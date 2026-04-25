@@ -1,0 +1,31 @@
+import * as mockRes from '@/protocol/fetch-api/mock-res';
+
+// 預設回傳 -------------------------------------------------------------------------------------------------
+export const Default = () => mockRes.CreateRes({});
+
+// -------------------------------------------------------------------------------------------------
+// 登入
+export const SignIn = () => {
+  const data: SignInRes = {
+    token: 'abc123'
+  };
+  return mockRes.CreateRes(data);
+};
+
+// -------------------------------------------------------------------------------------------------
+// 忘記密碼
+export const ForgotPassword = () => {
+  const data: ForgotPasswordRes = {
+    success: true
+  };
+  return mockRes.CreateRes(data);
+};
+
+// -------------------------------------------------------------------------------------------------
+// 註冊
+export const SignUp = () => {
+  const data: SignUpRes = {
+    success: true
+  };
+  return mockRes.CreateRes(data);
+};

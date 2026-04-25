@@ -1,0 +1,30 @@
+@use './config' as *;
+@use './fn' as *;
+
+// 預設 font size 16px
+@mixin fs($size: $base-font-size, $font-weight: 400) {
+  $calcSize: 16px;
+  $lineHeight: 1.5em;
+  $letterSpacing: .1em;
+  // $font-weight: 400;
+  
+  // @if $size == "h1" { // h1 ~h6
+  //   $calcSize: rem(48px);
+  //   $lineHeight: 1.5em;
+  //   $letterSpacing: .05em;
+  //   $font-weight: 600;
+  // } @else if $size == "h2" {
+  //   $calcSize: rem(40px);
+  //   $lineHeight: 1.5em;
+  //   $letterSpacing: .05em;
+  //   $font-weight: 600;ㄌ
+  // } @else { // Default 
+  //   $calcSize: rem($size);
+  // } 
+
+  $calcSize: rem($size);
+  font-size: $calcSize;
+  font-weight: $font-weight;
+  line-height: $lineHeight;
+  letter-spacing: $letterSpacing;
+}

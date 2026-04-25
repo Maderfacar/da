@@ -1,0 +1,236 @@
+// 寬高
+@mixin wh($width: 100%, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+// 圖片鎖定 不可下載與點擊
+@mixin img-lock {
+  -webkit-user-drag: none;
+  @supports (-webkit-touch-callout: none) {
+    -webkit-touch-callout: none;
+  }
+  display: block;
+}
+
+// 橫向排列
+@mixin row($gap: 0, $align: center) {
+  display: flex;
+  align-items: $align;
+  gap: $gap;
+}
+
+// 橫向排列 換行
+@mixin row-wrap($gap: 0) {
+  @include row($gap);
+  flex-wrap: wrap;
+}
+
+// 垂直排列
+@mixin col($gap: 0, $align: flex-start) {
+  display: flex;
+  flex-direction: column;
+  align-items: $align;
+  gap: $gap;
+}
+
+// 置中 橫向排列
+@mixin center-row($gap: 0) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: $gap;
+}
+
+// 置中 垂直排列
+@mixin center-col($gap: 0) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $gap;
+}
+
+/** 預設置中 */
+@mixin center($gap: 0) {
+  @include center-row($gap);
+}
+
+// grid 自動稠密
+@mixin auto-grid($gap: 0) {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column dense; // 稠密
+  gap: $gap;
+}
+
+// Grid 重疊，要搭配 grid-area: center;
+@mixin grid-place($area: "area-1", $place-row: center, $place-col: stretch) {
+  display: grid;
+  grid-template-areas: $area;
+  place-items: $place-row $place-col; // start | center | end | stretch
+}
+
+// Grid 重疊置中
+@mixin grid-center($area: "area-1") {
+  @include grid-place($area, center, center);
+}
+
+// Grid 橫向排列 自動換行 會留白
+@mixin grid-warp($min-width: 100px, $gap: 0) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($min-width, 1fr));
+  gap: $gap;
+}
+// Grid 橫向排列 自動換行 不會留白
+@mixin grid-warp-fit($min-width: 100px, $gap: 0) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
+  gap: $gap;
+}
+
+// 文字單行
+@mixin text-line {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+// 文字斷行
+@mixin text-break {
+  word-break: break-all;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+// 文字換行
+@mixin text-wrap {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+// 文字行數
+@mixin text-row($row: 3) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  -webkit-line-clamp: $row; /* 指定显示的最大行数 */
+  text-overflow: ellipsis;
+}
+
+// 按鈕點擊
+@mixin btn-click {
+  cursor: pointer;
+  user-select: none;
+  transition: filter 0.2s ease;
+  &:hover {
+    filter: brightness(1.1);
+  }
+  &:active {
+    filter: brightness(.9);
+  }
+}
+
+// 限制最大寬度與保留寬度
+@mixin max-w-padding($min-w: 1000px, $padding: 10px) {
+  max-width: calc($min-w + $padding * 2);
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: $padding;
+  padding-left: $padding;
+}
+
+// 等比區域
+@mixin ratio-wh($width: 300px, $height: 200px, $contrastWidth: 1920px, $useMax: false) {
+  @if $useMax == true {
+    max-width: $width;
+    max-height: $height;
+  }
+  width: w-ratio($width, $contrastWidth);
+  height: w-ratio($height, $contrastWidth);
+}
+
+// 定位 -------------------------------------------------------------------------------------------------
+/** absolute */
+@mixin absolute($direction: "tl" ,$a-pos: 0, $b-pos: $a-pos) {
+  position: absolute;
+  // 上左
+  @if $direction == "tl" {
+    top: $a-pos;
+    left: $b-pos;
+  }
+  // 上右
+  @if $direction == "tr" {
+    top: $a-pos;
+    right: $b-pos;
+  }
+  // 下左
+  @if $direction == "bl" {
+    bottom: $a-pos;
+    left: $b-pos;
+  }
+  // 下右
+  @if $direction == "br" {
+    right: $b-pos;
+    bottom: $a-pos;
+  }
+  // 填滿
+  @if $direction == "fill" {
+    inset: $a-pos $b-pos $a-pos $b-pos;
+  }
+}
+
+/** fixed */
+@mixin fixed($direction: "tl" ,$a-pos: 0, $b-pos: $a-pos) {
+  position: fixed;
+
+  @if $direction == "tl" {
+    top: $a-pos;
+    left: $b-pos;
+  }
+
+  @if $direction == "tr" {
+    top: $a-pos;
+    right: $b-pos;
+  }
+
+  @if $direction == "bl" {
+    bottom: $a-pos;
+    left: $b-pos;
+  }
+
+  @if $direction == "br" {
+    right: $b-pos;
+    bottom: $a-pos;
+  }
+
+  @if $direction == "fill" {
+    inset: $a-pos $b-pos $a-pos $b-pos;
+  }
+}
+
+// 字框 -------------------------------------------------------------------------------------------------
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {List}            - text-shadow list
+@function _stroke($stroke, $color) {
+  $shadow: ();
+  $from: $stroke * -1;
+
+  @for $i from $from through $stroke {
+   @for $j from $from through $stroke {
+      $shadow: append($shadow,$i * 1px $j * 1px 0 $color, comma);
+    }
+  }
+  @return $shadow;
+}
+
+/// Stroke font-character
+/// @param  {Integer} $stroke - Stroke width
+/// @param  {Color}   $color  - Stroke color
+/// @return {Style}           - text-shadow
+@mixin stroke($stroke: 1, $color: white) {
+  text-shadow: _stroke($stroke, $color);
+}

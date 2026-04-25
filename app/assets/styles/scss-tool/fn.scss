@@ -1,0 +1,16 @@
+@use './config' as *;
+
+// 轉換rem
+@function rem($px: 16px, $defaultVal: $base-font-size) {
+  @return calc($px / $defaultVal) * 1rem;
+}
+
+// 轉換 width 比例
+@function w-ratio($px: 10px, $contrastWidth: 1920px) {
+  @return calc($px / $contrastWidth * 100vw);
+}
+
+// 轉換 height 比例
+@function h-ratio($px: 10px, $contrastWidth: 1080px) {
+  @return calc($px / $contrastWidth * 100vh);
+}

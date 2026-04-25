@@ -1,0 +1,24 @@
+/* 要記得去scss/_colors.scss 添加 */
+:root {
+  --demo: #0baf2c;
+  --primary: #354d7b;
+  --secondary: #00ADA9;
+  --tertiary: #EB8B2D;
+  --gray: #808080;
+  --err: #EE5151;
+  --font: #454545;
+  --bg: #FDF9F2;
+  --white: #fff;
+}
+
+:root.dark {
+  --demo: #810b0b;
+  --primary: #354d7b;
+  --secondary: #00ADA9;
+  --tertiary: #EB8B2D;
+  --gray: #808080;
+  --err: #EE5151;
+  --font: #454545;
+  --bg: #FDF9F2;
+  --white: #fff;
+}

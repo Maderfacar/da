@@ -1,0 +1,68 @@
+@use './config' as *;
+
+@mixin rwd-pc-big() {
+  @media (min-width: $pc) {
+    @content;
+  }
+}
+
+// 電腦
+@mixin rwd-pc() {
+  @media (min-width: $mobile ) {
+    @content;
+  }
+}
+
+// 行動裝置
+@mixin rwd-mobile() {
+  @media all and (min-width: 0) and (max-width: calc($mobile - 1px)) {
+    @content;
+  }
+}
+
+// ---------------
+// 大於等於 觸發
+@mixin rwd-more($more: $xl) {
+  @media all and (min-width: $more) {
+    @content;
+  }
+}
+
+// 小於等於 觸發
+@mixin rwd-less($less: $md) {
+  @media all and (max-width: $less) {
+    @content;
+  } 
+}
+ 
+// 兩數之間 觸發
+@mixin rwd-between($min: $md, $max: $xl) {
+  @media all and (min-width: $min) and (max-width: $max) {
+    @content;
+  }
+}
+
+// 自定義RWD
+@mixin xl {
+  @media (max-width: $xl) {
+    @content;
+  }
+}
+
+@mixin lg {
+  @media (max-width: $lg) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (max-width: $md) {
+    @content;
+  }
+}
+
+@mixin sm {
+  @media (max-width: $sm) {
+    @content;
+  }
+}

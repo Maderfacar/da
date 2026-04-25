@@ -1,0 +1,111 @@
+/* date time picker --------------- */
+.el-date-picker__header {
+  .el-date-picker__header-label {
+    line-height: 30px !important;
+  }
+  span {
+    transform: scale(1.4);
+  }
+}
+
+.el-picker-panel__content {
+  width: 100% !important;
+  margin: unset !important;
+  padding: 10px;
+  th {
+    transform: scale(1.2);
+  }
+  .el-date-table-cell {
+    transform: scale(1.2);
+  }
+}
+/* input --------------- */
+
+.el-input .el-input__clear, .el-input .el-input__password, .el-input--large {
+  font-size: var(--el-font-size-base) !important;
+}
+
+/* select --------------- */
+.el-select__wrapper {
+  font-size: var(--el-font-size-base) !important;
+}
+
+.el-select__caret {
+  font-size: var(--el-font-size-base) !important;
+}
+
+/* button --------------- */
+.el-button--large {
+  font-size: var(--el-font-size-large) !important;
+}
+
+/* checkbox --------------- */
+.el-checkbox__inner {
+  transform: scale(1.6);
+  margin: 0 2px 0 4px;
+}
+
+.el-checkbox__label {
+  font-size: 16px !important;
+  font-weight: 400;
+}
+
+/* radio --------------- */
+.el-radio.el-radio--large {
+  min-width: 80px;
+}
+.el-radio__inner {
+  transform: scale(1.6);
+  margin: 0 2px 0 4px;
+}
+.el-radio__label {
+  font-size: 16px !important;
+  font-weight: 400;
+}
+
+/* form --------------- */
+.el-form-item {
+  position: relative;
+}
+
+.el-form-item__label {
+  font-size: var(--el-font-size-small) !important;
+  color: var(--gray-300) !important;
+}
+
+.el-form-item--label-top .el-form-item__label {
+  margin-bottom: 0 !important;
+  /* line-height: 16px !important; */
+}
+
+.el-form-item__content {
+  font-size: 18px!important;
+  line-height: 30px !important;
+}
+
+/* 必填* */
+.el-form-item__label::after {
+  line-height: 0;
+  font-size: 20px !important;
+}
+
+/* tooltip --------------- */
+.el-tooltip__trigger {
+  outline: none !important;
+}
+
+/* table --------------- */
+.el-table .even-row {
+  --el-table-tr-bg-color: #eee;
+}
+
+/* message box --------------- */
+
+.el-message {
+  z-index: 90000 !important;
+}
+
+/* ----- 自定義按鈕 ----- */
+/* .el-button--aa {
+  background-color: var(--tertiary-600) !important;
+} */
