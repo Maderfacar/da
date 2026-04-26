@@ -6,6 +6,34 @@
 
 ---
 
+### 2026/04/26 — 設計系統改版為美式復古機場風
+
+**決策類型**：設計規範  
+**標題**：將 Editorial Horizon 設計系統全面改版為「美式復古機場風（Retro Airport Americana）」  
+**背景**：Brain AI 提供 HTML 視覺參考稿（`_docs/inde.html`），風格為 Bebas Neue 粗體大標、黃黑斜條紋、琥珀金色調、毛玻璃效果，與原 Editorial Horizon 的午夜藍色調完全不同。  
+**決定**：
+- 廢棄原 Editorial Horizon 設計語言（午夜藍 `#051125`、Manrope/Inter 字體）
+- 改採米白 `#F5F2EC`＋暖奶油 `#FAF8F4`＋琥珀金 `#D4860A` 為主色系
+- 字體改為 Bebas Neue（大標）＋ Barlow/Barlow Condensed（英文）＋ Noto Sans TC（中文）
+- 新增 16 個 `--da-*` CSS 變數至 `_theme-colors.css`
+- `style-guide.md` 全面改版為 v2.0
+- 統計列由跑馬燈改為**機場翻牌效果（Split-Flap Board）**
+
+**影響**：所有 Ui* 元件、首頁、所有後續頁面均遵循新設計系統  
+**替代方案**：維持 Editorial Horizon → 已捨棄（與參考稿風格落差過大）
+
+---
+
+### 2026/04/26 — UiInput 強制 maxlength 預設值
+
+**決策類型**：元件規範  
+**標題**：UiInput 的 maxlength prop 設定預設值 200，而非無限制  
+**背景**：CLAUDE.md 規定 `ElInput` 必須加 `maxlength`，自製 UiInput 同樣遵循此原則，防止使用者意外輸入超長字串。  
+**決定**：`maxlength` 預設 200，呼叫方如需不同上限須明確傳入  
+**影響**：app/components/ui/Input.vue
+
+---
+
 ### 2026/04/26 — _docs 規格文件整合至 cc_da
 
 **決策類型**：開發流程  
@@ -62,20 +90,21 @@
 
 ---
 
-### 2026/04/24 — 設計系統選擇
+### 2026/04/24 — 設計系統選擇（已被 2026/04/26 決策取代）
 
 **決策類型**：設計規範  
 **標題**：採用 Editorial Horizon 設計系統（Tailwind CSS）與 Element Plus 並行  
 **背景**：企業樣板已整合 Element Plus，新 UI 元件採用 Tailwind + Editorial Horizon  
 **決定**：
 - Element Plus 用於複雜業務元件（表格、表單、彈窗）
-- 自定義 Ui* 元件採用 Tailwind Editorial Horizon 風格  
+- 自定義 Ui* 元件採用 Tailwind 設計系統風格
 
+**⚠️ 已被取代**：設計系統改版為美式復古機場風，見上方 2026/04/26 決策  
 **影響**：所有前端元件  
 **相關文件**：docs/style-guide.md
 
 ---
 
 **版本紀錄**
-- 版本：v1.1
+- 版本：v1.2（新增設計系統改版、UiInput maxlength 決策）
 - 更新日期：2026/04/26
