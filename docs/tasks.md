@@ -71,9 +71,13 @@
 - [✅] 完整實作 LINE LIFF 登入流程（line-exchange API 500 修復、authResolved 無限 loading 修復）
 - [✅] 完整實作 Firebase Auth 狀態機（onAuthStateChanged finally 保證 authResolved 設定）
 - [✅] 修復 SSR Hydration mismatch（司機端/Admin 改 CSR；乘客端殘留警告待後續追蹤）
-- [ ] 乘客訂單建立表單
-- [ ] Google Maps 路線計算與計價
-- [ ] **Stage Gate**：表單與計價功能正確
+- [✅] 乘客訂單建立表單（4 步驟：行程類型/地址/車種/計價）
+- [✅] Google Maps 地址自動完成（UiGooglePlaceInput + BFF autocomplete / place-details）
+- [✅] Google Maps 路線規劃（MapRoutePreview：DirectionsService + DirectionsRenderer + fitBounds）
+- [✅] Drop Pin 互動（地圖點擊 / 長按 → 逆向地理編碼 → 更新地址欄位）
+- [✅] 台灣本島地理圍欄（strictBounds + 服務端驗證 + 前端錯誤提示）
+- [✅] 共用計價公式（shared/pricing.ts：車種起跳費 + perKm + 額外服務 × 200，進位至 50）
+- [ ] **Stage Gate**：表單 E2E 完整測試通過
 
 ---
 
@@ -102,5 +106,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.5（Stage 4 進行中 — LINE LIFF + Firebase Auth 登入流程完成）
-- 更新日期：2026/04/26
+- 版本：v1.7（Stage 4 核心功能完成 — 訂單建立表單 + Maps 路線規劃 + Drop Pin + 台灣圍欄）
+- 更新日期：2026/04/27
