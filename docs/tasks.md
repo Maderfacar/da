@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 3 完成，進入 Stage 4  
+**總進度**：Stage 4 進行中  
 **最後更新**：2026/04/26
 
 ---
@@ -68,8 +68,9 @@
 
 ## Stage 4：邏輯實作與狀態管理
 
-- [ ] 完整實作 LINE LIFF 登入流程
-- [ ] 完整實作 Firebase Auth 狀態機
+- [✅] 完整實作 LINE LIFF 登入流程（line-exchange API 500 修復、authResolved 無限 loading 修復）
+- [✅] 完整實作 Firebase Auth 狀態機（onAuthStateChanged finally 保證 authResolved 設定）
+- [ ] 修復 SSR Hydration mismatch 警告
 - [ ] 乘客訂單建立表單
 - [ ] Google Maps 路線計算與計價
 - [ ] **Stage Gate**：表單與計價功能正確
@@ -101,5 +102,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.4（Stage 3 完成）
+- 版本：v1.5（Stage 4 進行中 — LINE LIFF + Firebase Auth 登入流程完成）
 - 更新日期：2026/04/26
