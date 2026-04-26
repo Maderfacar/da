@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 1 進行中  
+**總進度**：Stage 3 完成，進入 Stage 4  
 **最後更新**：2026/04/26
 
 ---
@@ -45,23 +45,24 @@
 
 ## Stage 2：基礎原子組件開發
 
-- [ ] 建立 UiButton（Primary / Secondary / Glass 三種變體）
-- [ ] 建立 UiInput（支援 Light / Dark Mode）
-- [ ] 建立 UiCard（Glassmorphism 效果）
-- [ ] 建立 UiModal
-- [ ] 建立 UiToast / UiBadge
-- [ ] 建立元件展示頁 `/demo/components`
-- [ ] **Stage Gate**：展示頁樣式正確 + build 通過
+- [✅] 建立 UiButton（Primary / Secondary / Glass 三種變體）
+- [✅] 建立 UiInput（支援 Light / Dark Mode）
+- [✅] 建立 UiCard（Glassmorphism 效果）
+- [✅] 建立 UiModal
+- [✅] 建立 UiToast / UiBadge
+- [✅] 建立元件展示頁 `/demo/components`
+- [✅] **Stage Gate**：展示頁樣式正確 + build 通過
 
 ---
 
 ## Stage 3：佈局與靜態頁面
 
-- [ ] 建立乘客端 Layout（底部 Tab Bar）
-- [ ] 建立司機端 Layout
-- [ ] 建立管理者端 Layout（側邊欄）
-- [ ] 實作路由守衛 middleware（auth + role）
-- [ ] **Stage Gate**：三端頁面可切換 + 手機顯示正常
+- [✅] 建立乘客端 Layout（front-desk：固定頂部 Nav + 底部 5-Tab Bar）
+- [✅] 建立司機端 Layout（driver：深色頂部 Nav + 底部 4-Tab Bar）
+- [✅] 建立管理者端 Layout（back-desk：Hamburger + 左側抽屜 280px）
+- [✅] 實作路由守衛 middleware（auth + role）
+- [✅] 首頁與所有頁面抽換為正式 Layout（移除頁面內暫時 nav）
+- [✅] **Stage Gate**：三端頁面可切換 + lint ✅ + build ✅
 
 ---
 
@@ -100,5 +101,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.2（反映 Stage 1 實際進度）
+- 版本：v1.4（Stage 3 完成）
 - 更新日期：2026/04/26
