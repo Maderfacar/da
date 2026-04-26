@@ -68,9 +68,16 @@
 
 ## 6. 設計風格
 
-- 整體風格以「現代、專業、清晰、行動優先」為主
-- 遵循 Editorial Horizon 設計系統（見 docs/style-guide.md）
-- 行動版優先（Mobile First）
+**設計主題：美式復古機場風（Retro Airport Americana）**
+
+- Bebas Neue 粗體大標、黃黑斜條紋分隔線（`stripe-divider`）
+- 機場代碼浮水印（TPE / JFK / NRT）— Ghost text 絕對定位，opacity 6%
+- 主色調：米白 `#F5F2EC` + 暖奶油 `#FAF8F4`，琥珀金點綴 `#D4860A`
+- 毛邊玻璃效果（`backdrop-filter blur`）用於表單卡片、Trip Card、導航列
+- 飛機動畫、浮動效果（`floatY`）
+- 統計數字展示採**機場翻牌效果**（Split-Flap Board）取代跑馬燈
+- 行動版優先（Mobile First），所有頁面優先設計 375px 手機版面
+- 完整規範見 [docs/style-guide.md](style-guide.md)
 
 ## 7. 其他重要需求
 

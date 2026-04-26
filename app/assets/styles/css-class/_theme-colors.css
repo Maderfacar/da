@@ -9,6 +9,23 @@
   --font: #454545;
   --bg: #FDF9F2;
   --white: #fff;
+
+  /* ── DestinationAnywhere 設計系統色彩 (美式復古機場風) ── */
+  --da-cream: #F5F2EC;
+  --da-off-white: #FAF8F4;
+  --da-amber: #D4860A;
+  --da-amber-light: #F0A830;
+  --da-amber-pale: #FDF3DC;
+  --da-dark: #1A1814;
+  --da-dark-mid: #2E2B25;
+  --da-gray: #6B6560;
+  --da-gray-light: #B8B3AC;
+  --da-gray-pale: #E8E4DC;
+  --da-stripe-yellow: #F5C842;
+  --da-stripe-dark: #2A2620;
+  --da-glass-bg: rgba(250, 248, 244, 0.72);
+  --da-glass-border: rgba(212, 134, 10, 0.18);
+  --da-glass-shadow: 0 8px 40px rgba(26, 24, 20, 0.08), 0 2px 8px rgba(26, 24, 20, 0.04);
 }
 
 :root.dark {
@@ -21,4 +38,21 @@
   --font: #454545;
   --bg: #FDF9F2;
   --white: #fff;
+
+  /* DA dark mode — 目前維持淺色，後續可擴充 */
+  --da-cream: #F5F2EC;
+  --da-off-white: #FAF8F4;
+  --da-amber: #D4860A;
+  --da-amber-light: #F0A830;
+  --da-amber-pale: #FDF3DC;
+  --da-dark: #1A1814;
+  --da-dark-mid: #2E2B25;
+  --da-gray: #6B6560;
+  --da-gray-light: #B8B3AC;
+  --da-gray-pale: #E8E4DC;
+  --da-stripe-yellow: #F5C842;
+  --da-stripe-dark: #2A2620;
+  --da-glass-bg: rgba(250, 248, 244, 0.72);
+  --da-glass-border: rgba(212, 134, 10, 0.18);
+  --da-glass-shadow: 0 8px 40px rgba(26, 24, 20, 0.08), 0 2px 8px rgba(26, 24, 20, 0.04);
 }

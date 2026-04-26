@@ -38,8 +38,8 @@
 - [✅] 建立 StoreAuth / StoreTrip / StoreOrder
 - [✅] 建立 app/plugins/auth.client.ts（Firebase onAuthStateChanged）
 - [✅] 建立 docs/ 規格文件目錄
-- [ ] 更新 CLAUDE.md 加入 docs/ 知識庫引用
-- [ ] **Stage Gate**：pnpm build 通過 + pnpm lint 通過
+- [✅] 更新 CLAUDE.md 加入 docs/ 知識庫引用
+- [✅] **Stage Gate**：pnpm build 通過 + pnpm lint 通過
 
 ---
 

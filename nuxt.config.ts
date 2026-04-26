@@ -98,9 +98,12 @@ export default defineNuxtConfig({
 
   // nuxt font ----------------------------------
   // https://nuxt.dev.org.tw/modules/fonts
-  fonts: { // 自動會抓不用設定
+  fonts: {
     families: [
-      // { name: 'Noto Sans TC', provider: 'google' }
+      { name: 'Bebas Neue', provider: 'google', weights: [400] },
+      { name: 'Barlow', provider: 'google', weights: [300, 400, 500, 700, 900] },
+      { name: 'Barlow Condensed', provider: 'google', weights: [400, 700, 900] },
+      { name: 'Noto Sans TC', provider: 'google', weights: [300, 400, 700, 900] },
     ]
   },
 
