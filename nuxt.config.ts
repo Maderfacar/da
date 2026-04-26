@@ -46,6 +46,7 @@ export default defineNuxtConfig({
   // env 環境變數 -------------------------------
   runtimeConfig: {
     apiBase: '',
+    firebaseServiceAccountJson: '', // NUXT_FIREBASE_SERVICE_ACCOUNT_JSON — server only
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
