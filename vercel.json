@@ -1,5 +1,5 @@
 {
   "framework": "nuxtjs",
-  "installCommand": "npm install -g pnpm@10.33.2 && pnpm install --ignore-scripts",
-  "buildCommand": "node scripts/copy-tinymce.mjs && pnpm build"
+  "installCommand": "npm install -g pnpm@10.33.2 && pnpm install",
+  "buildCommand": "pnpm build"
 }

@@ -37,15 +37,16 @@
 - **❌ 禁止**：使用 `corepack enable`（Node.js 22.11+ 已移除 corepack，Vercel 環境不可靠）
 - **Node.js 版本控制**：透過 `package.json` 的 `engines.node` 指定（如 `"22.x"`），Vercel 會自動讀取；不可在 `vercel.json` 設定
 - **pnpm 版本控制**：`installCommand` 使用 `npm install -g pnpm@10.33.2`（npm 在所有 Node 環境保證存在）
-- **postinstall 隔離**：`installCommand` 加 `--ignore-scripts` 跳過 `postinstall`，避免 `nuxt prepare` 在 CI 失敗；tinymce 資產複製移至 `buildCommand` 最前端
+- **postinstall 規範**：`package.json` 的 `postinstall` 禁止放 `nuxt prepare`（`nuxt build` 已內建此步驟，重複執行在 CI 易失敗）；`postinstall` 只放 `node scripts/copy-tinymce.mjs`
+- **❌ 禁止**：`pnpm install --ignore-scripts`（會跳過 esbuild 等原生套件的 binary 下載，導致 build 失敗）
 - **pnpm build scripts**：pnpm v10 預設封鎖原生套件的 build script；需在 `package.json` 的 `pnpm.onlyBuiltDependencies` 白名單列出（`esbuild`、`@parcel/watcher`、`protobufjs`、`unrs-resolver`、`@firebase/util`）
 
 ```json
 // vercel.json 正確格式（最終穩定版）
 {
   "framework": "nuxtjs",
-  "installCommand": "npm install -g pnpm@10.33.2 && pnpm install --ignore-scripts",
-  "buildCommand": "node scripts/copy-tinymce.mjs && pnpm build"
+  "installCommand": "npm install -g pnpm@10.33.2 && pnpm install",
+  "buildCommand": "pnpm build"
 }
 ```
 
