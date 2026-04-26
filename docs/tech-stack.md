@@ -32,13 +32,14 @@
 - **平台**：Vercel（Nuxt framework 自動偵測）
 - **設定檔**：`vercel.json`（僅允許 `framework`、`installCommand`、`buildCommand`、`functions`、`routes`、`rewrites`、`headers`、`redirects` 等官方 schema 欄位）
 - **❌ 禁止**：在 `vercel.json` 使用 `nodeVersion` 欄位（該欄位不存在於 Vercel schema，會造成 validation error）
+- **❌ 禁止**：`framework` 值使用 `"nuxt"`（不存在），**必須使用 `"nuxtjs"`**
 - **Node.js 版本控制**：透過 `package.json` 的 `engines.node` 指定（如 `"22.x"`），Vercel 會自動讀取；不可在 `vercel.json` 設定
 - **pnpm build scripts**：pnpm v10 預設封鎖原生套件的 build script；需在 `package.json` 的 `pnpm.onlyBuiltDependencies` 白名單列出（`esbuild`、`@parcel/watcher`、`protobufjs`、`unrs-resolver`、`@firebase/util`）
 
 ```json
 // vercel.json 正確格式
 {
-  "framework": "nuxt",
+  "framework": "nuxtjs",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm build"
 }
