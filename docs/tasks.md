@@ -70,7 +70,7 @@
 
 - [✅] 完整實作 LINE LIFF 登入流程（line-exchange API 500 修復、authResolved 無限 loading 修復）
 - [✅] 完整實作 Firebase Auth 狀態機（onAuthStateChanged finally 保證 authResolved 設定）
-- [ ] 修復 SSR Hydration mismatch 警告
+- [✅] 修復 SSR Hydration mismatch（司機端/Admin 改 CSR；乘客端殘留警告待後續追蹤）
 - [ ] 乘客訂單建立表單
 - [ ] Google Maps 路線計算與計價
 - [ ] **Stage Gate**：表單與計價功能正確
