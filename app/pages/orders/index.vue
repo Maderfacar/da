@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 </script>
 
 <template lang="pug">

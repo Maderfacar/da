@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({ layout: 'driver', middleware: ['auth'] });
 </script>
 
 <template lang="pug">
