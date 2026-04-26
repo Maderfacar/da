@@ -16,7 +16,9 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('nuxt version:', p.dependencies.nuxt\\)\")",
       "Bash(pnpm install *)",
       "Bash(git commit -m 'fix: 修復 Vercel pnpm install 失敗問題 *)",
-      "Bash(git commit -m 'chore: 更新 Claude Code 本地權限設定 *)"
+      "Bash(git commit -m 'chore: 更新 Claude Code 本地權限設定 *)",
+      "Bash(git commit -m 'fix: 修正 vercel.json schema 錯誤，補充部署規範 *)",
+      "Bash(git commit *)"
     ]
   }
 }
