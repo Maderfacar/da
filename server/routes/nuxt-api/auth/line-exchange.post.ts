@@ -14,9 +14,15 @@ interface RequestBody {
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const body = await readBody<RequestBody>(event);
 
-  if (!body.lineAccessToken) {
+  let body: RequestBody;
+  try {
+    body = await readBody<RequestBody>(event);
+  } catch {
+    return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
+  }
+
+  if (!body?.lineAccessToken) {
     return badRequestError({ zh_tw: 'LINE Token 缺失', en: 'LINE token missing', ja: 'LINEトークンが必要です' });
   }
 
@@ -34,35 +40,57 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── 2. 初始化 Firebase Admin ──────────────────────────────
-  const { auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+  let auth: ReturnType<typeof useFirebaseAdmin>['auth'];
+  let db: ReturnType<typeof useFirebaseAdmin>['db'];
+  try {
+    ({ auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson));
+  } catch {
+    return serverError({ zh_tw: 'Firebase 初始化失敗', en: 'Firebase initialization failed', ja: 'Firebase初期化に失敗しました' });
+  }
+
   const uid = `line:${lineProfile.sub}`;
+  const defaultRole = body.clientType === 'driver' ? 'driver' : 'passenger';
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
   try {
     await auth.getUser(uid);
   } catch {
-    await auth.createUser({
-      uid,
-      displayName: lineProfile.name,
-      photoURL: lineProfile.picture,
-    });
-
-    const defaultRole = body.clientType === 'driver' ? 'driver' : 'passenger';
-    await db.collection('users').doc(uid).set({
-      role: defaultRole,
-      lineUserId: lineProfile.sub,
-      displayName: lineProfile.name,
-      pictureUrl: lineProfile.picture,
-      createdAt: new Date(),
-    });
+    try {
+      await auth.createUser({
+        uid,
+        displayName: lineProfile.name,
+        photoURL: lineProfile.picture,
+      });
+      await db.collection('users').doc(uid).set({
+        role: defaultRole,
+        lineUserId: lineProfile.sub,
+        displayName: lineProfile.name,
+        pictureUrl: lineProfile.picture,
+        createdAt: new Date(),
+      });
+    } catch {
+      return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
+    }
   }
 
   // ── 4. 取得 Firestore 角色 ────────────────────────────────
-  const userDoc = await db.collection('users').doc(uid).get();
-  const role = (userDoc.data()?.role as string) ?? (body.clientType === 'driver' ? 'driver' : 'passenger');
+  let role = defaultRole;
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      role = (userDoc.data()?.role as string) ?? defaultRole;
+    }
+  } catch {
+    // Firestore 讀取失敗時沿用預設角色
+  }
 
   // ── 5. 建立 Firebase Custom Token ────────────────────────
-  const customToken = await auth.createCustomToken(uid, { role });
+  let customToken: string;
+  try {
+    customToken = await auth.createCustomToken(uid, { role });
+  } catch {
+    return serverError({ zh_tw: '無法建立登入憑證', en: 'Failed to create custom token', ja: 'カスタムトークンの生成に失敗しました' });
+  }
 
   return successResponse({ customToken, role, lineUserId: lineProfile.sub, displayName: lineProfile.name, pictureUrl: lineProfile.picture });
 });

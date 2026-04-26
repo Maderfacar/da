@@ -54,14 +54,19 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const auth = getAuth(firebaseApp);
 
     onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        user.value = firebaseUser;
-        idToken.value = await firebaseUser.getIdToken();
-        await _LoadRoleFromFirestore(firebaseApp, firebaseUser.uid);
-      } else {
+      try {
+        if (firebaseUser) {
+          user.value = firebaseUser;
+          idToken.value = await firebaseUser.getIdToken();
+          await _LoadRoleFromFirestore(firebaseApp, firebaseUser.uid);
+        } else {
+          _clearState();
+        }
+      } catch {
         _clearState();
+      } finally {
+        authResolved.value = true;
       }
-      authResolved.value = true;
     });
 
     await _InitLiffFlow(firebaseApp);
