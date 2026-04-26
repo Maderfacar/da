@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'] });
+definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 </script>
 
 <template lang="pug">

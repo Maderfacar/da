@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: false });
+definePageMeta({ layout: false, ssr: false });
 
 const config = useRuntimeConfig().public;
 const { isSignIn, role, authResolved, MockSignIn } = StoreAuth();
