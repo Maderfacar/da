@@ -36,3 +36,7 @@ yarn.lock
 # Local env files
 .env
 !.env.dev
+
+# Firebase service account keys（敏感憑證，不 commit）
+docs/*.json
+*adminsdk*.json
