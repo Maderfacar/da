@@ -59,7 +59,8 @@
     "overrides": {
       "glob": "^11.0.4",
       "minimatch": "^10.2.1",
-      "eslint-webpack-plugin": "^6.0.0"
+      "eslint-webpack-plugin": "^6.0.0",
+      "rollup-plugin-visualizer": "^5.12.0"
     }
   },
   "engines": {
