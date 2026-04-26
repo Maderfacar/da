@@ -31,13 +31,15 @@ ElConfigProvider(:locale="$elementI18n.elLocale.value")
   //- 加載橫條
   NuxtLoadingIndicator(color="#86D4A187")
 
-  //- 加載動畫
-  LoadingPage
+  //- 加載動畫（client only，避免 SSR hydration mismatch）
+  ClientOnly
+    LoadingPage
 
   //- 本體
   NuxtLayout
     NuxtPage
 
-  //- Drawer Modal Dialog 跳窗群組
-  OpenGroup
+  //- Drawer Modal Dialog 跳窗群組（client only）
+  ClientOnly
+    OpenGroup
 </template>

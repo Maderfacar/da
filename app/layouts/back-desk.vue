@@ -27,7 +27,8 @@ function ClickNav(path: string) {
 
 <template lang="pug">
 .LayoutBackDesk
-  UiToast
+  ClientOnly
+    UiToast
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")

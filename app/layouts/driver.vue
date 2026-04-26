@@ -23,7 +23,8 @@ const activeTab = computed(() => {
 
 <template lang="pug">
 .LayoutDriver
-  UiToast
+  ClientOnly
+    UiToast
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")
