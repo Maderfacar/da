@@ -49,6 +49,13 @@
     "tinymce-i18n": "^26.4.6"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@firebase/util",
+      "@parcel/watcher",
+      "esbuild",
+      "protobufjs",
+      "unrs-resolver"
+    ],
     "overrides": {
       "glob": "^11.0.4",
       "minimatch": "^10.2.1",
@@ -56,6 +63,6 @@
     }
   },
   "engines": {
-    "node": ">= 24.13.0"
+    "node": ">= 20.0.0"
   }
 }

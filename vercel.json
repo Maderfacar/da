@@ -1,0 +1,6 @@
+{
+  "framework": "nuxt",
+  "nodeVersion": "22.x",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build"
+}
