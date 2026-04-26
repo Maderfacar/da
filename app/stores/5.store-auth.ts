@@ -4,28 +4,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- State -----------------------------------------------------------------------------------------
 
-  /** 當前登入 Firebase User 物件 */
   const user = ref<import('firebase/auth').User | null>(null);
-
-  /** 使用者角色，由 Firestore 自訂聲明或查詢後寫入 */
   const role = ref<'passenger' | 'driver' | 'admin' | null>(null);
-
-  /** 是否已完成 Firebase Auth 狀態首次確認（解決初始化前 flicker 問題） */
   const authResolved = ref(false);
-
-  /** LINE LIFF 是否已完成初始化 */
   const liffReady = ref(false);
-
-  /** LINE Access Token */
-  const lineAccessToken = ref<string>('');
+  const lineAccessToken = ref('');
+  const lineProfile = ref<{ displayName: string; pictureUrl: string } | null>(null);
+  const idToken = ref('');
 
   // -- Computed --------------------------------------------------------------------------------------
 
-  /** 是否已登入 */
   const isSignIn = computed(() => !!user.value);
-
-  /** Firebase ID Token（供 BFF 驗證使用） */
-  const idToken = ref<string>('');
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
@@ -34,19 +23,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     role.value = null;
     idToken.value = '';
     lineAccessToken.value = '';
+    lineProfile.value = null;
     liffReady.value = false;
   };
 
   // -- Flow Control ----------------------------------------------------------------------------------
 
-  /**
-   * 初始化 Firebase onAuthStateChanged 監聽器與 LINE LIFF。
-   * 由 app/plugins/auth.client.ts 在 client 端啟動時呼叫一次。
-   */
   const InitAuthFlow = async () => {
     const config = useRuntimeConfig().public;
 
-    // Firebase 設定未填入時（開發初期）跳過初始化，直接標記已解析
     if (!config.firebaseApiKey) {
       authResolved.value = true;
       return;
@@ -72,54 +57,89 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       if (firebaseUser) {
         user.value = firebaseUser;
         idToken.value = await firebaseUser.getIdToken();
-        // TODO: 從 Firestore 或 Custom Claims 取得 role 並寫入 role.value
+        await _LoadRoleFromFirestore(firebaseApp, firebaseUser.uid);
       } else {
         _clearState();
       }
       authResolved.value = true;
     });
 
-    // LIFF 初始化（依路徑決定 liffId）
-    await _InitLiffFlow();
+    await _InitLiffFlow(firebaseApp);
   };
 
-  /**
-   * 依當前路徑決定使用乘客或司機的 LIFF ID 並完成初始化。
-   */
-  const _InitLiffFlow = async () => {
+  const _LoadRoleFromFirestore = async (firebaseApp: import('firebase/app').FirebaseApp, uid: string) => {
+    try {
+      const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+      const db = getFirestore(firebaseApp);
+      const snap = await getDoc(doc(db, 'users', uid));
+      if (snap.exists()) {
+        role.value = snap.data().role as 'passenger' | 'driver' | 'admin';
+      }
+    } catch {
+      // Firestore 讀取失敗時維持 null
+    }
+  };
+
+  const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
     const route = useRoute();
 
-    const liffId = route.path.startsWith('/driver')
-      ? config.lineLiffIdDriver
-      : config.lineLiffIdPassenger;
+    const isDriverPath = route.path.startsWith('/driver');
+    const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
+    const clientType = isDriverPath ? 'driver' : 'passenger';
 
-    if (!liffId) return;
+    if (!liffId) { liffReady.value = true; return; }
 
     try {
       const liff = (await import('@line/liff')).default;
       await liff.init({ liffId });
 
-      if (liff.isLoggedIn()) {
-        lineAccessToken.value = liff.getAccessToken() ?? '';
+      if (!liff.isLoggedIn()) {
         liffReady.value = true;
+        return;
       }
+
+      const token = liff.getAccessToken() ?? '';
+      lineAccessToken.value = token;
+      liffReady.value = true;
+
+      // 已有 Firebase 使用者 → 不重複登入
+      const { getAuth } = await import('firebase/auth');
+      if (getAuth(firebaseApp).currentUser) return;
+
+      // 交換 Firebase Custom Token
+      const res = await $fetch<{ data: { customToken: string; role: string; displayName: string; pictureUrl: string } }>(
+        '/nuxt-api/auth/line-exchange',
+        { method: 'POST', body: { lineAccessToken: token, clientType } },
+      );
+
+      if (!res.data?.customToken) return;
+
+      lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
+
+      const { signInWithCustomToken } = await import('firebase/auth');
+      await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
+      // onAuthStateChanged 接手後續
     } catch {
-      // LIFF 環境外（非 LINE App 開啟）時靜默略過
+      liffReady.value = true;
     }
   };
 
   // -- Actions ---------------------------------------------------------------------------------------
 
-  /** 設定使用者角色（由 Firestore 查詢後呼叫） */
-  const SetRole = (_role: 'passenger' | 'driver' | 'admin') => {
+  const SetRole = (_role: 'passenger' | 'driver' | 'admin') => { role.value = _role; };
+
+  /** 測試模式：直接設定角色（TestMode 用，不走 Firebase） */
+  const MockSignIn = (_role: 'passenger' | 'driver' | 'admin') => {
     role.value = _role;
+    authResolved.value = true;
   };
 
-  /** 登出：清除 Firebase session 並重置狀態 */
   const SignOut = async () => {
-    const { getAuth } = await import('firebase/auth');
-    await getAuth().signOut();
+    try {
+      const { getAuth } = await import('firebase/auth');
+      await getAuth().signOut();
+    } catch { /* Firebase 未初始化時忽略 */ }
     _clearState();
     authResolved.value = false;
     navigateTo('/');
@@ -127,15 +147,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user,
-    role,
-    authResolved,
-    liffReady,
-    lineAccessToken,
-    isSignIn,
-    idToken,
-    InitAuthFlow,
-    SetRole,
-    SignOut,
+    user, role, authResolved, liffReady, lineAccessToken, lineProfile,
+    isSignIn, idToken,
+    InitAuthFlow, SetRole, MockSignIn, SignOut,
   };
 });

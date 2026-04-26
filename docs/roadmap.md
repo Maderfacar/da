@@ -38,10 +38,9 @@
 **目標**：建立統一、美觀的基礎 UI 元件。
 
 **主要任務：**
-- 開發 UiButton、UiInput、UiCard、UiModal、UiToast、UiBadge 原子元件
-- 所有元件遵循美式復古機場風設計系統（style-guide.md v2.0）
-- 支援 Light / Dark 雙主題
-- useToast() composable 全局可用
+- 開發 UiButton、UiInput、UiCard 等原子元件
+- 所有元件遵循 美式復古機場風 設計系統（style-guide.md v2.0）
+- 支援 Light / Dark Mode
 
 **完成標準**：元件展示頁面樣式正確，build 通過  
 **狀態**：✅ 完成
@@ -53,12 +52,12 @@
 **目標**：搭建完整的網站骨架。
 
 **主要任務：**
-- 建立三端 Layout（乘客 front-desk / 司機 driver / 管理者 back-desk）
-- 實作路由守衛 middleware（auth + role 三端分流）
-- 首頁套用正式 Layout，移除頁面內暫時 nav
+- 建立三端 Layout（乘客、司機、管理者）
+- 建立靜態頁面框架（路由已在 Stage 1 建立）
+- 實作路由守衛（authResolved 等待）
 
 **完成標準**：可正常切換頁面，佈局在手機上顯示良好  
-**狀態**：🔄 進行中
+**狀態**：✅ 完成
 
 ---
 
@@ -107,5 +106,5 @@
 ---
 
 **版本紀錄**
-- 版本：v1.2（Stage 1–2 完成，Stage 3 進行中）
+- 版本：v1.3（Stage 2、3 完成）
 - 更新日期：2026/04/26

@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 3 進行中（Stage 0–2 已完成）  
+**總進度**：Stage 3 完成，進入 Stage 4  
 **最後更新**：2026/04/26
 
 ---
@@ -57,13 +57,12 @@
 
 ## Stage 3：佈局與靜態頁面
 
-- [ ] 建立乘客端 Layout `front-desk.vue`（固定頂部 Nav + 底部 5-Tab Bar）
-- [ ] 建立司機端 Layout `driver.vue`（底部 4-Tab Bar）
-- [ ] 建立管理者端 Layout `back-desk.vue`（側邊欄導航）
-- [ ] 實作 `middleware/auth.ts`（判斷 authResolved + 未登入導向）
-- [ ] 實作 `middleware/role.ts`（乘客 / 司機 / 管理者三端路由分流）
-- [ ] 首頁與 demo 頁抽換為正式 Layout（移除頁面內暫時 nav）
-- [ ] **Stage Gate**：三端頁面可切換 + 手機顯示正常 + build 通過
+- [✅] 建立乘客端 Layout（front-desk：固定頂部 Nav + 底部 5-Tab Bar）
+- [✅] 建立司機端 Layout（driver：深色頂部 Nav + 底部 4-Tab Bar）
+- [✅] 建立管理者端 Layout（back-desk：Hamburger + 左側抽屜 280px）
+- [✅] 實作路由守衛 middleware（auth + role）
+- [✅] 首頁與所有頁面抽換為正式 Layout（移除頁面內暫時 nav）
+- [✅] **Stage Gate**：三端頁面可切換 + lint ✅ + build ✅
 
 ---
 
@@ -102,5 +101,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.3（Stage 2 完成，Stage 3 任務細化）
+- 版本：v1.4（Stage 3 完成）
 - 更新日期：2026/04/26

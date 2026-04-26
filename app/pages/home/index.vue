@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'default' });
+definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 // ── 統計翻牌 ──────────────────────────────────────────────
 interface StatItem {
@@ -74,30 +74,6 @@ const upcomingTrips = [
   },
 ];
 
-// ── 底部 Tab ──────────────────────────────────────────────
-interface TabItem {
-  id: string
-  icon: string
-  label: string
-  path: string
-  dot: boolean
-}
-
-const bottomTabs: TabItem[] = [
-  { id: 'home',   icon: '🏠', label: '首頁', path: '/home',     dot: false },
-  { id: 'trips',  icon: '✈',  label: '行程', path: '/upcoming', dot: true  },
-  { id: 'book',   icon: '＋', label: '預約', path: '/booking',  dot: false },
-  { id: 'fleet',  icon: '🚗', label: '車型', path: '/fleet',    dot: false },
-  { id: 'orders', icon: '📋', label: '訂單', path: '/orders',   dot: false },
-];
-
-const activeTab = ref('home');
-
-function setTab(tab: string, path: string) {
-  activeTab.value = tab;
-  navigateTo(path);
-}
-
 // ── 生命週期 ──────────────────────────────────────────────
 onMounted(() => {
   // Scroll reveal
@@ -126,16 +102,6 @@ onMounted(() => {
 
 <template lang="pug">
 .PageHome
-  //- ── TOP NAV（Stage 3 後移入 Layout）──────────────────────────
-  nav.PageHome__nav
-    .PageHome__nav-logo
-      | DEST
-      span ∙
-      | ANYWHERE
-    .PageHome__nav-right
-      button.PageHome__nav-btn(@click="navigateTo('/orders')") 訂單
-      button.PageHome__nav-btn.is-primary(@click="navigateTo('/booking')") 預約
-
   //- ── HERO ────────────────────────────────────────────────────
   section#home.PageHome__hero-section
     .PageHome__hero
@@ -228,17 +194,6 @@ onMounted(() => {
         path(d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
       | 前往預約表單
 
-  //- ── BOTTOM NAV（Stage 3 後移入 Layout）────────────────────────
-  nav.PageHome__bottom-nav
-    .PageHome__bnav-item(
-      v-for="tab in bottomTabs"
-      :key="tab.id"
-      :class="{ 'is-active': activeTab === tab.id }"
-      @click="setTab(tab.id, tab.path)"
-    )
-      .PageHome__bnav-icon {{ tab.icon }}
-      .PageHome__bnav-label {{ tab.label }}
-      .PageHome__bnav-dot(v-if="tab.dot")
 </template>
 
 
@@ -279,63 +234,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   background: var(--da-off-white);
   color: var(--da-dark);
   overflow-x: hidden;
-  padding-bottom: 80px; // 底部 nav 空間
   -webkit-font-smoothing: antialiased;
-}
-
-// ── TOP NAV ───────────────────────────────────────────────────────────────────
-.PageHome__nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 0 20px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(250, 248, 244, 0.82);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--da-glass-border);
-}
-
-.PageHome__nav-logo {
-  font-family: $font-display;
-  font-size: 22px;
-  letter-spacing: 0.08em;
-  color: var(--da-dark);
-  line-height: 1;
-
-  span { color: var(--da-amber); }
-}
-
-.PageHome__nav-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.PageHome__nav-btn {
-  font-family: $font-body;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 7px 14px;
-  border-radius: 100px;
-  border: 1.5px solid var(--da-dark);
-  background: transparent;
-  color: var(--da-dark);
-  cursor: pointer;
-  transition: opacity 0.2s;
-
-  &:hover { opacity: 0.7; }
-
-  &.is-primary {
-    background: var(--da-dark);
-    color: var(--da-cream);
-    border-color: var(--da-dark);
-  }
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
@@ -743,62 +642,6 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   gap: 12px;
 
   &:active { transform: scale(0.98); }
-}
-
-// ── BOTTOM NAV ────────────────────────────────────────────────────────────────
-.PageHome__bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 0 8px;
-  padding-bottom: env(safe-area-inset-bottom, 8px);
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: rgba(250, 248, 244, 0.9);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid var(--da-glass-border);
-}
-
-.PageHome__bnav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 6px 10px;
-  border-radius: 12px;
-  min-width: 52px;
-  position: relative;
-
-  .PageHome__bnav-icon {
-    font-size: 20px;
-    line-height: 1;
-    color: var(--da-gray-light);
-  }
-  .PageHome__bnav-label {
-    font-family: $font-condensed;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: var(--da-gray-light);
-  }
-
-  &.is-active {
-    .PageHome__bnav-icon,
-    .PageHome__bnav-label { color: var(--da-dark); }
-  }
-}
-
-.PageHome__bnav-dot {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--da-amber);
-  position: absolute;
-  top: 6px; right: 8px;
 }
 
 // ── SCROLL REVEAL ─────────────────────────────────────────────────────────────
