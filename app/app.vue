@@ -28,8 +28,9 @@ const $elementI18n = UseElementI18n();
 
 <template lang="pug">
 ElConfigProvider(:locale="$elementI18n.elLocale.value")
-  //- 加載橫條
-  NuxtLoadingIndicator(color="#86D4A187")
+  //- 加載橫條（client only）
+  ClientOnly
+    NuxtLoadingIndicator(color="#86D4A187")
 
   //- 加載動畫（client only，避免 SSR hydration mismatch）
   ClientOnly
