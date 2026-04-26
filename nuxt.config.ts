@@ -110,7 +110,9 @@ export default defineNuxtConfig({
 
   // colorMode 主題色 ----------------------------
   colorMode: {
-    classSuffix: ''
+    classSuffix: '',
+    preference: 'light',
+    fallback: 'light',
   },
 
   // nuxt icon ----------------------------------

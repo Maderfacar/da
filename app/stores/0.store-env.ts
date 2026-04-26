@@ -1,16 +1,8 @@
 export const StoreEnv = defineStore('StoreEnv', () => {
+  const runtimeConfig = useRuntimeConfig();
   const env = ref({
-    apiBase: ''
+    apiBase: import.meta.server ? (runtimeConfig.apiBase ?? '') : '',
   });
 
-  /** 初始化 */
-  const Init = () => {
-    if (import.meta.server) {
-      const runtimeConfig = useRuntimeConfig();
-      env.value = runtimeConfig;
-    }
-  };
-
-  Init();
   return { env };
 });
