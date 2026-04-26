@@ -1,10 +1,10 @@
 # 技術棧文件 (Tech Stack)
 
-> ⚠️ **適配說明**：原始規格由 Brain AI 以 Nuxt 3 + pnpm 設計，Execution AI 實作時已適配至 **Nuxt 4 + npm**。詳見 decision-log.md。
+> ⚠️ **適配說明**：原始規格由 Brain AI 以 Nuxt 3 + pnpm 設計，Execution AI 實作時已適配至 **Nuxt 4 + pnpm**。詳見 decision-log.md。
 
 ## 1. 開發環境
 
-- **Node.js 版本**：>= 24.13.0
+- **Node.js 版本**：`22.x`（本機開發用 24.x 亦可，CI/Vercel 以 22.x 為準）
 - **套件管理器**：pnpm（`packageManager: pnpm@10.33.2`）
 - **開發作業系統**：Windows
 
@@ -27,7 +27,24 @@
 - 自定義 Ui* 原子元件 → Tailwind + Editorial Horizon
 - 複雜業務表單/表格/彈窗 → Element Plus
 
-## 4. 狀態管理與資料獲取
+## 4. 部署（Vercel）規範
+
+- **平台**：Vercel（Nuxt framework 自動偵測）
+- **設定檔**：`vercel.json`（僅允許 `framework`、`installCommand`、`buildCommand`、`functions`、`routes`、`rewrites`、`headers`、`redirects` 等官方 schema 欄位）
+- **❌ 禁止**：在 `vercel.json` 使用 `nodeVersion` 欄位（該欄位不存在於 Vercel schema，會造成 validation error）
+- **Node.js 版本控制**：透過 `package.json` 的 `engines.node` 指定（如 `"22.x"`），Vercel 會自動讀取；不可在 `vercel.json` 設定
+- **pnpm build scripts**：pnpm v10 預設封鎖原生套件的 build script；需在 `package.json` 的 `pnpm.onlyBuiltDependencies` 白名單列出（`esbuild`、`@parcel/watcher`、`protobufjs`、`unrs-resolver`、`@firebase/util`）
+
+```json
+// vercel.json 正確格式
+{
+  "framework": "nuxt",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build"
+}
+```
+
+## 5. 狀態管理與資料獲取
 
 - **狀態管理**：Pinia（@pinia/nuxt）
 - **API 請求**：Nuxt 內建 `$fetch` / `useFetch`；業務 API 透過 `app/protocol/fetch-api/` 的 `$api`
