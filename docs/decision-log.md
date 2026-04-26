@@ -6,6 +6,43 @@
 
 ---
 
+### 2026/04/27 — Google Maps 雙 Key + BFF 代理架構
+
+**決策類型**：安全性 / 架構  
+**標題**：Maps API 全程走 BFF（Nitro），前端僅使用 Browser Key 渲染地圖畫布  
+**背景**：Google Maps 有兩種金鑰用途：Server Key（無限制 IP，用於後端 API 呼叫）和 Browser Key（限制 HTTP Referrer，用於 Maps JS 渲染）。  
+**決定**：
+- `NUXT_GOOGLE_MAPS_API_KEY`（Server Key）：僅 BFF endpoints 使用，包含 autocomplete / place-details / reverse-geocode / distance
+- `NUXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`（Browser Key）：僅 MapRoutePreview.vue 用於載入 Maps JavaScript API 並渲染地圖畫布
+- 台灣本島地理圍欄驗證同時在 server-side（place-details / reverse-geocode BFF）和 client-side（UI 提示）執行，形成雙層防護
+
+**影響**：`server/api/maps/autocomplete.get.ts`、`place-details.get.ts`、`reverse-geocode.get.ts`、`app/components/MapRoutePreview.vue`  
+**替代方案**：全部走 Browser Key → Server Key 洩漏風險，已捨棄
+
+---
+
+### 2026/04/27 — Places Autocomplete 採用 sessionToken 分段計費
+
+**決策類型**：成本最佳化  
+**標題**：`UiGooglePlaceInput` 每次「輸入+選取」週期使用同一 sessionToken，選取後重置  
+**背景**：Google Places API 以 session 計費，同一 session 內的 autocomplete + detail 請求合計為一次計費  
+**決定**：每個 UiGooglePlaceInput 實例在 mounted 時產生 sessionToken，選取完成後（GetMapsPlaceDetails 成功後）立即 reset，確保 session 不跨越選取行為  
+**影響**：`app/components/ui/GooglePlaceInput.vue`  
+**替代方案**：不使用 sessionToken → 每次 keystroke 計費，成本大幅上升，已捨棄
+
+---
+
+### 2026/04/27 — Drop Pin 採用「activeField」prop 決定更新目標
+
+**決策類型**：互動設計  
+**標題**：MapRoutePreview 不自行判斷要更新哪個欄位，由父層傳入 `activeField` 控制  
+**背景**：地圖組件可能對應多個欄位（上車、下車、多個停靠站），若組件自行判斷會造成耦合  
+**決定**：MapRoutePreview 接收 `activeField: 'origin' | 'waypoint-N' | 'destination' | null`，Drop Pin 觸發時 emit `pin-placed(field, place)`，父層決定更新哪個欄位  
+**影響**：`app/components/MapRoutePreview.vue`、`app/pages/booking/index.vue`  
+**替代方案**：由地圖組件維護「最近被 focus 的欄位」→ 狀態耦合，已捨棄
+
+---
+
 ### 2026/04/26 — 設計系統改版為美式復古機場風
 
 **決策類型**：設計規範  
