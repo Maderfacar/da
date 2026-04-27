@@ -84,7 +84,7 @@
 
 ## Stage 5：資料串接與持久化
 
-- [ ] Firebase Firestore 訂單 CRUD
+- [✅] Firebase Firestore 訂單 CRUD（POST 寫入 + GET 查詢 + /upcoming 接真實資料）
 - [ ] 司機位置即時更新
 - [ ] 航空 API 串接
 - [ ] LINE Bot 推播通知
@@ -107,5 +107,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.8（Stage 4 Gate 通過 — 完整訂單表單 + Maps BFF 架構 + Drop Pin + 台灣圍欄 + 停靠站即時計算）
-- 更新日期：2026/04/27
+- 版本：v1.9（Stage 5 開始 — Firestore 訂單 CRUD 完成）
+- 更新日期：2026/04/28

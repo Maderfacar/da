@@ -42,8 +42,10 @@ interface OrderItem {
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
   vehicleType: string;
+  passengerCount: number;
   estimatedFare: number;
   orderStatus: string;
+  createdAt?: number;
 }
 
 // ===== Maps =====

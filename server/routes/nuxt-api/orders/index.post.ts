@@ -1,6 +1,7 @@
-// POST /nuxt-api/orders — 建立訂單（Stage 4：計價 + 暫存，Firestore 持久化於 Stage 5）
 import { calculateFare } from '~shared/pricing';
 import type { VehicleType, OrderType, ExtraService } from '~shared/pricing';
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 interface GooglePlace {
   address: string;
@@ -65,6 +66,34 @@ export default defineEventHandler(async (event) => {
   const estimatedTime = Math.round(distanceKm * 1.8);
 
   const orderId = crypto.randomUUID();
+  const { firebaseServiceAccountJson } = useRuntimeConfig();
+
+  if (firebaseServiceAccountJson) {
+    try {
+      const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+      await db.collection('orders').doc(orderId).set({
+        orderId,
+        userId: body.userId,
+        lineUserId: body.lineUserId ?? '',
+        orderType: body.orderType,
+        pickupDateTime: body.pickupDateTime,
+        pickupLocation: body.pickupLocation,
+        dropoffLocation: body.dropoffLocation,
+        stopovers: body.stopovers ?? [],
+        passengerCount: body.passengerCount,
+        luggageCount: body.luggageCount,
+        vehicleType: body.vehicleType,
+        extraServices: body.extraServices ?? [],
+        estimatedFare,
+        estimatedTime,
+        distanceKm,
+        orderStatus: 'pending',
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('[orders/post] Firestore write failed:', err);
+    }
+  }
 
   return {
     data: {

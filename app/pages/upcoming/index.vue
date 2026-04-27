@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { VEHICLE_CONFIGS, ORDER_TYPES } from '~shared/pricing';
+
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 type TripStatus = 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
@@ -8,7 +10,6 @@ interface TripItem {
   from: string;
   to: string;
   status: TripStatus;
-  statusLabel: string;
   date: string;
   time: string;
   vehicle: string;
@@ -26,47 +27,42 @@ const STATUS_TABS: Array<{ key: TripStatus | 'all'; label: string }> = [
 ];
 
 const STATUS_CONFIG: Record<TripStatus, { label: string; cls: string }> = {
-  pending:     { label: '待確認', cls: 'is-pending' },
-  confirmed:   { label: '已確認', cls: 'is-confirmed' },
+  pending:       { label: '待確認', cls: 'is-pending' },
+  confirmed:     { label: '已確認', cls: 'is-confirmed' },
   'in-progress': { label: '進行中', cls: 'is-progress' },
-  completed:   { label: '已完成', cls: 'is-done' },
-  cancelled:   { label: '已取消', cls: 'is-cancelled' },
+  completed:     { label: '已完成', cls: 'is-done' },
+  cancelled:     { label: '已取消', cls: 'is-cancelled' },
 };
 
-// Stage 5 接 Firestore；目前使用 mock 資料
-const mockTrips: TripItem[] = [
-  {
-    id: 'A1B2C3D4',
-    from: 'TPE', to: '台北市信義區',
-    status: 'confirmed', statusLabel: '已確認',
-    date: '2025.07.14', time: '14:30',
-    vehicle: '休旅車 SUV', passengerCount: 3, estimatedFare: 1550,
-    orderType: '接機',
-  },
-  {
-    id: 'E5F6G7H8',
-    from: '台北市大安區', to: 'TPE',
-    status: 'pending', statusLabel: '待確認',
-    date: '2025.07.18', time: '06:00',
-    vehicle: '轎車 Sedan', passengerCount: 2, estimatedFare: 950,
-    orderType: '送機',
-  },
-  {
-    id: 'I9J0K1L2',
-    from: 'TPE', to: '台中市西屯區',
-    status: 'completed', statusLabel: '已完成',
-    date: '2025.06.30', time: '10:00',
-    vehicle: '豪華轎車 Premium', passengerCount: 2, estimatedFare: 3800,
-    orderType: '接機',
-  },
-];
+const _locationLabel = (loc: GooglePlace): string =>
+  (loc.displayName ?? loc.address).split(',')[0].trim();
 
+const _mapToTripItem = (o: OrderItem): TripItem => {
+  const dt = $dayjs(o.pickupDateTime);
+  const vehicleCfg = VEHICLE_CONFIGS[o.vehicleType as keyof typeof VEHICLE_CONFIGS];
+  const orderTypeCfg = ORDER_TYPES.find((t) => t.value === o.orderType);
+  return {
+    id: o.orderId.slice(-8).toUpperCase(),
+    from: _locationLabel(o.pickupLocation),
+    to: _locationLabel(o.dropoffLocation),
+    status: (o.orderStatus as TripStatus) ?? 'pending',
+    date: dt.isValid() ? dt.format('YYYY.MM.DD') : '',
+    time: dt.isValid() ? dt.format('HH:mm') : '',
+    vehicle: vehicleCfg ? `${vehicleCfg.label} ${vehicleCfg.labelEn}` : o.vehicleType,
+    passengerCount: o.passengerCount ?? 1,
+    estimatedFare: o.estimatedFare,
+    orderType: orderTypeCfg?.label ?? o.orderType,
+  };
+};
+
+const loading = ref(false);
+const trips = ref<TripItem[]>([]);
 const activeTab = ref<TripStatus | 'all'>('all');
 
 const filteredTrips = computed(() =>
   activeTab.value === 'all'
-    ? mockTrips
-    : mockTrips.filter((t) => t.status === activeTab.value)
+    ? trips.value
+    : trips.value.filter((t) => t.status === activeTab.value)
 );
 
 const upcomingTrips = computed(() =>
@@ -76,6 +72,21 @@ const upcomingTrips = computed(() =>
 const pastTrips = computed(() =>
   filteredTrips.value.filter((t) => t.status === 'completed' || t.status === 'cancelled')
 );
+
+const ApiLoadOrders = async () => {
+  const authStore = StoreAuth();
+  const userId = authStore.user?.uid;
+  if (!userId) return;
+
+  loading.value = true;
+  const res = await $api.GetOrderList({ userId });
+  loading.value = false;
+
+  if (res.status.code !== $enum.apiStatus.success && res.status.code !== 0) return;
+  trips.value = (res.data as OrderItem[]).map(_mapToTripItem);
+};
+
+onMounted(ApiLoadOrders);
 </script>
 
 <template lang="pug">
@@ -97,79 +108,84 @@ const pastTrips = computed(() =>
       @click="activeTab = tab.key"
     ) {{ tab.label }}
 
-  //- 即將出發
-  template(v-if="upcomingTrips.length")
-    .PageUpcoming__section-label 即將出發
-    .PageUpcoming__list
-      .PageUpcoming__card(v-for="trip in upcomingTrips" :key="trip.id")
-        .PageUpcoming__card-top
-          .PageUpcoming__route
-            span.PageUpcoming__route-code {{ trip.from }}
-            .PageUpcoming__route-arrow
-              .PageUpcoming__route-line
-              NuxtIcon(name="mdi:airplane")
-              .PageUpcoming__route-line
-            span.PageUpcoming__route-code {{ trip.to }}
-          span.PageUpcoming__status(:class="STATUS_CONFIG[trip.status].cls")
-            | {{ STATUS_CONFIG[trip.status].label }}
-        .PageUpcoming__card-meta
-          .PageUpcoming__meta-row
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 行程類型
-              span.PageUpcoming__meta-val {{ trip.orderType }}
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 日期
-              span.PageUpcoming__meta-val {{ trip.date }}
-          .PageUpcoming__meta-row
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 時間
-              span.PageUpcoming__meta-val {{ trip.time }}
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 車種
-              span.PageUpcoming__meta-val {{ trip.vehicle }}
-          .PageUpcoming__meta-row
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 人數
-              span.PageUpcoming__meta-val {{ trip.passengerCount }} 人
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 預估車資
-              span.PageUpcoming__meta-val.is-fare NT$ {{ trip.estimatedFare.toLocaleString() }}
-        .PageUpcoming__card-footer
-          span.PageUpcoming__card-id # {{ trip.id }}
-          button.PageUpcoming__detail-btn 查看詳情
+  //- Loading 骨架
+  template(v-if="loading")
+    .PageUpcoming__skeleton(v-for="n in 2" :key="n")
 
-  //- 過去行程
-  template(v-if="pastTrips.length")
-    .PageUpcoming__section-label.is-muted 過去行程
-    .PageUpcoming__list.is-past
-      .PageUpcoming__card.is-past(v-for="trip in pastTrips" :key="trip.id")
-        .PageUpcoming__card-top
-          .PageUpcoming__route
-            span.PageUpcoming__route-code {{ trip.from }}
-            .PageUpcoming__route-arrow
-              .PageUpcoming__route-line
-              NuxtIcon(name="mdi:airplane")
-              .PageUpcoming__route-line
-            span.PageUpcoming__route-code {{ trip.to }}
-          span.PageUpcoming__status(:class="STATUS_CONFIG[trip.status].cls")
-            | {{ STATUS_CONFIG[trip.status].label }}
-        .PageUpcoming__card-meta
-          .PageUpcoming__meta-row
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 日期
-              span.PageUpcoming__meta-val {{ trip.date }}
-            .PageUpcoming__meta-item
-              span.PageUpcoming__meta-label 車資
-              span.PageUpcoming__meta-val NT$ {{ trip.estimatedFare.toLocaleString() }}
+  template(v-else)
+    //- 即將出發
+    template(v-if="upcomingTrips.length")
+      .PageUpcoming__section-label 即將出發
+      .PageUpcoming__list
+        .PageUpcoming__card(v-for="trip in upcomingTrips" :key="trip.id")
+          .PageUpcoming__card-top
+            .PageUpcoming__route
+              span.PageUpcoming__route-code {{ trip.from }}
+              .PageUpcoming__route-arrow
+                .PageUpcoming__route-line
+                NuxtIcon(name="mdi:airplane")
+                .PageUpcoming__route-line
+              span.PageUpcoming__route-code {{ trip.to }}
+            span.PageUpcoming__status(:class="STATUS_CONFIG[trip.status].cls")
+              | {{ STATUS_CONFIG[trip.status].label }}
+          .PageUpcoming__card-meta
+            .PageUpcoming__meta-row
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 行程類型
+                span.PageUpcoming__meta-val {{ trip.orderType }}
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 日期
+                span.PageUpcoming__meta-val {{ trip.date }}
+            .PageUpcoming__meta-row
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 時間
+                span.PageUpcoming__meta-val {{ trip.time }}
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 車種
+                span.PageUpcoming__meta-val {{ trip.vehicle }}
+            .PageUpcoming__meta-row
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 人數
+                span.PageUpcoming__meta-val {{ trip.passengerCount }} 人
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 預估車資
+                span.PageUpcoming__meta-val.is-fare NT$ {{ trip.estimatedFare.toLocaleString() }}
+          .PageUpcoming__card-footer
+            span.PageUpcoming__card-id # {{ trip.id }}
+            button.PageUpcoming__detail-btn(@click="navigateTo('/orders')") 查看詳情
 
-  //- 空狀態
-  .PageUpcoming__empty(v-if="!filteredTrips.length")
-    NuxtIcon.PageUpcoming__empty-icon(name="mdi:airplane-off")
-    p.PageUpcoming__empty-text 尚無符合的行程紀錄
-    UiButton(type="primary" @click="navigateTo('/booking')") 立即預約
+    //- 過去行程
+    template(v-if="pastTrips.length")
+      .PageUpcoming__section-label.is-muted 過去行程
+      .PageUpcoming__list.is-past
+        .PageUpcoming__card.is-past(v-for="trip in pastTrips" :key="trip.id")
+          .PageUpcoming__card-top
+            .PageUpcoming__route
+              span.PageUpcoming__route-code {{ trip.from }}
+              .PageUpcoming__route-arrow
+                .PageUpcoming__route-line
+                NuxtIcon(name="mdi:airplane")
+                .PageUpcoming__route-line
+              span.PageUpcoming__route-code {{ trip.to }}
+            span.PageUpcoming__status(:class="STATUS_CONFIG[trip.status].cls")
+              | {{ STATUS_CONFIG[trip.status].label }}
+          .PageUpcoming__card-meta
+            .PageUpcoming__meta-row
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 日期
+                span.PageUpcoming__meta-val {{ trip.date }}
+              .PageUpcoming__meta-item
+                span.PageUpcoming__meta-label 車資
+                span.PageUpcoming__meta-val NT$ {{ trip.estimatedFare.toLocaleString() }}
+
+    //- 空狀態
+    .PageUpcoming__empty(v-if="!filteredTrips.length")
+      NuxtIcon.PageUpcoming__empty-icon(name="mdi:airplane-off")
+      p.PageUpcoming__empty-text 尚無符合的行程紀錄
+      UiButton(type="primary" @click="navigateTo('/booking')") 立即預約
 
   //- 底部 CTA
-  .PageUpcoming__cta(v-if="filteredTrips.length")
+  .PageUpcoming__cta(v-if="filteredTrips.length && !loading")
     UiButton(type="primary" style="width:100%" @click="navigateTo('/booking')")
       | ✈ 預約新行程
 </template>
@@ -471,5 +487,20 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 底部 CTA ─────────────────────────────────────────────
 .PageUpcoming__cta {
   margin-top: 32px;
+}
+
+// ── Loading 骨架 ──────────────────────────────────────────
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.PageUpcoming__skeleton {
+  height: 180px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, var(--da-glass-border) 25%, rgba(255,255,255,0.5) 50%, var(--da-glass-border) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
 }
 </style>

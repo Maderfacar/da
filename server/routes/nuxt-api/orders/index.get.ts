@@ -1,4 +1,4 @@
-// GET /nuxt-api/orders — 取得訂單列表（Stage 5 接 Firestore 後填入真實查詢）
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -11,9 +11,46 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  // Stage 5 將替換為 Firestore 查詢
-  return {
-    data: [],
-    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-  };
+  const { firebaseServiceAccountJson } = useRuntimeConfig();
+
+  if (!firebaseServiceAccountJson) {
+    return {
+      data: [],
+      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+    };
+  }
+
+  try {
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    const snapshot = await db.collection('orders').where('userId', '==', userId).get();
+
+    const orders = snapshot.docs
+      .map((doc) => {
+        const d = doc.data();
+        return {
+          orderId: d.orderId as string,
+          orderType: d.orderType as string,
+          pickupDateTime: d.pickupDateTime as string,
+          pickupLocation: d.pickupLocation as { address: string; lat: number; lng: number; placeId?: string; displayName?: string },
+          dropoffLocation: d.dropoffLocation as { address: string; lat: number; lng: number; placeId?: string; displayName?: string },
+          vehicleType: d.vehicleType as string,
+          passengerCount: (d.passengerCount as number) ?? 1,
+          estimatedFare: (d.estimatedFare as number) ?? 0,
+          orderStatus: (d.orderStatus as string) ?? 'pending',
+          createdAt: d.createdAt?.toMillis?.() ?? 0,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    return {
+      data: orders,
+      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+    };
+  } catch (err) {
+    console.error('[orders/get] Firestore query failed:', err);
+    return {
+      data: [],
+      status: { code: 500, message: { zh_tw: '伺服器錯誤', en: 'Server error', ja: 'サーバーエラー' } },
+    };
+  }
 });
