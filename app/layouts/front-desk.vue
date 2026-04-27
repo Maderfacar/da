@@ -29,13 +29,14 @@ const activeTab = computed(() => {
     UiToast
 
   //- ── Auth Loading ────────────────────────────────────────
-  transition(name="auth-fade")
-    .LayoutFrontDesk__loading(v-if="!authResolved")
-      .LayoutFrontDesk__loading-logo
-        | DEST
-        span ∙
-        | ANYWHERE
-      .LayoutFrontDesk__loading-spinner
+  ClientOnly
+    transition(name="auth-fade")
+      .LayoutFrontDesk__loading(v-if="!authResolved")
+        .LayoutFrontDesk__loading-logo
+          | DEST
+          span ∙
+          | ANYWHERE
+        .LayoutFrontDesk__loading-spinner
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
   nav.LayoutFrontDesk__top
