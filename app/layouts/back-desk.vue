@@ -8,6 +8,7 @@ const drawerOpen = ref(false);
 const navItems = [
   { id: 'orders',        icon: '📋', label: '訂單管理',  path: '/admin/orders'        },
   { id: 'war-room',      icon: '🎯', label: '即時戰情',  path: '/admin/war-room'      },
+  { id: 'traffic',       icon: '✈️', label: '機場人流',  path: '/admin/traffic'       },
   { id: 'notifications', icon: '🔔', label: '通知管理',  path: '/admin/notifications' },
   { id: 'drivers',       icon: '🚗', label: '司機管理',  path: '/admin/drivers'       },
   { id: 'settings',      icon: '⚙️', label: '系統設定',  path: '/admin/settings'      },

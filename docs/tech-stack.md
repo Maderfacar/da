@@ -85,14 +85,20 @@
 - **航班資訊**：待確認廠商 → 透過 server/api/flight/ 代理
 - **LINE LIFF + LINE Bot**：登入與推播
 
-## 10. 嚴格禁止
+## 10. 圖表
+
+- **圖表套件**：chart.js 4.x（`chart.js`）— Admin 後台資料視覺化
+  - 僅在 `ssr: false` 頁面使用，透過動態 import 載入
+  - 用於機場人流 24 小時預測圖（`/admin/traffic`）
+
+## 12. 嚴格禁止
 
 - 未更新 tech-stack.md 並經架構師確認前，嚴禁安裝新套件
 - 禁止在客戶端直接呼叫外部 API
 - 禁止使用 `any` 型別
 - 禁止使用 `ElMessageBox.confirm/prompt`（改用 `UseAsk()`）
 
-## 11. 待確認清單
+## 13. 待確認清單
 
 | 項目 | 狀態 | 備註 |
 |------|------|------|
