@@ -251,9 +251,6 @@ export default defineNuxtConfig({
 
   // == Vite ===============================================================================================
   vite: {
-    ssr: {
-      external: ['chart.js'],
-    },
     css: {
       preprocessorMaxWorkers: true, // CPU 核心数减 1
       preprocessorOptions: {
