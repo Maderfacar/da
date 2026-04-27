@@ -136,6 +136,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   /** 測試模式：直接設定角色（TestMode 用，不走 Firebase） */
   const MockSignIn = (_role: 'passenger' | 'driver' | 'admin') => {
+    // 設定 mock user 讓 isSignIn = true，否則 auth middleware 會一直 redirect
+    user.value = { uid: `mock-${_role}` } as import('firebase/auth').User;
     role.value = _role;
     authResolved.value = true;
   };
