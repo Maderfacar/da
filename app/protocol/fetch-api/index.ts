@@ -3,6 +3,7 @@ import * as auth from './api/auth';
 import * as tinymce from './api/tinymce';
 import * as maps from './api/maps';
 import * as order from './api/order';
+import * as driver from './api/driver';
 
 export default {
   ...file,
@@ -10,6 +11,7 @@ export default {
   ...tinymce,
   ...maps,
   ...order,
+  ...driver,
 };
 
 
