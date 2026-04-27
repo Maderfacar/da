@@ -1,51 +1,46 @@
-// Google Maps 預估車程 BFF 代理
-// 前端嚴禁直接呼叫 Maps API，金鑰僅存於伺服器端
+// GET /api/maps/distance — Distance Matrix BFF（使用 Server Key）
 
-import { defineEventHandler, getQuery } from 'h3';
-
-interface DistanceData {
-  distance_km: number;
-  duration_minutes: number;
-  origin: string;
-  destination: string;
-}
-
-interface UnifiedResponse<T> {
-  data: T;
-  status: { code: number; message: { zh_tw: string; en: string; ja: string } };
-}
-
-export default defineEventHandler(async (event): Promise<UnifiedResponse<DistanceData | Record<string, never>>> => {
+export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const { origin, destination } = query as { origin?: string; destination?: string };
 
   if (!origin || !destination) {
     return {
       data: {},
-      status: {
-        code: 400,
-        message: {
-          zh_tw: '缺少起點或終點參數',
-          en: 'Missing origin or destination parameter',
-          ja: '出発地または目的地のパラメータが不足しています'
-        }
-      }
+      status: { code: 400, message: { zh_tw: '缺少起點或終點參數', en: 'Missing origin or destination', ja: '出発地または目的地が不足しています' } },
     };
   }
 
-  // TODO: 串接 Google Maps Distance Matrix API
-  // const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const { googleMapsApiKey } = useRuntimeConfig();
+
+  const params = new URLSearchParams({
+    origins: origin,
+    destinations: destination,
+    key: googleMapsApiKey,
+    region: 'TW',
+    language: 'zh-TW',
+    units: 'metric',
+  });
+
+  const res = await $fetch<any>(
+    `https://maps.googleapis.com/maps/api/distancematrix/json?${params}`,
+  ).catch(() => null);
+
+  const element = res?.rows?.[0]?.elements?.[0];
+  if (!element || element.status !== 'OK') {
+    return {
+      data: { distance_km: 0, duration_minutes: 0, origin, destination },
+      status: { code: 422, message: { zh_tw: '距離計算失敗', en: 'Distance calculation failed', ja: '距離計算失敗' } },
+    };
+  }
 
   return {
     data: {
-      distance_km: 0,
-      duration_minutes: 0,
-      origin: origin as string,
-      destination: destination as string
+      distance_km: Math.round(element.distance.value / 100) / 10,
+      duration_minutes: Math.round(element.duration.value / 60),
+      origin,
+      destination,
     },
-    status: {
-      code: 200,
-      message: { zh_tw: '', en: '', ja: '' }
-    }
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   };
 });

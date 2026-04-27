@@ -43,8 +43,8 @@ const pinLoading = ref(false);
 const pinError = ref('');
 
 let gmMap: google.maps.Map | null = null;
-let directionsService: google.maps.DirectionsService | null = null;
-let directionsRenderer: google.maps.DirectionsRenderer | null = null;
+// DirectionsService/Renderer 已移除，改用 BFF route + Polyline
+let routePolyline: google.maps.Polyline | null = null;
 // 各點的 Marker
 let originMarker: google.maps.Marker | null = null;
 let destMarker: google.maps.Marker | null = null;
@@ -109,12 +109,13 @@ async function _InitMapFlow() {
     styles: _mapStyles(),
   });
 
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({
-    suppressMarkers: true, // 我們自行管理 Marker
-    polylineOptions: { strokeColor: '#D4860A', strokeWeight: 4 },
+  routePolyline = new google.maps.Polyline({
+    map: gmMap,
+    strokeColor: '#1B4F8A',
+    strokeWeight: 5,
+    strokeOpacity: 0.85,
+    geodesic: true,
   });
-  directionsRenderer.setMap(gmMap);
 
   // 點擊 Drop Pin（Desktop）
   gmMap.addListener('click', (e: google.maps.MapMouseEvent) => {
@@ -271,46 +272,46 @@ function _UpdateWaypointMarkers() {
 }
 
 async function _DrawRoute() {
-  if (!directionsService || !directionsRenderer || !gmMap) return;
+  if (!gmMap || !routePolyline) return;
 
   const origin = props.origin;
   const destination = props.destination;
 
-  // 若起點或終點尚未設定，清除路線但保留 Markers
+  // 若起點或終點尚未設定，清除路線但 fitBounds 至現有 Markers
   if (!origin?.lat || !destination?.lat) {
-    directionsRenderer.setDirections({ routes: [] } as any);
-
-    // fitBounds 至現有 Markers
+    routePolyline.setPath([]);
     const bounds = new google.maps.LatLngBounds();
     let count = 0;
     if (origin?.lat) { bounds.extend({ lat: origin.lat, lng: origin.lng }); count++; }
     props.waypoints?.forEach((wp) => { if (wp?.lat) { bounds.extend({ lat: wp.lat, lng: wp.lng }); count++; } });
+    if (destination?.lat) { bounds.extend({ lat: destination.lat, lng: destination.lng }); count++; }
     if (count > 0) gmMap.fitBounds(bounds, 80);
     return;
   }
 
-  const waypoints = (props.waypoints ?? [])
+  // 呼叫 BFF 取 encoded polyline（Server Key，不需 Browser Key 開 Directions API）
+  const wpsParam = (props.waypoints ?? [])
     .filter((wp) => wp?.lat)
-    .map((wp) => ({ location: { lat: wp.lat, lng: wp.lng }, stopover: true }));
+    .map((wp) => `${wp.lat},${wp.lng}`)
+    .join('|');
 
-  directionsService.route(
-    {
-      origin: { lat: origin.lat, lng: origin.lng },
-      destination: { lat: destination.lat, lng: destination.lng },
-      waypoints,
-      travelMode: google.maps.TravelMode.DRIVING,
-      region: 'TW',
-    },
-    (result, status) => {
-      if (status === google.maps.DirectionsStatus.OK && result) {
-        directionsRenderer!.setDirections(result);
-        // fitBounds 至整條路線
-        const bounds = new google.maps.LatLngBounds();
-        result.routes[0]?.overview_path?.forEach((pt) => bounds.extend(pt));
-        gmMap!.fitBounds(bounds, 60);
-      }
-    }
+  const res = await $api.GetMapsRoute({
+    origin: `${origin.lat},${origin.lng}`,
+    destination: `${destination.lat},${destination.lng}`,
+    ...(wpsParam ? { waypoints: wpsParam } : {}),
+  });
+
+  if (res.status.code !== 200 || !res.data?.polyline) return;
+
+  const decoded = google.maps.geometry.encoding.decodePath(res.data.polyline);
+  routePolyline.setPath(decoded);
+
+  // fitBounds 至路線
+  const bounds = new google.maps.LatLngBounds(
+    { lat: res.data.bounds.southwest.lat, lng: res.data.bounds.southwest.lng },
+    { lat: res.data.bounds.northeast.lat, lng: res.data.bounds.northeast.lng }
   );
+  gmMap.fitBounds(bounds, 60);
 }
 
 // ── Watch props 更新地圖 ───────────────────────────────────
@@ -333,6 +334,7 @@ onMounted(() => { _InitMapFlow(); });
 
 onUnmounted(() => {
   if (longPressTimer) clearTimeout(longPressTimer);
+  routePolyline?.setMap(null);
   originMarker?.setMap(null);
   destMarker?.setMap(null);
   waypointMarkers.forEach((m) => m.setMap(null));

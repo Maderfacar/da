@@ -20,4 +20,13 @@ export const GetMapsDistance = (params: { origin: string; destination: string })
     params
   );
 
+/** 取得路線 encoded polyline（供地圖繪製使用，Server Key 呼叫 Directions API） */
+export const GetMapsRoute = (params: { origin: string; destination: string; waypoints?: string }) =>
+  methods.get<{
+    polyline: string;
+    bounds: { northeast: { lat: number; lng: number }; southwest: { lat: number; lng: number } };
+    distance_km: number;
+    duration_minutes: number;
+  }>('/api/maps/route', params);
+
 export type { AutocompleteRes, GooglePlace, PlaceSuggestion };

@@ -28,6 +28,13 @@ const isCalcLoading = ref(false);
 
 // Drop Pin — 目前聚焦欄位
 const activeField = ref<'origin' | `waypoint-${number}` | 'destination' | null>(null);
+let _activeFieldTimer: ReturnType<typeof setTimeout> | null = null;
+
+// blur 延遲 400ms 才清除，讓 map click 事件先觸發
+const ClearActiveField = () => {
+  if (_activeFieldTimer) clearTimeout(_activeFieldTimer);
+  _activeFieldTimer = setTimeout(() => { activeField.value = null; }, 400);
+};
 
 // 各地址欄 ref（用於 Drop Pin 回填）
 const pickupInputRef = ref<PlaceInputExpose | null>(null);
@@ -121,7 +128,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
     label="上車地點 / PICKUP"
     placeholder="請輸入上車地址"
     @focus="activeField = 'origin'"
-    @blur="activeField = null"
+    @blur="ClearActiveField"
   )
 
   .PassengerBookingStepRoute__stopovers(v-if="stopovers.length")
@@ -136,7 +143,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
         :placeholder="`請輸入第 ${idx + 1} 個停靠站`"
         @update:model-value="UpdateStopover(idx, $event)"
         @focus="activeField = `waypoint-${idx}`"
-        @blur="activeField = null"
+        @blur="ClearActiveField"
       )
       button.PassengerBookingStepRoute__remove-btn(@click="ClickRemoveStopover(idx)")
         NuxtIcon(name="mdi:close-circle-outline")
@@ -153,7 +160,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
     label="下車地點 / DROPOFF"
     placeholder="請輸入下車地址"
     @focus="activeField = 'destination'"
-    @blur="activeField = null"
+    @blur="ClearActiveField"
   )
 
   Transition(name="fade-up")
