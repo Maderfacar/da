@@ -40,7 +40,7 @@ const activeTab = computed(() => {
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
   nav.LayoutFrontDesk__top
-    .LayoutFrontDesk__logo
+    .LayoutFrontDesk__logo(@click="navigateTo('/home')")
       | DEST
       span ∙
       | ANYWHERE
@@ -138,6 +138,8 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.08em;
   color: var(--da-dark);
   line-height: 1;
+  cursor: pointer;
+  user-select: none;
 
   span { color: var(--da-amber); }
 }
