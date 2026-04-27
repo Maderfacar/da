@@ -48,6 +48,8 @@ export default defineNuxtConfig({
     apiBase: '',
     firebaseServiceAccountJson: '', // NUXT_FIREBASE_SERVICE_ACCOUNT_JSON — server only
     googleMapsApiKey: '',           // NUXT_GOOGLE_MAPS_API_KEY — server only (BFF)
+    lineChannelSecret: '',          // NUXT_LINE_CHANNEL_SECRET — server only
+    lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — server only
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
@@ -60,6 +62,8 @@ export default defineNuxtConfig({
       // LINE LIFF
       lineLiffIdPassenger: '',
       lineLiffIdDriver: '',
+      // LINE 官方帳號加好友連結
+      lineOaAddUrl: '',             // NUXT_PUBLIC_LINE_OA_ADD_URL
       // Google Maps（Browser Key，限制 HTTP Referrer）
       googleMapsBrowserKey: '',
     }

@@ -2,7 +2,13 @@
 // LayoutFrontDesk 乘客端佈局：固定頂部 Nav + 底部 5-Tab Bar
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const authStore = StoreAuth();
+const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
+const { lineOaAddUrl } = useRuntimeConfig().public;
+
+const showFriendBanner = computed(
+  () => isSignIn.value && isFriend.value === false,
+);
 
 const tabs = [
   { id: 'home',   icon: '🏠', label: '首頁', path: '/home',     dot: false },
@@ -37,6 +43,17 @@ const activeTab = computed(() => {
           span ∙
           | ANYWHERE
         .LayoutFrontDesk__loading-spinner
+
+  //- ── 加好友提醒橫幅 ──────────────────────────────────────
+  ClientOnly
+    transition(name="banner-slide")
+      .LayoutFrontDesk__friend-banner(v-if="showFriendBanner")
+        span.LayoutFrontDesk__banner-text 加入官方帳號，即時接收行程通知
+        a.LayoutFrontDesk__banner-btn(
+          :href="lineOaAddUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        ) + 加好友
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
   nav.LayoutFrontDesk__top
@@ -76,6 +93,46 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
   -webkit-font-smoothing: antialiased;
 }
+
+// ── 加好友橫幅 ─────────────────────────────────────────────
+.LayoutFrontDesk__friend-banner {
+  position: fixed;
+  top: 56px; left: 0; right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #06c755;
+  color: #fff;
+}
+
+.LayoutFrontDesk__banner-text {
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+}
+
+.LayoutFrontDesk__banner-btn {
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 5px 14px;
+  border-radius: 100px;
+  background: #fff;
+  color: #06c755;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.banner-slide-enter-active,
+.banner-slide-leave-active { transition: transform 0.3s ease, opacity 0.3s ease; }
+.banner-slide-enter-from,
+.banner-slide-leave-to    { transform: translateY(-100%); opacity: 0; }
 
 // ── Auth Loading ───────────────────────────────────────────
 .LayoutFrontDesk__loading {

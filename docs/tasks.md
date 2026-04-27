@@ -87,7 +87,9 @@
 - [✅] Firebase Firestore 訂單 CRUD（POST 寫入 + GET 查詢 + /upcoming 接真實資料）
 - [✅] 司機位置即時更新（PUT location BFF + GET available + /driver/trip 任務頁 + /admin/war-room 地圖）
 - [ ] 航空 API 串接
-- [ ] LINE Bot 推播通知
+- [✅] LINE Webhook 建立（HMAC 簽名驗證 + follow 歡迎訊息 + text 自動回覆）
+- [✅] liff.getFriendship() + 加好友提醒橫幅（乘客端 layout）
+- [ ] LINE Bot 訂單推播通知（訂單建立後主動推播乘客）
 - [ ] **Stage Gate**：MVP 核心流程可跑通
 
 ---
@@ -107,5 +109,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.0（Stage 5 — Firestore 訂單 CRUD + 司機位置即時更新完成）
+- 版本：v2.1（Stage 5 — LINE Webhook + 好友橫幅完成）
 - 更新日期：2026/04/28

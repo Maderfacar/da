@@ -11,6 +11,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const lineAccessToken = ref('');
   const lineProfile = ref<{ displayName: string; pictureUrl: string } | null>(null);
   const idToken = ref('');
+  const isFriend = ref<boolean | null>(null); // null = 尚未查詢
 
   // -- Computed --------------------------------------------------------------------------------------
 
@@ -25,6 +26,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     lineAccessToken.value = '';
     lineProfile.value = null;
     liffReady.value = false;
+    isFriend.value = null;
   };
 
   // -- Flow Control ----------------------------------------------------------------------------------
@@ -106,6 +108,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       const token = liff.getAccessToken() ?? '';
       lineAccessToken.value = token;
+
+      // 查詢是否已加官方帳號好友
+      try {
+        const friendship = await liff.getFriendship();
+        isFriend.value = friendship.friendFlag;
+      } catch {
+        isFriend.value = null;
+      }
+
       liffReady.value = true;
 
       // 已有 Firebase 使用者 → 不重複登入
@@ -154,7 +165,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user, role, authResolved, liffReady, lineAccessToken, lineProfile,
+    user, role, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     isSignIn, idToken,
     InitAuthFlow, SetRole, MockSignIn, SignOut,
   };
