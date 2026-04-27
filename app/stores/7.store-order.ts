@@ -1,58 +1,81 @@
-// 乘客端訂單狀態管理
+// 乘客端訂單狀態管理（對齊 api-contracts + 訂單建立表單狀態）
+
 export const StoreOrder = defineStore('StoreOrder', () => {
-  type OrderStatus = 'idle' | 'searching' | 'matched' | 'in_progress' | 'completed' | 'cancelled';
 
-  interface Order {
-    id: string;
-    driver_id: string | null;
-    origin: string;
-    destination: string;
-    estimated_minutes: number;
-    estimated_fare: number;
-    status: OrderStatus;
-    created_at: string;
-  }
+  // ── 表單草稿（跨步驟共享） ──────────────────────────────────────────────
+  const draft = ref<Partial<CreateOrderParams>>({
+    orderType: undefined,
+    pickupDateTime: '',
+    pickupLocation: undefined,
+    dropoffLocation: undefined,
+    stopovers: [],
+    passengerCount: 1,
+    luggageCount: 0,
+    vehicleType: 'sedan',
+    extraServices: [],
+  });
 
-  /** 當前進行中訂單 */
-  const currentOrder = ref<Order | null>(null);
+  /** 路線資訊（Step 2 計算後暫存） */
+  const routeInfo = ref<{ distanceKm: number; durationMinutes: number } | null>(null);
+
+  /** 預估車資（Step 3 選完車種後計算） */
+  const estimatedFare = ref(0);
+
+  // ── 已送出訂單 ──────────────────────────────────────────────────────────
+  const currentOrder = ref<CreateOrderRes | null>(null);
 
   /** 歷史訂單列表 */
-  const orderHistory = ref<Order[]>([]);
+  const orderHistory = ref<OrderItem[]>([]);
 
-  /** 當前訂單狀態 */
-  const status = computed<OrderStatus>(() => currentOrder.value?.status ?? 'idle');
+  // ── Actions ─────────────────────────────────────────────────────────────
+  const SetDraft = (partial: Partial<CreateOrderParams>) => {
+    draft.value = { ...draft.value, ...partial };
+  };
 
-  /** 建立新訂單 */
-  const CreateOrder = (order: Order) => {
+  const SetRouteInfo = (info: { distanceKm: number; durationMinutes: number }) => {
+    routeInfo.value = info;
+  };
+
+  const SetEstimatedFare = (fare: number) => {
+    estimatedFare.value = fare;
+  };
+
+  const SetCurrentOrder = (order: CreateOrderRes) => {
     currentOrder.value = order;
   };
 
-  /** 更新訂單狀態（由 Firestore 即時推播） */
-  const UpdateStatus = (newStatus: OrderStatus) => {
-    if (!currentOrder.value) return;
-    currentOrder.value.status = newStatus;
+  const AddToHistory = (item: OrderItem) => {
+    orderHistory.value.unshift(item);
   };
 
-  /** 訂單完成，移入歷史紀錄 */
-  const ArchiveOrder = () => {
-    if (!currentOrder.value) return;
-    orderHistory.value.unshift(currentOrder.value);
-    currentOrder.value = null;
+  const ResetDraft = () => {
+    draft.value = {
+      orderType: undefined,
+      pickupDateTime: '',
+      pickupLocation: undefined,
+      dropoffLocation: undefined,
+      stopovers: [],
+      passengerCount: 1,
+      luggageCount: 0,
+      vehicleType: 'sedan',
+      extraServices: [],
+    };
+    routeInfo.value = null;
+    estimatedFare.value = 0;
   };
 
-  /** 取消訂單 */
-  const CancelOrder = () => {
-    UpdateStatus('cancelled');
-    ArchiveOrder();
-  };
-
+  // ── Return ───────────────────────────────────────────────────────────────
   return {
+    draft,
+    routeInfo,
+    estimatedFare,
     currentOrder,
     orderHistory,
-    status,
-    CreateOrder,
-    UpdateStatus,
-    ArchiveOrder,
-    CancelOrder,
+    SetDraft,
+    SetRouteInfo,
+    SetEstimatedFare,
+    SetCurrentOrder,
+    AddToHistory,
+    ResetDraft,
   };
 });

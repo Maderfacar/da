@@ -2,12 +2,14 @@ import * as file from './api/file';
 import * as auth from './api/auth';
 import * as tinymce from './api/tinymce';
 import * as maps from './api/maps';
+import * as order from './api/order';
 
 export default {
   ...file,
   ...auth,
   ...tinymce,
   ...maps,
+  ...order,
 };
 
 

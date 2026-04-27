@@ -1,795 +1,401 @@
 <script setup lang="ts">
-import type { GooglePlace } from '~/protocol/fetch-api/api/maps';
-import { VEHICLE_CONFIG, calculateFare } from '~shared/pricing';
-import type { VehicleType } from '~shared/pricing';
+import type { VehicleType, ExtraService, OrderType } from '~shared/pricing';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-// ── Step 管理 ─────────────────────────────────────────────
+const storeOrder = StoreOrder();
+
+// ── 步驟控制 ────────────────────────────────────────────────────────────────
 const currentStep = ref(1);
 const TOTAL_STEPS = 4;
 
-function GoStep(n: number) {
-  if (n < 1 || n > TOTAL_STEPS) return;
-  currentStep.value = n;
-}
+const stepLabels = ['行程類型', '路線規劃', '乘車需求', '確認訂單'];
 
-// ── Step 1：行程類型 + 日期時間 ────────────────────────────
-type OrderType = 'airport-pickup' | 'airport-dropoff' | 'charter' | 'transfer';
-const orderType = ref<OrderType>('airport-pickup');
-const pickupDate = ref('');
-const pickupTime = ref('');
+// ── 表單狀態（從 store draft 同步）────────────────────────────────────────
+const orderType = ref<OrderType | undefined>(storeOrder.draft.orderType as OrderType | undefined);
+const pickupDateTime = ref(storeOrder.draft.pickupDateTime ?? '');
+const pickupLocation = ref<GooglePlace | null>(storeOrder.draft.pickupLocation ?? null);
+const dropoffLocation = ref<GooglePlace | null>(storeOrder.draft.dropoffLocation ?? null);
+const stopovers = ref<GooglePlace[]>(storeOrder.draft.stopovers ?? []);
+const passengerCount = ref(storeOrder.draft.passengerCount ?? 1);
+const luggageCount = ref(storeOrder.draft.luggageCount ?? 0);
+const vehicleType = ref<VehicleType>((storeOrder.draft.vehicleType as VehicleType) ?? 'sedan');
+const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as ExtraService[]) ?? []);
 
-const ORDER_TYPE_OPTIONS: { value: OrderType; label: string; icon: string }[] = [
-  { value: 'airport-pickup', label: '接機', icon: '✈️' },
-  { value: 'airport-dropoff', label: '送機', icon: '🛫' },
-  { value: 'charter', label: '包車', icon: '🚗' },
-  { value: 'transfer', label: '交通接送', icon: '🚌' },
-];
+const distanceKm = ref(storeOrder.routeInfo?.distanceKm ?? 0);
+const durationMinutes = ref(storeOrder.routeInfo?.durationMinutes ?? 0);
+const estimatedFare = ref(storeOrder.estimatedFare ?? 0);
 
-function Step1Valid(): boolean {
-  return !!pickupDate.value && !!pickupTime.value;
-}
+const isSubmitting = ref(false);
+const isSuccess = ref(false);
 
-// ── Step 2：地點設定 ────────────────────────────────────────
-const originPlace = ref<GooglePlace | null>(null);
-const destPlace = ref<GooglePlace | null>(null);
-const waypointPlaces = ref<(GooglePlace | null)[]>([]);
+// ── 步驟導航 ─────────────────────────────────────────────────────────────────
+const GoNext = () => {
+  SyncToStore();
+  if (currentStep.value < TOTAL_STEPS) currentStep.value++;
+};
 
-// 目前地圖正在編輯的欄位
-type ActiveField = 'origin' | `waypoint-${number}` | 'destination' | null;
-const activeField = ref<ActiveField>(null);
+const GoBack = () => {
+  if (currentStep.value > 1) currentStep.value--;
+};
 
-// Refs 指向 UiGooglePlaceInput 以便接收 Drop Pin 更新
-const originInputRef = ref<InstanceType<typeof UiGooglePlaceInput> | null>(null);
-const destInputRef = ref<InstanceType<typeof UiGooglePlaceInput> | null>(null);
-const waypointInputRefs = ref<(InstanceType<typeof UiGooglePlaceInput> | null)[]>([]);
+// ── 同步至 store ─────────────────────────────────────────────────────────────
+const SyncToStore = () => {
+  storeOrder.SetDraft({
+    orderType: orderType.value,
+    pickupDateTime: pickupDateTime.value,
+    pickupLocation: pickupLocation.value ?? undefined,
+    dropoffLocation: dropoffLocation.value ?? undefined,
+    stopovers: stopovers.value,
+    passengerCount: passengerCount.value,
+    luggageCount: luggageCount.value,
+    vehicleType: vehicleType.value,
+    extraServices: extraServices.value,
+  });
+};
 
-// 為了使 template ref 生效，動態組件用 computed
-const waypointList = computed(() => waypointPlaces.value);
+const OnRouteCalc = (info: { distanceKm: number; durationMinutes: number }) => {
+  distanceKm.value = info.distanceKm;
+  durationMinutes.value = info.durationMinutes;
+  storeOrder.SetRouteInfo(info);
+};
 
-function ClickAddWaypoint() {
-  if (waypointPlaces.value.length >= 3) return;
-  waypointPlaces.value.push(null);
-  waypointInputRefs.value.push(null);
-}
+const OnFareCalc = (fare: number) => {
+  estimatedFare.value = fare;
+  storeOrder.SetEstimatedFare(fare);
+};
 
-function ClickRemoveWaypoint(idx: number) {
-  waypointPlaces.value.splice(idx, 1);
-  waypointInputRefs.value.splice(idx, 1);
-}
+// ── 送出訂單 ──────────────────────────────────────────────────────────────────
+const ClickSubmit = async () => {
+  if (isSubmitting.value) return;
+  SyncToStore();
 
-function ClickSetActiveField(field: ActiveField) {
-  activeField.value = activeField.value === field ? null : field;
-}
+  const authStore = StoreAuth();
+  const userId = authStore.user?.uid ?? 'guest';
+  const lineUserId = authStore.user?.uid ?? ''; // LINE userId 於 Stage 5 補充
 
-// Drop Pin 回調：由 MapRoutePreview 觸發
-function OnPinPlaced(field: string, place: GooglePlace) {
-  if (field === 'origin') {
-    originPlace.value = place;
-    originInputRef.value?.SetPlace(place);
-  } else if (field === 'destination') {
-    destPlace.value = place;
-    destInputRef.value?.SetPlace(place);
-  } else if (field.startsWith('waypoint-')) {
-    const idx = parseInt(field.split('-')[1]);
-    waypointPlaces.value[idx] = place;
-    waypointInputRefs.value[idx]?.SetPlace(place);
-  }
-  activeField.value = null;
-}
+  if (!orderType.value || !pickupDateTime.value || !pickupLocation.value || !dropoffLocation.value) return;
 
-function Step2Valid(): boolean {
-  return !!originPlace.value && !!destPlace.value;
-}
+  isSubmitting.value = true;
+  const res = await $api.CreateOrder({
+    userId,
+    lineUserId,
+    orderType: orderType.value,
+    pickupDateTime: pickupDateTime.value,
+    pickupLocation: pickupLocation.value,
+    dropoffLocation: dropoffLocation.value,
+    stopovers: stopovers.value.filter((s) => s.lat !== 0),
+    passengerCount: passengerCount.value,
+    luggageCount: luggageCount.value,
+    vehicleType: vehicleType.value,
+    extraServices: extraServices.value,
+  });
+  isSubmitting.value = false;
 
-// 計算 waypoints 陣列（過濾 null）
-const validWaypoints = computed(() =>
-  waypointPlaces.value.filter((w): w is GooglePlace => !!w)
-);
+  const isOk = (code: number) => code === $enum.apiStatus.success || code === 0;
+  if (!isOk(res.status.code)) return;
+  storeOrder.SetCurrentOrder(res.data as CreateOrderRes);
+  storeOrder.ResetDraft();
+  isSuccess.value = true;
+};
 
-// ── Step 3：人數、行李、車種、額外服務 ─────────────────────
-const passengerCount = ref(1);
-const luggageCount = ref(0);
-const vehicleType = ref<VehicleType>('sedan');
-const extraServices = ref<string[]>([]);
-
-const EXTRA_SERVICE_OPTIONS = [
-  { value: 'child-seat', label: '兒童座椅' },
-  { value: 'wheelchair', label: '輪椅輔助' },
-  { value: 'meet-sign', label: '接機舉牌' },
-  { value: 'waiting', label: '額外等待（30分）' },
-];
-
-function ClickVehicle(v: VehicleType) {
-  vehicleType.value = v;
-  // 若乘客數超過選定車種最大座位數，自動調整
-  if (passengerCount.value > VEHICLE_CONFIG[v].seats) {
-    passengerCount.value = VEHICLE_CONFIG[v].seats;
-  }
-}
-
-function Step3Valid(): boolean {
-  return passengerCount.value >= 1;
-}
-
-// ── Step 4：計價確認 ────────────────────────────────────────
-const distanceKm = ref(0);
-const durationMin = ref(0);
-const loadingPrice = ref(false);
-
-const estimatedFare = computed(() =>
-  calculateFare(distanceKm.value, vehicleType.value, extraServices.value.length)
-);
-
-async function Step4InitFlow() {
-  if (!originPlace.value || !destPlace.value) return;
-  loadingPrice.value = true;
-
-  // 以「上車地址」→「下車地址」計算距離（含停靠站合計）
-  const allPoints = [originPlace.value, ...validWaypoints.value, destPlace.value];
-  let totalKm = 0;
-  let totalMin = 0;
-
-  for (let i = 0; i < allPoints.length - 1; i++) {
-    const from = allPoints[i];
-    const to = allPoints[i + 1];
-    const res = await $api.GetMapsDistance({
-      origin: `${from.lat},${from.lng}`,
-      destination: `${to.lat},${to.lng}`,
-    });
-    if (res.status.code === 200) {
-      const d = res.data as { distance_km: number; duration_minutes: number };
-      totalKm += d.distance_km ?? 0;
-      totalMin += d.duration_minutes ?? 0;
-    }
-  }
-
-  distanceKm.value = Math.round(totalKm * 10) / 10;
-  durationMin.value = totalMin;
-  loadingPrice.value = false;
-}
-
-// ── 步驟切換 ──────────────────────────────────────────────
-async function ClickNext() {
-  if (currentStep.value === 1 && !Step1Valid()) return;
-  if (currentStep.value === 2 && !Step2Valid()) return;
-  if (currentStep.value === 3 && !Step3Valid()) return;
-
-  if (currentStep.value === 3) await Step4InitFlow();
-  GoStep(currentStep.value + 1);
-}
-
-function ClickPrev() {
-  GoStep(currentStep.value - 1);
-}
-
-// ── 送出訂單 ──────────────────────────────────────────────
-const submitting = ref(false);
-
-async function ClickSubmit() {
-  submitting.value = true;
-  // TODO: 呼叫 Firebase Firestore 建立訂單（Stage 5）
-  await new Promise((r) => setTimeout(r, 800));
-  submitting.value = false;
-  navigateTo('/orders');
-}
-
-// 動態 import UiGooglePlaceInput（供 ref 型別使用）
-const UiGooglePlaceInput = resolveComponent('UiGooglePlaceInput') as any;
+const ClickNewOrder = () => {
+  isSuccess.value = false;
+  currentStep.value = 1;
+  orderType.value = undefined;
+  pickupDateTime.value = '';
+  pickupLocation.value = null;
+  dropoffLocation.value = null;
+  stopovers.value = [];
+  passengerCount.value = 1;
+  luggageCount.value = 0;
+  vehicleType.value = 'sedan';
+  extraServices.value = [];
+  distanceKm.value = 0;
+  durationMinutes.value = 0;
+  estimatedFare.value = 0;
+};
 </script>
 
 <template lang="pug">
 .PageBooking
-  //- 步驟指示器
-  .PageBooking__steps
-    .PageBooking__steps__item(
-      v-for="n in TOTAL_STEPS"
-      :key="n"
-      :class="{ 'is-active': n === currentStep, 'is-done': n < currentStep }"
-    ) {{ n }}
+  //- 機場代碼浮水印
+  .PageBooking__watermark TPE
 
-  //- ── Step 1：行程類型 + 日期時間 ─────────────────────────
-  .PageBooking__section(v-if="currentStep === 1")
-    h2.PageBooking__title 選擇行程
+  //- 成功畫面
+  Transition(name="fade-up")
+    .PageBooking__success(v-if="isSuccess")
+      NuxtIcon.PageBooking__success-icon(name="mdi:check-circle")
+      h2.PageBooking__success-title 訂單送出成功
+      p.PageBooking__success-sub ORDER SUBMITTED
+      .PageBooking__success-id
+        span 訂單編號
+        strong {{ storeOrder.currentOrder?.orderId?.slice(0, 8).toUpperCase() }}
+      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="ClickNewOrder") 再次訂車
 
-    .PageBooking__type-grid
-      button.PageBooking__type-btn(
-        v-for="opt in ORDER_TYPE_OPTIONS"
-        :key="opt.value"
-        type="button"
-        :class="{ 'is-active': orderType === opt.value }"
-        @click="orderType = opt.value"
+  //- 表單主體
+  template(v-if="!isSuccess")
+    //- 步驟進度條
+    .PageBooking__steps
+      .PageBooking__step(
+        v-for="(label, idx) in stepLabels"
+        :key="idx"
+        :class="{ 'is-active': currentStep === idx + 1, 'is-done': currentStep > idx + 1 }"
       )
-        span.PageBooking__type-btn__icon {{ opt.icon }}
-        span.PageBooking__type-btn__label {{ opt.label }}
-
-    .PageBooking__datetime
-      .PageBooking__field
-        label.PageBooking__label 出發日期
-        input.PageBooking__input(
-          v-model="pickupDate"
-          type="date"
-          :min="$dayjs().format('YYYY-MM-DD')"
-        )
-      .PageBooking__field
-        label.PageBooking__label 出發時間
-        input.PageBooking__input(
-          v-model="pickupTime"
-          type="time"
-        )
-
-  //- ── Step 2：設定路線（地圖 + 地址輸入）──────────────────
-  .PageBooking__section(v-else-if="currentStep === 2")
-    h2.PageBooking__title 設定路線
-
-    //- 地圖（在「設定路線」與「上車地點」之間）
-    ClientOnly
-      MapRoutePreview.PageBooking__map(
-        :origin="originPlace"
-        :waypoints="validWaypoints"
-        :destination="destPlace"
-        :active-field="activeField"
-        height="240px"
-        @pin-placed="OnPinPlaced"
+        .PageBooking__step-dot
+          NuxtIcon(v-if="currentStep > idx + 1" name="mdi:check")
+          span(v-else) {{ idx + 1 }}
+        span.PageBooking__step-label {{ label }}
+      .PageBooking__step-line(
+        v-for="i in TOTAL_STEPS - 1"
+        :key="'line-' + i"
+        :style="{ left: `calc(${(i * 100) / TOTAL_STEPS}% - 12px)` }"
+        :class="{ 'is-done': currentStep > i }"
       )
 
-    //- 上車地點
-    .PageBooking__route-row
-      .PageBooking__route-dot.is-origin
-      .PageBooking__route-field
-        UiGooglePlaceInput(
-          ref="originInputRef"
-          v-model="originPlace"
-          label="上車地點 (Pickup)"
-          placeholder="輸入接送地址或地點…"
-          @focus="ClickSetActiveField('origin')"
+    //- 表單卡片
+    .PageBooking__card
+      Transition(name="step-slide" mode="out-in")
+        //- Step 1
+        PassengerBookingStepType(
+          v-if="currentStep === 1"
+          key="step1"
+          v-model:order-type="orderType"
+          v-model:pickup-date-time="pickupDateTime"
+          @next="GoNext"
         )
-        button.PageBooking__pin-btn(
-          type="button"
-          :class="{ 'is-active': activeField === 'origin' }"
-          @click="ClickSetActiveField('origin')"
-          title="點擊地圖設定"
-        ) 📍
 
-    //- 停靠站
-    .PageBooking__route-row(
-      v-for="(_, idx) in waypointList"
-      :key="idx"
-    )
-      .PageBooking__route-dot.is-waypoint {{ idx + 1 }}
-      .PageBooking__route-field
-        UiGooglePlaceInput(
-          :ref="(el) => { waypointInputRefs[idx] = el as any }"
-          v-model="waypointPlaces[idx]"
-          :label="`停靠站 ${idx + 1}`"
-          placeholder="停靠地址或地點…"
-          @focus="ClickSetActiveField(`waypoint-${idx}`)"
+        //- Step 2
+        PassengerBookingStepRoute(
+          v-else-if="currentStep === 2"
+          key="step2"
+          v-model:pickup-location="pickupLocation"
+          v-model:dropoff-location="dropoffLocation"
+          v-model:stopovers="stopovers"
+          @route-calc="OnRouteCalc"
+          @next="GoNext"
+          @back="GoBack"
         )
-        button.PageBooking__pin-btn(
-          type="button"
-          :class="{ 'is-active': activeField === `waypoint-${idx}` }"
-          @click="ClickSetActiveField(`waypoint-${idx}`)"
-          title="點擊地圖設定"
-        ) 📍
-        button.PageBooking__remove-btn(
-          type="button"
-          @click="ClickRemoveWaypoint(idx)"
-        ) ✕
 
-    //- 下車地點
-    .PageBooking__route-row
-      .PageBooking__route-dot.is-dest
-      .PageBooking__route-field
-        UiGooglePlaceInput(
-          ref="destInputRef"
-          v-model="destPlace"
-          label="下車地點 (Dropoff)"
-          placeholder="輸入目的地地址或地點…"
-          @focus="ClickSetActiveField('destination')"
+        //- Step 3
+        PassengerBookingStepOptions(
+          v-else-if="currentStep === 3"
+          key="step3"
+          v-model:passenger-count="passengerCount"
+          v-model:luggage-count="luggageCount"
+          v-model:vehicle-type="vehicleType"
+          v-model:extra-services="extraServices"
+          :distance-km="distanceKm"
+          @fare-calc="OnFareCalc"
+          @next="GoNext"
+          @back="GoBack"
         )
-        button.PageBooking__pin-btn(
-          type="button"
-          :class="{ 'is-active': activeField === 'destination' }"
-          @click="ClickSetActiveField('destination')"
-          title="點擊地圖設定"
-        ) 📍
 
-    //- 新增停靠站
-    button.PageBooking__add-waypoint(
-      v-if="waypointPlaces.length < 3"
-      type="button"
-      @click="ClickAddWaypoint"
-    ) + 新增停靠站
-
-  //- ── Step 3：人數、行李、車種、服務 ─────────────────────
-  .PageBooking__section(v-else-if="currentStep === 3")
-    h2.PageBooking__title 乘客與車種
-
-    .PageBooking__counters
-      .PageBooking__counter
-        label.PageBooking__label 乘客人數
-        .PageBooking__counter__ctrl
-          button(type="button" @click="passengerCount = Math.max(1, passengerCount - 1)") −
-          span {{ passengerCount }}
-          button(type="button" @click="passengerCount = Math.min(VEHICLE_CONFIG[vehicleType].seats, passengerCount + 1)") +
-      .PageBooking__counter
-        label.PageBooking__label 行李件數
-        .PageBooking__counter__ctrl
-          button(type="button" @click="luggageCount = Math.max(0, luggageCount - 1)") −
-          span {{ luggageCount }}
-          button(type="button" @click="luggageCount = luggageCount + 1") +
-
-    .PageBooking__vehicle-grid
-      button.PageBooking__vehicle-btn(
-        v-for="(cfg, key) in VEHICLE_CONFIG"
-        :key="key"
-        type="button"
-        :class="{ 'is-active': vehicleType === key }"
-        @click="ClickVehicle(key as VehicleType)"
-      )
-        .PageBooking__vehicle-btn__label {{ cfg.label }}
-        .PageBooking__vehicle-btn__info 最多 {{ cfg.seats }} 人 · {{ cfg.luggage }} 件行李
-
-    .PageBooking__extras
-      label.PageBooking__label 額外服務（每項 +$200）
-      .PageBooking__extras__list
-        label.PageBooking__extra-item(
-          v-for="opt in EXTRA_SERVICE_OPTIONS"
-          :key="opt.value"
+        //- Step 4
+        PassengerBookingStepConfirm(
+          v-else-if="currentStep === 4"
+          key="step4"
+          :draft="storeOrder.draft"
+          :distance-km="distanceKm"
+          :duration-minutes="durationMinutes"
+          :estimated-fare="estimatedFare"
+          :is-loading="isSubmitting"
+          @submit="ClickSubmit"
+          @back="GoBack"
         )
-          input(
-            type="checkbox"
-            v-model="extraServices"
-            :value="opt.value"
-          )
-          span {{ opt.label }}
-
-  //- ── Step 4：計價確認 ─────────────────────────────────────
-  .PageBooking__section(v-else-if="currentStep === 4")
-    h2.PageBooking__title 確認行程
-
-    .PageBooking__summary(v-if="!loadingPrice")
-      .PageBooking__summary__row
-        span 行程類型
-        span {{ ORDER_TYPE_OPTIONS.find(o => o.value === orderType)?.label }}
-      .PageBooking__summary__row
-        span 出發時間
-        span {{ pickupDate }} {{ pickupTime }}
-      .PageBooking__summary__row
-        span 上車地點
-        span {{ originPlace?.displayName }}
-      .PageBooking__summary__row(v-for="(wp, i) in validWaypoints" :key="i")
-        span 停靠站 {{ i + 1 }}
-        span {{ wp.displayName }}
-      .PageBooking__summary__row
-        span 下車地點
-        span {{ destPlace?.displayName }}
-      .PageBooking__summary__row
-        span 車種
-        span {{ VEHICLE_CONFIG[vehicleType].label }}
-      .PageBooking__summary__row
-        span 乘客 / 行李
-        span {{ passengerCount }} 人 / {{ luggageCount }} 件
-      .PageBooking__summary__row(v-if="distanceKm > 0")
-        span 預估距離
-        span {{ distanceKm }} 公里（約 {{ durationMin }} 分鐘）
-      .PageBooking__summary__fare
-        span 預估車資
-        strong ${{ estimatedFare.toLocaleString() }}
-
-    .PageBooking__loading(v-else) 計算車資中…
-
-  //- ── 操作按鈕 ─────────────────────────────────────────────
-  .PageBooking__actions
-    button.PageBooking__btn.is-secondary(
-      v-if="currentStep > 1"
-      type="button"
-      @click="ClickPrev"
-    ) 上一步
-    button.PageBooking__btn.is-primary(
-      v-if="currentStep < TOTAL_STEPS"
-      type="button"
-      :disabled="(currentStep === 1 && !Step1Valid()) || (currentStep === 2 && !Step2Valid())"
-      @click="ClickNext"
-    ) 下一步
-    button.PageBooking__btn.is-primary(
-      v-else
-      type="button"
-      :disabled="submitting || loadingPrice"
-      @click="ClickSubmit"
-    ) {{ submitting ? '送出中…' : '確認訂車' }}
 </template>
 
 <style lang="scss" scoped>
 .PageBooking {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 20px 16px 100px;
-}
-
-// ── 步驟指示器 ─────────────────────────────────────────────
-.PageBooking__steps {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.PageBooking__steps__item {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  background: var(--da-gray-pale);
-  color: var(--da-gray);
-  transition: all 0.2s;
-
-  &.is-active {
-    background: var(--da-amber);
-    color: #fff;
-  }
-
-  &.is-done {
-    background: rgba(212, 134, 10, 0.2);
-    color: var(--da-amber);
-  }
-}
-
-// ── Section ────────────────────────────────────────────────
-.PageBooking__section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.PageBooking__title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  letter-spacing: 0.05em;
-  color: var(--da-dark);
-  margin: 0;
-}
-
-// ── Step 1：行程類型 ────────────────────────────────────────
-.PageBooking__type-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.PageBooking__type-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 16px 12px;
-  border: 2px solid var(--da-gray-pale);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-
-  &.is-active {
-    border-color: var(--da-amber);
-    background: rgba(212, 134, 10, 0.06);
-  }
-}
-
-.PageBooking__type-btn__icon { font-size: 28px; }
-
-.PageBooking__type-btn__label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--da-dark);
-}
-
-.PageBooking__datetime {
-  display: flex;
-  gap: 12px;
-}
-
-.PageBooking__field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-
-.PageBooking__label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--da-gray);
-}
-
-.PageBooking__input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1.5px solid var(--da-gray-pale);
-  border-radius: 12px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 15px;
-  color: var(--da-dark);
-  background: rgba(255, 255, 255, 0.85);
-  outline: none;
-  transition: border-color 0.2s;
-
-  &:focus { border-color: var(--da-amber); }
-}
-
-// ── Step 2：地圖 + 路線 ────────────────────────────────────
-.PageBooking__map {
-  border-radius: 16px;
+  position: relative;
+  min-height: 100vh;
+  background: var(--da-cream);
+  padding: 76px 16px 120px; // 56px nav + 20px gap
   overflow: hidden;
-}
 
-.PageBooking__route-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.PageBooking__route-dot {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: #fff;
-  margin-top: 28px; // 對齊 label 高度後的 input
-
-  &.is-origin { background: var(--da-amber); }
-  &.is-dest { background: var(--da-dark); }
-  &.is-waypoint { background: #4a7c59; }
-}
-
-.PageBooking__route-field {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-}
-
-.PageBooking__route-field > :first-child { flex: 1; }
-
-.PageBooking__pin-btn {
-  width: 36px;
-  height: 44px;
-  border: 1.5px solid var(--da-gray-pale);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 16px;
-  flex-shrink: 0;
-  transition: border-color 0.15s, background 0.15s;
-
-  &.is-active {
-    border-color: var(--da-amber);
-    background: rgba(212, 134, 10, 0.1);
-  }
-}
-
-.PageBooking__remove-btn {
-  width: 36px;
-  height: 44px;
-  border: 1.5px solid var(--da-gray-pale);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 14px;
-  color: var(--da-gray);
-  flex-shrink: 0;
-
-  &:hover { border-color: var(--err); color: var(--err); }
-}
-
-.PageBooking__add-waypoint {
-  align-self: flex-start;
-  margin-left: 34px;
-  padding: 6px 14px;
-  border: 1.5px dashed var(--da-gray-pale);
-  border-radius: 20px;
-  background: none;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 13px;
-  color: var(--da-gray);
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-
-  &:hover { border-color: var(--da-amber); color: var(--da-amber); }
-}
-
-// ── Step 3：計數器 ─────────────────────────────────────────
-.PageBooking__counters { display: flex; gap: 20px; }
-
-.PageBooking__counter {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.PageBooking__counter__ctrl {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-
-  button {
-    width: 36px;
-    height: 36px;
-    border: 1.5px solid var(--da-gray-pale);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.8);
-    font-size: 18px;
-    line-height: 1;
-    cursor: pointer;
-    transition: border-color 0.15s;
-
-    &:hover { border-color: var(--da-amber); }
-  }
-
-  span {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    min-width: 24px;
-    text-align: center;
-    color: var(--da-dark);
-  }
-}
-
-// ── 車種格 ─────────────────────────────────────────────────
-.PageBooking__vehicle-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.PageBooking__vehicle-btn {
-  padding: 14px 12px;
-  border: 2px solid var(--da-gray-pale);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.2s, background 0.2s;
-
-  &.is-active {
-    border-color: var(--da-amber);
-    background: rgba(212, 134, 10, 0.06);
-  }
-}
-
-.PageBooking__vehicle-btn__label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--da-dark);
-  display: block;
-}
-
-.PageBooking__vehicle-btn__info {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 12px;
-  color: var(--da-gray);
-  margin-top: 4px;
-}
-
-// ── 額外服務 ───────────────────────────────────────────────
-.PageBooking__extras { display: flex; flex-direction: column; gap: 10px; }
-
-.PageBooking__extras__list { display: flex; flex-direction: column; gap: 8px; }
-
-.PageBooking__extra-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 14px;
-  color: var(--da-dark);
-  cursor: pointer;
-
-  input[type="checkbox"] { accent-color: var(--da-amber); width: 18px; height: 18px; }
-}
-
-// ── Step 4：摘要 ───────────────────────────────────────────
-.PageBooking__summary {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1.5px solid var(--da-gray-pale);
-  border-radius: 16px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.PageBooking__summary__row {
-  display: flex;
-  justify-content: space-between;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 14px;
-
-  span:first-child { color: var(--da-gray); }
-  span:last-child { color: var(--da-dark); font-weight: 500; text-align: right; max-width: 65%; }
-}
-
-.PageBooking__summary__fare {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1.5px solid var(--da-gray-pale);
-
-  span {
-    font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--da-gray);
-  }
-
-  strong {
+  &__watermark {
+    position: fixed;
+    top: 80px;
+    right: -20px;
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    color: var(--da-amber);
-  }
-}
-
-.PageBooking__loading {
-  text-align: center;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
-  font-size: 14px;
-  color: var(--da-gray);
-  padding: 40px 0;
-}
-
-// ── 操作按鈕 ───────────────────────────────────────────────
-.PageBooking__actions {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16px 20px calc(env(safe-area-inset-bottom) + 16px);
-  background: linear-gradient(to top, var(--da-cream) 70%, transparent);
-  display: flex;
-  gap: 12px;
-  z-index: 50;
-}
-
-.PageBooking__btn {
-  flex: 1;
-  min-height: 52px;
-  border-radius: 14px;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.2s;
-
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  &.is-primary {
-    background: var(--da-amber);
-    color: #fff;
-  }
-
-  &.is-secondary {
-    background: rgba(0, 0, 0, 0.06);
+    font-size: 120px;
     color: var(--da-dark);
-    flex: 0 0 auto;
-    min-width: 88px;
+    opacity: 0.04;
+    pointer-events: none;
+    user-select: none;
+    animation: floatY 8s ease-in-out infinite;
   }
+
+  // ── 步驟進度 ─────────────────────────────────────────────────────────────
+  &__steps {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding: 0 8px;
+  }
+
+  &__step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 1;
+    flex: 1;
+  }
+
+  &__step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--da-gray-pale);
+    background: var(--da-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--da-gray-light);
+    transition: border-color 0.3s, background 0.3s, color 0.3s;
+
+    .is-active & {
+      border-color: var(--da-amber);
+      background: var(--da-amber);
+      color: #fff;
+    }
+
+    .is-done & {
+      border-color: var(--da-amber);
+      background: var(--da-amber-pale);
+      color: var(--da-amber);
+    }
+  }
+
+  &__step-label {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: var(--da-gray-light);
+    white-space: nowrap;
+    transition: color 0.3s;
+
+    .is-active &,
+    .is-done & { color: var(--da-amber); }
+  }
+
+  &__step-line {
+    position: absolute;
+    top: 15px;
+    width: calc(25% - 28px);
+    height: 2px;
+    background: var(--da-gray-pale);
+    transition: background 0.3s;
+
+    &.is-done { background: var(--da-amber); }
+
+    // 四步驟，三條線
+    &:nth-child(5) { left: calc(25% - 0px); }
+    &:nth-child(6) { left: calc(50% - 0px); }
+    &:nth-child(7) { left: calc(75% - 0px); }
+  }
+
+  // ── 表單卡片 ──────────────────────────────────────────────────────────────
+  &__card {
+    background: var(--da-glass-bg);
+    border: 1px solid var(--da-glass-border);
+    border-radius: 24px;
+    padding: 24px 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  // ── 成功畫面 ──────────────────────────────────────────────────────────────
+  &__success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px;
+    text-align: center;
+  }
+
+  &__success-icon {
+    font-size: 64px;
+    color: #22c55e;
+    margin-bottom: 16px;
+  }
+
+  &__success-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--da-dark);
+    letter-spacing: 0.04em;
+  }
+
+  &__success-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--da-gray);
+    margin-top: 4px;
+  }
+
+  &__success-id {
+    margin-top: 24px;
+    background: var(--da-dark);
+    border-radius: 12px;
+    padding: 14px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    span {
+      font-size: 12px;
+      color: var(--da-gray-light);
+      font-family: 'Barlow Condensed', sans-serif;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--da-amber-light);
+      letter-spacing: 0.1em;
+    }
+  }
+}
+
+// ── 動畫 ────────────────────────────────────────────────────────────────────
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.step-slide-enter-active,
+.step-slide-leave-active {
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.step-slide-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.step-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-24px);
+}
+
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>

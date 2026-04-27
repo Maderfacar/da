@@ -17,6 +17,7 @@ withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', place: GooglePlace | null): void;
+  (e: 'focus' | 'blur'): void;
 }>();
 
 const model = defineModel<GooglePlace | null>({ default: null });
@@ -63,12 +64,13 @@ function OnInput() {
 }
 
 function OnBlur() {
-  // 延遲關閉，讓 click 事件先觸發
   setTimeout(() => { showDropdown.value = false; }, 200);
+  emit('blur');
 }
 
 function OnFocus() {
   if (suggestions.value.length) showDropdown.value = true;
+  emit('focus');
 }
 
 function ClickClear() {
