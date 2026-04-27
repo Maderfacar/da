@@ -73,11 +73,12 @@
 - [✅] 修復 SSR Hydration mismatch（司機端/Admin 改 CSR；乘客端殘留警告待後續追蹤）
 - [✅] 乘客訂單建立表單（4 步驟：行程類型/地址/車種/計價）
 - [✅] Google Maps 地址自動完成（UiGooglePlaceInput + BFF autocomplete / place-details）
-- [✅] Google Maps 路線規劃（MapRoutePreview：DirectionsService + DirectionsRenderer + fitBounds）
-- [✅] Drop Pin 互動（地圖點擊 / 長按 → 逆向地理編碼 → 更新地址欄位）
+- [✅] Google Maps 路線規劃（MapRoutePreview：BFF Route API → encoded polyline → Polyline 繪製 + fitBounds）
+- [✅] Drop Pin 互動（地圖點擊 / 長按 → 逆向地理編碼 → 更新地址欄位，blur 延遲修正時序）
 - [✅] 台灣本島地理圍欄（strictBounds + 服務端驗證 + 前端錯誤提示）
 - [✅] 共用計價公式（shared/pricing.ts：車種起跳費 + perKm + 額外服務 × 200，進位至 50）
-- [ ] **Stage Gate**：表單 E2E 完整測試通過
+- [✅] 停靠站距離即時計算（GetMapsRoute 含 waypoints，停靠站填入後自動更新里程與車程）
+- [✅] **Stage Gate**：表單 E2E 手動驗收通過（testMode bypass 可在 localhost 完整走完 4 步驟訂車流程）
 
 ---
 
@@ -106,5 +107,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v1.7（Stage 4 核心功能完成 — 訂單建立表單 + Maps 路線規劃 + Drop Pin + 台灣圍欄）
+- 版本：v1.8（Stage 4 Gate 通過 — 完整訂單表單 + Maps BFF 架構 + Drop Pin + 台灣圍欄 + 停靠站即時計算）
 - 更新日期：2026/04/27
