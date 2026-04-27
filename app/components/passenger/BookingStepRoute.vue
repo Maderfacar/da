@@ -51,19 +51,30 @@ watch(dropoff, (val) => {
   if (val && pickup.value) ApiCalcRoute();
 });
 
-const _isOk = (code: number) => code === $enum.apiStatus.success || code === 0;
+// 停靠站有效點變動時重新計算（lat !== 0 代表已填入）
+watch(
+  () => stopovers.value.filter((s) => s.lat !== 0).length,
+  () => { if (pickup.value && dropoff.value) ApiCalcRoute(); }
+);
 
+// 改用 GetMapsRoute，支援 waypoints，同時取得含停靠站的總距離與車程
 const ApiCalcRoute = async () => {
   if (!pickup.value || !dropoff.value) return;
   isCalcLoading.value = true;
-  const res = await $api.GetMapsDistance({
+
+  const validWps = stopovers.value.filter((s) => s.lat !== 0);
+  const wpsParam = validWps.map((s) => `${s.lat},${s.lng}`).join('|');
+
+  const res = await $api.GetMapsRoute({
     origin: `${pickup.value.lat},${pickup.value.lng}`,
     destination: `${dropoff.value.lat},${dropoff.value.lng}`,
+    ...(wpsParam ? { waypoints: wpsParam } : {}),
   });
+
   isCalcLoading.value = false;
-  if (!_isOk(res.status.code)) return;
-  const data = res.data as DistanceRes;
-  routeInfo.value = { distanceKm: data.distance_km, durationMinutes: data.duration_minutes };
+  if (res.status.code !== 200 || !res.data) return;
+
+  routeInfo.value = { distanceKm: res.data.distance_km, durationMinutes: res.data.duration_minutes };
   emit('routeCalc', routeInfo.value);
 };
 
