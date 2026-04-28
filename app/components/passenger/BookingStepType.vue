@@ -51,12 +51,12 @@ const _LookupFlight = async (no: string) => {
       `/api/flight?flightNo=${cleaned}`,
     );
     if (res.ok && res.data) {
-      // 送機：預計起飛時間必須 >= 現在 + 3 小時
-      if (selectedType.value === 'airport-dropoff') {
-        const minDeparture = $dayjs().add(3, 'hour');
+      // 送機：預計起飛時間必須 >= 用車時間 + 3 小時
+      if (selectedType.value === 'airport-dropoff' && dateTime.value) {
+        const minDeparture = $dayjs(dateTime.value).add(3, 'hour');
         if ($dayjs(res.data.estimatedTime).isBefore(minDeparture)) {
           localFlightInfo.value = null;
-          flightError.value = `航班 ${cleaned} 起飛時間不足 3 小時，無法受理送機`;
+          flightError.value = `航班 ${cleaned} 起飛時間距用車時間不足 3 小時，無法受理送機`;
           emit('update:flightInfo', null);
           return;
         }
@@ -101,7 +101,18 @@ watch(selectedType, (val) => {
   }
 });
 
-watch(dateTime, (val) => emit('update:pickupDateTime', val));
+watch(dateTime, (val) => {
+  emit('update:pickupDateTime', val);
+  // 用車時間變更時，重新驗證已查到的送機航班
+  if (selectedType.value === 'airport-dropoff' && localFlightInfo.value && val) {
+    const minDeparture = $dayjs(val).add(3, 'hour');
+    if ($dayjs(localFlightInfo.value.estimatedTime).isBefore(minDeparture)) {
+      flightError.value = `航班 ${localFlightInfo.value.flightNo} 起飛時間距用車時間不足 3 小時，無法受理送機`;
+      localFlightInfo.value = null;
+      emit('update:flightInfo', null);
+    }
+  }
+});
 
 // ── 航班狀態標籤 ─────────────────────────────────────────────────────────────
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
