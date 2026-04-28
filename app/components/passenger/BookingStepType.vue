@@ -132,8 +132,13 @@ const formatTime = (iso: string) =>
 
 const disabledDate = (d: Date) => $dayjs(d).isBefore($dayjs().startOf('day'));
 
+const isPastDateTime = computed(() =>
+  !!dateTime.value && $dayjs(dateTime.value).isBefore($dayjs()),
+);
+
 const canNext = computed(() => {
   if (!selectedType.value || !dateTime.value) return false;
+  if (isPastDateTime.value) return false;
   if (needsFlight.value && !localFlightInfo.value) return false;
   return true;
 });
@@ -213,6 +218,7 @@ const ClickNext = () => {
     :minute-step="15"
     style="width: 100%"
   )
+  p.PassengerBookingStepType__time-error(v-if="isPastDateTime") 請選擇現在之後的時間
 
   UiButton(
     type="primary"
@@ -331,6 +337,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     border-top-color: var(--da-amber);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
+  }
+
+  &__time-error {
+    font-family: $font-body;
+    font-size: 12px;
+    color: #e74c3c;
+    margin: 6px 0 0;
   }
 
   &__flight-error {
