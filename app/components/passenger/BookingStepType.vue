@@ -130,12 +130,7 @@ const statusBadge = computed(() =>
 const formatTime = (iso: string) =>
   $dayjs(iso).format('HH:mm');
 
-const minDate = computed(() => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  d.setHours(0, 0, 0, 0);
-  return d;
-});
+const minDate = computed(() => new Date());
 
 const canNext = computed(() => {
   if (!selectedType.value || !dateTime.value) return false;
