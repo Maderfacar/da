@@ -40,3 +40,7 @@ yarn.lock
 # Firebase service account keys（敏感憑證，不 commit）
 docs/*.json
 *adminsdk*.json
+.vercel
+
+# Git worktrees（由 Claude Code 管理，不 commit）
+.claude/worktrees/

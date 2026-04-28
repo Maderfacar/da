@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 5 完成，進入 Stage 6  
+**總進度**：Stage 6 進行中  
 **最後更新**：2026/04/28
 
 ---
@@ -98,10 +98,10 @@
 
 ## Stage 6：測試、優化與部署
 
-- [ ] Vitest 單元測試
+- [✅] Vitest 單元測試（shared/pricing.ts — 8 tests passed）
 - [ ] Playwright E2E 測試
 - [ ] 行動版與 Dark Mode 完整測試
-- [ ] 部署至 Vercel
+- [🔄] 部署至 Vercel（cc_da 專案 Building 中）
 - [ ] **Stage Gate**：測試通過 + 部署成功
 
 ---
