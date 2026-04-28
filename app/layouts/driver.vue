@@ -8,7 +8,7 @@ const tabs = [
   { id: 'dashboard', icon: '🏠', label: '首頁',  path: '/driver/dashboard', dot: false },
   { id: 'pending',   icon: '📋', label: '搶單',  path: '/driver/pending',   dot: true  },
   { id: 'trip',      icon: '✅', label: '任務',  path: '/driver/trip',      dot: false },
-  { id: 'profile',   icon: '👤', label: '我的',  path: '/profile',          dot: false },
+  { id: 'profile',   icon: '👤', label: '我的',  path: '/driver/profile',   dot: false },
 ];
 
 const activeTab = computed(() => {
@@ -16,7 +16,7 @@ const activeTab = computed(() => {
   if (p.startsWith('/driver/dashboard')) return 'dashboard';
   if (p.startsWith('/driver/pending'))   return 'pending';
   if (p.startsWith('/driver/trip'))      return 'trip';
-  if (p.startsWith('/profile'))          return 'profile';
+  if (p.startsWith('/driver/profile'))   return 'profile';
   return 'dashboard';
 });
 </script>
