@@ -60,14 +60,17 @@ export default defineEventHandler((event) => {
   }
 
   // 動態產生時間（避免靜態時間在展示時顯示過去）
+  // 送機（departure）：時間基礎加 25 小時，確保起飛時間在明天以後，
+  // 符合前端 pickupDateTime（最早明天）+ 3h 的驗證門檻
+  const BASE = mock.direction === 'departure' ? 25 * 60 : 0;
   const timeOffsets: Record<typeof mock.status, [number, number]> = {
-    scheduled: [90, 90],   // [排班偏移, 預估偏移]（分鐘）
-    active:    [30, 35],
+    scheduled: [90,  90],
+    active:    [30,  35],
     landed:    [-10, -8],
-    delayed:   [60, 110],  // 預估晚 50 分鐘
+    delayed:   [60,  110],
     cancelled: [120, 120],
   };
-  const [schedOffset, estOffset] = timeOffsets[mock.status];
+  const [schedOffset, estOffset] = timeOffsets[mock.status].map((m) => m + BASE) as [number, number];
 
   const result: FlightInfo = {
     flightNo,
