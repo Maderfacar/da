@@ -57,7 +57,7 @@ const ApiLoadFlow = async () => {
 const _RenderChart = async (hours: HourData[]) => {
   if (!canvasEl.value) return;
 
-  const { Chart, registerables } = await import(/* @vite-ignore */ 'chart.js');
+  const { Chart, registerables } = await import('chart.js');
   Chart.register(...registerables);
 
   if (chartInstance) {
