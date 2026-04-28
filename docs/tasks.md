@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 4 進行中  
-**最後更新**：2026/04/26
+**總進度**：Stage 5 進行中  
+**最後更新**：2026/04/28
 
 ---
 
@@ -89,6 +89,7 @@
 - [ ] 航空 API 串接
 - [✅] LINE Webhook 建立（HMAC 簽名驗證 + follow 歡迎訊息 + text 自動回覆）
 - [✅] liff.getFriendship() + 加好友提醒橫幅（乘客端 layout）
+- [✅] 機場人流預測（Firestore airport_flow + n8n POST API + /admin/traffic Chart.js 24h 圖）
 - [ ] LINE Bot 訂單推播通知（訂單建立後主動推播乘客）
 - [ ] **Stage Gate**：MVP 核心流程可跑通
 
@@ -109,5 +110,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.1（Stage 5 — LINE Webhook + 好友橫幅完成）
+- 版本：v2.2（Stage 5 — 機場人流預測完成，Vercel 部署通過）
 - 更新日期：2026/04/28
