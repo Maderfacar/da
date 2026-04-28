@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { VEHICLE_CONFIGS, EXTRA_SERVICES, ORDER_TYPES } from '~shared/pricing';
+import type { FlightInfo } from '@@/api/flight.get';
 
 interface Props {
   draft: Partial<CreateOrderParams>;
@@ -7,6 +8,7 @@ interface Props {
   durationMinutes: number;
   estimatedFare: number;
   isLoading: boolean;
+  flightInfo?: FlightInfo | null;
 }
 
 const props = defineProps<Props>();
@@ -41,6 +43,9 @@ const formattedDateTime = computed(() => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label 行程類型
       span.PassengerBookingStepConfirm__row-value {{ orderTypeLabel }}
+    .PassengerBookingStepConfirm__row(v-if="flightInfo")
+      span.PassengerBookingStepConfirm__row-label 航班號碼
+      span.PassengerBookingStepConfirm__row-value {{ flightInfo.flightNo }} · T{{ flightInfo.terminal }}
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label 用車時間
       span.PassengerBookingStepConfirm__row-value {{ formattedDateTime }}

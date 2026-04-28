@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { VehicleType, ExtraService, OrderType } from '~shared/pricing';
+import type { FlightInfo } from '@@/api/flight.get';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
@@ -21,6 +22,9 @@ const passengerCount = ref(storeOrder.draft.passengerCount ?? 1);
 const luggageCount = ref(storeOrder.draft.luggageCount ?? 0);
 const vehicleType = ref<VehicleType>((storeOrder.draft.vehicleType as VehicleType) ?? 'sedan');
 const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as ExtraService[]) ?? []);
+
+const flightNo = ref('');
+const flightInfo = ref<FlightInfo | null>(null);
 
 const distanceKm = ref(storeOrder.routeInfo?.distanceKm ?? 0);
 const durationMinutes = ref(storeOrder.routeInfo?.durationMinutes ?? 0);
@@ -111,6 +115,8 @@ const ClickNewOrder = () => {
   luggageCount.value = 0;
   vehicleType.value = 'sedan';
   extraServices.value = [];
+  flightNo.value = '';
+  flightInfo.value = null;
   distanceKm.value = 0;
   durationMinutes.value = 0;
   estimatedFare.value = 0;
@@ -162,6 +168,8 @@ const ClickNewOrder = () => {
           key="step1"
           v-model:order-type="orderType"
           v-model:pickup-date-time="pickupDateTime"
+          v-model:flight-no="flightNo"
+          v-model:flight-info="flightInfo"
           @next="GoNext"
         )
 
@@ -200,6 +208,7 @@ const ClickNewOrder = () => {
           :duration-minutes="durationMinutes"
           :estimated-fare="estimatedFare"
           :is-loading="isSubmitting"
+          :flight-info="flightInfo"
           @submit="ClickSubmit"
           @back="GoBack"
         )
