@@ -130,7 +130,7 @@ const statusBadge = computed(() =>
 const formatTime = (iso: string) =>
   $dayjs(iso).format('HH:mm');
 
-const minDate = computed(() => new Date());
+const disabledDate = (d: Date) => $dayjs(d).isBefore($dayjs().startOf('day'));
 
 const canNext = computed(() => {
   if (!selectedType.value || !dateTime.value) return false;
@@ -209,7 +209,7 @@ const ClickNext = () => {
     placeholder="選擇日期與時間"
     format="YYYY/MM/DD HH:mm"
     value-format="YYYY-MM-DDTHH:mm:ss"
-    :min="minDate"
+    :disabled-date="disabledDate"
     :minute-step="15"
     style="width: 100%"
   )
