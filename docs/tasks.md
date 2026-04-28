@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 5 進行中  
+**總進度**：Stage 5 完成，進入 Stage 6  
 **最後更新**：2026/04/28
 
 ---
@@ -86,12 +86,13 @@
 
 - [✅] Firebase Firestore 訂單 CRUD（POST 寫入 + GET 查詢 + /upcoming 接真實資料）
 - [✅] 司機位置即時更新（PUT location BFF + GET available + /driver/trip 任務頁 + /admin/war-room 地圖）
-- [ ] 航空 API 串接
+- [✅] 航空 API 串接（server/api/flight.get.ts Mock Aviation Edge + 訂單表單自動填入航廈）
 - [✅] LINE Webhook 建立（HMAC 簽名驗證 + follow 歡迎訊息 + text 自動回覆）
 - [✅] liff.getFriendship() + 加好友提醒橫幅（乘客端 layout）
 - [✅] 機場人流預測（Firestore airport_flow + n8n POST API + /admin/traffic Chart.js 24h 圖）
 - [✅] LINE Bot 訂單推播通知（訂單建立後主動推播乘客 LINE 確認訊息）
-- [ ] **Stage Gate**：MVP 核心流程可跑通
+- [✅] 補完所有 driver / admin 路由頁面 UI（driver dashboard/pending/trip/profile；admin orders/notifications/drivers/settings）
+- [✅] **Stage Gate**：MVP 核心流程可跑通（乘客訂車→Firestore→LINE 推播→司機端可見→Admin 可查）
 
 ---
 
@@ -110,5 +111,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.3（Stage 5 — LINE Bot 訂單推播完成）
+- 版本：v2.4（Stage 5 完成 — MVP 核心流程 Gate 通過）
 - 更新日期：2026/04/28
