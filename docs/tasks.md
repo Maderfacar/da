@@ -90,7 +90,7 @@
 - [✅] LINE Webhook 建立（HMAC 簽名驗證 + follow 歡迎訊息 + text 自動回覆）
 - [✅] liff.getFriendship() + 加好友提醒橫幅（乘客端 layout）
 - [✅] 機場人流預測（Firestore airport_flow + n8n POST API + /admin/traffic Chart.js 24h 圖）
-- [ ] LINE Bot 訂單推播通知（訂單建立後主動推播乘客）
+- [✅] LINE Bot 訂單推播通知（訂單建立後主動推播乘客 LINE 確認訊息）
 - [ ] **Stage Gate**：MVP 核心流程可跑通
 
 ---
@@ -110,5 +110,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.2（Stage 5 — 機場人流預測完成，Vercel 部署通過）
+- 版本：v2.3（Stage 5 — LINE Bot 訂單推播完成）
 - 更新日期：2026/04/28

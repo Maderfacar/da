@@ -2,6 +2,7 @@ import { calculateFare } from '~shared/pricing';
 import type { VehicleType, OrderType, ExtraService } from '~shared/pricing';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { sendLinePush } from '@@/utils/line-push';
 
 interface GooglePlace {
   address: string;
@@ -90,6 +91,23 @@ export default defineEventHandler(async (event) => {
         orderStatus: 'pending',
         createdAt: FieldValue.serverTimestamp(),
       });
+      // ── LINE 訂單確認推播 ──────────────────────────────────
+      if (body.lineUserId && config.lineChannelAccessToken) {
+        const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
+        const fareStr = estimatedFare.toLocaleString();
+        const vehicleLabel: Record<string, string> = {
+          sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
+        };
+        const msg = [
+          '✅ 訂單確認',
+          `📅 接送時間：${dateStr}`,
+          `📍 上車地點：${body.pickupLocation.address}`,
+          `🚗 車型：${vehicleLabel[body.vehicleType] ?? body.vehicleType}`,
+          `💰 預估費用：NT$ ${fareStr}`,
+          `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
+        ].join('\n');
+        sendLinePush(config.lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
+      }
     } catch (err) {
       console.error('[orders/post] Firestore write failed:', err);
     }
