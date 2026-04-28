@@ -26,6 +26,23 @@ const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as Ext
 const flightNo = ref('');
 const flightInfo = ref<FlightInfo | null>(null);
 
+// 桃園機場航廈對應地點
+const TERMINAL_PLACE: Record<'1' | '2', GooglePlace> = {
+  '1': { address: '桃園市大園區航站南路9號', lat: 25.0797, lng: 121.2322, displayName: '桃園國際機場 第一航廈（T1）' },
+  '2': { address: '桃園市大園區航站南路9號', lat: 25.0714, lng: 121.2244, displayName: '桃園國際機場 第二航廈（T2）' },
+};
+
+// 航班確認後自動帶入對應航廈
+watch(flightInfo, (info) => {
+  if (!info) return;
+  const place = TERMINAL_PLACE[info.terminal];
+  if (orderType.value === 'airport-pickup') {
+    pickupLocation.value = place;
+  } else if (orderType.value === 'airport-dropoff') {
+    dropoffLocation.value = place;
+  }
+});
+
 const distanceKm = ref(storeOrder.routeInfo?.distanceKm ?? 0);
 const durationMinutes = ref(storeOrder.routeInfo?.durationMinutes ?? 0);
 const estimatedFare = ref(storeOrder.estimatedFare ?? 0);
