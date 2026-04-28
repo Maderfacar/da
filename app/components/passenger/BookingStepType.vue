@@ -51,6 +51,16 @@ const _LookupFlight = async (no: string) => {
       `/api/flight?flightNo=${cleaned}`,
     );
     if (res.ok && res.data) {
+      // 送機：預計起飛時間必須 >= 現在 + 3 小時
+      if (selectedType.value === 'airport-dropoff') {
+        const minDeparture = $dayjs().add(3, 'hour');
+        if ($dayjs(res.data.estimatedTime).isBefore(minDeparture)) {
+          localFlightInfo.value = null;
+          flightError.value = `航班 ${cleaned} 起飛時間不足 3 小時，無法受理送機`;
+          emit('update:flightInfo', null);
+          return;
+        }
+      }
       localFlightInfo.value = res.data;
       emit('update:flightInfo', res.data);
     } else {
