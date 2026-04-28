@@ -28,9 +28,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   // 使用開發工具
   devtools: { enabled: false },
-  build: {
-    transpile: ['chart.js'],
-  },
+
   // 路徑別名設定
   alias: {
     '@@': resolve(__dirname, './server'),
