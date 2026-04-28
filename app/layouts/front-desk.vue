@@ -10,13 +10,15 @@ const showFriendBanner = computed(
   () => isSignIn.value && isFriend.value === false,
 );
 
-const tabs = [
-  { id: 'home',   icon: '🏠', label: '首頁', path: '/home',     dot: false },
-  { id: 'trips',  icon: '✈',  label: '行程', path: '/upcoming', dot: true  },
-  { id: 'book',   icon: '＋', label: '預約', path: '/booking',  dot: false },
-  { id: 'fleet',  icon: '🚗', label: '車型', path: '/fleet',    dot: false },
-  { id: 'orders', icon: '📋', label: '訂單', path: '/orders',   dot: false },
-];
+const { t } = useI18n();
+
+const tabs = computed(() => [
+  { id: 'home',   icon: '🏠', label: t('tab.home'),   path: '/home',     dot: false },
+  { id: 'trips',  icon: '✈',  label: t('tab.trips'),  path: '/upcoming', dot: true  },
+  { id: 'book',   icon: '＋', label: t('tab.book'),   path: '/booking',  dot: false },
+  { id: 'fleet',  icon: '🚗', label: t('tab.fleet'),  path: '/fleet',    dot: false },
+  { id: 'orders', icon: '📋', label: t('tab.orders'), path: '/orders',   dot: false },
+]);
 
 const activeTab = computed(() => {
   const p = route.path;
@@ -48,12 +50,12 @@ const activeTab = computed(() => {
   ClientOnly
     transition(name="banner-slide")
       .LayoutFrontDesk__friend-banner(v-if="showFriendBanner")
-        span.LayoutFrontDesk__banner-text 加入官方帳號，即時接收行程通知
+        span.LayoutFrontDesk__banner-text {{ $t('banner.addFriend') }}
         a.LayoutFrontDesk__banner-btn(
           :href="lineOaAddUrl"
           target="_blank"
           rel="noopener noreferrer"
-        ) + 加好友
+        ) {{ $t('banner.addBtn') }}
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
   nav.LayoutFrontDesk__top
@@ -62,8 +64,9 @@ const activeTab = computed(() => {
       span ∙
       | ANYWHERE
     .LayoutFrontDesk__nav-right
-      button.LayoutFrontDesk__nav-btn(@click="navigateTo('/orders')") 訂單
-      button.LayoutFrontDesk__nav-btn.is-primary(@click="navigateTo('/booking')") 預約
+      LangSwitcher
+      button.LayoutFrontDesk__nav-btn(@click="navigateTo('/orders')") {{ $t('nav.orders') }}
+      button.LayoutFrontDesk__nav-btn.is-primary(@click="navigateTo('/booking')") {{ $t('nav.book') }}
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutFrontDesk__body

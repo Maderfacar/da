@@ -4,13 +4,20 @@ import type { FlightInfo } from '@@/api/flight.get';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
+const { t } = useI18n();
+
 const storeOrder = StoreOrder();
 
 // ── 步驟控制 ────────────────────────────────────────────────────────────────
 const currentStep = ref(1);
 const TOTAL_STEPS = 4;
 
-const stepLabels = ['行程類型', '路線規劃', '乘車需求', '確認訂單'];
+const stepLabels = computed(() => [
+  t('booking.step.1'),
+  t('booking.step.2'),
+  t('booking.step.3'),
+  t('booking.step.4'),
+]);
 
 // ── 表單狀態（從 store draft 同步）────────────────────────────────────────
 const orderType = ref<OrderType | undefined>(storeOrder.draft.orderType as OrderType | undefined);

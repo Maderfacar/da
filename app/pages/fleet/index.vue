@@ -4,6 +4,8 @@ import type { VehicleType } from '~shared/pricing';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
+const { t } = useI18n();
+
 const VEHICLE_ORDER: VehicleType[] = ['sedan', 'suv', 'van', 'premium'];
 
 const VEHICLE_ICONS: Record<VehicleType, string> = {
@@ -13,17 +15,9 @@ const VEHICLE_ICONS: Record<VehicleType, string> = {
   premium: 'mdi:car-convertible',
 };
 
-const VEHICLE_DESCS: Record<VehicleType, string> = {
-  sedan:   '適合小家庭或個人商務出行，舒適節省的首選。',
-  suv:     '寬敞座艙與充裕行李空間，一家大小出遊的最佳夥伴。',
-  van:     '最大載客量，適合大型團體或多件行李的長途接送。',
-  premium: '頂級商務禮遇，皮革座艙搭配專業接待服務。',
-};
-
 const vehicles = VEHICLE_ORDER.map((type) => ({
   ...VEHICLE_CONFIGS[type],
   icon: VEHICLE_ICONS[type],
-  desc: VEHICLE_DESCS[type],
 }));
 
 const activeVehicle = ref<VehicleType>('sedan');
@@ -44,7 +38,7 @@ const sampleFare = computed(() => {
   //- 頁首
   .PageFleet__header
     .PageFleet__header-label VEHICLE LINEUP
-    h1.PageFleet__header-title 車隊車型
+    h1.PageFleet__header-title {{ $t('fleet.title') }}
     p.PageFleet__header-sub ALL FLEET CLASSES
 
   //- 車型選擇列
@@ -72,37 +66,37 @@ const sampleFare = computed(() => {
         .PageFleet__spec-item
           NuxtIcon(name="mdi:account-group")
           .PageFleet__spec-info
-            span.PageFleet__spec-val {{ selected.capacity }} 人
-            span.PageFleet__spec-key 最大乘客
+            span.PageFleet__spec-val {{ selected.capacity }} {{ $t('fleet.unit.person') }}
+            span.PageFleet__spec-key {{ $t('fleet.spec.capacity') }}
         .PageFleet__spec-item
           NuxtIcon(name="mdi:bag-suitcase")
           .PageFleet__spec-info
-            span.PageFleet__spec-val {{ selected.luggageCapacity }} 件
-            span.PageFleet__spec-key 行李容量
+            span.PageFleet__spec-val {{ selected.luggageCapacity }} {{ $t('fleet.unit.piece') }}
+            span.PageFleet__spec-key {{ $t('fleet.spec.luggage') }}
         .PageFleet__spec-item
           NuxtIcon(name="mdi:currency-twd")
           .PageFleet__spec-info
             span.PageFleet__spec-val NT$ {{ selected.baseFare }}
-            span.PageFleet__spec-key 起跳車資
+            span.PageFleet__spec-key {{ $t('fleet.spec.baseFare') }}
         .PageFleet__spec-item
           NuxtIcon(name="mdi:map-marker-distance")
           .PageFleet__spec-info
             span.PageFleet__spec-val NT$ {{ selected.perKmRate }}
-            span.PageFleet__spec-key 每公里
+            span.PageFleet__spec-key {{ $t('fleet.spec.perKm') }}
 
       //- 車型描述
-      p.PageFleet__desc {{ selected.desc }}
+      p.PageFleet__desc {{ $t('fleet.desc.' + activeVehicle) }}
 
       //- 試算區
       .PageFleet__estimate
-        .PageFleet__estimate-label 試算範例（約 {{ SAMPLE_KM }} 公里）
+        .PageFleet__estimate-label {{ $t('fleet.estimate.label', { km: SAMPLE_KM }) }}
         .PageFleet__estimate-fare
           span NT$
           strong {{ sampleFare.toLocaleString() }}
-        p.PageFleet__estimate-note 實際車資依路線與額外服務計算，進位至 50 元
+        p.PageFleet__estimate-note {{ $t('fleet.estimate.note') }}
 
       //- 預約按鈕
-      UiButton(type="primary" style="width:100%" @click="navigateTo('/booking')") 預約此車型
+      UiButton(type="primary" style="width:100%" @click="navigateTo('/booking')") {{ $t('fleet.bookBtn') }}
 
   //- 分隔線
   .PageFleet__stripe
@@ -110,11 +104,11 @@ const sampleFare = computed(() => {
   //- 額外服務
   .PageFleet__extras
     .PageFleet__extras-label EXTRA SERVICES
-    h2.PageFleet__extras-title 加值服務
+    h2.PageFleet__extras-title {{ $t('fleet.extras.title') }}
     .PageFleet__extras-grid
       .PageFleet__extra-card(v-for="svc in EXTRA_SERVICES" :key="svc.value")
         NuxtIcon.PageFleet__extra-icon(:name="svc.icon")
-        span.PageFleet__extra-name {{ svc.label }}
+        span.PageFleet__extra-name {{ $t('fleet.extras.' + svc.value) }}
         span.PageFleet__extra-price + NT$ {{ EXTRA_SERVICE_PRICE }}
 </template>
 

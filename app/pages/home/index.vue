@@ -1,6 +1,8 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
+const { t } = useI18n();
+
 // ── 統計翻牌 ──────────────────────────────────────────────
 interface StatItem {
   id: string
@@ -9,12 +11,12 @@ interface StatItem {
   sub: string
 }
 
-const stats: StatItem[] = [
-  { id: 'ontime',   num: '98%',     label: '準時率',   sub: 'ON-TIME'  },
-  { id: 'journeys', num: '42,000+', label: '完成行程', sub: 'JOURNEYS' },
-  { id: 'rating',   num: '4.9★',   label: '用戶評分', sub: 'RATING'   },
-  { id: 'service',  num: '24/7',    label: '全天候服務', sub: 'SERVICE' },
-];
+const stats = computed<StatItem[]>(() => [
+  { id: 'ontime',   num: '98%',     label: t('home.stats.ontime'),   sub: 'ON-TIME'  },
+  { id: 'journeys', num: '42,000+', label: t('home.stats.journeys'), sub: 'JOURNEYS' },
+  { id: 'rating',   num: '4.9★',   label: t('home.stats.rating'),   sub: 'RATING'   },
+  { id: 'service',  num: '24/7',    label: t('home.stats.service'),  sub: 'SERVICE'  },
+]);
 
 const FLIP_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ%+★/,';
 const displayNums = reactive<Record<string, string>>({
@@ -60,17 +62,19 @@ let statsTriggered = false;
 const upcomingTrips = [
   {
     from: 'TPE', to: '市區',
-    status: 'confirmed', statusLabel: '已確認',
+    status: 'confirmed',
     date: '2025.07.14', time: '14:30',
     vehicle: '商務 SUV', driver: '陳師傅',
-    timeLabel: '接機時間',
+    timeLabelKey: 'home.upcoming.pickupTime',
+    infoLabelKey: 'home.upcoming.driver',
   },
   {
     from: '市區', to: 'TPE',
-    status: 'pending', statusLabel: '候補確認',
+    status: 'pending',
     date: '2025.07.18', time: '06:00',
-    vehicle: '商務轎車', driver: '3 人',
-    timeLabel: '送機時間',
+    vehicle: '商務轎車', driver: '3',
+    timeLabelKey: 'home.upcoming.dropoffTime',
+    infoLabelKey: 'home.upcoming.passengers',
   },
 ];
 
@@ -116,14 +120,14 @@ onMounted(() => {
         path(d="M44 8L4 22L18 26L20 44L28 32L40 36L44 8Z" fill="#1A1814" stroke="#1A1814" stroke-width="1.5" stroke-linejoin="round")
 
       .PageHome__hero-content
-        .PageHome__hero-tag ✈ 高階機場接送服務
+        .PageHome__hero-tag {{ $t('home.hero.tag') }}
         h1.PageHome__hero-title
           | DESTINATION
           span.PageHome__hero-title-line2 ANYWHERE
-        p.PageHome__hero-subtitle 每一次旅程，都是一段值得記憶的體驗。從出發到抵達，我們為您守候。
+        p.PageHome__hero-subtitle {{ $t('home.hero.subtitle') }}
         .PageHome__hero-cta
-          button.PageHome__cta-primary(@click="navigateTo('/booking')") 立即預約接送
-          button.PageHome__cta-secondary(@click="navigateTo('/fare')") 車資估算
+          button.PageHome__cta-primary(@click="navigateTo('/booking')") {{ $t('home.hero.cta.book') }}
+          button.PageHome__cta-secondary(@click="navigateTo('/fare')") {{ $t('home.hero.cta.fare') }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
@@ -144,11 +148,8 @@ onMounted(() => {
   //- ── UPCOMING TRIPS ──────────────────────────────────────────
   section#upcoming.PageHome__section.is-cream
     .PageHome__section-label DEPARTURE & ARRIVAL
-    h2.PageHome__section-title
-      | 即將出發的
-      br
-      | 行程
-    p.PageHome__section-desc 您的下一段旅程已就緒，司機即將為您候駕。
+    h2.PageHome__section-title {{ $t('home.upcoming.title') }}
+    p.PageHome__section-desc {{ $t('home.upcoming.desc') }}
 
     .PageHome__trip-card.reveal(
       v-for="(trip, idx) in upcomingTrips"
@@ -163,19 +164,19 @@ onMounted(() => {
             span ✈
             .PageHome__route-line
           .PageHome__route-code {{ trip.to }}
-        span.PageHome__trip-status(:class="`is-${trip.status}`") {{ trip.statusLabel }}
+        span.PageHome__trip-status(:class="`is-${trip.status}`") {{ $t('status.' + trip.status) }}
       .PageHome__trip-info
         .PageHome__info-item
-          .PageHome__info-label 日期
+          .PageHome__info-label {{ $t('home.upcoming.date') }}
           .PageHome__info-val {{ trip.date }}
         .PageHome__info-item
-          .PageHome__info-label {{ trip.timeLabel }}
+          .PageHome__info-label {{ $t(trip.timeLabelKey) }}
           .PageHome__info-val {{ trip.time }}
         .PageHome__info-item
-          .PageHome__info-label 車型
+          .PageHome__info-label {{ $t('home.upcoming.vehicle') }}
           .PageHome__info-val {{ trip.vehicle }}
         .PageHome__info-item
-          .PageHome__info-label {{ trip.status === 'confirmed' ? '司機' : '人數' }}
+          .PageHome__info-label {{ $t(trip.infoLabelKey) }}
           .PageHome__info-val {{ trip.driver }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
@@ -184,15 +185,12 @@ onMounted(() => {
   //- ── QUICK BOOK CTA ──────────────────────────────────────────
   section#book.PageHome__section.is-off-white
     .PageHome__section-label BOOK YOUR JOURNEY
-    h2.PageHome__section-title
-      | 預約
-      br
-      | 您的行程
-    p.PageHome__section-desc 填寫出發資訊，專屬司機將準時候駕。
+    h2.PageHome__section-title {{ $t('home.book.title') }}
+    p.PageHome__section-desc {{ $t('home.book.desc') }}
     button.PageHome__book-cta-btn.reveal(@click="navigateTo('/booking')")
       svg(width="20" height="20" viewBox="0 0 24 24" fill="none")
         path(d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
-      | 前往預約表單
+      | {{ $t('home.book.btn') }}
 
 </template>
 
