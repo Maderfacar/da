@@ -6,6 +6,60 @@
 
 ---
 
+### 2026/04/28 — `.client.vue` 封裝瀏覽器專用套件
+
+**決策類型**：架構規範  
+**標題**：`chart.js`、Google Maps SDK 等 browser-only 套件一律封裝為 `.client.vue` 元件  
+**背景**：Vercel 部署時 Rollup 靜態分析 chart.js ESM export map 失敗（`Cannot find module 'chart.js'`），嘗試過 `vite.ssr.external`、`build.transpile`、`@vite-ignore` 均無效。根本原因是 pnpm-lock.yaml 缺少 chart.js 條目（需同步提交），加上 SSR bundle 仍會嘗試解析 import。  
+**決定**：凡瀏覽器專用套件的使用元件，檔名後綴改為 `.client.vue`（例：`TrafficChart.client.vue`），Nuxt 自動將其完全排除於 SSR build 之外。  
+**影響**：`app/components/admin/TrafficChart.client.vue`；往後所有 chart.js / canvas / WebGL 元件均遵循此規則  
+**替代方案**：dynamic import + `@vite-ignore` → 只壓制 warning，不解決 Rollup resolution；已捨棄
+
+---
+
+### 2026/04/28 — ElDatePicker 日期限制使用 `:disabled-date`
+
+**決策類型**：Element Plus 使用規範  
+**標題**：`ElDatePicker` 禁止使用 `:min`，改用 `:disabled-date` callback 限制可選日期  
+**背景**：`:min` 是 `el-input-number` 的 prop，在 `el-date-picker` 上完全無效，導致乘客可選到昨天甚至更早的日期。  
+**決定**：  
+```ts
+const disabledDate = (d: Date) => $dayjs(d).isBefore($dayjs().startOf('day'))
+```
+傳入 `:disabled-date="disabledDate"`，可精確禁用今天以前的所有日期。  
+過去時間（今天已過的時段）則在 `canNext` computed 中加 `isPastDateTime` guard + UI 錯誤提示。  
+**影響**：`app/components/passenger/BookingStepType.vue`  
+**替代方案**：`:min` prop → 無效，已捨棄
+
+---
+
+### 2026/04/28 — LINE Bot 推播採用 fire-and-forget 模式
+
+**決策類型**：後端架構  
+**標題**：訂單建立後的 LINE 推播不阻塞 API 回應，失敗靜默 log  
+**背景**：LINE Messaging API 推播偶爾因網路或 token 過期失敗，不應因此讓訂單建立的 POST API 回傳 500。  
+**決定**：在 `server/utils/line-push.ts` 封裝推播邏輯，內部 `.catch()` 攔截錯誤僅 `console.error`，呼叫方不需 await 回傳值；訂單寫入 Firestore 成功後即刻回傳 201，推播在背景非同步執行。  
+**影響**：`server/utils/line-push.ts`、`server/routes/nuxt-api/orders/index.post.ts`  
+**替代方案**：await 推播結果 → 推播失敗會讓訂單建立失敗，體驗極差；已捨棄
+
+---
+
+### 2026/04/28 — 航空 API 採用 BFF Mock 模式（server/api/flight.get.ts）
+
+**決策類型**：外部 API 整合  
+**標題**：航班查詢以 Mock 資料在 BFF 層實作，格式完全對齊 Aviation Edge API  
+**背景**：Aviation Edge 為付費 API，MVP 階段不申請帳號；但訂車流程中的接機/送機需要航廈資訊與預計起降時間。  
+**決定**：
+- 建立 `server/api/flight.get.ts`，內建 12 組模擬航班（CI/BR/JL/CX）
+- 回傳格式對齊 Aviation Edge：`flightNo`、`airline`、`terminal`、`scheduledTime`、`estimatedTime`、`status`、`direction`
+- 時間動態計算（`Date.now() + offsetMinutes * 60000`），送機航班基礎偏移 +25h 確保符合「起飛時間 ≥ 用車時間 +3h」驗證
+- 正式上線時只需替換 handler 為 Aviation Edge HTTP 呼叫，介面不變
+
+**影響**：`server/api/flight.get.ts`、`app/components/passenger/BookingStepType.vue`、`app/pages/booking/index.vue`  
+**替代方案**：直接串接 Aviation Edge → MVP 不需實際資料，成本與複雜度過高；已捨棄
+
+---
+
 ### 2026/04/27 — Google Maps 雙 Key + BFF 代理架構
 
 **決策類型**：安全性 / 架構  
@@ -143,5 +197,5 @@
 ---
 
 **版本紀錄**
-- 版本：v1.2（新增設計系統改版、UiInput maxlength 決策）
-- 更新日期：2026/04/26
+- 版本：v1.6（新增 .client.vue、ElDatePicker、LINE push、航空 API 四項決策）
+- 更新日期：2026/04/28

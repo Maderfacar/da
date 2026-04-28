@@ -36,6 +36,27 @@ pnpm lint:fix     # ESLint 自動修復
 - `shared/` — 前後端共享程式碼（以 `~shared` 別名引用）
 - `openspec/` — OpenSpec 規格系統，新增功能或重構時透過 openspec skill 建立變更提案
 
+### 三端路由總覽
+
+| 端 | Layout | 路由 | 說明 |
+|----|--------|------|------|
+| 乘客 | `front-desk` | `/` `/booking` `/orders` `/upcoming` `/fleet` `/profile` | 公開首頁、訂車、訂單、行程、車型、個人 |
+| 司機 | `driver` | `/driver/dashboard` `/driver/pending` `/driver/trip` `/driver/profile` | 儀表板、搶單、任務GPS、個人 |
+| Admin | `back-desk` | `/admin/orders` `/admin/war-room` `/admin/traffic` `/admin/notifications` `/admin/drivers` `/admin/settings` | 訂單管理、即時地圖、人流、通知、司機、設定 |
+
+> 三端均使用 `middleware: ['auth', 'role']` 守衛，司機端/Admin 均設 `ssr: false`
+
+### Server API 路由分層
+
+| 路徑 | 用途 |
+|------|------|
+| `server/api/` | 輕量 BFF 端點（`flight.get.ts`、LINE webhook 等） |
+| `server/routes/nuxt-api/` | 資源型 CRUD（orders、maps、drivers 等，遵循 REST 結構） |
+
+### `.client.vue` 規則
+
+瀏覽器專用套件（`chart.js`、`google.maps` 等）必須封裝為 **`.client.vue`** 元件，Nuxt 會自動排除其 SSR bundle 分析，避免 Rollup 無法解析 ESM export 導致 Vercel build 失敗。
+
 ### 路徑別名
 
 | 別名 | 對應路徑 |
@@ -189,4 +210,4 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 | [roadmap.md](docs/roadmap.md) | 7 階段開發計劃與 Stage Gate 標準 | 評估當前進度或規劃下一階段時 |
 | [folder-structure.md](docs/folder-structure.md) | Nuxt 4 完整目錄結構說明 | 新建檔案或目錄時確認放置位置 |
 
-> 最後更新時間：2026-04-26
+> 最後更新時間：2026-04-28
