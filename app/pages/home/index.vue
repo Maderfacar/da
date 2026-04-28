@@ -3,7 +3,7 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
 
-// ── 統計翻牌 ──────────────────────────────────────────────
+// ── 統計告示牌 ────────────────────────────────────────
 interface StatItem {
   id: string
   num: string
@@ -18,42 +18,13 @@ const stats = computed<StatItem[]>(() => [
   { id: 'service',  num: '24/7',    label: t('home.stats.service'),  sub: 'SERVICE'  },
 ]);
 
-const FLIP_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ%+★/,';
+// 初始值：與目標等長的空白，讓每個 SplitFlapChar 都有 prop 變化觸發動畫
 const displayNums = reactive<Record<string, string>>({
-  ontime: '--',
-  journeys: '--',
-  rating: '--',
-  service: '--',
+  ontime:   '   ',
+  journeys: '       ',
+  rating:   '    ',
+  service:  '   ',
 });
-const flipKeys = reactive<Record<string, number>>({
-  ontime: 0, journeys: 0, rating: 0, service: 0,
-});
-
-function startFlip(item: StatItem) {
-  const target = item.num;
-  let count = 0;
-  const maxCycles = 14;
-
-  const tick = () => {
-    if (count >= maxCycles) {
-      displayNums[item.id] = target;
-      flipKeys[item.id]++;
-      return;
-    }
-    let rand = '';
-    for (let i = 0; i < target.length; i++) {
-      const ch = target[i];
-      rand += /[0-9]/.test(ch)
-        ? String(Math.floor(Math.random() * 10))
-        : FLIP_CHARS[Math.floor(Math.random() * FLIP_CHARS.length)];
-    }
-    displayNums[item.id] = rand;
-    flipKeys[item.id]++;
-    count++;
-    setTimeout(tick, 55);
-  };
-  tick();
-}
 
 const statsBarRef = ref<HTMLElement | null>(null);
 let statsTriggered = false;
@@ -93,8 +64,8 @@ onMounted(() => {
     entries.forEach((e) => {
       if (e.isIntersecting && !statsTriggered) {
         statsTriggered = true;
-        stats.forEach((item, idx) => {
-          setTimeout(() => startFlip(item), idx * 220);
+        stats.value.forEach((item, idx) => {
+          setTimeout(() => { displayNums[item.id] = item.num; }, idx * 350);
         });
       }
     });
@@ -136,8 +107,7 @@ onMounted(() => {
   .PageHome__stats(ref="statsBarRef")
     .PageHome__stats-grid
       .PageHome__stats-item(v-for="item in stats" :key="item.id")
-        .PageHome__stats-flip
-          .PageHome__stats-num(:key="flipKeys[item.id]") {{ displayNums[item.id] }}
+        SplitFlapBoard(:value="displayNums[item.id]" :char-delay="55" :cycles="8")
         .PageHome__stats-label
           span {{ item.label }}
           span.PageHome__stats-sub {{ item.sub }}
@@ -220,11 +190,6 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.7); }
-}
-
-@keyframes flip-in {
-  0%   { transform: rotateX(90deg); opacity: 0; }
-  100% { transform: rotateX(0deg); opacity: 1; }
 }
 
 // ── 頁面根節點 ────────────────────────────────────────────────────────────────
@@ -430,23 +395,6 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   padding: 20px 12px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(255, 255, 255, 0.02);
-}
-
-.PageHome__stats-flip {
-  perspective: 400px;
-  margin-bottom: 8px;
-}
-
-.PageHome__stats-num {
-  font-family: $font-display;
-  font-size: 36px;
-  color: var(--da-amber-light);
-  letter-spacing: 0.04em;
-  line-height: 1;
-  display: block;
-  animation: flip-in 0.1s ease both;
-  transform-origin: center bottom;
-  will-change: transform;
 }
 
 .PageHome__stats-label {
