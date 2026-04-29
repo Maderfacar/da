@@ -6,6 +6,38 @@
 
 ---
 
+### 2026/04/30 — i18n 採用 @nuxtjs/i18n v10 + prefix_except_default 策略
+
+**決策類型**：技術選型 / 架構  
+**標題**：乘客端三語系（zh / en / ja）採用 `@nuxtjs/i18n` v10.2.4，預設語系（zh）不加 URL 前綴  
+**背景**：Stage 6 目標之一為支援多語系，需選定 i18n 方案並決定 URL 策略。原有程式碼含大量硬編碼繁體中文（經 grep 統計乘客端頁面約 300+ 行、組件層約 468 行）。  
+**決定**：
+- 安裝 `@nuxtjs/i18n` v10.2.4（Nuxt 4 相容版），`langDir: 'locales'`，翻譯檔置於 `i18n/locales/{zh,en,ja}.js`
+- strategy `prefix_except_default`：預設語系（zh）路由不加前綴（`/booking`），en/ja 加前綴（`/en/booking`、`/ja/booking`）
+- 分兩層修復：Layer 1 核心頁面（home/booking/upcoming/fleet）→ Layer 2 乘客組件（7 個 passenger 組件）
+- 翻譯鍵採階層命名：`booking.step.*`、`booking.type.*`、`booking.route.*`、`booking.confirm.*`、`map.*`、`ui.*`、`fleet.extras.*`（跨頁共用）
+
+**影響**：`i18n/locales/zh.js`、`en.js`、`ja.js`；所有乘客端 `.vue` 頁面與組件；`nuxt.config.ts`  
+**替代方案**：`vue-i18n` 單獨使用（不走 Nuxt module）→ 失去自動路由前綴、語系偵測；已捨棄
+
+---
+
+### 2026/04/29 — 首頁統計列改為 Split-flap Display（機場告示牌效果）
+
+**決策類型**：UI / 視覺設計  
+**標題**：首頁統計列動畫從 CSS `flip-in` 跑馬燈改為完整機場翻牌效果（Split-flap Display）  
+**背景**：舊有跑馬燈實作（`FLIP_CHARS` 隨機字元 + `flip-in` keyframe）在數字切換時無法呈現真實機場告示牌的逐字翻牌感，且只能翻一次。  
+**決定**：
+- 新增 `SplitFlapChar.vue`：單字元翻牌組件，內含 4 層結構（static-top / flap-upper / flap-lower / static-bottom），使用 CSS `perspective` + `backface-visibility: hidden` + `rotateX()` 動畫，`v-if="isFlipping"` 每次翻牌觸發 DOM 重建以重播 CSS animation
+- 新增 `SplitFlapBoard.vue`：字串容器，`charDelay` prop 控制 stagger 效果（預設 60ms）
+- 隨機字元循環（`cycles` 次）後落地目標字元，增強機械感
+- 統計數字初始值為等長空白字串，`setTimeout` stagger 後依序設入目標值
+
+**影響**：`app/components/SplitFlapChar.vue`（新增）、`app/components/SplitFlapBoard.vue`（新增）、`app/pages/home/index.vue`（移除舊跑馬燈邏輯）  
+**替代方案**：`canvas` 繪製 / 第三方 split-flap 套件 → 綁定外部依賴，已捨棄；純 JS setInterval 更新文字 → 無法呈現物理翻牌分層視覺，已捨棄
+
+---
+
 ### 2026/04/28 — `.client.vue` 封裝瀏覽器專用套件
 
 **決策類型**：架構規範  

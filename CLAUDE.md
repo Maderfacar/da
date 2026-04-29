@@ -185,6 +185,12 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 
 三語系支援（繁中 zh、英文 en、日文 ja），預設繁中。路由策略 `prefix_except_default`（預設語言不加 URL 前綴）。翻譯檔位於 `i18n/locales/`。
 
+- **Script 內使用**：`const { t } = useI18n()`，呼叫 `t('key')` 或 `t('key', { param: val })`
+- **Template 內使用**：`$t('key')` 或 `$t('key', { param: val })`
+- **鍵命名規範**：`{頁面/模組}.{子模組}.{具體項}`，例：`booking.confirm.pickup`、`map.pinOrigin`
+- **共用鍵**：`fleet.extras.*`（額外服務）、`fleet.unit.*`（人/件）可跨頁複用，勿重複定義
+- **翻譯檔結構**：`zh.js`（主檔，240+ 行）為基準，`en.js` / `ja.js` 必須與 `zh.js` 結構完全對齊
+
 ## 知識庫
 
 詳細規範與技術知識存放於 `.claude/knowledge/`，按需讀取以減少上下文消耗：
@@ -210,4 +216,4 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 | [roadmap.md](docs/roadmap.md) | 7 階段開發計劃與 Stage Gate 標準 | 評估當前進度或規劃下一階段時 |
 | [folder-structure.md](docs/folder-structure.md) | Nuxt 4 完整目錄結構說明 | 新建檔案或目錄時確認放置位置 |
 
-> 最後更新時間：2026-04-28
+> 最後更新時間：2026-04-30

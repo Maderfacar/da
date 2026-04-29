@@ -94,10 +94,20 @@
 
 **主要任務：**
 - 測試（Vitest + Playwright）
+- 多語系（i18n）完整覆蓋
+- 首頁視覺強化（Split-flap Board）
 - 行動版優化
 - 部署至 Vercel
 
 **完成標準**：測試通過，staging 環境部署成功
+
+**目前進度（2026/04/30）**：
+- ✅ Vitest 單元測試（8 tests）
+- ✅ Split-flap Display（SplitFlapChar + SplitFlapBoard）
+- ✅ i18n Layer 1：核心頁面（home / booking / upcoming / fleet）
+- ✅ i18n Layer 2：乘客端組件（7 個 passenger 組件 + booking 成功畫面）
+- ✅ Playwright E2E（15/15 通過）
+- 🔄 行動版測試 / Vercel 部署確認
 
 ---
 
@@ -108,5 +118,5 @@
 ---
 
 **版本紀錄**
-- 版本：v1.5（Stage 5 完成）
-- 更新日期：2026/04/28
+- 版本：v1.6（Stage 6 進行中 — i18n + E2E 完成）
+- 更新日期：2026/04/30

@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 6 進行中  
-**最後更新**：2026/04/28
+**總進度**：Stage 6 進行中（約 85%）  
+**最後更新**：2026/04/30
 
 ---
 
@@ -99,10 +99,29 @@
 ## Stage 6：測試、優化與部署
 
 - [✅] Vitest 單元測試（shared/pricing.ts — 8 tests passed）
-- [ ] Playwright E2E 測試
+- [✅] 首頁統計列改版為機場翻牌效果（Split-flap Display）
+  - 新增 `SplitFlapChar.vue`（單字元翻牌動畫，CSS perspective + backface-visibility）
+  - 新增 `SplitFlapBoard.vue`（字串容器，charDelay stagger）
+  - 取代舊有跑馬燈 flip-in 動畫
+- [✅] 多語系（i18n）完整覆蓋 — **Layer 1：核心頁面**
+  - 安裝 `@nuxtjs/i18n` v10.2.4，strategy `prefix_except_default`，支援 zh / en / ja
+  - `home/index.vue`、`booking/index.vue`、`upcoming/index.vue`、`fleet/index.vue` 全面改用 `$t()`
+  - 三語系翻譯檔建立（`i18n/locales/zh.js` / `en.js` / `ja.js`）
+- [✅] 多語系（i18n）完整覆蓋 — **Layer 2：乘客端組件層**
+  - `BookingStepType.vue`、`BookingStepRoute.vue`、`BookingStepOptions.vue`、`BookingStepConfirm.vue`
+  - `BookingLocationInput.vue`、`GooglePlaceInput.vue`、`MapRoutePreview.vue`
+  - `booking/index.vue` 成功畫面（`訂單送出成功` / `訂單編號` / `再次訂車`）全面 i18n
+  - 修復 `ja.js` 遺漏整個 `booking.nav/type/route/options/confirm` 區塊（Playwright E2E 發現）
+  - 補齊 `en.js` / `ja.js` 缺少的 `map.*` 與 `ui.*` 頂層翻譯區塊
+- [✅] Playwright E2E 測試（15/15 通過）
+  - 語系切換 URL 路由驗證（zh / en / ja）
+  - 各語系 booking step 標籤確認無殘留硬編碼中文
+  - 首頁 Split-flap board 無 JS 錯誤
+  - 翻譯鍵缺失警告（`[vue-i18n] Not found`）全零
+- [✅] 修復 `loading/page.vue` `.is-hide` 缺少 `pointer-events: none`（遮罩 600ms 攔截點擊問題）
 - [ ] 行動版與 Dark Mode 完整測試
-- [🔄] 部署至 Vercel（cc_da 專案 Building 中）
-- [ ] **Stage Gate**：測試通過 + 部署成功
+- [🔄] 部署至 Vercel（v0.3.10 已 push，Vercel 自動部署中）
+- [ ] **Stage Gate**：行動版測試通過 + Vercel 部署成功確認
 
 ---
 
@@ -111,5 +130,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.4（Stage 5 完成 — MVP 核心流程 Gate 通過）
-- 更新日期：2026/04/28
+- 版本：v2.5（Stage 6 i18n + Split-flap + E2E 完成）
+- 更新日期：2026/04/30
