@@ -199,6 +199,18 @@ export default {
       extrasSep: ', ',
     },
   },
+  map: {
+    pinOrigin: 'Pickup',
+    pinDestination: 'Drop-off',
+    pinStopover: 'Stopover',
+    pinHint: 'Tap map to set {type} location',
+    geocoding: 'Resolving address…',
+    outOfRange: 'Selected location is outside the service area (Taiwan island)',
+  },
+  ui: {
+    googlePlace: { placeholder: 'Search address or place name…' },
+    bookingLocation: { placeholder: 'Enter address or place' },
+  },
   common: {
     goHome: 'Back Home',
     bookNow: 'Book Now',

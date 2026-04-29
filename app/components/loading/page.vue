@@ -40,5 +40,6 @@ nuxtApp.hooks.hookOnce('app:rendered', (e) => {
 // 組件 ----
 .is-hide {
   opacity: 0 !important;
+  pointer-events: none;
 }
 </style>
