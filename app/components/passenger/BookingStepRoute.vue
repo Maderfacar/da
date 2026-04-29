@@ -20,6 +20,11 @@ const emit = defineEmits<{
   (e: 'next' | 'back'): void;
 }>();
 
+const { t } = useI18n();
+
+const stopoverLabel = (n: number) => t('booking.route.stopoverLabel', { n })
+const stopoverPlaceholder = (n: number) => t('booking.route.stopoverPlaceholder', { n })
+
 const pickup = ref<GooglePlace | null>(props.pickupLocation);
 const dropoff = ref<GooglePlace | null>(props.dropoffLocation);
 const stopovers = ref<GooglePlace[]>([...props.stopovers]);
@@ -120,7 +125,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 <template lang="pug">
 .PassengerBookingStepRoute
   .PassengerBookingStepRoute__section-label ROUTE PLANNING
-  h2.PassengerBookingStepRoute__title 設定路線
+  h2.PassengerBookingStepRoute__title {{ $t('booking.route.title') }}
 
   //- 地圖預覽（Drop Pin 支援）
   ClientOnly
@@ -136,8 +141,8 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   UiGooglePlaceInput(
     ref="pickupInputRef"
     v-model="pickup"
-    label="上車地點 / PICKUP"
-    placeholder="請輸入上車地址"
+    :label="$t('booking.route.pickupLabel')"
+    :placeholder="$t('booking.route.pickupPlaceholder')"
     @focus="activeField = 'origin'"
     @blur="ClearActiveField"
   )
@@ -150,8 +155,8 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
       UiGooglePlaceInput(
         :ref="(el) => { waypointInputRefs[idx] = el }"
         :model-value="stopovers[idx] && stopovers[idx].lat !== 0 ? stopovers[idx] : null"
-        :label="`停靠站 ${idx + 1} / STOPOVER`"
-        :placeholder="`請輸入第 ${idx + 1} 個停靠站`"
+        :label="stopoverLabel(idx + 1)"
+        :placeholder="stopoverPlaceholder(idx + 1)"
         @update:model-value="UpdateStopover(idx, $event)"
         @focus="activeField = `waypoint-${idx}`"
         @blur="ClearActiveField"
@@ -161,15 +166,15 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
   button.PassengerBookingStepRoute__add-btn(@click="ClickAddStopover")
     NuxtIcon(name="mdi:plus-circle-outline")
-    span 新增中途停靠站
+    span {{ $t('booking.route.addStop') }}
 
   .PassengerBookingStepRoute__divider
 
   UiGooglePlaceInput(
     ref="dropoffInputRef"
     v-model="dropoff"
-    label="下車地點 / DROPOFF"
-    placeholder="請輸入下車地址"
+    :label="$t('booking.route.dropoffLabel')"
+    :placeholder="$t('booking.route.dropoffPlaceholder')"
     @focus="activeField = 'destination'"
     @blur="ClearActiveField"
   )
@@ -178,18 +183,18 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
     .PassengerBookingStepRoute__route-card(v-if="routeInfo || isCalcLoading")
       template(v-if="isCalcLoading")
         NuxtIcon.spin(name="mdi:loading")
-        span 計算路線中…
+        span {{ $t('booking.route.calculating') }}
       template(v-else-if="routeInfo")
         .PassengerBookingStepRoute__route-stat
           NuxtIcon(name="mdi:road-variant")
           span {{ routeInfo.distanceKm }} km
         .PassengerBookingStepRoute__route-stat
           NuxtIcon(name="mdi:clock-outline")
-          span 約 {{ routeInfo.durationMinutes }} 分鐘
+          span {{ $t('booking.route.duration', { min: routeInfo.durationMinutes }) }}
 
   .PassengerBookingStepRoute__actions
-    UiButton(type="secondary" @click="$emit('back')") ← 上一步
-    UiButton(type="primary" :disabled="!canNext" @click="$emit('next')") 下一步 NEXT →
+    UiButton(type="secondary" @click="$emit('back')") {{ $t('booking.nav.back') }}
+    UiButton(type="primary" :disabled="!canNext" @click="$emit('next')") {{ $t('booking.nav.next') }}
 </template>
 
 <style lang="scss" scoped>

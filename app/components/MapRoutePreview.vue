@@ -152,7 +152,7 @@ async function _InitMapFlow() {
 async function _DropPinFlow(lat: number, lng: number) {
   if (!props.activeField) return; // 未指定目標欄位，不放 Pin
   if (!_isInTaiwan(lat, lng)) {
-    pinError.value = '所選地點不在台灣本島服務範圍內';
+    pinError.value = t('map.outOfRange');
     setTimeout(() => { pinError.value = ''; }, 3000);
     return;
   }
@@ -348,11 +348,11 @@ onUnmounted(() => {
 
   //- 無 activeField 時不顯示 Drop Pin 提示
   .MapRoutePreview__hint(v-if="activeField && !pinLoading && !pinError")
-    span 點擊地圖設定 {{ activeField === 'origin' ? '上車' : activeField === 'destination' ? '下車' : '停靠' }}地點
+    span {{ $t('map.pinHint', { type: activeField === 'origin' ? $t('map.pinOrigin') : activeField === 'destination' ? $t('map.pinDestination') : $t('map.pinStopover') }) }}
 
   .MapRoutePreview__loading(v-if="pinLoading")
     .MapRoutePreview__spinner
-    span 解析地址中…
+    span {{ $t('map.geocoding') }}
 
   transition(name="fade")
     .MapRoutePreview__error(v-if="pinError") {{ pinError }}

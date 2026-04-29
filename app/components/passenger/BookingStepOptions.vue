@@ -58,25 +58,25 @@ watch([passengers, vehicle], ([p, v]) => {
 <template lang="pug">
 .PassengerBookingStepOptions
   .PassengerBookingStepOptions__section-label PASSENGERS
-  h2.PassengerBookingStepOptions__title 乘車需求
+  h2.PassengerBookingStepOptions__title {{ $t('booking.options.title') }}
 
   //- 人數行李
   .PassengerBookingStepOptions__counters
     .PassengerBookingStepOptions__counter
-      span.PassengerBookingStepOptions__counter-label 乘客人數
+      span.PassengerBookingStepOptions__counter-label {{ $t('booking.options.passengers') }}
       .PassengerBookingStepOptions__counter-ctrl
         button(@click="passengers = Math.max(1, passengers - 1)") −
         span {{ passengers }}
         button(@click="passengers = Math.min(8, passengers + 1)") +
     .PassengerBookingStepOptions__counter
-      span.PassengerBookingStepOptions__counter-label 行李數量
+      span.PassengerBookingStepOptions__counter-label {{ $t('booking.options.luggage') }}
       .PassengerBookingStepOptions__counter-ctrl
         button(@click="luggage = Math.max(0, luggage - 1)") −
         span {{ luggage }}
         button(@click="luggage = Math.min(8, luggage + 1)") +
 
   .PassengerBookingStepOptions__section-label.mt VEHICLE
-  h2.PassengerBookingStepOptions__title 選擇車種
+  h2.PassengerBookingStepOptions__title {{ $t('booking.options.vehicleTitle') }}
 
   .PassengerBookingStepOptions__vehicles
     .PassengerBookingStepOptions__vehicle-card(
@@ -90,16 +90,16 @@ watch([passengers, vehicle], ([p, v]) => {
       .PassengerBookingStepOptions__vehicle-specs
         span
           NuxtIcon(name="mdi:account-group")
-          | {{ cfg.capacity }}人
+          | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
         span
           NuxtIcon(name="mdi:bag-suitcase")
-          | {{ cfg.luggageCapacity }}件
+          | {{ cfg.luggageCapacity }}{{ $t('fleet.unit.piece') }}
       .PassengerBookingStepOptions__vehicle-fare
-        | 起跳 NT${{ cfg.baseFare }}
+        | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
         span + NT${{ cfg.perKmRate }}/km
 
   .PassengerBookingStepOptions__section-label.mt EXTRAS
-  h2.PassengerBookingStepOptions__title 額外服務
+  h2.PassengerBookingStepOptions__title {{ $t('booking.options.extrasTitle') }}
 
   .PassengerBookingStepOptions__extras
     .PassengerBookingStepOptions__extra-card(
@@ -109,16 +109,16 @@ watch([passengers, vehicle], ([p, v]) => {
       @click="ToggleExtra(svc.value)"
     )
       NuxtIcon(:name="svc.icon")
-      span {{ svc.label }}
+      span {{ $t('fleet.extras.' + svc.value) }}
       span.PassengerBookingStepOptions__extra-price +NT$200
 
   .PassengerBookingStepOptions__fare-preview
-    span.PassengerBookingStepOptions__fare-label 預估車資
+    span.PassengerBookingStepOptions__fare-label {{ $t('booking.options.fareLabel') }}
     span.PassengerBookingStepOptions__fare-value NT$ {{ fare.toLocaleString() }}
 
   .PassengerBookingStepOptions__actions
-    UiButton(type="secondary" @click="$emit('back')") ← 上一步
-    UiButton(type="primary" @click="$emit('next')") 下一步 NEXT →
+    UiButton(type="secondary" @click="$emit('back')") {{ $t('booking.nav.back') }}
+    UiButton(type="primary" @click="$emit('next')") {{ $t('booking.nav.next') }}
 </template>
 
 <style lang="scss" scoped>

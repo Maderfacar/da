@@ -3,6 +3,8 @@ import { ORDER_TYPES } from '~shared/pricing';
 import type { OrderType } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 
+const { t } = useI18n();
+
 interface Props {
   orderType: OrderType | undefined;
   pickupDateTime: string;
@@ -56,7 +58,7 @@ const _LookupFlight = async (no: string) => {
         const minDeparture = $dayjs(dateTime.value).add(3, 'hour');
         if ($dayjs(res.data.estimatedTime).isBefore(minDeparture)) {
           localFlightInfo.value = null;
-          flightError.value = `航班 ${cleaned} 起飛時間距用車時間不足 3 小時，無法受理送機`;
+          flightError.value = t('booking.type.error.tooSoon', { flight: cleaned });
           emit('update:flightInfo', null);
           return;
         }
@@ -65,12 +67,12 @@ const _LookupFlight = async (no: string) => {
       emit('update:flightInfo', res.data);
     } else {
       localFlightInfo.value = null;
-      flightError.value = `找不到航班 ${cleaned}`;
+      flightError.value = t('booking.type.error.notFound', { flight: cleaned });
       emit('update:flightInfo', null);
     }
   } catch {
     localFlightInfo.value = null;
-    flightError.value = '查詢失敗，請稍後再試';
+    flightError.value = t('booking.type.error.queryFail');
     emit('update:flightInfo', null);
   } finally {
     flightLoading.value = false;
@@ -107,7 +109,7 @@ watch(dateTime, (val) => {
   if (selectedType.value === 'airport-dropoff' && localFlightInfo.value && val) {
     const minDeparture = $dayjs(val).add(3, 'hour');
     if ($dayjs(localFlightInfo.value.estimatedTime).isBefore(minDeparture)) {
-      flightError.value = `航班 ${localFlightInfo.value.flightNo} 起飛時間距用車時間不足 3 小時，無法受理送機`;
+      flightError.value = t('booking.type.error.tooSoon', { flight: localFlightInfo.value.flightNo });
       localFlightInfo.value = null;
       emit('update:flightInfo', null);
     }
@@ -115,17 +117,22 @@ watch(dateTime, (val) => {
 });
 
 // ── 航班狀態標籤 ─────────────────────────────────────────────────────────────
-const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  scheduled: { label: '準時',   cls: 'is-ok' },
-  active:    { label: '起飛中', cls: 'is-ok' },
-  landed:    { label: '已落地', cls: 'is-ok' },
-  delayed:   { label: '誤點',   cls: 'is-warn' },
-  cancelled: { label: '取消',   cls: 'is-error' },
+const STATUS_CLS: Record<string, string> = {
+  scheduled: 'is-ok',
+  active:    'is-ok',
+  landed:    'is-ok',
+  delayed:   'is-warn',
+  cancelled: 'is-error',
 };
 
-const statusBadge = computed(() =>
-  localFlightInfo.value ? (STATUS_MAP[localFlightInfo.value.status] ?? { label: '未知', cls: '' }) : null,
-);
+const statusBadge = computed(() => {
+  if (!localFlightInfo.value) return null;
+  const s = localFlightInfo.value.status;
+  return {
+    label: t(`booking.type.flightStatus.${s}`, t('booking.type.flightStatus.unknown')),
+    cls:   STATUS_CLS[s] ?? '',
+  };
+});
 
 const formatTime = (iso: string) =>
   $dayjs(iso).format('HH:mm');
@@ -152,7 +159,7 @@ const ClickNext = () => {
 <template lang="pug">
 .PassengerBookingStepType
   .PassengerBookingStepType__section-label ORDER TYPE
-  h2.PassengerBookingStepType__title 選擇行程類型
+  h2.PassengerBookingStepType__title {{ $t('booking.type.title') }}
 
   .PassengerBookingStepType__grid
     .PassengerBookingStepType__card(
@@ -169,12 +176,12 @@ const ClickNext = () => {
   Transition(name="flight-slide")
     .PassengerBookingStepType__flight(v-if="needsFlight")
       .PassengerBookingStepType__section-label.mt FLIGHT INFO
-      h2.PassengerBookingStepType__title 輸入航班號碼
+      h2.PassengerBookingStepType__title {{ $t('booking.type.flightTitle') }}
 
       .PassengerBookingStepType__flight-input-wrap
         input.PassengerBookingStepType__flight-input(
           v-model="flightNoInput"
-          placeholder="例：CI102、BR12"
+          :placeholder="$t('booking.type.flightPlaceholder')"
           maxlength="8"
           autocomplete="off"
           autocapitalize="characters"
@@ -193,39 +200,39 @@ const ClickNext = () => {
 
           .PassengerBookingStepType__flight-card-body
             .PassengerBookingStepType__flight-row
-              span.PassengerBookingStepType__flight-label 航廈
+              span.PassengerBookingStepType__flight-label {{ $t('booking.type.terminal') }}
               span.PassengerBookingStepType__flight-val T{{ localFlightInfo.terminal }}
             .PassengerBookingStepType__flight-row
-              span.PassengerBookingStepType__flight-label 預計時間
+              span.PassengerBookingStepType__flight-label {{ $t('booking.type.flightTime') }}
               span.PassengerBookingStepType__flight-val {{ formatTime(localFlightInfo.estimatedTime) }}
             .PassengerBookingStepType__flight-row(v-if="localFlightInfo.direction === 'arrival'")
-              span.PassengerBookingStepType__flight-label 出發地
+              span.PassengerBookingStepType__flight-label {{ $t('booking.type.origin') }}
               span.PassengerBookingStepType__flight-val {{ localFlightInfo.origin.cityName }}（{{ localFlightInfo.origin.iataCode }}）
             .PassengerBookingStepType__flight-row(v-else)
-              span.PassengerBookingStepType__flight-label 目的地
+              span.PassengerBookingStepType__flight-label {{ $t('booking.type.destination') }}
               span.PassengerBookingStepType__flight-val {{ localFlightInfo.destination.cityName }}（{{ localFlightInfo.destination.iataCode }}）
 
   .PassengerBookingStepType__section-label.mt DATE &amp; TIME
-  h2.PassengerBookingStepType__title 用車日期與時間
+  h2.PassengerBookingStepType__title {{ $t('booking.type.dateTimeTitle') }}
 
   ElDatePicker.PassengerBookingStepType__picker(
     v-model="dateTime"
     type="datetime"
-    placeholder="選擇日期與時間"
+    :placeholder="$t('booking.type.dateTimePlaceholder')"
     format="YYYY/MM/DD HH:mm"
     value-format="YYYY-MM-DDTHH:mm:ss"
     :disabled-date="disabledDate"
     :minute-step="15"
     style="width: 100%"
   )
-  p.PassengerBookingStepType__time-error(v-if="isPastDateTime") 請選擇現在之後的時間
+  p.PassengerBookingStepType__time-error(v-if="isPastDateTime") {{ $t('booking.type.dateTimeError') }}
 
   UiButton(
     type="primary"
     :disabled="!canNext"
     @click="ClickNext"
     style="margin-top: 28px; width: 100%"
-  ) 下一步 NEXT →
+  ) {{ $t('booking.nav.next') }}
 </template>
 
 <style lang="scss" scoped>

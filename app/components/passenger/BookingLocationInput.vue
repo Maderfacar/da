@@ -6,11 +6,15 @@ interface Props {
   disabled?: boolean;
 }
 
+const { t } = useI18n();
+
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: '請輸入地址或地點',
+  placeholder: '',
   label: '',
   disabled: false,
 });
+
+const effectivePlaceholder = computed(() => props.placeholder || t('ui.bookingLocation.placeholder'));
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: GooglePlace | null): void;
@@ -91,7 +95,7 @@ const OnBlur = () => {
   .PassengerBookingLocationInput__field
     ElInput(
       :model-value="inputText"
-      :placeholder="placeholder"
+      :placeholder="effectivePlaceholder"
       :disabled="disabled"
       maxlength="100"
       clearable

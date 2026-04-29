@@ -10,10 +10,12 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   label: undefined,
-  placeholder: '搜尋地址或地點名稱…',
+  placeholder: '',
   disabled: false,
   theme: 'light',
 });
+
+const effectivePlaceholder = computed(() => props.placeholder || t('ui.googlePlace.placeholder'));
 
 const emit = defineEmits<{
   (e: 'update:modelValue', place: GooglePlace | null): void;
@@ -144,7 +146,7 @@ defineExpose({ SetPlace });
   .UiGooglePlaceInput__wrap
     input.UiGooglePlaceInput__field(
       v-model="inputText"
-      :placeholder="placeholder"
+      :placeholder="effectivePlaceholder"
       :disabled="disabled"
       maxlength="200"
       autocomplete="off"

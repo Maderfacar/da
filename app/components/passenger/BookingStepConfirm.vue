@@ -12,6 +12,8 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 const emit = defineEmits<{ (e: 'submit' | 'back'): void }>();
 
 const orderTypeLabel = computed(() =>
@@ -24,8 +26,8 @@ const vehicleLabel = computed(() =>
 
 const extraLabels = computed(() =>
   (props.draft.extraServices ?? [])
-    .map((s) => EXTRA_SERVICES.find((e) => e.value === s)?.label ?? s)
-    .join('、'),
+    .map((s) => t(`fleet.extras.${s}`))
+    .join(t('booking.confirm.extrasSep')),
 );
 
 const formattedDateTime = computed(() => {
@@ -37,62 +39,62 @@ const formattedDateTime = computed(() => {
 <template lang="pug">
 .PassengerBookingStepConfirm
   .PassengerBookingStepConfirm__section-label CONFIRM ORDER
-  h2.PassengerBookingStepConfirm__title 確認訂單資訊
+  h2.PassengerBookingStepConfirm__title {{ $t('booking.confirm.title') }}
 
   .PassengerBookingStepConfirm__card
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 行程類型
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.orderType') }}
       span.PassengerBookingStepConfirm__row-value {{ orderTypeLabel }}
     .PassengerBookingStepConfirm__row(v-if="flightInfo")
-      span.PassengerBookingStepConfirm__row-label 航班號碼
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.flightNo') }}
       span.PassengerBookingStepConfirm__row-value {{ flightInfo.flightNo }} · T{{ flightInfo.terminal }}
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 用車時間
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.pickupTime') }}
       span.PassengerBookingStepConfirm__row-value {{ formattedDateTime }}
     .PassengerBookingStepConfirm__divider
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 上車地點
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.pickup') }}
       span.PassengerBookingStepConfirm__row-value {{ draft.pickupLocation?.displayName ?? draft.pickupLocation?.address }}
     .PassengerBookingStepConfirm__row(v-if="draft.stopovers?.length")
-      span.PassengerBookingStepConfirm__row-label 停靠站
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.stopover') }}
       span.PassengerBookingStepConfirm__row-value {{ draft.stopovers.map(s => s.displayName ?? s.address).join(' → ') }}
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 下車地點
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.dropoff') }}
       span.PassengerBookingStepConfirm__row-value {{ draft.dropoffLocation?.displayName ?? draft.dropoffLocation?.address }}
     .PassengerBookingStepConfirm__divider
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 乘客人數
-      span.PassengerBookingStepConfirm__row-value {{ draft.passengerCount }} 人
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.passengers') }}
+      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.passengerUnit', { n: draft.passengerCount }) }}
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 行李數量
-      span.PassengerBookingStepConfirm__row-value {{ draft.luggageCount }} 件
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.luggage') }}
+      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.luggageUnit', { n: draft.luggageCount }) }}
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 車種
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.vehicle') }}
       span.PassengerBookingStepConfirm__row-value {{ vehicleLabel }}
     .PassengerBookingStepConfirm__row(v-if="extraLabels")
-      span.PassengerBookingStepConfirm__row-label 額外服務
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.extras') }}
       span.PassengerBookingStepConfirm__row-value {{ extraLabels }}
     .PassengerBookingStepConfirm__divider
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 行駛距離
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.distance') }}
       span.PassengerBookingStepConfirm__row-value {{ distanceKm }} km
     .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label 預估時間
-      span.PassengerBookingStepConfirm__row-value 約 {{ durationMinutes }} 分鐘
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.durationLabel') }}
+      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.durationVal', { min: durationMinutes }) }}
 
   .PassengerBookingStepConfirm__fare-box
     .PassengerBookingStepConfirm__fare-label
-      span 預估車資
-      span.PassengerBookingStepConfirm__fare-note 現金支付
+      span {{ $t('booking.confirm.fareLabel') }}
+      span.PassengerBookingStepConfirm__fare-note {{ $t('booking.confirm.cashNote') }}
     .PassengerBookingStepConfirm__fare-amount NT$ {{ estimatedFare.toLocaleString() }}
 
   .PassengerBookingStepConfirm__notice
     NuxtIcon(name="mdi:information-outline")
-    span 實際車資可能依行程調整，以現場為準。
+    span {{ $t('booking.confirm.notice') }}
 
   .PassengerBookingStepConfirm__actions
-    UiButton(type="secondary" :disabled="isLoading" @click="$emit('back')") ← 上一步
-    UiButton(type="primary" :loading="isLoading" @click="$emit('submit')") 確認送出訂單
+    UiButton(type="secondary" :disabled="isLoading" @click="$emit('back')") {{ $t('booking.confirm.back') }}
+    UiButton(type="primary" :loading="isLoading" @click="$emit('submit')") {{ $t('booking.confirm.submit') }}
 </template>
 
 <style lang="scss" scoped>
