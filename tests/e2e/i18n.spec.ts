@@ -213,7 +213,7 @@ test.describe('i18n — /booking page step labels', () => {
     // Verify step labels are NOT zh-only terms
     const allLabels = await page.locator('.PageBooking__step-label').allTextContents();
     const hasZhOnlyTerms = allLabels.some(
-      t => t.includes('行程類型') || t.includes('路線規劃') || t.includes('乘車需求') || t.includes('確認訂單')
+      (t) => t.includes('行程類型') || t.includes('路線規劃') || t.includes('乘車需求') || t.includes('確認訂單')
     );
     expect(hasZhOnlyTerms, `zh-only step labels found on /en/booking: ${allLabels.join(' | ')}`).toBe(false);
 
@@ -234,7 +234,7 @@ test.describe('i18n — /booking page step labels', () => {
     // Note: Japanese kanji are also CJK but the zh step labels are: 行程類型, 路線規劃, 乘車需求, 確認訂單
     const allLabels = await page.locator('.PageBooking__step-label').allTextContents();
     const hasZhOnlyTerms = allLabels.some(
-      t => t.includes('行程類型') || t.includes('路線規劃') || t.includes('乘車需求') || t.includes('確認訂單')
+      (t) => t.includes('行程類型') || t.includes('路線規劃') || t.includes('乘車需求') || t.includes('確認訂單')
     );
     expect(
       hasZhOnlyTerms,
@@ -244,32 +244,29 @@ test.describe('i18n — /booking page step labels', () => {
     expect(appErrors, `App errors on /ja/booking:\n${appErrors.join('\n')}`).toHaveLength(0);
   });
 
-  // KNOWN FAILING: ja.js is missing booking.type.title and booking.type.dateTimeTitle keys.
-  // This test documents the bug explicitly.
-  test('[ja] KNOWN ISSUE — booking.type.title key is missing in ja.js locale', async ({ page }) => {
-    await page.goto('/ja/booking', { waitUntil: 'networkidle' });
+  // BUG FIXED (commit ae40085): ja.js was previously missing booking.type.*, booking.route.*,
+  // booking.options.*, booking.confirm.*, booking.nav.* sections.
+  // This test now asserts the fix is in place — raw key strings must NOT appear.
+  test('[ja] /ja/booking — booking.type.title key renders correctly (not raw key)', async ({ page }) => {
+    const { appErrors, i18nMissing } = await collectConsole(page, '/ja/booking');
     await expect(page).toHaveURL(/\/ja\/booking/, { timeout: 10000 });
 
-    // The section title should NOT be the raw key string
-    const sectionTitle = page.locator('.PageBooking__card').first();
-    await expect(sectionTitle).toBeVisible();
+    const card = page.locator('.PageBooking__card').first();
+    await expect(card).toBeVisible();
 
+    // Raw key strings must NOT appear anywhere in the body
     const bodyText = await page.locator('body').textContent();
-    const hasRawKey = bodyText?.includes('booking.type.title') ||
-                      bodyText?.includes('booking.type.dateTimeTitle') ||
-                      bodyText?.includes('BOOKING.TYPE.TITLE');
+    const hasRawKey =
+      bodyText?.includes('booking.type.title') ||
+      bodyText?.includes('booking.type.dateTimeTitle') ||
+      bodyText?.includes('BOOKING.TYPE.TITLE') ||
+      bodyText?.includes('booking.route.title') ||
+      bodyText?.includes('booking.confirm.title');
 
-    // This assertion DOCUMENTS the bug — raw keys render on /ja/booking
-    // Fix: add booking.type.*, booking.route.*, booking.options.*, booking.confirm.*, booking.nav.*
-    // to i18n/locales/ja.js (those sections exist in en.js and zh.js but are absent from ja.js)
-    if (hasRawKey) {
-      console.warn('[BUG] Raw i18n key rendered on /ja/booking — ja.js is missing booking.type.* sections');
-    }
-    // We do not fail this test so the suite can still run; it is flagged as a known bug.
-    test.info().annotations.push({
-      type: 'bug',
-      description: 'ja.js missing booking.type.*, booking.route.*, booking.options.*, booking.confirm.*, booking.nav.* keys — raw key strings render on /ja/booking',
-    });
+    expect(hasRawKey, 'Raw i18n key string found on /ja/booking — ja.js translation missing').toBe(false);
+
+    expect(i18nMissing, `Missing i18n keys on /ja/booking:\n${i18nMissing.join('\n')}`).toHaveLength(0);
+    expect(appErrors, `App errors on /ja/booking:\n${appErrors.join('\n')}`).toHaveLength(0);
   });
 });
 
@@ -325,7 +322,7 @@ test.describe('i18n — booking.success.* key coverage', () => {
     await expect(page).toHaveURL(/\/ja\/booking/, { timeout: 10000 });
 
     const successKeyWarnings = warnings.filter(
-      w => w.includes('booking.success') || w.includes('booking.newOrder')
+      (w) => w.includes('booking.success') || w.includes('booking.newOrder')
     );
     expect(
       successKeyWarnings,

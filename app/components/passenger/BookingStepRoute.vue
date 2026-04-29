@@ -22,8 +22,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const stopoverLabel = (n: number) => t('booking.route.stopoverLabel', { n })
-const stopoverPlaceholder = (n: number) => t('booking.route.stopoverPlaceholder', { n })
+const stopoverLabel = (n: number) => t('booking.route.stopoverLabel', { n });
+const stopoverPlaceholder = (n: number) => t('booking.route.stopoverPlaceholder', { n });
 
 const pickup = ref<GooglePlace | null>(props.pickupLocation);
 const dropoff = ref<GooglePlace | null>(props.dropoffLocation);

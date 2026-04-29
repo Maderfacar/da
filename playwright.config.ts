@@ -20,6 +20,14 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },        // 393×851, Chrome 最常見 Android 機型
+    },
+    {
+      name: 'iphone-14',
+      use: { ...devices['iPhone 14'] },      // 390×844, Safari Mobile
+    },
   ],
   // Do NOT start the dev server here — we start it manually
 });

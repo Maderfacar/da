@@ -7,51 +7,51 @@ const props = defineProps<{
   char: string
   delay?: number   // ms，序列動畫起始延遲
   cycles?: number  // 落地前隨機翻滾幾個字元，預設 8
-}>()
+}>();
 
-const CHARS   = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+%★/,.'
-const FLIP_MS = 130   // 單次翻轉動畫時長 ms（需與 SCSS $flip-ms 一致）
-const GAP_MS  = 28    // 兩次翻轉之間的靜止間隔 ms
+const CHARS   = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+%★/,.';
+const FLIP_MS = 130;   // 單次翻轉動畫時長 ms（需與 SCSS $flip-ms 一致）
+const GAP_MS  = 28;    // 兩次翻轉之間的靜止間隔 ms
 
-const prevChar    = ref(props.char)
-const currentChar = ref(props.char)
-const isFlipping  = ref(false)
+const prevChar    = ref(props.char);
+const currentChar = ref(props.char);
+const isFlipping  = ref(false);
 
-let queue: string[]                            = []
-let timer: ReturnType<typeof setTimeout> | null = null
+let queue: string[]                            = [];
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 watch(() => props.char, (next, prev) => {
-  if (next === prev) return
+  if (next === prev) return;
 
-  const numCycles = props.cycles ?? 8
-  const newQueue: string[] = []
+  const numCycles = props.cycles ?? 8;
+  const newQueue: string[] = [];
   for (let i = 0; i < numCycles; i++) {
-    newQueue.push(CHARS[Math.floor(Math.random() * CHARS.length)])
+    newQueue.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
   }
-  newQueue.push(next)
+  newQueue.push(next);
 
-  queue = newQueue
-  if (timer) clearTimeout(timer)
-  timer = setTimeout(runQueue, props.delay ?? 0)
-})
+  queue = newQueue;
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(runQueue, props.delay ?? 0);
+});
 
 function runQueue() {
-  if (!queue.length) return
-  const next = queue.shift()!
+  if (!queue.length) return;
+  const next = queue.shift()!;
 
-  prevChar.value    = currentChar.value
-  currentChar.value = next
-  isFlipping.value  = true
+  prevChar.value    = currentChar.value;
+  currentChar.value = next;
+  isFlipping.value  = true;
 
   timer = setTimeout(() => {
-    isFlipping.value = false
+    isFlipping.value = false;
     if (queue.length) {
-      timer = setTimeout(runQueue, GAP_MS)
+      timer = setTimeout(runQueue, GAP_MS);
     }
-  }, FLIP_MS)
+  }, FLIP_MS);
 }
 
-onUnmounted(() => { if (timer) clearTimeout(timer) })
+onUnmounted(() => { if (timer) clearTimeout(timer); });
 </script>
 
 <template lang="pug">

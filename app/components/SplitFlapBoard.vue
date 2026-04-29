@@ -11,9 +11,9 @@ const props = withDefaults(defineProps<{
 }>(), {
   charDelay: 60,
   cycles: 8,
-})
+});
 
-const chars = computed(() => props.value.split(''))
+const chars = computed(() => props.value.split(''));
 </script>
 
 <template lang="pug">

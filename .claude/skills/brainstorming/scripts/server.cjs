@@ -115,8 +115,8 @@ function wrapInFrame(content) {
 
 function getNewestScreen() {
   const files = fs.readdirSync(CONTENT_DIR)
-    .filter(f => f.endsWith('.html'))
-    .map(f => {
+    .filter((f) => f.endsWith('.html'))
+    .map((f) => {
       const fp = path.join(CONTENT_DIR, f);
       return { path: fp, mtime: fs.statSync(fp).mtime.getTime() };
     })
@@ -131,7 +131,7 @@ function handleRequest(req, res) {
   if (req.method === 'GET' && req.url === '/') {
     const screenFile = getNewestScreen();
     let html = screenFile
-      ? (raw => isFullDocument(raw) ? raw : wrapInFrame(raw))(fs.readFileSync(screenFile, 'utf-8'))
+      ? ((raw) => isFullDocument(raw) ? raw : wrapInFrame(raw))(fs.readFileSync(screenFile, 'utf-8'))
       : WAITING_PAGE;
 
     if (html.includes('</body>')) {
@@ -267,7 +267,7 @@ function startServer() {
   // macOS fs.watch reports 'rename' for both new files and overwrites,
   // so we can't rely on eventType alone.
   const knownFiles = new Set(
-    fs.readdirSync(CONTENT_DIR).filter(f => f.endsWith('.html'))
+    fs.readdirSync(CONTENT_DIR).filter((f) => f.endsWith('.html'))
   );
 
   const server = http.createServer(handleRequest);

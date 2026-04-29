@@ -16,8 +16,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'update:orderType', val: OrderType): void;
-  (e: 'update:pickupDateTime', val: string): void;
-  (e: 'update:flightNo', val: string): void;
+  (e: 'update:pickupDateTime' | 'update:flightNo', val: string): void;
   (e: 'update:flightInfo', val: FlightInfo | null): void;
   (e: 'next'): void;
 }>();

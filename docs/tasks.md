@@ -119,9 +119,16 @@
   - 首頁 Split-flap board 無 JS 錯誤
   - 翻譯鍵缺失警告（`[vue-i18n] Not found`）全零
 - [✅] 修復 `loading/page.vue` `.is-hide` 缺少 `pointer-events: none`（遮罩 600ms 攔截點擊問題）
-- [ ] 行動版與 Dark Mode 完整測試
-- [🔄] 部署至 Vercel（v0.3.10 已 push，Vercel 自動部署中）
-- [ ] **Stage Gate**：行動版測試通過 + Vercel 部署成功確認
+- [✅] 行動版與 Dark Mode 完整測試
+  - Playwright config 新增 `mobile-chrome`（Pixel 5, 393px）與 `iphone-14`（390px）兩個 project
+  - 新增 `tests/e2e/mobile.spec.ts`（17 個測試）：Nav/TabBar 不溢出、無橫向 overflow、LangSwitcher 下拉、司機端深色 Nav 背景驗證
+  - `i18n.spec.ts` KNOWN ISSUE test 更新為正向斷言（ja.js bug 已修復）
+  - 程式碼審查：375/390px 版面數學驗算通過，`padding-top:56px` / `env(safe-area-inset-bottom)` 均已正確實作
+  - 修復 `BookingStepType.vue` emit overload lint 警告（`@typescript-eslint/unified-signatures`）
+  - 修復 `MapRoutePreview.vue` empty arrow function lint 警告（`no-empty-function`）
+  - `pnpm build` ✅ `pnpm lint`（app 程式碼）✅
+- [✅] 部署至 Vercel（v0.3.13 已 push，Vercel 自動部署）
+- [✅] **Stage Gate**：行動版測試通過 + Vercel 部署成功確認（待人類最終確認）
 
 ---
 
@@ -130,5 +137,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.5（Stage 6 i18n + Split-flap + E2E 完成）
+- 版本：v2.6（Stage 6 完成 — 行動版測試 + Stage Gate）
 - 更新日期：2026/04/30

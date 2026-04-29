@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   try {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
 
-    let q = db.collection('airport_flow')
+    const q = db.collection('airport_flow')
       .where('date', '==', date)
       .where('terminal', '==', terminal)
       .where('direction', '==', direction);

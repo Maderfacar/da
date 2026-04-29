@@ -17,10 +17,12 @@ pnpm build        # 生產構建
 pnpm preview      # 本地預覽生產構建
 pnpm lint         # ESLint 檢查
 pnpm lint:fix     # ESLint 自動修復
+pnpm test         # Vitest 單元測試（shared/pricing.ts，8 tests）
+pnpm test:e2e     # Playwright E2E 測試（需先手動啟動 pnpm dev）
 ```
 
 - 環境需求：Node.js >= 24.13.0，套件管理器：pnpm
-- 本專案**未配置測試框架**，無 `pnpm test`
+- 測試框架：**Vitest**（單元測試）+ **Playwright**（E2E，含 Desktop / Pixel 5 / iPhone 14 三個 project）
 - `pnpm dev` 會載入 `.env.dev`；新環境需先自行建立該檔
 
 ## 專案架構
@@ -216,4 +218,4 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 | [roadmap.md](docs/roadmap.md) | 7 階段開發計劃與 Stage Gate 標準 | 評估當前進度或規劃下一階段時 |
 | [folder-structure.md](docs/folder-structure.md) | Nuxt 4 完整目錄結構說明 | 新建檔案或目錄時確認放置位置 |
 
-> 最後更新時間：2026-04-30
+> 最後更新時間：2026-04-30（v0.3.14）

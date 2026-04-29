@@ -137,7 +137,7 @@ async function _InitMapFlow() {
         if (latLng) _DropPinFlow(latLng.lat(), latLng.lng());
         overlay.setMap(null);
       };
-      overlay.draw = () => {};
+      overlay.draw = () => { /* no-op: OverlayView requires draw() */ };
     }, 600);
   });
 

@@ -106,8 +106,12 @@
 - ✅ Split-flap Display（SplitFlapChar + SplitFlapBoard）
 - ✅ i18n Layer 1：核心頁面（home / booking / upcoming / fleet）
 - ✅ i18n Layer 2：乘客端組件（7 個 passenger 組件 + booking 成功畫面）
-- ✅ Playwright E2E（15/15 通過）
-- 🔄 行動版測試 / Vercel 部署確認
+- ✅ Playwright E2E（15/15 通過，新增 mobile spec 17 tests）
+- ✅ 行動版測試（Pixel 5 / iPhone 14 viewport）
+- ✅ Dark Mode 驗證（司機端深色 Nav bar 背景色測試）
+- ✅ Vercel 部署（v0.3.14 push，自動部署）
+
+**狀態**：✅ 完成（2026/04/30）—— 待人類最終 Stage Gate 確認
 
 ---
 
@@ -118,5 +122,5 @@
 ---
 
 **版本紀錄**
-- 版本：v1.6（Stage 6 進行中 — i18n + E2E 完成）
+- 版本：v1.7（Stage 6 完成 — 行動版測試 + Stage Gate）
 - 更新日期：2026/04/30
