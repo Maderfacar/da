@@ -132,10 +132,49 @@
 
 ---
 
+## Stage 7：維護與迭代（The Evolution）
+
+**目標**：完成 MVP 缺口、串接真實外部服務、建立長期維護機制。
+
+### P1：乘客端缺口補齊
+
+- [ ] `/orders` 頁面真實串接 Firestore（目前顯示 mock 資料）
+- [ ] `/profile` 頁面完整實作（個人資訊顯示、LINE 帳號連結狀態、登出）
+- [ ] 首頁 `/` 近期行程區塊改用真實 Firestore 資料（目前為靜態 mock）
+
+### P2：司機端 mock → 真實串接
+
+- [ ] `/driver/pending` 搶單列表改用 Firestore 即時監聽（`onSnapshot`）
+- [ ] `/driver/dashboard` 統計數據改用 Firestore 彙總查詢
+- [ ] `/driver/profile` 個人資訊真實串接（讀取 `drivers` 集合）
+
+### P3：Admin 端真實化
+
+- [ ] `/admin/orders` 指派司機功能（PUT order → assignedDriverId）
+- [ ] `/admin/drivers` 司機審核流程（審核通過/拒絕 → 更新 `drivers.status`）
+- [ ] `/admin/notifications` 發送推播（呼叫 LINE Bot broadcast API）
+
+### P4：外部整合
+
+- [ ] **n8n 桃園機場 XLS 爬取**：定期抓取 `https://www.taoyuanairport.com.tw/flightforecast` 每日航班運量整點人數預報表（如 `2026_05_01.xls`），解析後存入 Firestore `airport_flow_forecast` 集合
+- [ ] **CWA 氣象 API**：BFF endpoint `GET /nuxt-api/weather` 已建立（`server/routes/nuxt-api/weather/index.get.ts`），待確認資料用途後實作完整業務邏輯
+
+> 注意：Admin 與司機端**不做 i18n**，乘客端 i18n 已於 Stage 6 完成。
+
+### P5：品質維護
+
+- [ ] 真實航空 API 替換 Mock Aviation Edge（`server/api/flight.get.ts`）
+- [ ] ESLint 排除 `.claude/skills/` 目錄（修正 `no-unused-vars` 預存警告）
+- [ ] 定期 `pnpm audit` 依賴安全性掃描
+
+**Stage Gate**：P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
+
+---
+
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.6（Stage 6 完成 — 行動版測試 + Stage Gate）
+- 版本：v2.7（新增 Stage 7 任務清單）
 - 更新日期：2026/04/30
