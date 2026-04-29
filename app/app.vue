@@ -5,9 +5,6 @@
 import LoadingPage from '~/components/loading/page.vue';
 import OpenGroup from '~/components/open/group/index.vue';
 
-/** 偵測是否為各大 App 內建瀏覽器 */
-UseInAppBrowser();
-
 /** 初始化 */
 StoreEnv();
 StoreTool();
