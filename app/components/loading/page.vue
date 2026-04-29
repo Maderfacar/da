@@ -4,12 +4,13 @@ const nuxtApp = useNuxtApp();
 const isFinish = ref(false);
 const isHide = ref(false);
 
-nuxtApp.hooks.hookOnce('page:finish', () => {
+const _hide = () => {
+  if (isHide.value) return;
   isHide.value = true;
-  setTimeout(() => {
-    isFinish.value = true;
-  }, 600);
-});
+  setTimeout(() => { isFinish.value = true; }, 600);
+};
+
+nuxtApp.hooks.hookOnce('page:finish', _hide);
 
 nuxtApp.hooks.hookOnce('app:rendered', (e) => {
   if (e.ssrContext?.error) {
@@ -17,6 +18,9 @@ nuxtApp.hooks.hookOnce('app:rendered', (e) => {
     isFinish.value = true;
   }
 });
+
+// Fallback：若 page:finish 在 8 秒內未觸發（LINE WebView 特殊情況），強制隱藏
+setTimeout(_hide, 8_000);
 </script>
 
 <template lang="pug">

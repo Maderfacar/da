@@ -34,7 +34,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const InitAuthFlow = async () => {
     const config = useRuntimeConfig().public;
 
+    // 安全超時：Firebase / LIFF 若在 12 秒內未回應，強制解除 loading 遮罩
+    // 確保 LINE WebView 網路受限或 SDK hang 住時，使用者不會永久卡在轉圈圈
+    const safetyTimer = setTimeout(() => {
+      if (!authResolved.value) {
+        console.warn('[StoreAuth] 初始化逾時 (12s)，強制解除 loading');
+        authResolved.value = true;
+      }
+    }, 12_000);
+
     if (!config.firebaseApiKey) {
+      clearTimeout(safetyTimer);
       authResolved.value = true;
       return;
     }
@@ -56,6 +66,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const auth = getAuth(firebaseApp);
 
     onAuthStateChanged(auth, async (firebaseUser) => {
+      clearTimeout(safetyTimer); // Firebase 成功回應，取消安全計時器
       try {
         if (firebaseUser) {
           user.value = firebaseUser;
@@ -99,7 +110,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
     try {
       const liff = (await import('@line/liff')).default;
-      await liff.init({ liffId });
+
+      // 加入 10 秒 timeout，防止 liff.init() 在 LINE WebView 中 hang 住不返回
+      await Promise.race([
+        liff.init({ liffId }),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error('liff.init 逾時')), 10_000)
+        ),
+      ]);
 
       if (!liff.isLoggedIn()) {
         liffReady.value = true;
