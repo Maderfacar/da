@@ -8,13 +8,14 @@ interface Props {
   theme?: 'light' | 'dark';
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   label: undefined,
   placeholder: '',
   disabled: false,
   theme: 'light',
 });
 
+const { t } = useI18n();
 const effectivePlaceholder = computed(() => props.placeholder || t('ui.googlePlace.placeholder'));
 
 const emit = defineEmits<{
