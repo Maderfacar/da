@@ -128,6 +128,10 @@ export default {
       4: '確認訂單',
     },
     newOrder: '再次訂車',
+    success: {
+      title: '訂單送出成功',
+      orderLabel: '訂單編號',
+    },
     nav: {
       back: '← 上一步',
       next: '下一步',

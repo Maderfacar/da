@@ -120,6 +120,10 @@ export default {
       4: 'Confirm',
     },
     newOrder: 'Book Again',
+    success: {
+      title: 'Order Submitted',
+      orderLabel: 'Order ID',
+    },
     nav: {
       back: '← Back',
       next: 'Next →',

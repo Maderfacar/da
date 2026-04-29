@@ -156,12 +156,12 @@ const ClickNewOrder = () => {
   Transition(name="fade-up")
     .PageBooking__success(v-if="isSuccess")
       NuxtIcon.PageBooking__success-icon(name="mdi:check-circle")
-      h2.PageBooking__success-title 訂單送出成功
+      h2.PageBooking__success-title {{ $t('booking.success.title') }}
       p.PageBooking__success-sub ORDER SUBMITTED
       .PageBooking__success-id
-        span 訂單編號
+        span {{ $t('booking.success.orderLabel') }}
         strong {{ storeOrder.currentOrder?.orderId?.slice(0, 8).toUpperCase() }}
-      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="ClickNewOrder") 再次訂車
+      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="ClickNewOrder") {{ $t('booking.newOrder') }}
 
   //- 表單主體
   template(v-if="!isSuccess")

@@ -120,6 +120,10 @@ export default {
       4: '注文確認',
     },
     newOrder: '再予約',
+    success: {
+      title: '注文を送信しました',
+      orderLabel: '注文番号',
+    },
   },
   common: {
     goHome: 'ホームに戻る',
