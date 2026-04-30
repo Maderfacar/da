@@ -15,3 +15,8 @@ interface DriverInfo {
   heading: number | null;
   updatedAt: number;
 }
+
+interface DriverStats {
+  tripsToday: number;
+  earningsToday: number;
+}

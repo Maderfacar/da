@@ -136,25 +136,38 @@
 
 **目標**：完成 MVP 缺口、串接真實外部服務、建立長期維護機制。
 
-### P1：乘客端缺口補齊
+### P0：全端 LINE LIFF 登入強制 + 白名單審核（進行中）
 
-- [ ] `/orders` 頁面真實串接 Firestore（目前顯示 mock 資料）
-- [ ] `/profile` 頁面完整實作（個人資訊顯示、LINE 帳號連結狀態、登出）
-- [ ] 首頁 `/` 近期行程區塊改用真實 Firestore 資料（目前為靜態 mock）
+> **背景**：三端（乘客/司機/Admin）統一以 LINE LIFF 登入，Admin 與 Driver 需通過白名單才能進入各自入口；任何未核准的 UID 一律導至乘客端首頁 `/`。
+
+- [✅] `line-exchange.post.ts`：新 driver 登入時寫入 `approved: false`
+- [✅] `StoreAuth`：新增 `approved` 狀態欄位，從 Firestore 讀取
+- [✅] `role.ts` middleware：未核准 driver/admin 導至 `/`
+- [✅] Server API `GET /nuxt-api/admin/users`：查詢使用者清單（依 role 篩選）
+- [✅] Server API `PATCH /nuxt-api/admin/users/[uid]`：更新 role/approved
+- [✅] `admin/settings/index.vue`：新增「存取控制」區塊（Admin 白名單 + 司機審核）
+
+> **首位管理員設定方式**：須至 Firebase Console → Firestore → `users/{uid}` 手動設定 `role: "admin"`，或由現有管理員在系統設定頁操作。
+
+### P1：乘客端缺口補齊（進行中）
+
+- [✅] `/orders` 頁面真實串接 Firestore（目前顯示 mock 資料）
+- [✅] `/profile` 頁面完整實作（個人資訊顯示、LINE 帳號連結狀態、登出）
+- [✅] 首頁 `/` 近期行程區塊改用真實 Firestore 資料（目前為靜態 mock）
 
 ### P2：司機端 mock → 真實串接
 
-- [ ] `/driver/pending` 搶單列表改用 Firestore 即時監聽（`onSnapshot`）
-- [ ] `/driver/dashboard` 統計數據改用 Firestore 彙總查詢
-- [ ] `/driver/profile` 個人資訊真實串接（讀取 `drivers` 集合）
+- [✅] `/driver/pending` 搶單列表改用真實 Firestore 查詢（status=pending，接單寫入 assignedDriverId）
+- [✅] `/driver/dashboard` 統計數據改用真實 Firestore 彙總（今日已完成趟次＋收入）
+- [✅] `/driver/profile` 個人資訊真實串接（讀取 `users` 集合 createdAt + LINE profile）
 
 ### P3：Admin 端真實化
 
-- [ ] `/admin/orders` 指派司機功能（PUT order → assignedDriverId）
-- [ ] `/admin/drivers` 司機審核流程（審核通過/拒絕 → 更新 `drivers.status`）
-- [ ] `/admin/notifications` 發送推播（呼叫 LINE Bot broadcast API）
+- [✅] `/admin/orders` 真實 Firestore 資料 + 指派司機彈窗（PATCH order → assignedDriverId）
+- [✅] `/admin/drivers` 真實 Firestore 資料（role=driver），含核准/撤銷操作（取代 settings 頁的重複功能）
+- [✅] `/admin/notifications` 真實 LINE Bot 廣播（POST /nuxt-api/admin/broadcast，依 role 篩選收件人）
 
-### P4：外部整合
+### P4：外部整合（🔄 待處理）
 
 - [ ] **n8n 桃園機場 XLS 爬取**：定期抓取 `https://www.taoyuanairport.com.tw/flightforecast` 每日航班運量整點人數預報表（如 `2026_05_01.xls`），解析後存入 Firestore `airport_flow_forecast` 集合
 - [ ] **CWA 氣象 API**：BFF endpoint `GET /nuxt-api/weather` 已建立（`server/routes/nuxt-api/weather/index.get.ts`），待確認資料用途後實作完整業務邏輯
@@ -167,7 +180,7 @@
 - [ ] ESLint 排除 `.claude/skills/` 目錄（修正 `no-unused-vars` 預存警告）
 - [ ] 定期 `pnpm audit` 依賴安全性掃描
 
-**Stage Gate**：P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
+**Stage Gate**：P0 + P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
 
 ---
 
@@ -176,5 +189,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.7（新增 Stage 7 任務清單）
+- 版本：v2.9（Stage 7 P2 司機端真實化 + P3 Admin 端真實化）
 - 更新日期：2026/04/30

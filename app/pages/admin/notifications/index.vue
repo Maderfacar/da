@@ -1,116 +1,116 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
-interface Notification {
+interface SentRecord {
   id: string;
-  type: 'order_created' | 'order_cancelled' | 'driver_assigned' | 'trip_started' | 'trip_completed' | 'system';
   title: string;
-  body: string;
+  message: string;
+  targetRole: string;
+  sent: number;
+  total: number;
   sentAt: string;
-  recipients: number;
-  channel: 'line' | 'push' | 'system';
 }
 
-const TYPE_LABEL: Record<string, string> = {
-  order_created:   '訂單建立',
-  order_cancelled: '訂單取消',
-  driver_assigned: '司機分派',
-  trip_started:    '行程開始',
-  trip_completed:  '行程完成',
-  system:          '系統通知',
-};
-const CHANNEL_LABEL: Record<string, string> = {
-  line:   'LINE Bot',
-  push:   'Push',
-  system: '系統',
-};
-const CHANNEL_CLASS: Record<string, string> = {
-  line:   'is-line',
-  push:   'is-push',
-  system: 'is-system',
+const TARGET_LABEL: Record<string, string> = {
+  all:       '全體用戶',
+  passenger: '乘客',
+  driver:    '司機',
 };
 
-const loading = ref(false);
-const notifications = ref<Notification[]>([]);
+const sending = ref(false);
+const form = reactive({ title: '', message: '', targetRole: 'all' as 'all' | 'passenger' | 'driver' });
+const history = ref<SentRecord[]>([]);
 
-const _loadMock = () => {
-  notifications.value = [
-    {
-      id: 'N001', type: 'order_created', channel: 'line',
-      title: '✅ 訂單確認通知', body: '您的接機訂單 #A1B2C3D4 已確認，用車時間：03/15 14:30',
-      sentAt: $dayjs().subtract(10, 'minute').toISOString(), recipients: 1,
-    },
-    {
-      id: 'N002', type: 'driver_assigned', channel: 'line',
-      title: '🚗 司機已分派', body: '您的訂單已分派司機陳志明，車牌 ABC-1234，預計提早10分鐘抵達',
-      sentAt: $dayjs().subtract(35, 'minute').toISOString(), recipients: 1,
-    },
-    {
-      id: 'N003', type: 'trip_completed', channel: 'line',
-      title: '🏁 行程完成', body: '感謝您使用 DestinationAnywhere，歡迎下次預約',
-      sentAt: $dayjs().subtract(2, 'hour').toISOString(), recipients: 1,
-    },
-    {
-      id: 'N004', type: 'system', channel: 'system',
-      title: '系統維護公告', body: '2026/05/01 凌晨 2:00–4:00 系統維護，服務暫停',
-      sentAt: $dayjs().subtract(1, 'day').toISOString(), recipients: 48,
-    },
-    {
-      id: 'N005', type: 'order_cancelled', channel: 'line',
-      title: '❌ 訂單取消通知', body: '訂單 #Q7R8S9T0 已取消，如有疑問請聯繫客服',
-      sentAt: $dayjs().subtract(3, 'hour').toISOString(), recipients: 1,
-    },
-  ];
+const ClickSend = async () => {
+  if (!form.message.trim()) {
+    ElMessage({ message: '請填寫通知內容', type: 'warning' });
+    return;
+  }
+  const ok = await UseAsk(`確定要傳送給「${TARGET_LABEL[form.targetRole]}」嗎？`);
+  if (!ok) return;
+
+  sending.value = true;
+  const res = await $api.BroadcastNotification({
+    title: form.title,
+    message: form.message,
+    targetRole: form.targetRole,
+  });
+  sending.value = false;
+
+  if (res.status.code === 200 && res.data) {
+    const data = res.data as { sent: number; total: number };
+    ElMessage({ message: `成功傳送 ${data.sent} / ${data.total} 位用戶`, type: 'success' });
+    history.value.unshift({
+      id: crypto.randomUUID(),
+      title: form.title,
+      message: form.message,
+      targetRole: form.targetRole,
+      sent: data.sent,
+      total: data.total,
+      sentAt: new Date().toISOString(),
+    });
+    form.title = '';
+    form.message = '';
+  } else {
+    ElMessage({ message: '傳送失敗，請確認 LINE 設定', type: 'error' });
+  }
 };
-
-const stats = computed(() => ({
-  total: notifications.value.length,
-  today: notifications.value.filter((n) => $dayjs(n.sentAt).isAfter($dayjs().startOf('day'))).length,
-  line: notifications.value.filter((n) => n.channel === 'line').length,
-}));
-
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => { _loadMock(); loading.value = false; }, 500);
-});
 </script>
 
 <template lang="pug">
 .PageAdminNotifications
   .PageAdminNotifications__header
-    .PageAdminNotifications__header-label NOTIFICATION LOG
+    .PageAdminNotifications__header-label NOTIFICATION CENTER
     h1.PageAdminNotifications__header-title 通知管理
 
-  //- Stats
-  .PageAdminNotifications__stats
-    .PageAdminNotifications__stat
-      .PageAdminNotifications__stat-label TOTAL
-      .PageAdminNotifications__stat-val {{ stats.total }}
-    .PageAdminNotifications__stat
-      .PageAdminNotifications__stat-label TODAY
-      .PageAdminNotifications__stat-val {{ stats.today }}
-    .PageAdminNotifications__stat
-      .PageAdminNotifications__stat-label LINE BOT
-      .PageAdminNotifications__stat-val {{ stats.line }}
+  //- 發送表單
+  .PageAdminNotifications__form
+    .PageAdminNotifications__form-title SEND BROADCAST
 
-  //- Loading
-  .PageAdminNotifications__loading(v-if="loading")
-    .PageAdminNotifications__spinner
+    .PageAdminNotifications__field
+      label.PageAdminNotifications__label 目標對象
+      .PageAdminNotifications__radio-group
+        label.PageAdminNotifications__radio(
+          v-for="(label, key) in TARGET_LABEL"
+          :key="key"
+          :class="{ 'is-active': form.targetRole === key }"
+        )
+          input(type="radio" v-model="form.targetRole" :value="key" hidden)
+          span {{ label }}
 
-  template(v-else)
-    .PageAdminNotifications__empty(v-if="!notifications.length")
-      p 暫無通知紀錄
+    .PageAdminNotifications__field
+      label.PageAdminNotifications__label 標題（選填）
+      input.PageAdminNotifications__input(
+        v-model="form.title"
+        placeholder="例如：系統公告、服務通知"
+        maxlength="50"
+      )
 
-    .PageAdminNotifications__list(v-else)
-      .PageAdminNotifications__item(v-for="n in notifications" :key="n.id")
-        .PageAdminNotifications__item-head
-          span.PageAdminNotifications__channel(:class="CHANNEL_CLASS[n.channel]") {{ CHANNEL_LABEL[n.channel] }}
-          span.PageAdminNotifications__type {{ TYPE_LABEL[n.type] ?? n.type }}
-          span.PageAdminNotifications__time {{ $dayjs(n.sentAt).format('MM/DD HH:mm') }}
-        .PageAdminNotifications__title {{ n.title }}
-        .PageAdminNotifications__body {{ n.body }}
-        .PageAdminNotifications__item-foot
-          span {{ n.recipients }} 位收件人
+    .PageAdminNotifications__field
+      label.PageAdminNotifications__label 通知內容
+      textarea.PageAdminNotifications__textarea(
+        v-model="form.message"
+        placeholder="輸入要傳送給用戶的訊息..."
+        rows="4"
+        maxlength="500"
+      )
+      .PageAdminNotifications__char-count {{ form.message.length }} / 500
+
+    button.PageAdminNotifications__send-btn(
+      :disabled="sending || !form.message.trim()"
+      @click="ClickSend"
+    ) {{ sending ? '傳送中...' : '立即傳送' }}
+
+  //- 傳送紀錄
+  .PageAdminNotifications__history(v-if="history.length")
+    .PageAdminNotifications__history-title SENT HISTORY
+    .PageAdminNotifications__item(v-for="n in history" :key="n.id")
+      .PageAdminNotifications__item-head
+        span.PageAdminNotifications__target {{ TARGET_LABEL[n.targetRole] }}
+        span.PageAdminNotifications__time {{ $dayjs(n.sentAt).format('MM/DD HH:mm') }}
+      .PageAdminNotifications__item-title(v-if="n.title") {{ n.title }}
+      .PageAdminNotifications__item-body {{ n.message }}
+      .PageAdminNotifications__item-foot 成功傳送 {{ n.sent }} / {{ n.total }} 位
 </template>
 
 <style lang="scss" scoped>
@@ -151,63 +151,120 @@ $muted: rgba(255, 255, 255, 0.35);
   }
 }
 
-.PageAdminNotifications__stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.PageAdminNotifications__stat {
+// ── 發送表單 ──────────────────────────────────────────────────
+.PageAdminNotifications__form {
   background: $surface;
   border: 1px solid $border;
-  border-radius: 14px;
-  padding: 14px 16px;
-
-  &-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    color: $muted;
-    margin-bottom: 6px;
-  }
-
-  &-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    color: #fff;
-    line-height: 1;
-  }
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 28px;
 }
 
-.PageAdminNotifications__loading {
+.PageAdminNotifications__form-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: $muted;
+  margin-bottom: 16px;
+}
+
+.PageAdminNotifications__field {
+  margin-bottom: 16px;
+}
+
+.PageAdminNotifications__label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: $muted;
+  margin-bottom: 8px;
+}
+
+.PageAdminNotifications__radio-group {
   display: flex;
-  justify-content: center;
-  padding: 60px 0;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.PageAdminNotifications__spinner {
-  width: 28px;
-  height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.PageAdminNotifications__radio {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.is-active {
+    border-color: rgba($amber, 0.5);
+    background: rgba($amber, 0.1);
+    color: $amber;
+  }
 }
 
-.PageAdminNotifications__empty {
-  text-align: center;
-  padding: 60px 0;
+.PageAdminNotifications__input,
+.PageAdminNotifications__textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 14px;
-  color: $muted;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+
+  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &:focus { border-color: rgba($amber, 0.4); }
 }
 
-.PageAdminNotifications__list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.PageAdminNotifications__char-count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  color: $muted;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.PageAdminNotifications__send-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  background: $amber;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: darken(#d4860a, 8%); }
+}
+
+// ── 發送紀錄 ──────────────────────────────────────────────────
+.PageAdminNotifications__history { }
+
+.PageAdminNotifications__history-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: $muted;
+  margin-bottom: 12px;
 }
 
 .PageAdminNotifications__item {
@@ -215,39 +272,49 @@ $muted: rgba(255, 255, 255, 0.35);
   border: 1px solid $border;
   border-radius: 14px;
   padding: 14px 16px;
+  margin-bottom: 10px;
 
   &-head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 8px;
   }
 
+  &-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  &-body {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    margin-bottom: 10px;
+    white-space: pre-wrap;
+  }
+
   &-foot {
-    margin-top: 8px;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 11px;
     color: $muted;
   }
 }
 
-.PageAdminNotifications__channel {
+.PageAdminNotifications__target {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   padding: 2px 8px;
   border-radius: 100px;
-
-  &.is-line   { background: rgba(0, 185, 0, 0.12); border: 1px solid rgba(0, 185, 0, 0.3); color: #00c300; }
-  &.is-push   { background: rgba(100, 160, 255, 0.12); border: 1px solid rgba(100, 160, 255, 0.3); color: #64a0ff; }
-  &.is-system { background: rgba(255, 255, 255, 0.06); border: 1px solid $border; color: $muted; }
-}
-
-.PageAdminNotifications__type {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba($amber, 0.12);
+  border: 1px solid rgba($amber, 0.25);
+  color: $amber;
 }
 
 .PageAdminNotifications__time {
@@ -256,21 +323,4 @@ $muted: rgba(255, 255, 255, 0.35);
   color: $muted;
   margin-left: auto;
 }
-
-.PageAdminNotifications__title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 4px;
-}
-
-.PageAdminNotifications__body {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1.6;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
 </style>

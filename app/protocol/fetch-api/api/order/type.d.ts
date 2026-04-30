@@ -48,6 +48,25 @@ interface OrderItem {
   createdAt?: number;
 }
 
+// ===== 可接訂單（司機搶單） =====
+interface AvailableOrder {
+  orderId: string;
+  orderType: string;
+  pickupDateTime: string;
+  pickupLocation: GooglePlace;
+  dropoffLocation: GooglePlace;
+  vehicleType: string;
+  passengerCount: number;
+  estimatedFare: number;
+  distanceKm: number;
+}
+
+// ===== 更新訂單 =====
+interface PatchOrderParams {
+  orderStatus?: string;
+  assignedDriverId?: string;
+}
+
 // ===== Maps =====
 interface AutocompleteParams {
   input: string;

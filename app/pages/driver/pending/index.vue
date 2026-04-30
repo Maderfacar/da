@@ -1,19 +1,11 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
-interface PendingOrder {
-  orderId: string;
-  orderType: string;
-  pickupDateTime: string;
-  pickupAddress: string;
-  dropoffAddress: string;
-  vehicleType: string;
-  estimatedFare: number;
-  distanceKm: number;
-}
+const { user } = StoreAuth();
 
 const loading = ref(false);
-const orders = ref<PendingOrder[]>([]);
+const accepting = ref<string | null>(null);
+const orders = ref<AvailableOrder[]>([]);
 
 const ORDER_TYPE_LABEL: Record<string, string> = {
   'airport-pickup':  '接機',
@@ -25,54 +17,34 @@ const VEHICLE_LABEL: Record<string, string> = {
   sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
 };
 
-// Mock 待接訂單（正式版改為 Firestore query status=pending）
-const _loadMock = () => {
-  orders.value = [
-    {
-      orderId: 'A1B2C3D4',
-      orderType: 'airport-pickup',
-      pickupDateTime: $dayjs().add(2, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
-      pickupAddress: '桃園國際機場 第一航廈（T1）',
-      dropoffAddress: '台北市信義區市府路1號',
-      vehicleType: 'mpv',
-      estimatedFare: 1800,
-      distanceKm: 42,
-    },
-    {
-      orderId: 'E5F6G7H8',
-      orderType: 'airport-dropoff',
-      pickupDateTime: $dayjs().add(4, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
-      pickupAddress: '新北市板橋區縣民大道一段188號',
-      dropoffAddress: '桃園國際機場 第二航廈（T2）',
-      vehicleType: 'sedan',
-      estimatedFare: 1200,
-      distanceKm: 34,
-    },
-    {
-      orderId: 'I9J0K1L2',
-      orderType: 'charter',
-      pickupDateTime: $dayjs().add(1, 'day').format('YYYY-MM-DDTHH:mm:ss'),
-      pickupAddress: '台北市中正區忠孝西路一段49號',
-      dropoffAddress: '台中市西屯區台灣大道三段99號',
-      vehicleType: 'suv',
-      estimatedFare: 4500,
-      distanceKm: 168,
-    },
-  ];
+const ApiLoadOrders = async () => {
+  loading.value = true;
+  const res = await $api.GetAvailableOrders();
+  orders.value = (res.data as AvailableOrder[]) ?? [];
+  loading.value = false;
 };
 
-const ClickAccept = (order: PendingOrder) => {
-  ElMessage({ message: `已接受訂單 ${order.orderId}`, type: 'success' });
+const ClickAccept = async (order: AvailableOrder) => {
+  if (!user.value?.uid) return;
+  accepting.value = order.orderId;
+  const res = await $api.PatchOrder(order.orderId, {
+    orderStatus: 'confirmed',
+    assignedDriverId: user.value.uid,
+  });
+  accepting.value = null;
+  if (res.status.code === 200) {
+    orders.value = orders.value.filter((o) => o.orderId !== order.orderId);
+    ElMessage({ message: `已接單 #${order.orderId.slice(0, 8).toUpperCase()}`, type: 'success' });
+  } else {
+    ElMessage({ message: '接單失敗，請重試', type: 'error' });
+  }
 };
 
 const ClickDecline = (orderId: string) => {
   orders.value = orders.value.filter((o) => o.orderId !== orderId);
 };
 
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => { _loadMock(); loading.value = false; }, 600);
-});
+onMounted(ApiLoadOrders);
 </script>
 
 <template lang="pug">
@@ -97,7 +69,7 @@ onMounted(() => {
       .PageDriverPending__card-head
         .PageDriverPending__type-badge {{ ORDER_TYPE_LABEL[order.orderType] ?? order.orderType }}
         .PageDriverPending__vehicle {{ VEHICLE_LABEL[order.vehicleType] ?? order.vehicleType }}
-        .PageDriverPending__id \#{{ order.orderId }}
+        .PageDriverPending__id \#{{ order.orderId.slice(0, 8).toUpperCase() }}
 
       .PageDriverPending__time
         span.PageDriverPending__time-label 用車時間
@@ -106,19 +78,25 @@ onMounted(() => {
       .PageDriverPending__route
         .PageDriverPending__route-point.is-pickup
           .PageDriverPending__route-dot
-          span {{ order.pickupAddress }}
+          span {{ order.pickupLocation?.displayName || order.pickupLocation?.address }}
         .PageDriverPending__route-line
         .PageDriverPending__route-point.is-dropoff
           .PageDriverPending__route-dot
-          span {{ order.dropoffAddress }}
+          span {{ order.dropoffLocation?.displayName || order.dropoffLocation?.address }}
 
       .PageDriverPending__card-foot
         .PageDriverPending__meta
           span {{ order.distanceKm }} km
           span NT$ {{ order.estimatedFare.toLocaleString() }}
         .PageDriverPending__btns
-          button.PageDriverPending__btn.is-decline(@click="ClickDecline(order.orderId)") 略過
-          button.PageDriverPending__btn.is-accept(@click="ClickAccept(order)") 接單
+          button.PageDriverPending__btn.is-decline(
+            :disabled="accepting === order.orderId"
+            @click="ClickDecline(order.orderId)"
+          ) 略過
+          button.PageDriverPending__btn.is-accept(
+            :disabled="!!accepting"
+            @click="ClickAccept(order)"
+          ) {{ accepting === order.orderId ? '接單中...' : '接單' }}
 </template>
 
 <style lang="scss" scoped>
@@ -287,7 +265,7 @@ $amber: #d4860a;
   flex-shrink: 0;
 
   .is-pickup & { background: $amber; }
-  .is-dropoff & { background: rgba(255, 255, 255, 0.4); border: 2px solid rgba(255, 255, 255, 0.4); background: transparent; }
+  .is-dropoff & { background: transparent; border: 2px solid rgba(255, 255, 255, 0.4); }
 }
 
 .PageDriverPending__route-line {
@@ -322,6 +300,8 @@ $amber: #d4860a;
   transition: all 0.15s;
   border: none;
 
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
   &.is-decline {
     background: rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.4);
@@ -331,7 +311,7 @@ $amber: #d4860a;
     background: $amber;
     color: #fff;
 
-    &:active { transform: scale(0.97); }
+    &:active:not(:disabled) { transform: scale(0.97); }
   }
 }
 

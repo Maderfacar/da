@@ -18,7 +18,8 @@
       "Bash(git commit -m 'fix: 修復 Vercel pnpm install 失敗問題 *)",
       "Bash(git commit -m 'chore: 更新 Claude Code 本地權限設定 *)",
       "Bash(git commit -m 'fix: 修正 vercel.json schema 錯誤，補充部署規範 *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

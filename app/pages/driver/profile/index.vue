@@ -1,26 +1,55 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
-const authStore = StoreAuth();
-const displayName = computed(() => authStore.lineProfile?.displayName ?? '司機');
-const pictureUrl  = computed(() => authStore.lineProfile?.pictureUrl ?? '');
-const uid         = computed(() => authStore.user?.uid ?? '');
+const { user, lineProfile, SignOut } = StoreAuth();
 
-// Mock 司機資料（正式版接 Firestore driver document）
-const driverInfo = reactive({
-  vehicleType:  'MPV',
-  licensePlate: 'ABC-1234',
-  phone:        '0912-345-678',
-  joinedDate:   '2025/01/15',
-  totalTrips:   147,
-  rating:       4.9,
-});
+const displayName = computed(() => lineProfile.value?.displayName ?? '司機');
+const pictureUrl  = computed(() => lineProfile.value?.pictureUrl ?? '');
+const uid         = computed(() => user.value?.uid ?? '');
 
-const ClickSignOut = async () => {
-  const { getAuth, signOut } = await import('firebase/auth');
-  await signOut(getAuth());
-  navigateTo('/');
+const totalTrips  = ref(0);
+const joinedDate  = ref('—');
+
+const ApiLoadDriverData = async () => {
+  if (!uid.value) return;
+  try {
+    const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app) return;
+    const db = getFirestore(app);
+    const snap = await getDoc(doc(db, 'users', uid.value));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.createdAt?.toDate) {
+        joinedDate.value = $dayjs(data.createdAt.toDate()).format('YYYY/MM/DD');
+      }
+    }
+  } catch { /* 靜默失敗，顯示預設值 */ }
 };
+
+const ApiLoadTripCount = async () => {
+  if (!uid.value) return;
+  const res = await $api.GetDriverStats(uid.value);
+  if (res.status.code === 200 && res.data) {
+    const data = res.data as DriverStats;
+    // tripsToday 只是今日數量；全部趟次待後續累計欄位
+    totalTrips.value = data.tripsToday;
+  }
+};
+
+const signingOut = ref(false);
+const ClickSignOut = async () => {
+  const ok = await UseAsk('確定要登出嗎？');
+  if (!ok) return;
+  signingOut.value = true;
+  await SignOut();
+};
+
+onMounted(() => {
+  ApiLoadDriverData();
+  ApiLoadTripCount();
+});
 </script>
 
 <template lang="pug">
@@ -37,37 +66,20 @@ const ClickSignOut = async () => {
     .PageDriverProfile__hero-info
       .PageDriverProfile__name {{ displayName }}
       .PageDriverProfile__uid UID · {{ uid.slice(0, 8) }}
-    .PageDriverProfile__rating
-      span.PageDriverProfile__rating-star ⭐
-      span.PageDriverProfile__rating-val {{ driverInfo.rating.toFixed(1) }}
 
   //- 統計
   .PageDriverProfile__stats
     .PageDriverProfile__stat
-      .PageDriverProfile__stat-label TOTAL TRIPS
-      .PageDriverProfile__stat-val {{ driverInfo.totalTrips }}
-    .PageDriverProfile__stat
-      .PageDriverProfile__stat-label RATING
-      .PageDriverProfile__stat-val {{ driverInfo.rating.toFixed(1) }}
+      .PageDriverProfile__stat-label TODAY TRIPS
+      .PageDriverProfile__stat-val {{ totalTrips }}
     .PageDriverProfile__stat
       .PageDriverProfile__stat-label JOINED
-      .PageDriverProfile__stat-val {{ driverInfo.joinedDate }}
+      .PageDriverProfile__stat-val {{ joinedDate }}
+    .PageDriverProfile__stat
+      .PageDriverProfile__stat-label ROLE
+      .PageDriverProfile__stat-val 司機
 
-  //- 車輛資料
-  .PageDriverProfile__section
-    .PageDriverProfile__section-label VEHICLE INFO
-    .PageDriverProfile__rows
-      .PageDriverProfile__row
-        span.PageDriverProfile__row-key 車型
-        span.PageDriverProfile__row-val {{ driverInfo.vehicleType }}
-      .PageDriverProfile__row
-        span.PageDriverProfile__row-key 車牌
-        span.PageDriverProfile__row-val {{ driverInfo.licensePlate }}
-      .PageDriverProfile__row
-        span.PageDriverProfile__row-key 聯絡電話
-        span.PageDriverProfile__row-val {{ driverInfo.phone }}
-
-  //- 帳號
+  //- 帳號資訊
   .PageDriverProfile__section
     .PageDriverProfile__section-label ACCOUNT
     .PageDriverProfile__rows
@@ -75,11 +87,17 @@ const ClickSignOut = async () => {
         span.PageDriverProfile__row-key LINE 帳號
         span.PageDriverProfile__row-val {{ displayName }}
       .PageDriverProfile__row
+        span.PageDriverProfile__row-key Firebase UID
+        span.PageDriverProfile__row-val {{ uid.slice(0, 12) }}...
+      .PageDriverProfile__row
         span.PageDriverProfile__row-key 身份
-        span.PageDriverProfile__row-val 司機
+        span.PageDriverProfile__row-val 已核准司機
 
   //- 登出
-  button.PageDriverProfile__signout(@click="ClickSignOut") 登出
+  button.PageDriverProfile__signout(
+    :disabled="signingOut"
+    @click="ClickSignOut"
+  ) {{ signingOut ? '登出中...' : '登出' }}
 </template>
 
 <style lang="scss" scoped>
@@ -173,23 +191,6 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-top: 2px;
 }
 
-.PageDriverProfile__rating {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.PageDriverProfile__rating-star { font-size: 18px; }
-
-.PageDriverProfile__rating-val {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px;
-  color: $amber;
-  line-height: 1;
-}
-
 .PageDriverProfile__stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -279,6 +280,7 @@ $muted: rgba(255, 255, 255, 0.35);
   cursor: pointer;
   transition: all 0.15s;
 
-  &:active { transform: scale(0.98); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:active:not(:disabled) { transform: scale(0.98); }
 }
 </style>

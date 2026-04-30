@@ -1,56 +1,49 @@
 <script setup lang="ts">
+import type { AdminUser } from '@/protocol/fetch-api/api/admin';
+
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
-interface Driver {
-  driverId: string;
-  name: string;
-  phone: string;
-  vehicleType: string;
-  licensePlate: string;
-  status: 'online' | 'offline' | 'on_trip';
-  todayTrips: number;
-  todayEarnings: number;
-  rating: number;
-}
-
-const VEHICLE_LABEL: Record<string, string> = {
-  sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
-};
-const STATUS_LABEL: Record<string, string> = {
-  online:   '上線中',
-  offline:  '離線',
-  on_trip:  '任務中',
-};
-const STATUS_CLASS: Record<string, string> = {
-  online:   'is-online',
-  offline:  'is-offline',
-  on_trip:  'is-trip',
-};
-
 const loading = ref(false);
-const drivers = ref<Driver[]>([]);
-const filterStatus = ref('');
+const drivers = ref<AdminUser[]>([]);
+const filterApproved = ref<'' | 'approved' | 'pending'>('');
 
-const filteredDrivers = computed(() =>
-  filterStatus.value ? drivers.value.filter((d) => d.status === filterStatus.value) : drivers.value,
-);
+const approvedDrivers = computed(() => drivers.value.filter((d) => d.approved));
+const pendingDrivers  = computed(() => drivers.value.filter((d) => !d.approved));
 
-const onlineCount = computed(() => drivers.value.filter((d) => d.status !== 'offline').length);
+const filteredDrivers = computed(() => {
+  if (filterApproved.value === 'approved') return approvedDrivers.value;
+  if (filterApproved.value === 'pending')  return pendingDrivers.value;
+  return drivers.value;
+});
 
-const _loadMock = () => {
-  drivers.value = [
-    { driverId: 'D001', name: '陳志明', phone: '0912-345-678', vehicleType: 'mpv', licensePlate: 'ABC-1234', status: 'on_trip', todayTrips: 3, todayEarnings: 4800, rating: 4.9 },
-    { driverId: 'D002', name: '劉建宏', phone: '0923-456-789', vehicleType: 'sedan', licensePlate: 'DEF-5678', status: 'online', todayTrips: 1, todayEarnings: 800, rating: 4.7 },
-    { driverId: 'D003', name: '張維安', phone: '0934-567-890', vehicleType: 'suv', licensePlate: 'GHI-9012', status: 'online', todayTrips: 2, todayEarnings: 3200, rating: 4.8 },
-    { driverId: 'D004', name: '林育誠', phone: '0945-678-901', vehicleType: 'van', licensePlate: 'JKL-3456', status: 'offline', todayTrips: 0, todayEarnings: 0, rating: 4.6 },
-    { driverId: 'D005', name: '王俊傑', phone: '0956-789-012', vehicleType: 'sedan', licensePlate: 'MNO-7890', status: 'offline', todayTrips: 4, todayEarnings: 5200, rating: 4.5 },
-  ];
+const ApiLoadDrivers = async () => {
+  loading.value = true;
+  const res = await $api.GetAdminUsers({ role: 'driver' });
+  drivers.value = (res.data as AdminUser[]) ?? [];
+  loading.value = false;
 };
 
-onMounted(() => {
-  loading.value = true;
-  setTimeout(() => { _loadMock(); loading.value = false; }, 500);
-});
+const ClickApprove = async (uid: string) => {
+  const res = await $api.PatchAdminUser(uid, { approved: true });
+  if (res.status.code === 200) {
+    const d = drivers.value.find((x) => x.uid === uid);
+    if (d) d.approved = true;
+    ElMessage({ message: '已核准', type: 'success' });
+  }
+};
+
+const ClickRevoke = async (uid: string) => {
+  const ok = await UseAsk('確定要撤銷此司機的存取權？');
+  if (!ok) return;
+  const res = await $api.PatchAdminUser(uid, { approved: false });
+  if (res.status.code === 200) {
+    const d = drivers.value.find((x) => x.uid === uid);
+    if (d) d.approved = false;
+    ElMessage({ message: '已撤銷', type: 'warning' });
+  }
+};
+
+onMounted(ApiLoadDrivers);
 </script>
 
 <template lang="pug">
@@ -61,22 +54,22 @@ onMounted(() => {
 
   .PageAdminDrivers__summary
     .PageAdminDrivers__summary-item
-      .PageAdminDrivers__summary-label TOTAL DRIVERS
+      .PageAdminDrivers__summary-label TOTAL
       .PageAdminDrivers__summary-val {{ drivers.length }}
     .PageAdminDrivers__summary-item
-      .PageAdminDrivers__summary-label ON DUTY
-      .PageAdminDrivers__summary-val {{ onlineCount }}
+      .PageAdminDrivers__summary-label APPROVED
+      .PageAdminDrivers__summary-val {{ approvedDrivers.length }}
     .PageAdminDrivers__summary-item
-      .PageAdminDrivers__summary-label ON TRIP
-      .PageAdminDrivers__summary-val {{ drivers.filter(d => d.status === 'on_trip').length }}
+      .PageAdminDrivers__summary-label PENDING
+      .PageAdminDrivers__summary-val {{ pendingDrivers.length }}
 
   .PageAdminDrivers__toolbar
     .PageAdminDrivers__filters
       button.PageAdminDrivers__filter-btn(
-        v-for="(label, key) in { '': '全部', online: '上線中', on_trip: '任務中', offline: '離線' }"
+        v-for="(label, key) in { '': '全部', approved: '已核准', pending: '待審核' }"
         :key="key"
-        :class="{ 'is-active': filterStatus === key }"
-        @click="filterStatus = key"
+        :class="{ 'is-active': filterApproved === key }"
+        @click="filterApproved = key as ''"
       ) {{ label }}
 
   .PageAdminDrivers__loading(v-if="loading")
@@ -87,30 +80,33 @@ onMounted(() => {
       p 暫無司機資料
 
     .PageAdminDrivers__list(v-else)
-      .PageAdminDrivers__card(v-for="d in filteredDrivers" :key="d.driverId")
+      .PageAdminDrivers__card(v-for="d in filteredDrivers" :key="d.uid")
         .PageAdminDrivers__card-top
-          .PageAdminDrivers__avatar {{ d.name.slice(0, 1) }}
+          .PageAdminDrivers__avatar-wrap
+            img.PageAdminDrivers__avatar(v-if="d.pictureUrl" :src="d.pictureUrl" :alt="d.displayName")
+            .PageAdminDrivers__avatar-fallback(v-else) {{ d.displayName.slice(0, 1) }}
           .PageAdminDrivers__info
-            .PageAdminDrivers__name {{ d.name }}
-            .PageAdminDrivers__phone {{ d.phone }}
-          span.PageAdminDrivers__status(:class="STATUS_CLASS[d.status]") {{ STATUS_LABEL[d.status] }}
+            .PageAdminDrivers__name {{ d.displayName }}
+            .PageAdminDrivers__uid UID: {{ d.uid.slice(0, 10) }}...
+          span.PageAdminDrivers__status(:class="d.approved ? 'is-approved' : 'is-pending'") {{ d.approved ? '已核准' : '待審核' }}
 
         .PageAdminDrivers__card-meta
           .PageAdminDrivers__meta-item
-            span.PageAdminDrivers__meta-label 車型
-            span.PageAdminDrivers__meta-val {{ VEHICLE_LABEL[d.vehicleType] ?? d.vehicleType }}
+            span.PageAdminDrivers__meta-label 加入時間
+            span.PageAdminDrivers__meta-val {{ $dayjs(d.createdAt).format('YYYY/MM/DD') }}
           .PageAdminDrivers__meta-item
-            span.PageAdminDrivers__meta-label 車牌
-            span.PageAdminDrivers__meta-val {{ d.licensePlate }}
-          .PageAdminDrivers__meta-item
-            span.PageAdminDrivers__meta-label 今日
-            span.PageAdminDrivers__meta-val {{ d.todayTrips }} 趟
-          .PageAdminDrivers__meta-item
-            span.PageAdminDrivers__meta-label 收入
-            span.PageAdminDrivers__meta-val.is-earnings NT$ {{ d.todayEarnings.toLocaleString() }}
-          .PageAdminDrivers__meta-item
-            span.PageAdminDrivers__meta-label 評分
-            span.PageAdminDrivers__meta-val ⭐ {{ d.rating.toFixed(1) }}
+            span.PageAdminDrivers__meta-label LINE UID
+            span.PageAdminDrivers__meta-val {{ d.lineUserId.slice(0, 10) }}...
+
+        .PageAdminDrivers__card-actions
+          button.PageAdminDrivers__action-btn.is-approve(
+            v-if="!d.approved"
+            @click="ClickApprove(d.uid)"
+          ) 核准
+          button.PageAdminDrivers__action-btn.is-revoke(
+            v-if="d.approved"
+            @click="ClickRevoke(d.uid)"
+          ) 撤銷
 </template>
 
 <style lang="scss" scoped>
@@ -181,9 +177,7 @@ $muted: rgba(255, 255, 255, 0.35);
   line-height: 1;
 }
 
-.PageAdminDrivers__toolbar {
-  margin-bottom: 16px;
-}
+.PageAdminDrivers__toolbar { margin-bottom: 16px; }
 
 .PageAdminDrivers__filters {
   display: flex;
@@ -259,15 +253,28 @@ $muted: rgba(255, 255, 255, 0.35);
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
+    margin-bottom: 12px;
   }
+
+  &-actions { display: flex; gap: 8px; }
 }
 
+.PageAdminDrivers__avatar-wrap { flex-shrink: 0; }
+
 .PageAdminDrivers__avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba($amber, 0.3);
+}
+
+.PageAdminDrivers__avatar-fallback {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: rgba($amber, 0.15);
-  border: 1px solid rgba($amber, 0.3);
+  border: 1.5px solid rgba($amber, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -275,7 +282,6 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 16px;
   font-weight: 700;
   color: $amber;
-  flex-shrink: 0;
 }
 
 .PageAdminDrivers__info { flex: 1; min-width: 0; }
@@ -288,9 +294,9 @@ $muted: rgba(255, 255, 255, 0.35);
   line-height: 1.2;
 }
 
-.PageAdminDrivers__phone {
+.PageAdminDrivers__uid {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   color: $muted;
 }
 
@@ -303,9 +309,8 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 100px;
   flex-shrink: 0;
 
-  &.is-online  { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
-  &.is-trip    { background: rgba($amber, 0.12); border: 1px solid rgba($amber, 0.3); color: $amber; }
-  &.is-offline { background: rgba(255, 255, 255, 0.05); border: 1px solid $border; color: $muted; }
+  &.is-approved { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
+  &.is-pending  { background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
 }
 
 .PageAdminDrivers__meta-item {
@@ -327,8 +332,30 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
+}
 
-  &.is-earnings { color: $amber; }
+.PageAdminDrivers__action-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+
+  &.is-approve {
+    background: rgba(80, 200, 120, 0.15);
+    border: 1px solid rgba(80, 200, 120, 0.3);
+    color: #50c878;
+  }
+
+  &.is-revoke {
+    background: rgba(255, 80, 80, 0.08);
+    border: 1px solid rgba(255, 80, 80, 0.2);
+    color: rgba(255, 100, 100, 0.7);
+  }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }

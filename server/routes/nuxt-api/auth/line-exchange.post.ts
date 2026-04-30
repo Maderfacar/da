@@ -49,9 +49,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const uid = `line:${lineProfile.sub}`;
-  const defaultRole = body.clientType === 'driver' ? 'driver' : 'passenger';
+  const isDriver = body.clientType === 'driver';
+  const defaultRole = isDriver ? 'driver' : 'passenger';
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
+  // 新使用者：driver 預設 approved: false（須等管理員核准）
   try {
     await auth.getUser(uid);
   } catch {
@@ -63,6 +65,7 @@ export default defineEventHandler(async (event) => {
       });
       await db.collection('users').doc(uid).set({
         role: defaultRole,
+        approved: isDriver ? false : true,
         lineUserId: lineProfile.sub,
         displayName: lineProfile.name,
         pictureUrl: lineProfile.picture,
@@ -73,15 +76,17 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // ── 4. 取得 Firestore 角色 ────────────────────────────────
+  // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
   let role = defaultRole;
+  let approved = !isDriver; // passenger 預設已核准
   try {
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.exists) {
       role = (userDoc.data()?.role as string) ?? defaultRole;
+      approved = (userDoc.data()?.approved as boolean) ?? (!isDriver);
     }
   } catch {
-    // Firestore 讀取失敗時沿用預設角色
+    // Firestore 讀取失敗時沿用預設值
   }
 
   // ── 5. 建立 Firebase Custom Token ────────────────────────
@@ -92,5 +97,12 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: '無法建立登入憑證', en: 'Failed to create custom token', ja: 'カスタムトークンの生成に失敗しました' });
   }
 
-  return successResponse({ customToken, role, lineUserId: lineProfile.sub, displayName: lineProfile.name, pictureUrl: lineProfile.picture });
+  return successResponse({
+    customToken,
+    role,
+    approved,
+    lineUserId: lineProfile.sub,
+    displayName: lineProfile.name,
+    pictureUrl: lineProfile.picture,
+  });
 });

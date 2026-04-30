@@ -5,3 +5,6 @@ export const UpdateDriverLocation = (driverId: string, params: UpdateLocationPar
 
 export const GetAvailableDrivers = () =>
   methods.get<DriverInfo[]>('/nuxt-api/drivers/available', {});
+
+export const GetDriverStats = (uid: string) =>
+  methods.get<DriverStats>(`/nuxt-api/drivers/${uid}/stats`, {});
