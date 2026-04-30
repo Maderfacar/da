@@ -6,14 +6,14 @@
         "rule": {
           "interval": [
             {
-              "triggerAtHour": 7,
+              "triggerAtHour": 1,
               "triggerAtMinute": 0
             }
           ]
         }
       },
       "id": "schedule-trigger",
-      "name": "每日 07:00 觸發",
+      "name": "每日 01:00 觸發",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [240, 300]
@@ -32,8 +32,13 @@
       "parameters": {
         "method": "GET",
         "url": "={{ $json.xlsUrl }}",
-        "responseFormat": "file",
         "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
           "timeout": 30000,
           "redirect": {
             "redirect": {
@@ -66,7 +71,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─── 將 Spreadsheet File 輸出的多列 JSON 轉換為 hours 陣列 ─────\n// Spreadsheet File 節點每列輸出一個 item，欄位名稱來自 XLS 標題列。\n//\n// 【請依實際 XLS 欄位名稱調整 COL_* 常數】\n// 常見格式（桃園機場）：\n//   COL_HOUR    = '時段' 或 'hour' 或 '0' (第幾欄)\n//   COL_T1_ARR  = '第一航廈入境'\n//   COL_T1_DEP  = '第一航廈出境'\n//   COL_T2_ARR  = '第二航廈入境'\n//   COL_T2_DEP  = '第二航廈出境'\n// 若 XLS 沒有標題列，請在 Spreadsheet File 節點關閉「Header Row」，\n// 欄位會以 column_0, column_1, ... 命名。\n\nconst COL_HOUR   = '時段';        // 調整為實際欄位名稱\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hourRaw = row[COL_HOUR];\n  const hour = parseInt(String(hourRaw), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  const t1Arr = Number(row[COL_T1_ARR]) || 0;\n  const t1Dep = Number(row[COL_T1_DEP]) || 0;\n  const t2Arr = Number(row[COL_T2_ARR]) || 0;\n  const t2Dep = Number(row[COL_T2_DEP]) || 0;\n\n  hours.push({\n    hour,\n    forecastCount: t1Arr + t1Dep + t2Arr + t2Dep,\n    terminal: 'all',\n  });\n}\n\n// 確保 24 小時都有資料（未出現的時段填 0）\nconst filled = Array.from({ length: 24 }, (_, h) => {\n  const found = hours.find((r) => r.hour === h);\n  return found ?? { hour: h, forecastCount: 0, terminal: 'all' };\n});\n\nconst isoDate = $('計算日期與 XLS URL').first().json.isoDate;\nconst xlsName = $('計算日期與 XLS URL').first().json.xlsName;\n\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+        "jsCode": "// ─── 將 Spreadsheet File 輸出的多列 JSON 轉換為 hours 陣列 ─────\n// Spreadsheet File 節點每列輸出一個 item，欄位名稱來自 XLS 標題列。\n//\n// 【請依實際 XLS 欄位名稱調整 COL_* 常數】\n// 若 XLS 沒有標題列，在 Spreadsheet File 節點關閉「Header Row」，\n// 欄位會以 column_0, column_1, ... 命名。\n\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hourRaw = row[COL_HOUR];\n  const hour = parseInt(String(hourRaw), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  const t1Arr = Number(row[COL_T1_ARR]) || 0;\n  const t1Dep = Number(row[COL_T1_DEP]) || 0;\n  const t2Arr = Number(row[COL_T2_ARR]) || 0;\n  const t2Dep = Number(row[COL_T2_DEP]) || 0;\n\n  hours.push({\n    hour,\n    forecastCount: t1Arr + t1Dep + t2Arr + t2Dep,\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) => {\n  const found = hours.find((r) => r.hour === h);\n  return found ?? { hour: h, forecastCount: 0, terminal: 'all' };\n});\n\nconst isoDate = $('計算日期與 XLS URL').first().json.isoDate;\nconst xlsName = $('計算日期與 XLS URL').first().json.xlsName;\n\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
@@ -155,7 +160,7 @@
     }
   ],
   "connections": {
-    "每日 07:00 觸發": {
+    "每日 01:00 觸發": {
       "main": [
         [{ "node": "計算日期與 XLS URL", "type": "main", "index": 0 }]
       ]
@@ -203,5 +208,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "2"
+  "versionId": "3"
 }
