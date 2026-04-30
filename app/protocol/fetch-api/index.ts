@@ -4,6 +4,7 @@ import * as tinymce from './api/tinymce';
 import * as maps from './api/maps';
 import * as order from './api/order';
 import * as driver from './api/driver';
+import * as airport from './api/airport';
 
 export default {
   ...file,
@@ -12,6 +13,7 @@ export default {
   ...maps,
   ...order,
   ...driver,
+  ...airport,
 };
 
 

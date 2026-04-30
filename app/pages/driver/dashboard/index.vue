@@ -43,6 +43,14 @@ const now = computed(() => $dayjs().format('YYYY / MM / DD'));
         span 任務
         small MY TRIP
 
+  //- 機場人流預報（精簡模式）
+  .PageDriverDashboard__section-label AIRPORT FLOW
+  AirportForecastWidget(:compact="true")
+
+  //- 桃園氣象
+  .PageDriverDashboard__section-label.is-weather WEATHER · 桃園
+  WeatherWidget
+
   //- 狀態說明
   .PageDriverDashboard__notice
     p 前往「任務」頁開始上線並接受 GPS 追蹤
@@ -188,11 +196,24 @@ $amber: #d4860a;
   }
 }
 
+.PageDriverDashboard__section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #d4860a;
+  margin-bottom: 8px;
+  margin-top: 20px;
+
+  &.is-weather { color: #38bdf8; }
+}
+
 .PageDriverDashboard__notice {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   padding: 14px 16px;
+  margin-top: 20px;
 
   p {
     font-family: 'Barlow', 'Noto Sans TC', sans-serif;
