@@ -218,4 +218,4 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 | [roadmap.md](docs/roadmap.md) | 7 階段開發計劃與 Stage Gate 標準 | 評估當前進度或規劃下一階段時 |
 | [folder-structure.md](docs/folder-structure.md) | Nuxt 4 完整目錄結構說明 | 新建檔案或目錄時確認放置位置 |
 
-> 最後更新時間：2026-04-30（v0.3.15）
+> 最後更新時間：2026-04-30（v0.3.16）
