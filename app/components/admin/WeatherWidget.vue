@@ -81,7 +81,11 @@ onMounted(ApiGetWeather);
         .WeatherWidget__stat-label 降雨
         .WeatherWidget__stat-val {{ weather.rainProbability }}%
 
-  .WeatherWidget__empty(v-if="!loading && !weather") 無法取得氣象資料
+  .WeatherWidget__error(v-if="!loading && !weather")
+    .WeatherWidget__error-icon ⚠️
+    div
+      p.WeatherWidget__error-text 氣象資料無法取得
+      p.WeatherWidget__error-hint CWA API 連線中斷或金鑰未設定
 </template>
 
 <style lang="scss" scoped>
@@ -162,11 +166,30 @@ onMounted(ApiGetWeather);
   line-height: 1;
 }
 
-.WeatherWidget__empty {
+.WeatherWidget__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.WeatherWidget__error-icon { font-size: 14px; flex-shrink: 0; }
+
+.WeatherWidget__error-text {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.2);
-  text-align: center;
-  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 120, 120, 0.9);
+  margin: 0;
+}
+
+.WeatherWidget__error-hint {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 2px 0 0;
 }
 </style>

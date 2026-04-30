@@ -30,6 +30,14 @@ export default defineEventHandler(async (event) => {
 
     const snapshot = await q.get();
 
+    // Firestore 無資料時回傳 mock（標記 isMock: true 供前端顯示警告）
+    if (snapshot.empty) {
+      return {
+        data: _mockData(date),
+        status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+      };
+    }
+
     // 建立 0–23 的空陣列，填入資料
     const hours: Array<{ hour: number; forecastCount: number; actualCount: number | null }> =
       Array.from({ length: 24 }, (_, i) => ({ hour: i, forecastCount: 0, actualCount: null }));
@@ -47,7 +55,7 @@ export default defineEventHandler(async (event) => {
     }
 
     return {
-      data: { date, terminal, direction, hours },
+      data: { date, terminal, direction, hours, isMock: false },
       status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
     };
   } catch (err) {
@@ -59,10 +67,10 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-// 無資料時回傳模擬尖峰曲線（供 UI 展示）
+// 無資料時回傳模擬尖峰曲線（isMock: true 供前端顯示警告）
 function _mockData(date: string) {
   const peak = [0, 0, 0, 50, 120, 280, 450, 520, 480, 400, 380, 350,
     320, 290, 310, 380, 460, 520, 490, 420, 300, 200, 100, 30];
   const hours = peak.map((v, i) => ({ hour: i, forecastCount: v, actualCount: null }));
-  return { date, terminal: 'all', direction: 'all', hours };
+  return { date, terminal: 'all', direction: 'all', hours, isMock: true };
 }

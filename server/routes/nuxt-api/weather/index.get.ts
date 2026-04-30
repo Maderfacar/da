@@ -45,8 +45,12 @@ export default defineEventHandler(async (event) => {
     params.set('locationName', query.locationName);
   }
 
+  const fullUrl = `${baseUrl}?${params.toString()}`;
+  console.info('[weather/get] 呼叫 CWA API:', baseUrl, '| dataset:', dataset, '| locationName:', query.locationName ?? '未指定');
+
   try {
-    const res = await $fetch<unknown>(`${baseUrl}?${params.toString()}`);
+    const res = await $fetch<unknown>(fullUrl);
+    console.info('[weather/get] CWA API 回應成功');
 
     return {
       data: res,
@@ -55,16 +59,18 @@ export default defineEventHandler(async (event) => {
         message: { zh_tw: '', en: '', ja: '' },
       },
     };
-  } catch (err) {
-    console.error('[weather/get] CWA API 請求失敗:', err);
+  } catch (err: any) {
+    const status = err?.response?.status ?? 'unknown';
+    const body = err?.data ?? err?.message ?? String(err);
+    console.error(`[weather/get] CWA API 失敗 (HTTP ${status}):`, body);
     return {
       data: null,
       status: {
         code: 502,
         message: {
-          zh_tw: '氣象資料取得失敗',
-          en: 'Failed to fetch weather data',
-          ja: '気象データの取得に失敗しました',
+          zh_tw: `氣象資料取得失敗（HTTP ${status}）`,
+          en: `Failed to fetch weather data (HTTP ${status})`,
+          ja: `気象データの取得に失敗しました（HTTP ${status}）`,
         },
       },
     };
