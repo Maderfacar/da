@@ -177,7 +177,7 @@
 ### P5：品質維護
 
 - [ ] 真實航空 API 替換 Mock Aviation Edge（`server/api/flight.get.ts`）
-- [ ] ESLint 排除 `.claude/skills/` 目錄（修正 `no-unused-vars` 預存警告）
+- [✅] ESLint 排除 `.claude/skills/` 目錄（修正 `no-unused-vars` 預存警告）
 - [ ] 定期 `pnpm audit` 依賴安全性掃描
 
 **Stage Gate**：P0 + P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
@@ -189,5 +189,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v2.9（Stage 7 P2 司機端真實化 + P3 Admin 端真實化）
+- 版本：v3.0（Stage 7 P2+P3 完成 + P5 ESLint 排除 .claude/）
 - 更新日期：2026/04/30
