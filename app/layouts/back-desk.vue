@@ -49,7 +49,7 @@ function ClickNav(path: string) {
       span
       span
       span
-    .LayoutBackDesk__logo
+    NuxtLink.LayoutBackDesk__logo(to="/admin/traffic")
       | DEST
       span ∙
       | ADMIN
@@ -158,8 +158,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.08em;
   color: var(--da-cream);
   line-height: 1;
+  text-decoration: none;
 
   span { color: var(--da-amber); }
+
+  &:hover { opacity: 0.8; }
 }
 
 .LayoutBackDesk__hamburger {

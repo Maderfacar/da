@@ -64,7 +64,7 @@ onMounted(ApiGetForecast);
 
   //- 圖表（非精簡模式才顯示完整圖）
   .AirportForecastWidget__chart(v-if="!compact")
-    TrafficChart(:hours="chartHours" :loading="loading")
+    AdminTrafficChart(:hours="chartHours" :loading="loading")
 </template>
 
 <style lang="scss" scoped>

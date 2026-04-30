@@ -176,18 +176,6 @@ onUnmounted(_StopPoll);
 
     .PageWarRoom__empty(v-if="!drivers.length")
       | 目前無在線司機
-
-    //- 分隔線
-    .PageWarRoom__divider
-
-    //- 機場人流預報
-    AirportForecastWidget
-
-    //- 分隔線
-    .PageWarRoom__divider
-
-    //- 桃園氣象
-    WeatherWidget
 </template>
 
 <style lang="scss" scoped>
@@ -336,10 +324,4 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   text-align: center;
 }
 
-// ── 分隔線 ────────────────────────────────────────────────
-.PageWarRoom__divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  margin: 16px 0;
-}
 </style>

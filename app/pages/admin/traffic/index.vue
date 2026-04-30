@@ -3,46 +3,41 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 
 // ── 篩選條件 ─────────────────────────────────────────────────
 const selectedDate = ref($dayjs().format('YYYY-MM-DD'));
-const selectedTerminal = ref<'all' | 'T1' | 'T2'>('all');
-const selectedDirection = ref<'all' | 'arrival' | 'departure'>('all');
-
-const TERMINAL_OPTIONS = [
-  { value: 'all', label: '全端' },
-  { value: 'T1',  label: '第一航廈' },
-  { value: 'T2',  label: '第二航廈' },
-];
-const DIRECTION_OPTIONS = [
-  { value: 'all',       label: '進出境合計' },
-  { value: 'arrival',   label: '入境' },
-  { value: 'departure', label: '出境' },
-];
 
 // ── 資料狀態 ─────────────────────────────────────────────────
 const loading = ref(false);
 const peakHour = ref<number | null>(null);
 const peakCount = ref(0);
 const totalCount = ref(0);
+const sourceFile = ref('');
+const updatedAt = ref(0);
 
 interface HourData { hour: number; forecastCount: number; actualCount: number | null }
 const hourData = ref<HourData[]>([]);
 
-// ── 資料載入 ─────────────────────────────────────────────────
+// ── 資料載入（使用 airport-forecast BFF）────────────────────
 const ApiLoadFlow = async () => {
   loading.value = true;
-  const res = await $fetch<{
-    data: { date: string; hours: HourData[] };
-    status: { code: number };
-  }>(`/api/airport/flow?date=${selectedDate.value}&terminal=${selectedTerminal.value}&direction=${selectedDirection.value}`);
-  loading.value = false;
-
-  const hours = res?.data?.hours ?? [];
-  hourData.value = hours;
-
-  const counts = hours.map((h) => h.forecastCount);
-  totalCount.value = counts.reduce((a, b) => a + b, 0);
-  const maxVal = Math.max(...counts);
-  peakCount.value = maxVal;
-  peakHour.value = maxVal > 0 ? counts.indexOf(maxVal) : null;
+  try {
+    const res = await $api.GetAirportForecast({ date: selectedDate.value });
+    const d = res.data as AirportForecastData | null;
+    const hours: HourData[] = (d?.hours ?? []).map((h) => ({
+      hour: h.hour,
+      forecastCount: h.forecastCount,
+      actualCount: null,
+    }));
+    hourData.value = hours;
+    totalCount.value = d?.totalForecast ?? hours.reduce((a, b) => a + b.forecastCount, 0);
+    peakCount.value = d?.peakCount ?? 0;
+    peakHour.value = d?.peakHour != null ? d.peakHour : null;
+    sourceFile.value = d?.sourceFile ?? '';
+    updatedAt.value = d?.updatedAt ?? 0;
+  } catch (err) {
+    console.error('[traffic] ApiLoadFlow failed:', err);
+    hourData.value = [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 // ── 日期快捷 ─────────────────────────────────────────────────
@@ -50,9 +45,14 @@ const SetDateOffset = (offset: number) => {
   selectedDate.value = $dayjs().add(offset, 'day').format('YYYY-MM-DD');
 };
 
-// ── 監聽篩選變更 ──────────────────────────────────────────────
-watch([selectedDate, selectedTerminal, selectedDirection], ApiLoadFlow);
+const updatedLabel = computed(() =>
+  updatedAt.value ? $dayjs(updatedAt.value).format('HH:mm 更新') : '',
+);
+const sourceLabel = computed(() =>
+  sourceFile.value ? `來源：${sourceFile.value}` : '',
+);
 
+watch(selectedDate, ApiLoadFlow);
 onMounted(ApiLoadFlow);
 </script>
 
@@ -64,65 +64,67 @@ onMounted(ApiLoadFlow);
     h1.PageTraffic__header-title 機場人流預測
     p.PageTraffic__header-sub 24-HOUR PASSENGER FLOW FORECAST
 
-  //- 篩選列
-  .PageTraffic__filters
-    .PageTraffic__filter-group
-      label.PageTraffic__filter-label 日期
-      .PageTraffic__date-shortcuts
-        button.PageTraffic__shortcut(@click="SetDateOffset(0)" :class="{ 'is-active': selectedDate === $dayjs().format('YYYY-MM-DD') }") 今日
-        button.PageTraffic__shortcut(@click="SetDateOffset(1)" :class="{ 'is-active': selectedDate === $dayjs().add(1,'day').format('YYYY-MM-DD') }") 明日
-        button.PageTraffic__shortcut(@click="SetDateOffset(2)" :class="{ 'is-active': selectedDate === $dayjs().add(2,'day').format('YYYY-MM-DD') }") 後日
-      input.PageTraffic__date-input(
-        type="date"
-        v-model="selectedDate"
-      )
+  //- 主體：左欄（圖表）+ 右欄（氣象）
+  .PageTraffic__layout
 
-    .PageTraffic__filter-group
-      label.PageTraffic__filter-label 航廈
-      .PageTraffic__seg
-        button.PageTraffic__seg-btn(
-          v-for="opt in TERMINAL_OPTIONS"
-          :key="opt.value"
-          :class="{ 'is-active': selectedTerminal === opt.value }"
-          @click="selectedTerminal = opt.value as any"
-        ) {{ opt.label }}
+    //- 左欄
+    .PageTraffic__main
 
-    .PageTraffic__filter-group
-      label.PageTraffic__filter-label 方向
-      .PageTraffic__seg
-        button.PageTraffic__seg-btn(
-          v-for="opt in DIRECTION_OPTIONS"
-          :key="opt.value"
-          :class="{ 'is-active': selectedDirection === opt.value }"
-          @click="selectedDirection = opt.value as any"
-        ) {{ opt.label }}
+      //- 日期篩選
+      .PageTraffic__filters
+        .PageTraffic__filter-group
+          label.PageTraffic__filter-label 日期
+          .PageTraffic__date-shortcuts
+            button.PageTraffic__shortcut(
+              @click="SetDateOffset(0)"
+              :class="{ 'is-active': selectedDate === $dayjs().format('YYYY-MM-DD') }"
+            ) 今日
+            button.PageTraffic__shortcut(
+              @click="SetDateOffset(1)"
+              :class="{ 'is-active': selectedDate === $dayjs().add(1,'day').format('YYYY-MM-DD') }"
+            ) 明日
+            button.PageTraffic__shortcut(
+              @click="SetDateOffset(2)"
+              :class="{ 'is-active': selectedDate === $dayjs().add(2,'day').format('YYYY-MM-DD') }"
+            ) 後日
+          input.PageTraffic__date-input(
+            type="date"
+            v-model="selectedDate"
+          )
+        .PageTraffic__meta-row(v-if="updatedLabel || sourceLabel")
+          span(v-if="updatedLabel") {{ updatedLabel }}
+          span(v-if="sourceLabel") · {{ sourceLabel }}
 
-  //- 統計摘要
-  .PageTraffic__stats
-    .PageTraffic__stat-card
-      .PageTraffic__stat-label 全日預計總人流
-      .PageTraffic__stat-val {{ totalCount.toLocaleString() }}
-      .PageTraffic__stat-unit 人次
-    .PageTraffic__stat-card.is-peak(v-if="peakHour !== null")
-      .PageTraffic__stat-label 尖峰時段
-      .PageTraffic__stat-val {{ String(peakHour).padStart(2, '0') }}:00
-      .PageTraffic__stat-unit {{ peakCount.toLocaleString() }} 人次
-    .PageTraffic__stat-card
-      .PageTraffic__stat-label 日期
-      .PageTraffic__stat-val {{ selectedDate }}
-      .PageTraffic__stat-unit {{ selectedTerminal === 'all' ? '全航廈' : selectedTerminal }}
+      //- 統計摘要
+      .PageTraffic__stats
+        .PageTraffic__stat-card
+          .PageTraffic__stat-label 全日預計總人流
+          .PageTraffic__stat-val {{ totalCount.toLocaleString() }}
+          .PageTraffic__stat-unit 人次
+        .PageTraffic__stat-card.is-peak(v-if="peakHour !== null")
+          .PageTraffic__stat-label 尖峰時段
+          .PageTraffic__stat-val {{ String(peakHour).padStart(2, '0') }}:00
+          .PageTraffic__stat-unit {{ peakCount.toLocaleString() }} 人次
+        .PageTraffic__stat-card
+          .PageTraffic__stat-label 查詢日期
+          .PageTraffic__stat-val {{ selectedDate }}
 
-  //- 圖表區
-  .PageTraffic__chart-wrapper
-    AdminTrafficChart(:hours="hourData" :loading="loading")
+      //- 圖表
+      .PageTraffic__chart-wrapper
+        AdminTrafficChart(:hours="hourData" :loading="loading")
 
-  //- 調度建議
-  .PageTraffic__suggest(v-if="peakHour !== null")
-    .PageTraffic__suggest-icon ⚡
-    .PageTraffic__suggest-text
-      | 尖峰時段
-      strong {{ String(peakHour).padStart(2, '0') }}:00 — {{ String(peakHour + 1).padStart(2, '0') }}:00
-      |  預計 {{ peakCount.toLocaleString() }} 人次，建議提前 1 小時部署司機待命。
+      //- 調度建議
+      .PageTraffic__suggest(v-if="peakHour !== null")
+        .PageTraffic__suggest-icon ⚡
+        .PageTraffic__suggest-text
+          | 尖峰時段
+          strong  {{ String(peakHour).padStart(2, '0') }}:00 — {{ String(peakHour + 1).padStart(2, '0') }}:00
+          |  預計 {{ peakCount.toLocaleString() }} 人次，建議提前 1 小時部署司機待命。
+
+    //- 右欄（氣象）
+    .PageTraffic__aside
+      .PageTraffic__aside-title WEATHER · 桃園
+      WeatherWidget
 </template>
 
 <style lang="scss" scoped>
@@ -138,7 +140,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 // ── 頁首 ──────────────────────────────────────────────────
-.PageTraffic__header { margin-bottom: 28px; }
+.PageTraffic__header { margin-bottom: 24px; }
 
 .PageTraffic__header-label {
   font-family: $font-condensed;
@@ -170,12 +172,35 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-top: 4px;
 }
 
+// ── 主體雙欄 ──────────────────────────────────────────────
+.PageTraffic__layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.PageTraffic__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.PageTraffic__aside {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.PageTraffic__aside-title {
+  font-family: $font-condensed;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: #38bdf8;
+  margin-bottom: 10px;
+}
+
 // ── 篩選列 ────────────────────────────────────────────────
 .PageTraffic__filters {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .PageTraffic__filter-group {
@@ -192,7 +217,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
-  min-width: 36px;
+  min-width: 30px;
 }
 
 .PageTraffic__date-shortcuts {
@@ -233,29 +258,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
 }
 
-.PageTraffic__seg {
-  display: flex;
-  gap: 4px;
-}
-
-.PageTraffic__seg-btn {
+.PageTraffic__meta-row {
+  margin-top: 6px;
   font-family: $font-condensed;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 5px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.45);
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &.is-active {
-    background: rgba(212, 134, 10, 0.2);
-    border-color: rgba(212, 134, 10, 0.5);
-    color: var(--da-amber);
-  }
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  gap: 6px;
 }
 
 // ── 統計摘要 ──────────────────────────────────────────────
@@ -263,7 +273,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .PageTraffic__stat-card {

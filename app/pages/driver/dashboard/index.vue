@@ -43,13 +43,10 @@ const now = computed(() => $dayjs().format('YYYY / MM / DD'));
         span 任務
         small MY TRIP
 
-  //- 機場人流預報（精簡模式）
-  .PageDriverDashboard__section-label AIRPORT FLOW
-  AirportForecastWidget(:compact="true")
-
-  //- 桃園氣象
-  .PageDriverDashboard__section-label.is-weather WEATHER · 桃園
-  WeatherWidget
+  //- 機場人流預報（精簡模式）+ 桃園氣象
+  .PageDriverDashboard__widgets
+    AdminAirportForecastWidget(:compact="true")
+    WeatherWidget
 
   //- 狀態說明
   .PageDriverDashboard__notice
@@ -196,16 +193,11 @@ $amber: #d4860a;
   }
 }
 
-.PageDriverDashboard__section-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  color: #d4860a;
-  margin-bottom: 8px;
-  margin-top: 20px;
-
-  &.is-weather { color: #38bdf8; }
+.PageDriverDashboard__widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .PageDriverDashboard__notice {
