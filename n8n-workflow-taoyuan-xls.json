@@ -58,6 +58,7 @@
       "parameters": {
         "operation": "fromFile",
         "binaryPropertyName": "data",
+        "fileFormat": "xls",
         "options": {
           "headerRow": true,
           "sheetName": 0
