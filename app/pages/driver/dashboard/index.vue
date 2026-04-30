@@ -3,15 +3,29 @@ definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
 const driverName = computed(() => authStore.lineProfile?.displayName ?? '司機');
-
-// Mock 今日統計（正式串接時改呼叫 API）
-const stats = [
-  { label: 'TRIPS TODAY', labelZh: '今日趟次', value: '0', unit: '趟' },
-  { label: 'EARNINGS',    labelZh: '今日收入', value: 'NT$ 0', unit: '' },
-  { label: 'ONLINE HRS',  labelZh: '上線時數', value: '0',     unit: 'hr' },
-];
-
 const now = computed(() => $dayjs().format('YYYY / MM / DD'));
+
+const tripsToday = ref(0);
+const earningsToday = ref(0);
+
+const ApiLoadStats = async () => {
+  const uid = authStore.user?.uid;
+  if (!uid) return;
+  const res = await $api.GetDriverStats(uid);
+  if (res.status.code === 200 && res.data) {
+    const data = res.data as DriverStats;
+    tripsToday.value = data.tripsToday;
+    earningsToday.value = data.earningsToday;
+  }
+};
+
+const stats = computed(() => [
+  { label: 'TRIPS TODAY', labelZh: '今日趟次', value: String(tripsToday.value), unit: '趟' },
+  { label: 'EARNINGS',    labelZh: '今日收入', value: `NT$ ${earningsToday.value.toLocaleString()}`, unit: '' },
+  { label: 'ONLINE HRS',  labelZh: '上線時數', value: '0', unit: 'hr' },
+]);
+
+onMounted(ApiLoadStats);
 </script>
 
 <template lang="pug">

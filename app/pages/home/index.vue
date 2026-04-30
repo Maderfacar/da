@@ -29,28 +29,49 @@ const displayNums = reactive<Record<string, string>>({
 const statsBarRef = ref<HTMLElement | null>(null);
 let statsTriggered = false;
 
-// ── 行程資料（mock）────────────────────────────────────────
-const upcomingTrips = [
-  {
-    from: 'TPE', to: '市區',
-    status: 'confirmed',
-    date: '2025.07.14', time: '14:30',
-    vehicle: '商務 SUV', driver: '陳師傅',
-    timeLabelKey: 'home.upcoming.pickupTime',
-    infoLabelKey: 'home.upcoming.driver',
-  },
-  {
-    from: '市區', to: 'TPE',
-    status: 'pending',
-    date: '2025.07.18', time: '06:00',
-    vehicle: '商務轎車', driver: '3',
-    timeLabelKey: 'home.upcoming.dropoffTime',
-    infoLabelKey: 'home.upcoming.passengers',
-  },
-];
+// ── 近期行程（Firestore 真實資料）──────────────────────────────
+const { user } = StoreAuth();
+
+const VEHICLE_LABEL: Record<string, string> = {
+  sedan: '房車', suv: 'SUV', van: '廂型', premium: '商務',
+};
+
+const upcomingTrips = ref<{
+  from: string; to: string; status: string;
+  date: string; time: string; vehicle: string;
+  timeLabelKey: string; infoLabelKey: string; passengerCount: string;
+}[]>([]);
+
+const ApiLoadUpcomingTrips = async () => {
+  if (!user.value?.uid) return;
+  const res = await $api.GetOrderList({ userId: user.value.uid });
+  const now = Date.now();
+  const upcoming = (res.data ?? [])
+    .filter((o) => {
+      const isPending = ['pending', 'confirmed'].includes(o.orderStatus);
+      const isFuture = new Date(o.pickupDateTime).getTime() > now;
+      return isPending && isFuture;
+    })
+    .slice(0, 3)
+    .map((o) => ({
+      from: o.pickupLocation?.displayName?.split('(')?.[0]?.trim() ?? o.pickupLocation?.address?.slice(0, 6) ?? '--',
+      to:   o.dropoffLocation?.displayName?.split('(')?.[0]?.trim() ?? o.dropoffLocation?.address?.slice(0, 6) ?? '--',
+      status: o.orderStatus,
+      date: $dayjs(o.pickupDateTime).format('YYYY.MM.DD'),
+      time: $dayjs(o.pickupDateTime).format('HH:mm'),
+      vehicle: VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType,
+      timeLabelKey: 'home.upcoming.pickupTime',
+      infoLabelKey: 'home.upcoming.passengers',
+      passengerCount: String(o.passengerCount ?? 1),
+    }));
+  upcomingTrips.value = upcoming;
+};
 
 // ── 生命週期 ──────────────────────────────────────────────
 onMounted(() => {
+  // 載入近期行程
+  ApiLoadUpcomingTrips();
+
   // Scroll reveal
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
@@ -147,7 +168,7 @@ onMounted(() => {
           .PageHome__info-val {{ trip.vehicle }}
         .PageHome__info-item
           .PageHome__info-label {{ $t(trip.infoLabelKey) }}
-          .PageHome__info-val {{ trip.driver }}
+          .PageHome__info-val {{ trip.passengerCount }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe

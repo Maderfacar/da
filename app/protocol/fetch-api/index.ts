@@ -5,6 +5,7 @@ import * as maps from './api/maps';
 import * as order from './api/order';
 import * as driver from './api/driver';
 import * as airport from './api/airport';
+import * as admin from './api/admin';
 
 export default {
   ...file,
@@ -14,6 +15,7 @@ export default {
   ...order,
   ...driver,
   ...airport,
+  ...admin,
 };
 
 

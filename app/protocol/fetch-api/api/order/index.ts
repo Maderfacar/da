@@ -18,6 +18,14 @@ export const GetOrderList = (params: GetOrderListParams) => {
   return methods.get<OrderItem[]>('/nuxt-api/orders', params);
 };
 
+/** 取得可接待接訂單（司機搶單） */
+export const GetAvailableOrders = () =>
+  methods.get<AvailableOrder[]>('/nuxt-api/orders/available', {});
+
+/** 更新訂單狀態或指派司機 */
+export const PatchOrder = (orderId: string, params: PatchOrderParams) =>
+  methods.patch<{ orderId: string }>(`/nuxt-api/orders/${orderId}`, params);
+
 /** 地址自動完成（永遠打 BFF，key 在 server 端，不使用 mock） */
 export const GetAutocomplete = (params: AutocompleteParams) =>
   methods.get<PlacePrediction[]>('/api/maps/autocomplete', params);

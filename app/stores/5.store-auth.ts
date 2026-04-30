@@ -6,6 +6,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   const user = ref<import('firebase/auth').User | null>(null);
   const role = ref<'passenger' | 'driver' | 'admin' | null>(null);
+  const approved = ref<boolean>(true); // passenger 預設 true；driver/admin 從 Firestore 讀取
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
@@ -22,6 +23,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const _clearState = () => {
     user.value = null;
     role.value = null;
+    approved.value = true;
     idToken.value = '';
     lineAccessToken.value = '';
     lineProfile.value = null;
@@ -91,10 +93,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const db = getFirestore(firebaseApp);
       const snap = await getDoc(doc(db, 'users', uid));
       if (snap.exists()) {
-        role.value = snap.data().role as 'passenger' | 'driver' | 'admin';
+        const data = snap.data();
+        role.value = data.role as 'passenger' | 'driver' | 'admin';
+        // passenger 永遠核准；driver/admin 讀取 approved 欄位
+        approved.value = role.value === 'passenger' ? true : (data.approved as boolean) ?? false;
       }
     } catch {
-      // Firestore 讀取失敗時維持 null
+      // Firestore 讀取失敗時維持預設值
     }
   };
 
@@ -165,9 +170,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   /** 測試模式：直接設定角色（TestMode 用，不走 Firebase） */
   const MockSignIn = (_role: 'passenger' | 'driver' | 'admin') => {
-    // 設定 mock user 讓 isSignIn = true，否則 auth middleware 會一直 redirect
     user.value = { uid: `mock-${_role}` } as import('firebase/auth').User;
     role.value = _role;
+    approved.value = true; // 測試模式視為已核准
     authResolved.value = true;
   };
 
@@ -183,7 +188,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user, role, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
+    user, role, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     isSignIn, idToken,
     InitAuthFlow, SetRole, MockSignIn, SignOut,
   };

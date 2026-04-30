@@ -1,19 +1,7 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
+import type { AdminOrder, AdminUser } from '@/protocol/fetch-api/api/admin';
 
-interface AdminOrder {
-  orderId: string;
-  orderType: string;
-  pickupDateTime: string;
-  pickupAddress: string;
-  dropoffAddress: string;
-  vehicleType: string;
-  estimatedFare: number;
-  distanceKm: number;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
-  passengerName: string;
-  driverName: string | null;
-}
+definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
 const ORDER_TYPE_LABEL: Record<string, string> = {
   'airport-pickup':  '接機',
@@ -27,69 +15,77 @@ const VEHICLE_LABEL: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   pending:     '待確認',
   confirmed:   '已確認',
-  in_progress: '進行中',
+  in_transit:  '進行中',
   completed:   '已完成',
   cancelled:   '已取消',
 };
 const STATUS_CLASS: Record<string, string> = {
   pending:     'is-pending',
   confirmed:   'is-confirmed',
-  in_progress: 'is-progress',
+  in_transit:  'is-progress',
   completed:   'is-done',
   cancelled:   'is-cancel',
 };
 
 const loading = ref(false);
 const orders = ref<AdminOrder[]>([]);
+const drivers = ref<AdminUser[]>([]);
 const filterStatus = ref('');
+const assigningOrderId = ref<string | null>(null);
+const selectedDriverUid = ref('');
 
 const filteredOrders = computed(() =>
-  filterStatus.value ? orders.value.filter((o) => o.status === filterStatus.value) : orders.value,
+  filterStatus.value ? orders.value.filter((o) => o.orderStatus === filterStatus.value) : orders.value
 );
 
-const _loadMock = () => {
-  orders.value = [
-    {
-      orderId: 'A1B2C3D4', orderType: 'airport-pickup',
-      pickupDateTime: $dayjs().add(2, 'hour').toISOString(),
-      pickupAddress: '桃園國際機場 第一航廈（T1）', dropoffAddress: '台北市信義區市府路1號',
-      vehicleType: 'mpv', estimatedFare: 1800, distanceKm: 42,
-      status: 'confirmed', passengerName: '林先生', driverName: '陳志明',
-    },
-    {
-      orderId: 'E5F6G7H8', orderType: 'airport-dropoff',
-      pickupDateTime: $dayjs().add(4, 'hour').toISOString(),
-      pickupAddress: '新北市板橋區縣民大道一段188號', dropoffAddress: '桃園國際機場 第二航廈（T2）',
-      vehicleType: 'sedan', estimatedFare: 1200, distanceKm: 34,
-      status: 'pending', passengerName: '張小姐', driverName: null,
-    },
-    {
-      orderId: 'I9J0K1L2', orderType: 'charter',
-      pickupDateTime: $dayjs().add(1, 'day').toISOString(),
-      pickupAddress: '台北市中正區忠孝西路一段49號', dropoffAddress: '台中市西屯區台灣大道三段99號',
-      vehicleType: 'suv', estimatedFare: 4500, distanceKm: 168,
-      status: 'pending', passengerName: '王總監', driverName: null,
-    },
-    {
-      orderId: 'M3N4O5P6', orderType: 'transfer',
-      pickupDateTime: $dayjs().subtract(1, 'hour').toISOString(),
-      pickupAddress: '台北市大安區忠孝東路四段', dropoffAddress: '台北松山機場',
-      vehicleType: 'sedan', estimatedFare: 800, distanceKm: 12,
-      status: 'in_progress', passengerName: '黃先生', driverName: '劉建宏',
-    },
-    {
-      orderId: 'Q7R8S9T0', orderType: 'airport-pickup',
-      pickupDateTime: $dayjs().subtract(3, 'hour').toISOString(),
-      pickupAddress: '桃園國際機場 第二航廈（T2）', dropoffAddress: '台北市南港區經貿二路',
-      vehicleType: 'van', estimatedFare: 2200, distanceKm: 55,
-      status: 'completed', passengerName: '吳小姐', driverName: '張維安',
-    },
-  ];
+const ApiLoadOrders = async () => {
+  loading.value = true;
+  const res = await $api.GetAllOrders();
+  orders.value = (res.data as AdminOrder[]) ?? [];
+  loading.value = false;
+};
+
+const ApiLoadDrivers = async () => {
+  const res = await $api.GetAdminUsers({ role: 'driver', approved: true });
+  drivers.value = (res.data as AdminUser[]) ?? [];
+};
+
+const ClickOpenAssign = (orderId: string, currentDriverId: string) => {
+  assigningOrderId.value = orderId;
+  selectedDriverUid.value = currentDriverId ?? '';
+};
+
+const ClickConfirmAssign = async () => {
+  if (!assigningOrderId.value || !selectedDriverUid.value) return;
+  const res = await $api.PatchOrder(assigningOrderId.value, {
+    orderStatus: 'confirmed',
+    assignedDriverId: selectedDriverUid.value,
+  });
+  if (res.status.code === 200) {
+    const idx = orders.value.findIndex((o) => o.orderId === assigningOrderId.value);
+    if (idx >= 0) {
+      orders.value[idx] = {
+        ...orders.value[idx],
+        orderStatus: 'confirmed',
+        assignedDriverId: selectedDriverUid.value,
+      };
+    }
+    ElMessage({ message: '指派成功', type: 'success' });
+  } else {
+    ElMessage({ message: '指派失敗', type: 'error' });
+  }
+  assigningOrderId.value = null;
+  selectedDriverUid.value = '';
+};
+
+const DriverNameOf = (uid: string) => {
+  if (!uid) return null;
+  return drivers.value.find((d) => d.uid === uid)?.displayName ?? `UID:${uid.slice(0, 6)}`;
 };
 
 onMounted(() => {
-  loading.value = true;
-  setTimeout(() => { _loadMock(); loading.value = false; }, 500);
+  ApiLoadOrders();
+  ApiLoadDrivers();
 });
 </script>
 
@@ -102,7 +98,7 @@ onMounted(() => {
   .PageAdminOrders__toolbar
     .PageAdminOrders__filters
       button.PageAdminOrders__filter-btn(
-        v-for="(label, key) in { '': '全部', pending: '待確認', confirmed: '已確認', in_progress: '進行中', completed: '已完成', cancelled: '已取消' }"
+        v-for="(label, key) in { '': '全部', pending: '待確認', confirmed: '已確認', in_transit: '進行中', completed: '已完成', cancelled: '已取消' }"
         :key="key"
         :class="{ 'is-active': filterStatus === key }"
         @click="filterStatus = key"
@@ -123,26 +119,46 @@ onMounted(() => {
         span 訂單
         span 行程類型
         span 用車時間
-        span 乘客
         span 司機
         span 車型
         span 費用
         span 狀態
+        span 操作
 
       .PageAdminOrders__row(v-for="o in filteredOrders" :key="o.orderId")
         .PageAdminOrders__cell.is-id
-          span.PageAdminOrders__order-id \#{{ o.orderId.slice(0, 6) }}
+          span.PageAdminOrders__order-id \#{{ o.orderId.slice(0, 8).toUpperCase() }}
         .PageAdminOrders__cell
           span.PageAdminOrders__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
         .PageAdminOrders__cell.is-time {{ $dayjs(o.pickupDateTime).format('MM/DD HH:mm') }}
-        .PageAdminOrders__cell {{ o.passengerName }}
         .PageAdminOrders__cell
-          span(v-if="o.driverName") {{ o.driverName }}
+          span(v-if="DriverNameOf(o.assignedDriverId)") {{ DriverNameOf(o.assignedDriverId) }}
           span.PageAdminOrders__unassigned(v-else) 未分派
         .PageAdminOrders__cell {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
         .PageAdminOrders__cell.is-fare NT$ {{ o.estimatedFare.toLocaleString() }}
         .PageAdminOrders__cell
-          span.PageAdminOrders__status(:class="STATUS_CLASS[o.status]") {{ STATUS_LABEL[o.status] }}
+          span.PageAdminOrders__status(:class="STATUS_CLASS[o.orderStatus]") {{ STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
+        .PageAdminOrders__cell
+          button.PageAdminOrders__assign-btn(
+            v-if="o.orderStatus === 'pending' || o.orderStatus === 'confirmed'"
+            @click="ClickOpenAssign(o.orderId, o.assignedDriverId)"
+          ) 指派
+
+  //- 指派司機彈窗
+  .PageAdminOrders__modal-mask(v-if="assigningOrderId" @click.self="assigningOrderId = null")
+    .PageAdminOrders__modal
+      .PageAdminOrders__modal-title 指派司機
+      .PageAdminOrders__modal-body
+        label.PageAdminOrders__modal-label 選擇司機
+        select.PageAdminOrders__modal-select(v-model="selectedDriverUid")
+          option(value="" disabled) 請選擇司機
+          option(v-for="d in drivers" :key="d.uid" :value="d.uid") {{ d.displayName }}
+      .PageAdminOrders__modal-actions
+        button.PageAdminOrders__modal-cancel(@click="assigningOrderId = null") 取消
+        button.PageAdminOrders__modal-confirm(
+          :disabled="!selectedDriverUid"
+          @click="ClickConfirmAssign"
+        ) 確認指派
 </template>
 
 <style lang="scss" scoped>
@@ -252,17 +268,19 @@ $muted: rgba(255, 255, 255, 0.35);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow-x: auto;
 }
 
 .PageAdminOrders__row {
   display: grid;
-  grid-template-columns: 90px 80px 100px 80px 80px 60px 90px 80px;
+  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px 60px;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
   background: $surface;
   border: 1px solid $border;
+  min-width: 680px;
 
   &.is-head {
     background: transparent;
@@ -293,7 +311,6 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__order-id {
-  font-family: 'Barlow Condensed', sans-serif;
   font-size: 12px;
   color: $muted;
   letter-spacing: 0.05em;
@@ -315,6 +332,22 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 11px;
 }
 
+.PageAdminOrders__assign-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba($amber, 0.35);
+  background: rgba($amber, 0.08);
+  color: $amber;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: rgba($amber, 0.16); }
+}
+
 .PageAdminOrders__status {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 10px;
@@ -328,6 +361,95 @@ $muted: rgba(255, 255, 255, 0.35);
   &.is-progress  { background: rgba($amber, 0.12); border: 1px solid rgba($amber, 0.3); color: $amber; }
   &.is-done      { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
   &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
+}
+
+// ── 指派彈窗 ──────────────────────────────────────────────────
+.PageAdminOrders__modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.PageAdminOrders__modal {
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.PageAdminOrders__modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.PageAdminOrders__modal-body { margin-bottom: 20px; }
+
+.PageAdminOrders__modal-label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: $muted;
+  margin-bottom: 8px;
+}
+
+.PageAdminOrders__modal-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: $surface;
+  color: #fff;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  outline: none;
+
+  option { background: #161b22; }
+}
+
+.PageAdminOrders__modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.PageAdminOrders__modal-cancel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $muted;
+  cursor: pointer;
+}
+
+.PageAdminOrders__modal-confirm {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: none;
+  background: $amber;
+  color: #fff;
+  cursor: pointer;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
