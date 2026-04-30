@@ -4,12 +4,7 @@
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "triggerAtHour": 1,
-              "triggerAtMinute": 0
-            }
-          ]
+          "interval": [{ "triggerAtHour": 1, "triggerAtMinute": 0 }]
         }
       },
       "id": "schedule-trigger",
@@ -20,10 +15,10 @@
     },
     {
       "parameters": {
-        "jsCode": "// 計算今日日期（台灣時間 UTC+8）\nconst now = new Date();\nconst taiwanOffset = 8 * 60 * 60 * 1000;\nconst twDate = new Date(now.getTime() + taiwanOffset);\n\nconst yyyy = twDate.getUTCFullYear();\nconst mm = String(twDate.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(twDate.getUTCDate()).padStart(2, '0');\n\nconst isoDate = `${yyyy}-${mm}-${dd}`;\nconst xlsName = `${yyyy}_${mm}_${dd}.xls`;\nconst xlsUrl  = `https://www.taoyuanairport.com.tw/flightforecast/${xlsName}`;\n\nreturn [{ json: { isoDate, xlsName, xlsUrl } }];"
+        "jsCode": "const now = new Date();\nconst tw = new Date(now.getTime() + 8 * 3600 * 1000);\nconst yyyy = tw.getUTCFullYear();\nconst mm = String(tw.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(tw.getUTCDate()).padStart(2, '0');\nreturn [{ json: {\n  isoDate: `${yyyy}-${mm}-${dd}`,\n  dateSlug: `${yyyy}_${mm}_${dd}`,\n  pageUrl: 'https://www.taoyuanairport.com.tw/flightforecast'\n}}];"
       },
       "id": "compute-date",
-      "name": "計算日期與 XLS URL",
+      "name": "計算日期",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [460, 300]
@@ -31,34 +26,86 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $json.xlsUrl }}",
+        "url": "={{ $json.pageUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            },
+            { "name": "Accept", "value": "text/html,application/xhtml+xml,*/*;q=0.9" },
+            { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en;q=0.8" }
+          ]
+        },
         "options": {
           "response": {
-            "response": {
-              "responseFormat": "file",
-              "outputPropertyName": "data"
-            }
+            "response": { "responseFormat": "text" }
           },
           "timeout": 30000,
-          "redirect": {
-            "redirect": {
-              "followRedirects": true,
-              "maxRedirects": 5
-            }
-          }
+          "redirect": { "redirect": { "followRedirects": true, "maxRedirects": 5 } }
         }
       },
-      "id": "download-xls",
-      "name": "下載 XLS 檔案",
+      "id": "fetch-page",
+      "name": "抓取機場頁面",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [680, 300]
     },
     {
       "parameters": {
+        "jsCode": "const html = $input.first().json.data || '';\nconst { isoDate, dateSlug } = $('計算日期').first().json;\n\n// 找所有 href 包含 .xls 或 .xlsx 的連結\nconst regex = /href=[\"']([^\"']*\\.xlsx?)[\"']/gi;\nconst found = [];\nlet m;\nwhile ((m = regex.exec(html)) !== null) {\n  found.push(m[1]);\n}\n\n// 優先找含今日日期的連結\nlet xlsUrl = found.find(u => u.includes(dateSlug) || u.includes(isoDate)) || found[0] || null;\n\nif (!xlsUrl) {\n  // 如果頁面找不到，退而用猜測 URL（原始策略）\n  xlsUrl = `https://www.taoyuanairport.com.tw/flightforecast/${dateSlug}.xls`;\n}\n\n// 補全相對路徑\nif (xlsUrl.startsWith('/')) {\n  xlsUrl = 'https://www.taoyuanairport.com.tw' + xlsUrl;\n} else if (!xlsUrl.startsWith('http')) {\n  xlsUrl = 'https://www.taoyuanairport.com.tw/' + xlsUrl;\n}\n\nconst xlsName = xlsUrl.split('/').pop()?.split('?')[0] || `${dateSlug}.xls`;\nconst fileExt  = xlsUrl.toLowerCase().includes('.xlsx') ? 'xlsx' : 'xls';\n\nconsole.log(`[n8n] XLS URL: ${xlsUrl} (format: ${fileExt})`);\n\nreturn [{ json: { isoDate, dateSlug, xlsUrl, xlsName, fileExt } }];"
+      },
+      "id": "extract-url",
+      "name": "提取 XLS 下載連結",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.xlsUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            },
+            { "name": "Accept", "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,*/*" },
+            { "name": "Referer", "value": "https://www.taoyuanairport.com.tw/flightforecast" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": { "responseFormat": "file", "outputPropertyName": "data" }
+          },
+          "timeout": 30000,
+          "redirect": { "redirect": { "followRedirects": true, "maxRedirects": 5 } }
+        }
+      },
+      "id": "download-xls",
+      "name": "下載 XLS 檔案",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\n// ① 確認 binary 存在\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）');\n}\n\nconst mimeType  = (binary.data.mimeType  || '').toLowerCase();\nconst fileName  = (binary.data.fileName  || '').toLowerCase();\nconst fileSize  = binary.data.fileSize  || 0;\n\n// ② 確認不是 HTML 錯誤頁面（通常 <5KB）\nif (fileSize < 1000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為 HTML 錯誤頁面而非 XLS`);\n}\n\n// ③ 從 MIME 或檔名偵測格式\nlet detectedFormat = $('提取 XLS 下載連結').first().json.fileExt || 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n} else if (mimeType.includes('ms-excel') || fileName.endsWith('.xls')) {\n  detectedFormat = 'xls';\n}\n\nconsole.log(`[n8n] Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\n\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
+      },
+      "id": "verify-binary",
+      "name": "驗證 Binary + 偵測格式",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
         "operation": "fromFile",
         "binaryPropertyName": "data",
-        "fileFormat": "xls",
+        "fileFormat": "={{ $json.detectedFormat }}",
         "options": {
           "headerRow": true,
           "sheetName": 0
@@ -68,17 +115,17 @@
       "name": "Spreadsheet 解析",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [1560, 300]
     },
     {
       "parameters": {
-        "jsCode": "// ─── 將 Spreadsheet File 輸出的多列 JSON 轉換為 hours 陣列 ─────\n// Spreadsheet File 節點每列輸出一個 item，欄位名稱來自 XLS 標題列。\n//\n// 【請依實際 XLS 欄位名稱調整 COL_* 常數】\n// 若 XLS 沒有標題列，在 Spreadsheet File 節點關閉「Header Row」，\n// 欄位會以 column_0, column_1, ... 命名。\n\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hourRaw = row[COL_HOUR];\n  const hour = parseInt(String(hourRaw), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  const t1Arr = Number(row[COL_T1_ARR]) || 0;\n  const t1Dep = Number(row[COL_T1_DEP]) || 0;\n  const t2Arr = Number(row[COL_T2_ARR]) || 0;\n  const t2Dep = Number(row[COL_T2_DEP]) || 0;\n\n  hours.push({\n    hour,\n    forecastCount: t1Arr + t1Dep + t2Arr + t2Dep,\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) => {\n  const found = hours.find((r) => r.hour === h);\n  return found ?? { hour: h, forecastCount: 0, terminal: 'all' };\n});\n\nconst isoDate = $('計算日期與 XLS URL').first().json.isoDate;\nconst xlsName = $('計算日期與 XLS URL').first().json.xlsName;\n\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+        "jsCode": "// ─── 欄位名稱請依實際 XLS 標題調整 ──────────────────────────\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n// ────────────────────────────────────────────────────────────\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[COL_HOUR]), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount: (Number(row[COL_T1_ARR]) || 0)\n                 + (Number(row[COL_T1_DEP]) || 0)\n                 + (Number(row[COL_T2_ARR]) || 0)\n                 + (Number(row[COL_T2_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('提取 XLS 下載連結').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [1780, 300]
     },
     {
       "parameters": {
@@ -87,48 +134,31 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer 7275bd5ac5bf49a4cf4d5019b4a34cf26bdcd8c459dd096213a1eec3685f0aa7"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
+            { "name": "Authorization", "value": "Bearer 7275bd5ac5bf49a4cf4d5019b4a34cf26bdcd8c459dd096213a1eec3685f0aa7" },
+            { "name": "Content-Type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ date: $json.date, sourceFile: $json.sourceFile, hours: $json.hours }) }}",
-        "options": {
-          "timeout": 20000
-        }
+        "options": { "timeout": 20000 }
       },
       "id": "post-vercel",
       "name": "寫入 Vercel Firestore",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300]
+      "position": [2000, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "check-ok",
-              "leftValue": "={{ $json.status.code }}",
-              "rightValue": 200,
-              "operator": {
-                "type": "number",
-                "operation": "equals"
-              }
-            }
-          ],
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [{
+            "id": "check-ok",
+            "leftValue": "={{ $json.status.code }}",
+            "rightValue": 200,
+            "operator": { "type": "number", "operation": "equals" }
+          }],
           "combinator": "and"
         },
         "options": {}
@@ -137,59 +167,56 @@
       "name": "檢查結果",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1560, 300]
+      "position": [2220, 300]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.log(`[n8n] ✅ 桃園機場人流寫入成功 | ${d.data?.date} | 尖峰 ${d.data?.peakHour}:00 | 總人次 ${d.data?.totalForecast}`);\nreturn $input.all();"
+        "jsCode": "const d = $input.first().json;\nconsole.log(`[n8n] ✅ 寫入成功 | ${d.data?.date} | 尖峰 ${d.data?.peakHour}:00 | 總人次 ${d.data?.totalForecast}`);\nreturn $input.all();"
       },
       "id": "log-success",
       "name": "記錄成功",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 200]
+      "position": [2440, 180]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.error(`[n8n] ❌ 桃園機場人流寫入失敗:`, JSON.stringify(d));\nreturn $input.all();"
+        "jsCode": "const d = $input.first().json;\nconsole.error('[n8n] ❌ 寫入失敗:', JSON.stringify(d));\nreturn $input.all();"
       },
       "id": "log-error",
       "name": "記錄失敗",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 420]
+      "position": [2440, 420]
     }
   ],
   "connections": {
     "每日 01:00 觸發": {
-      "main": [
-        [{ "node": "計算日期與 XLS URL", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "計算日期", "type": "main", "index": 0 }]]
     },
-    "計算日期與 XLS URL": {
-      "main": [
-        [{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]
-      ]
+    "計算日期": {
+      "main": [[{ "node": "抓取機場頁面", "type": "main", "index": 0 }]]
+    },
+    "抓取機場頁面": {
+      "main": [[{ "node": "提取 XLS 下載連結", "type": "main", "index": 0 }]]
+    },
+    "提取 XLS 下載連結": {
+      "main": [[{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]]
     },
     "下載 XLS 檔案": {
-      "main": [
-        [{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "驗證 Binary + 偵測格式", "type": "main", "index": 0 }]]
+    },
+    "驗證 Binary + 偵測格式": {
+      "main": [[{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]]
     },
     "Spreadsheet 解析": {
-      "main": [
-        [{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]]
     },
     "轉換為 hours 陣列": {
-      "main": [
-        [{ "node": "寫入 Vercel Firestore", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "寫入 Vercel Firestore", "type": "main", "index": 0 }]]
     },
     "寫入 Vercel Firestore": {
-      "main": [
-        [{ "node": "檢查結果", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "檢查結果", "type": "main", "index": 0 }]]
     },
     "檢查結果": {
       "main": [
@@ -209,5 +236,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "3"
+  "versionId": "4"
 }
