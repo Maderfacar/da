@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 計算今日日期（台灣時間 UTC+8）\nconst now = new Date();\nconst taiwanOffset = 8 * 60 * 60 * 1000;\nconst twDate = new Date(now.getTime() + taiwanOffset);\n\nconst yyyy = twDate.getUTCFullYear();\nconst mm = String(twDate.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(twDate.getUTCDate()).padStart(2, '0');\n\nconst isoDate = `${yyyy}-${mm}-${dd}`; // e.g. 2026-05-01\nconst xlsName = `${yyyy}_${mm}_${dd}.xls`; // e.g. 2026_05_01.xls\nconst xlsUrl  = `https://www.taoyuanairport.com.tw/flightforecast/${xlsName}`;\n\nreturn [{ json: { isoDate, xlsName, xlsUrl } }];"
+        "jsCode": "// 計算今日日期（台灣時間 UTC+8）\nconst now = new Date();\nconst taiwanOffset = 8 * 60 * 60 * 1000;\nconst twDate = new Date(now.getTime() + taiwanOffset);\n\nconst yyyy = twDate.getUTCFullYear();\nconst mm = String(twDate.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(twDate.getUTCDate()).padStart(2, '0');\n\nconst isoDate = `${yyyy}-${mm}-${dd}`;\nconst xlsName = `${yyyy}_${mm}_${dd}.xls`;\nconst xlsUrl  = `https://www.taoyuanairport.com.tw/flightforecast/${xlsName}`;\n\nreturn [{ json: { isoDate, xlsName, xlsUrl } }];"
       },
       "id": "compute-date",
       "name": "計算日期與 XLS URL",
@@ -51,13 +51,28 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─── 解析桃園機場 XLS ─────────────────────────────────────\n// 預期格式（可能因官網改版而不同，請依實際情況調整）：\n//   Row 0: 標題列（忽略）\n//   Col A: 時段（0, 1, 2, ... 23 或 \"00\", \"01\", ...）\n//   Col B: 第一航廈 入境\n//   Col C: 第一航廈 出境\n//   Col D: 第二航廈 入境\n//   Col E: 第二航廈 出境\n// 若 XLS 格式不同，調整 COLUMN_MAP 與 skipRows 即可。\n\nconst XLSX = require('xlsx');\n\nconst binaryData = $binary.data; // n8n 二進位欄位\nconst buffer = Buffer.from(binaryData, 'base64');\n\nconst workbook = XLSX.read(buffer, { type: 'buffer' });\nconst sheetName = workbook.SheetNames[0];\nconst sheet = workbook.Sheets[sheetName];\nconst rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });\n\n// 跳過標題列（根據實際 XLS 調整）\nconst skipRows = 1;\nconst dataRows = rows.slice(skipRows);\n\nconst hours = [];\n\nfor (let i = 0; i < dataRows.length; i++) {\n  const row = dataRows[i];\n  const hourRaw = row[0];\n  const hour = parseInt(String(hourRaw), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  // 各欄位加總（T1入境 + T1出境 + T2入境 + T2出境）\n  const t1Arr = Number(row[1]) || 0;\n  const t1Dep = Number(row[2]) || 0;\n  const t2Arr = Number(row[3]) || 0;\n  const t2Dep = Number(row[4]) || 0;\n\n  hours.push({\n    hour,\n    forecastCount: t1Arr + t1Dep + t2Arr + t2Dep,\n    terminal: 'all',\n  });\n}\n\n// 確保 24 小時都有資料\nconst filled = Array.from({ length: 24 }, (_, h) => {\n  const found = hours.find((r) => r.hour === h);\n  return found ?? { hour: h, forecastCount: 0, terminal: 'all' };\n});\n\nconst isoDate = $('計算日期與 XLS URL').first().json.isoDate;\nconst xlsName = $('計算日期與 XLS URL').first().json.xlsName;\n\nreturn [{\n  json: {\n    date: isoDate,\n    sourceFile: xlsName,\n    hours: filled,\n  }\n}];"
+        "operation": "fromFile",
+        "binaryPropertyName": "data",
+        "options": {
+          "headerRow": true,
+          "sheetName": 0
+        }
       },
-      "id": "parse-xls",
-      "name": "解析 XLS → hours 陣列",
-      "type": "n8n-nodes-base.code",
+      "id": "parse-spreadsheet",
+      "name": "Spreadsheet 解析",
+      "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 2,
       "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─── 將 Spreadsheet File 輸出的多列 JSON 轉換為 hours 陣列 ─────\n// Spreadsheet File 節點每列輸出一個 item，欄位名稱來自 XLS 標題列。\n//\n// 【請依實際 XLS 欄位名稱調整 COL_* 常數】\n// 常見格式（桃園機場）：\n//   COL_HOUR    = '時段' 或 'hour' 或 '0' (第幾欄)\n//   COL_T1_ARR  = '第一航廈入境'\n//   COL_T1_DEP  = '第一航廈出境'\n//   COL_T2_ARR  = '第二航廈入境'\n//   COL_T2_DEP  = '第二航廈出境'\n// 若 XLS 沒有標題列，請在 Spreadsheet File 節點關閉「Header Row」，\n// 欄位會以 column_0, column_1, ... 命名。\n\nconst COL_HOUR   = '時段';        // 調整為實際欄位名稱\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hourRaw = row[COL_HOUR];\n  const hour = parseInt(String(hourRaw), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  const t1Arr = Number(row[COL_T1_ARR]) || 0;\n  const t1Dep = Number(row[COL_T1_DEP]) || 0;\n  const t2Arr = Number(row[COL_T2_ARR]) || 0;\n  const t2Dep = Number(row[COL_T2_DEP]) || 0;\n\n  hours.push({\n    hour,\n    forecastCount: t1Arr + t1Dep + t2Arr + t2Dep,\n    terminal: 'all',\n  });\n}\n\n// 確保 24 小時都有資料（未出現的時段填 0）\nconst filled = Array.from({ length: 24 }, (_, h) => {\n  const found = hours.find((r) => r.hour === h);\n  return found ?? { hour: h, forecastCount: 0, terminal: 'all' };\n});\n\nconst isoDate = $('計算日期與 XLS URL').first().json.isoDate;\nconst xlsName = $('計算日期與 XLS URL').first().json.xlsName;\n\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+      },
+      "id": "transform-rows",
+      "name": "轉換為 hours 陣列",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
     },
     {
       "parameters": {
@@ -77,22 +92,8 @@
           ]
         },
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "date",
-              "value": "={{ $json.date }}"
-            },
-            {
-              "name": "sourceFile",
-              "value": "={{ $json.sourceFile }}"
-            },
-            {
-              "name": "hours",
-              "value": "={{ JSON.stringify($json.hours) }}"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ date: $json.date, sourceFile: $json.sourceFile, hours: $json.hours }) }}",
         "options": {
           "timeout": 20000
         }
@@ -101,7 +102,7 @@
       "name": "寫入 Vercel Firestore",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [1340, 300]
     },
     {
       "parameters": {
@@ -130,7 +131,7 @@
       "name": "檢查結果",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [1560, 300]
     },
     {
       "parameters": {
@@ -140,17 +141,17 @@
       "name": "記錄成功",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 200]
+      "position": [1780, 200]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.error(`[n8n] ❌ 桃園機場人流寫入失敗:`, JSON.stringify(d));\n// 可在此加入 Slack/LINE 告警通知\nreturn $input.all();"
+        "jsCode": "const d = $input.first().json;\nconsole.error(`[n8n] ❌ 桃園機場人流寫入失敗:`, JSON.stringify(d));\nreturn $input.all();"
       },
       "id": "log-error",
       "name": "記錄失敗",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 420]
+      "position": [1780, 420]
     }
   ],
   "connections": {
@@ -166,10 +167,15 @@
     },
     "下載 XLS 檔案": {
       "main": [
-        [{ "node": "解析 XLS → hours 陣列", "type": "main", "index": 0 }]
+        [{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]
       ]
     },
-    "解析 XLS → hours 陣列": {
+    "Spreadsheet 解析": {
+      "main": [
+        [{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]
+      ]
+    },
+    "轉換為 hours 陣列": {
       "main": [
         [{ "node": "寫入 Vercel Firestore", "type": "main", "index": 0 }]
       ]
@@ -197,5 +203,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "1"
+  "versionId": "2"
 }
