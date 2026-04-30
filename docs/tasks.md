@@ -167,10 +167,17 @@
 - [✅] `/admin/drivers` 真實 Firestore 資料（role=driver），含核准/撤銷操作（取代 settings 頁的重複功能）
 - [✅] `/admin/notifications` 真實 LINE Bot 廣播（POST /nuxt-api/admin/broadcast，依 role 篩選收件人）
 
-### P4：外部整合（🔄 待處理）
+### P4：外部整合
 
-- [ ] **n8n 桃園機場 XLS 爬取**：定期抓取 `https://www.taoyuanairport.com.tw/flightforecast` 每日航班運量整點人數預報表（如 `2026_05_01.xls`），解析後存入 Firestore `airport_flow_forecast` 集合
-- [ ] **CWA 氣象 API**：BFF endpoint `GET /nuxt-api/weather` 已建立（`server/routes/nuxt-api/weather/index.get.ts`），待確認資料用途後實作完整業務邏輯
+- [✅] **n8n 桃園機場 XLS 爬取**：
+  - Server POST `POST /nuxt-api/airport-forecast`（Bearer 驗證 + Firestore `airport_flow_forecast` 寫入）✅
+  - Server GET `GET /nuxt-api/airport-forecast`（讀取 Firestore，無資料回 mock）✅
+  - n8n workflow JSON 已建立（`n8n-workflow-taoyuan-xls.json`，根目錄，可直接匯入 n8n）✅
+  - **待人工操作**：至 n8n 匯入 workflow JSON，確認 XLS 欄位格式後調整解析邏輯，啟用排程
+- [✅] **CWA 氣象 API**：
+  - BFF `GET /nuxt-api/weather?dataset=F-C0032-001&locationName=桃園市` 完整實作 ✅
+  - `WeatherWidget.vue` 已串接，顯示桃園天氣（描述/最高最低溫/降雨機率）✅
+  - 嵌入司機端 Dashboard 與 Admin Traffic 頁 ✅
 
 > 注意：Admin 與司機端**不做 i18n**，乘客端 i18n 已於 Stage 6 完成。
 
@@ -189,5 +196,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v3.0（Stage 7 P2+P3 完成 + P5 ESLint 排除 .claude/）
-- 更新日期：2026/04/30
+- 版本：v3.1（Stage 7 P4 CWA+n8n workflow 完成 + Vercel 環境變數上傳）
+- 更新日期：2026/05/01
