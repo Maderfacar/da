@@ -87,6 +87,7 @@
       "parameters": {
         "method": "PATCH",
         "url": "https://api.github.com/gists/45f10cf9dd34610db74ec473b564db05",
+        "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -132,5 +133,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "9"
+  "versionId": "10"
 }
