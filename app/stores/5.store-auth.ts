@@ -128,7 +128,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       if (!liff.isLoggedIn()) {
         liff.login(); // 強制導向 LINE 登入，redirect 後重新執行
-        return; // liffReady 保持 false，頁面即將 redirect
+        return;
       }
 
       const token = liff.getAccessToken() ?? '';
@@ -142,12 +142,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         isFriend.value = null;
       }
 
+      liffReady.value = true;
+
       // 已有 Firebase 使用者 → 不重複登入
       const { getAuth } = await import('firebase/auth');
-      if (getAuth(firebaseApp).currentUser) {
-        liffReady.value = true;
-        return;
-      }
+      if (getAuth(firebaseApp).currentUser) return;
 
       // 交換 Firebase Custom Token
       const res = await $fetch<{ data: { customToken: string; role: string; displayName: string; pictureUrl: string } }>(
@@ -155,17 +154,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         { method: 'POST', body: { lineAccessToken: token, clientType } },
       );
 
-      if (!res.data?.customToken) {
-        liffReady.value = true; // 交換失敗，auth 流程結束
-        return;
-      }
+      if (!res.data?.customToken) return;
 
       lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
 
       const { signInWithCustomToken } = await import('firebase/auth');
       await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
-      // onAuthStateChanged 接手後續（設定 isSignIn、role）
-      liffReady.value = true;
+      // onAuthStateChanged 接手後續
     } catch {
       liffReady.value = true;
     }
