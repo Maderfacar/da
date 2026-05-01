@@ -1,6 +1,8 @@
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event) as { date?: string };
+  const query = getQuery(event) as { date?: string; terminal?: string; direction?: string };
   const date = query.date ?? new Date().toISOString().slice(0, 10);
+  const terminal = query.terminal ?? 'all';
+  const direction = query.direction ?? 'all';
 
   const { airportForecastGistUrl } = useRuntimeConfig();
 
@@ -18,16 +20,29 @@ export default defineEventHandler(async (event) => {
     });
     const payload = JSON.parse(raw) as {
       date: string;
-      hours: Array<{ hour: number; forecastCount: number; terminal: string }>;
+      hours: Array<{ hour: number; forecastCount: number; terminal: string; direction?: string }>;
     };
 
     if (!payload?.hours?.length) {
       return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
     }
 
+    // 過濾 terminal：'all' 時接受所有資料（包含 terminal==='all' 的合計列）
+    // 若指定 T1/T2，只取 terminal 完全吻合的列
+    const terminalFiltered = terminal === 'all'
+      ? payload.hours
+      : payload.hours.filter(h => h.terminal === terminal);
+
+    // 過濾 direction：'all' 時不限制；指定時篩選 direction 欄位
+    const directionFiltered = direction === 'all'
+      ? terminalFiltered
+      : terminalFiltered.filter(h => h.direction === direction);
+
+    // 依小時彙總（同一小時可能有多列 → 加總）
     const hours = Array.from({ length: 24 }, (_, i) => {
-      const found = payload.hours.find(h => h.hour === i);
-      return { hour: i, forecastCount: found?.forecastCount ?? 0, actualCount: null };
+      const matched = directionFiltered.filter(h => h.hour === i);
+      const forecastCount = matched.reduce((sum, h) => sum + (h.forecastCount ?? 0), 0);
+      return { hour: i, forecastCount, actualCount: null };
     });
 
     return {

@@ -3,11 +3,25 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 
 // ── 篩選條件 ─────────────────────────────────────────────────
 const selectedDate = ref($dayjs().format('YYYY-MM-DD'));
+const selectedTerminal = ref<'all' | 'T1' | 'T2'>('all');
+const selectedDirection = ref<'all' | 'arrival' | 'departure'>('all');
 
 const DATE_SHORTCUTS = [
   { label: '昨天', offset: -1 },
   { label: '今天', offset: 0 },
   { label: '明天', offset: 1 },
+];
+
+const TERMINAL_OPTIONS = [
+  { value: 'all', label: '全端' },
+  { value: 'T1',  label: '第一航廈' },
+  { value: 'T2',  label: '第二航廈' },
+];
+
+const DIRECTION_OPTIONS = [
+  { value: 'all',       label: '進出境合計' },
+  { value: 'arrival',   label: '入境' },
+  { value: 'departure', label: '出境' },
 ];
 
 // ── 資料狀態 ─────────────────────────────────────────────────
@@ -20,7 +34,7 @@ const totalCount = ref(0);
 interface HourData { hour: number; forecastCount: number; actualCount: number | null }
 const hourData = ref<HourData[]>([]);
 
-// ── 資料載入（讀 Firestore airport_flow；無資料時 server 回 mock 曲線）─
+// ── 資料載入 ──────────────────────────────────────────────────
 const ApiLoadFlow = async () => {
   loading.value = true;
   isMockData.value = false;
@@ -28,11 +42,11 @@ const ApiLoadFlow = async () => {
     const res = await $fetch<{
       data: { date: string; hours: HourData[]; isMock?: boolean };
       status: { code: number };
-    }>(`/api/airport/flow?date=${selectedDate.value}`);
+    }>(`/api/airport/flow?date=${selectedDate.value}&terminal=${selectedTerminal.value}&direction=${selectedDirection.value}`);
 
     const hours = res?.data?.hours ?? [];
     hourData.value = hours;
-    isMockData.value = res?.data?.isMock ?? true; // server 回 mock 時標記
+    isMockData.value = res?.data?.isMock ?? true;
 
     const counts = hours.map((h) => h.forecastCount);
     totalCount.value = counts.reduce((a, b) => a + b, 0);
@@ -52,8 +66,14 @@ const SetDateOffset = (offset: number) => {
   selectedDate.value = $dayjs().add(offset, 'day').format('YYYY-MM-DD');
 };
 
+const terminalLabel = computed(() => {
+  const t = TERMINAL_OPTIONS.find(o => o.value === selectedTerminal.value);
+  const d = DIRECTION_OPTIONS.find(o => o.value === selectedDirection.value);
+  return `${t?.label ?? '全端'} · ${d?.label ?? '進出境合計'}`;
+});
+
 // ── 監聽篩選變更 ──────────────────────────────────────────────
-watch(selectedDate, ApiLoadFlow);
+watch([selectedDate, selectedTerminal, selectedDirection], ApiLoadFlow);
 onMounted(ApiLoadFlow);
 </script>
 
@@ -82,10 +102,26 @@ onMounted(ApiLoadFlow);
               @click="SetDateOffset(s.offset)"
               :class="{ 'is-active': selectedDate === $dayjs().add(s.offset, 'day').format('YYYY-MM-DD') }"
             ) {{ s.label }}
-          input.PageTraffic__date-input(
-            type="date"
-            v-model="selectedDate"
-          )
+
+        .PageTraffic__filter-group
+          label.PageTraffic__filter-label 航廈
+          .PageTraffic__seg
+            button.PageTraffic__seg-btn(
+              v-for="opt in TERMINAL_OPTIONS"
+              :key="opt.value"
+              :class="{ 'is-active': selectedTerminal === opt.value }"
+              @click="selectedTerminal = opt.value as any"
+            ) {{ opt.label }}
+
+        .PageTraffic__filter-group
+          label.PageTraffic__filter-label 方向
+          .PageTraffic__seg
+            button.PageTraffic__seg-btn(
+              v-for="opt in DIRECTION_OPTIONS"
+              :key="opt.value"
+              :class="{ 'is-active': selectedDirection === opt.value }"
+              @click="selectedDirection = opt.value as any"
+            ) {{ opt.label }}
 
       //- 統計摘要
       .PageTraffic__stats
@@ -100,7 +136,7 @@ onMounted(ApiLoadFlow);
         .PageTraffic__stat-card
           .PageTraffic__stat-label 日期
           .PageTraffic__stat-val {{ selectedDate }}
-          .PageTraffic__stat-unit 全航廈（進出境合計）
+          .PageTraffic__stat-unit {{ terminalLabel }}
 
       //- 模擬資料警告
       .PageTraffic__mock-badge(v-if="isMockData && !loading")
@@ -247,18 +283,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
-.PageTraffic__date-input {
-  font-family: $font-condensed;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  color: #fff;
-  padding: 6px 10px;
-  cursor: pointer;
-
-  &::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
-}
 
 .PageTraffic__seg {
   display: flex;
