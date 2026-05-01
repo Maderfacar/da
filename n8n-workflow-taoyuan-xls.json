@@ -1,5 +1,5 @@
 {
-  "name": "桃園機場人流預報 XLS 爬取 → Vercel Firestore",
+  "name": "桃園機場人流預報 XLS 爬取 → GitHub Gist",
   "nodes": [
     {
       "parameters": {
@@ -30,14 +30,8 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            },
-            {
-              "name": "Accept",
-              "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.9"
-            },
+            { "name": "User-Agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" },
+            { "name": "Accept", "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.9" },
             { "name": "Referer", "value": "https://www.taoyuan-airport.com/" },
             { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7" }
           ]
@@ -58,7 +52,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期').first().json.xlsUrl;\n\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(\n    `[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\nURL: ${xlsUrl}`\n  );\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
+        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期').first().json.xlsUrl;\n\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(`[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\nURL: ${xlsUrl}`);\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
       },
       "id": "verify-binary",
       "name": "驗證 Binary + 偵測格式",
@@ -71,10 +65,7 @@
         "operation": "fromFile",
         "binaryPropertyName": "data",
         "fileFormat": "={{ $json.detectedFormat }}",
-        "options": {
-          "headerRow": true,
-          "sheetName": 0
-        }
+        "options": { "headerRow": true, "sheetName": 0 }
       },
       "id": "parse-spreadsheet",
       "name": "Spreadsheet 解析",
@@ -84,7 +75,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\n// XLS 第一列是「報表產出時間：YYYY-MM-DD HH:mm:ss」作為 header key（每天不同）\n// 動態找出哪個欄位的值包含 ≥20 個 0-23 的整數 → 即「時段」欄\nfunction findHourKey(rows) {\n  if (!rows.length) return null;\n  const keys = Object.keys(rows[0].json);\n  for (const key of keys) {\n    const hits = rows.filter(r => {\n      const v = parseInt(String(r.json[key] ?? ''), 10);\n      return !isNaN(v) && v >= 0 && v <= 23;\n    }).length;\n    if (hits >= 20) return key;\n  }\n  return null;\n}\n\n// 根據 XLS 欄位結構：\n//   __EMPTY   = 總計-入境（第 1 個空格欄）\n//   __EMPTY_1 = 總計-出境（第 2 個空格欄）\nconst COL_ARR = '__EMPTY';\nconst COL_DEP = '__EMPTY_1';\n\nconst hourKey = findHourKey(items);\nif (!hourKey) throw new Error('無法找到時段欄位，XLS 格式可能已變更');\n\nconst hours = [];\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[hourKey] ?? ''), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount: (Number(row[COL_ARR]) || 0) + (Number(row[COL_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('計算日期').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+        "jsCode": "const items = $input.all();\n\nfunction findHourKey(rows) {\n  if (!rows.length) return null;\n  const keys = Object.keys(rows[0].json);\n  for (const key of keys) {\n    const hits = rows.filter(r => {\n      const v = parseInt(String(r.json[key] ?? ''), 10);\n      return !isNaN(v) && v >= 0 && v <= 23;\n    }).length;\n    if (hits >= 20) return key;\n  }\n  return null;\n}\n\nconst COL_ARR = '__EMPTY';\nconst COL_DEP = '__EMPTY_1';\n\nconst hourKey = findHourKey(items);\nif (!hourKey) throw new Error('無法找到時段欄位，XLS 格式可能已變更');\n\nconst hours = [];\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[hourKey] ?? ''), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n  hours.push({\n    hour,\n    forecastCount: (Number(row[COL_ARR]) || 0) + (Number(row[COL_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('計算日期').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
@@ -94,29 +85,30 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://da-line-liff-app.vercel.app/nuxt-api/airport-forecast",
+        "method": "PATCH",
+        "url": "https://api.github.com/gists/45f10cf9dd34610db74ec473b564db05",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer 7275bd5ac5bf49a4cf4d5019b4a34cf26bdcd8c459dd096213a1eec3685f0aa7" },
-            { "name": "Content-Type", "value": "application/json" }
+            { "name": "Authorization", "value": "Bearer YOUR_GITHUB_PAT_HERE" },
+            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ date: $json.date, sourceFile: $json.sourceFile, hours: $json.hours }) }}",
+        "jsonBody": "={{ JSON.stringify({ files: { 'airport-forecast.json': { content: JSON.stringify({ date: $json.date, sourceFile: $json.sourceFile, hours: $json.hours, updatedAt: new Date().toISOString() }) } } }) }}",
         "options": { "timeout": 20000 }
       },
-      "id": "post-vercel",
-      "name": "寫入 Vercel Firestore",
+      "id": "write-gist",
+      "name": "寫入 GitHub Gist",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1560, 300]
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconst date = d.data?.date || d.date || '?';\nconst peak = d.data?.peakHour ?? '?';\nconst total = d.data?.totalForecast ?? '?';\nreturn [{ json: { ok: true, date, peakHour: peak, totalForecast: total, raw: d } }];"
+        "jsCode": "const g = $input.first().json;\nconsole.log('[n8n] ✅ Gist 更新成功 | updated_at:', g.updated_at, '| url:', g.html_url);\nreturn [{ json: { ok: true, gistUrl: g.html_url, updatedAt: g.updated_at } }];"
       },
       "id": "log-success",
       "name": "記錄成功",
@@ -126,38 +118,19 @@
     }
   ],
   "connections": {
-    "每日 01:00 觸發": {
-      "main": [[{ "node": "計算日期", "type": "main", "index": 0 }]]
-    },
-    "計算日期": {
-      "main": [[{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]]
-    },
-    "下載 XLS 檔案": {
-      "main": [[{ "node": "驗證 Binary + 偵測格式", "type": "main", "index": 0 }]]
-    },
-    "驗證 Binary + 偵測格式": {
-      "main": [[{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]]
-    },
-    "Spreadsheet 解析": {
-      "main": [[{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]]
-    },
-    "轉換為 hours 陣列": {
-      "main": [[{ "node": "寫入 Vercel Firestore", "type": "main", "index": 0 }]]
-    },
-    "寫入 Vercel Firestore": {
-      "main": [[{ "node": "記錄成功", "type": "main", "index": 0 }]]
-    }
+    "每日 01:00 觸發": { "main": [[{ "node": "計算日期", "type": "main", "index": 0 }]] },
+    "計算日期":         { "main": [[{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]] },
+    "下載 XLS 檔案":    { "main": [[{ "node": "驗證 Binary + 偵測格式", "type": "main", "index": 0 }]] },
+    "驗證 Binary + 偵測格式": { "main": [[{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]] },
+    "Spreadsheet 解析": { "main": [[{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]] },
+    "轉換為 hours 陣列": { "main": [[{ "node": "寫入 GitHub Gist", "type": "main", "index": 0 }]] },
+    "寫入 GitHub Gist": { "main": [[{ "node": "記錄成功", "type": "main", "index": 0 }]] }
   },
   "pinData": {},
-  "settings": {
-    "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": ""
-  },
+  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "" },
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "8"
+  "versionId": "9"
 }

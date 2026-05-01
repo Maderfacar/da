@@ -53,6 +53,7 @@ export default defineNuxtConfig({
     lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — server only
     internalApiKey: '',             // NUXT_INTERNAL_API_KEY — n8n 內部 API 認證
     cwaApiKey: '',                  // NUXT_CWA_API_KEY — 中央氣象署開放資料平台（伺服器端）
+    airportForecastGistUrl: '',     // NUXT_AIRPORT_FORECAST_GIST_URL — GitHub Gist raw URL
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
