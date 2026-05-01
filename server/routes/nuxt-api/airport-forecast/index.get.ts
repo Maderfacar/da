@@ -2,59 +2,63 @@
  * GET /nuxt-api/airport-forecast
  *
  * 取得桃園機場每日航班運量整點人數預報。
- * 資料由 n8n 爬取 Taoyuan Airport 官網 XLS 後寫入 Firestore。
+ * 資料由 n8n 爬取官網 XLS 後寫入 GitHub Gist，此端點直接讀取 Gist raw JSON。
  *
- * Query: date (YYYY-MM-DD，預設今日)
+ * Query: date (YYYY-MM-DD，目前忽略，Gist 固定存最新一日)
  */
-import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+
+interface AirportHour { hour: number; forecastCount: number; terminal?: string }
+
+interface GistData {
+  date: string;
+  sourceFile: string;
+  hours: AirportHour[];
+  updatedAt: string;
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event) as { date?: string };
   const date = query.date ?? new Date().toISOString().slice(0, 10);
-
   const config = useRuntimeConfig();
 
-  if (!config.firebaseServiceAccountJson) {
-    return {
-      data: _mockData(date),
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
-  }
+  const gistUrl = config.airportForecastGistUrl;
 
-  try {
-    const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
-    const doc = await db.collection('airport_flow_forecast').doc(date).get();
+  if (gistUrl) {
+    try {
+      const raw = await $fetch<GistData>(gistUrl, {
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+      });
 
-    if (!doc.exists) {
-      return {
-        data: _mockData(date),
-        status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-      };
+      if (raw?.hours?.length) {
+        const total = raw.hours.reduce((s, h) => s + h.forecastCount, 0);
+        const peak = raw.hours.reduce(
+          (max, h) => (h.forecastCount > max.forecastCount ? h : max),
+          raw.hours[0],
+        );
+        return {
+          data: {
+            date: raw.date || date,
+            hours: raw.hours,
+            totalForecast: total,
+            peakHour: peak.hour,
+            peakCount: peak.forecastCount,
+            sourceFile: raw.sourceFile || '',
+            updatedAt: raw.updatedAt ? new Date(raw.updatedAt).getTime() : 0,
+          },
+          status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+        };
+      }
+    } catch (err) {
+      console.error('[airport-forecast/get] Gist fetch failed:', err);
     }
-
-    const d = doc.data()!;
-    return {
-      data: {
-        date: d.date as string,
-        hours: d.hours as AirportHour[],
-        totalForecast: (d.totalForecast as number) ?? 0,
-        peakHour: (d.peakHour as number) ?? 0,
-        peakCount: (d.peakCount as number) ?? 0,
-        sourceFile: (d.sourceFile as string) ?? '',
-        updatedAt: d.updatedAt?.toMillis?.() ?? 0,
-      },
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
-  } catch (err) {
-    console.error('[airport-forecast/get] Firestore query failed:', err);
-    return {
-      data: _mockData(date),
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
   }
-});
 
-interface AirportHour { hour: number; forecastCount: number; terminal?: string }
+  // Fallback: 模擬資料（Gist 尚未設定或讀取失敗時）
+  return {
+    data: _mockData(date),
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  };
+});
 
 function _mockData(date: string) {
   const peak = [0, 0, 200, 420, 810, 1450, 1980, 2240, 2100, 1870, 1650, 1520,
