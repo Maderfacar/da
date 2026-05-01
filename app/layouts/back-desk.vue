@@ -2,8 +2,15 @@
 // LayoutBackDesk 管理者端佈局：頂部 Bar + 左側抽屜導航
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const { authResolved, isSignIn, liffReady } = StoreAuth();
 const drawerOpen = ref(false);
+
+// auth + liff 雙雙完成但仍未登入 → 導回 /login
+watch([authResolved, liffReady], ([resolved, liffDone]) => {
+  if (resolved && liffDone && !isSignIn.value) {
+    navigateTo('/login');
+  }
+});
 
 const navItems = [
   { id: 'orders',        icon: '📋', label: '訂單管理',  path: '/admin/orders'        },
@@ -33,7 +40,7 @@ function ClickNav(path: string) {
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")
-    .LayoutBackDesk__loading(v-if="!authResolved")
+    .LayoutBackDesk__loading(v-if="!authResolved || (authResolved && !liffReady && !isSignIn)")
       .LayoutBackDesk__loading-logo
         | DEST
         span ∙
