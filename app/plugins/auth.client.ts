@@ -4,8 +4,9 @@ export default defineNuxtPlugin(() => {
   const { testMode } = useRuntimeConfig().public;
 
   if (testMode === 'T') {
-    // 本地開發模式：直接 mock passenger 角色，跳過 LIFF / Firebase
-    StoreAuth().MockSignIn('passenger');
+    // 本地開發模式：跳過 Firebase/LIFF，只解除 auth loading
+    // 角色由登入頁「DEV MODE」按鈕手動選擇
+    StoreAuth().authResolved.value = true;
     return;
   }
 
