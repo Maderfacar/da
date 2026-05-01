@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const { airportForecastGistUrl } = useRuntimeConfig();
 
   if (!airportForecastGistUrl) {
-    return { data: { ..._mockData(date), _debug: 'no_env_var' }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
   }
 
   const rawUrl = `${airportForecastGistUrl.replace(/\/$/, '')}/airport-${date}.json`;
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     };
 
     if (!payload?.hours?.length) {
-      return { data: { ..._mockData(date), _debug: `empty_payload | raw_type:${typeof raw} | raw_len:${String(raw).length} | keys:${Object.keys(payload||{}).join(',')}` }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+      return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
     }
 
     const hours = Array.from({ length: 24 }, (_, i) => {
@@ -34,9 +34,8 @@ export default defineEventHandler(async (event) => {
       data: { date, hours, isMock: false },
       status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
     };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { data: { ..._mockData(date), _debug: `fetch_error: ${msg.slice(0, 120)}` }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+  } catch {
+    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
   }
 });
 
