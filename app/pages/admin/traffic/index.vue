@@ -7,7 +7,6 @@ const selectedTerminal = ref<'all' | 'T1' | 'T2'>('all');
 const selectedDirection = ref<'all' | 'arrival' | 'departure'>('all');
 
 const DATE_SHORTCUTS = [
-  { label: '昨天', offset: -1 },
   { label: '今天', offset: 0 },
   { label: '明天', offset: 1 },
 ];

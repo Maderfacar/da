@@ -4,24 +4,35 @@
     {
       "parameters": {
         "rule": {
-          "interval": [{ "triggerAtHour": 17, "triggerAtMinute": 0 }]
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
         }
       },
       "id": "schedule-trigger",
-      "name": "每日 17:00 觸發",
+      "name": "每小時觸發",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [240, 300]
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\n// 台灣時間 = UTC+8\nconst twNow = new Date(now.getTime() + 8 * 3600 * 1000);\n// 抓明日的預報表\nconst twTomorrow = new Date(twNow.getTime() + 24 * 3600 * 1000);\nconst yyyy = twTomorrow.getUTCFullYear();\nconst mm = String(twTomorrow.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(twTomorrow.getUTCDate()).padStart(2, '0');\nconst isoDate  = `${yyyy}-${mm}-${dd}`;\nconst dateSlug = `${yyyy}_${mm}_${dd}`;\nconst xlsName  = `${dateSlug}.xls`;\nconst xlsUrl   = `https://www.taoyuan-airport.com/uploads/fos/${xlsName}`;\nconst gistFileName = `airport-${isoDate}.json`;\nreturn [{ json: { isoDate, dateSlug, xlsUrl, xlsName, gistFileName, fileExt: 'xls' } }];"
+        "jsCode": "const now = new Date();\nconst twNow = new Date(now.getTime() + 8 * 3600 * 1000);\n\nfunction makeDateInfo(twDate) {\n  const yyyy = twDate.getUTCFullYear();\n  const mm = String(twDate.getUTCMonth() + 1).padStart(2, '0');\n  const dd = String(twDate.getUTCDate()).padStart(2, '0');\n  const isoDate  = `${yyyy}-${mm}-${dd}`;\n  const dateSlug = `${yyyy}_${mm}_${dd}`;\n  return {\n    isoDate,\n    dateSlug,\n    xlsUrl: `https://www.taoyuan-airport.com/uploads/fos/${dateSlug}.xls`,\n    xlsName: `${dateSlug}.xls`,\n    gistFileName: `airport-${isoDate}.json`,\n  };\n}\n\nconst twTomorrow = new Date(twNow.getTime() + 24 * 3600 * 1000);\nreturn [\n  { json: makeDateInfo(twNow) },\n  { json: makeDateInfo(twTomorrow) },\n];"
       },
-      "id": "compute-date",
-      "name": "計算日期（明日）",
+      "id": "compute-dates",
+      "name": "計算今日與明日",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batches",
+      "name": "逐一處理日期",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [680, 300]
     },
     {
       "parameters": {
@@ -30,9 +41,9 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "User-Agent", "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" },
-            { "name": "Accept", "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.9" },
-            { "name": "Referer", "value": "https://www.taoyuan-airport.com/" },
+            { "name": "User-Agent",      "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" },
+            { "name": "Accept",          "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.9" },
+            { "name": "Referer",         "value": "https://www.taoyuan-airport.com/" },
             { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7" }
           ]
         },
@@ -48,17 +59,36 @@
       "name": "下載 XLS 檔案",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 300]
+      "position": [900, 300],
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期（明日）').first().json.xlsUrl;\n\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(`[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\nURL: ${xlsUrl}`);\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
+        "jsCode": "const item = $input.first();\n\nif (item.json?.error || !item.binary?.data) {\n  console.log(`[n8n] ⚠️ 跳過 ${item.json.isoDate} — 下載失敗或檔案不存在`);\n  return [{ json: { skipRemainder: true, isoDate: item.json.isoDate } }];\n}\n\nconst binary = item.binary.data;\nconst mimeType = (binary.mimeType || '').toLowerCase();\nconst fileSize = binary.fileSize || 0;\n\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || fileSize < 2000) {\n  console.log(`[n8n] ⚠️ 跳過 ${item.json.isoDate} — MIME ${mimeType}，檔案 ${fileSize} bytes`);\n  return [{ json: { skipRemainder: true, isoDate: item.json.isoDate } }];\n}\n\nconst detectedFormat = (mimeType.includes('openxmlformats') || (binary.fileName || '').toLowerCase().endsWith('.xlsx')) ? 'xlsx' : 'xls';\nconsole.log(`[n8n] ✅ ${item.json.isoDate} Binary OK | size=${fileSize} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, skipRemainder: false, detectedFormat }, binary: item.binary }];"
       },
-      "id": "verify-binary",
-      "name": "驗證 Binary + 偵測格式",
+      "id": "check-download",
+      "name": "驗證下載結果",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 300]
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.skipRemainder }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "if-skip",
+      "name": "跳過？",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1340, 300]
     },
     {
       "parameters": {
@@ -71,17 +101,17 @@
       "name": "Spreadsheet 解析",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [1560, 200]
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nfunction findHourKey(rows) {\n  if (!rows.length) return null;\n  const keys = Object.keys(rows[0].json);\n  for (const key of keys) {\n    const hits = rows.filter(r => {\n      const v = parseInt(String(r.json[key] ?? ''), 10);\n      return !isNaN(v) && v >= 0 && v <= 23;\n    }).length;\n    if (hits >= 20) return key;\n  }\n  return null;\n}\n\nconst COL_ARR = '__EMPTY';\nconst COL_DEP = '__EMPTY_1';\n\nconst hourKey = findHourKey(items);\nif (!hourKey) throw new Error('無法找到時段欄位，XLS 格式可能已變更');\n\nconst hours = [];\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[hourKey] ?? ''), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n  hours.push({\n    hour,\n    forecastCount: (Number(row[COL_ARR]) || 0) + (Number(row[COL_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName, gistFileName } = $('計算日期（明日）').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, gistFileName, hours: filled } }];"
+        "jsCode": "const items = $input.all();\n\nfunction findHourKey(rows) {\n  if (!rows.length) return null;\n  const keys = Object.keys(rows[0].json);\n  for (const key of keys) {\n    const hits = rows.filter(r => {\n      const v = parseInt(String(r.json[key] ?? ''), 10);\n      return !isNaN(v) && v >= 0 && v <= 23;\n    }).length;\n    if (hits >= 20) return key;\n  }\n  return null;\n}\n\nconst COL_ARR = '__EMPTY';   // 入境\nconst COL_DEP = '__EMPTY_1'; // 出境\n\nconst hourKey = findHourKey(items);\nif (!hourKey) throw new Error('無法找到時段欄位，XLS 格式可能已變更');\n\nconst parsed = [];\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[hourKey] ?? ''), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n  const arr = Number(row[COL_ARR]) || 0;\n  const dep = Number(row[COL_DEP]) || 0;\n  parsed.push({ hour, arr, dep });\n}\n\n// 每個小時輸出 arrival / departure / all 三筆，供前端篩選\nconst hours = Array.from({ length: 24 }, (_, h) => {\n  const found = parsed.find(r => r.hour === h) ?? { hour: h, arr: 0, dep: 0 };\n  return [\n    { hour: h, forecastCount: found.arr,               terminal: 'all', direction: 'arrival' },\n    { hour: h, forecastCount: found.dep,               terminal: 'all', direction: 'departure' },\n    { hour: h, forecastCount: found.arr + found.dep,   terminal: 'all', direction: 'all' },\n  ];\n}).flat();\n\nconst { isoDate, xlsName, gistFileName } = $('驗證下載結果').first().json;\nconsole.log(`[n8n] 📊 ${isoDate} 解析完成，共 ${hours.length} 筆（${hours.length / 3} 小時 × 3 方向）`);\nreturn [{ json: { date: isoDate, sourceFile: xlsName, gistFileName, hours } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [1780, 200]
     },
     {
       "parameters": {
@@ -90,8 +120,8 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer YOUR_GITHUB_PAT_HERE" },
-            { "name": "Accept", "value": "application/vnd.github+json" },
+            { "name": "Authorization",      "value": "Bearer YOUR_GITHUB_PAT_HERE" },
+            { "name": "Accept",             "value": "application/vnd.github+json" },
             { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
           ]
         },
@@ -104,33 +134,86 @@
       "name": "寫入 GitHub Gist（日期檔名）",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1560, 300]
+      "position": [2000, 200]
     },
     {
       "parameters": {
-        "jsCode": "const g = $input.first().json;\nconst fileName = $('轉換為 hours 陣列').first().json.gistFileName;\nconsole.log(`[n8n] ✅ Gist 更新成功 | file=${fileName} | updated_at:`, g.updated_at, '| url:', g.html_url);\nreturn [{ json: { ok: true, fileName, gistUrl: g.html_url, updatedAt: g.updated_at } }];"
+        "jsCode": "// 計算 8~60 天前的日期作為待清理檔名（PATCH null 即刪除 Gist 中該檔案）\nconst files = {};\nfor (let i = 8; i <= 60; i++) {\n  const d = new Date(Date.now() + 8 * 3600 * 1000 - i * 24 * 3600 * 1000);\n  const yyyy = d.getUTCFullYear();\n  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');\n  const dd = String(d.getUTCDate()).padStart(2, '0');\n  files[`airport-${yyyy}-${mm}-${dd}.json`] = null;\n}\nreturn [{ json: { filesToDelete: files } }];"
+      },
+      "id": "compute-cleanup",
+      "name": "計算待清理檔案",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 460]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.github.com/gists/45f10cf9dd34610db74ec473b564db05",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization",      "value": "Bearer YOUR_GITHUB_PAT_HERE" },
+            { "name": "Accept",             "value": "application/vnd.github+json" },
+            { "name": "X-GitHub-Api-Version", "value": "2022-11-28" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ files: $json.filesToDelete }) }}",
+        "options": { "timeout": 20000 }
+      },
+      "id": "delete-old-files",
+      "name": "刪除過期檔案",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 460],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const g = $input.first().json;\nconsole.log('[n8n] ✅ 全部完成 | gist updated_at:', g.updated_at ?? '(清理完成)');\nreturn [{ json: { ok: true } }];"
       },
       "id": "log-success",
       "name": "記錄成功",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 300]
+      "position": [1340, 460]
     }
   ],
   "connections": {
-    "每日 17:00 觸發":       { "main": [[{ "node": "計算日期（明日）", "type": "main", "index": 0 }]] },
-    "計算日期（明日）":       { "main": [[{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]] },
-    "下載 XLS 檔案":          { "main": [[{ "node": "驗證 Binary + 偵測格式", "type": "main", "index": 0 }]] },
-    "驗證 Binary + 偵測格式": { "main": [[{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]] },
-    "Spreadsheet 解析":       { "main": [[{ "node": "轉換為 hours 陣列", "type": "main", "index": 0 }]] },
-    "轉換為 hours 陣列":      { "main": [[{ "node": "寫入 GitHub Gist（日期檔名）", "type": "main", "index": 0 }]] },
-    "寫入 GitHub Gist（日期檔名）": { "main": [[{ "node": "記錄成功", "type": "main", "index": 0 }]] }
+    "每小時觸發":           { "main": [[{ "node": "計算今日與明日",          "type": "main", "index": 0 }]] },
+    "計算今日與明日":       { "main": [[{ "node": "逐一處理日期",            "type": "main", "index": 0 }]] },
+    "逐一處理日期": {
+      "main": [
+        [{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }],
+        [{ "node": "計算待清理檔案", "type": "main", "index": 0 }]
+      ]
+    },
+    "下載 XLS 檔案":        { "main": [[{ "node": "驗證下載結果",            "type": "main", "index": 0 }]] },
+    "驗證下載結果":         { "main": [[{ "node": "跳過？",                  "type": "main", "index": 0 }]] },
+    "跳過？": {
+      "main": [
+        [{ "node": "逐一處理日期", "type": "main", "index": 0 }],
+        [{ "node": "Spreadsheet 解析", "type": "main", "index": 0 }]
+      ]
+    },
+    "Spreadsheet 解析":     { "main": [[{ "node": "轉換為 hours 陣列",       "type": "main", "index": 0 }]] },
+    "轉換為 hours 陣列":    { "main": [[{ "node": "寫入 GitHub Gist（日期檔名）", "type": "main", "index": 0 }]] },
+    "寫入 GitHub Gist（日期檔名）": { "main": [[{ "node": "逐一處理日期",   "type": "main", "index": 0 }]] },
+    "計算待清理檔案":       { "main": [[{ "node": "刪除過期檔案",            "type": "main", "index": 0 }]] },
+    "刪除過期檔案":         { "main": [[{ "node": "記錄成功",                "type": "main", "index": 0 }]] }
   },
   "pinData": {},
-  "settings": { "executionOrder": "v1", "saveManualExecutions": true, "callerPolicy": "workflowsFromSameOwner", "errorWorkflow": "" },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "10"
+  "updatedAt": "2026-05-02T00:00:00.000Z",
+  "versionId": "11"
 }
