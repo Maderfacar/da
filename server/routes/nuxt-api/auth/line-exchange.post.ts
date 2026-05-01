@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
         displayName: lineProfile.name,
         photoURL: lineProfile.picture,
       });
-      await db.collection('users').doc(uid).set({
+      await db.collection('users').doc(lineProfile.sub).set({
         role: defaultRole,
         approved: isDriver ? false : true,
         lineUserId: lineProfile.sub,
@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
   let role = defaultRole;
   let approved = !isDriver; // passenger 預設已核准
   try {
-    const userDoc = await db.collection('users').doc(uid).get();
+    const userDoc = await db.collection('users').doc(lineProfile.sub).get();
     if (userDoc.exists) {
       role = (userDoc.data()?.role as string) ?? defaultRole;
       approved = (userDoc.data()?.approved as boolean) ?? (!isDriver);

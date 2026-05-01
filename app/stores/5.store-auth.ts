@@ -91,7 +91,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     try {
       const { getFirestore, doc, getDoc } = await import('firebase/firestore');
       const db = getFirestore(firebaseApp);
-      const snap = await getDoc(doc(db, 'users', uid));
+      // Firebase UID 格式為 line:{lineUserId}，Firestore 文件 key 直接使用 LINE UID
+      const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
+      const snap = await getDoc(doc(db, 'users', lineUid));
       if (snap.exists()) {
         const data = snap.data();
         role.value = data.role as 'passenger' | 'driver' | 'admin';
