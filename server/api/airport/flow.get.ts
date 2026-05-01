@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     };
 
     if (!payload?.hours?.length) {
-      return { data: { ..._mockData(date), _debug: 'empty_payload' }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+      return { data: { ..._mockData(date), _debug: `empty_payload | raw_type:${typeof raw} | raw_len:${String(raw).length} | keys:${Object.keys(payload||{}).join(',')}` }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
     }
 
     const hours = Array.from({ length: 24 }, (_, i) => {
