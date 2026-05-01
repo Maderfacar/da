@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  const { googleMapsApiKey } = useRuntimeConfig();
+  const { googleMapsApiKey, firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
   let distanceKm = 25; // mock fallback
 
   if (googleMapsApiKey) {
@@ -67,7 +67,6 @@ export default defineEventHandler(async (event) => {
   const estimatedTime = Math.round(distanceKm * 1.8);
 
   const orderId = crypto.randomUUID();
-  const { firebaseServiceAccountJson } = useRuntimeConfig();
 
   if (firebaseServiceAccountJson) {
     try {
@@ -92,7 +91,7 @@ export default defineEventHandler(async (event) => {
         createdAt: FieldValue.serverTimestamp(),
       });
       // ── LINE 訂單確認推播 ──────────────────────────────────
-      if (body.lineUserId && config.lineChannelAccessToken) {
+      if (body.lineUserId && lineChannelAccessToken) {
         const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
         const fareStr = estimatedFare.toLocaleString();
         const vehicleLabel: Record<string, string> = {
@@ -106,7 +105,7 @@ export default defineEventHandler(async (event) => {
           `💰 預估費用：NT$ ${fareStr}`,
           `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
         ].join('\n');
-        sendLinePush(config.lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
+        sendLinePush(lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
       }
     } catch (err) {
       console.error('[orders/post] Firestore write failed:', err);

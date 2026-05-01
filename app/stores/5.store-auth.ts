@@ -125,7 +125,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       ]);
 
       if (!liff.isLoggedIn()) {
-        liffReady.value = true;
+        liff.login(); // 強制導向 LINE 登入，redirect 後重新執行
         return;
       }
 
