@@ -116,43 +116,13 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": { "caseSensitive": false, "typeValidation": "loose" },
-          "conditions": [{
-            "id": "check-ok",
-            "leftValue": "={{ String($json.status?.code ?? $json.statusCode ?? '') }}",
-            "rightValue": "200",
-            "operator": { "type": "string", "operation": "equals" }
-          }],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "check-result",
-      "name": "檢查結果",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1780, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.log(`[n8n] ✅ 寫入成功 | ${d.data?.date} | 尖峰 ${d.data?.peakHour}:00 | 總人次 ${d.data?.totalForecast}`);\nreturn $input.all();"
+        "jsCode": "const d = $input.first().json;\nconst date = d.data?.date || d.date || '?';\nconst peak = d.data?.peakHour ?? '?';\nconst total = d.data?.totalForecast ?? '?';\nreturn [{ json: { ok: true, date, peakHour: peak, totalForecast: total, raw: d } }];"
       },
       "id": "log-success",
       "name": "記錄成功",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 180]
-    },
-    {
-      "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.error('[n8n] ❌ 寫入失敗 | status.code:', d.status?.code, '| statusCode:', d.statusCode);\nconsole.error('[n8n] 完整回應:', JSON.stringify(d, null, 2));\nreturn $input.all();"
-      },
-      "id": "log-error",
-      "name": "記錄失敗",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2000, 420]
+      "position": [1780, 300]
     }
   ],
   "connections": {
@@ -175,13 +145,7 @@
       "main": [[{ "node": "寫入 Vercel Firestore", "type": "main", "index": 0 }]]
     },
     "寫入 Vercel Firestore": {
-      "main": [[{ "node": "檢查結果", "type": "main", "index": 0 }]]
-    },
-    "檢查結果": {
-      "main": [
-        [{ "node": "記錄成功", "type": "main", "index": 0 }],
-        [{ "node": "記錄失敗", "type": "main", "index": 0 }]
-      ]
+      "main": [[{ "node": "記錄成功", "type": "main", "index": 0 }]]
     }
   },
   "pinData": {},
@@ -195,5 +159,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "6"
+  "versionId": "7"
 }
