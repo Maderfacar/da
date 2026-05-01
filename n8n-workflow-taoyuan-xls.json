@@ -117,12 +117,12 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "options": { "caseSensitive": false, "typeValidation": "loose" },
           "conditions": [{
             "id": "check-ok",
-            "leftValue": "={{ $json.status.code }}",
-            "rightValue": 200,
-            "operator": { "type": "number", "operation": "equals" }
+            "leftValue": "={{ String($json.status?.code ?? $json.statusCode ?? '') }}",
+            "rightValue": "200",
+            "operator": { "type": "string", "operation": "equals" }
           }],
           "combinator": "and"
         },
@@ -146,7 +146,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const d = $input.first().json;\nconsole.error('[n8n] ❌ 寫入失敗:', JSON.stringify(d));\nreturn $input.all();"
+        "jsCode": "const d = $input.first().json;\nconsole.error('[n8n] ❌ 寫入失敗 | status.code:', d.status?.code, '| statusCode:', d.statusCode);\nconsole.error('[n8n] 完整回應:', JSON.stringify(d, null, 2));\nreturn $input.all();"
       },
       "id": "log-error",
       "name": "記錄失敗",
