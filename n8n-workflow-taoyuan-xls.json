@@ -15,55 +15,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\nconst tw = new Date(now.getTime() + 8 * 3600 * 1000);\nconst yyyy = tw.getUTCFullYear();\nconst mm = String(tw.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(tw.getUTCDate()).padStart(2, '0');\nconst isoDate   = `${yyyy}-${mm}-${dd}`;\nconst dateSlug  = `${yyyy}_${mm}_${dd}`;\nconst compact   = `${yyyy}${mm}${dd}`;\nreturn [{ json: {\n  isoDate,\n  dateSlug,\n  compact,\n  pageUrl: 'https://www.taoyuanairport.com.tw/flightforecast'\n}}];"
+        "jsCode": "const now = new Date();\nconst tw = new Date(now.getTime() + 8 * 3600 * 1000);\nconst yyyy = tw.getUTCFullYear();\nconst mm = String(tw.getUTCMonth() + 1).padStart(2, '0');\nconst dd = String(tw.getUTCDate()).padStart(2, '0');\nconst isoDate  = `${yyyy}-${mm}-${dd}`;\nconst dateSlug = `${yyyy}_${mm}_${dd}`;\nconst xlsName  = `${dateSlug}.xls`;\nconst xlsUrl   = `https://www.taoyuan-airport.com/uploads/fos/${xlsName}`;\nreturn [{ json: { isoDate, dateSlug, xlsUrl, xlsName, fileExt: 'xls' } }];"
       },
       "id": "compute-date",
       "name": "計算日期",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [460, 300]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $json.pageUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-            },
-            { "name": "Accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" },
-            { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7" },
-            { "name": "Accept-Encoding", "value": "gzip, deflate, br" },
-            { "name": "Cache-Control", "value": "no-cache" },
-            { "name": "Pragma", "value": "no-cache" }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": { "responseFormat": "text" }
-          },
-          "timeout": 30000,
-          "redirect": { "redirect": { "followRedirects": true, "maxRedirects": 5 } }
-        }
-      },
-      "id": "fetch-page",
-      "name": "抓取機場頁面",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "const html = $input.first().json.data || '';\nconst { isoDate, dateSlug, compact } = $('計算日期').first().json;\n\n// ── 多種正則，全面掃描 HTML 屬性中的 .xls / .xlsx 連結 ─────────\nconst patternSources = [\n  /href=[\"']([^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /href=[\"']([^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /url:\\s*[\"']([^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /action=[\"']([^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /[\"']([^\"'<>]*flightforecast[^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /[\"']([^\"'<>]*forecast[^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /[\"']([^\"'<>]*download[^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /[\"']([^\"'<>]*\\/files\\/[^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n  /[\"']([^\"'<>]*\\/upload\\/[^\"'<>]*\\.xlsx?(?:\\?[^\"'<>]*)?)[\"']/gi,\n];\n\nconst found = new Set();\nfor (const pat of patternSources) {\n  const re = new RegExp(pat.source, 'gi');\n  let m;\n  while ((m = re.exec(html)) !== null) {\n    const u = m[1].trim();\n    if (u) found.add(u);\n  }\n}\nconst allLinks = [...found];\nconsole.log(`[n8n] 頁面掃描到 ${allLinks.length} 個 XLS 連結: ${JSON.stringify(allLinks)}`);\n\n// 優先選含今日日期字串的連結\nlet xlsUrl =\n  allLinks.find(u => u.includes(dateSlug))  ||\n  allLinks.find(u => u.includes(compact))   ||\n  allLinks.find(u => u.includes(isoDate))   ||\n  allLinks[0] || null;\n\n// ── Fallback：多種日期格式的猜測路徑（依慣例優先度） ─────────────\nif (!xlsUrl) {\n  const candidates = [\n    `https://www.taoyuanairport.com.tw/upload/flightforecast/${dateSlug}.xls`,\n    `https://www.taoyuanairport.com.tw/upload/flightforecast/${compact}.xls`,\n    `https://www.taoyuanairport.com.tw/upload/flightforecast/${isoDate}.xls`,\n    `https://www.taoyuanairport.com.tw/upload/flightforecast/${dateSlug}.xlsx`,\n    `https://www.taoyuanairport.com.tw/flightforecast/${dateSlug}.xls`,\n    `https://www.taoyuanairport.com.tw/flightforecast/${compact}.xls`,\n  ];\n  xlsUrl = candidates[0];\n  console.warn(`[n8n] ⚠️ 頁面未找到 XLS 連結，使用猜測 URL: ${xlsUrl}`);\n}\n\n// 補全相對路徑\nif (xlsUrl.startsWith('//')) {\n  xlsUrl = 'https:' + xlsUrl;\n} else if (xlsUrl.startsWith('/')) {\n  xlsUrl = 'https://www.taoyuanairport.com.tw' + xlsUrl;\n} else if (!xlsUrl.startsWith('http')) {\n  xlsUrl = 'https://www.taoyuanairport.com.tw/' + xlsUrl;\n}\n\nconst fileExt = /\\.xlsx(\\?|$)/i.test(xlsUrl) ? 'xlsx' : 'xls';\nconst xlsName = xlsUrl.split('/').pop()?.split('?')[0] || `${dateSlug}.xls`;\n\nconsole.log(`[n8n] 最終下載 URL: ${xlsUrl} (format: ${fileExt})`);\nreturn [{ json: { isoDate, dateSlug, compact, xlsUrl, xlsName, fileExt } }];"
-      },
-      "id": "extract-url",
-      "name": "提取 XLS 下載連結",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [900, 300]
     },
     {
       "parameters": {
@@ -80,9 +38,8 @@
               "name": "Accept",
               "value": "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/octet-stream,*/*;q=0.9"
             },
-            { "name": "Referer", "value": "https://www.taoyuanairport.com.tw/flightforecast" },
-            { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7" },
-            { "name": "Cache-Control", "value": "no-cache" }
+            { "name": "Referer", "value": "https://www.taoyuan-airport.com/" },
+            { "name": "Accept-Language", "value": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7" }
           ]
         },
         "options": {
@@ -97,17 +54,17 @@
       "name": "下載 XLS 檔案",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1120, 300]
+      "position": [680, 300]
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\n// ① 確認 binary 欄位存在\nif (!binary?.data) {\n  throw new Error(\n    '下載失敗：未收到 Binary 資料。\\n' +\n    '官網可能阻擋了請求或需要登入 Session。'\n  );\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('提取 XLS 下載連結').first().json.xlsUrl;\n\n// ② 最重要的檢查：嚴格拒絕 HTML / 純文字回應\n//    這是 \"not in xls format\" 的根本原因 — HTML 頁面 > 1 KB 會通過大小檢查\nconst isHtml = mimeType.includes('text/html') || mimeType.includes('text/plain');\nconst isJson = mimeType.includes('application/json');\nif (isHtml || isJson) {\n  throw new Error(\n    `[MIME 錯誤] 下載到 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\n` +\n    `URL: ${xlsUrl}\\n\\n` +\n    `診斷步驟：\\n` +\n    `1. 手動用瀏覽器開啟 https://www.taoyuanairport.com.tw/flightforecast\\n` +\n    `2. 右鍵點「下載 XLS」→ 複製連結位址\\n` +\n    `3. 將真實 URL 填入 Workflow 的「提取 XLS 下載連結」節點 xlsUrl 變數`\n  );\n}\n\n// ③ 確認不是空檔案或極小的錯誤回應\nif (fileSize < 2000) {\n  throw new Error(\n    `檔案過小 (${fileSize} bytes)，可能為錯誤回應頁面或 404。\\n` +\n    `URL: ${xlsUrl}`\n  );\n}\n\n// ④ 從 MIME type 或副檔名偵測格式\nlet detectedFormat = $('提取 XLS 下載連結').first().json.fileExt || 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n} else if (\n  mimeType.includes('ms-excel') ||\n  mimeType.includes('spreadsheet') ||\n  mimeType.includes('octet-stream') && fileName.endsWith('.xls') ||\n  fileName.endsWith('.xls')\n) {\n  detectedFormat = 'xls';\n}\n\nconsole.log(`[n8n] ✅ Binary 驗證通過 | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
+        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期').first().json.xlsUrl;\n\n// 拒絕 HTML / 純文字回應（這是 \"not in xls format\" 的根本原因）\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(\n    `[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\n` +\n    `URL: ${xlsUrl}\\n` +\n    `可能原因：今日 XLS 尚未發佈，或 URL 路徑有誤。`\n  );\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
       },
       "id": "verify-binary",
       "name": "驗證 Binary + 偵測格式",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1340, 300]
+      "position": [900, 300]
     },
     {
       "parameters": {
@@ -123,17 +80,17 @@
       "name": "Spreadsheet 解析",
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 2,
-      "position": [1560, 300]
+      "position": [1120, 300]
     },
     {
       "parameters": {
-        "jsCode": "// ─── 欄位名稱請依實際 XLS 標題列調整（先執行一次看 output 再修改） ──\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n// ─────────────────────────────────────────────────────────────────\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[COL_HOUR]), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount:\n      (Number(row[COL_T1_ARR]) || 0) +\n      (Number(row[COL_T1_DEP]) || 0) +\n      (Number(row[COL_T2_ARR]) || 0) +\n      (Number(row[COL_T2_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('提取 XLS 下載連結').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+        "jsCode": "// ─── 欄位名稱請依實際 XLS 標題列調整 ────────────────────────────\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n// ─────────────────────────────────────────────────────────────────\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[COL_HOUR]), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount:\n      (Number(row[COL_T1_ARR]) || 0) +\n      (Number(row[COL_T1_DEP]) || 0) +\n      (Number(row[COL_T2_ARR]) || 0) +\n      (Number(row[COL_T2_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('計算日期').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 300]
+      "position": [1340, 300]
     },
     {
       "parameters": {
@@ -155,7 +112,7 @@
       "name": "寫入 Vercel Firestore",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 300]
+      "position": [1560, 300]
     },
     {
       "parameters": {
@@ -175,7 +132,7 @@
       "name": "檢查結果",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2220, 300]
+      "position": [1780, 300]
     },
     {
       "parameters": {
@@ -185,7 +142,7 @@
       "name": "記錄成功",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2440, 180]
+      "position": [2000, 180]
     },
     {
       "parameters": {
@@ -195,7 +152,7 @@
       "name": "記錄失敗",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2440, 420]
+      "position": [2000, 420]
     }
   ],
   "connections": {
@@ -203,12 +160,6 @@
       "main": [[{ "node": "計算日期", "type": "main", "index": 0 }]]
     },
     "計算日期": {
-      "main": [[{ "node": "抓取機場頁面", "type": "main", "index": 0 }]]
-    },
-    "抓取機場頁面": {
-      "main": [[{ "node": "提取 XLS 下載連結", "type": "main", "index": 0 }]]
-    },
-    "提取 XLS 下載連結": {
       "main": [[{ "node": "下載 XLS 檔案", "type": "main", "index": 0 }]]
     },
     "下載 XLS 檔案": {
@@ -244,5 +195,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "5"
+  "versionId": "6"
 }
