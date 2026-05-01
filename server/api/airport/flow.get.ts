@@ -1,76 +1,42 @@
-import { useFirebaseAdmin } from '@@/utils/firebase-admin';
-
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event) as {
-    date?: string;
-    terminal?: string;
-    direction?: string;
-  };
-
-  // 預設查詢今天的資料
+  const query = getQuery(event) as { date?: string };
   const date = query.date ?? new Date().toISOString().slice(0, 10);
-  const terminal = query.terminal ?? 'all';
-  const direction = query.direction ?? 'all';
 
-  const config = useRuntimeConfig();
-  if (!config.firebaseServiceAccountJson) {
-    return {
-      data: _mockData(date),
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
+  const { airportForecastGistUrl } = useRuntimeConfig();
+
+  if (!airportForecastGistUrl) {
+    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
   }
 
   try {
-    const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+    // 從 Gist 讀取指定日期的資料（raw URL base + /airport-{date}.json）
+    const rawUrl = `${airportForecastGistUrl.replace(/\/$/, '')}/airport-${date}.json`;
+    const payload = await $fetch<{
+      date: string;
+      hours: Array<{ hour: number; forecastCount: number; terminal: string }>;
+    }>(rawUrl, { headers: { 'Cache-Control': 'no-cache' } });
 
-    const q = db.collection('airport_flow')
-      .where('date', '==', date)
-      .where('terminal', '==', terminal)
-      .where('direction', '==', direction);
-
-    const snapshot = await q.get();
-
-    // Firestore 無資料時回傳 mock（標記 isMock: true 供前端顯示警告）
-    if (snapshot.empty) {
-      return {
-        data: _mockData(date),
-        status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-      };
+    if (!payload?.hours?.length) {
+      return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
     }
 
-    // 建立 0–23 的空陣列，填入資料
-    const hours: Array<{ hour: number; forecastCount: number; actualCount: number | null }> =
-      Array.from({ length: 24 }, (_, i) => ({ hour: i, forecastCount: 0, actualCount: null }));
-
-    for (const doc of snapshot.docs) {
-      const d = doc.data();
-      const h = d.hour as number;
-      if (h >= 0 && h < 24) {
-        hours[h] = {
-          hour: h,
-          forecastCount: (d.forecastCount as number) ?? 0,
-          actualCount: d.actualCount as number | null,
-        };
-      }
-    }
+    const hours = Array.from({ length: 24 }, (_, i) => {
+      const found = payload.hours.find(h => h.hour === i);
+      return { hour: i, forecastCount: found?.forecastCount ?? 0, actualCount: null };
+    });
 
     return {
-      data: { date, terminal, direction, hours, isMock: false },
+      data: { date, hours, isMock: false },
       status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
     };
-  } catch (err) {
-    console.error('[airport/flow.get] Firestore query failed:', err);
-    return {
-      data: _mockData(date),
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
+  } catch {
+    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
   }
 });
 
-// 無資料時回傳模擬尖峰曲線（isMock: true 供前端顯示警告）
 function _mockData(date: string) {
   const peak = [0, 0, 0, 50, 120, 280, 450, 520, 480, 400, 380, 350,
     320, 290, 310, 380, 460, 520, 490, 420, 300, 200, 100, 30];
   const hours = peak.map((v, i) => ({ hour: i, forecastCount: v, actualCount: null }));
-  return { date, terminal: 'all', direction: 'all', hours, isMock: true };
+  return { date, hours, isMock: true };
 }

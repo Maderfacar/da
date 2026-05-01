@@ -3,18 +3,11 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 
 // ── 篩選條件 ─────────────────────────────────────────────────
 const selectedDate = ref($dayjs().format('YYYY-MM-DD'));
-const selectedTerminal = ref<'all' | 'T1' | 'T2'>('all');
-const selectedDirection = ref<'all' | 'arrival' | 'departure'>('all');
 
-const TERMINAL_OPTIONS = [
-  { value: 'all', label: '全端' },
-  { value: 'T1',  label: '第一航廈' },
-  { value: 'T2',  label: '第二航廈' },
-];
-const DIRECTION_OPTIONS = [
-  { value: 'all',       label: '進出境合計' },
-  { value: 'arrival',   label: '入境' },
-  { value: 'departure', label: '出境' },
+const DATE_SHORTCUTS = [
+  { label: '昨天', offset: -1 },
+  { label: '今天', offset: 0 },
+  { label: '明天', offset: 1 },
 ];
 
 // ── 資料狀態 ─────────────────────────────────────────────────
@@ -35,7 +28,7 @@ const ApiLoadFlow = async () => {
     const res = await $fetch<{
       data: { date: string; hours: HourData[]; isMock?: boolean };
       status: { code: number };
-    }>(`/api/airport/flow?date=${selectedDate.value}&terminal=${selectedTerminal.value}&direction=${selectedDirection.value}`);
+    }>(`/api/airport/flow?date=${selectedDate.value}`);
 
     const hours = res?.data?.hours ?? [];
     hourData.value = hours;
@@ -60,7 +53,7 @@ const SetDateOffset = (offset: number) => {
 };
 
 // ── 監聽篩選變更 ──────────────────────────────────────────────
-watch([selectedDate, selectedTerminal, selectedDirection], ApiLoadFlow);
+watch(selectedDate, ApiLoadFlow);
 onMounted(ApiLoadFlow);
 </script>
 
@@ -83,33 +76,16 @@ onMounted(ApiLoadFlow);
         .PageTraffic__filter-group
           label.PageTraffic__filter-label 日期
           .PageTraffic__date-shortcuts
-            button.PageTraffic__shortcut(@click="SetDateOffset(0)" :class="{ 'is-active': selectedDate === $dayjs().format('YYYY-MM-DD') }") 今日
-            button.PageTraffic__shortcut(@click="SetDateOffset(1)" :class="{ 'is-active': selectedDate === $dayjs().add(1,'day').format('YYYY-MM-DD') }") 明日
-            button.PageTraffic__shortcut(@click="SetDateOffset(2)" :class="{ 'is-active': selectedDate === $dayjs().add(2,'day').format('YYYY-MM-DD') }") 後日
+            button.PageTraffic__shortcut(
+              v-for="s in DATE_SHORTCUTS"
+              :key="s.offset"
+              @click="SetDateOffset(s.offset)"
+              :class="{ 'is-active': selectedDate === $dayjs().add(s.offset, 'day').format('YYYY-MM-DD') }"
+            ) {{ s.label }}
           input.PageTraffic__date-input(
             type="date"
             v-model="selectedDate"
           )
-
-        .PageTraffic__filter-group
-          label.PageTraffic__filter-label 航廈
-          .PageTraffic__seg
-            button.PageTraffic__seg-btn(
-              v-for="opt in TERMINAL_OPTIONS"
-              :key="opt.value"
-              :class="{ 'is-active': selectedTerminal === opt.value }"
-              @click="selectedTerminal = opt.value as any"
-            ) {{ opt.label }}
-
-        .PageTraffic__filter-group
-          label.PageTraffic__filter-label 方向
-          .PageTraffic__seg
-            button.PageTraffic__seg-btn(
-              v-for="opt in DIRECTION_OPTIONS"
-              :key="opt.value"
-              :class="{ 'is-active': selectedDirection === opt.value }"
-              @click="selectedDirection = opt.value as any"
-            ) {{ opt.label }}
 
       //- 統計摘要
       .PageTraffic__stats
@@ -124,11 +100,11 @@ onMounted(ApiLoadFlow);
         .PageTraffic__stat-card
           .PageTraffic__stat-label 日期
           .PageTraffic__stat-val {{ selectedDate }}
-          .PageTraffic__stat-unit {{ selectedTerminal === 'all' ? '全航廈' : selectedTerminal }}
+          .PageTraffic__stat-unit 全航廈（進出境合計）
 
       //- 模擬資料警告
       .PageTraffic__mock-badge(v-if="isMockData && !loading")
-        span ⚠️ 目前顯示模擬資料 — n8n 尚未寫入真實 XLS 資料至 Firestore
+        span ⚠️ 目前顯示模擬資料 — n8n 尚未寫入此日期的 XLS 預報至 Gist
 
       //- 圖表區
       .PageTraffic__chart-wrapper
