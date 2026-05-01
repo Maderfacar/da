@@ -11,10 +11,15 @@ export default defineEventHandler(async (event) => {
   const rawUrl = `${airportForecastGistUrl.replace(/\/$/, '')}/airport-${date}.json`;
 
   try {
-    const payload = await $fetch<{
+    // GitHub raw URL 回傳 text/plain，用 responseType: 'text' 取得原始字串再手動 JSON.parse
+    const raw = await $fetch<string>(rawUrl, {
+      responseType: 'text',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    const payload = JSON.parse(raw) as {
       date: string;
       hours: Array<{ hour: number; forecastCount: number; terminal: string }>;
-    }>(rawUrl, { headers: { 'Cache-Control': 'no-cache' } });
+    };
 
     if (!payload?.hours?.length) {
       return { data: { ..._mockData(date), _debug: 'empty_payload' }, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
