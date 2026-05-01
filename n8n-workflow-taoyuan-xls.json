@@ -58,7 +58,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期').first().json.xlsUrl;\n\n// 拒絕 HTML / 純文字回應（這是 \"not in xls format\" 的根本原因）\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(\n    `[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\n` +\n    `URL: ${xlsUrl}\\n` +\n    `可能原因：今日 XLS 尚未發佈，或 URL 路徑有誤。`\n  );\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
+        "jsCode": "const item = $input.first();\nconst binary = item.binary;\n\nif (!binary?.data) {\n  throw new Error('下載失敗：未收到 Binary 資料（官網可能阻擋請求或檔案不存在）。');\n}\n\nconst mimeType = (binary.data.mimeType || '').toLowerCase();\nconst fileName = (binary.data.fileName  || '').toLowerCase();\nconst fileSize = binary.data.fileSize   || 0;\nconst xlsUrl   = $('計算日期').first().json.xlsUrl;\n\nif (mimeType.includes('text/html') || mimeType.includes('text/plain') || mimeType.includes('application/json')) {\n  throw new Error(\n    `[MIME 錯誤] 伺服器回傳 \"${mimeType}\" 而非 Excel 檔案（${fileSize} bytes）。\\nURL: ${xlsUrl}`\n  );\n}\n\nif (fileSize < 2000) {\n  throw new Error(`檔案過小 (${fileSize} bytes)，可能為錯誤頁面或 404。URL: ${xlsUrl}`);\n}\n\nlet detectedFormat = 'xls';\nif (mimeType.includes('openxmlformats') || fileName.endsWith('.xlsx')) {\n  detectedFormat = 'xlsx';\n}\n\nconsole.log(`[n8n] ✅ Binary OK | size=${fileSize} | mime=${mimeType} | format=${detectedFormat}`);\nreturn [{ json: { ...item.json, detectedFormat }, binary: item.binary }];"
       },
       "id": "verify-binary",
       "name": "驗證 Binary + 偵測格式",
@@ -84,7 +84,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// ─── 欄位名稱請依實際 XLS 標題列調整 ────────────────────────────\nconst COL_HOUR   = '時段';\nconst COL_T1_ARR = '第一航廈入境';\nconst COL_T1_DEP = '第一航廈出境';\nconst COL_T2_ARR = '第二航廈入境';\nconst COL_T2_DEP = '第二航廈出境';\n// ─────────────────────────────────────────────────────────────────\n\nconst items = $input.all();\nconst hours = [];\n\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[COL_HOUR]), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount:\n      (Number(row[COL_T1_ARR]) || 0) +\n      (Number(row[COL_T1_DEP]) || 0) +\n      (Number(row[COL_T2_ARR]) || 0) +\n      (Number(row[COL_T2_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('計算日期').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
+        "jsCode": "const items = $input.all();\n\n// XLS 第一列是「報表產出時間：YYYY-MM-DD HH:mm:ss」作為 header key（每天不同）\n// 動態找出哪個欄位的值包含 ≥20 個 0-23 的整數 → 即「時段」欄\nfunction findHourKey(rows) {\n  if (!rows.length) return null;\n  const keys = Object.keys(rows[0].json);\n  for (const key of keys) {\n    const hits = rows.filter(r => {\n      const v = parseInt(String(r.json[key] ?? ''), 10);\n      return !isNaN(v) && v >= 0 && v <= 23;\n    }).length;\n    if (hits >= 20) return key;\n  }\n  return null;\n}\n\n// 根據 XLS 欄位結構：\n//   __EMPTY   = 總計-入境（第 1 個空格欄）\n//   __EMPTY_1 = 總計-出境（第 2 個空格欄）\nconst COL_ARR = '__EMPTY';\nconst COL_DEP = '__EMPTY_1';\n\nconst hourKey = findHourKey(items);\nif (!hourKey) throw new Error('無法找到時段欄位，XLS 格式可能已變更');\n\nconst hours = [];\nfor (const item of items) {\n  const row = item.json;\n  const hour = parseInt(String(row[hourKey] ?? ''), 10);\n  if (isNaN(hour) || hour < 0 || hour > 23) continue;\n\n  hours.push({\n    hour,\n    forecastCount: (Number(row[COL_ARR]) || 0) + (Number(row[COL_DEP]) || 0),\n    terminal: 'all',\n  });\n}\n\nconst filled = Array.from({ length: 24 }, (_, h) =>\n  hours.find(r => r.hour === h) ?? { hour: h, forecastCount: 0, terminal: 'all' }\n);\n\nconst { isoDate, xlsName } = $('計算日期').first().json;\nreturn [{ json: { date: isoDate, sourceFile: xlsName, hours: filled } }];"
       },
       "id": "transform-rows",
       "name": "轉換為 hours 陣列",
@@ -159,5 +159,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2026-05-01T00:00:00.000Z",
-  "versionId": "7"
+  "versionId": "8"
 }
