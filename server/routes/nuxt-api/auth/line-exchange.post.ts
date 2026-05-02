@@ -54,9 +54,11 @@ export default defineEventHandler(async (event) => {
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
   // 新使用者：driver 預設 approved: false（須等管理員核准）
+  let isNewUser = false;
   try {
     await auth.getUser(uid);
   } catch {
+    isNewUser = true;
     try {
       await auth.createUser({
         uid,
@@ -73,6 +75,18 @@ export default defineEventHandler(async (event) => {
       });
     } catch {
       return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
+    }
+  }
+
+  // 既有用戶每次登入同步最新 LINE 頭像與名稱
+  if (!isNewUser) {
+    try {
+      await db.collection('users').doc(lineProfile.sub).update({
+        displayName: lineProfile.name,
+        pictureUrl: lineProfile.picture,
+      });
+    } catch {
+      // 更新失敗不阻斷登入流程
     }
   }
 

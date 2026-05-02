@@ -5,6 +5,12 @@ const route = useRoute();
 const authStore = StoreAuth();
 const { authResolved, lineProfile, isAdmin, isSignIn } = storeToRefs(authStore);
 
+// auth 解析後補守護：middleware 僅在 navigation 時執行一次
+watch(authResolved, (resolved) => {
+  if (!resolved) return;
+  if (!isSignIn.value) { navigateTo('/driver/auth'); }
+}, { immediate: true });
+
 const tabs = [
   { id: 'dashboard', icon: '🏠', label: '首頁',  path: '/driver/dashboard', dot: false },
   { id: 'pending',   icon: '📋', label: '搶單',  path: '/driver/pending',   dot: true  },

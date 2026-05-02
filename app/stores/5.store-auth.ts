@@ -172,7 +172,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
 
       if (!liff.isLoggedIn()) {
-        liff.login(); // 強制導向 LINE 登入，redirect 後重新執行
+        // auth 入口頁由按鈕控制登入時機，避免自動跳轉形成無限循環
+        if (currentPath === '/driver/auth') {
+          liffReady.value = true;
+          return;
+        }
+        liff.login();
         return;
       }
 

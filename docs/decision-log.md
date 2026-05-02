@@ -6,6 +6,28 @@
 
 ---
 
+### 2026/05/02 — line-exchange 每次登入同步更新 displayName/pictureUrl
+
+**決策類型**：資料一致性修復  
+**標題**：`line-exchange.post.ts` 對既有用戶執行 Firestore `update({ displayName, pictureUrl })` 而非僅新增時寫入  
+**背景**：LINE 使用者可能在初次登入後修改頭像或顯示名稱；`_LoadRoleFromFirestore` 從 Firestore 讀取 lineProfile，但 Firestore 只在建立時寫入，導致 Header 持續顯示初次登入時的舊資料。  
+**決定**：`line-exchange.post.ts` 確認用戶已存在後，額外呼叫 `db.collection('users').doc(...).update({ displayName, pictureUrl })`，每次登入同步最新 LINE 資料。  
+**影響**：`server/routes/nuxt-api/auth/line-exchange.post.ts`  
+**替代方案**：client 端每次從 LIFF `getProfile()` 取 → 依賴 LIFF session，已過期則失效；已捨棄
+
+---
+
+### 2026/05/02 — 司機 auth 入口頁不自動觸發 LIFF login，避免無限循環
+
+**決策類型**：Auth 架構修復  
+**標題**：`_InitLiffFlow` 在 `/driver/auth` 路徑時，`liff.isLoggedIn()` 為 false 不自動呼叫 `liff.login()`  
+**背景**：`InitAuthFlow` 在 plugin 初始化時執行（包含 `/driver/auth` 頁面）。原邏輯在 `liff.isLoggedIn() === false` 時立即呼叫 `liff.login()` 觸發 LINE 跳轉；但 `/driver/auth` 是登入入口頁本身，自動跳轉會形成 auth page → LINE login → redirect back → auth page → 再次 liff.login() 的無限循環。  
+**決定**：`_InitLiffFlow` 中，`liff.isLoggedIn() === false` 且 `currentPath === '/driver/auth'` 時，直接 `liffReady = true` 並 return；由頁面按鈕控制登入時機。按鈕增加 `:disabled="liffLoading || !liffReady"` 防止 init 完成前點擊。  
+**影響**：`app/stores/5.store-auth.ts`（`_InitLiffFlow`）；`app/pages/driver/auth/index.vue`  
+**替代方案**：偵測 popstate 判斷是否從 LINE 跳回 → 複雜且不可靠；已捨棄
+
+---
+
 ### 2026/05/02 — Firebase session 優先於 LIFF，避免 LIFF 過期觸發強制跳轉
 
 **決策類型**：Auth 架構修復  
