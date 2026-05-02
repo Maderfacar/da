@@ -3,8 +3,16 @@
 
 const route = useRoute();
 const authStore = StoreAuth();
-const { authResolved, lineProfile, isDriver, isSignIn } = storeToRefs(authStore);
+const { authResolved, lineProfile, isDriver, isAdmin, isSignIn } = storeToRefs(authStore);
 const drawerOpen = ref(false);
+
+// auth 解析後補守護：middleware 僅在 navigation 時執行一次
+// 若 auth 在頁面載入後才解析（無 session 或非 admin），主動導向正確頁面
+watch(authResolved, (resolved) => {
+  if (!resolved) return;
+  if (!isSignIn.value) { navigateTo('/login'); return; }
+  if (!isAdmin.value) { navigateTo('/'); }
+}, { immediate: true });
 
 const navItems = [
   { id: 'orders',        icon: '📋', label: '訂單管理',  path: '/admin/orders'        },

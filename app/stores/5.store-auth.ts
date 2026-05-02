@@ -36,7 +36,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -- Flow Control ----------------------------------------------------------------------------------
 
   const InitAuthFlow = async () => {
+    // 在任何 await 之前同步取出 composable，避免 async context 遺失
     const config = useRuntimeConfig().public;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
 
     // 安全超時：Firebase / LIFF 若在 12 秒內未回應，強制解除 loading 遮罩
     // 確保 LINE WebView 網路受限或 SDK hang 住時，使用者不會永久卡在轉圈圈
@@ -85,7 +87,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
     });
 
-    await _InitLiffFlow(firebaseApp);
+    try {
+      await _InitLiffFlow(firebaseApp, currentPath, config);
+    } catch {
+      liffReady.value = true;
+    }
   };
 
   const _LoadRoleFromFirestore = async (firebaseApp: import('firebase/app').FirebaseApp, uid: string) => {
@@ -120,17 +126,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     }
   };
 
-  const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
-    const config = useRuntimeConfig().public;
-    const route = useRoute();
-
+  const _InitLiffFlow = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+    currentPath: string,
+    config: ReturnType<typeof useRuntimeConfig>['public'],
+  ) => {
     // Admin 端不走 LIFF，純靠 Firebase session 驗證
-    if (route.path.startsWith('/admin')) {
+    if (currentPath.startsWith('/admin')) {
       liffReady.value = true;
       return;
     }
 
-    const isDriverPath = route.path.startsWith('/driver');
+    const isDriverPath = currentPath.startsWith('/driver');
     const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
     const clientType = isDriverPath ? 'driver' : 'passenger';
 
@@ -150,6 +157,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // Firebase session 有效 → LIFF 不需重新登入，直接標記就緒
       const { getAuth } = await import('firebase/auth');
       if (getAuth(firebaseApp).currentUser) {
+        // 嘗試從 LIFF 補取個人資料（若 Firestore 未存有頭像/名稱）
+        if (!lineProfile.value && liff.isLoggedIn()) {
+          try {
+            const profile = await liff.getProfile();
+            lineProfile.value = {
+              displayName: profile.displayName,
+              pictureUrl: profile.pictureUrl ?? '',
+            };
+          } catch { /* 取得失敗時維持 Firestore 的資料 */ }
+        }
         liffReady.value = true;
         return;
       }

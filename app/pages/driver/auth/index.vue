@@ -12,7 +12,7 @@ watch([isSignIn, authResolved], () => {
   if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
   const dest = roles.value.includes('driver') || roles.value.includes('admin')
     ? '/driver/dashboard'
-    : '/home';
+    : '/driver/register';
   navigateTo(dest);
 }, { immediate: true });
 
