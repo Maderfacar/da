@@ -185,7 +185,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageWarRoom {
   display: flex;
-  height: calc(100vh - 60px);
+  height: calc(100svh - 56px);
   background: #0f1115;
   overflow: hidden;
 }
@@ -193,7 +193,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 地圖 ──────────────────────────────────────────────────
 .PageWarRoom__map {
   flex: 1;
-  height: 100%;
+  min-height: 0;
 }
 
 // ── 側邊面板 ──────────────────────────────────────────────
@@ -206,6 +206,55 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-direction: column;
   padding: 20px 16px;
   overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .PageWarRoom {
+    flex-direction: column;
+  }
+
+  .PageWarRoom__map {
+    flex: 1;
+  }
+
+  .PageWarRoom__panel {
+    width: 100%;
+    height: 200px;
+    flex-shrink: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 14px;
+    overflow-y: auto;
+  }
+
+  .PageWarRoom__panel-header {
+    display: none;
+  }
+
+  .PageWarRoom__panel-meta {
+    padding: 4px 0;
+    margin-bottom: 2px;
+  }
+
+  .PageWarRoom__driver-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  .PageWarRoom__driver-item {
+    flex-shrink: 0;
+    min-width: 150px;
+  }
+
+  .PageWarRoom__driver-coords {
+    display: none;
+  }
 }
 
 .PageWarRoom__panel-header {

@@ -222,6 +222,18 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   top: 72px;
 }
 
+@media (max-width: 900px) {
+  .PageTraffic__layout {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .PageTraffic__aside {
+    width: 100%;
+    position: static;
+  }
+}
+
 .PageTraffic__aside-title {
   font-family: $font-condensed;
   font-size: 9px;
