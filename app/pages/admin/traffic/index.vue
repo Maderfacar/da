@@ -26,6 +26,10 @@ const DIRECTION_OPTIONS = [
 // ── 資料狀態 ─────────────────────────────────────────────────
 const loading = ref(false);
 const isMockData = ref(false);
+const terminalFallback = ref(false);
+const directionFallback = ref(false);
+const hasTerminalBreakdown = ref(false);
+const hasDirectionalBreakdown = ref(false);
 const peakHour = ref<number | null>(null);
 const peakCount = ref(0);
 const totalCount = ref(0);
@@ -39,13 +43,25 @@ const ApiLoadFlow = async () => {
   isMockData.value = false;
   try {
     const res = await $fetch<{
-      data: { date: string; hours: HourData[]; isMock?: boolean };
+      data: {
+        date: string;
+        hours: HourData[];
+        isMock?: boolean;
+        terminalFallback?: boolean;
+        directionFallback?: boolean;
+        hasTerminalBreakdown?: boolean;
+        hasDirectionalBreakdown?: boolean;
+      };
       status: { code: number };
     }>(`/api/airport/flow?date=${selectedDate.value}&terminal=${selectedTerminal.value}&direction=${selectedDirection.value}`);
 
     const hours = res?.data?.hours ?? [];
     hourData.value = hours;
     isMockData.value = res?.data?.isMock ?? true;
+    terminalFallback.value = res?.data?.terminalFallback ?? false;
+    directionFallback.value = res?.data?.directionFallback ?? false;
+    hasTerminalBreakdown.value = res?.data?.hasTerminalBreakdown ?? false;
+    hasDirectionalBreakdown.value = res?.data?.hasDirectionalBreakdown ?? false;
 
     const counts = hours.map((h) => h.forecastCount);
     totalCount.value = counts.reduce((a, b) => a + b, 0);
@@ -107,9 +123,10 @@ onMounted(ApiLoadFlow);
             button.PageTraffic__seg-btn(
               v-for="opt in TERMINAL_OPTIONS"
               :key="opt.value"
-              :class="{ 'is-active': selectedTerminal === opt.value }"
+              :class="{ 'is-active': selectedTerminal === opt.value, 'is-limited': opt.value !== 'all' && !hasTerminalBreakdown }"
               @click="selectedTerminal = opt.value as any"
             ) {{ opt.label }}
+          span.PageTraffic__data-note(v-if="terminalFallback") 顯示全端合計
 
         .PageTraffic__filter-group
           label.PageTraffic__filter-label 方向
@@ -117,9 +134,10 @@ onMounted(ApiLoadFlow);
             button.PageTraffic__seg-btn(
               v-for="opt in DIRECTION_OPTIONS"
               :key="opt.value"
-              :class="{ 'is-active': selectedDirection === opt.value }"
+              :class="{ 'is-active': selectedDirection === opt.value, 'is-limited': opt.value !== 'all' && !hasDirectionalBreakdown }"
               @click="selectedDirection = opt.value as any"
             ) {{ opt.label }}
+          span.PageTraffic__data-note(v-if="directionFallback") 顯示進出境合計
 
       //- 統計摘要
       .PageTraffic__stats
@@ -317,6 +335,27 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     border-color: rgba(212, 134, 10, 0.5);
     color: var(--da-amber);
   }
+
+  &.is-limited {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  &.is-active.is-limited {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.4);
+    opacity: 1;
+  }
+}
+
+.PageTraffic__data-note {
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 200, 0, 0.6);
+  white-space: nowrap;
 }
 
 // ── 統計摘要 ──────────────────────────────────────────────

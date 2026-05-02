@@ -26,21 +26,37 @@ export default defineEventHandler(async (event) => {
       return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
     }
 
+    // ── 資料解析度偵測 ───────────────────────────────────────────
+    // 是否有真實的航廈分項（T1/T2 資料與 all 不同）
+    const hasT1Data = payload.hours.some(h => h.terminal === 'T1' && h.forecastCount > 0);
+    const hasT2Data = payload.hours.some(h => h.terminal === 'T2' && h.forecastCount > 0);
+    const hasTerminalBreakdown = hasT1Data || hasT2Data;
+
+    // 是否有真實的方向分項（arrival/departure 值與彼此不同）
+    const arrRows = payload.hours.filter(h => h.direction === 'arrival');
+    const depRows = payload.hours.filter(h => h.direction === 'departure');
+    const hasDirectionalBreakdown = arrRows.length > 0
+      && depRows.length > 0
+      && arrRows.some((a, i) => a.forecastCount !== (depRows[i]?.forecastCount ?? a.forecastCount));
+
     // ── 航廈篩選 ────────────────────────────────────────────────
-    // 若指定 T1/T2 但無該航廈資料（目前資料只有 'all'），fallback 到 terminal='all'
     let terminalFiltered = terminal === 'all'
       ? payload.hours
       : payload.hours.filter(h => h.terminal === terminal);
 
-    if (terminalFiltered.length === 0) {
+    let terminalFallback = false;
+    if (terminal !== 'all' && terminalFiltered.length === 0) {
       terminalFiltered = payload.hours.filter(h => h.terminal === 'all');
+      terminalFallback = true;
+    }
+    // 有 T1/T2 列但與 all 值完全相同，也視為 fallback
+    if (!terminalFallback && terminal !== 'all' && !hasTerminalBreakdown) {
+      terminalFallback = true;
     }
 
     // ── 方向篩選 ─────────────────────────────────────────────────
-    // 新格式：每小時有 direction='arrival'/'departure'/'all' 三筆
-    // 舊格式：無 direction 欄位（視為全部合計）
-    // direction='all' 時：優先取有 direction='all' 的彙總列；若無則取無 direction 欄的舊格式列
     let directionFiltered: typeof terminalFiltered;
+    let directionFallback = false;
 
     if (direction === 'all') {
       const withAll = terminalFiltered.filter(h => h.direction === 'all');
@@ -49,10 +65,11 @@ export default defineEventHandler(async (event) => {
         : terminalFiltered.filter(h => h.direction === undefined || h.direction === null);
     } else {
       const specific = terminalFiltered.filter(h => h.direction === direction);
-      if (specific.length > 0) {
+      if (specific.length > 0 && hasDirectionalBreakdown) {
         directionFiltered = specific;
       } else {
-        // fallback：指定方向無資料時，用彙總列或舊格式
+        // 找不到分項資料，或分項值與合計相同 → fallback
+        directionFallback = true;
         const withAll = terminalFiltered.filter(h => h.direction === 'all');
         directionFiltered = withAll.length > 0
           ? withAll
@@ -68,7 +85,15 @@ export default defineEventHandler(async (event) => {
     });
 
     return {
-      data: { date, hours, isMock: false },
+      data: {
+        date,
+        hours,
+        isMock: false,
+        terminalFallback,
+        directionFallback,
+        hasTerminalBreakdown,
+        hasDirectionalBreakdown,
+      },
       status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
     };
   } catch {
@@ -80,5 +105,5 @@ function _mockData(date: string) {
   const peak = [0, 0, 0, 50, 120, 280, 450, 520, 480, 400, 380, 350,
     320, 290, 310, 380, 460, 520, 490, 420, 300, 200, 100, 30];
   const hours = peak.map((v, i) => ({ hour: i, forecastCount: v, actualCount: null }));
-  return { date, hours, isMock: true };
+  return { date, hours, isMock: true, terminalFallback: false, directionFallback: false, hasTerminalBreakdown: false, hasDirectionalBreakdown: false };
 }
