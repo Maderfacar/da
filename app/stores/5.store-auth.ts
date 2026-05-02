@@ -132,6 +132,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         ),
       ]);
 
+      // Firebase session 有效 → LIFF 不需重新登入，直接標記就緒
+      const { getAuth } = await import('firebase/auth');
+      if (getAuth(firebaseApp).currentUser) {
+        liffReady.value = true;
+        return;
+      }
+
       if (!liff.isLoggedIn()) {
         liff.login(); // 強制導向 LINE 登入，redirect 後重新執行
         return;
@@ -149,10 +156,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
 
       liffReady.value = true;
-
-      // 已有 Firebase 使用者 → 不重複登入
-      const { getAuth } = await import('firebase/auth');
-      if (getAuth(firebaseApp).currentUser) return;
 
       // 交換 Firebase Custom Token
       const res = await $fetch<{ data: { customToken: string; role: string; displayName: string; pictureUrl: string } }>(
