@@ -3,7 +3,7 @@
 
 const route = useRoute();
 const authStore = StoreAuth();
-const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
+const { authResolved, isFriend, isSignIn, lineProfile, isAdmin, isDriver } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
 
 const showFriendBanner = computed(
@@ -67,6 +67,13 @@ const activeTab = computed(() => {
       LangSwitcher
       button.LayoutFrontDesk__nav-btn(@click="navigateTo('/orders')") {{ $t('nav.orders') }}
       button.LayoutFrontDesk__nav-btn.is-primary(@click="navigateTo('/booking')") {{ $t('nav.book') }}
+      template(v-if="isSignIn && lineProfile")
+        button.LayoutFrontDesk__switch-btn(v-if="isAdmin" @click="navigateTo('/admin/traffic')") 管理端
+        button.LayoutFrontDesk__switch-btn(v-if="isDriver" @click="navigateTo('/driver/dashboard')") 司機端
+        .LayoutFrontDesk__user-info
+          img.LayoutFrontDesk__avatar(v-if="lineProfile.pictureUrl" :src="lineProfile.pictureUrl" :alt="lineProfile.displayName" referrerpolicy="no-referrer")
+          .LayoutFrontDesk__avatar-fallback(v-else) {{ lineProfile.displayName?.[0] ?? '?' }}
+          span.LayoutFrontDesk__user-name {{ lineProfile.displayName }}
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutFrontDesk__body
@@ -231,6 +238,65 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     color: var(--da-cream);
     border-color: var(--da-dark);
   }
+}
+
+// ── 切換按鈕 ──────────────────────────────────────────────
+.LayoutFrontDesk__switch-btn {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(212, 134, 10, 0.5);
+  background: rgba(212, 134, 10, 0.08);
+  color: var(--da-amber);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(212, 134, 10, 0.18); }
+}
+
+// ── 使用者資訊 ─────────────────────────────────────────────
+.LayoutFrontDesk__user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.LayoutFrontDesk__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.LayoutFrontDesk__avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--da-amber);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.LayoutFrontDesk__user-name {
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--da-dark);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // ── 頁面主體 ───────────────────────────────────────────────

@@ -2,13 +2,15 @@
 definePageMeta({ layout: false });
 
 const config = useRuntimeConfig().public;
-const { isSignIn, role, authResolved, MockSignIn } = StoreAuth();
+const authStore = StoreAuth();
+const { isSignIn, roles, authResolved } = storeToRefs(authStore);
+const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
 watch([isSignIn, authResolved], () => {
-  if (!authResolved.value || !isSignIn.value || !role.value) return;
-  navigateTo(role.value === 'admin' ? '/admin/orders' : '/home');
+  if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
+  navigateTo(roles.value.includes('admin') ? '/admin/orders' : '/home');
 }, { immediate: true });
 
 async function ClickLineLogin() {

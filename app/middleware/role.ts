@@ -1,32 +1,26 @@
-// 角色路由分流：確保乘客/司機/管理者只能進入各自的頁面
-// driver 須 approved: true；admin 須 role === 'admin'（role 本身即白名單）
-// 未核准者一律導至乘客端首頁 /
+// 角色路由守衛：依 roles 陣列決定存取權限
+// 乘客路由 (/)：登入即可，無需 role 檢查
+// 司機路由 (/driver)：roles 需包含 'driver' 或 'admin'；否則導向 /driver/register
+// 管理路由 (/admin)：roles 需嚴格包含 'admin'；否則導向 /
 export default defineNuxtRouteMiddleware((to) => {
-  const { role, approved, authResolved } = StoreAuth();
+  const store = StoreAuth();
 
-  if (!authResolved.value) return;
-  if (!role.value) return;
+  if (!store.authResolved) return;
 
   const isAdminPath = to.path.startsWith('/admin');
   const isDriverPath = to.path.startsWith('/driver');
+  const isRegisterPath = to.path.startsWith('/driver/register');
 
-  // Admin 路由：必須是 admin role（role 本身即白名單）
-  if (isAdminPath && role.value !== 'admin') {
+  // Admin 路由：必須有 admin 權限
+  if (isAdminPath && !store.roles.includes('admin')) {
     return navigateTo('/');
   }
 
-  // Driver 路由：必須是 driver role 且 approved: true
-  if (isDriverPath && (role.value !== 'driver' || !approved.value)) {
-    return navigateTo('/');
-  }
-
-  // Admin 不得進入乘客路由
-  if (!isAdminPath && !isDriverPath && role.value === 'admin') {
-    return navigateTo('/admin/traffic');
-  }
-
-  // 已核准 Driver 不得進入乘客路由
-  if (!isDriverPath && !isAdminPath && role.value === 'driver' && approved.value) {
-    return navigateTo('/driver/dashboard');
+  // Driver 路由：/driver/register 為申請頁，不做 role 攔截
+  if (isDriverPath && !isRegisterPath) {
+    const hasDriverAccess = store.roles.includes('driver') || store.roles.includes('admin');
+    if (!hasDriverAccess) {
+      return navigateTo('/driver/register');
+    }
   }
 });

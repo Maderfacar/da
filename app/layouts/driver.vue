@@ -2,7 +2,8 @@
 // LayoutDriver 司機端佈局：頂部 Nav + 底部 4-Tab Bar
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const authStore = StoreAuth();
+const { authResolved, lineProfile, isAdmin, isSignIn } = storeToRefs(authStore);
 
 const tabs = [
   { id: 'dashboard', icon: '🏠', label: '首頁',  path: '/driver/dashboard', dot: false },
@@ -44,6 +45,12 @@ const activeTab = computed(() => {
     .LayoutDriver__nav-right
       .LayoutDriver__status-dot
       span.LayoutDriver__status-label 待命中
+      template(v-if="isSignIn && lineProfile")
+        button.LayoutDriver__switch-btn(v-if="isAdmin" @click="navigateTo('/admin/traffic')") 管理端
+        .LayoutDriver__user-info
+          img.LayoutDriver__avatar(v-if="lineProfile.pictureUrl" :src="lineProfile.pictureUrl" :alt="lineProfile.displayName" referrerpolicy="no-referrer")
+          .LayoutDriver__avatar-fallback(v-else) {{ lineProfile.displayName?.[0] ?? '?' }}
+          span.LayoutDriver__user-name {{ lineProfile.displayName }}
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutDriver__body
@@ -158,6 +165,65 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.6);
+}
+
+// ── 切換按鈕 ──────────────────────────────────────────────
+.LayoutDriver__switch-btn {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(212, 134, 10, 0.5);
+  background: rgba(212, 134, 10, 0.1);
+  color: var(--da-amber);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(212, 134, 10, 0.2); }
+}
+
+// ── 使用者資訊 ─────────────────────────────────────────────
+.LayoutDriver__user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.LayoutDriver__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.LayoutDriver__avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--da-amber);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.LayoutDriver__user-name {
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // ── 頁面主體 ───────────────────────────────────────────────

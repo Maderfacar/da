@@ -2,7 +2,8 @@
 // LayoutBackDesk 管理者端佈局：頂部 Bar + 左側抽屜導航
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const authStore = StoreAuth();
+const { authResolved, lineProfile, isDriver, isSignIn } = storeToRefs(authStore);
 const drawerOpen = ref(false);
 
 const navItems = [
@@ -55,6 +56,12 @@ function ClickNav(path: string) {
       | ADMIN
     .LayoutBackDesk__top-right
       span.LayoutBackDesk__admin-badge ADMIN
+      template(v-if="isSignIn && lineProfile")
+        button.LayoutBackDesk__switch-btn(v-if="isDriver" @click="navigateTo('/driver/dashboard')") 司機端
+        .LayoutBackDesk__user-info
+          img.LayoutBackDesk__avatar(v-if="lineProfile.pictureUrl" :src="lineProfile.pictureUrl" :alt="lineProfile.displayName" referrerpolicy="no-referrer")
+          .LayoutBackDesk__avatar-fallback(v-else) {{ lineProfile.displayName?.[0] ?? '?' }}
+          span.LayoutBackDesk__user-name {{ lineProfile.displayName }}
 
   //- ── 側邊抽屜 ─────────────────────────────────────────────
   transition(name="drawer")
@@ -190,7 +197,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 }
 
-.LayoutBackDesk__top-right { display: flex; align-items: center; }
+.LayoutBackDesk__top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .LayoutBackDesk__admin-badge {
   font-family: $font-condensed;
@@ -202,6 +213,65 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border: 1px solid rgba(212, 134, 10, 0.3);
   padding: 3px 10px;
   border-radius: 100px;
+}
+
+// ── 切換按鈕 ──────────────────────────────────────────────
+.LayoutBackDesk__switch-btn {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(212, 134, 10, 0.5);
+  background: rgba(212, 134, 10, 0.1);
+  color: var(--da-amber);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(212, 134, 10, 0.2); }
+}
+
+// ── 使用者資訊 ─────────────────────────────────────────────
+.LayoutBackDesk__user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.LayoutBackDesk__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.LayoutBackDesk__avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--da-amber);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.LayoutBackDesk__user-name {
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // ── 側邊抽屜 ───────────────────────────────────────────────

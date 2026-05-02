@@ -5,8 +5,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -- State -----------------------------------------------------------------------------------------
 
   const user = ref<import('firebase/auth').User | null>(null);
-  const role = ref<'passenger' | 'driver' | 'admin' | null>(null);
-  const approved = ref<boolean>(true); // passenger 預設 true；driver/admin 從 Firestore 讀取
+  const roles = ref<string[]>([]);
+  const approved = ref<boolean>(true); // passenger/admin 預設 true；driver 從 Firestore 讀取
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
@@ -17,12 +17,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -- Computed --------------------------------------------------------------------------------------
 
   const isSignIn = computed(() => !!user.value);
+  const isAdmin = computed(() => roles.value.includes('admin'));
+  const isDriver = computed(() => roles.value.includes('driver'));
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
   const _clearState = () => {
     user.value = null;
-    role.value = null;
+    roles.value = [];
     approved.value = true;
     idToken.value = '';
     lineAccessToken.value = '';
@@ -40,7 +42,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     // 確保 LINE WebView 網路受限或 SDK hang 住時，使用者不會永久卡在轉圈圈
     const safetyTimer = setTimeout(() => {
       if (!authResolved.value) {
-        console.warn('[StoreAuth] 初始化逾時 (12s)，強制解除 loading');
         authResolved.value = true;
       }
     }, 12_000);
@@ -55,7 +56,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const { getAuth, onAuthStateChanged } = await import('firebase/auth');
 
     const firebaseApp = getApps().length
-      ? getApps()[0]
+      ? getApps()[0]!
       : initializeApp({
           apiKey: config.firebaseApiKey,
           authDomain: config.firebaseAuthDomain,
@@ -96,9 +97,23 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const snap = await getDoc(doc(db, 'users', lineUid));
       if (snap.exists()) {
         const data = snap.data();
-        role.value = data.role as 'passenger' | 'driver' | 'admin';
-        // passenger 永遠核准；driver/admin 讀取 approved 欄位
-        approved.value = role.value === 'passenger' ? true : (data.approved as boolean) ?? false;
+        // 支援新格式（roles 陣列）與舊格式（role 字串）
+        if (Array.isArray(data.roles) && data.roles.length > 0) {
+          roles.value = data.roles as string[];
+        } else if (data.role) {
+          roles.value = [data.role as string];
+        }
+        // driver 沒有 admin 權限時需核准；其餘視為已核准
+        approved.value = isDriver.value && !isAdmin.value
+          ? (data.approved as boolean) ?? false
+          : true;
+        // 管理端跳過 LIFF，改從 Firestore 補全個人資料
+        if (!lineProfile.value && (data.displayName || data.pictureUrl)) {
+          lineProfile.value = {
+            displayName: (data.displayName as string) || '',
+            pictureUrl: (data.pictureUrl as string) || '',
+          };
+        }
       }
     } catch {
       // Firestore 讀取失敗時維持預設值
@@ -177,12 +192,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- Actions ---------------------------------------------------------------------------------------
 
-  const SetRole = (_role: 'passenger' | 'driver' | 'admin') => { role.value = _role; };
+  const SetRole = (_role: string) => { roles.value = [_role]; };
 
   /** 測試模式：直接設定角色（TestMode 用，不走 Firebase） */
   const MockSignIn = (_role: 'passenger' | 'driver' | 'admin') => {
     user.value = { uid: `mock-${_role}` } as import('firebase/auth').User;
-    role.value = _role;
+    roles.value = [_role];
     approved.value = true; // 測試模式視為已核准
     authResolved.value = true;
   };
@@ -199,8 +214,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user, role, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
-    isSignIn, idToken,
+    user, roles, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
+    isSignIn, isAdmin, isDriver, idToken,
     InitAuthFlow, SetRole, MockSignIn, SignOut,
   };
 });
