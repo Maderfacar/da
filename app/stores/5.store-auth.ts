@@ -109,6 +109,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const config = useRuntimeConfig().public;
     const route = useRoute();
 
+    // Admin 端不走 LIFF，純靠 Firebase session 驗證
+    if (route.path.startsWith('/admin')) {
+      liffReady.value = true;
+      return;
+    }
+
     const isDriverPath = route.path.startsWith('/driver');
     const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
     const clientType = isDriverPath ? 'driver' : 'passenger';

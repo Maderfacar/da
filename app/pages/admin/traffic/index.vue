@@ -52,8 +52,7 @@ const ApiLoadFlow = async () => {
     const maxVal = Math.max(...counts);
     peakCount.value = maxVal;
     peakHour.value = maxVal > 0 ? counts.indexOf(maxVal) : null;
-  } catch (err) {
-    console.error('[traffic] ApiLoadFlow failed:', err);
+  } catch {
     hourData.value = [];
   } finally {
     loading.value = false;
