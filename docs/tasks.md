@@ -169,11 +169,18 @@
 
 ### P4：外部整合
 
-- [✅] **n8n 桃園機場 XLS 爬取**：
-  - Server POST `POST /nuxt-api/airport-forecast`（Bearer 驗證 + Firestore `airport_flow_forecast` 寫入）✅
-  - Server GET `GET /nuxt-api/airport-forecast`（讀取 Firestore，無資料回 mock）✅
-  - n8n workflow JSON 已建立（`n8n-workflow-taoyuan-xls.json`，根目錄，可直接匯入 n8n）✅
-  - **待人工操作**：至 n8n 匯入 workflow JSON，確認 XLS 欄位格式後調整解析邏輯，啟用排程
+- [✅] **n8n 桃園機場 XLS 爬取**（已全面重構）：
+  - ~~Firestore `airport_flow_forecast`~~ → **改用 GitHub Gist** 儲存（每日一檔 JSON）✅
+  - Server `GET /api/airport/flow` 改讀 Gist raw URL，支援 `date` / `terminal` / `direction` query ✅
+  - n8n workflow 重構（`n8n-workflow-taoyuan-xls.json`）：
+    - 排程改為**每小時**執行（原每日 17:00）✅
+    - 每次同時處理**今日與明日**兩個日期（SplitInBatches，下載失敗自動跳過）✅
+    - hours 改存 arrival / departure / all 三筆，前端方向篩選有真實數據 ✅
+    - 執行結束後**自動刪除 7 天前** Gist 檔案（PATCH null）✅
+  - `admin/traffic` UI 重構：
+    - 恢復 全端/第一航廈/第二航廈 及 進出境/入境/出境 篩選器 ✅
+    - 移除自訂日期 input，保留今天/明天快捷鈕 ✅
+  - **待人工操作**：至 n8n 將兩個「Bearer YOUR_GITHUB_PAT_HERE」節點改為真實 PAT（需 `gist` 權限）
 - [✅] **CWA 氣象 API**：
   - BFF `GET /nuxt-api/weather?dataset=F-C0032-001&locationName=桃園市` 完整實作 ✅
   - `WeatherWidget.vue` 已串接，顯示桃園天氣（描述/最高最低溫/降雨機率）✅
@@ -187,6 +194,12 @@
 - [✅] ESLint 排除 `.claude/skills/` 目錄（修正 `no-unused-vars` 預存警告）
 - [ ] 定期 `pnpm audit` 依賴安全性掃描
 
+### P6：Auth 穩定性修復（2026/05/02 完成）
+
+- [✅] **Firestore admin 文件缺失**：首位管理員 `users/{lineUid}` 文件不存在，導致 role=null → middleware 踢出 → admin 頁面無法進入。已透過 Firebase Admin SDK 建立 `{ role: 'admin', approved: true }`
+- [✅] **Admin 跳過 LIFF**：admin 路徑不需 LINE LIFF 功能，加入 `/admin` 路徑早期 return，`liffReady=true`，避免 LIFF session 過期時強制跳轉 LINE 重新登入
+- [✅] **Firebase session 優先於 LIFF**：driver / passenger 路徑，若 Firebase `currentUser` 存在，直接跳過 `liff.login()` 強制跳轉，解決 LIFF session 過期但 Firebase session 有效時被踢出的問題
+
 **Stage Gate**：P0 + P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
 
 ---
@@ -196,5 +209,5 @@
 - 重大決策必須同步記錄至 docs/decision-log.md
 
 **版本紀錄**
-- 版本：v3.1（Stage 7 P4 CWA+n8n workflow 完成 + Vercel 環境變數上傳）
-- 更新日期：2026/05/01
+- 版本：v3.2（Stage 7 P4 Gist 遷移 + P6 Auth 修復完成）
+- 更新日期：2026/05/02

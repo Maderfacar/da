@@ -6,6 +6,45 @@
 
 ---
 
+### 2026/05/02 — Firebase session 優先於 LIFF，避免 LIFF 過期觸發強制跳轉
+
+**決策類型**：Auth 架構修復  
+**標題**：`_InitLiffFlow` 中將 Firebase `currentUser` 檢查移至 `liff.isLoggedIn()` 之前  
+**背景**：LIFF session 與 Firebase session 是獨立的，且 LIFF session 有效期較短。原本邏輯先檢查 `liff.isLoggedIn()`，為 false 時直接呼叫 `liff.login()` 強制跳轉 LINE 登入；但 Firebase session 此時可能仍有效，導致 driver / passenger 在 LIFF session 過期後被不必要地踢出。  
+**決定**：在 `liff.init()` 之後、`liff.isLoggedIn()` 之前，先取得 Firebase `currentUser`。若 currentUser 存在，直接 `liffReady=true` 並 return，跳過所有 LIFF 登入邏輯。  
+**影響**：`app/stores/5.store-auth.ts`（`_InitLiffFlow`）；driver 與 passenger 端受益  
+**替代方案**：延長 LIFF session → 非程式碼可控；每次進入頁面先刷新 token → 增加複雜度，已捨棄
+
+---
+
+### 2026/05/02 — Admin 端跳過 LIFF，採純 Firebase session 驗證
+
+**決策類型**：Auth 架構  
+**標題**：`/admin` 路徑在 `_InitLiffFlow` 早期 return，不走 LINE LIFF 流程  
+**背景**：Admin 端是後台管理介面，不需要 LINE LIFF 的功能（無 LINE 分享、無好友查詢）。原本 admin 路徑因 `isDriverPath=false` 而走 `lineLiffIdPassenger` LIFF 流程，導致 LIFF session 過期時觸發 `liff.login()` 強制跳轉，造成 admin 頁面間歇性無法進入（即使 Firebase session 有效）。  
+**決定**：在 `_InitLiffFlow` 開頭加入 `if (route.path.startsWith('/admin')) { liffReady.value = true; return; }`，admin 端完全由 Firebase session 控制存取。  
+**影響**：`app/stores/5.store-auth.ts`（`_InitLiffFlow`）  
+**替代方案**：為 admin 建立獨立 LIFF App → 成本高且無實際需求；已捨棄
+
+---
+
+### 2026/05/02 — 機場人流儲存從 Firestore 改為 GitHub Gist
+
+**決策類型**：基礎架構 / 外部整合  
+**標題**：n8n 爬取桃園機場 XLS 後，改寫入 GitHub Gist（每日一個 JSON 檔），取代 Firestore `airport_flow_forecast`  
+**背景**：原本以 Firestore 儲存人流預報資料，但 n8n → Firestore 的 API 認證需要 Service Account；而前端讀取 Firestore 需要 Firebase SDK，增加 bundle 體積。Gist 提供無認證的公開 raw URL，n8n 使用 GitHub PAT 即可 PATCH 更新。  
+**決定**：
+- n8n PATCH `https://api.github.com/gists/{gistId}`，每個日期一個 JSON 檔（`airport-YYYY-MM-DD.json`）
+- Nuxt server `GET /api/airport/flow` 直接 fetch Gist raw URL（`responseType: 'text'` + 手動 JSON.parse，繞過 GitHub CDN 回傳 `text/plain` 的問題）
+- hours 格式升級：每小時存 arrival / departure / all 三筆，前端篩選方向時有真實數據
+- Gist 自動清理：每次 n8n 執行後 PATCH null 刪除 8~60 天前的日期檔
+- n8n 排程改為每小時，同時處理今日與明日，下載失敗優雅跳過
+
+**影響**：`server/api/airport/flow.get.ts`、`n8n-workflow-taoyuan-xls.json`、`app/pages/admin/traffic/index.vue`；移除 Firestore `airport_flow_forecast` 集合依賴  
+**替代方案**：Firestore → 需 Service Account 憑證管理；Supabase Storage → 額外帳號；已捨棄
+
+---
+
 ### 2026/04/30 — i18n 採用 @nuxtjs/i18n v10 + prefix_except_default 策略
 
 **決策類型**：技術選型 / 架構  
