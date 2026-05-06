@@ -54,9 +54,15 @@ export default defineEventHandler(async (event) => {
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
   // 新使用者：driver 預設 approved: false（須等管理員核准）
+  // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 role / approved）
+  let isNewUser = false;
   try {
     await auth.getUser(uid);
   } catch {
+    isNewUser = true;
+  }
+
+  if (isNewUser) {
     try {
       await auth.createUser({
         uid,
@@ -74,6 +80,14 @@ export default defineEventHandler(async (event) => {
     } catch {
       return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
     }
+  } else {
+    // 既有使用者：merge 寫入最新 displayName / pictureUrl，避免舊文件無此兩欄位導致 Header 永遠空白
+    try {
+      await db.collection('users').doc(lineProfile.sub).set({
+        displayName: lineProfile.name,
+        pictureUrl: lineProfile.picture,
+      }, { merge: true });
+    } catch { /* 同步失敗不阻擋登入流程 */ }
   }
 
   // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────

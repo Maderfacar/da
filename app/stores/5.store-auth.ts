@@ -134,6 +134,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         ),
       ]);
 
+      // LIFF 已登入 → 主動取 profile 寫入 store
+      // 確保即使後續 Firebase session 命中跳過 line-exchange，lineProfile 仍有值
+      // 避免重新整理或既有 session 使用者的 Header 頭像/名稱永遠空白
+      if (liff.isLoggedIn()) {
+        try {
+          const profile = await liff.getProfile();
+          lineProfile.value = { displayName: profile.displayName, pictureUrl: profile.pictureUrl ?? '' };
+        } catch { /* 取 profile 失敗時保持原值，後續 _LoadRoleFromFirestore 會嘗試補回 */ }
+      }
+
       // Firebase session 有效 → LIFF 不需重新登入，直接標記就緒
       const { getAuth } = await import('firebase/auth');
       if (getAuth(firebaseApp).currentUser) {
@@ -195,7 +205,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       await getAuth().signOut();
     } catch { /* Firebase 未初始化時忽略 */ }
     _clearState();
-    authResolved.value = false;
+    // authResolved 保持 true（auth 流程仍是「已解析，當前未登入」狀態）
+    // 若設為 false 會導致 layout v-if="!authResolved" 顯示 loading，但 plugin 不會再跑而永久卡住
     navigateTo('/');
   };
 
