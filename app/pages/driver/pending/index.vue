@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
-const { user } = StoreAuth();
+const { user } = storeToRefs(StoreAuth());
 
 const loading = ref(false);
 const accepting = ref<string | null>(null);

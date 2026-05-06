@@ -1,7 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { lineProfile, user, isFriend, isSignIn, SignOut } = StoreAuth();
+const authStore = StoreAuth();
+const { lineProfile, user, isFriend, isSignIn } = storeToRefs(authStore);
+const { SignOut } = authStore;
 
 const config = useRuntimeConfig().public;
 const lineOaUrl = config.lineOaAddUrl as string;

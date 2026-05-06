@@ -1,7 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
-const { user, lineProfile, SignOut } = StoreAuth();
+const authStore = StoreAuth();
+const { user, lineProfile } = storeToRefs(authStore);
+const { SignOut } = authStore;
 
 const displayName = computed(() => lineProfile.value?.displayName ?? '司機');
 const pictureUrl  = computed(() => lineProfile.value?.pictureUrl ?? '');

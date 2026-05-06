@@ -2,7 +2,9 @@
 definePageMeta({ layout: false });
 
 const config = useRuntimeConfig().public;
-const { isSignIn, role, authResolved, MockSignIn } = StoreAuth();
+const authStore = StoreAuth();
+const { isSignIn, role, authResolved } = storeToRefs(authStore);
+const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 

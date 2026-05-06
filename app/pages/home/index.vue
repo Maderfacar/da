@@ -30,7 +30,7 @@ const statsBarRef = ref<HTMLElement | null>(null);
 let statsTriggered = false;
 
 // ── 近期行程（Firestore 真實資料）──────────────────────────────
-const { user } = StoreAuth();
+const { user } = storeToRefs(StoreAuth());
 
 const VEHICLE_LABEL: Record<string, string> = {
   sedan: '房車', suv: 'SUV', van: '廂型', premium: '商務',

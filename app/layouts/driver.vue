@@ -2,7 +2,7 @@
 // LayoutDriver 司機端佈局：頂部 Nav + 底部 4-Tab Bar
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const { authResolved } = storeToRefs(StoreAuth());
 
 const tabs = [
   { id: 'dashboard', icon: '🏠', label: '首頁',  path: '/driver/dashboard', dot: false },

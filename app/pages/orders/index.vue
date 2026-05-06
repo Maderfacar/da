@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { user } = StoreAuth();
+const { user } = storeToRefs(StoreAuth());
 
 const loading = ref(false);
 const orders = ref<OrderItem[]>([]);
