@@ -44,6 +44,8 @@ const activeTab = computed(() => {
     .LayoutDriver__nav-right
       .LayoutDriver__status-dot
       span.LayoutDriver__status-label 待命中
+      ClientOnly
+        CommonHeaderUser(profile-path="/driver/profile")
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutDriver__body

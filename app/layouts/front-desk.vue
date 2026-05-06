@@ -65,8 +65,8 @@ const activeTab = computed(() => {
       | ANYWHERE
     .LayoutFrontDesk__nav-right
       LangSwitcher
-      button.LayoutFrontDesk__nav-btn(@click="navigateTo('/orders')") {{ $t('nav.orders') }}
-      button.LayoutFrontDesk__nav-btn.is-primary(@click="navigateTo('/booking')") {{ $t('nav.book') }}
+      ClientOnly
+        CommonHeaderUser(profile-path="/profile")
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutFrontDesk__body

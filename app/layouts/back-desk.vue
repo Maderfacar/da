@@ -55,6 +55,8 @@ function ClickNav(path: string) {
       | ADMIN
     .LayoutBackDesk__top-right
       span.LayoutBackDesk__admin-badge ADMIN
+      ClientOnly
+        CommonHeaderUser
 
   //- ── 側邊抽屜 ─────────────────────────────────────────────
   transition(name="drawer")
@@ -190,7 +192,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 }
 
-.LayoutBackDesk__top-right { display: flex; align-items: center; }
+.LayoutBackDesk__top-right { display: flex; align-items: center; gap: 8px; }
 
 .LayoutBackDesk__admin-badge {
   font-family: $font-condensed;

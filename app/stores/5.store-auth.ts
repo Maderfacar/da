@@ -99,6 +99,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         role.value = data.role as 'passenger' | 'driver' | 'admin';
         // passenger 永遠核准；driver/admin 讀取 approved 欄位
         approved.value = role.value === 'passenger' ? true : (data.approved as boolean) ?? false;
+        // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
+        const displayName = data.displayName as string | undefined;
+        const pictureUrl = data.pictureUrl as string | undefined;
+        if (displayName && pictureUrl) {
+          lineProfile.value = { displayName, pictureUrl };
+        }
       }
     } catch {
       // Firestore 讀取失敗時維持預設值
@@ -109,12 +115,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const config = useRuntimeConfig().public;
     const route = useRoute();
 
-    // Admin 端不走 LIFF，純靠 Firebase session 驗證
-    if (route.path.startsWith('/admin')) {
-      liffReady.value = true;
-      return;
-    }
-
+    // 三端統一走 LINE LIFF（admin 改採 Firestore role='admin' 白名單，2026/05/06 起）
+    // admin 端從 LINE 入口進入時走 passenger LIFF App（role 由 Firestore 決定，與 LIFF App 無關）
     const isDriverPath = route.path.startsWith('/driver');
     const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
     const clientType = isDriverPath ? 'driver' : 'passenger';
