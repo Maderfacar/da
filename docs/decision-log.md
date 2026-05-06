@@ -6,6 +6,121 @@
 
 ---
 
+### 2026/05/06 — 司機申請流程重新設計：/driver/register + 圖片上傳 + 1 天冷卻
+
+**決策類型**：業務流程 / 新增功能
+**標題**：未註冊或未核准司機統一導向 `/driver/register`，提供完整申請表單與審核狀態顯示；被拒絕者 1 天內不可重新申請
+**背景**：原規格中，未核准 driver / 一般 passenger 進入 `/driver/auth` 完成 LINE 登入後，會被 `middleware/role.ts` 一律導至乘客端首頁 `/`，使用者無法得知申請狀態，也無「申請司機」的入口；同時 `line-exchange.post.ts` 因 `clientType=driver` 直接把新使用者寫成 `role: 'driver', approved: false`，違反「先申請後審核」的業務邏輯。
+**決定**：
+- **新增** `/driver/register` 頁面，依 store 狀態渲染三種模式：
+  - `role=passenger / null` → 顯示完整申請表單
+  - `role=driver, approved=false` 且未被拒絕 → 顯示「審核中」提示
+  - `role=driver, approved=false` 且 `rejectedAt` 在 1 天內 → 顯示「冷卻中」剩餘時間
+- **修** `line-exchange.post.ts`：新使用者一律建立為 `role: 'passenger'`（不再因 `clientType=driver` 自動寫 driver 身分）
+- **修** `pages/driver/auth/index.vue` 導向邏輯為四分支：
+  - `driver + approved` → `/driver/dashboard`
+  - `driver + !approved` → `/driver/register`
+  - `passenger / null` → `/driver/register`
+  - `admin` → `/admin/orders`
+- **修** `middleware/role.ts`：`/driver/register` 路徑放行（passenger 與未核准 driver 都可進入）
+- **新增** API `POST /nuxt-api/driver/apply` 收申請資料（含圖片 URL）寫入 Firestore `users/{uid}.driverApplication`，並把 `role` 改為 `driver`、`approved=false`
+- **新增** API `POST /nuxt-api/driver/upload`，將檔案推送至 Firebase Storage `drivers/{uid}/{docType}-{timestamp}.{ext}` 並回傳下載 URL
+- **修** `admin/drivers/index.vue` 加入「待審核 / 已核准 / 已拒絕」三個分頁，可展開檢視申請資料與圖片，可拒絕（寫入 `rejectedAt`）並可手動解除冷卻（清空 `rejectedAt`）
+- **新增 Firestore 欄位**（位於 `users/{lineUid}`）：
+  - `driverCategory: string`（預設 `'0'`，admin 可調整為搶單排序權重）
+  - `driverApplication: { driverName, phone, plateNumber, vehicleType, bankCode, bankAccount, documents: { licenseUrl, registrationUrl, insuranceUrl, goodCitizenUrl }, appliedAt, reviewedAt, reviewedBy, rejectedAt, rejectReason }`
+- **冷卻機制**：被拒絕後 24 小時內 `apply` API 拒絕新提交（回傳 `403`），admin 可在 `/admin/drivers` 點「解除冷卻」立即清空 `rejectedAt`
+
+**影響**：
+- 新增：`app/pages/driver/register/index.vue`、`server/routes/nuxt-api/driver/apply.post.ts`、`server/routes/nuxt-api/driver/upload.post.ts`、`app/components/driver/RegisterUploadField.vue`
+- 修改：`server/routes/nuxt-api/auth/line-exchange.post.ts`、`app/pages/driver/auth/index.vue`、`app/middleware/role.ts`、`app/stores/5.store-auth.ts`（補讀 `driverApplication`）、`app/pages/admin/drivers/index.vue`
+- Firebase Storage Rules 與 Firestore Rules 需新增 `drivers/*` 與 `users.driverApplication` 的存取規則
+
+**替代方案**：
+- 司機申請仍走 admin 直接 Firestore 修改 → 使用者無自助申請體驗，已捨棄
+- 不做冷卻 → 被拒絕的人可重複轟炸申請，已捨棄
+- 圖片直接 base64 存 Firestore → 文件大小限制 1MB 不可行，已捨棄
+
+---
+
+### 2026/05/06 — Admin 端改回走 LINE LIFF + Firestore 白名單（推翻 2026/05/02 決策）
+
+**決策類型**：Auth 架構修正
+**標題**：Admin 端不再「跳過 LIFF」，與乘客 / 司機端同樣走 LINE LIFF 流程，由 Firestore `users/{uid}.role === 'admin'` 作為白名單依據
+**背景**：2026/05/02 為解決 LIFF session 過期導致 admin 進不去的問題，採用「admin 路徑跳過 LIFF」策略。但此策略意味著 admin 無 LINE 身分綁定，無法顯示 LINE 頭像 / 名稱，也無法以單一 LINE 帳號統一三端登入。本次需求要求三端 Header 都能顯示登入者頭像，需重新走通 admin LIFF。
+**決定**：
+- 移除 `_InitLiffFlow` 中的 `if (route.path.startsWith('/admin')) { liffReady=true; return; }`
+- Admin 端改與乘客端相同：走 `lineLiffIdPassenger`（LIFF App 不需區分；passenger LIFF 可承載任意角色）
+- Firestore `users/{lineUid}.role` 為單一身分來源，admin 必須由現有 admin 在 `/admin/settings` 或 Firebase Console 手動設為 `role: 'admin', approved: true`
+- 解決 2026/05/02 的 LIFF session 過期問題改沿用同日另一決策：「Firebase session 優先於 LIFF」— admin Firebase session 存活期間不會被 LIFF 強制跳轉
+- Header 頭像顯示邏輯：admin role 與其他 role 共用同一份 `lineProfile` 來源
+
+**影響**：
+- 修改：`app/stores/5.store-auth.ts`（移除 admin 早期 return）
+- 廢止：2026/05/02 決策「Admin 端跳過 LIFF」標記為 `[OBSOLETE]`，本決策取代
+- 既有 admin 帳號：須確認 Firestore `users/{lineUid}` 文件存在且 `role: 'admin'`；首位 admin 設定方式不變（Firebase Console 手動建立）
+
+**替代方案**：
+- 為 admin 建立獨立 LIFF App → 成本高，已捨棄
+- 維持 admin 不顯示頭像 → 違反本次 UX 一致性需求，已捨棄
+
+---
+
+### 2026/05/06 — 三端 Header 統一顯示 LINE 頭像 + 名稱（含 admin 跳轉鈕）
+
+**決策類型**：UI / UX 統一
+**標題**：乘客 / 司機 / Admin 三端 Layout Header 右側統一顯示圓形 LINE 頭像 + displayName，點擊跳轉至各端 profile 頁；若使用者具 admin 權限，於頭像左側顯示「ADMIN」按鈕跳轉至 `/admin/orders`
+**背景**：原三端 Layout Header 無使用者識別資訊，使用者無法一目了然當前登入狀態；同時乘客端 Header 的「訂單」「預約」按鈕功能與底部 Tab Bar 重複。
+**決定**：
+- 三端 Header 右側統一加入：
+  - 圓形頭像（尺寸 `clamp(28px, 8vw, 36px)` 適配 56px header 高度）
+  - displayName 文字（小於 768px 視窗隱藏，僅顯示頭像）
+  - i18n 語系切換（保留既有 `LangSwitcher`）
+  - 點擊頭像 → 各端 profile 頁（乘客 `/profile`、司機 `/driver/profile`、admin 暫無 profile 頁，先導向 `/admin/orders`）
+- **乘客端 Header 簡化**：移除「訂單」「預約」按鈕（與底部 Tab Bar 的「訂單」「+ 預約」重複）
+- **Admin 跳轉鈕**：當 `role === 'admin'` 時，於頭像左側顯示「ADMIN」按鈕（紅底 amber 文字），點擊跳轉 `/admin/orders`；非 admin 使用者不顯示
+- 抽出共用元件 `app/components/common/CommonHeaderUser.vue`（接 `lineProfile` + `role` props，三端 layout 共用）
+
+**影響**：
+- 新增：`app/components/common/CommonHeaderUser.vue`
+- 修改：`app/layouts/front-desk.vue`、`app/layouts/driver.vue`、`app/layouts/back-desk.vue`
+- 移除：乘客端 Header 的「訂單」「預約」按鈕（i18n key `nav.orders`、`nav.book` 仍保留供其他頁面使用）
+
+**替代方案**：
+- 在每個 layout 各自實作 → 三份重複程式碼，已捨棄
+- 用 Pinia getter 直接讀 store → 仍需傳 props 給元件以利測試與重用，已捨棄
+
+---
+
+### 2026/05/06 — Pinia setup store 解構統一改用 storeToRefs
+
+**決策類型**：技術修復
+**標題**：禁止從 Pinia setup store 直接解構 reactive state；統一改用 `storeToRefs()` 包裹，actions 維持直接解構
+**背景**：實機測試發現 admin 端在特定 Chrome 主 profile + 快取時序下出現「無限 loading」、`/profile` 個人卡永遠空白、`/driver/auth` 登入後不會自動導向、訂單頁 API 永遠不打等多個症狀；經 console 驗證 Pinia store 內 `authResolved=true`，但 layout v-if="!authResolved" 仍顯示 → 確認為「直接解構 setup store ref 失去 reactivity」共通根因。
+**決定**：
+- 修復模式：
+  ```ts
+  // 錯誤
+  const { authResolved, lineProfile, SignOut } = StoreAuth();
+  // 正確
+  const authStore = StoreAuth();
+  const { authResolved, lineProfile } = storeToRefs(authStore);
+  const { SignOut } = authStore;  // actions 維持直接解構
+  ```
+- middleware 內的解構（`auth.ts`、`role.ts`）保持原寫法 — middleware 每次路由切換重新呼叫，無 reactivity 需求
+- `front-desk.vue` 早已使用 `storeToRefs`，本次修復其他 8 個檔案並對齊
+- 將此 pattern 加入 [docs/naming-conventions.md](naming-conventions.md) 與 `.claude/knowledge/frontend-conventions.md` 作為長期規範
+
+**影響**：
+- Commits `e6bc8d6`（admin layout）、`1490725`（其餘 7 檔）已套用此修復
+- 修改檔案：`app/layouts/back-desk.vue`、`app/layouts/driver.vue`、`app/pages/profile/index.vue`、`app/pages/driver/profile/index.vue`、`app/pages/driver/auth/index.vue`、`app/pages/login/index.vue`、`app/pages/orders/index.vue`、`app/pages/driver/pending/index.vue`、`app/pages/home/index.vue`
+
+**替代方案**：
+- 改用 Options Store（不使用 setup store）→ 影響範圍過大，已捨棄
+- 全部改用 store proxy 訪問（`store.x.y` 不解構） → 增加 verbose，已捨棄
+
+---
+
 ### 2026/05/02 — Firebase session 優先於 LIFF，避免 LIFF 過期觸發強制跳轉
 
 **決策類型**：Auth 架構修復  
@@ -17,7 +132,9 @@
 
 ---
 
-### 2026/05/02 — Admin 端跳過 LIFF，採純 Firebase session 驗證
+### 2026/05/02 — Admin 端跳過 LIFF，採純 Firebase session 驗證 [OBSOLETE 2026/05/06]
+
+> ⚠️ **本決策已被 2026/05/06「Admin 端改回走 LINE LIFF + Firestore 白名單」取代。** 保留此紀錄供歷史追溯。
 
 **決策類型**：Auth 架構  
 **標題**：`/admin` 路徑在 `_InitLiffFlow` 早期 return，不走 LINE LIFF 流程  

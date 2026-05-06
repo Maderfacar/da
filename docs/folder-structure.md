@@ -38,8 +38,10 @@ cc_da/                                 # 專案根目錄
 │   │   ├── ui/                        # 原子元件（UiButton、UiCard 等）- 純 UI + Tailwind
 │   │   ├── passenger/                 # 乘客端專用（PassengerXXX）
 │   │   ├── driver/                    # 司機端專用（DriverXXX）
+│   │   │   └── RegisterUploadField.vue # P8 申請頁圖片上傳欄位
 │   │   ├── admin/                     # 管理者端專用（AdminXXX）
 │   │   ├── common/                    # 共用業務元件（CommonXXX）
+│   │   │   └── CommonHeaderUser.vue   # P7 三端 Header 頭像 + 名稱共用元件
 │   │   ├── el/                        # Element Plus 擴展元件
 │   │   ├── open/                      # 彈窗元件（OpenDialogXXX）
 │   │   ├── loading/                   # 加載元件
@@ -59,8 +61,10 @@ cc_da/                                 # 專案根目錄
 │   │   ├── orders/index.vue           # 訂單列表
 │   │   ├── profile/index.vue          # 個人資料
 │   │   ├── driver/
-│   │   │   ├── auth/index.vue         # 司機登入驗證
+│   │   │   ├── auth/index.vue         # 司機登入驗證（依 role + approved 分流）
+│   │   │   ├── register/index.vue     # P8 申請 / 審核中 / 冷卻中（三模式）
 │   │   │   ├── pending/index.vue      # 司機待命
+│   │   │   ├── profile/index.vue      # 司機個人資料
 │   │   │   ├── dashboard/index.vue    # 司機儀表板
 │   │   │   └── trip/index.vue         # 行程執行中
 │   │   ├── admin/
@@ -91,6 +95,14 @@ cc_da/                                 # 專案根目錄
 │   │   ├── flight/status.get.ts       # 航班狀態代理
 │   │   └── trip/sync.post.ts          # 司機 GPS 離線同步
 │   └── routes/nuxt-api/               # 內部業務 API 路由
+│       ├── auth/line-exchange.post.ts # LINE Token → Firebase Custom Token
+│       ├── driver/                    # P8 司機申請流程
+│       │   ├── apply.post.ts          # 送出申請（驗冷卻 + 寫 Firestore）
+│       │   └── upload.post.ts         # 證件上傳（multipart → Firebase Storage）
+│       ├── admin/
+│       │   ├── users/index.get.ts     # 列表 + 篩選
+│       │   ├── users/[uid].patch.ts   # 核准 / 拒絕 / 解除冷卻 / 變更角色
+│       │   └── broadcast.post.ts      # LINE Bot 廣播
 │       └── tinymce/upload.post.ts
 │
 ├── i18n/locales/                      # 多語系（zh.js / en.js / ja.js）
@@ -114,6 +126,26 @@ cc_da/                                 # 專案根目錄
 
 ---
 
+## Firebase Storage 結構（P8 新增）
+
+```
+gs://destination-anywhere-cfd50.firebasestorage.app/
+└── drivers/
+    └── {lineUid}/                     # 一個司機一個資料夾
+        ├── license-{timestamp}.{ext}    # 駕照
+        ├── registration-{timestamp}.{ext} # 行照
+        ├── insurance-{timestamp}.{ext}    # 保險卡
+        └── goodCitizen-{timestamp}.{ext}  # 良民證
+```
+
+**Storage Rules（須建立）**：
+- 寫入：僅 `request.auth.uid == lineUid`（owner）可上傳
+- 讀取：owner 或 `users/{auth.uid}.role == 'admin'` 可讀
+- 上限：單檔 5MB，副檔名限 `jpg|jpeg|png|pdf`
+
+---
+
 **版本紀錄**
-- 版本：v1.2（完全適配 Nuxt 4 app/ 架構，反映 Stage 1 實際結構）
-- 更新日期：2026/04/26
+- 版本：v1.3（新增 P7 CommonHeaderUser、P8 driver/register 路由與 RegisterUploadField、driver/upload + apply API、Firebase Storage drivers/ 結構）
+- 更新日期：2026/05/06
+- 歷史：v1.2（2026/04/26）完全適配 Nuxt 4 app/ 架構

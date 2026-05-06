@@ -32,8 +32,35 @@ type OrderStatus = 'pending' | 'confirmed' | 'assigned' | 'in-progress' | 'compl
 // 司機行程狀態（對應 StoreTrip 狀態機）
 type TripStatus = 'idle' | 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled';
 
-// 車種
-type VehicleType = 'sedan' | 'suv' | 'van' | 'premium';
+// 車種（訂單系統 + 司機申請共用）
+type VehicleType = 'sedan' | 'mpv' | 'suv' | 'van' | 'premium';
+
+// 司機申請文件 URL（Firebase Storage download URL）
+interface DriverDocuments {
+  licenseUrl: string;        // 駕照
+  registrationUrl: string;   // 行照
+  insuranceUrl: string;      // 保險卡
+  goodCitizenUrl: string;    // 良民證
+}
+
+// 司機申請資料（Firestore users/{uid}.driverApplication）
+interface DriverApplication {
+  driverName: string;        // 司機真實姓名
+  phone: string;
+  plateNumber: string;
+  vehicleType: VehicleType;
+  bankCode: string;          // 銀行代號（3 碼）
+  bankAccount: string;
+  documents: DriverDocuments;
+  appliedAt: string;         // ISO timestamp
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  rejectedAt: string | null; // 拒絕時間，24h 內無法重申
+  rejectReason: string | null;
+}
+
+// 司機申請文件種類
+type DriverDocumentType = 'license' | 'registration' | 'insurance' | 'goodCitizen';
 
 // Google Maps 地點
 interface GooglePlace {
@@ -143,18 +170,93 @@ interface UpdateLocationPayload {
 type UpdateLocationResponse = UnifiedResponse<{ updated: boolean }>
 ```
 
+### 4.4 司機申請（server/routes/nuxt-api/driver/）
+
+**POST `/nuxt-api/driver/upload`**（單一文件上傳，呼叫前端先上傳每個證件取得 URL，再呼叫 apply）
+```typescript
+// 請求：multipart/form-data
+//   field: file (圖片檔，5MB 上限，jpg/png/pdf)
+//   field: docType (DriverDocumentType)
+// 後端：寫入 Firebase Storage drivers/{uid}/{docType}-{timestamp}.{ext}
+type UploadDriverDocResponse = UnifiedResponse<{
+  docType: DriverDocumentType;
+  url: string;       // Firebase Storage download URL
+  path: string;      // Storage path（供日後刪除參考）
+}>;
+```
+
+**POST `/nuxt-api/driver/apply`**（送出申請）
+```typescript
+interface ApplyDriverRequest {
+  driverName: string;
+  phone: string;
+  plateNumber: string;
+  vehicleType: VehicleType;
+  bankCode: string;
+  bankAccount: string;
+  documents: DriverDocuments;  // 4 個 URL，由 upload API 先取得
+}
+
+type ApplyDriverResponse = UnifiedResponse<{
+  applied: boolean;
+  appliedAt: string;
+}>;
+// 失敗回應：
+//   400 INVALID_INPUT — 欄位缺失或格式錯誤
+//   403 COOLDOWN — rejectedAt 在 24h 內，回傳 cooldownUntil 時間
+//   409 ALREADY_APPLIED — 已是 driver 且 approved=true
+```
+
+### 4.5 Admin 端使用者管理（server/routes/nuxt-api/admin/）
+
+**GET `/nuxt-api/admin/users`**（列出使用者，可按 role / approved / rejected 篩選）
+```typescript
+// Query: role (passenger|driver|admin), filter (approved|pending|rejected)
+interface AdminUser {
+  uid: string;            // 對應 Firebase UID（含 'line:' 前綴）
+  lineUserId: string;
+  role: 'passenger' | 'driver' | 'admin';
+  approved: boolean;
+  displayName: string;
+  pictureUrl: string;
+  driverCategory?: string;
+  driverApplication?: DriverApplication;
+  createdAt: string;
+}
+type AdminUsersResponse = UnifiedResponse<AdminUser[]>;
+```
+
+**PATCH `/nuxt-api/admin/users/[uid]`**（admin 審核操作）
+```typescript
+interface UpdateUserRequest {
+  approved?: boolean;       // 核准 / 撤銷
+  rejectedAt?: string | null; // 設為 ISO timestamp 拒絕；設為 null 解除冷卻
+  rejectReason?: string;    // 配合 rejectedAt 寫入
+  driverCategory?: string;  // 調整搶單排序權重
+  role?: 'passenger' | 'driver' | 'admin'; // 變更角色（admin 白名單操作）
+}
+type UpdateUserResponse = UnifiedResponse<{ updated: boolean }>;
+```
+
 ## 5. 錯誤代碼表
 
 | Code | 說明 |
 |------|------|
 | `INVALID_ROUTE` | 路線計算失敗或超出台灣本島 |
+| `INVALID_INPUT` | 申請欄位缺失或格式錯誤 |
 | `ORDER_NOT_FOUND` | 訂單不存在 |
 | `DRIVER_UNAVAILABLE` | 目前無可用司機 |
 | `FLIGHT_API_ERROR` | 航班 API 錯誤 |
 | `AUTH_FAILED` | LINE / Firebase 認證失敗 |
+| `COOLDOWN` | 司機申請被拒絕後 24h 冷卻中 |
+| `ALREADY_APPLIED` | 已為核准司機，無法重新申請 |
+| `UPLOAD_FAILED` | Firebase Storage 上傳失敗 |
+| `FILE_TOO_LARGE` | 證件圖片超過 5MB |
+| `UNSUPPORTED_FILE_TYPE` | 證件檔案類型非 jpg/png/pdf |
 
 ---
 
 **版本紀錄**
-- 版本：v1.1（統一為 UnifiedResponse 格式，移除 `any`）
-- 更新日期：2026/04/26
+- 版本：v1.2（新增司機申請、文件上傳、admin 審核 API；補 `mpv` 車種；新增 `DriverApplication` 等型別）
+- 更新日期：2026/05/06
+- 歷史：v1.1（2026/04/26）統一為 UnifiedResponse 格式，移除 `any`

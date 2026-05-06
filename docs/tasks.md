@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 6 進行中（約 85%）  
-**最後更新**：2026/04/30
+**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8 進行中）
+**最後更新**：2026/05/06
 
 ---
 
@@ -197,17 +197,95 @@
 ### P6：Auth 穩定性修復（2026/05/02 完成）
 
 - [✅] **Firestore admin 文件缺失**：首位管理員 `users/{lineUid}` 文件不存在，導致 role=null → middleware 踢出 → admin 頁面無法進入。已透過 Firebase Admin SDK 建立 `{ role: 'admin', approved: true }`
-- [✅] **Admin 跳過 LIFF**：admin 路徑不需 LINE LIFF 功能，加入 `/admin` 路徑早期 return，`liffReady=true`，避免 LIFF session 過期時強制跳轉 LINE 重新登入
+- [⚠️ OBSOLETE 2026/05/06] **Admin 跳過 LIFF**：原本決策為 admin 路徑不走 LINE LIFF 功能；後因 P7 三端 Header 統一顯示 LINE 頭像需求，改回走 LIFF + Firestore 白名單（見 P8）
 - [✅] **Firebase session 優先於 LIFF**：driver / passenger 路徑，若 Firebase `currentUser` 存在，直接跳過 `liff.login()` 強制跳轉，解決 LIFF session 過期但 Firebase session 有效時被踢出的問題
 
-**Stage Gate**：P0 + P1 + P2 + P3 完成，Vercel 部署通過，MVP 流程全端可跑通
+### P7：UI/UX 強化與 Pinia reactivity 修復（2026/05/06 進行中）
+
+> **背景**：實機測試發現多個解構 Pinia setup store 失去 reactivity 引發的隱性 bug（admin 無限 loading、profile 卡空白、登入後不自動導向、訂單頁 API 不打）。同時補上三端 Header 顯示 LINE 頭像 + 名稱以提升 UX 一致性。
+
+**P7-1：Pinia setup store 解構統一改用 `storeToRefs`（已完成）**
+- [✅] `app/layouts/back-desk.vue`（commit `e6bc8d6`，解決 admin 無限 loading）
+- [✅] `app/layouts/driver.vue`、`app/pages/profile/index.vue`、`app/pages/driver/profile/index.vue`、`app/pages/driver/auth/index.vue`、`app/pages/login/index.vue`、`app/pages/orders/index.vue`、`app/pages/driver/pending/index.vue`、`app/pages/home/index.vue`（commit `1490725`）
+
+**P7-2：三端 Header 顯示 LINE 頭像 + 名稱（待做）**
+- [ ] 補 `_LoadRoleFromFirestore` 讀取 `displayName` / `pictureUrl` 寫回 `lineProfile.value`（解決重新整理後 lineProfile=null 的問題）
+- [ ] 新增 `app/components/common/CommonHeaderUser.vue`（圓形頭像 + displayName + 點擊跳轉 profile）
+- [ ] `front-desk.vue` Header 加入 `CommonHeaderUser`，**移除「訂單」「預約」按鈕**（保留 LangSwitcher）
+- [ ] `driver.vue` Header 加入 `CommonHeaderUser`（取代或並列「待命中」狀態圓點）
+- [ ] `back-desk.vue` Header 加入 `CommonHeaderUser`（保留 ADMIN 標章）
+- [ ] 若 `role === 'admin'`，於頭像左側顯示 ADMIN 跳轉鈕（連到 `/admin/orders`）；非 admin 不顯示
+
+### P8：司機申請流程改造（2026/05/06 進行中）
+
+> **背景**：原 `/driver/auth` 流程對未註冊使用者直接寫入 `role: 'driver', approved: false` 後又被 middleware 導回 `/`，使用者無從得知申請狀態。重新設計為「passenger 預設 → 主動申請 → admin 審核」標準三段流程，並新增 1 天冷卻避免轟炸申請。
+
+**P8-1：後端架構修正**
+- [ ] 修 `server/routes/nuxt-api/auth/line-exchange.post.ts`：新使用者一律建為 `role: 'passenger'`（移除 `clientType=driver` 的 driver 預設邏輯）
+- [ ] 修 `app/middleware/role.ts`：`/driver/register` 路徑放行（passenger 與未核准 driver 都可進）
+- [ ] 修 `app/stores/5.store-auth.ts`：`_LoadRoleFromFirestore` 讀取 `driverApplication`（含 `rejectedAt`、`appliedAt`）
+
+**P8-2：申請頁面**
+- [ ] 新建 `app/pages/driver/register/index.vue`，三模式渲染：
+  - `role=passenger / null` → 申請表單
+  - `driver + !approved + !rejectedAt`（或 `rejectedAt` 已過 24h）→ 「審核中」提示
+  - `rejectedAt` 在 24h 內 → 「冷卻中」剩餘時間倒數
+- [ ] 表單欄位：司機真實姓名、聯絡電話、車牌號、車型（sedan/mpv/suv/van，中英對照）、銀行代號、銀行帳號
+- [ ] 4 個圖片上傳欄位：駕照、行照、保險卡、良民證（皆必填）
+- [ ] 新建 `app/components/driver/RegisterUploadField.vue`：拖放上傳 + 預覽 + 進度
+
+**P8-3：申請與圖片上傳 API**
+- [ ] 新建 `server/routes/nuxt-api/driver/upload.post.ts`：multipart → Firebase Storage `drivers/{uid}/{docType}-{timestamp}.{ext}` → 回傳 download URL
+- [ ] 新建 `server/routes/nuxt-api/driver/apply.post.ts`：驗證冷卻 → 寫入 `users/{uid}.driverApplication` + 改 `role='driver', approved=false, driverCategory='0'`
+- [ ] 新增 protocol：`app/protocol/fetch-api/api/driver/index.ts` 加入 `ApplyDriver`、`UploadDriverDocument`
+
+**P8-4：登入後分流**
+- [ ] 修 `app/pages/driver/auth/index.vue` 導向四分支：
+  - `driver + approved=true` → `/driver/dashboard`
+  - `driver + approved=false` → `/driver/register`
+  - `passenger / null` → `/driver/register`
+  - `admin` → `/admin/orders`
+
+**P8-5：Admin 審核強化**
+- [ ] 修 `app/pages/admin/drivers/index.vue` 加「待審核 / 已核准 / 已拒絕」三分頁
+- [ ] 司機卡片可展開檢視 `driverApplication` 完整資料 + 4 張證件圖片
+- [ ] 「拒絕」按鈕：寫入 `rejectedAt = now`、`rejectReason`
+- [ ] 「解除冷卻」按鈕（僅對 `rejectedAt` 在 24h 內者顯示）：清空 `rejectedAt`
+- [ ] 新增 API `PATCH /nuxt-api/admin/users/[uid]` 支援 `approved`、`rejectedAt`、`driverCategory`
+
+**P8-6：權限規則**
+- [ ] Firebase Storage Rules：`drivers/{uid}/*` 只允許 owner 上傳、admin 讀取
+- [ ] Firestore Rules：`users/{uid}.driverApplication` 只允許 owner 寫、admin 讀寫
+
+### P9：Admin LIFF 白名單統一（2026/05/06 進行中，與 P7 並行）
+
+> **背景**：P7 要求三端 Header 都顯示 LINE 頭像，admin 端必須有 LINE 身分；推翻 P6 的「admin 跳過 LIFF」決策。
+
+- [ ] 移除 `app/stores/5.store-auth.ts` `_InitLiffFlow` 中 `route.path.startsWith('/admin')` 的早期 return
+- [ ] 確認既有 admin 帳號 Firestore `users/{lineUid}` 文件存在且 `role: 'admin'`（首位 admin 仍須由 Firebase Console 手動建立）
+- [ ] Vercel 部署後實機驗證：admin 從 LINE 內建瀏覽器進 `/admin/orders` 可正常顯示頭像 + 名稱
+
+### P5：品質維護（沿用）
+
+- [ ] 真實航空 API 替換 Mock Aviation Edge（`server/api/flight.get.ts`）
+- [✅] ESLint 排除 `.claude/skills/` 目錄
+- [ ] 定期 `pnpm audit` 依賴安全性掃描
+
+> 注意：Admin 與司機端**不做 i18n**，乘客端 i18n 已於 Stage 6 完成。
+
+**Stage Gate（P7 + P8 + P9）**：
+- 三端 Header 顯示 LINE 頭像 + 名稱（lint ✅ + 部署 ✅ + 實機驗證 ✅）
+- 司機申請流程可走通：passenger → 申請 → admin 核准 → /driver/dashboard
+- 被拒絕司機 24h 內無法重申，admin 可手動解除冷卻
+- Admin 端從 LINE 登入後可正常進入後台並顯示頭像
 
 ---
 
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
+- P7 / P8 / P9 為 2026/05/06 新增工作項，依序執行（P7-1 已完成；P7-2 → P9 → P8 為建議順序）
 
 **版本紀錄**
-- 版本：v3.2（Stage 7 P4 Gist 遷移 + P6 Auth 修復完成）
-- 更新日期：2026/05/02
+- 版本：v3.3（Stage 7 P7 Pinia 修復完成 + P7-2/P8/P9 新增工作清單）
+- 更新日期：2026/05/06
