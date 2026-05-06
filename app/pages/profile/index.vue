@@ -3,19 +3,9 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const authStore = StoreAuth();
 const { lineProfile, user, isFriend, isSignIn } = storeToRefs(authStore);
-const { SignOut } = authStore;
 
 const config = useRuntimeConfig().public;
 const lineOaUrl = config.lineOaAddUrl as string;
-
-const signingOut = ref(false);
-
-const ClickSignOut = async () => {
-  const ok = await UseAsk('確定要登出嗎？');
-  if (!ok) return;
-  signingOut.value = true;
-  await SignOut();
-};
 </script>
 
 <template lang="pug">
@@ -51,13 +41,6 @@ const ClickSignOut = async () => {
   .PageProfile__unauth(v-else)
     .PageProfile__unauth-icon 👤
     p.PageProfile__unauth-text 尚未登入
-
-  //- 登出按鈕
-  .PageProfile__actions
-    button.PageProfile__signout-btn(
-      :disabled="signingOut"
-      @click="ClickSignOut"
-    ) {{ signingOut ? '登出中...' : '登出' }}
 </template>
 
 <style lang="scss" scoped>
@@ -182,27 +165,4 @@ $amber: #d4860a;
   }
 }
 
-// ── 操作區 ────────────────────────────────────────────────────
-.PageProfile__actions { padding: 8px 0; }
-
-.PageProfile__signout-btn {
-  width: 100%;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 13px;
-  border-radius: 12px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.08);
-  color: #f87171;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.16);
-  }
-
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
 </style>
