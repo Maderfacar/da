@@ -3,12 +3,14 @@
 
 const route = useRoute();
 const authStore = StoreAuth();
-const { authResolved, lineProfile, isAdmin, isSignIn } = storeToRefs(authStore);
+const { authResolved, lineProfile, isAdmin, isDriver, isSignIn } = storeToRefs(authStore);
 
 // auth 解析後補守護：middleware 僅在 navigation 時執行一次
+// admin 具備所有權限，與 driver 同等允許進入司機端
 watch(authResolved, (resolved) => {
   if (!resolved) return;
-  if (!isSignIn.value) { navigateTo('/driver/auth'); }
+  if (!isSignIn.value) { navigateTo('/driver/auth'); return; }
+  if (!isDriver.value && !isAdmin.value) { navigateTo('/driver/register'); }
 }, { immediate: true });
 
 const tabs = [

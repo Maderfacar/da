@@ -113,8 +113,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         approved.value = isDriver.value && !isAdmin.value
           ? (data.approved as boolean) ?? false
           : true;
-        // 管理端跳過 LIFF，改從 Firestore 補全個人資料
-        if (!lineProfile.value && (data.displayName || data.pictureUrl)) {
+        // 無論三端何種 session 路徑，只要 Firestore 有資料就同步至全域 lineProfile
+        // 確保 Header 頭象與名稱在任何情境下都能正確顯示
+        if (data.displayName || data.pictureUrl) {
           lineProfile.value = {
             displayName: (data.displayName as string) || '',
             pictureUrl: (data.pictureUrl as string) || '',
