@@ -2,7 +2,7 @@
 // LayoutBackDesk 管理者端佈局：頂部 Bar + 左側抽屜導航
 
 const route = useRoute();
-const { authResolved } = StoreAuth();
+const { authResolved } = storeToRefs(StoreAuth());
 const drawerOpen = ref(false);
 
 const navItems = [
