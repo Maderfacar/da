@@ -3,14 +3,31 @@ definePageMeta({ layout: false, ssr: false });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
-const { isSignIn, role, authResolved } = storeToRefs(authStore);
+const { isSignIn, role, approved, authResolved } = storeToRefs(authStore);
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
+// P8 四分支導向：
+//   1. driver + approved=true  → /driver/dashboard
+//   2. driver + approved=false → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
+//   3. passenger / 新使用者     → /driver/register（顯示申請表單）
+//   4. admin                   → /admin/orders
 watch([isSignIn, authResolved], () => {
   if (!authResolved.value || !isSignIn.value || !role.value) return;
-  navigateTo(role.value === 'driver' ? '/driver/dashboard' : '/home');
+
+  if (role.value === 'admin') {
+    navigateTo('/admin/orders');
+    return;
+  }
+
+  if (role.value === 'driver') {
+    navigateTo(approved.value ? '/driver/dashboard' : '/driver/register');
+    return;
+  }
+
+  // passenger 或無 role
+  navigateTo('/driver/register');
 }, { immediate: true });
 
 async function ClickLineLogin() {

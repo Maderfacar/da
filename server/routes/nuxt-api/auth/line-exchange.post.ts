@@ -49,12 +49,11 @@ export default defineEventHandler(async (event) => {
   }
 
   const uid = `line:${lineProfile.sub}`;
-  const isDriver = body.clientType === 'driver';
-  const defaultRole = isDriver ? 'driver' : 'passenger';
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
-  // 新使用者：driver 預設 approved: false（須等管理員核准）
-  // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 role / approved）
+  // P8（2026/05/06 起）：新使用者一律建為 passenger，由使用者主動申請才升級為 driver
+  // body.clientType 僅用於識別來源端（passenger / driver path），不再影響 role
+  // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 role / approved / driverApplication）
   let isNewUser = false;
   try {
     await auth.getUser(uid);
@@ -70,8 +69,8 @@ export default defineEventHandler(async (event) => {
         photoURL: lineProfile.picture,
       });
       await db.collection('users').doc(lineProfile.sub).set({
-        role: defaultRole,
-        approved: isDriver ? false : true,
+        role: 'passenger',
+        approved: true,
         lineUserId: lineProfile.sub,
         displayName: lineProfile.name,
         pictureUrl: lineProfile.picture,
@@ -91,13 +90,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
-  let role = defaultRole;
-  let approved = !isDriver; // passenger 預設已核准
+  let role: 'passenger' | 'driver' | 'admin' = 'passenger';
+  let approved = true;
   try {
     const userDoc = await db.collection('users').doc(lineProfile.sub).get();
     if (userDoc.exists) {
-      role = (userDoc.data()?.role as string) ?? defaultRole;
-      approved = (userDoc.data()?.approved as boolean) ?? (!isDriver);
+      role = (userDoc.data()?.role as 'passenger' | 'driver' | 'admin') ?? 'passenger';
+      approved = (userDoc.data()?.approved as boolean) ?? true;
     }
   } catch {
     // Firestore 讀取失敗時沿用預設值

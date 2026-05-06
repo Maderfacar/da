@@ -14,6 +14,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const idToken = ref('');
   const isFriend = ref<boolean | null>(null); // null = 尚未查詢
 
+  // 司機申請狀態（P8）：null = 未申請；rejectedAt 有值 = 已被拒絕等待 admin 解除
+  const driverApplication = ref<{
+    appliedAt: string | null;
+    reviewedAt: string | null;
+    rejectedAt: string | null;
+    rejectReason: string | null;
+  } | null>(null);
+
   // -- Computed --------------------------------------------------------------------------------------
 
   const isSignIn = computed(() => !!user.value);
@@ -29,6 +37,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     lineProfile.value = null;
     liffReady.value = false;
     isFriend.value = null;
+    driverApplication.value = null;
   };
 
   // -- Flow Control ----------------------------------------------------------------------------------
@@ -104,6 +113,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         const pictureUrl = data.pictureUrl as string | undefined;
         if (displayName && pictureUrl) {
           lineProfile.value = { displayName, pictureUrl };
+        }
+        // 補回司機申請狀態（P8）：register 頁與 driver/auth watch 依此分流
+        const appData = data.driverApplication as Record<string, unknown> | undefined;
+        if (appData) {
+          driverApplication.value = {
+            appliedAt: (appData.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.appliedAt as string | null) ?? null,
+            reviewedAt: (appData.reviewedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.reviewedAt as string | null) ?? null,
+            rejectedAt: (appData.rejectedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.rejectedAt as string | null) ?? null,
+            rejectReason: (appData.rejectReason as string | null) ?? null,
+          };
+        } else {
+          driverApplication.value = null;
         }
       }
     } catch {
@@ -213,6 +234,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -------------------------------------------------------------------------------------------------
   return {
     user, role, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
+    driverApplication,
     isSignIn, idToken,
     InitAuthFlow, SetRole, MockSignIn, SignOut,
   };
