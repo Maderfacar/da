@@ -51,9 +51,9 @@ export default defineEventHandler(async (event) => {
   const uid = `line:${lineProfile.sub}`;
 
   // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
-  // P8（2026/05/06 起）：新使用者一律建為 passenger，由使用者主動申請才升級為 driver
-  // body.clientType 僅用於識別來源端（passenger / driver path），不再影響 role
-  // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 role / approved / driverApplication）
+  // P10（2026/05/07 起）：roles[] 陣列模型；新使用者一律建為 ['passenger']，由 admin 加入額外 role
+  // body.clientType 僅用於識別來源端（passenger / driver path），不再影響 roles
+  // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 roles / approved / driverApplication）
   let isNewUser = false;
   try {
     await auth.getUser(uid);
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
         photoURL: lineProfile.picture,
       });
       await db.collection('users').doc(lineProfile.sub).set({
-        role: 'passenger',
+        roles: ['passenger'],
         approved: true,
         lineUserId: lineProfile.sub,
         displayName: lineProfile.name,
@@ -90,13 +90,19 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
-  let role: 'passenger' | 'driver' | 'admin' = 'passenger';
+  type Role = 'passenger' | 'driver' | 'admin';
+  let roles: Role[] = ['passenger'];
   let approved = true;
   try {
     const userDoc = await db.collection('users').doc(lineProfile.sub).get();
     if (userDoc.exists) {
-      role = (userDoc.data()?.role as 'passenger' | 'driver' | 'admin') ?? 'passenger';
-      approved = (userDoc.data()?.approved as boolean) ?? true;
+      const data = userDoc.data();
+      const rawRoles = data?.roles as unknown;
+      if (Array.isArray(rawRoles) && rawRoles.length > 0) {
+        roles = rawRoles.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
+        if (roles.length === 0) roles = ['passenger'];
+      }
+      approved = (data?.approved as boolean) ?? true;
     }
   } catch {
     // Firestore 讀取失敗時沿用預設值
@@ -105,14 +111,14 @@ export default defineEventHandler(async (event) => {
   // ── 5. 建立 Firebase Custom Token ────────────────────────
   let customToken: string;
   try {
-    customToken = await auth.createCustomToken(uid, { role });
+    customToken = await auth.createCustomToken(uid, { roles });
   } catch {
     return serverError({ zh_tw: '無法建立登入憑證', en: 'Failed to create custom token', ja: 'カスタムトークンの生成に失敗しました' });
   }
 
   return successResponse({
     customToken,
-    role,
+    roles,
     approved,
     lineUserId: lineProfile.sub,
     displayName: lineProfile.name,

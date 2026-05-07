@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
     let q = db.collection('users') as FirebaseFirestore.Query;
     if (body.targetRole !== 'all') {
-      q = q.where('role', '==', body.targetRole);
+      q = q.where('roles', 'array-contains', body.targetRole);
     }
 
     const snapshot = await q.get();

@@ -1,11 +1,13 @@
 import methods from '@/protocol/fetch-api/methods';
 
+export type Role = 'passenger' | 'driver' | 'admin';
+
 export interface AdminUser {
   uid: string
   lineUserId: string
   displayName: string
   pictureUrl: string
-  role: string
+  roles: Role[]
   approved: boolean
   createdAt: string
 }
@@ -26,13 +28,20 @@ export interface AdminOrder {
   createdAt: number
 }
 
-/** 查詢使用者清單（依 role 篩選） */
-export const GetAdminUsers = (params: { role: string; approved?: boolean }) =>
+export interface PatchAdminUserBody {
+  addRole?: Role
+  removeRole?: Exclude<Role, 'passenger'>
+  approved?: boolean
+  displayName?: string
+}
+
+/** 查詢使用者清單（依 role 篩選 — server 端用 array-contains） */
+export const GetAdminUsers = (params: { role: Role; approved?: boolean }) =>
   methods.get<AdminUser[]>('/nuxt-api/admin/users', params as Record<string, unknown>);
 
-/** 更新使用者 role 或 approved 狀態 */
-export const PatchAdminUser = (uid: string, body: { role?: string; approved?: boolean }) =>
-  methods.patch<{ uid: string }>(`/nuxt-api/admin/users/${uid}`, body);
+/** 更新使用者 roles（addRole / removeRole）或 approved 狀態 */
+export const PatchAdminUser = (uid: string, body: PatchAdminUserBody) =>
+  methods.patch<{ uid: string; updated?: boolean }>(`/nuxt-api/admin/users/${uid}`, body);
 
 /** 查詢所有訂單（Admin 用） */
 export const GetAllOrders = (params: { status?: string } = {}) =>

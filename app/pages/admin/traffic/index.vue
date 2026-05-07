@@ -65,8 +65,8 @@ const SetDateOffset = (offset: number) => {
 };
 
 const terminalLabel = computed(() => {
-  const t = TERMINAL_OPTIONS.find(o => o.value === selectedTerminal.value);
-  const d = DIRECTION_OPTIONS.find(o => o.value === selectedDirection.value);
+  const t = TERMINAL_OPTIONS.find((o) => o.value === selectedTerminal.value);
+  const d = DIRECTION_OPTIONS.find((o) => o.value === selectedDirection.value);
   return `${t?.label ?? '全端'} · ${d?.label ?? '進出境合計'}`;
 });
 

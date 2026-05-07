@@ -30,10 +30,10 @@ export default defineEventHandler(async (event) => {
     // 若指定 T1/T2 但無該航廈資料（目前資料只有 'all'），fallback 到 terminal='all'
     let terminalFiltered = terminal === 'all'
       ? payload.hours
-      : payload.hours.filter(h => h.terminal === terminal);
+      : payload.hours.filter((h) => h.terminal === terminal);
 
     if (terminalFiltered.length === 0) {
-      terminalFiltered = payload.hours.filter(h => h.terminal === 'all');
+      terminalFiltered = payload.hours.filter((h) => h.terminal === 'all');
     }
 
     // ── 方向篩選 ─────────────────────────────────────────────────
@@ -43,26 +43,26 @@ export default defineEventHandler(async (event) => {
     let directionFiltered: typeof terminalFiltered;
 
     if (direction === 'all') {
-      const withAll = terminalFiltered.filter(h => h.direction === 'all');
+      const withAll = terminalFiltered.filter((h) => h.direction === 'all');
       directionFiltered = withAll.length > 0
         ? withAll
-        : terminalFiltered.filter(h => h.direction === undefined || h.direction === null);
+        : terminalFiltered.filter((h) => h.direction === undefined || h.direction === null);
     } else {
-      const specific = terminalFiltered.filter(h => h.direction === direction);
+      const specific = terminalFiltered.filter((h) => h.direction === direction);
       if (specific.length > 0) {
         directionFiltered = specific;
       } else {
         // fallback：指定方向無資料時，用彙總列或舊格式
-        const withAll = terminalFiltered.filter(h => h.direction === 'all');
+        const withAll = terminalFiltered.filter((h) => h.direction === 'all');
         directionFiltered = withAll.length > 0
           ? withAll
-          : terminalFiltered.filter(h => h.direction === undefined || h.direction === null);
+          : terminalFiltered.filter((h) => h.direction === undefined || h.direction === null);
       }
     }
 
     // ── 依小時彙總 ───────────────────────────────────────────────
     const hours = Array.from({ length: 24 }, (_, i) => {
-      const matched = directionFiltered.filter(h => h.hour === i);
+      const matched = directionFiltered.filter((h) => h.hour === i);
       const forecastCount = matched.reduce((sum, h) => sum + (h.forecastCount ?? 0), 0);
       return { hour: i, forecastCount, actualCount: null };
     });

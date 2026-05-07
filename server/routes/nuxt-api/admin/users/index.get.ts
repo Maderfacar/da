@@ -1,9 +1,9 @@
 /**
  * GET /nuxt-api/admin/users
- * 管理員查詢使用者清單（依 role 篩選）
+ * 管理員查詢使用者清單（依 role 篩選 — array-contains）
  *
  * Query params:
- *   role — 'admin' | 'driver' | 'passenger'（必填）
+ *   role — 'admin' | 'driver' | 'passenger'（必填，使用 array-contains 比對）
  *   approved — 'true' | 'false'（可選，driver 審核狀態篩選）
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
-    let q = db.collection('users').where('role', '==', query.role);
+    let q = db.collection('users').where('roles', 'array-contains', query.role);
 
     if (query.approved !== undefined) {
       q = q.where('approved', '==', query.approved === 'true') as typeof q;
@@ -32,12 +32,13 @@ export default defineEventHandler(async (event) => {
 
     const users = snapshot.docs.map((doc) => {
       const d = doc.data();
+      const rawRoles = Array.isArray(d.roles) ? (d.roles as string[]) : [];
       return {
         uid: doc.id,
         lineUserId: d.lineUserId as string ?? '',
         displayName: d.displayName as string ?? '',
         pictureUrl: d.pictureUrl as string ?? '',
-        role: d.role as string,
+        roles: rawRoles,
         approved: d.approved as boolean ?? false,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
       };

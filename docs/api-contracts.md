@@ -209,14 +209,15 @@ type ApplyDriverResponse = UnifiedResponse<{
 
 ### 4.5 Admin 端使用者管理（server/routes/nuxt-api/admin/）
 
-**GET `/nuxt-api/admin/users`**（列出使用者，可按 role / approved / rejected 篩選）
+**GET `/nuxt-api/admin/users`**（列出使用者，可按 role / approved 篩選；server 端用 `roles` array-contains 比對）
 ```typescript
-// Query: role (passenger|driver|admin), filter (approved|pending|rejected)
+// Query: role (passenger|driver|admin), approved (true|false 可選)
+type Role = 'passenger' | 'driver' | 'admin';
 interface AdminUser {
   uid: string;            // 對應 Firebase UID（含 'line:' 前綴）
   lineUserId: string;
-  role: 'passenger' | 'driver' | 'admin';
-  approved: boolean;
+  roles: Role[];          // 多角色陣列（最少含 'passenger'）
+  approved: boolean;      // 僅代表 driver 是否核准；passenger / admin 永遠視為 true
   displayName: string;
   pictureUrl: string;
   driverCategory?: string;
@@ -228,14 +229,17 @@ type AdminUsersResponse = UnifiedResponse<AdminUser[]>;
 
 **PATCH `/nuxt-api/admin/users/[uid]`**（admin 審核操作）
 ```typescript
+type Role = 'passenger' | 'driver' | 'admin';
 interface UpdateUserRequest {
-  approved?: boolean;       // 核准 / 撤銷
-  rejectedAt?: string | null; // 設為 ISO timestamp 拒絕；設為 null 解除冷卻
-  rejectReason?: string;    // 配合 rejectedAt 寫入
-  driverCategory?: string;  // 調整搶單排序權重
-  role?: 'passenger' | 'driver' | 'admin'; // 變更角色（admin 白名單操作）
+  addRole?: Role;                  // arrayUnion 加入 role
+  removeRole?: 'admin' | 'driver'; // arrayRemove 移除 role；禁止移除 passenger
+  approved?: boolean;              // 核准 / 停用 driver
+  rejectedAt?: string | null;      // 設為 ISO timestamp 拒絕；設為 null 解除冷卻
+  rejectReason?: string;           // 配合 rejectedAt 寫入
+  driverCategory?: string;         // 調整搶單排序權重
+  displayName?: string;            // 建立新使用者文件時可同步寫入
 }
-type UpdateUserResponse = UnifiedResponse<{ updated: boolean }>;
+type UpdateUserResponse = UnifiedResponse<{ uid: string; updated?: boolean }>;
 ```
 
 ## 5. 錯誤代碼表
