@@ -91,16 +91,28 @@ export default defineEventHandler(async (event) => {
 
   // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
   type Role = 'passenger' | 'driver' | 'admin';
+  // 容錯：若使用者在 Firebase Console 誤把 roles 存成 string 型別，嘗試 parse
+  const parseRoles = (raw: unknown): Role[] => {
+    let arr: unknown[] = [];
+    if (Array.isArray(raw)) {
+      arr = raw;
+    } else if (typeof raw === 'string') {
+      arr = raw.replace(/[[\]'"\s]/g, '').split(',');
+    }
+    return arr.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
+  };
   let roles: Role[] = ['passenger'];
   let approved = true;
   try {
     const userDoc = await db.collection('users').doc(lineProfile.sub).get();
     if (userDoc.exists) {
       const data = userDoc.data();
-      const rawRoles = data?.roles as unknown;
-      if (Array.isArray(rawRoles) && rawRoles.length > 0) {
-        roles = rawRoles.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
-        if (roles.length === 0) roles = ['passenger'];
+      const parsed = parseRoles(data?.roles);
+      if (parsed.length > 0) {
+        roles = parsed;
+      } else if (typeof data?.role === 'string') {
+        const legacy = parseRoles([data.role]);
+        if (legacy.length > 0) roles = legacy;
       }
       approved = (data?.approved as boolean) ?? true;
     }

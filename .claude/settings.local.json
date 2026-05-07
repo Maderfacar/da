@@ -19,7 +19,11 @@
       "Bash(git commit -m 'chore: 更新 Claude Code 本地權限設定 *)",
       "Bash(git commit -m 'fix: 修正 vercel.json schema 錯誤，補充部署規範 *)",
       "Bash(git commit *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(nuxt prepare *)",
+      "Bash(git checkout *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm vitest *)"
     ]
   }
 }

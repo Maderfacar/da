@@ -50,8 +50,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   };
 
   const _normalizeRoles = (raw: unknown): Role[] => {
-    if (!Array.isArray(raw)) return [];
-    const valid = raw.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
+    // 容錯：若使用者在 Firebase Console 誤把 roles 存成 string 型別
+    // （例如 "['passenger', 'driver', 'admin']" 或 "passenger,driver,admin"），
+    // 嘗試 parse 出有效角色名稱，避免 ADMIN/PASSENGER 鈕永遠不顯示。
+    let arr: unknown[] = [];
+    if (Array.isArray(raw)) {
+      arr = raw;
+    } else if (typeof raw === 'string') {
+      const stripped = raw.replace(/[[\]'"\s]/g, '');
+      arr = stripped.split(',');
+    }
+    const valid = arr.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
     return valid;
   };
 
