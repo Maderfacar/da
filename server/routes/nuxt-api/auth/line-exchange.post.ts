@@ -82,14 +82,30 @@ export default defineEventHandler(async (event) => {
           displayName: lineProfile.name,
           photoURL: lineProfile.picture,
         });
-        await db.collection('users').doc(lineProfile.sub).set({
-          roles: ['passenger'],
-          approved: true,
-          lineUserId: lineProfile.sub,
-          displayName: lineProfile.name,
-          pictureUrl: lineProfile.picture,
-          createdAt: new Date(),
-        });
+        // 重要：用 merge: true 避免覆寫既有 Firestore 文件中的手動設定（例如 admin 預先
+        // 為某 LINE UID 設好的 roles: ['passenger', 'admin']）。Firebase Auth user 可能
+        // 因前次 line-exchange 失敗而從未建成功，但 Firestore 的 users 文件已存在。
+        // 之前用 .set() 直接覆寫會把使用者已有的 roles / approved / driverApplication 全清掉。
+        const docRef = db.collection('users').doc(lineProfile.sub);
+        const existingSnap = await docRef.get();
+        if (existingSnap.exists) {
+          // 文件已存在 — 只更新 LINE profile，不動 roles / approved / driverApplication
+          await docRef.set({
+            lineUserId: lineProfile.sub,
+            displayName: lineProfile.name,
+            pictureUrl: lineProfile.picture,
+          }, { merge: true });
+        } else {
+          // 真正全新的使用者 — 建立完整初始文件
+          await docRef.set({
+            roles: ['passenger'],
+            approved: true,
+            lineUserId: lineProfile.sub,
+            displayName: lineProfile.name,
+            pictureUrl: lineProfile.picture,
+            createdAt: new Date(),
+          });
+        }
       } catch (err) {
         console.error('[line-exchange] createUser/set failed:', err);
         return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
