@@ -6,6 +6,48 @@
 
 ---
 
+### 2026/05/07 — 身分模型由單一 role 改為 roles[] 陣列（多角色支援）
+
+**決策類型**：資料模型重構 / 業務邏輯
+**標題**：Firestore `users/{uid}.role: string` 改為 `roles: Role[]`，支援單一使用者同時具 passenger / driver / admin 多重身分
+**背景**：原本單一 role 互斥模型造成多項 UX 問題：
+- admin 永遠看不到 ADMIN 跳轉鈕（因為 admin 沒有「乘客 / 司機」身分可進入相應路由）
+- admin / approved driver 無法在乘客端訂車（middleware 強制把 admin 導 `/admin/traffic`、approved driver 導 `/driver/dashboard`）
+- 實務上，admin 可能也是 driver / passenger，driver 也可能會自己訂車，單一身分過於僵硬
+
+**決定**：
+- **Firestore schema**：`users/{lineUid}.role: string` → `users/{lineUid}.roles: ('passenger' | 'driver' | 'admin')[]`
+  - 所有使用者最少含 `'passenger'`（passenger 是基礎身分，無法被移除）
+  - admin 加白名單：`arrayUnion('admin')`，移除：`arrayRemove('admin')`
+  - driver 申請通過：`arrayUnion('driver')` + `approved=true`
+  - `approved: boolean` 維持獨立欄位，**僅作為 driver 核准旗標**（passenger / admin 永遠視為 true）
+- **Store**：`role: ref<Role|null>` → `roles: ref<Role[]>`，新增 computed：`isAdmin`、`isDriver`、`isPassenger`、`isApprovedDriver`
+- **Middleware/role.ts**：
+  - admin 路徑：`roles.includes('admin')` 才放行
+  - driver 路徑：`roles.includes('driver') && approved` 才放行
+  - **乘客路徑：所有已登入使用者皆可進入**（移除「admin / approved driver 不得進入乘客路由」的兩條 redirect）
+- **CommonHeaderUser**：admin 在乘客/司機端顯示「ADMIN」鈕、approved driver 在乘客/admin 端顯示「DRIVER」鈕，提供雙向切換入口
+- **Admin API `PATCH /nuxt-api/admin/users/[uid]`** 改為 `addRole` / `removeRole` 語意：
+  - `addRole: 'admin'` → arrayUnion；`removeRole: 'admin'` → arrayRemove
+  - **禁止 `removeRole: 'passenger'`**（passenger 是基礎身分）
+  - `approved` 維持獨立操作（核准/停用 driver）
+- **Admin API `GET /nuxt-api/admin/users`** server 端改用 `where('roles', 'array-contains', query.role)` 篩選；query 介面不變
+- **broadcast.post.ts** 推播鎖定 role 同改 array-contains
+- **既有資料遷移**：手動於 Firebase Console 對既有 1 位使用者改為 `roles: ['passenger', 'driver', 'admin']`（無自動遷移 script）
+
+**影響**：
+- 修改：`server/routes/nuxt-api/auth/line-exchange.post.ts`、`server/routes/nuxt-api/admin/users/{index.get.ts,[uid].patch.ts}`、`server/routes/nuxt-api/admin/broadcast.post.ts`、`app/protocol/fetch-api/api/admin/index.ts`、`app/stores/5.store-auth.ts`、`app/middleware/role.ts`、`app/components/common/CommonHeaderUser.vue`、`app/pages/{login,driver/auth,driver/register,admin/settings}/index.vue`
+- 移除：StoreAuth.SetRole action（無人使用）
+- 變更語意：`MockSignIn` 從接 `Role` 改為接 `Role[]`，admin/driver mock 同時帶 passenger 模擬實際多身分
+- docs：`docs/api-contracts.md` 對齊新 schema
+
+**替代方案**：
+- 維持單一 role + 多端切換用 query 參數 → admin 仍無法訂車，未解決根本問題；已捨棄
+- 加 `secondaryRoles` 欄位 → 複雜度高且資料分散；已捨棄
+- 完全用 RBAC（permission-based）→ 過度設計，目前 3 種身分用 array 即可；已捨棄
+
+---
+
 ### 2026/05/06 — 司機申請流程重新設計：/driver/register + 圖片上傳 + 1 天冷卻
 
 **決策類型**：業務流程 / 新增功能

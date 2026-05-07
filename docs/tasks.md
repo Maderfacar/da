@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8 進行中）
-**最後更新**：2026/05/06
+**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10 進行中）
+**最後更新**：2026/05/07
 
 ---
 
@@ -279,13 +279,46 @@
 - 被拒絕司機 24h 內無法重申，admin 可手動解除冷卻
 - Admin 端從 LINE 登入後可正常進入後台並顯示頭像
 
+### P10：身分模型改為 roles[] 多角色陣列（2026/05/07 完成）
+
+> **背景**：原單一 role 互斥造成 admin 看不到 ADMIN 跳轉鈕、admin / approved driver 無法在乘客端訂車。改為 roles 陣列後，單一使用者可同時具 passenger / driver / admin 多重身分。
+
+**P10-1：後端 schema 與 API（已完成）**
+- [✅] `server/routes/nuxt-api/auth/line-exchange.post.ts`：新使用者寫 `roles: ['passenger']`、custom token claims 改 `roles`、回傳 `roles[]`
+- [✅] `server/routes/nuxt-api/admin/users/index.get.ts`：改用 `where('roles', 'array-contains', query.role)`
+- [✅] `server/routes/nuxt-api/admin/users/[uid].patch.ts`：body 改為 `addRole` / `removeRole` 語意（arrayUnion / arrayRemove），禁止移除 passenger
+- [✅] `server/routes/nuxt-api/admin/broadcast.post.ts`：targetRole 篩選改 array-contains
+- [✅] `app/protocol/fetch-api/api/admin/index.ts`：`AdminUser.roles: Role[]`、`PatchAdminUserBody.{addRole,removeRole}`
+- [✅] `docs/api-contracts.md`：對齊新 schema 與 PATCH 語意
+
+**P10-2：前端 store / middleware / pages（已完成）**
+- [✅] `app/stores/5.store-auth.ts`：`role` → `roles[]`，新增 computed `isAdmin` / `isDriver` / `isPassenger` / `isApprovedDriver`，移除 `SetRole` action，`MockSignIn(roles[])`
+- [✅] `app/middleware/role.ts`：以 `roles.includes(...)` 判斷；**移除 admin / approved driver 不得進入乘客路由的 redirect**
+- [✅] `app/components/common/CommonHeaderUser.vue`：新增 DRIVER 切換鈕（approved driver 在乘客/admin 端顯示），ADMIN 鈕改用 `isAdmin`
+- [✅] `app/pages/login/index.vue`：以 `isAdmin` 判斷導向；MockSignIn 自動帶 passenger
+- [✅] `app/pages/driver/auth/index.vue`：四分支導向改用 `isApprovedDriver` / `isDriver` / `isAdmin`
+- [✅] `app/pages/driver/register/index.vue`：mode 判斷改用 `isDriver`
+- [✅] `app/pages/admin/settings/index.vue`：管理員白名單與司機審核操作改用 `addRole` / `removeRole`
+
+**P10-3：docs（已完成）**
+- [✅] `docs/decision-log.md`：新增 2026/05/07 決策條目
+- [✅] `docs/tasks.md`：新增本 P10 章節
+
+**P10-4：手動操作（須使用者執行）**
+- [✅] Firebase Console 將既有使用者文件 `users/{lineUid}` 加入 `roles: ['passenger', 'driver', 'admin']`（陣列型別）
+
+**Stage Gate（P10）**：
+- lint ✅ / build 待 Vercel 部署驗證
+- 實機：admin 從乘客端可看到 ADMIN 切換鈕、approved driver 在乘客端可看到 DRIVER 切換鈕
+- admin / approved driver 可進入乘客端訂車流程不會被踢出
+
 ---
 
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
-- P7 / P8 / P9 為 2026/05/06 新增工作項，依序執行（P7-1 已完成；P7-2 → P9 → P8 為建議順序）
+- P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增
 
 **版本紀錄**
-- 版本：v3.3（Stage 7 P7 Pinia 修復完成 + P7-2/P8/P9 新增工作清單）
-- 更新日期：2026/05/06
+- 版本：v3.4（Stage 7 P10 roles[] 多角色遷移完成）
+- 更新日期：2026/05/07
