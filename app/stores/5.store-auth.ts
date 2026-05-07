@@ -93,19 +93,27 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
     onAuthStateChanged(auth, async (firebaseUser) => {
       clearTimeout(safetyTimer); // Firebase 成功回應，取消安全計時器
-      try {
-        if (firebaseUser) {
-          user.value = firebaseUser;
-          idToken.value = await firebaseUser.getIdToken();
-          await _LoadRolesFromFirestore(firebaseApp, firebaseUser.uid);
-        } else {
-          _clearState();
-        }
-      } catch {
+      // 重要：firebaseUser 為 null 才清空 state；其餘情況保留 user，避免 token 取得
+      // 失敗或 Firestore 讀失敗時誤踢使用者（症狀：切換路由觸發 middleware/auth 把人
+      // 導去 /driver/auth，看似「再觸發 LINE 登入」）
+      if (!firebaseUser) {
         _clearState();
-      } finally {
         authResolved.value = true;
+        return;
       }
+      user.value = firebaseUser;
+      // getIdToken / Firestore 讀失敗都不應該影響 user 狀態
+      try {
+        idToken.value = await firebaseUser.getIdToken();
+      } catch (err) {
+        console.error('[StoreAuth] getIdToken failed:', err);
+      }
+      try {
+        await _LoadRolesFromFirestore(firebaseApp, firebaseUser.uid);
+      } catch (err) {
+        console.error('[StoreAuth] _LoadRolesFromFirestore unexpected throw:', err);
+      }
+      authResolved.value = true;
     });
 
     await _InitLiffFlow(firebaseApp);
@@ -184,24 +192,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       ]);
 
       // LIFF 已登入 → 主動取 profile 寫入 store
-      // 確保即使後續 Firebase session 命中跳過 line-exchange，lineProfile 仍有值
-      // 避免重新整理或既有 session 使用者的 Header 頭像/名稱永遠空白
       if (liff.isLoggedIn()) {
         try {
           const profile = await liff.getProfile();
           lineProfile.value = { displayName: profile.displayName, pictureUrl: profile.pictureUrl ?? '' };
-        } catch { /* 取 profile 失敗時保持原值，後續 _LoadRolesFromFirestore 會嘗試補回 */ }
+        } catch { /* 取 profile 失敗時保持原值 */ }
       }
 
-      // Firebase session 有效 → LIFF 不需重新登入，直接標記就緒
-      const { getAuth } = await import('firebase/auth');
-      if (getAuth(firebaseApp).currentUser) {
-        liffReady.value = true;
-        return;
-      }
-
+      // 沒登入 LIFF → 強制 LINE 登入，redirect 後重新執行
       if (!liff.isLoggedIn()) {
-        liff.login(); // 強制導向 LINE 登入，redirect 後重新執行
+        liff.login();
         return;
       }
 
@@ -218,27 +218,33 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       liffReady.value = true;
 
-      // 交換 Firebase Custom Token
+      // 永遠跑 line-exchange 取 server-side roles（即便 Firebase 已有 session）
+      // 原因：client-side _LoadRolesFromFirestore 偶爾因 Rules / 網路失敗，server-side
+      // 取得的 roles 作為最權威來源；signInWithCustomToken 只在還沒 Firebase session 時做。
       const res = await $fetch<{ data: { customToken: string; roles: Role[]; approved: boolean; displayName: string; pictureUrl: string } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
-      );
+      ).catch((err) => {
+        console.error('[StoreAuth] line-exchange failed:', err);
+        return null;
+      });
 
-      if (!res.data?.customToken) return;
+      if (res?.data) {
+        if (res.data.displayName && res.data.pictureUrl) {
+          lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
+        }
+        const parsed = _normalizeRoles(res.data.roles);
+        if (parsed.length > 0) {
+          roles.value = parsed;
+          approved.value = res.data.approved ?? true;
+          console.info('[StoreAuth] roles via line-exchange', roles.value, 'approved', approved.value);
+        }
 
-      lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
-
-      // P10 修復：line-exchange 回傳即刻同步 roles / approved 至 store
-      // 避免後續頁面 watch 在 onAuthStateChanged → _LoadRolesFromFirestore 完成前
-      // 看到 roles=[] 走錯分流（例如 driver/auth 把使用者導去 /driver/register）
-      const parsed = _normalizeRoles(res.data.roles);
-      if (parsed.length > 0) {
-        roles.value = parsed;
-        approved.value = res.data.approved ?? true;
+        const { getAuth, signInWithCustomToken } = await import('firebase/auth');
+        if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
+          await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
+        }
       }
-
-      const { signInWithCustomToken } = await import('firebase/auth');
-      await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
       // onAuthStateChanged 接手後續
     } catch {
       liffReady.value = true;

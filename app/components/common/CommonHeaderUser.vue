@@ -1,24 +1,28 @@
 <script setup lang="ts">
-// CommonHeaderUser 三端 Layout Header 共用：圓形 LINE 頭像 + displayName + 後台切換鈕
+// CommonHeaderUser 三端 Layout Header 共用：圓形 LINE 頭像 + displayName + 跨端切換鈕
 //
-// - 頭像不可點擊（無連結，純顯示）— 點擊跳轉由各端 Tab Bar 上的「我的」按鈕處理
-// - 若 roles 包含 'admin' 且當前不在 /admin 路徑下，顯示 ADMIN 跳轉鈕
-// - 若 isApprovedDriver 且當前不在 /driver 路徑下，顯示 DRIVER 跳轉鈕
-// - 無 pictureUrl 時顯示 displayName 第一個字元的灰底 fallback
+// 三條規則（2026/05/07 使用者明確要求）：
+//   1. 乘客端（非 /admin 也非 /driver）：roles 含 admin → 顯示 ADMIN 鈕；其餘不顯示跨端鈕
+//   2. Admin 端（/admin/*）：永遠顯示 PASSENGER 鈕（無條件）
+//   3. 司機端（/driver/*）：不顯示任何跨端按鈕
 //
-// 內部直接讀 authStore proxy（不用 storeToRefs），避免 Pinia setup store
-// 解構 computed 在某些瀏覽器環境失去 reactivity 的潛在問題。
+// 頭像不可點擊（純顯示）；無 pictureUrl 時顯示 displayName 第一個字元 fallback。
+// 內部直接讀 authStore proxy（不用 storeToRefs），避免 Pinia setup store 解構 computed
+// 在某些瀏覽器環境失去 reactivity 的潛在問題。
 
 const route = useRoute();
 const authStore = StoreAuth();
 
+const isAdminPath = computed(() => route.path.startsWith('/admin'));
+const isDriverPath = computed(() => route.path.startsWith('/driver'));
+
+// 規則 1：乘客端 + admin → ADMIN 鈕
 const showAdminBtn = computed(() =>
-  authStore.roles.includes('admin') && !route.path.startsWith('/admin'),
+  !isAdminPath.value && !isDriverPath.value && authStore.roles.includes('admin'),
 );
 
-const showDriverBtn = computed(() =>
-  authStore.roles.includes('driver') && authStore.approved && !route.path.startsWith('/driver'),
-);
+// 規則 2：admin 端 → 永遠顯示 PASSENGER 鈕
+const showPassengerBtn = computed(() => isAdminPath.value);
 
 const lineProfile = computed(() => authStore.lineProfile);
 
@@ -33,8 +37,8 @@ const ClickAdmin = () => {
   navigateTo('/admin/orders');
 };
 
-const ClickDriver = () => {
-  navigateTo('/driver/dashboard');
+const ClickPassenger = () => {
+  navigateTo('/home');
 };
 </script>
 
@@ -46,11 +50,11 @@ const ClickDriver = () => {
     @click="ClickAdmin"
   ) ADMIN
 
-  button.CommonHeaderUser__driver-btn(
-    v-if="showDriverBtn"
+  button.CommonHeaderUser__passenger-btn(
+    v-if="showPassengerBtn"
     type="button"
-    @click="ClickDriver"
-  ) DRIVER
+    @click="ClickPassenger"
+  ) PASSENGER
 
   .CommonHeaderUser__avatar-wrap(:title="tooltip")
     img.CommonHeaderUser__avatar(
@@ -74,9 +78,9 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   gap: 8px;
 }
 
-// ── ADMIN / DRIVER 跳轉鈕 ──────────────────────────────────
+// ── 跨端切換鈕 ─────────────────────────────────────────────
 .CommonHeaderUser__admin-btn,
-.CommonHeaderUser__driver-btn {
+.CommonHeaderUser__passenger-btn {
   font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
@@ -97,11 +101,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &:hover { background: rgba(238, 81, 81, 0.28); }
 }
 
-.CommonHeaderUser__driver-btn {
-  background: rgba(80, 200, 120, 0.16);
-  color: #4ade80;
-  border: 1px solid rgba(80, 200, 120, 0.35);
-  &:hover { background: rgba(80, 200, 120, 0.26); }
+.CommonHeaderUser__passenger-btn {
+  background: rgba(212, 134, 10, 0.14);
+  color: var(--da-cream);
+  border: 1px solid rgba(212, 134, 10, 0.4);
+  &:hover { background: rgba(212, 134, 10, 0.24); }
 }
 
 // ── 頭像（純顯示，不可點擊） ─────────────────────────────
