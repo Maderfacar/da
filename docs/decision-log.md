@@ -6,6 +6,51 @@
 
 ---
 
+### 2026/05/07~08 — P10 production debug：Firebase Admin 初始化三大踩雷點（必讀）
+
+**決策類型**：基礎架構 / 重大踩雷紀錄
+**標題**：line-exchange 在 Vercel production 上連續出現三層失敗，最終定位為 Nuxt runtimeConfig 與 firebase-admin 互動的三個未知行為
+**背景**：P10 roles[] 多角色遷移合併後，實機驗證發現乘客端 ADMIN 鈕永遠不顯示、司機端登入循環、訂單 silent failure（API 回 200 但 Firestore 沒寫入）。經 11 個 commits 漸進加 debug log 才完整鎖定，期間使用者實機跑了 8 次以上才修通。**未來新增任何用 firebase-admin 的 server route 都必須遵守這份紀錄**。
+
+**踩雷點 1：Nuxt runtimeConfig 用 destr 自動把合法 JSON 字串 parse 成 object**
+
+- 現象：`config.firebaseServiceAccountJson` 在 server 端**已是 object 不是 string**
+- 原因：Nuxt 4 內部用 [destr](https://github.com/unjs/destr) 處理 env vars，偵測到 `{` 開頭會自動 `JSON.parse`
+- 錯誤訊息：`SyntaxError: "[object Object]" is not valid JSON`（因為對 object 再 `JSON.parse()` 會先 toString 變 `"[object Object]"`）
+- 修復：`useFirebaseAdmin` 改成接受 `string | object`，是 object 就跳過 `JSON.parse`
+
+**踩雷點 2：Nuxt defu deep merge 把 object frozen，firebase-admin SDK 試圖 mutate 失敗**
+
+- 現象：cert(sa) + initializeApp 表面成功，但實際 fetch OAuth2 token 時失敗
+- 原因：runtimeConfig 經過 `defu` deep merge 後物件變成 read-only。Firebase Admin SDK 內部會試圖規範化 service account 欄位（mutate `project_id` 等），對 frozen object 寫入 throw
+- 錯誤訊息：`Cannot assign to read only property 'project_id' of object '#<Object>'`，errorInfo.code: `app/invalid-credential`
+- 修復：在 `cert()` 之前先 `JSON.parse(JSON.stringify(serviceAccount))` 深拷貝一份普通可寫 object
+
+**踩雷點 3：line-exchange isNewUser 路徑 `.set()` 直接覆寫，把手動設的 roles 清掉**
+
+- 現象：使用者手動在 Firestore 設定的 `roles: ['passenger', 'driver', 'admin']` 被改回 `['passenger']`
+- 原因：前面踩雷點 1+2 連續失敗 → Firebase Auth 從未建成功此 uid → `auth.getUser(uid)` 失敗 → `isNewUser=true` → 走 `db.collection('users').doc(...).set({ roles: ['passenger'], ... })` **直接覆寫**
+- 觸發條件：Firebase Auth user 不存在 + Firestore 文件已存在（兩端不同步）。常見於 admin 手動預先在 Firestore 加白名單但使用者尚未走過 line-exchange 流程
+- 修復：isNewUser 路徑先檢查 Firestore 文件是否已存在；存在則只 merge LINE profile（lineUserId / displayName / pictureUrl），絕不動 roles / approved / driverApplication
+
+**強制規範（未來開發）**：
+- 任何用 `useRuntimeConfig()` 取得**JSON 結構**的 secret，type 都要當作 `string | object` 處理
+- 任何用 `firebase-admin` 的 server route，service account 必須走 `useFirebaseAdmin()`（已內建深拷貝 + 必填欄位驗證 + private_key PEM 格式驗證）
+- 任何同步 Firebase Auth ↔ Firestore 的 endpoint，**禁止用 `.set()` 直接寫使用者文件**，必須用 `.set({...}, { merge: true })` 或先 `.get()` 檢查存在性
+- 任何 server-side 失敗都要 `console.error` 而非 silent，方便 Vercel runtime logs 定位（Vercel logs 對 console.error 級別最可靠）
+
+**影響**：
+- 修改：`server/utils/firebase-admin.ts`（核心修復，三層保護）、`server/routes/nuxt-api/auth/line-exchange.post.ts`（merge 不覆寫 + 全 handler wrap try-catch + 各步驟 console.error）
+- 涉及 commits：`535926e` → `048f027`（11 個 commits 的漸進除錯過程）
+- 同樣的修復也保護其他用 `useFirebaseAdmin` 的 server route：訂單建立、admin/users CRUD、admin/broadcast、driver apply 等
+
+**替代方案**：
+- 把 service account 拆成多個 env var（type / project_id / private_key 等獨立）→ 增加維護成本，且 destr 仍會對個別欄位 type-coerce；已捨棄
+- 不用 Nuxt runtimeConfig，改用 `process.env` 直讀 → 失去 type safety，且 server-side 仍可能遇到 destr；已捨棄
+- 換 `firebase-rest-api` 不用 admin SDK → 工程量大，已捨棄
+
+---
+
 ### 2026/05/07 — 身分模型由單一 role 改為 roles[] 陣列（多角色支援）
 
 **決策類型**：資料模型重構 / 業務邏輯

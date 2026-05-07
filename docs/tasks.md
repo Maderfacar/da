@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10 進行中）
-**最後更新**：2026/05/07
+**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10 完成，P11 待施作）
+**最後更新**：2026/05/08
 
 ---
 
@@ -307,18 +307,57 @@
 **P10-4：手動操作（須使用者執行）**
 - [✅] Firebase Console 將既有使用者文件 `users/{lineUid}` 加入 `roles: ['passenger', 'driver', 'admin']`（陣列型別）
 
-**Stage Gate（P10）**：
-- lint ✅ / build 待 Vercel 部署驗證
-- 實機：admin 從乘客端可看到 ADMIN 切換鈕、approved driver 在乘客端可看到 DRIVER 切換鈕
-- admin / approved driver 可進入乘客端訂車流程不會被踢出
+**Stage Gate（P10）** — 2026/05/08 ✅ 全部通過：
+- lint ✅ / Vercel 部署 ✅
+- 乘客端 ADMIN 鈕顯示 ✅
+- Admin 端 PASSENGER 鈕顯示 ✅
+- 司機端不再循環登入 ✅
+- 訂單建立成功並寫入 Firestore orders ✅
+
+**P10 Production Debug 補課（2026/05/07~08，11 個 commits）**：
+- [✅] 535926e → 048f027：踩雷三大層完整修復（destr parse object / frozen object / isNewUser 覆寫）
+- [✅] decision-log.md 詳記三大踩雷點與強制規範
+- 學到的教訓：`useRuntimeConfig` 取 JSON secret 必須當 `string | object`；`firebase-admin` service account 必須先深拷貝；同步 Auth ↔ Firestore 文件禁用 `.set()` 直接覆寫
+
+### P11：收尾整理（2026/05/08 待施作）
+
+> **背景**：P10 production debug 過程中為了定位問題，留下大量 console.error / console.info；同時發現訂單 API 仍有 silent failure 隱憂；Vercel 殘留無用專案；Firestore Rules 未正式設定。建議在下一個工作週期一次清理。
+
+**P11-1：移除 production debug log**（中優先級）
+- [ ] `server/utils/firebase-admin.ts`：保留必填欄位 throw、移除 verbose console.error
+- [ ] `server/routes/nuxt-api/auth/line-exchange.post.ts`：保留兜底 try-catch，但移除「handler entry」「success summary」「step-by-step」這類除錯 log
+- [ ] `app/stores/5.store-auth.ts`：移除 `[StoreAuth] _InitLiffFlow start`、`liff.init OK`、`LIFF token length`、`calling line-exchange`、`status code` 等 debug log；保留錯誤 console.error
+- [ ] `app/plugins/auth.client.ts`：保留 `window.__authStore` 暴露但移除 `[plugin/auth] window.__authStore exposed for debugging` 這個 console.info（暴露機制本身對開發 debug 仍有價值）
+
+**P11-2：訂單 API silent failure 修復**（**高優先級**）
+- [ ] `server/routes/nuxt-api/orders/index.post.ts:71-113`：Firestore 寫失敗時回 `serverError(...)` 而非 silent 200
+- [ ] 同步檢查 `server/routes/nuxt-api/orders/[orderId].patch.ts`、`server/routes/nuxt-api/admin/users/[uid].patch.ts`、`server/routes/nuxt-api/driver/upload.post.ts`（若已建）等所有寫入 Firestore 的 endpoint，確認失敗時不會 silent 回 200
+- [ ] 加 unit / integration 測試覆蓋失敗路徑
+
+**P11-3：Firestore Security Rules 正式設定**（低優先級）
+- [ ] 補完 `firestore.rules`：users/{uid} 只允許 owner 讀、寫入只透過 server admin SDK；orders/{id} 只允許 owner / admin 讀、寫入只透過 server
+- [ ] 部署 rules（透過 Firebase CLI 或 Firebase Console）
+- [ ] 同步消除 client-side `_LoadRolesFromFirestore failed: Missing or insufficient permissions` warning
+
+**P11-4：Vercel 專案清理**（低優先級）
+- [ ] 確認 production 跑的是 `da-line-liff-app.vercel.app`（已確認）
+- [ ] 刪除無人使用的 `cc_da` Vercel 專案，避免日後混淆
+
+**P11-5：MockSignIn 簽名修復補課**（已完成）
+- [✅] `app/plugins/auth.client.ts`：`MockSignIn('passenger')` → `MockSignIn(['passenger'])` 對齊 P10 簽名
+
+**Stage Gate（P11）**：
+- production logs 乾淨（無多餘 debug 訊息）
+- 訂單寫失敗會回前端 error 而非靜默成功
+- Firestore Rules 設好後 client console 無 permission warning
 
 ---
 
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
-- P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增
+- P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增，P11 為 2026/05/08 新增
 
 **版本紀錄**
-- 版本：v3.4（Stage 7 P10 roles[] 多角色遷移完成）
-- 更新日期：2026/05/07
+- 版本：v3.5（Stage 7 P10 production debug 完成 + P11 收尾任務清單）
+- 更新日期：2026/05/08
