@@ -44,7 +44,11 @@ export default defineEventHandler(async (event) => {
   let db: ReturnType<typeof useFirebaseAdmin>['db'];
   try {
     ({ auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson));
-  } catch {
+  } catch (err) {
+    // 在 Vercel runtime logs 印出真實錯誤訊息，便於 debug 環境變數設定
+    console.error('[line-exchange] useFirebaseAdmin failed:', err);
+    console.error('[line-exchange] service account JSON length:', config.firebaseServiceAccountJson?.length);
+    console.error('[line-exchange] starts with:', config.firebaseServiceAccountJson?.slice(0, 30));
     return serverError({ zh_tw: 'Firebase 初始化失敗', en: 'Firebase initialization failed', ja: 'Firebase初期化に失敗しました' });
   }
 
