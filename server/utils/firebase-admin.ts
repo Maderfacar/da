@@ -20,7 +20,10 @@ export function useFirebaseAdmin(serviceAccount: string | Record<string, unknown
       if (typeof serviceAccount === 'string') {
         sa = JSON.parse(serviceAccount);
       } else if (typeof serviceAccount === 'object') {
-        sa = serviceAccount;
+        // 重要：Nuxt runtimeConfig 經過 defu deep merge 後 object 是 frozen / read-only。
+        // Firebase Admin SDK 內部會試圖 mutate service account（規範化欄位），會 throw
+        // "Cannot assign to read only property 'project_id'"。深拷貝一份解除 frozen。
+        sa = JSON.parse(JSON.stringify(serviceAccount));
       } else {
         throw new Error(`Unexpected serviceAccount type: ${typeof serviceAccount}`);
       }
