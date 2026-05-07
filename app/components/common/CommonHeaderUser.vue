@@ -1,26 +1,26 @@
 <script setup lang="ts">
 // CommonHeaderUser 三端 Layout Header 共用：圓形 LINE 頭像 + displayName + 後台切換鈕
 //
-// - 點擊頭像跳轉至 props.profilePath；未提供 profilePath 時頭像不可點擊
+// - 頭像不可點擊（無連結，純顯示）— 點擊跳轉由各端 Tab Bar 上的「我的」按鈕處理
 // - 若 roles 包含 'admin' 且當前不在 /admin 路徑下，顯示 ADMIN 跳轉鈕
 // - 若 isApprovedDriver 且當前不在 /driver 路徑下，顯示 DRIVER 跳轉鈕
 // - 無 pictureUrl 時顯示 displayName 第一個字元的灰底 fallback
-
-const props = defineProps<{
-  profilePath?: string;
-}>();
+//
+// 內部直接讀 authStore proxy（不用 storeToRefs），避免 Pinia setup store
+// 解構 computed 在某些瀏覽器環境失去 reactivity 的潛在問題。
 
 const route = useRoute();
 const authStore = StoreAuth();
-const { lineProfile, isAdmin, isApprovedDriver } = storeToRefs(authStore);
 
 const showAdminBtn = computed(() =>
-  isAdmin.value && !route.path.startsWith('/admin'),
+  authStore.roles.includes('admin') && !route.path.startsWith('/admin'),
 );
 
 const showDriverBtn = computed(() =>
-  isApprovedDriver.value && !route.path.startsWith('/driver'),
+  authStore.roles.includes('driver') && authStore.approved && !route.path.startsWith('/driver'),
 );
+
+const lineProfile = computed(() => authStore.lineProfile);
 
 const fallbackChar = computed(() => {
   const name = lineProfile.value?.displayName ?? '';
@@ -28,11 +28,6 @@ const fallbackChar = computed(() => {
 });
 
 const tooltip = computed(() => lineProfile.value?.displayName ?? '');
-
-const ClickAvatar = () => {
-  if (!props.profilePath) return;
-  navigateTo(props.profilePath);
-};
 
 const ClickAdmin = () => {
   navigateTo('/admin/orders');
@@ -57,12 +52,7 @@ const ClickDriver = () => {
     @click="ClickDriver"
   ) DRIVER
 
-  button.CommonHeaderUser__avatar-btn(
-    type="button"
-    :disabled="!profilePath"
-    :title="tooltip"
-    @click="ClickAvatar"
-  )
+  .CommonHeaderUser__avatar-wrap(:title="tooltip")
     img.CommonHeaderUser__avatar(
       v-if="lineProfile?.pictureUrl"
       :src="lineProfile.pictureUrl"
@@ -114,26 +104,15 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &:hover { background: rgba(80, 200, 120, 0.26); }
 }
 
-// ── 頭像按鈕 ───────────────────────────────────────────────
-.CommonHeaderUser__avatar-btn {
+// ── 頭像（純顯示，不可點擊） ─────────────────────────────
+.CommonHeaderUser__avatar-wrap {
   width: clamp(28px, 8vw, 36px);
   height: clamp(28px, 8vw, 36px);
-  padding: 0;
   border: 1px solid rgba(212, 134, 10, 0.25);
   border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
   overflow: hidden;
   flex-shrink: 0;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
-
-  &:hover:not(:disabled) {
-    border-color: var(--da-amber);
-    box-shadow: 0 0 0 2px rgba(212, 134, 10, 0.15);
-  }
-
-  &:active:not(:disabled) { transform: scale(0.95); }
-  &:disabled { cursor: default; }
+  background: transparent;
 }
 
 .CommonHeaderUser__avatar {

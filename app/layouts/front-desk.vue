@@ -65,8 +65,7 @@ const activeTab = computed(() => {
       | ANYWHERE
     .LayoutFrontDesk__nav-right
       LangSwitcher
-      ClientOnly
-        CommonHeaderUser(profile-path="/profile")
+      CommonHeaderUser
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutFrontDesk__body

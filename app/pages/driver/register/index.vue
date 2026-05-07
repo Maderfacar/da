@@ -11,13 +11,15 @@
 definePageMeta({ layout: false, ssr: false });
 
 const authStore = StoreAuth();
-const { isDriver, approved, lineProfile, driverApplication, authResolved } = storeToRefs(authStore);
+const lineProfile = computed(() => authStore.lineProfile);
+const driverApplication = computed(() => authStore.driverApplication);
+const authResolved = computed(() => authStore.authResolved);
 
 type RegisterMode = 'apply' | 'pending' | 'rejected';
 
 const mode = computed<RegisterMode>(() => {
-  if (isDriver.value && !approved.value) {
-    return driverApplication.value?.rejectedAt ? 'rejected' : 'pending';
+  if (authStore.roles.includes('driver') && !authStore.approved) {
+    return authStore.driverApplication?.rejectedAt ? 'rejected' : 'pending';
   }
   // 無 driver 身分 → 顯示申請表單
   return 'apply';

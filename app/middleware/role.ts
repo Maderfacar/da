@@ -4,10 +4,13 @@
 //   - 乘客路徑：所有已登入使用者皆可進入（admin / approved driver 也能訂車）
 //
 // /driver/auth 與 /driver/register 為公開申請入口，永遠放行
+//
+// 注意：middleware 每次路由切換重新呼叫，無 reactivity 需求；
+// 直接讀 store proxy 即可，不需 storeToRefs。
 export default defineNuxtRouteMiddleware((to) => {
-  const { roles, approved, authResolved } = StoreAuth();
+  const authStore = StoreAuth();
 
-  if (!authResolved.value) return;
+  if (!authStore.authResolved) return;
 
   const isAdminPath = to.path.startsWith('/admin');
   const isDriverPath = to.path.startsWith('/driver');
@@ -16,16 +19,16 @@ export default defineNuxtRouteMiddleware((to) => {
   // /driver/auth 與 /driver/register 永遠放行（公開申請入口）
   if (isDriverPublic) return;
 
-  if (!roles.value.length) return;
+  if (authStore.roles.length === 0) return;
 
   // Admin 路徑：必須包含 admin role
-  if (isAdminPath && !roles.value.includes('admin')) {
+  if (isAdminPath && !authStore.roles.includes('admin')) {
     return navigateTo('/');
   }
 
   // Driver 路徑：必須包含 driver role 且已核准
   // 未核准 driver / 純 passenger / admin 但無 driver 身分 → 導至 /driver/register
-  if (isDriverPath && (!roles.value.includes('driver') || !approved.value)) {
+  if (isDriverPath && (!authStore.roles.includes('driver') || !authStore.approved)) {
     return navigateTo('/driver/register');
   }
 

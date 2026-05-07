@@ -3,37 +3,44 @@ definePageMeta({ layout: false, ssr: false });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
-const { isSignIn, roles, isAdmin, isDriver, isApprovedDriver, authResolved } = storeToRefs(authStore);
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
-// P10 多角色導向：
-//   1. isApprovedDriver        → /driver/dashboard（核准司機優先進駕駛端）
-//   2. isDriver && !approved   → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
-//   3. isAdmin（無 driver 身分）→ /admin/orders
-//   4. 純 passenger / 新使用者 → /driver/register（顯示申請表單）
-watch([isSignIn, authResolved], () => {
-  if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
+// P10 多角色導向（直讀 store proxy，避開 storeToRefs computed 的 reactivity 問題）：
+//   1. roles 含 driver 且 approved → /driver/dashboard（核准司機優先進駕駛端）
+//   2. roles 含 driver 但未核准    → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
+//   3. roles 含 admin（無 driver） → /admin/orders
+//   4. 純 passenger / 新使用者     → /driver/register（顯示申請表單）
+//
+// 同時 watch authStore.roles，確保 _LoadRolesFromFirestore 完成設值時也會觸發
+watch(
+  () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
+  () => {
+    if (!authStore.authResolved || !authStore.isSignIn || authStore.roles.length === 0) return;
 
-  if (isApprovedDriver.value) {
-    navigateTo('/driver/dashboard');
-    return;
-  }
+    const hasDriver = authStore.roles.includes('driver');
+    const hasAdmin  = authStore.roles.includes('admin');
 
-  if (isDriver.value) {
-    navigateTo('/driver/register'); // 未核准 driver
-    return;
-  }
+    if (hasDriver && authStore.approved) {
+      navigateTo('/driver/dashboard');
+      return;
+    }
 
-  if (isAdmin.value) {
-    navigateTo('/admin/orders');
-    return;
-  }
+    if (hasDriver) {
+      navigateTo('/driver/register');
+      return;
+    }
 
-  // 純 passenger 或無身分 → 申請司機
-  navigateTo('/driver/register');
-}, { immediate: true });
+    if (hasAdmin) {
+      navigateTo('/admin/orders');
+      return;
+    }
+
+    navigateTo('/driver/register');
+  },
+  { immediate: true },
+);
 
 async function ClickLineLogin() {
   liffLoading.value = true;

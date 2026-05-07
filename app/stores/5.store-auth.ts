@@ -120,9 +120,20 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const snap = await getDoc(doc(db, 'users', lineUid));
       if (snap.exists()) {
         const data = snap.data();
+        // 兼容舊 schema：若 roles 為空但有舊 role 欄位，自動 fallback 到單一 role
         const parsed = _normalizeRoles(data.roles);
-        roles.value = parsed.length > 0 ? parsed : ['passenger']; // 防呆：至少給 passenger
+        if (parsed.length > 0) {
+          roles.value = parsed;
+        } else if (typeof data.role === 'string') {
+          const legacy = _normalizeRoles([data.role]);
+          roles.value = legacy.length > 0 ? legacy : ['passenger'];
+        } else {
+          roles.value = ['passenger'];
+        }
         approved.value = (data.approved as boolean) ?? false;
+        if (typeof console !== 'undefined') {
+          console.info('[StoreAuth] loaded roles', roles.value, 'approved', approved.value);
+        }
         // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
         const displayName = data.displayName as string | undefined;
         const pictureUrl = data.pictureUrl as string | undefined;
@@ -141,21 +152,23 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         } else {
           driverApplication.value = null;
         }
+      } else {
+        console.warn('[StoreAuth] users/{uid} 文件不存在', { uid, lineUid });
       }
-    } catch {
-      // Firestore 讀取失敗時維持預設值
+    } catch (err) {
+      console.error('[StoreAuth] _LoadRolesFromFirestore failed:', err);
     }
   };
 
   const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
-    const route = useRoute();
 
-    // 三端統一走 LINE LIFF（admin 改採 Firestore roles 陣列白名單，2026/05/07 起 P10）
-    // admin 端從 LINE 入口進入時走 passenger LIFF App（roles 由 Firestore 決定，與 LIFF App 無關）
-    const isDriverPath = route.path.startsWith('/driver');
-    const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
-    const clientType = isDriverPath ? 'driver' : 'passenger';
+    // P10 後續修復：三端統一走 passenger LIFF App
+    // 身分由 Firestore roles[] 控制，與 LIFF App 無關。原依路徑切換 driver LIFF
+    // 易因環境變數未設或 LIFF App scope 不同造成司機端登入循環，故統一處理。
+    // 若需保留 driver LIFF（例如不同 scope），可改回 path 判斷，但 fallback 必須設好。
+    const liffId = config.lineLiffIdPassenger || config.lineLiffIdDriver;
+    const clientType = 'passenger';
 
     if (!liffId) { liffReady.value = true; return; }
 
@@ -206,7 +219,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       liffReady.value = true;
 
       // 交換 Firebase Custom Token
-      const res = await $fetch<{ data: { customToken: string; roles: Role[]; displayName: string; pictureUrl: string } }>(
+      const res = await $fetch<{ data: { customToken: string; roles: Role[]; approved: boolean; displayName: string; pictureUrl: string } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
       );
@@ -214,6 +227,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       if (!res.data?.customToken) return;
 
       lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
+
+      // P10 修復：line-exchange 回傳即刻同步 roles / approved 至 store
+      // 避免後續頁面 watch 在 onAuthStateChanged → _LoadRolesFromFirestore 完成前
+      // 看到 roles=[] 走錯分流（例如 driver/auth 把使用者導去 /driver/register）
+      const parsed = _normalizeRoles(res.data.roles);
+      if (parsed.length > 0) {
+        roles.value = parsed;
+        approved.value = res.data.approved ?? true;
+      }
 
       const { signInWithCustomToken } = await import('firebase/auth');
       await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);

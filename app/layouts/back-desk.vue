@@ -55,8 +55,7 @@ function ClickNav(path: string) {
       | ADMIN
     .LayoutBackDesk__top-right
       span.LayoutBackDesk__admin-badge ADMIN
-      ClientOnly
-        CommonHeaderUser
+      CommonHeaderUser
 
   //- ── 側邊抽屜 ─────────────────────────────────────────────
   transition(name="drawer")

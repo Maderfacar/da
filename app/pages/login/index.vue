@@ -3,17 +3,21 @@ definePageMeta({ layout: false });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
-const { isSignIn, roles, isAdmin, authResolved } = storeToRefs(authStore);
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
 // P10：admin 優先導後台；其餘（passenger / driver）一律先進乘客首頁，
 // approved driver 想進司機端可從 /driver/auth 入口或乘客端 Header 切換。
-watch([isSignIn, authResolved], () => {
-  if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
-  navigateTo(isAdmin.value ? '/admin/orders' : '/home');
-}, { immediate: true });
+// 同時 watch roles 變化（_LoadRolesFromFirestore 完成才設值）。
+watch(
+  () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
+  () => {
+    if (!authStore.authResolved || !authStore.isSignIn || authStore.roles.length === 0) return;
+    navigateTo(authStore.roles.includes('admin') ? '/admin/orders' : '/home');
+  },
+  { immediate: true },
+);
 
 async function ClickLineLogin() {
   liffLoading.value = true;
