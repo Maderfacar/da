@@ -55,8 +55,13 @@ export default defineEventHandler(async (event) => {
       ({ auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson));
     } catch (err) {
       console.error('[line-exchange] useFirebaseAdmin failed:', err);
-      console.error('[line-exchange] service account JSON length:', config.firebaseServiceAccountJson?.length);
-      console.error('[line-exchange] starts with:', config.firebaseServiceAccountJson?.slice(0, 30));
+      const sa = config.firebaseServiceAccountJson;
+      console.error('[line-exchange] service account type:', typeof sa);
+      if (typeof sa === 'string') {
+        console.error('[line-exchange] string length:', sa.length, 'starts with:', sa.slice(0, 30));
+      } else if (sa && typeof sa === 'object') {
+        console.error('[line-exchange] object keys:', Object.keys(sa as Record<string, unknown>));
+      }
       return serverError({ zh_tw: 'Firebase 初始化失敗', en: 'Firebase initialization failed', ja: 'Firebase初期化に失敗しました' });
     }
 
