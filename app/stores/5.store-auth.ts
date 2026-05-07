@@ -230,14 +230,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       // 永遠跑 line-exchange 取 server-side roles
       console.info('[StoreAuth] calling line-exchange...');
-      const res = await $fetch<{ data: { customToken: string; roles: Role[]; approved: boolean; displayName: string; pictureUrl: string } }>(
+      const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number; message?: unknown } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
       ).catch((err) => {
         console.error('[StoreAuth] line-exchange failed:', err);
         return null;
       });
-      console.info('[StoreAuth] line-exchange response:', res);
+      console.info('[StoreAuth] line-exchange status code:', res?.status?.code, 'data keys:', Object.keys(res?.data ?? {}));
+      if (res?.status?.code !== 200) {
+        console.error('[StoreAuth] ❌ line-exchange returned non-200 business code:', res?.status);
+      }
 
       if (res?.data) {
         if (res.data.displayName && res.data.pictureUrl) {
@@ -250,13 +253,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           approved.value = res.data.approved ?? true;
           console.info('[StoreAuth] ✅ roles set to', roles.value, 'approved', approved.value);
         } else {
-          console.warn('[StoreAuth] ⚠️ server 回傳的 roles parse 後為空');
+          console.warn('[StoreAuth] ⚠️ server 回傳的 roles parse 後為空（多半是 server 走 error path，請看 Vercel runtime logs）');
         }
 
         const { getAuth, signInWithCustomToken } = await import('firebase/auth');
         if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
           await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
           console.info('[StoreAuth] signInWithCustomToken OK');
+        } else if (!res.data.customToken) {
+          console.error('[StoreAuth] ❌ server 沒回 customToken，Firebase 無法 sign in，後續整個 auth flow 會卡住');
         }
       }
     } catch (err) {

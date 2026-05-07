@@ -13,17 +13,45 @@ let _app: App | null = null;
 export function useFirebaseAdmin(serviceAccount: string | Record<string, unknown> | undefined | null): { auth: Auth; db: Firestore } {
   if (!_app && !getApps().length) {
     if (!serviceAccount) {
-      throw new Error('NUXT_FIREBASE_SERVICE_ACCOUNT_JSON is not configured');
+      throw new Error('NUXT_FIREBASE_SERVICE_ACCOUNT_JSON is not configured (empty/undefined)');
     }
     let sa: Record<string, unknown>;
-    if (typeof serviceAccount === 'string') {
-      sa = JSON.parse(serviceAccount);
-    } else if (typeof serviceAccount === 'object') {
-      sa = serviceAccount;
-    } else {
-      throw new Error(`Unexpected serviceAccount type: ${typeof serviceAccount}`);
+    try {
+      if (typeof serviceAccount === 'string') {
+        sa = JSON.parse(serviceAccount);
+      } else if (typeof serviceAccount === 'object') {
+        sa = serviceAccount;
+      } else {
+        throw new Error(`Unexpected serviceAccount type: ${typeof serviceAccount}`);
+      }
+    } catch (err) {
+      console.error('[useFirebaseAdmin] failed to normalize service account:', err);
+      throw err;
     }
-    _app = initializeApp({ credential: cert(sa as Parameters<typeof cert>[0]) });
+
+    // 驗證必要欄位都存在
+    const requiredFields = ['type', 'project_id', 'private_key', 'client_email'];
+    const missing = requiredFields.filter((k) => !sa[k]);
+    if (missing.length > 0) {
+      console.error('[useFirebaseAdmin] service account 缺少必要欄位:', missing, 'present keys:', Object.keys(sa));
+      throw new Error(`Service account missing required fields: ${missing.join(', ')}`);
+    }
+
+    // private_key 格式檢查：必須是含 BEGIN/END PRIVATE KEY 的 PEM 字串
+    const pk = sa.private_key as string;
+    if (typeof pk !== 'string' || !pk.includes('BEGIN PRIVATE KEY') || !pk.includes('END PRIVATE KEY')) {
+      console.error('[useFirebaseAdmin] private_key 格式異常 — 不是合法 PEM');
+      console.error('[useFirebaseAdmin] private_key type:', typeof pk, 'length:', pk?.length);
+      console.error('[useFirebaseAdmin] private_key starts with:', String(pk).slice(0, 50));
+      throw new Error('private_key is not a valid PEM string');
+    }
+
+    try {
+      _app = initializeApp({ credential: cert(sa as Parameters<typeof cert>[0]) });
+    } catch (err) {
+      console.error('[useFirebaseAdmin] initializeApp(cert) failed:', err);
+      throw err;
+    }
   } else if (!_app) {
     _app = getApps()[0];
   }
