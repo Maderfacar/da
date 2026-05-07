@@ -181,11 +181,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const config = useRuntimeConfig().public;
 
     // P10 後續修復：三端統一走 passenger LIFF App
-    // 身分由 Firestore roles[] 控制，與 LIFF App 無關。原依路徑切換 driver LIFF
-    // 易因環境變數未設或 LIFF App scope 不同造成司機端登入循環，故統一處理。
-    // 若需保留 driver LIFF（例如不同 scope），可改回 path 判斷，但 fallback 必須設好。
     const liffId = config.lineLiffIdPassenger || config.lineLiffIdDriver;
     const clientType = 'passenger';
+    console.info('[StoreAuth] _InitLiffFlow start, liffId set?', !!liffId);
 
     if (!liffId) { liffReady.value = true; return; }
 
@@ -199,6 +197,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           setTimeout(() => reject(new Error('liff.init 逾時')), 10_000)
         ),
       ]);
+      console.info('[StoreAuth] liff.init OK, isLoggedIn=', liff.isLoggedIn());
 
       // LIFF 已登入 → 主動取 profile 寫入 store
       if (liff.isLoggedIn()) {
@@ -210,12 +209,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       // 沒登入 LIFF → 強制 LINE 登入，redirect 後重新執行
       if (!liff.isLoggedIn()) {
+        console.warn('[StoreAuth] LIFF 未登入，呼叫 liff.login() redirect');
         liff.login();
         return;
       }
 
       const token = liff.getAccessToken() ?? '';
       lineAccessToken.value = token;
+      console.info('[StoreAuth] LIFF token length:', token.length);
 
       // 查詢是否已加官方帳號好友
       try {
@@ -227,9 +228,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       liffReady.value = true;
 
-      // 永遠跑 line-exchange 取 server-side roles（即便 Firebase 已有 session）
-      // 原因：client-side _LoadRolesFromFirestore 偶爾因 Rules / 網路失敗，server-side
-      // 取得的 roles 作為最權威來源；signInWithCustomToken 只在還沒 Firebase session 時做。
+      // 永遠跑 line-exchange 取 server-side roles
+      console.info('[StoreAuth] calling line-exchange...');
       const res = await $fetch<{ data: { customToken: string; roles: Role[]; approved: boolean; displayName: string; pictureUrl: string } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
@@ -237,25 +237,30 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         console.error('[StoreAuth] line-exchange failed:', err);
         return null;
       });
+      console.info('[StoreAuth] line-exchange response:', res);
 
       if (res?.data) {
         if (res.data.displayName && res.data.pictureUrl) {
           lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
         }
         const parsed = _normalizeRoles(res.data.roles);
+        console.info('[StoreAuth] parsed roles from server:', parsed, 'raw:', res.data.roles);
         if (parsed.length > 0) {
           roles.value = parsed;
           approved.value = res.data.approved ?? true;
-          console.info('[StoreAuth] roles via line-exchange', roles.value, 'approved', approved.value);
+          console.info('[StoreAuth] ✅ roles set to', roles.value, 'approved', approved.value);
+        } else {
+          console.warn('[StoreAuth] ⚠️ server 回傳的 roles parse 後為空');
         }
 
         const { getAuth, signInWithCustomToken } = await import('firebase/auth');
         if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
           await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
+          console.info('[StoreAuth] signInWithCustomToken OK');
         }
       }
-      // onAuthStateChanged 接手後續
-    } catch {
+    } catch (err) {
+      console.error('[StoreAuth] _InitLiffFlow caught error:', err);
       liffReady.value = true;
     }
   };
