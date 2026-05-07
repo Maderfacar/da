@@ -1,8 +1,9 @@
 <script setup lang="ts">
-// CommonHeaderUser 三端 Layout Header 共用：圓形 LINE 頭像 + displayName + admin 跳轉鈕
+// CommonHeaderUser 三端 Layout Header 共用：圓形 LINE 頭像 + displayName + 後台切換鈕
 //
 // - 點擊頭像跳轉至 props.profilePath；未提供 profilePath 時頭像不可點擊
-// - 若 role=admin 且當前不在 /admin 路徑下，於頭像左側顯示 ADMIN 跳轉鈕
+// - 若 roles 包含 'admin' 且當前不在 /admin 路徑下，顯示 ADMIN 跳轉鈕
+// - 若 isApprovedDriver 且當前不在 /driver 路徑下，顯示 DRIVER 跳轉鈕
 // - 無 pictureUrl 時顯示 displayName 第一個字元的灰底 fallback
 
 const props = defineProps<{
@@ -11,10 +12,14 @@ const props = defineProps<{
 
 const route = useRoute();
 const authStore = StoreAuth();
-const { lineProfile, role } = storeToRefs(authStore);
+const { lineProfile, isAdmin, isApprovedDriver } = storeToRefs(authStore);
 
 const showAdminBtn = computed(() =>
-  role.value === 'admin' && !route.path.startsWith('/admin'),
+  isAdmin.value && !route.path.startsWith('/admin'),
+);
+
+const showDriverBtn = computed(() =>
+  isApprovedDriver.value && !route.path.startsWith('/driver'),
 );
 
 const fallbackChar = computed(() => {
@@ -32,6 +37,10 @@ const ClickAvatar = () => {
 const ClickAdmin = () => {
   navigateTo('/admin/orders');
 };
+
+const ClickDriver = () => {
+  navigateTo('/driver/dashboard');
+};
 </script>
 
 <template lang="pug">
@@ -41,6 +50,12 @@ const ClickAdmin = () => {
     type="button"
     @click="ClickAdmin"
   ) ADMIN
+
+  button.CommonHeaderUser__driver-btn(
+    v-if="showDriverBtn"
+    type="button"
+    @click="ClickDriver"
+  ) DRIVER
 
   button.CommonHeaderUser__avatar-btn(
     type="button"
@@ -69,23 +84,34 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   gap: 8px;
 }
 
-// ── ADMIN 跳轉鈕 ───────────────────────────────────────────
-.CommonHeaderUser__admin-btn {
+// ── ADMIN / DRIVER 跳轉鈕 ──────────────────────────────────
+.CommonHeaderUser__admin-btn,
+.CommonHeaderUser__driver-btn {
   font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
   padding: 5px 12px;
   border-radius: 100px;
-  background: rgba(238, 81, 81, 0.18);
-  color: var(--da-amber);
-  border: 1px solid rgba(212, 134, 10, 0.35);
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
   white-space: nowrap;
 
-  &:hover { background: rgba(238, 81, 81, 0.28); }
   &:active { transform: scale(0.96); }
+}
+
+.CommonHeaderUser__admin-btn {
+  background: rgba(238, 81, 81, 0.18);
+  color: var(--da-amber);
+  border: 1px solid rgba(212, 134, 10, 0.35);
+  &:hover { background: rgba(238, 81, 81, 0.28); }
+}
+
+.CommonHeaderUser__driver-btn {
+  background: rgba(80, 200, 120, 0.16);
+  color: #4ade80;
+  border: 1px solid rgba(80, 200, 120, 0.35);
+  &:hover { background: rgba(80, 200, 120, 0.26); }
 }
 
 // ── 頭像按鈕 ───────────────────────────────────────────────

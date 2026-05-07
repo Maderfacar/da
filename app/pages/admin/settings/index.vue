@@ -75,17 +75,17 @@ watch(activeTab, (tab) => {
   else ApiLoadDrivers();
 }, { immediate: true });
 
-// ── 管理員白名單操作 ─────────────────────────────────────────────
+// ── 管理員白名單操作（P10：addRole / removeRole 語意） ─────────
 const ClickAddAdmin = async () => {
   const uid = newAdminUid.value.trim();
   if (!uid) return;
   addingAdmin.value = true;
   const lineUid = uid.startsWith('line:') ? uid : `line:${uid}`;
   const res = await $api.PatchAdminUser(lineUid, {
-    role: 'admin',
+    addRole: 'admin',
     approved: true,
     ...(newAdminName.value.trim() ? { displayName: newAdminName.value.trim() } : {}),
-  } as Parameters<typeof $api.PatchAdminUser>[1]);
+  });
   if (res.status?.code === 200) {
     newAdminUid.value = '';
     newAdminName.value = '';
@@ -95,9 +95,9 @@ const ClickAddAdmin = async () => {
 };
 
 const ClickRemoveAdmin = async (uid: string) => {
-  const ok = await UseAsk('確定移除此管理員嗎？移除後該帳號將降級為乘客身份。');
+  const ok = await UseAsk('確定移除此管理員嗎？移除後該帳號將失去管理員身分（保留乘客 / 司機身分）。');
   if (!ok) return;
-  await $api.PatchAdminUser(uid, { role: 'passenger', approved: true });
+  await $api.PatchAdminUser(uid, { removeRole: 'admin' });
   await ApiLoadAdmins();
 };
 
@@ -110,16 +110,16 @@ const ClickApproveDriver = async (uid: string) => {
 };
 
 const ClickRejectDriver = async (uid: string) => {
-  const ok = await UseAsk('確定拒絕此司機申請？拒絕後該帳號將降級為乘客身份。');
+  const ok = await UseAsk('確定拒絕此司機申請？拒絕後該帳號將失去司機身分（保留乘客身分）。');
   if (!ok) return;
   approvingUid.value = uid;
-  await $api.PatchAdminUser(uid, { role: 'passenger', approved: true });
+  await $api.PatchAdminUser(uid, { removeRole: 'driver' });
   await ApiLoadDrivers();
   approvingUid.value = '';
 };
 
 const ClickRevokeDriver = async (uid: string) => {
-  const ok = await UseAsk('確定停用此司機帳號？停用後該帳號將無法進入司機端。');
+  const ok = await UseAsk('確定停用此司機帳號？停用後該帳號將無法進入司機端（保留 driver role 但 approved=false）。');
   if (!ok) return;
   await $api.PatchAdminUser(uid, { approved: false });
   await ApiLoadDrivers();
@@ -193,7 +193,7 @@ const ClickRevokeDriver = async (uid: string) => {
     template(v-if="activeTab === 'admin'")
       .PageAdminSettings__notice.is-info
         span ℹ️
-        span 管理員帳號具有完整系統權限。首位管理員須至 Firebase Console 手動設定 role: "admin"。
+        span 管理員帳號具有完整系統權限。首位管理員須至 Firebase Console 手動於 users/{uid} 加入 roles 陣列含 'admin'。
 
       //- 新增管理員
       .PageAdminSettings__add-row

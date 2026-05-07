@@ -1,25 +1,25 @@
 <script setup lang="ts">
-// PageDriverRegister 司機申請頁面（P8-1 空殼三模式）
+// PageDriverRegister 司機申請頁面（P10 多角色版本）
 //
 // 顯示模式依 store 狀態決定：
-//   1. role=passenger / null  → 申請表單（P8-2 補完，目前顯示「即將推出」）
+//   1. 無 driver 身分（純 passenger / admin）  → 申請表單（P8-2 補完，目前顯示「即將推出」）
 //   2. driver + !approved + 無 rejectedAt → 「審核中」訊息
-//   3. driver + !approved + 有 rejectedAt → 「需進一步審核，請聯絡管理者」（P8-3 將補拒絕原因）
+//   3. driver + !approved + 有 rejectedAt → 「需進一步審核，請聯絡管理者」
 //
-// driver + approved=true 不會進到此頁（middleware/role.ts 會放行至 /driver/dashboard）
+// approved driver 不會進到此頁（middleware/role.ts 會放行至 /driver/dashboard）
 
 definePageMeta({ layout: false, ssr: false });
 
 const authStore = StoreAuth();
-const { role, approved, lineProfile, driverApplication, authResolved } = storeToRefs(authStore);
+const { isDriver, approved, lineProfile, driverApplication, authResolved } = storeToRefs(authStore);
 
 type RegisterMode = 'apply' | 'pending' | 'rejected';
 
 const mode = computed<RegisterMode>(() => {
-  if (role.value === 'driver' && !approved.value) {
+  if (isDriver.value && !approved.value) {
     return driverApplication.value?.rejectedAt ? 'rejected' : 'pending';
   }
-  // passenger / null / 其他 → 顯示申請表單
+  // 無 driver 身分 → 顯示申請表單
   return 'apply';
 });
 

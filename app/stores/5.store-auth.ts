@@ -1,12 +1,17 @@
 // Firebase Auth + LINE LIFF 認證狀態管理
 // InitAuthFlow() 由 app/plugins/auth.client.ts 呼叫，確保僅在瀏覽器端執行
+//
+// P10（2026/05/07 起）：身分模型由單一 role 改為 roles[] 陣列，支援單一使用者同時具
+// passenger / driver / admin 多重身分。approved 仍為單一 boolean，僅代表 driver 核准狀態。
+type Role = 'passenger' | 'driver' | 'admin';
+
 export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- State -----------------------------------------------------------------------------------------
 
   const user = ref<import('firebase/auth').User | null>(null);
-  const role = ref<'passenger' | 'driver' | 'admin' | null>(null);
-  const approved = ref<boolean>(true); // passenger 預設 true；driver/admin 從 Firestore 讀取
+  const roles = ref<Role[]>([]);
+  const approved = ref<boolean>(true); // 僅作為 driver 核准旗標；passenger/admin 永遠視為 true
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
@@ -25,12 +30,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -- Computed --------------------------------------------------------------------------------------
 
   const isSignIn = computed(() => !!user.value);
+  const isAdmin = computed(() => roles.value.includes('admin'));
+  const isDriver = computed(() => roles.value.includes('driver'));
+  const isPassenger = computed(() => roles.value.includes('passenger'));
+  const isApprovedDriver = computed(() => isDriver.value && approved.value);
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
   const _clearState = () => {
     user.value = null;
-    role.value = null;
+    roles.value = [];
     approved.value = true;
     idToken.value = '';
     lineAccessToken.value = '';
@@ -38,6 +47,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     liffReady.value = false;
     isFriend.value = null;
     driverApplication.value = null;
+  };
+
+  const _normalizeRoles = (raw: unknown): Role[] => {
+    if (!Array.isArray(raw)) return [];
+    const valid = raw.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
+    return valid;
   };
 
   // -- Flow Control ----------------------------------------------------------------------------------
@@ -82,7 +97,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         if (firebaseUser) {
           user.value = firebaseUser;
           idToken.value = await firebaseUser.getIdToken();
-          await _LoadRoleFromFirestore(firebaseApp, firebaseUser.uid);
+          await _LoadRolesFromFirestore(firebaseApp, firebaseUser.uid);
         } else {
           _clearState();
         }
@@ -96,7 +111,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     await _InitLiffFlow(firebaseApp);
   };
 
-  const _LoadRoleFromFirestore = async (firebaseApp: import('firebase/app').FirebaseApp, uid: string) => {
+  const _LoadRolesFromFirestore = async (firebaseApp: import('firebase/app').FirebaseApp, uid: string) => {
     try {
       const { getFirestore, doc, getDoc } = await import('firebase/firestore');
       const db = getFirestore(firebaseApp);
@@ -105,9 +120,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const snap = await getDoc(doc(db, 'users', lineUid));
       if (snap.exists()) {
         const data = snap.data();
-        role.value = data.role as 'passenger' | 'driver' | 'admin';
-        // passenger 永遠核准；driver/admin 讀取 approved 欄位
-        approved.value = role.value === 'passenger' ? true : (data.approved as boolean) ?? false;
+        const parsed = _normalizeRoles(data.roles);
+        roles.value = parsed.length > 0 ? parsed : ['passenger']; // 防呆：至少給 passenger
+        approved.value = (data.approved as boolean) ?? false;
         // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
         const displayName = data.displayName as string | undefined;
         const pictureUrl = data.pictureUrl as string | undefined;
@@ -136,8 +151,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const config = useRuntimeConfig().public;
     const route = useRoute();
 
-    // 三端統一走 LINE LIFF（admin 改採 Firestore role='admin' 白名單，2026/05/06 起）
-    // admin 端從 LINE 入口進入時走 passenger LIFF App（role 由 Firestore 決定，與 LIFF App 無關）
+    // 三端統一走 LINE LIFF（admin 改採 Firestore roles 陣列白名單，2026/05/07 起 P10）
+    // admin 端從 LINE 入口進入時走 passenger LIFF App（roles 由 Firestore 決定，與 LIFF App 無關）
     const isDriverPath = route.path.startsWith('/driver');
     const liffId = isDriverPath ? config.lineLiffIdDriver : config.lineLiffIdPassenger;
     const clientType = isDriverPath ? 'driver' : 'passenger';
@@ -162,7 +177,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         try {
           const profile = await liff.getProfile();
           lineProfile.value = { displayName: profile.displayName, pictureUrl: profile.pictureUrl ?? '' };
-        } catch { /* 取 profile 失敗時保持原值，後續 _LoadRoleFromFirestore 會嘗試補回 */ }
+        } catch { /* 取 profile 失敗時保持原值，後續 _LoadRolesFromFirestore 會嘗試補回 */ }
       }
 
       // Firebase session 有效 → LIFF 不需重新登入，直接標記就緒
@@ -191,7 +206,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       liffReady.value = true;
 
       // 交換 Firebase Custom Token
-      const res = await $fetch<{ data: { customToken: string; role: string; displayName: string; pictureUrl: string } }>(
+      const res = await $fetch<{ data: { customToken: string; roles: Role[]; displayName: string; pictureUrl: string } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
       );
@@ -210,12 +225,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- Actions ---------------------------------------------------------------------------------------
 
-  const SetRole = (_role: 'passenger' | 'driver' | 'admin') => { role.value = _role; };
-
-  /** 測試模式：直接設定角色（TestMode 用，不走 Firebase） */
-  const MockSignIn = (_role: 'passenger' | 'driver' | 'admin') => {
-    user.value = { uid: `mock-${_role}` } as import('firebase/auth').User;
-    role.value = _role;
+  /** 測試模式：直接設定身分（TestMode 用，不走 Firebase） */
+  const MockSignIn = (_roles: Role[]) => {
+    user.value = { uid: `mock-${_roles.join('-')}` } as import('firebase/auth').User;
+    roles.value = _roles.length > 0 ? _roles : ['passenger'];
     approved.value = true; // 測試模式視為已核准
     authResolved.value = true;
   };
@@ -233,9 +246,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user, role, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
+    user, roles, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication,
-    isSignIn, idToken,
-    InitAuthFlow, SetRole, MockSignIn, SignOut,
+    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, idToken,
+    InitAuthFlow, MockSignIn, SignOut,
   };
 });

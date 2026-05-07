@@ -3,14 +3,16 @@ definePageMeta({ layout: false });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
-const { isSignIn, role, authResolved } = storeToRefs(authStore);
+const { isSignIn, roles, isAdmin, authResolved } = storeToRefs(authStore);
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
+// P10：admin 優先導後台；其餘（passenger / driver）一律先進乘客首頁，
+// approved driver 想進司機端可從 /driver/auth 入口或乘客端 Header 切換。
 watch([isSignIn, authResolved], () => {
-  if (!authResolved.value || !isSignIn.value || !role.value) return;
-  navigateTo(role.value === 'admin' ? '/admin/orders' : '/home');
+  if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
+  navigateTo(isAdmin.value ? '/admin/orders' : '/home');
 }, { immediate: true });
 
 async function ClickLineLogin() {
@@ -23,9 +25,14 @@ async function ClickLineLogin() {
   }
 }
 
-function ClickMockLogin(r: 'passenger' | 'driver' | 'admin') {
-  MockSignIn(r);
-  navigateTo(r === 'admin' ? '/admin/orders' : r === 'driver' ? '/driver/dashboard' : '/home');
+function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
+  // 測試模式：admin / driver mock 同時帶上 passenger，模擬實際多身分
+  const mockRoles: ('passenger' | 'driver' | 'admin')[] =
+    kind === 'admin'  ? ['passenger', 'admin']
+  : kind === 'driver' ? ['passenger', 'driver']
+  :                     ['passenger'];
+  MockSignIn(mockRoles);
+  navigateTo(kind === 'admin' ? '/admin/orders' : kind === 'driver' ? '/driver/dashboard' : '/home');
 }
 </script>
 

@@ -3,30 +3,35 @@ definePageMeta({ layout: false, ssr: false });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
-const { isSignIn, role, approved, authResolved } = storeToRefs(authStore);
+const { isSignIn, roles, isAdmin, isDriver, isApprovedDriver, authResolved } = storeToRefs(authStore);
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
-// P8 四分支導向：
-//   1. driver + approved=true  → /driver/dashboard
-//   2. driver + approved=false → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
-//   3. passenger / 新使用者     → /driver/register（顯示申請表單）
-//   4. admin                   → /admin/orders
+// P10 多角色導向：
+//   1. isApprovedDriver        → /driver/dashboard（核准司機優先進駕駛端）
+//   2. isDriver && !approved   → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
+//   3. isAdmin（無 driver 身分）→ /admin/orders
+//   4. 純 passenger / 新使用者 → /driver/register（顯示申請表單）
 watch([isSignIn, authResolved], () => {
-  if (!authResolved.value || !isSignIn.value || !role.value) return;
+  if (!authResolved.value || !isSignIn.value || !roles.value.length) return;
 
-  if (role.value === 'admin') {
+  if (isApprovedDriver.value) {
+    navigateTo('/driver/dashboard');
+    return;
+  }
+
+  if (isDriver.value) {
+    navigateTo('/driver/register'); // 未核准 driver
+    return;
+  }
+
+  if (isAdmin.value) {
     navigateTo('/admin/orders');
     return;
   }
 
-  if (role.value === 'driver') {
-    navigateTo(approved.value ? '/driver/dashboard' : '/driver/register');
-    return;
-  }
-
-  // passenger 或無 role
+  // 純 passenger 或無身分 → 申請司機
   navigateTo('/driver/register');
 }, { immediate: true });
 
@@ -41,7 +46,7 @@ async function ClickLineLogin() {
 }
 
 function ClickMockLogin() {
-  MockSignIn('driver');
+  MockSignIn(['passenger', 'driver']);
   navigateTo('/driver/dashboard');
 }
 </script>
