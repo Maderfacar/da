@@ -445,20 +445,19 @@
 
 > **背景**：使用者要求轉向乘客端完善。code-explorer agent 全面盤點 + booking → orders → upcoming 流程交叉確認。詳見 P17 工作清單。
 
-**P17-1：上線阻擋級（必修）**
-- [ ] **userId 格式不一致 bug（P14 引入回歸）**
-  - Firestore `orders.userId` 寫入時帶 `line:` prefix（來自 client `authStore.user?.uid`）
-  - 但 P14 後 `server/routes/nuxt-api/orders/index.get.ts` 改成 `where('userId', '==', auth.lineUid)`（不帶 prefix）
-  - **結果：乘客 `/orders` 永遠看不到訂單**
-  - 修：`server/routes/nuxt-api/orders/index.post.ts` 加 require-auth + 強制覆寫 userId/lineUserId 為 `auth.lineUid`；既有測試訂單需手動清空 Firestore（測試階段資料無價值）
-  - 同時修 `app/pages/booking/index.vue:102-103`、`app/pages/orders/index.vue:34`、`app/pages/upcoming/index.vue:74-78` 對齊
-- [ ] **`upcoming/index.vue` orderStatus 'in_transit' vs 'in-progress' 不一致**：Firestore 寫入是 `in_transit`（底線），upcoming TripStatus type 用 `in-progress`（連字號）→ 司機接單後乘客看不到「行程中」
-- [ ] **`orders/index.vue:36` status code 用 magic 200 而非 `$enum.apiStatus.success`**：與 upcoming 慣例不一致
+**P17-1：上線阻擋級（2026/05/09 ✅ 完成）**
+- [✅] **userId 格式不一致 bug（P14 引入回歸）**
+  - 修法：`server/routes/nuxt-api/orders/index.post.ts` 加 require-auth + 強制 `userId = lineUserId = auth.lineUid`
+  - `CreateOrderParams` / `GetOrderListParams` userId 改為 optional
+  - `booking/index.vue` 不再傳 userId/lineUserId；`orders/index.vue` `upcoming/index.vue` 不再傳 query.userId
+  - **使用者操作**：清空 Firestore `orders` collection 內舊測試訂單（帶 `line:` prefix）
+- [✅] **`upcoming/index.vue` orderStatus 'in_transit' 統一**：TripStatus、STATUS_TAB_KEYS、STATUS_CLS、3 個 i18n 檔（zh/en/ja）的 `status.*` 與 `upcoming.tab.*` 全部對齊
+- [✅] **`orders/index.vue` magic 200 改為 `$enum.apiStatus.success`**
 
-**P17-2：應做才好上線（建議這次做）**
-- [ ] **訂單取消功能**：P14 server 已支援 owner 改 status='cancelled'，但 client `/orders` `/upcoming` 沒有取消按鈕
-- [ ] **booking 成功後加「查看行程」按鈕**：跳 `/upcoming`（目前只有「再訂一張」按鈕）
-- [ ] **訂單狀態 polling**：`/orders` 與 `/upcoming` 加 30-60s setInterval，與 admin/driver 端一致
+**P17-2：應做才好上線（2026/05/09 ✅ 完成）**
+- [✅] **訂單取消功能**：`/orders` 與 `/upcoming` 的 pending / confirmed 訂單顯示「取消訂單」按鈕；UseAsk 確認 → PatchOrder → 重 load
+- [✅] **booking 成功後加「查看行程」按鈕**：原「再訂一張」改為次按鈕，新增「查看行程」主按鈕跳 `/upcoming`
+- [✅] **訂單狀態 polling**：`/orders` 與 `/upcoming` 加 30s setInterval + visibility 切回時 refresh，onUnmounted 清理 timer
 
 **P17-3：體驗細節（先列入待辦）**
 - [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）

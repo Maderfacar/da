@@ -3,6 +3,7 @@ import type { VehicleType, OrderType, ExtraService } from '~shared/pricing';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 interface GooglePlace {
   address: string;
@@ -12,8 +13,10 @@ interface GooglePlace {
 }
 
 interface CreateOrderBody {
-  userId: string;
-  lineUserId: string;
+  // P17：userId / lineUserId 不再從 client 接收，由 server 從 ID token 取
+  // body 仍接受這兩個欄位是為了向後相容，但會被忽略並用 auth.lineUid 覆寫
+  userId?: string;
+  lineUserId?: string;
   orderType: OrderType;
   pickupDateTime: string;
   pickupLocation: GooglePlace;
@@ -26,11 +29,21 @@ interface CreateOrderBody {
 }
 
 export default defineEventHandler(async (event) => {
+  // P17：必須登入；userId / lineUserId 強制使用 auth.lineUid（去 'line:' prefix）
+  // 這同時：(a) 修復 P14 引入的 GET 查詢格式不一致 bug、(b) 補上 P14 漏改的 IDOR
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
+
   const body = await readBody<CreateOrderBody>(event);
 
-  if (!body.userId || !body.orderType || !body.pickupDateTime || !body.pickupLocation || !body.dropoffLocation) {
+  if (!body.orderType || !body.pickupDateTime || !body.pickupLocation || !body.dropoffLocation) {
     return badRequestError({ zh_tw: '缺少必要欄位', en: 'Missing required fields', ja: '必須フィールドが不足しています' });
   }
+
+  // P17：強制使用 caller 自己的 lineUid，忽略 client body 中的 userId / lineUserId
+  // admin 為他人下單目前不支援（罕見場景，需另外設計）
+  const userId = auth.lineUid;
+  const lineUserId = auth.lineUid;
 
   if (body.passengerCount < 1 || body.passengerCount > 8) {
     return badRequestError({ zh_tw: '乘客人數必須在 1–8 之間', en: 'Passenger count must be 1–8', ja: '乗客数は 1〜8 にしてください' });
@@ -73,8 +86,8 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     await db.collection('orders').doc(orderId).set({
       orderId,
-      userId: body.userId,
-      lineUserId: body.lineUserId ?? '',
+      userId,
+      lineUserId,
       orderType: body.orderType,
       pickupDateTime: body.pickupDateTime,
       pickupLocation: body.pickupLocation,
@@ -97,7 +110,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── LINE 訂單確認推播（fire-and-forget，失敗不影響訂單成立）──
-  if (body.lineUserId && lineChannelAccessToken) {
+  if (lineUserId && lineChannelAccessToken) {
     const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
     const fareStr = estimatedFare.toLocaleString();
     const vehicleLabel: Record<string, string> = {
@@ -111,7 +124,7 @@ export default defineEventHandler(async (event) => {
       `💰 預估費用：NT$ ${fareStr}`,
       `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
     ].join('\n');
-    sendLinePush(lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
+    sendLinePush(lineChannelAccessToken, lineUserId, [{ type: 'text', text: msg }]);
   }
 
   return successResponse({

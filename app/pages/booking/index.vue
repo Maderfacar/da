@@ -98,16 +98,11 @@ const ClickSubmit = async () => {
   if (isSubmitting.value) return;
   SyncToStore();
 
-  const authStore = StoreAuth();
-  const userId = authStore.user?.uid ?? 'guest';
-  const lineUserId = authStore.user?.uid ?? ''; // LINE userId 於 Stage 5 補充
-
+  // P17：userId / lineUserId 不再從 client 傳，server 強制從 ID token 取 auth.lineUid 寫入
   if (!orderType.value || !pickupDateTime.value || !pickupLocation.value || !dropoffLocation.value) return;
 
   isSubmitting.value = true;
   const res = await $api.CreateOrder({
-    userId,
-    lineUserId,
     orderType: orderType.value,
     pickupDateTime: pickupDateTime.value,
     pickupLocation: pickupLocation.value,
@@ -161,7 +156,9 @@ const ClickNewOrder = () => {
       .PageBooking__success-id
         span {{ $t('booking.success.orderLabel') }}
         strong {{ storeOrder.currentOrder?.orderId?.slice(0, 8).toUpperCase() }}
-      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="ClickNewOrder") {{ $t('booking.newOrder') }}
+      //- P17：成功後雙按鈕 — 查看行程（主） + 再訂一張（次）
+      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="navigateTo('/upcoming')") 查看行程
+      UiButton(type="secondary" style="margin-top: 12px; width: 100%" @click="ClickNewOrder") {{ $t('booking.newOrder') }}
 
   //- 表單主體
   template(v-if="!isSuccess")

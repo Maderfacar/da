@@ -8,9 +8,10 @@ interface GooglePlace {
 }
 
 // ===== 建立訂單 =====
+// P17：userId / lineUserId 改為 optional — server 從 ID token 取，不再信任 client
 interface CreateOrderParams {
-  userId: string;
-  lineUserId: string;
+  userId?: string;
+  lineUserId?: string;
   orderType: 'airport-pickup' | 'airport-dropoff' | 'charter' | 'transfer';
   pickupDateTime: string;
   pickupLocation: GooglePlace;
@@ -31,8 +32,10 @@ interface CreateOrderRes {
 }
 
 // ===== 取得訂單列表 =====
+// P17：userId 改為 optional — passenger 由 server 強制使用 auth.lineUid，
+// 此參數僅 admin / driver 可帶用於查指定使用者
 interface GetOrderListParams {
-  userId: string;
+  userId?: string;
 }
 
 interface OrderItem {

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { user } = storeToRefs(StoreAuth());
-
 const loading = ref(false);
 const orders = ref<OrderItem[]>([]);
+const cancellingId = ref<string>('');
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
   pending:    { text: '等待確認', color: '#f59e0b' },
@@ -28,13 +27,15 @@ const VEHICLE_LABEL: Record<string, string> = {
   premium: '商務',
 };
 
+// P17：可取消狀態（pending / confirmed 才允許乘客主動取消，行程中或已完成不可）
+const CAN_CANCEL_STATUS = new Set(['pending', 'confirmed']);
+
 const ApiLoadOrders = async () => {
-  if (!user.value?.uid) return;
+  // P17：query.userId 不傳，server 強制使用 auth.lineUid（passenger 只能讀自己）
   loading.value = true;
   try {
-    const res = await $api.GetOrderList({ userId: user.value.uid });
-    if (res.status?.code !== 200) {
-      // P15：API 失敗不再 silent 顯示空訂單列表，避免使用者誤以為「沒訂單」
+    const res = await $api.GetOrderList({});
+    if (res.status?.code !== $enum.apiStatus.success) {
       console.error('[orders] load failed:', res.status?.message?.zh_tw);
       ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
       orders.value = [];
@@ -46,11 +47,42 @@ const ApiLoadOrders = async () => {
   }
 };
 
-onMounted(ApiLoadOrders);
+// P17：訂單取消（pending / confirmed 才可取消）
+const ClickCancel = async (orderId: string, orderStatus: string) => {
+  if (!CAN_CANCEL_STATUS.has(orderStatus)) return;
+  if (cancellingId.value) return;
+  const ok = await UseAsk('確定要取消此訂單嗎？取消後無法復原。');
+  if (!ok) return;
+  cancellingId.value = orderId;
+  const res = await $api.PatchOrder(orderId, { orderStatus: 'cancelled' });
+  cancellingId.value = '';
+  if (res.status?.code !== $enum.apiStatus.success) {
+    ElMessage({ message: res.status?.message?.zh_tw ?? '取消失敗，請稍後重試', type: 'error' });
+    return;
+  }
+  ElMessage({ message: '訂單已取消', type: 'success' });
+  await ApiLoadOrders();
+};
+
+// P17：30 秒輪詢一次（與 admin / driver 端一致），visibility 切回時也立即重 load
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+const POLL_INTERVAL = 30_000;
+const onVisibility = () => { if (document.visibilityState === 'visible') ApiLoadOrders(); };
+
+onMounted(() => {
+  ApiLoadOrders();
+  pollTimer = setInterval(ApiLoadOrders, POLL_INTERVAL);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility);
+});
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer);
+  if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
+});
 
 const FormatDate = (iso: string) => $dayjs(iso).format('MM/DD HH:mm');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
 const StatusOf = (status: string) => STATUS_LABEL[status] ?? { text: status, color: 'rgba(255,255,255,0.4)' };
+const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 </script>
 
 <template lang="pug">
@@ -89,6 +121,13 @@ const StatusOf = (status: string) => STATUS_LABEL[status] ?? { text: status, col
         span.PageOrders__date {{ FormatDate(o.pickupDateTime) }}
         span.PageOrders__vehicle {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
         span.PageOrders__fare {{ FormatFare(o.estimatedFare) }}
+
+      //- P17：取消按鈕（pending / confirmed 才顯示）
+      button.PageOrders__cancel(
+        v-if="CanCancel(o.orderStatus)"
+        :disabled="cancellingId === o.orderId"
+        @click="ClickCancel(o.orderId, o.orderStatus)"
+      ) {{ cancellingId === o.orderId ? '取消中...' : '取消訂單' }}
 </template>
 
 <style lang="scss" scoped>
@@ -187,6 +226,28 @@ $amber: #d4860a;
   border: 1px solid $border;
   border-radius: 16px;
   padding: 14px 16px;
+}
+
+// P17：取消按鈕（pending / confirmed 狀態才顯示）
+.PageOrders__cancel {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f87171;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:hover { opacity: 0.85; }
+  &:active { transform: scale(0.99); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .PageOrders__card-top {

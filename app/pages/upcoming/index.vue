@@ -5,10 +5,13 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
 
-type TripStatus = 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
+// P17：'in_transit' 對齊 server / Firestore 寫入值（原 'in-progress' 連字號是 bug，
+// 司機接單後乘客「行程中」分頁永遠空）
+type TripStatus = 'pending' | 'confirmed' | 'in_transit' | 'completed' | 'cancelled';
 
 interface TripItem {
-  id: string;
+  orderId: string;     // 完整 orderId 用於 PatchOrder
+  id: string;          // 顯示用短碼
   from: string;
   to: string;
   status: TripStatus;
@@ -28,6 +31,7 @@ const _mapToTripItem = (o: OrderItem): TripItem => {
   const vehicleCfg = VEHICLE_CONFIGS[o.vehicleType as keyof typeof VEHICLE_CONFIGS];
   const orderTypeCfg = ORDER_TYPES.find((t) => t.value === o.orderType);
   return {
+    orderId: o.orderId,
     id: o.orderId.slice(-8).toUpperCase(),
     from: _locationLabel(o.pickupLocation),
     to: _locationLabel(o.dropoffLocation),
@@ -43,15 +47,21 @@ const _mapToTripItem = (o: OrderItem): TripItem => {
 
 const loading = ref(false);
 const trips = ref<TripItem[]>([]);
-const STATUS_TAB_KEYS: Array<TripStatus | 'all'> = ['all', 'pending', 'confirmed', 'in-progress', 'completed'];
+const cancellingId = ref<string>('');
+// P17：'in-progress' → 'in_transit'（與 server 對齊）
+const STATUS_TAB_KEYS: Array<TripStatus | 'all'> = ['all', 'pending', 'confirmed', 'in_transit', 'completed'];
 
 const STATUS_CLS: Record<TripStatus, string> = {
-  pending:       'is-pending',
-  confirmed:     'is-confirmed',
-  'in-progress': 'is-progress',
-  completed:     'is-done',
-  cancelled:     'is-cancelled',
+  pending:    'is-pending',
+  confirmed:  'is-confirmed',
+  in_transit: 'is-progress',
+  completed:  'is-done',
+  cancelled:  'is-cancelled',
 };
+
+// P17：可取消狀態（pending / confirmed 才允許乘客主動取消）
+const CAN_CANCEL_STATUS = new Set<TripStatus>(['pending', 'confirmed']);
+const CanCancel = (status: TripStatus) => CAN_CANCEL_STATUS.has(status);
 
 const activeTab = ref<TripStatus | 'all'>('all');
 
@@ -70,19 +80,50 @@ const pastTrips = computed(() =>
 );
 
 const ApiLoadOrders = async () => {
-  const authStore = StoreAuth();
-  const userId = authStore.user?.uid;
-  if (!userId) return;
-
+  // P17：query.userId 不傳，server 強制使用 auth.lineUid
   loading.value = true;
-  const res = await $api.GetOrderList({ userId });
+  const res = await $api.GetOrderList({});
   loading.value = false;
 
-  if (res.status.code !== $enum.apiStatus.success && res.status.code !== 0) return;
-  trips.value = (res.data as OrderItem[]).map(_mapToTripItem);
+  if (res.status.code !== $enum.apiStatus.success && res.status.code !== 0) {
+    console.error('[upcoming] load failed:', res.status?.message?.zh_tw);
+    trips.value = [];
+    return;
+  }
+  trips.value = Array.isArray(res.data) ? (res.data as OrderItem[]).map(_mapToTripItem) : [];
 };
 
-onMounted(ApiLoadOrders);
+// P17：訂單取消（pending / confirmed 才可取消）
+const ClickCancel = async (orderId: string, status: TripStatus) => {
+  if (!CAN_CANCEL_STATUS.has(status)) return;
+  if (cancellingId.value) return;
+  const ok = await UseAsk('確定要取消此訂單嗎？取消後無法復原。');
+  if (!ok) return;
+  cancellingId.value = orderId;
+  const res = await $api.PatchOrder(orderId, { orderStatus: 'cancelled' });
+  cancellingId.value = '';
+  if (res.status?.code !== $enum.apiStatus.success) {
+    ElMessage({ message: res.status?.message?.zh_tw ?? '取消失敗，請稍後重試', type: 'error' });
+    return;
+  }
+  ElMessage({ message: '訂單已取消', type: 'success' });
+  await ApiLoadOrders();
+};
+
+// P17：30 秒輪詢一次（與 admin / driver 端一致），visibility 切回時也立即重 load
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+const POLL_INTERVAL = 30_000;
+const onVisibility = () => { if (document.visibilityState === 'visible') ApiLoadOrders(); };
+
+onMounted(() => {
+  ApiLoadOrders();
+  pollTimer = setInterval(ApiLoadOrders, POLL_INTERVAL);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility);
+});
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer);
+  if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
+});
 </script>
 
 <template lang="pug">
@@ -148,7 +189,12 @@ onMounted(ApiLoadOrders);
                 span.PageUpcoming__meta-val.is-fare NT$ {{ trip.estimatedFare.toLocaleString() }}
           .PageUpcoming__card-footer
             span.PageUpcoming__card-id # {{ trip.id }}
-            button.PageUpcoming__detail-btn(@click="navigateTo('/orders')") {{ $t('upcoming.detail') }}
+            //- P17：取消按鈕（pending / confirmed 才顯示）；其他狀態不顯示按鈕
+            button.PageUpcoming__cancel-btn(
+              v-if="CanCancel(trip.status)"
+              :disabled="cancellingId === trip.orderId"
+              @click="ClickCancel(trip.orderId, trip.status)"
+            ) {{ cancellingId === trip.orderId ? '取消中...' : '取消訂單' }}
 
     //- 過去行程
     template(v-if="pastTrips.length")
@@ -443,19 +489,24 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   text-transform: uppercase;
 }
 
-.PageUpcoming__detail-btn {
+// P17：取消訂單按鈕（取代原 detail-btn — 詳情功能尚未實作）
+.PageUpcoming__cancel-btn {
   font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--da-amber);
-  background: none;
-  border: none;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 100px;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 12px;
+  transition: opacity 0.15s, transform 0.1s;
 
-  &:hover { opacity: 0.7; }
+  &:hover { opacity: 0.85; }
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 // ── 空狀態 ────────────────────────────────────────────────

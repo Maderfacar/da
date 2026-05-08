@@ -17,7 +17,7 @@ export default {
   status: {
     confirmed: 'Confirmed',
     pending: 'Pending',
-    'in-progress': 'In Progress',
+    in_transit: 'In Progress',
     completed: 'Completed',
     cancelled: 'Cancelled',
   },
@@ -89,7 +89,7 @@ export default {
       all: 'All',
       pending: 'Pending',
       confirmed: 'Confirmed',
-      'in-progress': 'In Progress',
+      in_transit: 'In Progress',
       completed: 'Completed',
     },
     section: {

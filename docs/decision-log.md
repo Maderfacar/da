@@ -6,6 +6,48 @@
 
 ---
 
+### 2026/05/09 — P17 乘客端完善：userId 格式統一 + 訂單取消 + polling
+
+**決策類型**：Bug 修復 / 功能補齊
+**標題**：修復 P14 引入的 `orders.userId` 格式回歸 bug；補上訂單取消功能、booking 成功後導向、列表 30s polling
+
+**背景**：
+1. **P14 後 `/orders` `/upcoming` 永遠 0 筆**：Firestore `orders.userId` 寫入時帶 `line:` prefix（來自 client `authStore.user?.uid`），但 P14 改的 `orders/index.get.ts` 改用 `auth.lineUid`（去 prefix）查 → mismatch
+2. **`orders/index.post.ts` 是 P14 漏改的 IDOR**：任何登入者可代他人下單（client body 帶 lineUserId）
+3. **upcoming `'in-progress'` 與 server 寫入的 `'in_transit'` 不一致**：司機接單後乘客「行程中」分頁永遠空
+4. **訂單取消功能未實作**：P14 server 已支援 owner 改 status='cancelled'，但 client 沒對應 UI
+5. **booking 成功後無導向行程頁**：使用者送出後不知道去哪確認狀態
+6. **列表頁無 polling**：司機接單後乘客端看不到變化
+
+**決定**：
+1. **userId 格式統一為「不帶 prefix 的 LINE userId」**（與 Firestore `users/{lineUid}` document key 對齊）：
+   - `server/routes/nuxt-api/orders/index.post.ts` 加 `require-auth`，強制 `userId = lineUserId = auth.lineUid`，忽略 client body 帶來的值
+   - `app/protocol/fetch-api/api/order/type.d.ts` `CreateOrderParams.userId/lineUserId` 與 `GetOrderListParams.userId` 改為 optional
+   - `app/pages/booking/index.vue` `CreateOrder` 不再傳 userId/lineUserId
+   - `app/pages/orders/index.vue` 與 `app/pages/upcoming/index.vue` `GetOrderList` 不再傳 query.userId
+2. **既有測試訂單清空**（測試階段資料無價值）：使用者手動刪除 Firestore `orders` collection 內帶 prefix 的舊資料；上線前無 production 資料 migration 必要
+3. **`'in-progress'` → `'in_transit'`**：upcoming TripStatus、STATUS_TAB_KEYS、STATUS_CLS、3 個 i18n 檔（zh/en/ja）的 `status.*` 與 `upcoming.tab.*` 全部對齊
+4. **訂單取消功能**：`/orders` 與 `/upcoming` 的 pending / confirmed 訂單顯示「取消訂單」按鈕；UseAsk 確認 → `PatchOrder({orderStatus:'cancelled'})` → 重 load
+5. **booking 成功畫面**：原本只有「再訂一張」，補上「查看行程」主按鈕跳 `/upcoming`
+6. **列表 polling**：`/orders` `/upcoming` 加 30s setInterval（與 admin / driver 端一致）+ visibility 切回時立即重 load；onUnmounted 清理 timer
+
+**強制規範**：
+- **任何寫入 user-specific 資料的 server endpoint，userId / lineUserId / ownerId 等身分欄位禁止信任 client body**：必須從 `auth.lineUid` / `auth.uid` 強制覆寫
+- **格式統一**：Firestore 中所有「使用者識別欄位」（document key、order.userId、order.lineUserId、driverApplication.lineUserId）一律使用**不帶 `line:` prefix 的純 LINE userId**；唯一例外是 Firebase Auth UID（系統強制 `line:` prefix），與 Firestore 文件比對時去掉 prefix
+- **狀態值常數對齊**：訂單 / 司機 / 任何 enum 在 client（TS type）+ server（Firestore 寫入）+ i18n key 三處必須完全一致；新增狀態值前先全文檢查 grep 三處
+- **列表頁建議 polling**：admin / driver / passenger 對任何 Firestore 「即時變化但不易做 webhook」的資料（訂單、司機位置、應徵狀態），統一 30s setInterval + visibility 切回 refresh 模式
+
+**影響**：
+- 修改：`server/routes/nuxt-api/orders/index.post.ts`、`app/protocol/fetch-api/api/order/type.d.ts`、`app/pages/booking/index.vue`、`app/pages/orders/index.vue`、`app/pages/upcoming/index.vue`、`i18n/locales/{zh,en,ja}.js`
+- **使用者操作**：手動清空 Firestore `orders` collection 內舊有測試訂單（含 `line:` prefix 的 userId）
+
+**替代方案**：
+- 改 `orders/index.get.ts` 用 `where('userId', 'in', [auth.uid, auth.lineUid])` 兼容兩種格式 → 暫時可用但永久 tech debt；已捨棄
+- migration script 把既有 `orders.userId` 改成不帶 prefix → 測試資料無 migration 價值，直接清空更乾淨；已捨棄
+- 訂單取消改 server-side 軟刪除（status='deleted'）→ 業務需求是讓 admin 仍能看到取消訂單統計，soft cancel + status='cancelled' 已足夠；已捨棄
+
+---
+
 ### 2026/05/09 — P15 路由整理 + silent failure 修復（上線阻擋級）
 
 **決策類型**：上線前清理 / 體驗修復

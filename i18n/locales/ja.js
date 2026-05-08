@@ -17,7 +17,7 @@ export default {
   status: {
     confirmed: '確認済み',
     pending: '確認待ち',
-    'in-progress': '進行中',
+    in_transit: '進行中',
     completed: '完了',
     cancelled: 'キャンセル',
   },
@@ -89,7 +89,7 @@ export default {
       all: 'すべて',
       pending: '確認待ち',
       confirmed: '確認済み',
-      'in-progress': '進行中',
+      in_transit: '進行中',
       completed: '完了',
     },
     section: {
