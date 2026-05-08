@@ -9,11 +9,17 @@
  *   if (!auth.ok) return authFailResponse(auth);
  *   if (!auth.roles.includes('admin')) return forbiddenError(...);
  *
- * 取值來源：
- *   - roles：先看 custom claims（line-exchange 有寫入）；缺則 fallback Firestore users/{lineUid}.roles
- *   - approved：永遠從 Firestore 即時讀（admin 撤銷立即生效，不等 1 小時 token TTL）
+ * 取值來源（P17 後修正）：
+ *   - roles：**永遠從 Firestore 即時讀**（admin 加/撤銷角色立即生效，不等 1 小時 token TTL）；
+ *     claims 只在 Firestore 讀失敗時 fallback（容錯舊 token）。
+ *     原因：custom token claims 是 sign-in 當下的快照，admin 之後在 Firestore 加 'admin' role
+ *     不會自動更新 claims；若 require-auth 信任 claims 會造成「明明 Firestore 已是 admin
+ *     但 server 仍認為不是」的錯誤拒絕。
+ *   - approved：同上，永遠從 Firestore 即時讀。
  *
- * 詳見 docs/decision-log.md 2026/05/09 P14 條目。
+ * 成本：每個 protected request +1 Firestore read（已內建在 approved 那次 read，零增量）。
+ *
+ * 詳見 docs/decision-log.md 2026/05/09 P14 條目（含本次修正）。
  */
 import type { H3Event } from 'h3';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
@@ -61,24 +67,32 @@ export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
     const { auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
     const decoded = await auth.verifyIdToken(idToken);
 
-    const claimRoles = filterRoles((decoded as { roles?: unknown }).roles);
     const lineUid = decoded.uid.startsWith('line:') ? decoded.uid.slice(5) : decoded.uid;
 
-    let roles = claimRoles;
+    // P17 修正：Firestore 為 source of truth，claims 僅作 fallback
+    // （admin 在 Firestore 加 'admin' role 後立即生效，不等 1 小時 token refresh）
+    let roles: Role[] = [];
     let approved = false;
+    let firestoreOk = false;
     try {
       const snap = await db.collection('users').doc(lineUid).get();
       if (snap.exists) {
         const data = snap.data() ?? {};
         approved = (data.approved as boolean) ?? false;
-        // claims 沒帶 roles 時 fallback 從 Firestore 讀（罕見：custom token 過舊 / 用戶資料異動）
-        if (roles.length === 0) {
-          roles = filterRoles(data.roles);
-        }
+        roles = filterRoles(data.roles);
+        firestoreOk = true;
       }
     } catch (err) {
-      // Firestore 讀失敗不阻擋 auth flow，只是 approved 預設 false（影響 driver 路徑）
+      // Firestore 讀失敗不阻擋 auth flow，下面 fallback 到 claims
       console.error('[getAuthFromEvent] Firestore read failed:', err);
+    }
+
+    // Firestore 讀失敗或文件不存在 → fallback 到 custom token claims（舊 token 容錯）
+    if (!firestoreOk || roles.length === 0) {
+      const claimRoles = filterRoles((decoded as { roles?: unknown }).roles);
+      if (claimRoles.length > 0) {
+        roles = claimRoles;
+      }
     }
 
     return { ok: true, uid: decoded.uid, lineUid, roles, approved };
