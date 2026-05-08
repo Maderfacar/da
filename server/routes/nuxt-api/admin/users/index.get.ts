@@ -69,7 +69,8 @@ export default defineEventHandler(async (event) => {
         pictureUrl: d.pictureUrl as string ?? '',
         roles: rawRoles,
         approved: d.approved as boolean ?? false,
-        driverCategory: d.driverCategory as string | undefined,
+        // P18：driverCategory 已搬到 drivers/{uid}，下方 batch read 後補入
+        driverCategory: undefined as string | undefined,
         driverApplication,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
       };
@@ -77,6 +78,28 @@ export default defineEventHandler(async (event) => {
 
     // in-memory sort by createdAt desc（取代 server side orderBy 避免 composite index）
     users.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+
+    // P18：batch 讀 drivers/{uid} 補 driverCategory（僅 driver role 才需要）
+    // 100 筆級資料量批次 getAll 成本可忽略；admins SDK 限制 single batch 大小有上限但遠超 100。
+    const driverUsers = users.filter((u) => u.roles.includes('driver'));
+    if (driverUsers.length > 0) {
+      const refs = driverUsers.map((u) => db.collection('drivers').doc(u.uid));
+      try {
+        const snaps = await db.getAll(...refs);
+        const categoryByUid = new Map<string, string | undefined>();
+        snaps.forEach((s) => {
+          if (s.exists) {
+            categoryByUid.set(s.id, s.data()?.driverCategory as string | undefined);
+          }
+        });
+        users.forEach((u) => {
+          if (categoryByUid.has(u.uid)) u.driverCategory = categoryByUid.get(u.uid);
+        });
+      } catch (err) {
+        // 補資料失敗不阻擋列表回傳；driverCategory 為 undefined 不影響 admin 端基本管理
+        console.error('[admin/users.get] drivers batch read failed:', err);
+      }
+    }
 
     return successResponse(users);
   } catch (err) {

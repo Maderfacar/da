@@ -1,13 +1,14 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { hasPermission } from '@@/utils/require-permission';
 
 export default defineEventHandler(async (event) => {
-  // P14：admin only
+  // P14：必須登入；P18：套 canManageOrders 權限（admin/assistant 都有此權限）
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
-  if (!auth.roles.includes('admin')) {
-    return forbiddenError({ zh_tw: '需要管理員權限', en: 'Admin role required', ja: '管理者権限が必要です' });
+  if (!hasPermission(auth, 'canManageOrders')) {
+    return forbiddenError({ zh_tw: '需要訂單管理權限', en: 'canManageOrders required', ja: '注文管理権限が必要です' });
   }
 
   const query = getQuery(event);

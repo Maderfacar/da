@@ -22,6 +22,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { hasPermission } from '@@/utils/require-permission';
 
 type Role = 'passenger' | 'driver' | 'admin';
 
@@ -36,12 +37,9 @@ interface PatchBody {
 }
 
 export default defineEventHandler(async (event) => {
-  // P14：admin only
+  // P14：必須登入；P18：依 body 內容套 require-permission
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
-  if (!auth.roles.includes('admin')) {
-    return forbiddenError({ zh_tw: '需要管理員權限', en: 'Admin role required', ja: '管理者権限が必要です' });
-  }
 
   const config = useRuntimeConfig();
 
@@ -71,6 +69,26 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '不可移除 passenger 身分', en: 'Cannot remove passenger role', ja: 'passenger権限は削除できません' });
   }
 
+  // P18：依 body 內容判斷需要哪些權限
+  // - admin 操作（addRole/removeRole='admin'）→ canManageAdmins
+  // - driver 管理（approved / rejectedAt / rejectReason / driverCategory / displayName / addRole/removeRole='driver' or 'passenger'）→ canManageDrivers
+  const requiresManageAdmins = body!.addRole === 'admin' || body!.removeRole === 'admin';
+  const requiresManageDrivers = (
+    body!.addRole === 'driver' || body!.removeRole === 'driver' || body!.addRole === 'passenger'
+    || body!.approved !== undefined
+    || body!.rejectedAt !== undefined
+    || body!.rejectReason !== undefined
+    || body!.driverCategory !== undefined
+    || body!.displayName !== undefined
+  );
+
+  if (requiresManageAdmins && !hasPermission(auth, 'canManageAdmins')) {
+    return forbiddenError({ zh_tw: '需要管理員管理權限', en: 'canManageAdmins required', ja: '管理者管理権限が必要です' });
+  }
+  if (requiresManageDrivers && !hasPermission(auth, 'canManageDrivers')) {
+    return forbiddenError({ zh_tw: '需要司機管理權限', en: 'canManageDrivers required', ja: 'ドライバー管理権限が必要です' });
+  }
+
   try {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
     const ref = db.collection('users').doc(uid);
@@ -91,7 +109,33 @@ export default defineEventHandler(async (event) => {
       if (body!.displayName) newData.displayName = body!.displayName;
 
       await ref.set(newData, { merge: true });
+
+      // P18：addRole='admin' 時同步建 admins/{uid} doc，預設 level='admin'
+      // 由 super admin 後續透過 admin/admins.patch 調整為 super / admin / assistant
+      if (body!.addRole === 'admin') {
+        await db.collection('admins').doc(uid).set({
+          lineUserId: uid,
+          displayName: (newData.displayName as string) ?? '',
+          pictureUrl: '',
+          level: 'admin',
+          createdBy: auth.lineUid,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+
       return successResponse({ uid, ...newData });
+    }
+
+    // P18：removeRole='admin' 前先 guard — super admin 不可被撤銷（保護管理員失能）
+    if (body!.removeRole === 'admin') {
+      const adminSnap = await db.collection('admins').doc(uid).get();
+      if (adminSnap.exists && adminSnap.data()?.level === 'super') {
+        return forbiddenError({
+          zh_tw: '無法撤銷最高管理員',
+          en: 'Cannot remove super admin',
+          ja: 'スーパー管理者は削除できません',
+        });
+      }
     }
 
     // P18：removeRole='driver'（拒絕司機）不刪除 drivers doc，保留歷史統計
@@ -125,6 +169,34 @@ export default defineEventHandler(async (event) => {
       await db.collection('drivers').doc(uid).set({
         driverCategory: body!.driverCategory,
       }, { merge: true });
+    }
+
+    // P18：addRole='admin' 同步建 admins/{uid} doc（首次預設 level='admin'，重複 addRole 不覆寫 level）
+    if (body!.addRole === 'admin') {
+      const userData = snap.data() ?? {};
+      const adminRef = db.collection('admins').doc(uid);
+      const adminSnap = await adminRef.get();
+      const baseFields = {
+        lineUserId: uid,
+        displayName: (userData.displayName as string) ?? '',
+        pictureUrl: (userData.pictureUrl as string) ?? '',
+      };
+      if (!adminSnap.exists) {
+        await adminRef.set({
+          ...baseFields,
+          level: 'admin',
+          createdBy: auth.lineUid,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        // admins doc 已存在（極罕見：重複 addRole）→ 只更新身分欄位，保留 level / createdAt
+        await adminRef.set(baseFields, { merge: true });
+      }
+    }
+
+    // P18：removeRole='admin' 同步刪 admins/{uid} doc（super 已在前面 guard 擋住）
+    if (body!.removeRole === 'admin') {
+      await db.collection('admins').doc(uid).delete();
     }
 
     return successResponse({ uid, updated: true });
