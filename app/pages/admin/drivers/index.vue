@@ -34,9 +34,17 @@ const filteredDrivers = computed(() => {
 
 const ApiLoadDrivers = async () => {
   loading.value = true;
-  const res = await $api.GetAdminUsers({ role: 'driver' });
-  drivers.value = (res.data as AdminUser[]) ?? [];
-  loading.value = false;
+  try {
+    const res = await $api.GetAdminUsers({ role: 'driver' });
+    // 防禦：res.data 在 server 失敗時可能是 {} 而非 array（methods.ts FilterRes 預設 data:{}）
+    // 直接賦值會讓 filteredDrivers 的 .filter() throw TypeError，導致 spinner 卡住
+    drivers.value = Array.isArray(res.data) ? (res.data as AdminUser[]) : [];
+  } catch (err) {
+    console.error('[admin/drivers] load failed:', err);
+    drivers.value = [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 const ToggleExpand = (uid: string) => {

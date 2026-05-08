@@ -22,13 +22,17 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+    // 注意：where('roles', 'array-contains') + orderBy('createdAt') 是複合查詢，
+    // Firestore 需要建 composite index 才能跑（沒建會 throw FAILED_PRECONDITION）。
+    // 這裡刻意省掉 orderBy，改在 map 後 in-memory 排序，避開使用者額外部署 index 的成本。
+    // users 集合資料量上限約 100 筆級，記憶體排序成本可忽略。
     let q = db.collection('users').where('roles', 'array-contains', query.role);
 
     if (query.approved !== undefined) {
       q = q.where('approved', '==', query.approved === 'true') as typeof q;
     }
 
-    const snapshot = await q.orderBy('createdAt', 'desc').get();
+    const snapshot = await q.get();
 
     const users = snapshot.docs.map((doc) => {
       const d = doc.data();
@@ -62,6 +66,9 @@ export default defineEventHandler(async (event) => {
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
       };
     });
+
+    // in-memory sort by createdAt desc（取代 server side orderBy 避免 composite index）
+    users.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 
     return successResponse(users);
   } catch (err) {

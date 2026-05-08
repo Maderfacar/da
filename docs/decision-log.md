@@ -6,6 +6,48 @@
 
 ---
 
+### 2026/05/08 — P12 司機端循環登入 + Admin 司機管理無限轉圈雙修
+
+**決策類型**：Bug 修復 / 回歸防護
+**標題**：還原 P6「Firebase session 優先於 LIFF」邏輯；admin/users 列表查詢避開 Firestore composite index 並補 client array guard
+
+**背景**：實機驗證 P8 司機申請流程時回報兩個問題：
+1. 司機端：點 LINE 登入後跑回乘客端首頁，且重整時又陷入 LINE 登入畫面
+2. Admin 端：`/admin/drivers` 進入後 spinner 永遠不消失
+
+逐一定位後確認兩個問題各有獨立 root cause，但都是回歸：
+
+**問題 1 root cause（重要）**：
+- `f35e01f`（2026/05/02）原本加在 `_InitLiffFlow` 的 P6 修復「Firebase session 有效時跳過 `liff.login()`」**在 P10/P11 多次重構中被誤刪**（由 commit 鏈 `35e9355` → `2100449` → `79ab914` 漸進式改寫，過程中 currentUser 檢查的早期 return 沒有保留）
+- 結果：LIFF token 比 Firebase custom token 短，LIFF 過期時不論 Firebase session 是否仍有效，都會強制 `liff.login()` 跳轉 LINE 認證頁
+- LIFF redirect 完成後把使用者送回 LIFF App 設定的 endpoint URL（乘客端首頁 `/`），現象與「司機端登入後被導回乘客端」一致
+
+**問題 2 root cause**：
+- `server/routes/nuxt-api/admin/users/index.get.ts` 用 `where('roles', 'array-contains', role).orderBy('createdAt', 'desc')` 是複合查詢，Firestore 需要建 composite index 才能執行，沒建會 throw `FAILED_PRECONDITION`
+- server 雖 catch 後回 500，但 `app/protocol/fetch-api/methods.ts` `FilterRes` 預設 `data: {}`（非 array），`admin/drivers/index.vue` 直接 `drivers.value = res.data ?? []` 讓 `drivers.value` 變成 `{}`
+- 接著 `filteredDrivers` computed 對 `{}` 跑 `.filter()` throw TypeError，render 失敗 → spinner 卡住、loading 永遠不會被 reset
+
+**決定**：
+1. **還原 P6 邏輯**：在 `app/stores/5.store-auth.ts` `_InitLiffFlow` 的 `if (!liff.isLoggedIn())` 之前加回 Firebase `currentUser` 檢查；若 currentUser 存在則 `liffReady=true` + return，跳過 `liff.login()`。同時把後段 `signInWithCustomToken` 重複的 `getAuth` import 拿掉避免 lint 重複宣告。
+2. **避開 composite index**：`admin/users/index.get.ts` 移除 `.orderBy('createdAt', 'desc')`，改在 server 端 map 完後 in-memory sort（`users` 集合資料量上限約 100 筆，記憶體排序成本可忽略）。避免使用者額外去 Firebase Console 建 index。
+3. **Client 防禦**：`admin/drivers/index.vue` `ApiLoadDrivers` 加 try-finally + `Array.isArray(res.data)` guard。`finally` 保證 `loading` 一定 reset；guard 確保 `drivers.value` 永遠是 array，避免 `.filter()` throw。
+
+**強制規範（避免再次回歸）**：
+- 任何 `_InitLiffFlow` 的重構，**都必須保留 Firebase currentUser 檢查的早期 return**。重構前先 grep `currentUser` 確認此邏輯仍在；commit 前手動驗收「LIFF token 過期但 Firebase 仍有 session」情境（可在 DevTools Application 把 LIFF cookies 清掉但保留 Firebase IndexedDB 模擬）。
+- 任何 Firestore 集合查詢加 `orderBy` 之前，先確認是否與 `where`/`array-contains` 形成複合查詢。複合查詢需要 composite index；除非已部署 `firestore.indexes.json`，否則優先 in-memory sort。
+- 任何 `await $api.*` 的呼叫端，都應該對 `res.data` 做 `Array.isArray` 或型別 guard，因為 `methods.ts` `FilterRes` 在 server 失敗時把 `data` 預設為 `{}`，呼叫端直接 `as Type[]` 無法擋住型別錯位。
+
+**影響**：
+- 修改：`app/stores/5.store-auth.ts`、`server/routes/nuxt-api/admin/users/index.get.ts`、`app/pages/admin/drivers/index.vue`
+- 不影響：firestore.rules、storage.rules、其他 server route
+
+**替代方案**：
+- 問題 2 改建 composite index → 需使用者額外到 Firebase Console 部署，且未來新增其他 role 篩選都要重複這個成本；in-memory sort 在資料量小時更務實，已採用
+- 問題 2 改 client 端做 `where + sort` → admin 端要負擔過多邏輯且仍需處理 array guard，同時保留 server-side guard 才完整；已採用
+- 問題 1 改成所有頁面都先檢查 isSignIn 才 mount → 修改面太大且不能解決根本（LIFF flow 內部仍會 `liff.login()`）；已捨棄
+
+---
+
 ### 2026/05/07~08 — P10 production debug：Firebase Admin 初始化三大踩雷點（必讀）
 
 **決策類型**：基礎架構 / 重大踩雷紀錄
