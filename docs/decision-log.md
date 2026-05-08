@@ -6,6 +6,46 @@
 
 ---
 
+### 2026/05/08 — P13 司機證件上傳失敗修復（storageBucket 預設 + 錯誤訊息暴露）
+
+**決策類型**：Bug 修復 / 環境配置規範
+**標題**：`useFirebaseAdmin` 預設 storageBucket 從 `.appspot.com` 改為 `.firebasestorage.app`，且支援從 public runtime config fallback 讀取；`upload.post.ts` catch 暴露 `err.message`
+
+**背景**：實機驗證 P12 修復後測試司機申請流程，點選證件上傳時 client 顯示「上傳失敗，請稍後重試」（即 `serverError` 預設訊息）。檢查使用者實際 Firebase Storage bucket name 是 `destination-anywhere-cfd50.firebasestorage.app`（**新版 URL**），但 `server/utils/firebase-admin.ts` 預設組合 `${project_id}.appspot.com` 會去找不存在的 bucket，`blob.save()` 在 production 拋 `The specified bucket does not exist`。
+
+Vercel 環境變數中沒有設 server-only 的 `NUXT_FIREBASE_STORAGE_BUCKET`，public 端的 `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` 也沒設（client Firebase init 帶的 storageBucket 是空字串）。
+
+**Root cause**：
+1. Firebase 在 2024/04 後新建專案的 default Storage bucket URL 從 `${project_id}.appspot.com` 改為 `${project_id}.firebasestorage.app`，本專案是新版
+2. `firebase-admin.ts` 寫死 fallback 為舊版 URL，且只讀 server-only env var，client / server 必須設兩份 env var 才能對齊
+
+**決定**：
+1. **`server/utils/firebase-admin.ts`** 取值順序改為：
+   - server-only `NUXT_FIREBASE_STORAGE_BUCKET`
+   - public `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET`（client SDK 同樣讀此值，一份共用）
+   - fallback `${project_id}.firebasestorage.app`（新版預設）
+   - fallback `${project_id}.appspot.com`（舊版兜底）
+2. **`server/routes/nuxt-api/driver/upload.post.ts`** catch block 把 `err.message` 帶入回傳訊息（如「上傳失敗：The specified bucket does not exist」），協助定位環境配置問題；不洩漏 secret，只暴露 SDK 訊息。
+3. **使用者操作**：在 Vercel 設 `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` = `destination-anywhere-cfd50.firebasestorage.app`（Production / Preview / Development 三個環境都勾），client / server 共用此值。
+
+**強制規範**：
+- 任何 server route 需要存取 Firebase Storage 時，**禁止寫死 fallback bucket 名稱為舊版格式**；必須同時支援新舊兩種 default bucket，且能從 `config.public.firebaseStorageBucket` fallback 讀取。
+- 任何 server-side throw 的 catch block，**錯誤訊息必須包含 `err.message`**；只回 `serverError(...)` 預設「伺服器錯誤」會讓使用者面對黑盒，浪費往返定位時間。但要避免暴露 secret（檔案路徑、token、connection string），這類訊息要先 sanitize。
+- 任何同時需要 client / server 取值的 Firebase 設定（如 storageBucket、projectId），**設計 env var 時優先用 `NUXT_PUBLIC_*` 一份共用**，避免使用者重複設定造成 mismatch。
+
+**影響**：
+- 修改：`server/utils/firebase-admin.ts`、`server/routes/nuxt-api/driver/upload.post.ts`
+- Vercel env var：新增 `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET`（使用者操作）
+- 未來新建 Firebase 專案不必再特別設此 env var，預設 fallback 已涵蓋新版格式
+- 同樣的 storageBucket 邏輯影響其他 storage 操作（如未來可能加上的訂單發票上傳、廣播圖片附件）
+
+**替代方案**：
+- 改 `firebase-admin.ts` 寫死新版 bucket name → 對舊版 Firebase 專案（2024/04 前建立）會 fail，可移植性差；已捨棄
+- 在 `firebase-admin.ts` 內 try `.firebasestorage.app` 失敗再 fallback `.appspot.com` → `bucket()` 不會立刻 verify，要到實際操作才 throw，retry 邏輯複雜且耗時；已捨棄
+- 直接讓 client 端用 Firebase JS SDK 上傳（繞過 server）→ 雖然使用者 storage.rules 已允許 < 5MB 直接 client write，但失去 server-side 驗證 docType / mime / 路徑的能力，且 admin 審核所需的 signed URL 仍需 server 產生；已捨棄
+
+---
+
 ### 2026/05/08 — P12 司機端循環登入 + Admin 司機管理無限轉圈雙修
 
 **決策類型**：Bug 修復 / 回歸防護

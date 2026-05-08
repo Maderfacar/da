@@ -46,12 +46,21 @@ export function useFirebaseAdmin(serviceAccount: string | Record<string, unknown
     }
 
     // P8：driver 證件圖片需上傳 Firebase Storage，於 init 時帶上 storageBucket
-    // 預設 `${project_id}.appspot.com`（大部分 Firebase 專案使用此格式）；
-    // 若使用者啟用新版 storage bucket（`${project_id}.firebasestorage.app`），
-    // 可透過 NUXT_FIREBASE_STORAGE_BUCKET 環境變數覆寫
+    //
+    // 取值順序：
+    //   1. server-only env var NUXT_FIREBASE_STORAGE_BUCKET
+    //   2. public env var NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET（client SDK 也用此值，一份共用）
+    //   3. fallback `${project_id}.firebasestorage.app`（2024/04 後新建專案的預設 bucket name）
+    //   4. fallback `${project_id}.appspot.com`（舊版 Firebase 專案兜底）
+    //
+    // 使用者只需在 Vercel 設一份 NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET 即可同時供 client / server。
     const config = useRuntimeConfig();
-    const storageBucket = (config as { firebaseStorageBucket?: string }).firebaseStorageBucket
-      || `${sa.project_id as string}.appspot.com`;
+    const serverBucket = (config as { firebaseStorageBucket?: string }).firebaseStorageBucket;
+    const publicBucket = (config.public as { firebaseStorageBucket?: string })?.firebaseStorageBucket;
+    const storageBucket =
+      (serverBucket && serverBucket.length > 0 ? serverBucket : null)
+      ?? (publicBucket && publicBucket.length > 0 ? publicBucket : null)
+      ?? `${sa.project_id as string}.firebasestorage.app`;
 
     _app = initializeApp({
       credential: cert(sa as Parameters<typeof cert>[0]),
