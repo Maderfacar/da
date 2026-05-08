@@ -6,6 +6,44 @@
 
 ---
 
+### 2026/05/09 — P18 stage gate hotfix：middleware/auth 真的 await authResolved
+
+**決策類型**：Bug 修復（P14 後 race condition）
+**標題**：`app/middleware/auth.ts` 由「`!authResolved` 直接 return 放行」改為「真的 await authResolved」修 onMounted 取不到 idToken 導致受 require-auth 保護 endpoint 401「未授權」
+
+**背景**：P18 stage gate 驗證 G4 時發現重整 `/admin/orders` 後訂單列表 401「未授權」（admin/admins 列表卻正常）。DevTools Network 確認 `Authorization` header 完全沒帶。Root cause 收斂為：
+- 原 middleware 寫法 `if (!authResolved) return` 註解寫「等待 Firebase 解析，layout 顯示 loading」但**實際是直接 return 放行 navigation 沒 await**
+- page `onMounted` 跑時 Firebase auth 尚未從 IndexedDB 復原 → `getAuth().currentUser=null`
+- `methods.ts` onRequest 透過 `GetFreshIdToken()` → currentUser=null → 回空字串 → 不帶 Authorization
+- server 端 `require-auth.ts:79` 收不到 `Bearer` token → 401「未授權」
+- admin/settings 用 `watch immediate` 比 onMounted 早一個 tick，剛好踩在 currentUser 復原邊界，**race 飄忽**所以 G3 看似正常
+
+此 race 自 P14（require-auth 引入）後就存在，但 P14/P15/P17 沒測「重整受保護頁面」情境，到 P18 stage gate 才暴露。
+
+**決定**：改 `app/middleware/auth.ts`：
+- 改為 `async` middleware
+- `!authResolved` 時用 `watch(authResolved, immediate)` 真的等到變 true 再放行 navigation
+- 上限隱含於 `InitAuthFlow` 的 12 秒 safetyTimer（逾時會強制 `authResolved=true` 避免無限等）
+- Firebase IndexedDB 復原通常 <500ms，使用者感知不到延遲
+- 既有 layout `v-if="!authResolved"` loading UI 顯示時間反而縮短（middleware 已等過）
+
+**強制規範**：
+- **任何 client-side route middleware 對 async 狀態（store / firebase / api）的等待，必須 `await Promise + watch`，不可只寫 `if (!ready) return` — 那是放行 navigation 不是阻擋**
+- 觸發測試模式之一：「**重整任何受 require-auth 保護的頁面**」必須跑通；不能只測「登入後第一次進入」
+- 若 page `onMounted` 內呼叫受 `require-auth` 保護的 endpoint，**caller 不需各自處理 idToken 等待**，由 middleware/auth 統一解決（DRY）
+
+**影響**：
+- 修改：`app/middleware/auth.ts`
+- 影響面：所有用 `middleware: ['auth']` 的頁面（passenger / driver / admin 三端共用）
+- 預期同步修好「driver/trip 看不到指派訂單」（同源 race — driver 端 fetch 訂單時 idToken 取不到）
+
+**替代方案**：
+- 改在每個 page `onMounted` 內 await `authResolved` → 違反 DRY 且新加頁面容易漏；已捨棄
+- 改在 `methods.ts` onRequest 內 await `authResolved` → line-exchange 是公開 endpoint 跑在 LIFF flow 內、authResolved 還沒 true 時，會死鎖（line-exchange 等 authResolved，authResolved 等 line-exchange 完成 signIn）；已捨棄
+- 改 `GetFreshIdToken` 內等 `authResolved` → 同樣有死鎖風險；已捨棄
+
+---
+
 ### 2026/05/09 — P18 Collection Split：drivers / admins 獨立 collection + admin 三層分權
 
 **決策類型**：資料模型重構 / 業務邏輯擴展
