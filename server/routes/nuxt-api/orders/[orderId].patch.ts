@@ -1,4 +1,5 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { successResponse, badRequestError, notFoundError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
@@ -63,6 +64,33 @@ export default defineEventHandler(async (event) => {
     }
 
     await ref.update(updates);
+
+    // P18：當訂單狀態剛切換為 'completed'（前一狀態非 completed），對司機 drivers doc 累加統計
+    // - assignedDriverId 在 orders 內格式為 'line:Uxxx'，須去 prefix 對應 drivers doc key
+    // - 用 set({ ...increments }, { merge: true }) 容錯 drivers doc 不存在情境（歷史司機未走 apply）
+    // - 失敗只 log，不影響訂單更新成功 response（訂單已成功 update）
+    const wasCompleted = (orderData.orderStatus as string | undefined) === 'completed';
+    if (body.orderStatus === 'completed' && !wasCompleted) {
+      const rawDriverId = orderData.assignedDriverId as string | undefined;
+      if (rawDriverId) {
+        const driverLineUid = rawDriverId.startsWith('line:') ? rawDriverId.slice(5) : rawDriverId;
+        const fare = (orderData.estimatedFare as number) ?? 0;
+        const distance = (orderData.distanceKm as number) ?? 0;
+        try {
+          await db.collection('drivers').doc(driverLineUid).set({
+            totalTrips: FieldValue.increment(1),
+            totalEarnings: FieldValue.increment(fare),
+            totalDistanceKm: FieldValue.increment(distance),
+            todayTrips: FieldValue.increment(1),
+            todayEarnings: FieldValue.increment(fare),
+            lastTripAt: FieldValue.serverTimestamp(),
+          }, { merge: true });
+        } catch (err) {
+          console.error('[orders/patch] driver stats increment failed:', err);
+        }
+      }
+    }
+
     return successResponse({ orderId, ...updates });
   } catch (err) {
     console.error('[orders/patch] Firestore update failed:', err);
