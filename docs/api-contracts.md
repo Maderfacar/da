@@ -172,39 +172,59 @@ type UpdateLocationResponse = UnifiedResponse<{ updated: boolean }>
 
 ### 4.4 司機申請（server/routes/nuxt-api/driver/）
 
-**POST `/nuxt-api/driver/upload`**（單一文件上傳，呼叫前端先上傳每個證件取得 URL，再呼叫 apply）
+**POST `/nuxt-api/driver/upload`**（單一文件上傳，前端對 4 個證件分別呼叫，全部取得 signed URL 後再呼叫 apply）
 ```typescript
 // 請求：multipart/form-data
-//   field: file (圖片檔，5MB 上限，jpg/png/pdf)
-//   field: docType (DriverDocumentType)
-// 後端：寫入 Firebase Storage drivers/{uid}/{docType}-{timestamp}.{ext}
+//   field: file        (圖片檔，5MB 上限，jpg/png/pdf)
+//   field: docType     ('licenseUrl' | 'registrationUrl' | 'insuranceUrl' | 'goodCitizenUrl')
+//   field: lineUserId  (用於 Storage path drivers/{lineUserId}/...)
+// 後端：寫入 Firebase Storage drivers/{lineUserId}/{docType}-{timestamp}.{ext}
+//       產生 1 年長效 signed URL 回傳（admin / owner 端可直接顯示，無需 Storage Rules public）
 type UploadDriverDocResponse = UnifiedResponse<{
-  docType: DriverDocumentType;
-  url: string;       // Firebase Storage download URL
-  path: string;      // Storage path（供日後刪除參考）
+  docType: 'licenseUrl' | 'registrationUrl' | 'insuranceUrl' | 'goodCitizenUrl';
+  url: string;          // 1 年有效的 signed URL
+  objectPath: string;   // Storage path（供日後刪除參考）
+  sizeBytes: number;
+  mime: string;
 }>;
+// 失敗回應：
+//   400 — 缺檔案 / docType 無效 / 缺 lineUserId / 超過 5MB / mime 不支援
+//   500 — Firebase Storage 寫入失敗
 ```
 
 **POST `/nuxt-api/driver/apply`**（送出申請）
 ```typescript
 interface ApplyDriverRequest {
+  lineUserId: string;          // 必填，用於 Firestore 文件 ID（users/{lineUserId}）
   driverName: string;
   phone: string;
   plateNumber: string;
-  vehicleType: VehicleType;
+  vehicleType: 'sedan' | 'mpv' | 'suv' | 'van';
   bankCode: string;
   bankAccount: string;
-  documents: DriverDocuments;  // 4 個 URL，由 upload API 先取得
+  documents: {
+    licenseUrl: string;
+    registrationUrl: string;
+    insuranceUrl: string;
+    goodCitizenUrl: string;
+  };
 }
 
 type ApplyDriverResponse = UnifiedResponse<{
   applied: boolean;
   appliedAt: string;
+  cooldownUntil?: string;  // 僅 403 冷卻中時回傳
 }>;
+// 後端行為：
+//   - roles arrayUnion('driver')（保留現有 passenger / admin 等其他身分）
+//   - approved=false（待 admin 審核）
+//   - driverCategory='0'（admin 可後續調整搶單排序權重）
+//   - driverApplication 寫入完整申請資料含 appliedAt serverTimestamp
+//
 // 失敗回應：
 //   400 INVALID_INPUT — 欄位缺失或格式錯誤
-//   403 COOLDOWN — rejectedAt 在 24h 內，回傳 cooldownUntil 時間
-//   409 ALREADY_APPLIED — 已是 driver 且 approved=true
+//   403 COOLDOWN — rejectedAt 在 24h 內，回傳 cooldownUntil
+//   409 ALREADY_APPLIED — 已是 approved driver，無需重新申請
 ```
 
 ### 4.5 Admin 端使用者管理（server/routes/nuxt-api/admin/）
@@ -261,6 +281,6 @@ type UpdateUserResponse = UnifiedResponse<{ uid: string; updated?: boolean }>;
 ---
 
 **版本紀錄**
-- 版本：v1.2（新增司機申請、文件上傳、admin 審核 API；補 `mpv` 車種；新增 `DriverApplication` 等型別）
-- 更新日期：2026/05/06
-- 歷史：v1.1（2026/04/26）統一為 UnifiedResponse 格式，移除 `any`
+- 版本：v1.3（對齊 P8 實作 — driver/upload 回 signed URL + objectPath/sizeBytes/mime；driver/apply 補 lineUserId 必填；admin/users PATCH 完整支援 addRole/removeRole/rejectedAt/rejectReason/driverCategory）
+- 更新日期：2026/05/08
+- 歷史：v1.2（2026/05/06）新增司機申請、文件上傳、admin 審核 API；v1.1（2026/04/26）統一為 UnifiedResponse 格式
