@@ -366,13 +366,119 @@
 - 訂單寫失敗會回前端 error 而非靜默成功 ✅
 - firestore.rules 已建立（待使用者部署）✅
 
+### P12：司機端循環登入 + Admin 司機管理無限轉圈雙修（2026/05/08 ✅ 完成）
+
+> 詳見 docs/decision-log.md 2026/05/08 P12 條目。
+
+- [✅] 還原 `app/stores/5.store-auth.ts` `_InitLiffFlow` 的 P6 Firebase currentUser 檢查（commit `fd8c4d9`）
+- [✅] `server/routes/nuxt-api/admin/users/index.get.ts` 移除 `.orderBy('createdAt')` 改 in-memory sort（避開 composite index 部署）
+- [✅] `app/pages/admin/drivers/index.vue` ApiLoadDrivers 加 try-finally + Array.isArray guard（commit `ec70f69`）
+
+### P13：司機證件上傳失敗修復（2026/05/08 ✅ 完成）
+
+> 詳見 docs/decision-log.md 2026/05/08 P13 條目。
+
+- [✅] `server/utils/firebase-admin.ts` storageBucket 取值順序：server-only > public > `.firebasestorage.app` > `.appspot.com`（commit `89bd2e7`）
+- [✅] `server/routes/nuxt-api/driver/upload.post.ts` catch 暴露 err.message 協助定位
+- [✅] **使用者操作**：確認 Vercel `NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET` = `destination-anywhere-cfd50.firebasestorage.app`
+
+### P14：上線安全修復 — 全部受保護 endpoint 加 require-auth（2026/05/09 ✅ 完成）
+
+> 詳見 docs/decision-log.md 2026/05/09 P14 條目。共解決 6 個 CRITICAL 漏洞。
+
+**Server side（10 個 endpoint + 1 個新 helper）** ✅
+- [✅] 新增 `server/utils/require-auth.ts`：`getAuthFromEvent` + `authFailResponse`（commit `da52cb5`）
+- [✅] admin endpoints 4 個套 admin only guard：broadcast / orders.get / users.get / users.patch
+- [✅] driver/upload + driver/apply：caller.lineUid === body.lineUserId 或 admin
+- [✅] orders/index.get：純 passenger 強制只能讀自己；admin/driver 可帶 query.userId
+- [✅] orders/[orderId].patch：owner 只能 cancel；admin/driver 任意更新
+- [✅] drivers/[id]/location.put + drivers/[uid]/stats.get：caller.uid === id 或 admin
+
+**Client side（3 處）** ✅
+- [✅] `app/stores/5.store-auth.ts` 加 `GetFreshIdToken()` action
+- [✅] `app/protocol/fetch-api/methods.ts` onRequest 改 async 帶 Bearer ID token
+- [✅] `app/protocol/fetch-api/api/driver/index.ts` UploadDriverDocument 直接 $fetch 加 header
+
+**Stage Gate（P14）** — 2026/05/09 ✅ 通過實機驗證：
+- 無痕直接打 `/nuxt-api/admin/users` → 401 ✅
+- admin 端 / 司機端 / 乘客端正常流程 idToken 自動帶上 ✅
+
+### P15：路由整理 + silent failure 修復（2026/05/09 ✅ 完成）
+
+> 詳見 docs/decision-log.md 2026/05/09 P15 條目。
+
+**第二批：路由整理 + dev 痕跡** ✅（commit `cde9af7`）
+- [✅] `app/pages/index.vue`：原本 if/else 都導 `/home` → 改成依登入狀態 + roles 分流
+- [✅] `app/pages/admin/index.vue`：`/admin` 入口從 `/admin/traffic` 改為 `/admin/orders`（與其他 admin 落點一致）
+- [✅] 刪除 `app/pages/demo/components.vue` + `tinymce-editor.vue`（兩支頁面無 middleware 對外可開）
+- [✅] **使用者操作**：刪除 Vercel `NUXT_PUBLIC_TEST_MODE`，prod 不再顯示 MockSignIn 鈕
+
+**第三批：silent failure 修復** ✅（commit `4b19700`）
+- [✅] `server/routes/nuxt-api/orders/available.get.ts`：Firebase 未設不再 silent 200，改 serverError
+- [✅] `server/routes/nuxt-api/drivers/available.get.ts`：同上
+- [✅] `server/routes/nuxt-api/auth/line-exchange.post.ts`：既有使用者 displayName/pictureUrl 同步失敗加 console.warn
+- [✅] client 4 個頁面加 status guard + Array.isArray + try-finally：`orders/index.vue`、`home/index.vue`、`admin/orders/index.vue`、`admin/settings/index.vue`
+
+### P16：暫緩項目（待轉換批次再做）
+
+> **背景**：使用者要求先把資安債 / 體驗修飾暫停，轉向乘客端完善。本節記錄已盤點但暫緩的項目，避免遺忘。
+
+**P16-1：資安債（建議上線後 1 週內）**
+- [ ] **Signed URL TTL 縮短**：`server/routes/nuxt-api/driver/upload.post.ts:97` 1 年 → 4 小時；admin/owner 端每次 load 重新 sign（避免證件外洩 1 年內任何人能看）
+- [ ] **err.message 暴露 prod guard**：`server/routes/nuxt-api/driver/upload.post.ts:113` 加 `process.env.NODE_ENV === 'development'` 才顯示細節，prod 回通用訊息（避免洩漏 SDK 內部錯誤訊息）
+- [ ] **Rate limiting**：line-exchange / driver/apply / admin/broadcast 至少 IP 級限流（避免 LINE API 配額被打爆）
+
+**P16-2：體驗修飾（上線後可做）**
+- [ ] `/admin/war-room` `console.error` 殘留清理
+- [ ] `/driver/dashboard` ONLINE HRS 永遠顯示 0（無對應 API），隱藏或補後端
+- [ ] `/admin/notifications` 通知歷史只存 in-memory，重整就清空（無稽核需求可不做）
+- [ ] `/driver/profile` totalTrips 顯示「今日趟次」但 label 是「累計」（語意混淆）
+
+**P16-3：基礎設施**
+- [ ] **使用者部署 firestore.rules**：Firebase Console → Firestore → Rules 貼上 `firestore.rules` 內容並 Publish
+- [ ] **使用者部署 storage.rules**（P8 建立但用戶以自有規則覆寫，已 OK）
+- [ ] **刪除 Vercel `cc_da` 舊專案**：避免與 `da-line-liff-app` 混淆
+- [ ] **真實航空 API 替換 Aviation Edge mock**（`server/api/flight.get.ts`）：需業務 RFP 決定來源
+- [ ] **pnpm audit 排程**：寫進 GitHub Actions 月排程
+
+### P17：乘客端完善（2026/05/09 進行中）
+
+> **背景**：使用者要求轉向乘客端完善。code-explorer agent 全面盤點 + booking → orders → upcoming 流程交叉確認。詳見 P17 工作清單。
+
+**P17-1：上線阻擋級（必修）**
+- [ ] **userId 格式不一致 bug（P14 引入回歸）**
+  - Firestore `orders.userId` 寫入時帶 `line:` prefix（來自 client `authStore.user?.uid`）
+  - 但 P14 後 `server/routes/nuxt-api/orders/index.get.ts` 改成 `where('userId', '==', auth.lineUid)`（不帶 prefix）
+  - **結果：乘客 `/orders` 永遠看不到訂單**
+  - 修：`server/routes/nuxt-api/orders/index.post.ts` 加 require-auth + 強制覆寫 userId/lineUserId 為 `auth.lineUid`；既有測試訂單需手動清空 Firestore（測試階段資料無價值）
+  - 同時修 `app/pages/booking/index.vue:102-103`、`app/pages/orders/index.vue:34`、`app/pages/upcoming/index.vue:74-78` 對齊
+- [ ] **`upcoming/index.vue` orderStatus 'in_transit' vs 'in-progress' 不一致**：Firestore 寫入是 `in_transit`（底線），upcoming TripStatus type 用 `in-progress`（連字號）→ 司機接單後乘客看不到「行程中」
+- [ ] **`orders/index.vue:36` status code 用 magic 200 而非 `$enum.apiStatus.success`**：與 upcoming 慣例不一致
+
+**P17-2：應做才好上線（建議這次做）**
+- [ ] **訂單取消功能**：P14 server 已支援 owner 改 status='cancelled'，但 client `/orders` `/upcoming` 沒有取消按鈕
+- [ ] **booking 成功後加「查看行程」按鈕**：跳 `/upcoming`（目前只有「再訂一張」按鈕）
+- [ ] **訂單狀態 polling**：`/orders` 與 `/upcoming` 加 30-60s setInterval，與 admin/driver 端一致
+
+**P17-3：體驗細節（先列入待辦）**
+- [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）
+- [ ] `profile` 頁加訂單統計（總趟數 / 累計里程）+ 客服聯絡資訊
+- [ ] `fleet/index.vue` 預約按鈕帶 `?vehicleType=` query 直連 `/booking` 預選車型
+- [ ] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（目前硬編碼中文）
+- [ ] `upcoming/index.vue` STATUS_TAB_KEYS 加 `cancelled` filter
+- [ ] `app/protocol/fetch-api/methods.ts` 401 自動登出邏輯實作（line 3 / 18 / 61 三個 TODO）
+- [ ] 加好友橫幅與 home Hero 排版重疊檢查（P2）
+
+**P17-4：使用者偏好變更**
+- [✅] **乘客端登出按鈕**：早於 commit `473ada0` 移除（不需重做；司機端 / Admin 端保留）
+
 ---
 
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
-- P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增，P11 為 2026/05/08 新增
+- P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
 
 **版本紀錄**
-- 版本：v3.7（Stage 7 P8 司機申請流程全鏈完成 — register 表單 / upload + apply API / admin 三分頁審核 / Storage Rules）
+- 版本：v3.8（P12 司機循環/admin 轉圈 + P13 storageBucket + P14 上線安全修復 + P15 路由+silent failure + P17 乘客端完善 backlog）
 - 更新日期：2026/05/08

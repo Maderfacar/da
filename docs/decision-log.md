@@ -6,6 +6,48 @@
 
 ---
 
+### 2026/05/09 — P15 路由整理 + silent failure 修復（上線阻擋級）
+
+**決策類型**：上線前清理 / 體驗修復
+**標題**：`app/pages/index.vue` 重寫分流邏輯；刪除 demo 路由；6 處 silent failure 改回 error response
+
+**背景**：P14 安全修復後，code-explorer / silent-failure-hunter 兩個 agent 全面審查，發現除安全外仍有：
+1. `app/pages/index.vue` if/else 都導 `/home`，登入分流形同虛設
+2. `app/pages/admin/index.vue` 導 `/admin/traffic`，但 login / driver/auth 後 admin 落點是 `/admin/orders`，不一致
+3. `/demo/components` `/demo/tinymce-editor` 對外可開（無 middleware）
+4. `orders/available.get.ts` + `drivers/available.get.ts` 在 Firebase env 缺失時 silent 回 200 + `[]`，UI 顯示假成功（司機看「沒訂單」、戰情室「沒司機」）
+5. 多個 client 頁面 API 失敗無 status guard（`orders/index.vue`、`home/index.vue`、`admin/orders/index.vue`、`admin/settings/index.vue`），失敗時直接 `res.data ?? []` 顯示空畫面
+
+**決定**：
+1. **路由整理**：
+   - `app/pages/index.vue` 改 watch authResolved + roles 分流：未登入 → `/login`，approved driver → `/driver/dashboard`，admin → `/admin/orders`，其他 → `/home`
+   - `app/pages/admin/index.vue` 統一改導 `/admin/orders`
+   - 刪除 `app/pages/demo/components.vue` + `tinymce-editor.vue`（openspec / docs/tasks.md 內歷史紀錄保留）
+2. **使用者操作**：刪除 Vercel `NUXT_PUBLIC_TEST_MODE` env var，prod 不再顯示 MockSignIn 鈕
+3. **server silent failure 修復**：
+   - `orders/available.get.ts`：Firebase 未設改回 serverError（不再 silent 200）
+   - `drivers/available.get.ts`：同上
+   - `auth/line-exchange.post.ts:111`：既有使用者 displayName/pictureUrl 同步失敗加 `console.warn`（保持 non-fatal 但留追蹤線索）
+4. **client silent failure 修復**：
+   - 統一模式：`res.status.code !== 200 → console.error + ElMessage + 清空 + return`；try-finally 確保 loading reset；`Array.isArray` guard 防型別錯位
+   - `admin/settings` 原 `if (res.data)` 對 `{}` 也通過會把 `{}` 賦值給 array ref，特別需要 array guard
+
+**強制規範**：
+- **任何 server endpoint 在 env 缺失時禁止 silent 200 + 預設值回傳**：必須回 serverError，避免 production 漏設 env 時 UI 看起來正常但功能癱瘓
+- **任何 client `await $api.*` 後賦值 array ref，必須先 `res.status.code !== 200` 檢查 + `Array.isArray(res.data)` guard**：因 `methods.ts` `FilterRes` 在失敗時把 `data` 預設為 `{}`，直接 `as Type[]` 無法擋型別錯位
+- **任何 Nuxt 路由分流頁面（`/`、`/admin`、`/login` 等）**：登入狀態判斷必須等 `authStore.authResolved`，且依 roles 分多端落點，禁止 if/else 都跳同個路徑
+
+**影響**：
+- 修改：`app/pages/index.vue`、`app/pages/admin/index.vue`（重寫）；`orders/available.get.ts`、`drivers/available.get.ts`、`auth/line-exchange.post.ts`（server）；`orders/index.vue`、`home/index.vue`、`admin/orders/index.vue`、`admin/settings/index.vue`（client）
+- 刪除：`app/pages/demo/components.vue`、`app/pages/demo/tinymce-editor.vue`
+- commits：`cde9af7`（路由）+ `4b19700`（silent failure）
+
+**替代方案**：
+- silent 200 在 dev 方便本地開發 → 已捨棄；若需要本地 mock 應走另一個 fallback flag，而非用「Firebase 未設」當 implicit fallback signal
+- demo 頁面加 middleware 擋住 → 上線後仍是死碼，乾脆刪除；歷史紀錄保留在 openspec changelog
+
+---
+
 ### 2026/05/09 — P14 上線安全修復：所有受保護 server endpoint 加上 require-auth guard
 
 **決策類型**：安全性 / 上線阻擋級修復
