@@ -471,6 +471,22 @@
 **P17-4：使用者偏好變更**
 - [✅] **乘客端登出按鈕**：早於 commit `473ada0` 移除（不需重做；司機端 / Admin 端保留）
 
+### P18：Collection Split — drivers + admins 獨立 collection（2026/05/09 計畫中）
+
+> 完整設計與 tasks 見 `openspec/changes/2026-05-09-collection-split/`：
+> - `proposal.md`：背景、範圍、影響
+> - `design.md`：schema 細節、決策與 trade-off
+> - `tasks.md`：Stage 0~10 順序化 checklist
+> - `migration.md`：使用者手動 Firebase Console 操作指引
+
+**核心改動**：
+- 新增 `drivers/{lineUid}`（合併現有 drivers/{driverId} 即時位置 + 累積統計）
+- 新增 `admins/{lineUid}`（含 super / admin / assistant 三層分權）
+- `users.roles[]` 仍是身分認證唯一來源；level / permissions 是 admin 內部細分
+- 10+ server endpoint 改動 + require-permission helper + admin/admins/* 新 endpoint
+
+**執行方式**：開新 Claude Code session，依 `openspec/changes/2026-05-09-collection-split/tasks.md` 順序實作
+
 ---
 
 **使用規則**
