@@ -1,13 +1,21 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
-import { successResponse, serverError } from '@@/utils/response';
+import { successResponse, serverError, forbiddenError } from '@@/utils/response';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 export default defineEventHandler(async (event) => {
+  // P14：admin only
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
+  if (!auth.roles.includes('admin')) {
+    return forbiddenError({ zh_tw: '需要管理員權限', en: 'Admin role required', ja: '管理者権限が必要です' });
+  }
+
   const query = getQuery(event);
   const { status } = query as { status?: string };
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
-    return successResponse([] as object[]);
+    return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
 
   try {

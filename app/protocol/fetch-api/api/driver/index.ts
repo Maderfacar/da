@@ -46,6 +46,8 @@ export const ApplyDriver = (body: DriverApplyBody) =>
 /**
  * 上傳司機證件圖片至 Firebase Storage，回傳 signed URL
  * 注意：此端點接受 multipart/form-data，必須直接使用 fetch 而非 methods.post
+ *
+ * P14：手動帶 Firebase ID token（multipart 不走 methods.ts onRequest 攔截器）
  */
 export const UploadDriverDocument = async (params: {
   file: File;
@@ -56,9 +58,13 @@ export const UploadDriverDocument = async (params: {
   fd.append('file', params.file);
   fd.append('docType', params.docType);
   fd.append('lineUserId', params.lineUserId);
+
+  const idToken = await StoreAuth().GetFreshIdToken();
+  const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+
   const res = await $fetch<{ data: UploadDocumentResponse; status: { code: number; message: { zh_tw: string; en: string; ja: string } } }>(
     '/nuxt-api/driver/upload',
-    { method: 'POST', body: fd },
+    { method: 'POST', body: fd, headers },
   );
   return res;
 };

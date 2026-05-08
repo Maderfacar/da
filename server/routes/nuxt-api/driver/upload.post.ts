@@ -17,6 +17,7 @@
  *   - lineUserId 由 client 帶入；正式環境建議改從 ID token 解出 uid 確保 owner-only
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 const ALLOWED_DOC_TYPES = ['licenseUrl', 'registrationUrl', 'insuranceUrl', 'goodCitizenUrl'] as const;
 type DocType = typeof ALLOWED_DOC_TYPES[number];
@@ -33,6 +34,10 @@ const EXT_MAP: Record<string, string> = {
 
 export default defineEventHandler(async (event) => {
   try {
+    // P14：必須登入；lineUserId 必須對應 caller，admin 可代上傳任意人
+    const auth = await getAuthFromEvent(event);
+    if (!auth.ok) return authFailResponse(auth);
+
     const config = useRuntimeConfig();
     if (!config.firebaseServiceAccountJson) {
       return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
@@ -63,6 +68,13 @@ export default defineEventHandler(async (event) => {
     if (!lineUserId) {
       return badRequestError({ zh_tw: '缺少 lineUserId', en: 'Missing lineUserId', ja: 'lineUserId が必要です' });
     }
+
+    // P14：caller 必須是 lineUserId 本人，或具 admin 身分
+    const isAdmin = auth.roles.includes('admin');
+    if (!isAdmin && auth.lineUid !== lineUserId) {
+      return forbiddenError({ zh_tw: '無權上傳他人證件', en: 'Cannot upload for other user', ja: '他人の証明書はアップロードできません' });
+    }
+
     if (!file?.data) {
       return badRequestError({ zh_tw: '沒有收到檔案', en: 'No file received', ja: 'ファイルが受信できませんでした' });
     }

@@ -1,28 +1,31 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const { userId } = query as { userId?: string };
+  // P14：必須登入。passenger 強制只能讀自己；admin / driver 可帶 query.userId 查指定人
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
 
-  if (!userId) {
-    return {
-      data: [],
-      status: { code: 400, message: { zh_tw: '缺少使用者 ID', en: 'Missing userId', ja: 'ユーザー ID が不足しています' } },
-    };
-  }
+  const query = getQuery(event);
+  const { userId: queryUserId } = query as { userId?: string };
+
+  const isPrivileged = auth.roles.includes('admin') || auth.roles.includes('driver');
+  // 純 passenger 帶的 userId 一律忽略，強制使用自己的 lineUid
+  const targetUserId = isPrivileged && queryUserId ? queryUserId : auth.lineUid;
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
 
   if (!firebaseServiceAccountJson) {
+    // P15：Firebase 未設不再 silent 回 200，避免 UI 顯示假成功
     return {
       data: [],
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+      status: { code: 500, message: { zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' } },
     };
   }
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-    const snapshot = await db.collection('orders').where('userId', '==', userId).get();
+    const snapshot = await db.collection('orders').where('userId', '==', targetUserId).get();
 
     const orders = snapshot.docs
       .map((doc) => {

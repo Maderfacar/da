@@ -7,8 +7,16 @@
  *   approved — 'true' | 'false'（可選，driver 審核狀態篩選）
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 export default defineEventHandler(async (event) => {
+  // P14：admin only
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
+  if (!auth.roles.includes('admin')) {
+    return forbiddenError({ zh_tw: '需要管理員權限', en: 'Admin role required', ja: '管理者権限が必要です' });
+  }
+
   const config = useRuntimeConfig();
 
   if (!config.firebaseServiceAccountJson) {

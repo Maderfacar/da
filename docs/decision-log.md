@@ -6,6 +6,63 @@
 
 ---
 
+### 2026/05/09 — P14 上線安全修復：所有受保護 server endpoint 加上 require-auth guard
+
+**決策類型**：安全性 / 上線阻擋級修復
+**標題**：新建 `server/utils/require-auth.ts`，10 個 server endpoint 從「完全無身分驗證」改為「verifyIdToken + roles 檢查」；client 端改帶 Firebase ID token
+
+**背景**：security-reviewer agent 全面審查發現 6 個 CRITICAL 漏洞，全部歸因於 server endpoint 沒做身分驗證：
+1. 4 個 admin endpoint（broadcast / orders / users GET / users PATCH）無 auth，任何人可列使用者銀行帳號、把自己升 admin、broadcast 全員 LINE
+2. driver/upload 與 driver/apply 接受 client 自帶 lineUserId，可偽造他人身分上傳偽證件、覆寫他人申請資料
+3. orders/index.get IDOR：query.userId 從 client 帶，可讀任何人訂單
+4. orders/[orderId].patch 無 auth：可改任意訂單 status 與 assignedDriverId
+5. drivers/[id]/location.put 無 auth：可污染戰情室地圖
+6. drivers/[uid]/stats.get IDOR：可讀他人今日收益
+
+Firestore Rules 擋不住這些攻擊，因為 server-side 走 Admin SDK bypass rules。
+
+**決定**：
+1. **新建 `server/utils/require-auth.ts`**：
+   - `getAuthFromEvent(event)`：讀 `Authorization: Bearer` → `auth.verifyIdToken()` → 回傳 `{ ok, uid, lineUid, roles, approved }`
+   - 失敗時 return `{ ok: false, code: 401|500, message }`
+   - `authFailResponse(fail)` 把 AuthFail 轉成標準 UnifiedResponse（呼叫方一行 `return authFailResponse(auth)`）
+   - **roles 取值**：先看 custom token claims（line-exchange 已寫入），claims 缺則 fallback Firestore `users/{lineUid}.roles`
+   - **approved 取值**：永遠從 Firestore 即時讀，不寫 claims，**接受每個 protected request 多一次 Firestore round trip 的成本，換取 admin 撤銷立即生效**（不等 1 小時 token TTL）
+2. **每個 endpoint 套用 guard 模式**：
+   - admin only：`!auth.roles.includes('admin') → forbiddenError`
+   - self or admin：`!isAdmin && auth.lineUid !== body.lineUserId → forbiddenError`
+   - orders/index.get：純 passenger 強制忽略 query.userId，只能讀自己；admin/driver 才能帶 query 查指定人
+   - orders/[orderId].patch：owner 只能 cancel（不能改 assignedDriverId / 不能改 status 為非 cancelled）；admin/driver 任意更新
+   - drivers/[id]/location.put + stats.get：caller.uid === id 或 caller.lineUid === id（兩種格式都比對）或 admin
+3. **client 端帶 Firebase ID token**：
+   - `app/stores/5.store-auth.ts` 新增 `GetFreshIdToken()` action：呼叫 `firebaseUser.getIdToken()`（內部自動 refresh，TTL 1 小時前重新簽）
+   - `app/protocol/fetch-api/methods.ts` `onRequest` 改 async：先取 fresh idToken 帶進 Authorization header；fallback 樣板舊有 `storeSelf.apiToken`（避免破壞既有測試流程）
+   - `app/protocol/fetch-api/api/driver/index.ts` `UploadDriverDocument` 直接 $fetch 不走 methods.ts，手動加 Authorization header
+4. **公開 endpoint 不檢查 token**：line-exchange（用 LINE token 換 Firebase token）、weather、airport/flow、line-webhook 等維持原狀
+
+**強制規範（未來新增 server endpoint）**：
+- **任何寫入操作**（POST / PATCH / PUT / DELETE）一律先 `const auth = await getAuthFromEvent(event); if (!auth.ok) return authFailResponse(auth);`
+- **任何讀取操作**只要回傳的是 user-specific 資料（訂單 / 個人資訊 / 司機資料），同上必須驗 token
+- **公開 endpoint** 註記在檔案開頭（如 `// 公開端點：line-exchange 用 LINE token 換 Firebase token，故不可要求 ID token`）
+- **權限判斷三條原則**：
+  1. admin/* 路徑 → `roles.includes('admin')` 才放行
+  2. 操作他人資料 → 必須 admin
+  3. 操作自己資料 → `auth.lineUid === body.targetId` 或 `auth.uid === routeParam.id`（兩種格式 both 比對）
+- **絕對禁止 client 帶 userId/lineUserId 然後 server 信任不驗證**；身分一律從 `auth.lineUid` / `auth.uid` 取得
+
+**影響**：
+- 新增：`server/utils/require-auth.ts`
+- 修改 server（10 個）：admin 4 個 + driver 2 個 + orders 2 個 + drivers 2 個
+- 修改 client（3 個）：methods.ts、store-auth.ts、driver/index.ts
+- **MockSignIn 影響**：mock 使用者沒有真實 Firebase ID token，呼叫受保護 endpoint 會 401。`testMode` 在 prod env 必須設非 'T' 才能完全擋住 mock UI；即便對外曝光，server 也擋住關鍵操作
+
+**替代方案**：
+- 用 server middleware 在 `server/middleware/` 全域擋 → 公開 endpoint 例外清單會變動，維護成本高；改 endpoint-by-endpoint 直接 guard 反而清楚，已捨棄
+- approved 寫進 custom token claims 避免 Firestore round trip → admin 撤銷後 1 小時內仍可用，可能讓被撤銷 driver 在 token TTL 內污染地圖；現方案多 1 次 read 換即時撤銷，已採用
+- testMode 下 server 跳過 auth 檢查 → 形同 backdoor，正式環境風險過高；改要求 prod env 嚴格設 testMode != 'T'，已採用
+
+---
+
 ### 2026/05/08 — P13 司機證件上傳失敗修復（storageBucket 預設 + 錯誤訊息暴露）
 
 **決策類型**：Bug 修復 / 環境配置規範

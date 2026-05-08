@@ -262,6 +262,33 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- Actions ---------------------------------------------------------------------------------------
 
+  /**
+   * 取得最新的 Firebase ID token（自動 refresh）
+   *
+   * 用途：所有需要呼叫受 require-auth 保護的 server endpoint 之前，
+   * client 必須帶 `Authorization: Bearer <freshIdToken>`。
+   *
+   * Firebase ID token TTL 1 小時，`getIdToken()` 內部會在過期前自動 refresh。
+   *
+   * 回傳：
+   *   - 已登入：最新的有效 idToken
+   *   - 未登入 / 取得失敗：空字串（caller 可選擇不帶 header，server 會回 401）
+   */
+  const GetFreshIdToken = async (): Promise<string> => {
+    if (typeof window === 'undefined') return idToken.value;
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const u = getAuth().currentUser;
+      if (!u) return '';
+      const fresh = await u.getIdToken();
+      idToken.value = fresh;
+      return fresh;
+    } catch (err) {
+      console.error('[StoreAuth] GetFreshIdToken failed:', err);
+      return idToken.value;
+    }
+  };
+
   /** 測試模式：直接設定身分（TestMode 用，不走 Firebase） */
   const MockSignIn = (_roles: Role[]) => {
     user.value = { uid: `mock-${_roles.join('-')}` } as import('firebase/auth').User;
@@ -286,6 +313,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, idToken,
-    InitAuthFlow, MockSignIn, SignOut,
+    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken,
   };
 });

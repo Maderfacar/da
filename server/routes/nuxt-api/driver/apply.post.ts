@@ -18,6 +18,7 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 interface ApplyBody {
   lineUserId: string;
@@ -39,6 +40,10 @@ const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時
 
 export default defineEventHandler(async (event) => {
   try {
+    // P14：必須登入；申請只能申請自己（admin 例外）
+    const auth = await getAuthFromEvent(event);
+    if (!auth.ok) return authFailResponse(auth);
+
     const config = useRuntimeConfig();
     if (!config.firebaseServiceAccountJson) {
       return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
@@ -47,6 +52,12 @@ export default defineEventHandler(async (event) => {
     const body = await readBody<ApplyBody>(event).catch(() => null);
     if (!body) {
       return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
+    }
+
+    // P14：caller 必須是 lineUserId 本人，或具 admin 身分（admin 代他人提交）
+    const isAdmin = auth.roles.includes('admin');
+    if (!isAdmin && auth.lineUid !== body.lineUserId) {
+      return forbiddenError({ zh_tw: '無權代他人申請', en: 'Cannot apply for other user', ja: '他人の申請はできません' });
     }
 
     // 必填驗證

@@ -1,6 +1,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { sendLinePush } from '@@/utils/line-push';
-import { successResponse, badRequestError, serverError } from '@@/utils/response';
+import { successResponse, badRequestError, serverError, forbiddenError } from '@@/utils/response';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 interface BroadcastBody {
   title: string;
@@ -9,6 +10,13 @@ interface BroadcastBody {
 }
 
 export default defineEventHandler(async (event) => {
+  // P14：admin only
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
+  if (!auth.roles.includes('admin')) {
+    return forbiddenError({ zh_tw: '需要管理員權限', en: 'Admin role required', ja: '管理者権限が必要です' });
+  }
+
   const body = await readBody<BroadcastBody>(event);
 
   if (!body.message?.trim() || !body.targetRole) {

@@ -33,10 +33,25 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
         ...option,
 
         // 請求攔截器
-        onRequest({ options }) {
-          // options.baseURL = baseURL;
+        // P14：改為帶 Firebase ID token；舊有 storeSelf.apiToken 沿用為樣板既有欄位
+        // onRequest 為 async：先取最新 ID token（過期會自動 refresh），失敗則不帶 header
+        // 公開 endpoint（如 line-exchange）即使收到 token 也不檢查；受保護 endpoint 缺 token 會回 401
+        async onRequest({ options }) {
           options.headers = new Headers(options.headers);
-          options.headers.set('Authorization', `Bearer ${storeSelf.apiToken}`);
+          try {
+            const authStore = StoreAuth();
+            const idToken = await authStore.GetFreshIdToken();
+            if (idToken) {
+              options.headers.set('Authorization', `Bearer ${idToken}`);
+            } else if (storeSelf.apiToken) {
+              // fallback 樣板原 apiToken（避免破壞既有測試流程）
+              options.headers.set('Authorization', `Bearer ${storeSelf.apiToken}`);
+            }
+          } catch {
+            if (storeSelf.apiToken) {
+              options.headers.set('Authorization', `Bearer ${storeSelf.apiToken}`);
+            }
+          }
         },
 
         // 響應攔截
