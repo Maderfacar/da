@@ -1,7 +1,7 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P11 完成，僅剩 P5 部分項待施作）
-**最後更新**：2026/05/08
+**總進度**：Stage 7 維護迭代中（P0~P11、P12~P15、P17、P18 完成，僅剩 P5 部分項與 P16 暫緩債待施作）
+**最後更新**：2026/05/09
 
 ---
 
@@ -471,7 +471,7 @@
 **P17-4：使用者偏好變更**
 - [✅] **乘客端登出按鈕**：早於 commit `473ada0` 移除（不需重做；司機端 / Admin 端保留）
 
-### P18：Collection Split — drivers + admins 獨立 collection（2026/05/09 計畫中）
+### P18：Collection Split — drivers + admins 獨立 collection（2026/05/09 程式碼層完成）
 
 > 完整設計與 tasks 見 `openspec/changes/2026-05-09-collection-split/`：
 > - `proposal.md`：背景、範圍、影響
@@ -479,13 +479,26 @@
 > - `tasks.md`：Stage 0~10 順序化 checklist
 > - `migration.md`：使用者手動 Firebase Console 操作指引
 
-**核心改動**：
-- 新增 `drivers/{lineUid}`（合併現有 drivers/{driverId} 即時位置 + 累積統計）
-- 新增 `admins/{lineUid}`（含 super / admin / assistant 三層分權）
-- `users.roles[]` 仍是身分認證唯一來源；level / permissions 是 admin 內部細分
-- 10+ server endpoint 改動 + require-permission helper + admin/admins/* 新 endpoint
+**P18 程式碼層改動（Stage 1~9 ✅ 完成）**：
+- [✅] **Stage 1**：`server/utils/require-auth.ts` 載入 admin level + permissions overrides
+- [✅] **Stage 2**：新增 `server/utils/require-permission.ts`（Permission 列舉 + LEVEL_TABLE + hasPermission）
+- [✅] **Stage 3**：`driver/apply.post.ts` 同步建 `drivers/{lineUid}` + `admin/users/[uid].patch.ts` driverCategory 改寫 drivers
+- [✅] **Stage 4**：`drivers/[id]/location.put` + `drivers/[uid]/stats.get` + `drivers/available.get` 三 endpoint 對齊新 schema
+- [✅] **Stage 5**：`orders/[orderId].patch.ts` 訂單 completed 時對 drivers doc increment 統計
+- [✅] **Stage 6**：`admin/users/[uid].patch.ts` 套 require-permission + 同步 admins doc 建 / 刪 / super 保護；新增 `admin/admins/index.get.ts` + `admin/admins/[uid].patch.ts`；`admin/broadcast.post.ts` 套 canBroadcast；`admin/orders/index.get.ts` 套 canManageOrders
+- [✅] **Stage 7**：`admin/index.ts` 加 GetAdmins / PatchAdmin；`store-auth.ts` 加 level + isSuper；`admin/settings/index.vue` admin tab 限 super + level 編輯 UI
+- [✅] **Stage 8**：`firestore.rules` drivers rules 對齊 lineUid + 新增 admins rules
+- [✅] **Stage 9**：docs/decision-log P18 條目 + tasks.md 更新
 
-**執行方式**：開新 Claude Code session，依 `openspec/changes/2026-05-09-collection-split/tasks.md` 順序實作
+**P18 使用者操作（Stage 10）**：
+- [ ] 依 `openspec/changes/2026-05-09-collection-split/migration.md` 在 Firebase Console 手動建 admins/drivers doc + 清舊 driverCategory + 部署新 firestore.rules
+
+**P18 後續工作（已記入 backlog）**：
+- 司機統計 today 欄位每日歸零（cron 或讀取時依日期判斷）
+- admin operation 操作日誌（audit log）
+- admins.permissions 細粒度 override UI
+- 司機評分系統（drivers.rating / ratingCount 欄位已預留）
+- 分區管理（drivers.assignedRegions 欄位已預留）
 
 ---
 
@@ -495,5 +508,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
 
 **版本紀錄**
-- 版本：v3.8（P12 司機循環/admin 轉圈 + P13 storageBucket + P14 上線安全修復 + P15 路由+silent failure + P17 乘客端完善 backlog）
-- 更新日期：2026/05/08
+- 版本：v3.9（P18 collection split — drivers / admins 獨立 collection + admin 三層分權；程式碼層完成，待使用者執行 Stage 10 migration）
+- 更新日期：2026/05/09

@@ -47,15 +47,31 @@ service cloud.firestore {
     }
 
     // ── drivers 集合 ───────────────────────────────────────────
-    // 即時位置資訊（司機位置追蹤、admin 戰情室）
-    match /drivers/{driverId} {
-      // 只有 admin 與 driver 自己可讀自己的位置
-      // 戰情室（admin）需讀全部司機位置
+    // P18：collection split 後合併「即時位置 + 累積統計 + 業務設定」
+    // 文件 ID 改為 lineUid（與 users 同 key，去 'line:' prefix）
+    match /drivers/{lineUid} {
+      // 只有 admin 與 driver 自己可讀自己的 doc
+      // 戰情室（admin）需讀全部司機；driver/dashboard 需讀自己的累積統計
       allow read: if request.auth != null && (
-        request.auth.uid == driverId ||
+        request.auth.uid == 'line:' + lineUid ||
         ('roles' in request.auth.token && 'admin' in request.auth.token.roles)
       );
-      // 寫入一律透過 server-side（drivers/[id]/location.put.ts）
+      // 寫入一律透過 server-side（drivers/[id]/location.put.ts、driver/apply.post.ts、orders/[orderId].patch.ts）
+      allow write: if false;
+    }
+
+    // ── admins 集合（P18 新增）─────────────────────────────────
+    // 管理員分權：level=super | admin | assistant；permissions overrides 預留
+    // 文件 ID 為 lineUid（與 users 同 key）
+    match /admins/{lineUid} {
+      // admin 可讀自己的 doc（store-auth client SDK 載入 level）；具 admin 角色者可讀全部 admin（settings 列表）
+      // 注意：request.auth.token.roles 為 sign-in 當下 claims；可能尚未含新加的 admin
+      // 對「admin 自己讀自己」第一條件永遠通過，不依賴 claims
+      allow read: if request.auth != null && (
+        request.auth.uid == 'line:' + lineUid ||
+        ('roles' in request.auth.token && 'admin' in request.auth.token.roles)
+      );
+      // 寫入一律透過 server-side（admin/users/[uid].patch.ts、admin/admins/[uid].patch.ts）
       allow write: if false;
     }
 

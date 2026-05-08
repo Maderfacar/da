@@ -6,6 +6,61 @@
 
 ---
 
+### 2026/05/09 — P18 Collection Split：drivers / admins 獨立 collection + admin 三層分權
+
+**決策類型**：資料模型重構 / 業務邏輯擴展
+**標題**：把司機營運資料與管理員權限從 `users` 拆出，新建 `drivers/{lineUid}` 與 `admins/{lineUid}` 獨立 collection；admin 細分 `super | admin | assistant` 三層權限
+
+**背景**：
+1. 所有 user 資料原本擠在 `users/{lineUid}`，driver 累程 / 訂單 / 金額、admin 分權都塞在 same doc，optional 欄位過多；
+2. 司機位置寫入頻率極高（每分鐘）與 passenger 訂車、admin 改名混在同 doc 易產生寫入競爭與成本浪費；
+3. P12 才剛踩過 `users` query 加 `orderBy` 觸發 composite index 的問題 — 統計欄位放 users 未來只會更慘；
+4. admin 分權需求（super 撤銷其他 admin、assistant 不可全員 broadcast 等）靠 `roles[]` 一個欄位無法表達；
+5. 業務即將上線，先把資料模型整治到位、避免上線後 migration 風險。
+
+**決定**：
+1. **新增 `drivers/{lineUid}`**：合併原 `drivers/{driverId}`（即時位置）+ 新增累積統計與業務設定。doc key 統一改用 lineUid（不帶 `line:` prefix），與 `users` 同 key（lookup 一次即可）。
+2. **新增 `admins/{lineUid}`**：含 `level: 'super' | 'admin' | 'assistant'`、預留 `permissions` 細粒度 override、`createdBy`、稽核時戳；doc key 同樣與 users 同 key。
+3. **`users.roles[]` 仍是身分認證唯一來源**：middleware/role 與 require-auth 只看 roles 判斷三端入口；level / permissions 只作 admin 端內部細粒度判斷。
+4. **新增 `server/utils/require-permission.ts`**：`Permission` 列舉（`canManageAdmins / canManageDrivers / canManageOrders / canBroadcast / canViewFinance`）+ 寫死的 `LEVEL_TABLE` + `hasPermission(auth, perm)` 查表。第一版只看 level；保留 `admins.permissions` overrides 欄位給未來自訂 admin。
+5. **`require-auth` 增強**：`AuthOk` 加 `level?` 與 `permissions?`；roles 含 admin 時加讀 `admins/{lineUid}` 帶回。讀失敗 / doc 不存在 → level=undefined，hasPermission 一律 false（migration 漏建會被擋）。
+6. **driver/apply 同步建 `drivers/{lineUid}`**：申請時建立預設 doc（status='offline'、totalTrips=0 等），admin 核准後 driver 一登入即可開工，無 race condition。重複申請（被拒後再申請）只 merge 身分與車型欄位，保留 admin 既設 driverCategory + 歷史統計。
+7. **訂單 `completed` 觸發 `drivers/{lineUid}` 統計累加**：在 `orders/[orderId].patch.ts` 內判斷「狀態剛切換為 completed」（前一狀態非 completed），對 drivers doc `FieldValue.increment` totalTrips/totalEarnings/totalDistanceKm/todayTrips/todayEarnings + lastTripAt。`assignedDriverId` 在 orders 內格式為 `line:Uxxx`，去 prefix 對應 drivers doc key。
+8. **admin/users.patch 同步管理 admins doc**：`addRole='admin'` 時建 `admins/{uid}` doc 預設 level='admin'（重複 addRole 不覆寫 level）；`removeRole='admin'` 時刪 admins doc。**保護機制**：super 不可被 removeRole='admin'（前置 guard 擋住），避免最高管理員被自降後沒人能管理。
+9. **新增 `admin/admins/*` endpoints**：`GET /admin/admins` 列管理員（含 level）、`PATCH /admin/admins/[uid]` 改 level（僅接受 'admin'/'assistant'，不接受 super；target=super 拒絕）。需 `canManageAdmins`。
+10. **broadcast / admin/orders 套 require-permission**：broadcast 改用 `canBroadcast`、admin/orders 改用 `canManageOrders`。
+11. **client store-auth 載 level**：roles 含 admin 時 client SDK 多讀 `admins/{lineUid}` 取 level（讀失敗 / rules 未部署 → null，不影響入口）；export `level` + `isSuper`。
+12. **admin/settings UI 加 level 編輯**：管理員 tab + 內容區 + 撤銷按鈕全用 `v-if="authStore.isSuper"`；列表多顯示 level 徽章；非 super 行顯示「設為管理員 / 設為助理」按鈕。
+13. **firestore.rules**：`drivers/{driverId}` 改名為 `drivers/{lineUid}` 並對應 `request.auth.uid == 'line:' + lineUid`；新增 `admins/{lineUid}` rules（admin 自己讀自己 / admin 讀全部，寫禁止）。
+14. **driverCategory 從 users 搬到 drivers**：driver/apply 不再寫 users.driverCategory；admin/users.patch.ts 遇到 driverCategory 改寫 `drivers/{uid}.driverCategory` (merge:true)；admin/users.get 補 batch read drivers doc 取回 driverCategory（避免列表頁顯示空白）。
+15. **migration 由使用者手動 Firebase Console 操作**（測試階段資料量小於 10 筆，無自動 script 必要）。所有既有 admin 預設設為 `level='super'`（避免管理員失能）；既有 driver 預設建 drivers doc 含 `driverCategory='0'` 與 0 統計欄位；users 內 driverCategory 欄位手動刪除。
+
+**強制規範（未來開發）**：
+- **新增 user-specific resource 必須先評估該角色的 collection**：例如未來新增「passenger 累積里程 / 偏好設定」應走 `passengers/{lineUid}` 或 `users.preferences` 子物件，禁止再往 `users` doc top-level 塞角色相關欄位。
+- **統計類欄位必須與業務寫入端同步 increment**：訂單完成 → drivers totalTrips/totalEarnings 同步 increment；未來新增「司機評分 / 取消率」等統計欄位，必須在對應業務動作（訂單完成 / 取消）就地 increment，不要事後 batch query 重算。
+- **任何 admin 端內部細粒度操作必須走 require-permission**：禁止單純檢查 `auth.roles.includes('admin')` 就放行；必須對應一個 `Permission` 列舉值並透過 `hasPermission(auth, perm)` 判斷。新加敏感操作時優先評估是否要新加 Permission（如未來「金流操作」可加 `canManageFinance`）。
+- **doc key 統一不帶 `line:` prefix**：users / drivers / admins 三集合 doc key 全部用 lineUid（與 P17 userId 規範一致）；唯一例外是 Firebase Auth UID（系統強制 `line:` prefix）。orders 內 assignedDriverId 仍以 `line:Uxxx` 形式儲存（既有資料），對應 drivers doc 時去 prefix。
+- **保護 super admin 的兩個面向**：(a) admin/users.patch removeRole='admin' 對 target=super 拒絕；(b) admin/admins.patch 不接受 level='super' 也不允許改 target=super 的 level。super 撤銷需手動 Firestore Console 操作（高風險動作不開 UI）。
+
+**影響**：
+- 新增：`server/utils/require-permission.ts`、`server/routes/nuxt-api/admin/admins/{index.get.ts,[uid].patch.ts}`
+- 修改 server（7 個）：`require-auth.ts`、`driver/apply.post.ts`、`drivers/[id]/location.put.ts`、`drivers/[uid]/stats.get.ts`、`drivers/available.get.ts`、`orders/[orderId].patch.ts`、`admin/users/[uid].patch.ts`、`admin/users/index.get.ts`、`admin/broadcast.post.ts`、`admin/orders/index.get.ts`
+- 修改 client（3 個）：`app/protocol/fetch-api/api/admin/index.ts`、`app/stores/5.store-auth.ts`、`app/pages/admin/settings/index.vue`
+- 修改 rules：`firestore.rules`（drivers rules 對齊 lineUid + 新增 admins rules）
+- 修改 docs：`docs/decision-log.md`（本條目）+ `docs/tasks.md`（v3.9）
+- **使用者操作（Stage 10）**：依 `openspec/changes/2026-05-09-collection-split/migration.md` 在 Firebase Console 手動 migration + 部署 rules
+- **過渡期風險**：production 部署 P18 改動後、migration 完成前，admin 端內部操作會 403（hasPermission 因 admins doc 不存在一律 false）— 這是 spec 設計的故意行為，迫使使用者完成 migration；admin 入口本身（roles 判斷）仍正常
+
+**替代方案**：
+- 把 admin level 寫進 `users.roles[]`（如 `roles: ['passenger', 'admin:super']`）→ 違反 single-source 原則，混雜身分與權限；已捨棄
+- 自動產生 driverId / adminId（UUID）+ users 內存 driverId 欄位 → 多一層 lookup，無實際好處；已捨棄
+- 保留 `drivers/{driverId}` 即時位置 + 另開 `driver_stats/{lineUid}` 統計 → 一個司機要查兩個 doc，沒實質好處；已捨棄
+- 改 admin/users.patch 等多個 endpoint 各自重複 hasPermission 邏輯 → 違反 DRY 且未來新增權限要改多處；已採 `require-permission.ts` 統一 helper
+- 自動 migration script → 測試階段資料量極小（< 10 筆），手動 Firebase Console 反而清楚；已捨棄
+- super 撤銷由 UI 操作（按鈕）→ 高風險動作（最後一個 super 被撤銷則管理員失能），第一版禁止 UI；只能 Firebase Console；已採用
+
+---
+
 ### 2026/05/09 — P17 乘客端完善：userId 格式統一 + 訂單取消 + polling
 
 **決策類型**：Bug 修復 / 功能補齊
