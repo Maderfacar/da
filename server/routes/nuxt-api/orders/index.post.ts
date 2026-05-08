@@ -29,17 +29,11 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<CreateOrderBody>(event);
 
   if (!body.userId || !body.orderType || !body.pickupDateTime || !body.pickupLocation || !body.dropoffLocation) {
-    return {
-      data: {},
-      status: { code: 400, message: { zh_tw: '缺少必要欄位', en: 'Missing required fields', ja: '必須フィールドが不足しています' } },
-    };
+    return badRequestError({ zh_tw: '缺少必要欄位', en: 'Missing required fields', ja: '必須フィールドが不足しています' });
   }
 
   if (body.passengerCount < 1 || body.passengerCount > 8) {
-    return {
-      data: {},
-      status: { code: 400, message: { zh_tw: '乘客人數必須在 1–8 之間', en: 'Passenger count must be 1–8', ja: '乗客数は 1〜8 にしてください' } },
-    };
+    return badRequestError({ zh_tw: '乘客人數必須在 1–8 之間', en: 'Passenger count must be 1–8', ja: '乗客数は 1〜8 にしてください' });
   }
 
   const { googleMapsApiKey, firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
@@ -68,58 +62,63 @@ export default defineEventHandler(async (event) => {
 
   const orderId = crypto.randomUUID();
 
-  if (firebaseServiceAccountJson) {
-    try {
-      const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-      await db.collection('orders').doc(orderId).set({
-        orderId,
-        userId: body.userId,
-        lineUserId: body.lineUserId ?? '',
-        orderType: body.orderType,
-        pickupDateTime: body.pickupDateTime,
-        pickupLocation: body.pickupLocation,
-        dropoffLocation: body.dropoffLocation,
-        stopovers: body.stopovers ?? [],
-        passengerCount: body.passengerCount,
-        luggageCount: body.luggageCount,
-        vehicleType: body.vehicleType,
-        extraServices: body.extraServices ?? [],
-        estimatedFare,
-        estimatedTime,
-        distanceKm,
-        orderStatus: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-      });
-      // ── LINE 訂單確認推播 ──────────────────────────────────
-      if (body.lineUserId && lineChannelAccessToken) {
-        const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
-        const fareStr = estimatedFare.toLocaleString();
-        const vehicleLabel: Record<string, string> = {
-          sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
-        };
-        const msg = [
-          '✅ 訂單確認',
-          `📅 接送時間：${dateStr}`,
-          `📍 上車地點：${body.pickupLocation.address}`,
-          `🚗 車型：${vehicleLabel[body.vehicleType] ?? body.vehicleType}`,
-          `💰 預估費用：NT$ ${fareStr}`,
-          `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
-        ].join('\n');
-        sendLinePush(lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
-      }
-    } catch (err) {
-      console.error('[orders/post] Firestore write failed:', err);
-    }
+  // P11-2：必須有 firebaseServiceAccountJson 才能寫入訂單，否則回 serverError
+  // 而非 silent 200，避免使用者以為訂單成立但實際沒寫進資料庫
+  if (!firebaseServiceAccountJson) {
+    console.error('[orders/post] firebaseServiceAccountJson is empty/missing');
+    return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
   }
 
-  return {
-    data: {
+  try {
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    await db.collection('orders').doc(orderId).set({
       orderId,
+      userId: body.userId,
+      lineUserId: body.lineUserId ?? '',
+      orderType: body.orderType,
+      pickupDateTime: body.pickupDateTime,
+      pickupLocation: body.pickupLocation,
+      dropoffLocation: body.dropoffLocation,
+      stopovers: body.stopovers ?? [],
+      passengerCount: body.passengerCount,
+      luggageCount: body.luggageCount,
+      vehicleType: body.vehicleType,
+      extraServices: body.extraServices ?? [],
       estimatedFare,
       estimatedTime,
       distanceKm,
       orderStatus: 'pending',
-    },
-    status: { code: 200, message: { zh_tw: '訂單建立成功', en: 'Order created', ja: '注文が作成されました' } },
-  };
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    // 寫入失敗必須回 serverError，不能 silent 吞掉造成使用者誤以為訂單成立
+    console.error('[orders/post] Firestore write failed:', err);
+    return serverError({ zh_tw: '訂單寫入失敗，請稍後重試', en: 'Failed to save order, please retry', ja: '注文の保存に失敗しました' });
+  }
+
+  // ── LINE 訂單確認推播（fire-and-forget，失敗不影響訂單成立）──
+  if (body.lineUserId && lineChannelAccessToken) {
+    const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
+    const fareStr = estimatedFare.toLocaleString();
+    const vehicleLabel: Record<string, string> = {
+      sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
+    };
+    const msg = [
+      '✅ 訂單確認',
+      `📅 接送時間：${dateStr}`,
+      `📍 上車地點：${body.pickupLocation.address}`,
+      `🚗 車型：${vehicleLabel[body.vehicleType] ?? body.vehicleType}`,
+      `💰 預估費用：NT$ ${fareStr}`,
+      `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
+    ].join('\n');
+    sendLinePush(lineChannelAccessToken, body.lineUserId, [{ type: 'text', text: msg }]);
+  }
+
+  return successResponse({
+    orderId,
+    estimatedFare,
+    estimatedTime,
+    distanceKm,
+    orderStatus: 'pending',
+  });
 });

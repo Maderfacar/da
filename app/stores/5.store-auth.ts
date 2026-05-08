@@ -135,71 +135,63 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // Firebase UID 格式為 line:{lineUserId}，Firestore 文件 key 直接使用 LINE UID
       const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
       const snap = await getDoc(doc(db, 'users', lineUid));
-      if (snap.exists()) {
-        const data = snap.data();
-        // 兼容舊 schema：若 roles 為空但有舊 role 欄位，自動 fallback 到單一 role
-        const parsed = _normalizeRoles(data.roles);
-        if (parsed.length > 0) {
-          roles.value = parsed;
-        } else if (typeof data.role === 'string') {
-          const legacy = _normalizeRoles([data.role]);
-          roles.value = legacy.length > 0 ? legacy : ['passenger'];
-        } else {
-          roles.value = ['passenger'];
-        }
-        approved.value = (data.approved as boolean) ?? false;
-        if (typeof console !== 'undefined') {
-          console.info('[StoreAuth] loaded roles', roles.value, 'approved', approved.value);
-        }
-        // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
-        const displayName = data.displayName as string | undefined;
-        const pictureUrl = data.pictureUrl as string | undefined;
-        if (displayName && pictureUrl) {
-          lineProfile.value = { displayName, pictureUrl };
-        }
-        // 補回司機申請狀態（P8）：register 頁與 driver/auth watch 依此分流
-        const appData = data.driverApplication as Record<string, unknown> | undefined;
-        if (appData) {
-          driverApplication.value = {
-            appliedAt: (appData.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.appliedAt as string | null) ?? null,
-            reviewedAt: (appData.reviewedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.reviewedAt as string | null) ?? null,
-            rejectedAt: (appData.rejectedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.rejectedAt as string | null) ?? null,
-            rejectReason: (appData.rejectReason as string | null) ?? null,
-          };
-        } else {
-          driverApplication.value = null;
-        }
+      if (!snap.exists()) return;
+      const data = snap.data();
+      // 兼容舊 schema：若 roles 為空但有舊 role 欄位，自動 fallback 到單一 role
+      const parsed = _normalizeRoles(data.roles);
+      if (parsed.length > 0) {
+        roles.value = parsed;
+      } else if (typeof data.role === 'string') {
+        const legacy = _normalizeRoles([data.role]);
+        roles.value = legacy.length > 0 ? legacy : ['passenger'];
       } else {
-        console.warn('[StoreAuth] users/{uid} 文件不存在', { uid, lineUid });
+        roles.value = ['passenger'];
       }
-    } catch (err) {
-      console.error('[StoreAuth] _LoadRolesFromFirestore failed:', err);
+      approved.value = (data.approved as boolean) ?? false;
+      // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
+      const displayName = data.displayName as string | undefined;
+      const pictureUrl = data.pictureUrl as string | undefined;
+      if (displayName && pictureUrl) {
+        lineProfile.value = { displayName, pictureUrl };
+      }
+      // 補回司機申請狀態（P8）
+      const appData = data.driverApplication as Record<string, unknown> | undefined;
+      if (appData) {
+        driverApplication.value = {
+          appliedAt: (appData.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.appliedAt as string | null) ?? null,
+          reviewedAt: (appData.reviewedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.reviewedAt as string | null) ?? null,
+          rejectedAt: (appData.rejectedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.rejectedAt as string | null) ?? null,
+          rejectReason: (appData.rejectReason as string | null) ?? null,
+        };
+      } else {
+        driverApplication.value = null;
+      }
+    } catch {
+      // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
     }
   };
 
   const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
 
-    // P10 後續修復：三端統一走 passenger LIFF App
+    // 三端統一走 passenger LIFF App，身分由 Firestore roles[] 控制
     const liffId = config.lineLiffIdPassenger || config.lineLiffIdDriver;
     const clientType = 'passenger';
-    console.info('[StoreAuth] _InitLiffFlow start, liffId set?', !!liffId);
 
     if (!liffId) { liffReady.value = true; return; }
 
     try {
       const liff = (await import('@line/liff')).default;
 
-      // 加入 10 秒 timeout，防止 liff.init() 在 LINE WebView 中 hang 住不返回
+      // 10 秒 timeout 防止 liff.init() 在 LINE WebView 中 hang 住
       await Promise.race([
         liff.init({ liffId }),
         new Promise<void>((_, reject) =>
           setTimeout(() => reject(new Error('liff.init 逾時')), 10_000)
         ),
       ]);
-      console.info('[StoreAuth] liff.init OK, isLoggedIn=', liff.isLoggedIn());
 
-      // LIFF 已登入 → 主動取 profile 寫入 store
+      // LIFF 已登入 → 主動取 profile 寫入 store（避免重整後 Header 頭像/名稱空白）
       if (liff.isLoggedIn()) {
         try {
           const profile = await liff.getProfile();
@@ -209,14 +201,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       // 沒登入 LIFF → 強制 LINE 登入，redirect 後重新執行
       if (!liff.isLoggedIn()) {
-        console.warn('[StoreAuth] LIFF 未登入，呼叫 liff.login() redirect');
         liff.login();
         return;
       }
 
       const token = liff.getAccessToken() ?? '';
       lineAccessToken.value = token;
-      console.info('[StoreAuth] LIFF token length:', token.length);
 
       // 查詢是否已加官方帳號好友
       try {
@@ -228,44 +218,33 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       liffReady.value = true;
 
-      // 永遠跑 line-exchange 取 server-side roles
-      console.info('[StoreAuth] calling line-exchange...');
-      const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number; message?: unknown } }>(
+      // 永遠跑 line-exchange 取 server-side roles（即便 Firebase 已有 session）
+      // 避免 client-side _LoadRolesFromFirestore 因 Rules 限制讀失敗時 roles 為空
+      const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number } }>(
         '/nuxt-api/auth/line-exchange',
         { method: 'POST', body: { lineAccessToken: token, clientType } },
       ).catch((err) => {
         console.error('[StoreAuth] line-exchange failed:', err);
         return null;
       });
-      console.info('[StoreAuth] line-exchange status code:', res?.status?.code, 'data keys:', Object.keys(res?.data ?? {}));
-      if (res?.status?.code !== 200) {
-        console.error('[StoreAuth] ❌ line-exchange returned non-200 business code:', res?.status);
-      }
 
       if (res?.data) {
         if (res.data.displayName && res.data.pictureUrl) {
           lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
         }
         const parsed = _normalizeRoles(res.data.roles);
-        console.info('[StoreAuth] parsed roles from server:', parsed, 'raw:', res.data.roles);
         if (parsed.length > 0) {
           roles.value = parsed;
           approved.value = res.data.approved ?? true;
-          console.info('[StoreAuth] ✅ roles set to', roles.value, 'approved', approved.value);
-        } else {
-          console.warn('[StoreAuth] ⚠️ server 回傳的 roles parse 後為空（多半是 server 走 error path，請看 Vercel runtime logs）');
         }
 
         const { getAuth, signInWithCustomToken } = await import('firebase/auth');
         if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
           await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
-          console.info('[StoreAuth] signInWithCustomToken OK');
-        } else if (!res.data.customToken) {
-          console.error('[StoreAuth] ❌ server 沒回 customToken，Firebase 無法 sign in，後續整個 auth flow 會卡住');
         }
       }
     } catch (err) {
-      console.error('[StoreAuth] _InitLiffFlow caught error:', err);
+      console.error('[StoreAuth] _InitLiffFlow failed:', err);
       liffReady.value = true;
     }
   };

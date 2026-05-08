@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// Firestore Security Rules — DestinationAnywhere
+//
+// 安全策略總覽：
+// - 所有寫入一律透過 server-side Firebase Admin SDK（繞過 Rules）
+// - client-side（瀏覽器）只能讀，且只能讀自己有權限的文件
+// - 三大集合：users / orders / drivers
+//
+// 部署方式（任選）：
+//   方式 A（推薦）：Firebase Console → Firestore Database → Rules → 貼上本檔內容 → Publish
+//   方式 B：firebase CLI（需先 `firebase init firestore`）
+//     firebase deploy --only firestore:rules
+//
+// 對應 docs/decision-log.md 2026/05/08 條目（P11-3）。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── users 集合 ─────────────────────────────────────────────
+    // 文件 ID 是 LINE userId（不含 'line:' prefix）
+    // Firebase Auth UID 格式為 'line:{lineUserId}'，比對時去掉 prefix
+    match /users/{lineUid} {
+      // 使用者只能讀自己的文件（解除 client-side _LoadRolesFromFirestore 的 permission warning）
+      // admin 可讀所有 users（透過 custom claim roles 含 'admin' 判斷）
+      allow read: if request.auth != null && (
+        request.auth.uid == 'line:' + lineUid ||
+        ('roles' in request.auth.token && 'admin' in request.auth.token.roles)
+      );
+      // 寫入一律禁止 client 直接操作；改由 server-side admin SDK 處理
+      allow write: if false;
+    }
+
+    // ── orders 集合 ────────────────────────────────────────────
+    // 文件 ID 是 UUID（crypto.randomUUID）
+    match /orders/{orderId} {
+      // 乘客可讀自己的訂單；admin / 已核准 driver 可讀所有訂單
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        ('roles' in request.auth.token && (
+          'admin' in request.auth.token.roles ||
+          'driver' in request.auth.token.roles
+        ))
+      );
+      // 寫入一律透過 server-side admin SDK（建立 / 指派 / 狀態變更）
+      allow write: if false;
+    }
+
+    // ── drivers 集合 ───────────────────────────────────────────
+    // 即時位置資訊（司機位置追蹤、admin 戰情室）
+    match /drivers/{driverId} {
+      // 只有 admin 與 driver 自己可讀自己的位置
+      // 戰情室（admin）需讀全部司機位置
+      allow read: if request.auth != null && (
+        request.auth.uid == driverId ||
+        ('roles' in request.auth.token && 'admin' in request.auth.token.roles)
+      );
+      // 寫入一律透過 server-side（drivers/[id]/location.put.ts）
+      allow write: if false;
+    }
+
+    // ── airport_flow_forecast 集合 ─────────────────────────────
+    // 機場人流預測（已遷移至 GitHub Gist，但保留 Rules 以防回退）
+    match /airport_flow_forecast/{date} {
+      allow read: if true;     // 公開資料
+      allow write: if false;   // 僅由 n8n / server route 寫入
+    }
+
+    // ── 其他集合預設拒絕 ──────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

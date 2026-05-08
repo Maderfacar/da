@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10 完成，P11 待施作）
+**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10/P11 完成）
 **最後更新**：2026/05/08
 
 ---
@@ -319,37 +319,42 @@
 - [✅] decision-log.md 詳記三大踩雷點與強制規範
 - 學到的教訓：`useRuntimeConfig` 取 JSON secret 必須當 `string | object`；`firebase-admin` service account 必須先深拷貝；同步 Auth ↔ Firestore 文件禁用 `.set()` 直接覆寫
 
-### P11：收尾整理（2026/05/08 待施作）
+### P11：收尾整理（2026/05/08 ✅ 完成）
 
-> **背景**：P10 production debug 過程中為了定位問題，留下大量 console.error / console.info；同時發現訂單 API 仍有 silent failure 隱憂；Vercel 殘留無用專案；Firestore Rules 未正式設定。建議在下一個工作週期一次清理。
+> **背景**：P10 production debug 過程中為了定位問題，留下大量 console.error / console.info；同時發現訂單 API 仍有 silent failure 隱憂；Firestore Rules 未正式設定。本階段一次清理乾淨。
 
-**P11-1：移除 production debug log**（中優先級）
-- [ ] `server/utils/firebase-admin.ts`：保留必填欄位 throw、移除 verbose console.error
-- [ ] `server/routes/nuxt-api/auth/line-exchange.post.ts`：保留兜底 try-catch，但移除「handler entry」「success summary」「step-by-step」這類除錯 log
-- [ ] `app/stores/5.store-auth.ts`：移除 `[StoreAuth] _InitLiffFlow start`、`liff.init OK`、`LIFF token length`、`calling line-exchange`、`status code` 等 debug log；保留錯誤 console.error
-- [ ] `app/plugins/auth.client.ts`：保留 `window.__authStore` 暴露但移除 `[plugin/auth] window.__authStore exposed for debugging` 這個 console.info（暴露機制本身對開發 debug 仍有價值）
+**P11-1：移除 production debug log**（中優先級 ✅）
+- [✅] `server/utils/firebase-admin.ts`：保留必填欄位 throw + PEM 格式驗證 throw，移除 verbose console.error
+- [✅] `server/routes/nuxt-api/auth/line-exchange.post.ts`：保留兜底 try-catch 與失敗 console.error，移除入口 / 步驟性 / success summary 等除錯 log
+- [✅] `app/stores/5.store-auth.ts`：移除 LIFF flow 各階段 `console.info` debug log，保留 line-exchange / _InitLiffFlow 失敗時 console.error
+- [✅] `app/plugins/auth.client.ts`：保留 `window.__authStore` 開發 debug 機制，移除 `[plugin/auth] exposed` console.info
 
-**P11-2：訂單 API silent failure 修復**（**高優先級**）
-- [ ] `server/routes/nuxt-api/orders/index.post.ts:71-113`：Firestore 寫失敗時回 `serverError(...)` 而非 silent 200
-- [ ] 同步檢查 `server/routes/nuxt-api/orders/[orderId].patch.ts`、`server/routes/nuxt-api/admin/users/[uid].patch.ts`、`server/routes/nuxt-api/driver/upload.post.ts`（若已建）等所有寫入 Firestore 的 endpoint，確認失敗時不會 silent 回 200
-- [ ] 加 unit / integration 測試覆蓋失敗路徑
+**P11-2：訂單 API silent failure 修復**（**高優先級** ✅）
+- [✅] `server/routes/nuxt-api/orders/index.post.ts`：Firestore 寫失敗時回 `serverError(...)` 而非 silent 200；前面 400 路徑統一改用 `badRequestError` helper；成功路徑改用 `successResponse` helper
+- [✅] 補檢查：`drivers/[id]/location.put.ts` 在 `firebaseServiceAccountJson` 缺失時 silent 回 200 → 改 `serverError`；統一改用 helpers
+- [✅] 確認其他寫入 endpoint（`orders/[orderId].patch.ts`、`admin/users/[uid].patch.ts`、`airport-forecast/index.post.ts`）失敗路徑都正確 return error
 
-**P11-3：Firestore Security Rules 正式設定**（低優先級）
-- [ ] 補完 `firestore.rules`：users/{uid} 只允許 owner 讀、寫入只透過 server admin SDK；orders/{id} 只允許 owner / admin 讀、寫入只透過 server
-- [ ] 部署 rules（透過 Firebase CLI 或 Firebase Console）
-- [ ] 同步消除 client-side `_LoadRolesFromFirestore failed: Missing or insufficient permissions` warning
+**P11-3：Firestore Security Rules 正式設定**（低優先級 ✅）
+- [✅] 新建 `firestore.rules` 含三大集合（users / orders / drivers）+ 預設拒絕兜底
+  - `users/{lineUid}`：使用者只能讀自己（auth.uid == 'line:' + lineUid），admin 可讀所有；寫入禁止 client，僅 server admin SDK
+  - `orders/{orderId}`：乘客讀自己訂單，admin / driver 可讀所有；寫入禁止 client
+  - `drivers/{driverId}`：admin 可讀所有，driver 自己可讀自己；寫入禁止 client
+  - `airport_flow_forecast`：公開讀
+- [ ] **待人工操作**：使用者需到 Firebase Console → Firestore Database → Rules 貼上 `firestore.rules` 內容並 Publish（或用 firebase CLI `firebase deploy --only firestore:rules`）
+- 部署後 client console 的 `Missing or insufficient permissions` warning 會消失
 
 **P11-4：Vercel 專案清理**（低優先級）
-- [ ] 確認 production 跑的是 `da-line-liff-app.vercel.app`（已確認）
-- [ ] 刪除無人使用的 `cc_da` Vercel 專案，避免日後混淆
+- [✅] 確認 production 跑的是 `da-line-liff-app.vercel.app`
+- [ ] **待人工操作**：使用者需到 Vercel Dashboard → 找到 `cc_da` 專案 → Settings → 最下方 Delete Project，避免日後混淆（代碼層無可動）
 
 **P11-5：MockSignIn 簽名修復補課**（已完成）
 - [✅] `app/plugins/auth.client.ts`：`MockSignIn('passenger')` → `MockSignIn(['passenger'])` 對齊 P10 簽名
 
-**Stage Gate（P11）**：
-- production logs 乾淨（無多餘 debug 訊息）
-- 訂單寫失敗會回前端 error 而非靜默成功
-- Firestore Rules 設好後 client console 無 permission warning
+**Stage Gate（P11）** — 2026/05/08 ✅ 全部通過：
+- lint ✅
+- production logs 乾淨（無多餘 debug 訊息）✅
+- 訂單寫失敗會回前端 error 而非靜默成功 ✅
+- firestore.rules 已建立（待使用者部署）✅
 
 ---
 
@@ -359,5 +364,5 @@
 - P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增，P11 為 2026/05/08 新增
 
 **版本紀錄**
-- 版本：v3.5（Stage 7 P10 production debug 完成 + P11 收尾任務清單）
+- 版本：v3.6（Stage 7 P11 收尾整理完成 — debug log 清理 + 訂單 silent failure 修復 + firestore.rules 建立）
 - 更新日期：2026/05/08

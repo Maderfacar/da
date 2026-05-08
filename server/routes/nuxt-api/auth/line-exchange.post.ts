@@ -1,5 +1,12 @@
 // LINE Access Token → Firebase Custom Token 交換
 // 流程：LIFF 取得 LINE token → 本端點驗證 → 建立/取得 Firebase 使用者 → 回傳 custom token
+//
+// P10 重要規範（見 docs/decision-log.md 2026/05/07~08）：
+//   1. config.firebaseServiceAccountJson 可能是 string 或 object（destr 自動 parse）
+//      → 處理交給 useFirebaseAdmin（已內建深拷貝、必填欄位驗證）
+//   2. 同步 Firebase Auth ↔ Firestore 文件時禁用 .set() 直接覆寫
+//      → 必須 merge: true 或先 .get() 檢查存在性
+//   3. handler 整體 wrap try-catch，避免 unhandled exception 讓 Nitro 回 HTTP 500
 
 interface LineUserInfo {
   sub: string
@@ -13,17 +20,13 @@ interface RequestBody {
 }
 
 export default defineEventHandler(async (event) => {
-  // 入口 log：handler 是否真的被呼叫到
-  console.error('[line-exchange] handler entry');
-
   try {
     const config = useRuntimeConfig();
 
     let body: RequestBody;
     try {
       body = await readBody<RequestBody>(event);
-    } catch (err) {
-      console.error('[line-exchange] readBody failed:', err);
+    } catch {
       return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
     }
 
@@ -32,17 +35,13 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!config.firebaseServiceAccountJson) {
-      console.error('[line-exchange] firebaseServiceAccountJson is empty/missing');
       return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
     }
 
     // ── 1. 驗證 LINE Access Token ────────────────────────────
     const lineProfile = await $fetch<LineUserInfo>('https://api.line.me/oauth2/v2.1/userinfo', {
       headers: { Authorization: `Bearer ${body.lineAccessToken}` },
-    }).catch((err) => {
-      console.error('[line-exchange] LINE userinfo fetch failed:', err);
-      return null;
-    });
+    }).catch(() => null);
 
     if (!lineProfile?.sub) {
       return badRequestError({ zh_tw: 'LINE Token 無效', en: 'Invalid LINE token', ja: '無効なLINEトークン' });
@@ -55,19 +54,14 @@ export default defineEventHandler(async (event) => {
       ({ auth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson));
     } catch (err) {
       console.error('[line-exchange] useFirebaseAdmin failed:', err);
-      const sa = config.firebaseServiceAccountJson;
-      console.error('[line-exchange] service account type:', typeof sa);
-      if (typeof sa === 'string') {
-        console.error('[line-exchange] string length:', sa.length, 'starts with:', sa.slice(0, 30));
-      } else if (sa && typeof sa === 'object') {
-        console.error('[line-exchange] object keys:', Object.keys(sa as Record<string, unknown>));
-      }
       return serverError({ zh_tw: 'Firebase 初始化失敗', en: 'Firebase initialization failed', ja: 'Firebase初期化に失敗しました' });
     }
 
     const uid = `line:${lineProfile.sub}`;
 
     // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
+    // P10：新使用者一律建為 ['passenger']，由 admin 加入額外 role
+    // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 roles / approved / driverApplication）
     let isNewUser = false;
     try {
       await auth.getUser(uid);
@@ -82,21 +76,18 @@ export default defineEventHandler(async (event) => {
           displayName: lineProfile.name,
           photoURL: lineProfile.picture,
         });
-        // 重要：用 merge: true 避免覆寫既有 Firestore 文件中的手動設定（例如 admin 預先
-        // 為某 LINE UID 設好的 roles: ['passenger', 'admin']）。Firebase Auth user 可能
-        // 因前次 line-exchange 失敗而從未建成功，但 Firestore 的 users 文件已存在。
-        // 之前用 .set() 直接覆寫會把使用者已有的 roles / approved / driverApplication 全清掉。
+        // 重要：用 merge: true 避免覆寫既有 Firestore 文件中的手動設定（admin 預先設好的
+        // roles / approved）。Firebase Auth user 可能因前次失敗而從未建成功，但 Firestore
+        // 文件已存在，直接 .set() 會把使用者已有的 roles / approved / driverApplication 全清掉。
         const docRef = db.collection('users').doc(lineProfile.sub);
         const existingSnap = await docRef.get();
         if (existingSnap.exists) {
-          // 文件已存在 — 只更新 LINE profile，不動 roles / approved / driverApplication
           await docRef.set({
             lineUserId: lineProfile.sub,
             displayName: lineProfile.name,
             pictureUrl: lineProfile.picture,
           }, { merge: true });
         } else {
-          // 真正全新的使用者 — 建立完整初始文件
           await docRef.set({
             roles: ['passenger'],
             approved: true,
@@ -111,18 +102,18 @@ export default defineEventHandler(async (event) => {
         return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
       }
     } else {
+      // 既有使用者：merge 寫入最新 displayName / pictureUrl
       try {
         await db.collection('users').doc(lineProfile.sub).set({
           displayName: lineProfile.name,
           pictureUrl: lineProfile.picture,
         }, { merge: true });
-      } catch (err) {
-        console.error('[line-exchange] merge displayName/pictureUrl failed (non-fatal):', err);
-      }
+      } catch { /* 同步失敗不阻擋登入流程 */ }
     }
 
     // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
     type Role = 'passenger' | 'driver' | 'admin';
+    // 容錯：若使用者在 Firebase Console 誤把 roles 存成 string 型別，嘗試 parse
     const parseRoles = (raw: unknown): Role[] => {
       let arr: unknown[] = [];
       if (Array.isArray(raw)) {
@@ -160,7 +151,6 @@ export default defineEventHandler(async (event) => {
       return serverError({ zh_tw: '無法建立登入憑證', en: 'Failed to create custom token', ja: 'カスタムトークンの生成に失敗しました' });
     }
 
-    console.error('[line-exchange] success, returning roles=', roles, 'approved=', approved);
     return successResponse({
       customToken,
       roles,
@@ -170,11 +160,8 @@ export default defineEventHandler(async (event) => {
       pictureUrl: lineProfile.picture,
     });
   } catch (err) {
-    // 兜底：捕獲任何 unhandled exception，避免 Nitro 回 HTTP 500 讓 client 完全摸不著頭緒
-    console.error('[line-exchange] UNCAUGHT exception:', err);
-    if (err instanceof Error) {
-      console.error('[line-exchange] stack:', err.stack);
-    }
+    // 兜底：任何 unhandled exception 都回 serverError，避免 Nitro 回 HTTP 500
+    console.error('[line-exchange] uncaught exception:', err);
     return serverError({ zh_tw: '伺服器錯誤', en: 'Server error', ja: 'サーバーエラー' });
   }
 });
