@@ -15,17 +15,21 @@ export default defineEventHandler(async (event) => {
       .where('status', 'in', ['online', 'busy'])
       .get();
 
-    const drivers = snapshot.docs.map((doc) => {
+    // P18：drivers schema 改為 nested location；保持對外 flat response 不變（戰情室相容）
+    // driverId 改用 doc.id（即 lineUid，去 prefix 後）；過濾掉 location 缺失的 doc（剛申請尚未開工）
+    const drivers = snapshot.docs.flatMap((doc) => {
       const d = doc.data();
-      return {
-        driverId: d.driverId as string,
+      const loc = d.location as { lat?: number; lng?: number; heading?: number; updatedAt?: { toMillis?: () => number } } | null | undefined;
+      if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') return [];
+      return [{
+        driverId: doc.id,
         displayName: (d.displayName as string) ?? '',
         status: d.status as 'online' | 'busy',
-        lat: d.lat as number,
-        lng: d.lng as number,
-        heading: (d.heading as number | undefined) ?? null,
-        updatedAt: d.updatedAt?.toMillis?.() ?? 0,
-      };
+        lat: loc.lat,
+        lng: loc.lng,
+        heading: typeof loc.heading === 'number' ? loc.heading : null,
+        updatedAt: loc.updatedAt?.toMillis?.() ?? 0,
+      }];
     });
 
     return {

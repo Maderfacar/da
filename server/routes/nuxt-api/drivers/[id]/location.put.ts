@@ -42,17 +42,24 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-    const payload: Record<string, unknown> = {
-      driverId: id,
+
+    // P18：drivers doc key 改為 lineUid（去 prefix），寫入路徑與位置都對齊
+    const location: Record<string, unknown> = {
       lat: body.lat,
       lng: body.lng,
       updatedAt: FieldValue.serverTimestamp(),
-      status: body.status ?? 'online',
     };
-    if (typeof body.heading === 'number') payload.heading = body.heading;
+    if (typeof body.heading === 'number') location.heading = body.heading;
+
+    const payload: Record<string, unknown> = {
+      status: body.status ?? 'online',
+      location,
+      lastActiveAt: FieldValue.serverTimestamp(),
+    };
+    // displayName 由 driver/apply 寫入；若 client 仍帶來則 merge 更新（容錯既有資料）
     if (body.displayName) payload.displayName = body.displayName;
 
-    await db.collection('drivers').doc(id).set(payload, { merge: true });
+    await db.collection('drivers').doc(idAsLineUid).set(payload, { merge: true });
 
     return successResponse({ ok: true });
   } catch (err) {

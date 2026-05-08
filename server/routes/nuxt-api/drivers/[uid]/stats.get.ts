@@ -29,30 +29,29 @@ export default defineEventHandler(async (event) => {
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    // P18：改從 drivers/{lineUid} 累積欄位讀取，取代原 orders aggregate query
+    // 容錯：drivers doc 不存在（歷史 admin 帳號 / 未走 apply）→ 全部回 0
+    const snap = await db.collection('drivers').doc(uidAsLineUid).get();
+    const data = snap.exists ? (snap.data() ?? {}) : {};
 
-    const todayIsoStart = todayStart.toISOString().slice(0, 10);
-    const todayIsoEnd = todayEnd.toISOString().slice(0, 10) + 'T23:59:59';
+    const todayTrips = (data.todayTrips as number) ?? 0;
+    const todayEarnings = (data.todayEarnings as number) ?? 0;
+    const totalTrips = (data.totalTrips as number) ?? 0;
+    const totalEarnings = (data.totalEarnings as number) ?? 0;
+    const totalDistanceKm = (data.totalDistanceKm as number) ?? 0;
 
-    const snapshot = await db
-      .collection('orders')
-      .where('assignedDriverId', '==', uid)
-      .where('orderStatus', '==', 'completed')
-      .where('pickupDateTime', '>=', todayIsoStart)
-      .where('pickupDateTime', '<=', todayIsoEnd)
-      .get();
-
-    let earningsToday = 0;
-    snapshot.docs.forEach((doc) => {
-      earningsToday += (doc.data().estimatedFare as number) ?? 0;
+    // 舊欄位 (tripsToday/earningsToday) 保留供既有 client 相容；新欄位（totalTrips 等）併同回傳
+    return successResponse({
+      tripsToday: todayTrips,
+      earningsToday: todayEarnings,
+      todayTrips,
+      todayEarnings,
+      totalTrips,
+      totalEarnings,
+      totalDistanceKm,
     });
-
-    return successResponse({ tripsToday: snapshot.size, earningsToday });
   } catch (err) {
-    console.error('[drivers/stats] Firestore query failed:', err);
+    console.error('[drivers/stats] Firestore read failed:', err);
     return serverError();
   }
 });

@@ -7,14 +7,17 @@
  *   2. 寫入 users/{lineUserId}.driverApplication 完整申請資料
  *   3. roles arrayUnion 'driver'（保留現有 passenger / admin 等其他身分）
  *   4. approved 設為 false 等待 admin 審核
- *   5. 設 driverCategory: '0' 預設搶單排序權重
+ *   5. 同步建立 / 更新 drivers/{lineUid} doc（P18 collection split 後 driverCategory 改寫此處）
+ *      - doc 不存在 → 寫完整 defaults（含 driverCategory='0'、totalTrips=0 等統計初值）
+ *      - doc 已存在（重複申請） → 只 merge 身分與車型欄位，保留 admin 既有設定（driverCategory）
+ *        與歷史統計（totalTrips/totalEarnings 等）
  *
  * 業務規則：
  *   - 已是 approved driver → 拒絕（不需重新申請）
  *   - 被拒絕後 24h 內 → 回 403 含 cooldownUntil
  *   - 圖片需先透過 /nuxt-api/driver/upload 上傳取得 4 個 signed URL
  *
- * 對應 docs/decision-log.md 2026/05/06 司機申請流程設計
+ * 對應 docs/decision-log.md 2026/05/06 司機申請流程設計、P18 collection split
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -113,11 +116,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 寫入 driverApplication + roles arrayUnion('driver') + approved=false + driverCategory
+    // 寫入 users/{lineUserId} driverApplication + roles arrayUnion('driver') + approved=false
+    // P18：driverCategory 改寫 drivers/{lineUid}，不再寫 users
     await docRef.set({
       roles: FieldValue.arrayUnion('driver'),
       approved: false,
-      driverCategory: '0',
       driverApplication: {
         driverName: body.driverName,
         phone: body.phone,
@@ -138,6 +141,44 @@ export default defineEventHandler(async (event) => {
         rejectReason: null,
       },
     }, { merge: true });
+
+    // P18：同步建立 / 更新 drivers/{lineUid} doc
+    // - 從 users 同步取 displayName / pictureUrl（snap 此時通常已 exists；若不存在則 fallback）
+    // - drivers doc 不存在 → 寫完整 defaults（首次申請）
+    // - drivers doc 已存在 → 只 merge 身分與車型欄位（重複申請保留 admin 既設 driverCategory + 歷史統計）
+    const userData = snap.exists ? (snap.data() ?? {}) : {};
+    const displayName = (userData.displayName as string) ?? body.driverName;
+    const pictureUrl = (userData.pictureUrl as string) ?? '';
+
+    const driverRef = db.collection('drivers').doc(body.lineUserId);
+    const driverSnap = await driverRef.get();
+
+    if (!driverSnap.exists) {
+      await driverRef.set({
+        lineUserId: body.lineUserId,
+        displayName,
+        pictureUrl,
+        status: 'offline',
+        location: null,
+        totalTrips: 0,
+        totalEarnings: 0,
+        totalDistanceKm: 0,
+        todayTrips: 0,
+        todayEarnings: 0,
+        driverCategory: '0',
+        vehicleType: body.vehicleType,
+        createdAt: FieldValue.serverTimestamp(),
+        lastActiveAt: FieldValue.serverTimestamp(),
+      });
+    } else {
+      await driverRef.set({
+        lineUserId: body.lineUserId,
+        displayName,
+        pictureUrl,
+        vehicleType: body.vehicleType,
+        lastActiveAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+    }
 
     return successResponse({
       applied: true,

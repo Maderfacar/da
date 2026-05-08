@@ -78,6 +78,8 @@ export default defineEventHandler(async (event) => {
 
     if (!snap.exists) {
       // 使用者不在 Firestore 中 → 允許新增（管理員手動加入白名單情境）
+      // P18：driverCategory 不再寫 users（搬到 drivers）。新增使用者時帶 driverCategory 極罕見，
+      // 且此時 driver 流程未啟動（無 drivers doc），略過此欄位即可。
       const initialRoles: Role[] = ['passenger'];
       if (body!.addRole && body!.addRole !== 'passenger') initialRoles.push(body!.addRole);
 
@@ -87,17 +89,17 @@ export default defineEventHandler(async (event) => {
         createdAt: new Date(),
       };
       if (body!.displayName) newData.displayName = body!.displayName;
-      if (body!.driverCategory !== undefined) newData.driverCategory = body!.driverCategory;
 
       await ref.set(newData, { merge: true });
       return successResponse({ uid, ...newData });
     }
 
+    // P18：removeRole='driver'（拒絕司機）不刪除 drivers doc，保留歷史統計
     const update: Record<string, unknown> = {};
     if (body!.addRole) update.roles = FieldValue.arrayUnion(body!.addRole);
     if (body!.removeRole) update.roles = FieldValue.arrayRemove(body!.removeRole);
     if (body!.approved !== undefined) update.approved = body!.approved;
-    if (body!.driverCategory !== undefined) update.driverCategory = body!.driverCategory;
+    // P18：driverCategory 改寫 drivers/{uid}，不再寫 users
 
     // P8 司機審核：rejectedAt / rejectReason 寫入巢狀 driverApplication
     // null 代表解除冷卻（清空 rejectedAt + rejectReason），admin 端「解除冷卻」按鈕用
@@ -116,6 +118,15 @@ export default defineEventHandler(async (event) => {
     }
 
     await ref.update(update);
+
+    // P18：driverCategory 寫到 drivers/{uid} doc（merge:true，doc 不存在會建一個僅含此欄位的 stub doc；
+    // 正常流程下 drivers doc 由 driver/apply 建立，此處 merge 即可）
+    if (body!.driverCategory !== undefined) {
+      await db.collection('drivers').doc(uid).set({
+        driverCategory: body!.driverCategory,
+      }, { merge: true });
+    }
+
     return successResponse({ uid, updated: true });
   } catch (err) {
     console.error('[admin/users.patch] Firestore update failed:', err);
