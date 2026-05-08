@@ -2,6 +2,9 @@ import methods from '@/protocol/fetch-api/methods';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
+/** P18：admin 三層分權 */
+export type AdminLevel = 'super' | 'admin' | 'assistant';
+
 export interface DriverApplication {
   driverName?: string
   phone?: string
@@ -75,3 +78,24 @@ export const GetAllOrders = (params: { status?: string } = {}) =>
 /** 廣播 LINE 推播通知 */
 export const BroadcastNotification = (body: { title: string; message: string; targetRole: 'all' | 'passenger' | 'driver' }) =>
   methods.post<{ sent: number; total: number }>('/nuxt-api/admin/broadcast', body);
+
+// P18：admins collection 相關 ----------------------------------------------------
+
+export interface AdminEntry {
+  uid: string
+  lineUserId: string
+  displayName: string
+  pictureUrl: string
+  level: AdminLevel
+  createdBy?: string | null
+  createdAt: string
+  lastLoginAt?: string | null
+}
+
+/** 列出所有管理員（含 level）— 需 canManageAdmins */
+export const GetAdmins = () =>
+  methods.get<AdminEntry[]>('/nuxt-api/admin/admins');
+
+/** 修改某管理員 level（僅 'admin' | 'assistant'，不接受 super；target=super 也會被擋）— 需 canManageAdmins */
+export const PatchAdmin = (uid: string, body: { level: 'admin' | 'assistant' }) =>
+  methods.patch<{ uid: string; level: AdminLevel }>(`/nuxt-api/admin/admins/${uid}`, body);

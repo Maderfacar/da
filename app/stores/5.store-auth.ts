@@ -4,6 +4,8 @@
 // P10（2026/05/07 起）：身分模型由單一 role 改為 roles[] 陣列，支援單一使用者同時具
 // passenger / driver / admin 多重身分。approved 仍為單一 boolean，僅代表 driver 核准狀態。
 type Role = 'passenger' | 'driver' | 'admin';
+// P18（2026/05/09 起）：admin 細分三層 level，僅作 admin 端內部權限判斷；roles[] 仍是身分入口的唯一依據。
+type AdminLevel = 'super' | 'admin' | 'assistant';
 
 export const StoreAuth = defineStore('StoreAuth', () => {
 
@@ -12,6 +14,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const user = ref<import('firebase/auth').User | null>(null);
   const roles = ref<Role[]>([]);
   const approved = ref<boolean>(true); // 僅作為 driver 核准旗標；passenger/admin 永遠視為 true
+  // P18：admin 細粒度權限（讀失敗或非 admin → null）；client SDK 受 firestore.rules 限制
+  // 部署 rules 前讀失敗會降級 null，但不影響 admin 入口（roles 仍是依據）。
+  const level = ref<AdminLevel | null>(null);
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
@@ -34,6 +39,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const isDriver = computed(() => roles.value.includes('driver'));
   const isPassenger = computed(() => roles.value.includes('passenger'));
   const isApprovedDriver = computed(() => isDriver.value && approved.value);
+  // P18：最高管理員（僅 super 可看到「設定 level」「撤銷管理員」按鈕）
+  const isSuper = computed(() => isAdmin.value && level.value === 'super');
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
@@ -41,6 +48,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user.value = null;
     roles.value = [];
     approved.value = true;
+    level.value = null;
     idToken.value = '';
     lineAccessToken.value = '';
     lineProfile.value = null;
@@ -165,6 +173,23 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         };
       } else {
         driverApplication.value = null;
+      }
+
+      // P18：roles 含 admin → 額外讀 admins/{lineUid} 取 level（client SDK 受 firestore.rules 限制）
+      // 讀失敗（rules 未部署 / doc 不存在）→ level=null，不影響 admin 入口；僅讓 isSuper 等 UI 隱藏
+      if (roles.value.includes('admin')) {
+        try {
+          const adminSnap = await getDoc(doc(db, 'admins', lineUid));
+          if (adminSnap.exists()) {
+            const adminData = adminSnap.data();
+            const raw = adminData.level;
+            if (raw === 'super' || raw === 'admin' || raw === 'assistant') {
+              level.value = raw;
+            }
+          }
+        } catch {
+          // rules 阻擋或 doc 不存在 → level 保持 null
+        }
       }
     } catch {
       // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
@@ -310,9 +335,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -------------------------------------------------------------------------------------------------
   return {
-    user, roles, approved, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
+    user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication,
-    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, idToken,
+    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken,
   };
 });

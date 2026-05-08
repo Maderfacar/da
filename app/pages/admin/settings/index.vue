@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { AdminUser } from '@/protocol/fetch-api/api/admin';
+import type { AdminEntry, AdminUser } from '@/protocol/fetch-api/api/admin';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
+
+const authStore = StoreAuth();
 
 // ── 系統設定（只讀展示）────────────────────────────────────────
 const groups = [
@@ -38,12 +40,13 @@ const groups = [
 type AccessTab = 'admin' | 'driver';
 const activeTab = ref<AccessTab>('driver');
 
-// 管理員清單
-const admins = ref<AdminUser[]>([]);
+// 管理員清單（P18：改從 admins collection 讀，含 level）
+const admins = ref<AdminEntry[]>([]);
 const adminsLoading = ref(false);
 const newAdminUid = ref('');
 const newAdminName = ref('');
 const addingAdmin = ref(false);
+const changingLevelUid = ref('');
 
 // 司機清單
 const pendingDrivers = ref<AdminUser[]>([]);
@@ -55,8 +58,8 @@ const approvingUid = ref('');
 const ApiLoadAdmins = async () => {
   adminsLoading.value = true;
   try {
-    const res = await $api.GetAdminUsers({ role: 'admin' });
-    // P15：原本 if (res.data) 對 {} 也通過，造成失敗時誤把 {} 賦值給 array ref；改為嚴格 status + array guard
+    // P18：改用 GetAdmins 直接讀 admins collection（含 level）
+    const res = await $api.GetAdmins();
     if (res.status?.code !== 200) {
       console.error('[admin/settings] load admins failed:', res.status?.message?.zh_tw);
       ElMessage({ message: res.status?.message?.zh_tw ?? '載入管理員失敗', type: 'error' });
@@ -92,8 +95,16 @@ const ApiLoadDrivers = async () => {
 };
 
 watch(activeTab, (tab) => {
-  if (tab === 'admin') ApiLoadAdmins();
-  else ApiLoadDrivers();
+  // P18：非 super 不可載入 admin tab（API 會 403），強制切回 driver
+  if (tab === 'admin') {
+    if (!authStore.isSuper) {
+      activeTab.value = 'driver';
+      return;
+    }
+    ApiLoadAdmins();
+  } else {
+    ApiLoadDrivers();
+  }
 }, { immediate: true });
 
 // ── 管理員白名單操作（P10：addRole / removeRole 語意） ─────────
@@ -118,8 +129,30 @@ const ClickAddAdmin = async () => {
 const ClickRemoveAdmin = async (uid: string) => {
   const ok = await UseAsk('確定移除此管理員嗎？移除後該帳號將失去管理員身分（保留乘客 / 司機身分）。');
   if (!ok) return;
-  await $api.PatchAdminUser(uid, { removeRole: 'admin' });
+  const res = await $api.PatchAdminUser(uid, { removeRole: 'admin' });
+  if (res.status?.code !== 200) {
+    ElMessage({ message: res.status?.message?.zh_tw ?? '移除失敗', type: 'error' });
+    return;
+  }
   await ApiLoadAdmins();
+};
+
+// P18：變更管理員 level（僅 super 可呼叫；target=super 會被 server 擋住）
+const ClickChangeLevel = async (uid: string, newLevel: 'admin' | 'assistant') => {
+  const label = newLevel === 'admin' ? '管理員' : '助理';
+  const ok = await UseAsk(`確定將此管理員 level 設為「${label}」？`);
+  if (!ok) return;
+  changingLevelUid.value = uid;
+  try {
+    const res = await $api.PatchAdmin(uid, { level: newLevel });
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '變更失敗', type: 'error' });
+      return;
+    }
+    await ApiLoadAdmins();
+  } finally {
+    changingLevelUid.value = '';
+  }
 };
 
 // ── 司機審核操作 ─────────────────────────────────────────────────
@@ -165,7 +198,9 @@ const ClickRevokeDriver = async (uid: string) => {
         :class="{ 'is-active': activeTab === 'driver' }"
         @click="activeTab = 'driver'"
       ) 司機審核
+      //- P18：管理員白名單 tab 僅 super 可見
       button.PageAdminSettings__tab(
+        v-if="authStore.isSuper"
         :class="{ 'is-active': activeTab === 'admin' }"
         @click="activeTab = 'admin'"
       ) 管理員白名單
@@ -210,11 +245,11 @@ const ClickRevokeDriver = async (uid: string) => {
                 @click="ClickRevokeDriver(u.uid)"
               ) 停用
 
-    //- 管理員白名單
-    template(v-if="activeTab === 'admin'")
+    //- 管理員白名單（P18：僅 super 可見）
+    template(v-if="activeTab === 'admin' && authStore.isSuper")
       .PageAdminSettings__notice.is-info
         span ℹ️
-        span 管理員帳號具有完整系統權限。首位管理員須至 Firebase Console 手動於 users/{uid} 加入 roles 陣列含 'admin'。
+        span 管理員分三層：SUPER（最高管理員，僅可由 Firebase Console 設定）、ADMIN（管理員）、ASSISTANT（助理）。新增者預設為 ADMIN。
 
       //- 新增管理員
       .PageAdminSettings__add-row
@@ -240,10 +275,24 @@ const ClickRevokeDriver = async (uid: string) => {
           .PageAdminSettings__user-row(v-for="u in admins" :key="u.uid")
             img.PageAdminSettings__avatar(:src="u.pictureUrl || '/img/avatar-default.png'" :alt="u.displayName")
             .PageAdminSettings__user-info
-              .PageAdminSettings__user-name {{ u.displayName || '未知使用者' }}
+              .PageAdminSettings__user-name
+                | {{ u.displayName || '未知使用者' }}
+                span.PageAdminSettings__level-badge(:class="`is-${u.level}`") {{ u.level.toUpperCase() }}
               .PageAdminSettings__user-uid {{ u.uid }}
             .PageAdminSettings__user-actions
-              button.PageAdminSettings__btn.is-reject(@click="ClickRemoveAdmin(u.uid)") 移除
+              //- super 不可被改 level 也不可被撤銷
+              template(v-if="u.level !== 'super'")
+                button.PageAdminSettings__btn.is-toggle(
+                  v-if="u.level !== 'admin'"
+                  :disabled="changingLevelUid === u.uid"
+                  @click="ClickChangeLevel(u.uid, 'admin')"
+                ) 設為管理員
+                button.PageAdminSettings__btn.is-toggle(
+                  v-if="u.level !== 'assistant'"
+                  :disabled="changingLevelUid === u.uid"
+                  @click="ClickChangeLevel(u.uid, 'assistant')"
+                ) 設為助理
+                button.PageAdminSettings__btn.is-reject(@click="ClickRemoveAdmin(u.uid)") 撤銷
 
         .PageAdminSettings__empty(v-if="admins.length === 0")
           span 目前無管理員資料（請至 Firebase Console 設定首位管理員）
@@ -415,6 +464,37 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// P18：admin level 徽章
+.PageAdminSettings__level-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  border-radius: 100px;
+  padding: 1px 6px;
+  border: 1px solid;
+  line-height: 1.4;
+
+  &.is-super {
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+  &.is-admin {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.1);
+    border-color: rgba(74, 222, 128, 0.35);
+  }
+  &.is-assistant {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.3);
+  }
 }
 
 .PageAdminSettings__user-uid {
@@ -462,6 +542,17 @@ $muted: rgba(255, 255, 255, 0.35);
 
     &:hover:not(:disabled) {
       background: rgba(239, 68, 68, 0.2);
+    }
+  }
+
+  &.is-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.7);
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
     }
   }
 }
