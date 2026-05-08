@@ -32,6 +32,30 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     rejectReason: string | null;
   } | null>(null);
 
+  // P18 hotfix（middleware/auth race）：暴露一個 plain Promise 讓 middleware/onMounted 可
+  // `await`，不依賴 Vue reactivity（先前用 `watch(authResolved)` 在 SSR + Vercel 環境會 hang）。
+  // - `_authResolvedPromise` 在 `_markAuthResolved()` 被呼叫時 resolve（idempotent）。
+  // - middleware 用 `Promise.race(WaitForAuthResolved(), 12s timeout)` 套用上限，與
+  //   InitAuthFlow safetyTimer 對齊。
+  let _resolveAuthPromise: (() => void) | null = null;
+  let _authResolvedPromise: Promise<void> | null = null;
+  const _ensureAuthResolvedPromise = (): Promise<void> => {
+    if (_authResolvedPromise) return _authResolvedPromise;
+    if (authResolved.value) {
+      _authResolvedPromise = Promise.resolve();
+    } else {
+      _authResolvedPromise = new Promise<void>((resolve) => { _resolveAuthPromise = resolve; });
+    }
+    return _authResolvedPromise;
+  };
+  const _markAuthResolved = () => {
+    authResolved.value = true;
+    if (_resolveAuthPromise) {
+      _resolveAuthPromise();
+      _resolveAuthPromise = null;
+    }
+  };
+
   // -- Computed --------------------------------------------------------------------------------------
 
   const isSignIn = computed(() => !!user.value);
@@ -82,13 +106,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const safetyTimer = setTimeout(() => {
       if (!authResolved.value) {
         console.warn('[StoreAuth] 初始化逾時 (12s)，強制解除 loading');
-        authResolved.value = true;
+        _markAuthResolved();
       }
     }, 12_000);
 
     if (!config.firebaseApiKey) {
       clearTimeout(safetyTimer);
-      authResolved.value = true;
+      _markAuthResolved();
       return;
     }
 
@@ -115,7 +139,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // 導去 /driver/auth，看似「再觸發 LINE 登入」）
       if (!firebaseUser) {
         _clearState();
-        authResolved.value = true;
+        _markAuthResolved();
         return;
       }
       user.value = firebaseUser;
@@ -130,7 +154,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       } catch (err) {
         console.error('[StoreAuth] _LoadRolesFromFirestore unexpected throw:', err);
       }
-      authResolved.value = true;
+      _markAuthResolved();
     });
 
     await _InitLiffFlow(firebaseApp);
@@ -299,6 +323,20 @@ export const StoreAuth = defineStore('StoreAuth', () => {
    *   - 已登入：最新的有效 idToken
    *   - 未登入 / 取得失敗：空字串（caller 可選擇不帶 header，server 會回 401）
    */
+  /**
+   * 等待 InitAuthFlow 完成（authResolved=true）。
+   *
+   * 設計用意：middleware/auth 與部分 onMounted 場景需在 API 呼叫前確保 Firebase auth
+   * 已解析（idToken 取得 / roles 載入），避免 race 導致 401「未授權」。
+   *
+   * 用 plain Promise（不靠 Vue watch）以避開以下陷阱：
+   * 1. Nuxt route middleware 沒有 active component / effect scope，watch 行為不可靠
+   * 2. SSR 上 plugin (.client.ts) 不跑、authResolved 永遠 false → watch 永遠不 fire
+   *
+   * caller 應自己套 timeout（如 12s），與 InitAuthFlow safetyTimer 對齊。
+   */
+  const WaitForAuthResolved = (): Promise<void> => _ensureAuthResolvedPromise();
+
   const GetFreshIdToken = async (): Promise<string> => {
     if (typeof window === 'undefined') return idToken.value;
     try {
@@ -319,7 +357,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user.value = { uid: `mock-${_roles.join('-')}` } as import('firebase/auth').User;
     roles.value = _roles.length > 0 ? _roles : ['passenger'];
     approved.value = true; // 測試模式視為已核准
-    authResolved.value = true;
+    _markAuthResolved();
   };
 
   const SignOut = async () => {
@@ -338,6 +376,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
-    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken,
+    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, WaitForAuthResolved,
   };
 });
