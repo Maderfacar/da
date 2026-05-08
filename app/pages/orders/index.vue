@@ -31,9 +31,19 @@ const VEHICLE_LABEL: Record<string, string> = {
 const ApiLoadOrders = async () => {
   if (!user.value?.uid) return;
   loading.value = true;
-  const res = await $api.GetOrderList({ userId: user.value.uid });
-  orders.value = res.data ?? [];
-  loading.value = false;
+  try {
+    const res = await $api.GetOrderList({ userId: user.value.uid });
+    if (res.status?.code !== 200) {
+      // P15：API 失敗不再 silent 顯示空訂單列表，避免使用者誤以為「沒訂單」
+      console.error('[orders] load failed:', res.status?.message?.zh_tw);
+      ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
+      orders.value = [];
+      return;
+    }
+    orders.value = Array.isArray(res.data) ? res.data : [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 onMounted(ApiLoadOrders);

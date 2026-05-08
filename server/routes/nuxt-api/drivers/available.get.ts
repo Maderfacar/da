@@ -1,13 +1,12 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { serverError } from '@@/utils/response';
 
 export default defineEventHandler(async (event) => {
   const { firebaseServiceAccountJson } = useRuntimeConfig();
 
   if (!firebaseServiceAccountJson) {
-    return {
-      data: [],
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
+    // P15：Firebase 未設不再 silent 回 200 + []，避免戰情室地圖「沒司機」假成功
+    return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
 
   try {

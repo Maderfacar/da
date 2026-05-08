@@ -40,14 +40,28 @@ const filteredOrders = computed(() =>
 
 const ApiLoadOrders = async () => {
   loading.value = true;
-  const res = await $api.GetAllOrders();
-  orders.value = (res.data as AdminOrder[]) ?? [];
-  loading.value = false;
+  try {
+    const res = await $api.GetAllOrders();
+    if (res.status?.code !== 200) {
+      console.error('[admin/orders] load failed:', res.status?.message?.zh_tw);
+      ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
+      orders.value = [];
+      return;
+    }
+    orders.value = Array.isArray(res.data) ? (res.data as AdminOrder[]) : [];
+  } finally {
+    loading.value = false;
+  }
 };
 
 const ApiLoadDrivers = async () => {
   const res = await $api.GetAdminUsers({ role: 'driver', approved: true });
-  drivers.value = (res.data as AdminUser[]) ?? [];
+  if (res.status?.code !== 200) {
+    console.error('[admin/orders] load drivers failed:', res.status?.message?.zh_tw);
+    drivers.value = [];
+    return;
+  }
+  drivers.value = Array.isArray(res.data) ? (res.data as AdminUser[]) : [];
 };
 
 const ClickOpenAssign = (orderId: string, currentDriverId: string) => {

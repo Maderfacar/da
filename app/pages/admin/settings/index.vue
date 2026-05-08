@@ -54,20 +54,41 @@ const approvingUid = ref('');
 // ── 資料載入 ────────────────────────────────────────────────────
 const ApiLoadAdmins = async () => {
   adminsLoading.value = true;
-  const res = await $api.GetAdminUsers({ role: 'admin' });
-  if (res.data) admins.value = res.data;
-  adminsLoading.value = false;
+  try {
+    const res = await $api.GetAdminUsers({ role: 'admin' });
+    // P15：原本 if (res.data) 對 {} 也通過，造成失敗時誤把 {} 賦值給 array ref；改為嚴格 status + array guard
+    if (res.status?.code !== 200) {
+      console.error('[admin/settings] load admins failed:', res.status?.message?.zh_tw);
+      ElMessage({ message: res.status?.message?.zh_tw ?? '載入管理員失敗', type: 'error' });
+      admins.value = [];
+      return;
+    }
+    admins.value = Array.isArray(res.data) ? res.data : [];
+  } finally {
+    adminsLoading.value = false;
+  }
 };
 
 const ApiLoadDrivers = async () => {
   driversLoading.value = true;
-  const [pendingRes, approvedRes] = await Promise.all([
-    $api.GetAdminUsers({ role: 'driver', approved: false }),
-    $api.GetAdminUsers({ role: 'driver', approved: true }),
-  ]);
-  if (pendingRes.data) pendingDrivers.value = pendingRes.data;
-  if (approvedRes.data) approvedDrivers.value = approvedRes.data;
-  driversLoading.value = false;
+  try {
+    const [pendingRes, approvedRes] = await Promise.all([
+      $api.GetAdminUsers({ role: 'driver', approved: false }),
+      $api.GetAdminUsers({ role: 'driver', approved: true }),
+    ]);
+    if (pendingRes.status?.code !== 200 || approvedRes.status?.code !== 200) {
+      const msg = pendingRes.status?.message?.zh_tw ?? approvedRes.status?.message?.zh_tw ?? '載入司機失敗';
+      console.error('[admin/settings] load drivers failed:', msg);
+      ElMessage({ message: msg, type: 'error' });
+      pendingDrivers.value = [];
+      approvedDrivers.value = [];
+      return;
+    }
+    pendingDrivers.value = Array.isArray(pendingRes.data) ? pendingRes.data : [];
+    approvedDrivers.value = Array.isArray(approvedRes.data) ? approvedRes.data : [];
+  } finally {
+    driversLoading.value = false;
+  }
 };
 
 watch(activeTab, (tab) => {

@@ -45,8 +45,15 @@ const upcomingTrips = ref<{
 const ApiLoadUpcomingTrips = async () => {
   if (!user.value?.uid) return;
   const res = await $api.GetOrderList({ userId: user.value.uid });
+  // P15：API 失敗不 silent 隱藏，至少 log 出來；首頁不彈提示避免吵
+  if (res.status?.code !== 200) {
+    console.error('[home/upcoming] load failed:', res.status?.message?.zh_tw);
+    upcomingTrips.value = [];
+    return;
+  }
+  const orders = Array.isArray(res.data) ? res.data : [];
   const now = Date.now();
-  const upcoming = (res.data ?? [])
+  const upcoming = orders
     .filter((o) => {
       const isPending = ['pending', 'confirmed'].includes(o.orderStatus);
       const isFuture = new Date(o.pickupDateTime).getTime() > now;

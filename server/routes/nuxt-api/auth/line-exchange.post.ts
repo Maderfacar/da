@@ -108,7 +108,10 @@ export default defineEventHandler(async (event) => {
           displayName: lineProfile.name,
           pictureUrl: lineProfile.picture,
         }, { merge: true });
-      } catch { /* 同步失敗不阻擋登入流程 */ }
+      } catch (err) {
+        // 同步失敗不阻擋登入流程，但要 log（避免 displayName / pictureUrl 永遠不更新無人發現）
+        console.warn('[line-exchange] existing user displayName/pictureUrl sync failed (non-fatal):', err);
+      }
     }
 
     // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────

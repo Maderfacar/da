@@ -5,7 +5,8 @@ export default defineEventHandler(async (event) => {
   const { firebaseServiceAccountJson } = useRuntimeConfig();
 
   if (!firebaseServiceAccountJson) {
-    return successResponse([] as object[]);
+    // P15：Firebase 未設不再 silent 回 200 + []，避免司機端「沒訂單」假成功
+    return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
 
   try {
