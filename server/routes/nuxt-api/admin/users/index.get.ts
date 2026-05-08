@@ -33,6 +33,23 @@ export default defineEventHandler(async (event) => {
     const users = snapshot.docs.map((doc) => {
       const d = doc.data();
       const rawRoles = Array.isArray(d.roles) ? (d.roles as string[]) : [];
+      const app = d.driverApplication as Record<string, unknown> | undefined;
+      const driverApplication = app
+        ? {
+            driverName: app.driverName as string | undefined,
+            phone: app.phone as string | undefined,
+            plateNumber: app.plateNumber as string | undefined,
+            vehicleType: app.vehicleType as string | undefined,
+            bankCode: app.bankCode as string | undefined,
+            bankAccount: app.bankAccount as string | undefined,
+            documents: app.documents as Record<string, string> | undefined,
+            appliedAt: (app.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (app.appliedAt as string | null) ?? null,
+            reviewedAt: (app.reviewedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (app.reviewedAt as string | null) ?? null,
+            reviewedBy: (app.reviewedBy as string | null) ?? null,
+            rejectedAt: (app.rejectedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (app.rejectedAt as string | null) ?? null,
+            rejectReason: (app.rejectReason as string | null) ?? null,
+          }
+        : null;
       return {
         uid: doc.id,
         lineUserId: d.lineUserId as string ?? '',
@@ -40,6 +57,8 @@ export default defineEventHandler(async (event) => {
         pictureUrl: d.pictureUrl as string ?? '',
         roles: rawRoles,
         approved: d.approved as boolean ?? false,
+        driverCategory: d.driverCategory as string | undefined,
+        driverApplication,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
       };
     });

@@ -2,6 +2,26 @@ import methods from '@/protocol/fetch-api/methods';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
+export interface DriverApplication {
+  driverName?: string
+  phone?: string
+  plateNumber?: string
+  vehicleType?: 'sedan' | 'mpv' | 'suv' | 'van'
+  bankCode?: string
+  bankAccount?: string
+  documents?: {
+    licenseUrl?: string
+    registrationUrl?: string
+    insuranceUrl?: string
+    goodCitizenUrl?: string
+  }
+  appliedAt?: string | null
+  reviewedAt?: string | null
+  reviewedBy?: string | null
+  rejectedAt?: string | null
+  rejectReason?: string | null
+}
+
 export interface AdminUser {
   uid: string
   lineUserId: string
@@ -9,6 +29,8 @@ export interface AdminUser {
   pictureUrl: string
   roles: Role[]
   approved: boolean
+  driverCategory?: string
+  driverApplication?: DriverApplication
   createdAt: string
 }
 
@@ -32,6 +54,9 @@ export interface PatchAdminUserBody {
   addRole?: Role
   removeRole?: Exclude<Role, 'passenger'>
   approved?: boolean
+  rejectedAt?: string | null
+  rejectReason?: string
+  driverCategory?: string
   displayName?: string
 }
 

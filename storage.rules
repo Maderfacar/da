@@ -1,0 +1,35 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules — DestinationAnywhere
+//
+// 安全策略：
+// - 所有寫入透過 server-side admin SDK 上傳（/nuxt-api/driver/upload）
+// - client 端不直接寫 Storage（避免被竄改檔案、繞過 MIME / 大小驗證）
+// - 讀取走 signed URL（後端產生 1 年有效，存進 driverApplication.documents）
+//   → 不需要 client read 權限，admin 端與司機本人都拿 signed URL 直接顯示
+//
+// 部署方式（任選）：
+//   方式 A（推薦）：Firebase Console → Storage → Rules → 貼上本檔內容 → Publish
+//   方式 B：firebase CLI（需先 `firebase init storage`）
+//     firebase deploy --only storage
+//
+// 對應 docs/decision-log.md 2026/05/06 司機申請流程設計
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── drivers/{lineUserId}/{...} 司機證件 ─────────────────
+    match /drivers/{lineUserId}/{allPaths=**} {
+      // client 不直接讀（用 signed URL）
+      allow read: if false;
+      // client 不直接寫（必經 server-side /nuxt-api/driver/upload）
+      // server-side admin SDK 不受此 Rules 約束
+      allow write: if false;
+    }
+
+    // ── 其他路徑預設拒絕 ──────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

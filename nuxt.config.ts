@@ -48,6 +48,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiBase: '',
     firebaseServiceAccountJson: '', // NUXT_FIREBASE_SERVICE_ACCOUNT_JSON — server only
+    firebaseStorageBucket: '',      // NUXT_FIREBASE_STORAGE_BUCKET — server only（覆寫預設 ${project_id}.appspot.com）
     googleMapsApiKey: '',           // NUXT_GOOGLE_MAPS_API_KEY — server only (BFF)
     lineChannelSecret: '',          // NUXT_LINE_CHANNEL_SECRET — server only
     lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — server only

@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P6 完成，P7/P8/P10/P11 完成）
+**總進度**：Stage 7 維護迭代中（P0~P11 完成，僅剩 P5 部分項待施作）
 **最後更新**：2026/05/08
 
 ---
@@ -216,46 +216,56 @@
 - [ ] `back-desk.vue` Header 加入 `CommonHeaderUser`（保留 ADMIN 標章）
 - [ ] 若 `role === 'admin'`，於頭像左側顯示 ADMIN 跳轉鈕（連到 `/admin/orders`）；非 admin 不顯示
 
-### P8：司機申請流程改造（2026/05/06 進行中）
+### P8：司機申請流程改造（2026/05/06~05/08 ✅ 完成）
 
 > **背景**：原 `/driver/auth` 流程對未註冊使用者直接寫入 `role: 'driver', approved: false` 後又被 middleware 導回 `/`，使用者無從得知申請狀態。重新設計為「passenger 預設 → 主動申請 → admin 審核」標準三段流程，並新增 1 天冷卻避免轟炸申請。
 
-**P8-1：後端架構修正**
-- [ ] 修 `server/routes/nuxt-api/auth/line-exchange.post.ts`：新使用者一律建為 `role: 'passenger'`（移除 `clientType=driver` 的 driver 預設邏輯）
-- [ ] 修 `app/middleware/role.ts`：`/driver/register` 路徑放行（passenger 與未核准 driver 都可進）
-- [ ] 修 `app/stores/5.store-auth.ts`：`_LoadRoleFromFirestore` 讀取 `driverApplication`（含 `rejectedAt`、`appliedAt`）
+**P8-1：後端架構修正** ✅（2026/05/06 commit `6a4ab84`）
+- [✅] 修 `server/routes/nuxt-api/auth/line-exchange.post.ts`：新使用者一律建為 `roles: ['passenger']`
+- [✅] 修 `app/middleware/role.ts`：`/driver/register` 路徑放行
+- [✅] 修 `app/stores/5.store-auth.ts`：`_LoadRolesFromFirestore` 讀取 `driverApplication`
 
-**P8-2：申請頁面**
-- [ ] 新建 `app/pages/driver/register/index.vue`，三模式渲染：
-  - `role=passenger / null` → 申請表單
-  - `driver + !approved + !rejectedAt`（或 `rejectedAt` 已過 24h）→ 「審核中」提示
-  - `rejectedAt` 在 24h 內 → 「冷卻中」剩餘時間倒數
-- [ ] 表單欄位：司機真實姓名、聯絡電話、車牌號、車型（sedan/mpv/suv/van，中英對照）、銀行代號、銀行帳號
-- [ ] 4 個圖片上傳欄位：駕照、行照、保險卡、良民證（皆必填）
-- [ ] 新建 `app/components/driver/RegisterUploadField.vue`：拖放上傳 + 預覽 + 進度
+**P8-2：申請頁面** ✅（2026/05/08）
+- [✅] 重寫 `app/pages/driver/register/index.vue` 三模式渲染：
+  - 無 driver 身分 → apply 模式：完整申請表單
+  - driver + !approved + 無 rejectedAt → pending 模式：審核中提示
+  - driver + !approved + 有 rejectedAt 在 24h 內 → rejected 模式：拒絕原因 + 24h 倒數
+- [✅] 表單欄位：司機姓名、聯絡電話、車牌號、車型（sedan/mpv/suv/van radio）、銀行代號、銀行帳號
+- [✅] 4 個證件上傳欄位：駕照、行照、保險卡、良民證（皆必填）
+- [✅] 新建 `app/components/driver/RegisterUploadField.vue`：拖放 + 點擊上傳、jpg/png 預覽、pdf 圖示 fallback、5MB 上限、上傳中 spinner、清空按鈕
 
-**P8-3：申請與圖片上傳 API**
-- [ ] 新建 `server/routes/nuxt-api/driver/upload.post.ts`：multipart → Firebase Storage `drivers/{uid}/{docType}-{timestamp}.{ext}` → 回傳 download URL
-- [ ] 新建 `server/routes/nuxt-api/driver/apply.post.ts`：驗證冷卻 → 寫入 `users/{uid}.driverApplication` + 改 `role='driver', approved=false, driverCategory='0'`
-- [ ] 新增 protocol：`app/protocol/fetch-api/api/driver/index.ts` 加入 `ApplyDriver`、`UploadDriverDocument`
+**P8-3：申請與圖片上傳 API** ✅（2026/05/08）
+- [✅] 新建 `server/routes/nuxt-api/driver/upload.post.ts`：multipart → Firebase Storage `drivers/{lineUserId}/{docType}-{timestamp}.{ext}` → 1 年長效 signed URL；驗證 docType / mime / 5MB 上限
+- [✅] 新建 `server/routes/nuxt-api/driver/apply.post.ts`：驗證冷卻（24h）→ 寫入 `users/{lineUserId}.driverApplication` 完整欄位 + `roles: arrayUnion('driver')` + `approved=false` + `driverCategory='0'`；保留 passenger / admin 等其他 role
+- [✅] 新增 protocol `app/protocol/fetch-api/api/driver/index.ts`：`ApplyDriver` + `UploadDriverDocument`（multipart formdata）
+- [✅] 補強 `firebase-admin.ts`：加 `storage` export，初始化時帶 `storageBucket`
 
-**P8-4：登入後分流**
-- [ ] 修 `app/pages/driver/auth/index.vue` 導向四分支：
-  - `driver + approved=true` → `/driver/dashboard`
-  - `driver + approved=false` → `/driver/register`
-  - `passenger / null` → `/driver/register`
-  - `admin` → `/admin/orders`
+**P8-4：登入後分流** ✅（2026/05/07 P10 順手做完）
+- [✅] 修 `app/pages/driver/auth/index.vue` 導向四分支：
+  - `isApprovedDriver` → `/driver/dashboard`
+  - `isDriver && !approved` → `/driver/register`
+  - `isAdmin` → `/admin/orders`
+  - 純 passenger → `/driver/register`
 
-**P8-5：Admin 審核強化**
-- [ ] 修 `app/pages/admin/drivers/index.vue` 加「待審核 / 已核准 / 已拒絕」三分頁
-- [ ] 司機卡片可展開檢視 `driverApplication` 完整資料 + 4 張證件圖片
-- [ ] 「拒絕」按鈕：寫入 `rejectedAt = now`、`rejectReason`
-- [ ] 「解除冷卻」按鈕（僅對 `rejectedAt` 在 24h 內者顯示）：清空 `rejectedAt`
-- [ ] 新增 API `PATCH /nuxt-api/admin/users/[uid]` 支援 `approved`、`rejectedAt`、`driverCategory`
+**P8-5：Admin 審核強化** ✅（2026/05/08）
+- [✅] 重寫 `app/pages/admin/drivers/index.vue` 三分頁（待審核 / 已核准 / 冷卻中）
+- [✅] 司機卡片可展開檢視 `driverApplication` 完整資料（姓名/電話/車牌/車型/銀行/申請時間）+ 4 張證件圖片（jpg/png 直接顯示，pdf 圖示連結）
+- [✅] 「拒絕」按鈕：用 `window.prompt` 取拒絕原因 → `removeRole: 'driver' + rejectedAt + rejectReason`
+- [✅] 「解除冷卻」按鈕（僅冷卻中顯示）：`rejectedAt: null` 清空
+- [✅] 「直接核准」按鈕（冷卻中也可越過冷卻直接核准）：`approved: true`
+- [✅] 補 `server/routes/nuxt-api/admin/users/[uid].patch.ts` 支援 `rejectedAt` / `rejectReason` / `driverCategory` 三個新欄位
+- [✅] 補 `server/routes/nuxt-api/admin/users/index.get.ts` 回傳完整 `driverApplication` 結構
 
-**P8-6：權限規則**
-- [ ] Firebase Storage Rules：`drivers/{uid}/*` 只允許 owner 上傳、admin 讀取
-- [ ] Firestore Rules：`users/{uid}.driverApplication` 只允許 owner 寫、admin 讀寫
+**P8-6：權限規則** ✅ 代碼層（2026/05/08）
+- [✅] 新建 `storage.rules`：`drivers/{lineUserId}/*` client 完全禁止讀寫，僅透過 server-side admin SDK 上傳；client 端用 signed URL 顯示圖片
+- [✅] 既有 `firestore.rules`（P11-3）已涵蓋 `users.driverApplication` — owner / admin 可讀，寫入只透過 server admin SDK
+- [ ] **待人工部署**：到 Firebase Console → Storage → Rules 貼上 `storage.rules` 並 Publish
+
+**Stage Gate（P8）** — 2026/05/08 ✅ 代碼層全部通過：
+- lint ✅
+- 司機申請完整三段流程（passenger → 申請 → 審核 → 核准 / 拒絕 / 冷卻 / 解除）已串通
+- 圖片上傳走 Firebase Storage + 1 年 signed URL，admin 端可直接顯示
+- 多角色身分保留：申請 driver 不影響原有 passenger / admin 身分
 
 ### P9：Admin LIFF 白名單統一（2026/05/06 進行中，與 P7 並行）
 
@@ -364,5 +374,5 @@
 - P7 / P8 / P9 為 2026/05/06 新增工作項，P10 為 2026/05/07 新增，P11 為 2026/05/08 新增
 
 **版本紀錄**
-- 版本：v3.6（Stage 7 P11 收尾整理完成 — debug log 清理 + 訂單 silent failure 修復 + firestore.rules 建立）
+- 版本：v3.7（Stage 7 P8 司機申請流程全鏈完成 — register 表單 / upload + apply API / admin 三分頁審核 / Storage Rules）
 - 更新日期：2026/05/08
