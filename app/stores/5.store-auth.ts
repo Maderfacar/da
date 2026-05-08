@@ -199,7 +199,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         } catch { /* 取 profile 失敗時保持原值 */ }
       }
 
-      // 沒登入 LIFF → 強制 LINE 登入，redirect 後重新執行
+      // Firebase session 優先於 LIFF（原 P6 修復 commit f35e01f，2026/05/02）
+      // LIFF token 比 Firebase custom token 短；若 Firebase session 仍有效但 LIFF 過期，
+      // 此處不應觸發 liff.login() 把使用者踢去 LINE 登入頁，否則 LIFF 會把使用者送回
+      // endpoint URL（乘客端首頁），看起來像「又陷入 LINE 登入又被導回乘客端」。
+      // 此段邏輯在 P10/P11 重構中曾被誤刪，此處還原。
+      const { getAuth } = await import('firebase/auth');
+      if (!liff.isLoggedIn() && getAuth(firebaseApp).currentUser) {
+        liffReady.value = true;
+        return;
+      }
+
+      // 沒登入 LIFF 且 Firebase 也無 session → 強制 LINE 登入，redirect 後重新執行
       if (!liff.isLoggedIn()) {
         liff.login();
         return;
@@ -238,7 +249,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           approved.value = res.data.approved ?? true;
         }
 
-        const { getAuth, signInWithCustomToken } = await import('firebase/auth');
+        const { signInWithCustomToken } = await import('firebase/auth');
         if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
           await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
         }
