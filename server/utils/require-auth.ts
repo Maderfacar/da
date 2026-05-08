@@ -25,6 +25,19 @@ import type { H3Event } from 'h3';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 
 type Role = 'passenger' | 'driver' | 'admin';
+type AdminLevel = 'super' | 'admin' | 'assistant';
+
+/**
+ * P18：admin 細粒度權限 overrides。第一版未寫入，hasPermission 全部依 level 對應表判斷；
+ * 預留欄位給未來「自訂 admin 權限」需求使用。
+ */
+export interface AdminPermissions {
+  canManageAdmins?: boolean;
+  canManageDrivers?: boolean;
+  canManageOrders?: boolean;
+  canBroadcast?: boolean;
+  canViewFinance?: boolean;
+}
 
 export interface AuthOk {
   ok: true;
@@ -34,6 +47,10 @@ export interface AuthOk {
   lineUid: string;
   roles: Role[];
   approved: boolean;
+  /** P18：admin 三層分權；非 admin 為 undefined */
+  level?: AdminLevel;
+  /** P18：admin 細粒度權限 overrides；非 admin 或未設定為 undefined */
+  permissions?: AdminPermissions;
 }
 
 export interface AuthFail {
@@ -45,11 +62,15 @@ export interface AuthFail {
 export type AuthResult = AuthOk | AuthFail;
 
 const VALID_ROLES = new Set<Role>(['passenger', 'driver', 'admin']);
+const VALID_ADMIN_LEVELS = new Set<AdminLevel>(['super', 'admin', 'assistant']);
 
 const filterRoles = (raw: unknown): Role[] => {
   if (!Array.isArray(raw)) return [];
   return raw.filter((r): r is Role => typeof r === 'string' && VALID_ROLES.has(r as Role));
 };
+
+const isAdminLevel = (raw: unknown): raw is AdminLevel =>
+  typeof raw === 'string' && VALID_ADMIN_LEVELS.has(raw as AdminLevel);
 
 export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
   const authHeader = getHeader(event, 'authorization') ?? '';
@@ -95,7 +116,27 @@ export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
       }
     }
 
-    return { ok: true, uid: decoded.uid, lineUid, roles, approved };
+    // P18：roles 含 admin 時加讀 admins/{lineUid}，取 level + permissions overrides
+    // 失敗（doc 不存在或 Firestore 出錯）→ level 為 undefined，後續 hasPermission 一律 false
+    let level: AdminLevel | undefined;
+    let permissions: AdminPermissions | undefined;
+    if (roles.includes('admin')) {
+      try {
+        const adminSnap = await db.collection('admins').doc(lineUid).get();
+        if (adminSnap.exists) {
+          const adminData = adminSnap.data() ?? {};
+          if (isAdminLevel(adminData.level)) level = adminData.level;
+          const rawPerms = adminData.permissions;
+          if (rawPerms && typeof rawPerms === 'object') {
+            permissions = rawPerms as AdminPermissions;
+          }
+        }
+      } catch (err) {
+        console.error('[getAuthFromEvent] admins doc read failed:', err);
+      }
+    }
+
+    return { ok: true, uid: decoded.uid, lineUid, roles, approved, level, permissions };
   } catch (err) {
     // verifyIdToken 失敗：token 過期 / 無效 / 簽名錯
     console.error('[getAuthFromEvent] verifyIdToken failed:', err);
