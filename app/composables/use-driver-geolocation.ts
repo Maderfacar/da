@@ -13,9 +13,15 @@
 // P19 hotfix：5 秒 timeout 對真實 UX 太緊（使用者讀完授權彈框文字 + 決定 + 點擊都需時間），
 // 改 30 秒。實測 Chrome / LINE WebView 第一次授權彈框平均 8-15 秒；30 秒給充分緩衝且仍有上限。
 const PERMISSION_TIMEOUT_MS = 30_000;
-const UPLOAD_DISTANCE_THRESHOLD_M = 5;     // 5m 距離 threshold
-const UPLOAD_FORCE_REFRESH_MS = 60_000;    // 60s 強制 force refresh
-const ACCURACY_FILTER_M = 50;              // accuracy > 50m 不上傳
+// P19 hotfix（threshold 調整）：
+// - 5m 距離 → 10m：GPS noise 平均 ±5-10m，5m threshold 讓靜止司機也偶爾觸發小幅抖動更新
+//   且車輛 5m 級距太密（典型行進 1 秒 14m / 50km/h 級），10m 更貼近實際移動
+// - accuracy 50m → 100m：LINE WebView 內 GPS 精度典型 30-100m，cold start 可達 200m+；
+//   50m 太嚴會在弱訊號 / 第一次 fix 全部 skip → 司機位置卡在最初不準的座標永不更新；
+//   100m 仍能擋掉真正爛的 fix（>100m 通常 GPS 完全不可信）
+const UPLOAD_DISTANCE_THRESHOLD_M = 10;
+const UPLOAD_FORCE_REFRESH_MS = 60_000;    // 60s 強制 force refresh（war-room alive ping）
+const ACCURACY_FILTER_M = 100;
 
 type PermissionState = 'pending' | 'granted' | 'denied';
 
