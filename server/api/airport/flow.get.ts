@@ -1,80 +1,145 @@
+/**
+ * GET /api/airport/flow
+ *
+ * admin/traffic 取桃園機場每日人流預報。
+ *
+ * 流程（取代 n8n + Gist）：
+ *   1) 讀 Firestore airport_flow/{date} cache
+ *   2) cache miss → 呼叫 fetcher 抓桃園機場 XLS → xlsx 解析 → 寫 Firestore → 回傳
+ *   3) 寫入時順手清理 7 天前的舊 doc（保留近期 2-3 筆即可）
+ *
+ * Query: date (YYYY-MM-DD)、terminal ('all' | 'T1' | 'T2')、direction ('all' | 'arrival' | 'departure')
+ *
+ * 回傳：data.isMock 為 true 時，data.mockReason 標明走 fallback 的原因，方便前端 banner 顯示精準提示。
+ */
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
+import { FetchTaoyuanForecast, type HourRecord } from '@@/utils/airport-xls-fetcher';
+
+type MockReason = 'firebase-not-configured' | 'xls-not-found' | 'parse-failed' | 'unknown-error';
+
+const COLLECTION = 'airport_flow';
+const CLEANUP_KEEP_DAYS = 7;
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event) as { date?: string; terminal?: string; direction?: string };
   const date = query.date ?? new Date().toISOString().slice(0, 10);
   const terminal = query.terminal ?? 'all';
   const direction = query.direction ?? 'all';
 
-  const { airportForecastGistUrl } = useRuntimeConfig();
-
-  if (!airportForecastGistUrl) {
-    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+  const { firebaseServiceAccountJson } = useRuntimeConfig();
+  if (!firebaseServiceAccountJson) {
+    console.warn('[airport/flow.get] firebaseServiceAccountJson 未設定');
+    return _mockResponse(date, 'firebase-not-configured');
   }
 
-  const rawUrl = `${airportForecastGistUrl.replace(/\/$/, '')}/airport-${date}.json`;
-
+  let hours: HourRecord[];
   try {
-    const raw = await $fetch<string>(rawUrl, {
-      responseType: 'text',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    const payload = JSON.parse(raw) as {
-      date: string;
-      hours: Array<{ hour: number; forecastCount: number; terminal: string; direction?: string }>;
-    };
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    const ref = db.collection(COLLECTION).doc(date);
 
-    if (!payload?.hours?.length) {
-      return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
-    }
-
-    // ── 航廈篩選 ────────────────────────────────────────────────
-    // 若指定 T1/T2 但無該航廈資料（目前資料只有 'all'），fallback 到 terminal='all'
-    let terminalFiltered = terminal === 'all'
-      ? payload.hours
-      : payload.hours.filter((h) => h.terminal === terminal);
-
-    if (terminalFiltered.length === 0) {
-      terminalFiltered = payload.hours.filter((h) => h.terminal === 'all');
-    }
-
-    // ── 方向篩選 ─────────────────────────────────────────────────
-    // 新格式：每小時有 direction='arrival'/'departure'/'all' 三筆
-    // 舊格式：無 direction 欄位（視為全部合計）
-    // direction='all' 時：優先取有 direction='all' 的彙總列；若無則取無 direction 欄的舊格式列
-    let directionFiltered: typeof terminalFiltered;
-
-    if (direction === 'all') {
-      const withAll = terminalFiltered.filter((h) => h.direction === 'all');
-      directionFiltered = withAll.length > 0
-        ? withAll
-        : terminalFiltered.filter((h) => h.direction === undefined || h.direction === null);
-    } else {
-      const specific = terminalFiltered.filter((h) => h.direction === direction);
-      if (specific.length > 0) {
-        directionFiltered = specific;
-      } else {
-        // fallback：指定方向無資料時，用彙總列或舊格式
-        const withAll = terminalFiltered.filter((h) => h.direction === 'all');
-        directionFiltered = withAll.length > 0
-          ? withAll
-          : terminalFiltered.filter((h) => h.direction === undefined || h.direction === null);
+    // ── 1. 讀 Firestore cache ──────────────────────────────
+    const snap = await ref.get();
+    if (snap.exists) {
+      const data = snap.data() as { hours?: HourRecord[] };
+      if (Array.isArray(data?.hours) && data.hours.length > 0) {
+        hours = data.hours;
+        return _filterAndRespond(date, hours, terminal, direction);
       }
     }
 
-    // ── 依小時彙總 ───────────────────────────────────────────────
-    const hours = Array.from({ length: 24 }, (_, i) => {
-      const matched = directionFiltered.filter((h) => h.hour === i);
-      const forecastCount = matched.reduce((sum, h) => sum + (h.forecastCount ?? 0), 0);
-      return { hour: i, forecastCount, actualCount: null };
-    });
+    // ── 2. cache miss → 抓桃園機場 XLS ──────────────────────
+    console.info(`[airport/flow.get] cache miss ${date}，開始抓 XLS...`);
+    const result = await FetchTaoyuanForecast(date);
+    hours = result.hours;
 
-    return {
-      data: { date, hours, isMock: false },
-      status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-    };
-  } catch {
-    return { data: _mockData(date), status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+    // ── 3. 寫 Firestore + 清理舊 doc ────────────────────────
+    await ref.set({
+      date: result.date,
+      sourceFile: result.sourceFile,
+      hours: result.hours,
+      fetchedAt: result.fetchedAt,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    console.info(`[airport/flow.get] 已寫入 Firestore airport_flow/${date}（${hours.length} 筆）`);
+
+    // 清理 7 天前的 doc（不阻塞回應）
+    void _CleanupOldDocs(db).catch((err) => {
+      console.warn('[airport/flow.get] cleanup 失敗（不影響本次請求）:', err);
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('XLS 不存在')) {
+      console.warn(`[airport/flow.get] ${date} XLS 不存在（機場可能尚未上傳）`);
+      return _mockResponse(date, 'xls-not-found');
+    }
+    if (msg.includes('解析') || msg.includes('XLS') || msg.includes('Sheet')) {
+      console.error(`[airport/flow.get] XLS 解析失敗 ${date}:`, msg);
+      return _mockResponse(date, 'parse-failed');
+    }
+    console.error(`[airport/flow.get] 未知錯誤 ${date}:`, err);
+    return _mockResponse(date, 'unknown-error');
   }
+
+  return _filterAndRespond(date, hours, terminal, direction);
 });
+
+// ── 篩選 + 回應 ──────────────────────────────────────────
+function _filterAndRespond(date: string, hours: HourRecord[], terminal: string, direction: string) {
+  // 航廈篩選（目前資料只有 'all'，指定 T1/T2 fallback all）
+  let terminalFiltered = terminal === 'all'
+    ? hours
+    : hours.filter((h) => h.terminal === terminal);
+
+  if (terminalFiltered.length === 0) {
+    terminalFiltered = hours.filter((h) => h.terminal === 'all');
+  }
+
+  // 方向篩選
+  let directionFiltered: HourRecord[];
+  if (direction === 'all') {
+    directionFiltered = terminalFiltered.filter((h) => h.direction === 'all');
+  } else if (direction === 'arrival' || direction === 'departure') {
+    directionFiltered = terminalFiltered.filter((h) => h.direction === direction);
+  } else {
+    directionFiltered = terminalFiltered.filter((h) => h.direction === 'all');
+  }
+
+  // 依小時彙總（24 筆，缺值補 0）
+  const out = Array.from({ length: 24 }, (_, i) => {
+    const matched = directionFiltered.filter((h) => h.hour === i);
+    const forecastCount = matched.reduce((sum, h) => sum + (h.forecastCount ?? 0), 0);
+    return { hour: i, forecastCount, actualCount: null };
+  });
+
+  return {
+    data: { date, hours: out, isMock: false },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  };
+}
+
+// ── Firestore 清理：刪除 7 天前的 airport_flow doc ─────────
+async function _CleanupOldDocs(db: FirebaseFirestore.Firestore): Promise<void> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - CLEANUP_KEEP_DAYS);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const snap = await db.collection(COLLECTION).where('date', '<', cutoffStr).limit(20).get();
+  if (snap.empty) return;
+
+  const batch = db.batch();
+  snap.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+  console.info(`[airport/flow.get] 清理 ${snap.size} 筆 ${cutoffStr} 之前的舊 doc`);
+}
+
+// ── Mock fallback ─────────────────────────────────────────
+function _mockResponse(date: string, reason: MockReason) {
+  return {
+    data: { ..._mockData(date), mockReason: reason },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  };
+}
 
 function _mockData(date: string) {
   const peak = [0, 0, 0, 50, 120, 280, 450, 520, 480, 400, 380, 350,

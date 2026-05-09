@@ -24,8 +24,11 @@ const DIRECTION_OPTIONS = [
 ];
 
 // ── 資料狀態 ─────────────────────────────────────────────────
+type MockReason = 'firebase-not-configured' | 'xls-not-found' | 'parse-failed' | 'unknown-error';
+
 const loading = ref(false);
 const isMockData = ref(false);
+const mockReason = ref<MockReason | null>(null);
 const peakHour = ref<number | null>(null);
 const peakCount = ref(0);
 const totalCount = ref(0);
@@ -33,19 +36,32 @@ const totalCount = ref(0);
 interface HourData { hour: number; forecastCount: number; actualCount: number | null }
 const hourData = ref<HourData[]>([]);
 
+// 根據 mockReason 顯示不同 banner 文案
+const mockMessage = computed(() => {
+  switch (mockReason.value) {
+    case 'firebase-not-configured': return '⚠️ 設定錯誤 — Firebase Service Account 未設定';
+    case 'xls-not-found':           return '⚠️ 機場尚未上傳此日期 XLS — 通常隔日凌晨更新';
+    case 'parse-failed':            return '⚠️ XLS 解析失敗 — 機場檔案格式可能已變更，請通知工程';
+    case 'unknown-error':           return '⚠️ 抓取人流資料時發生未知錯誤 — 請檢查 server logs';
+    default:                         return '⚠️ 目前顯示模擬資料';
+  }
+});
+
 // ── 資料載入 ──────────────────────────────────────────────────
 const ApiLoadFlow = async () => {
   loading.value = true;
   isMockData.value = false;
+  mockReason.value = null;
   try {
     const res = await $fetch<{
-      data: { date: string; hours: HourData[]; isMock?: boolean };
+      data: { date: string; hours: HourData[]; isMock?: boolean; mockReason?: MockReason };
       status: { code: number };
     }>(`/api/airport/flow?date=${selectedDate.value}&terminal=${selectedTerminal.value}&direction=${selectedDirection.value}`);
 
     const hours = res?.data?.hours ?? [];
     hourData.value = hours;
     isMockData.value = res?.data?.isMock ?? true;
+    mockReason.value = res?.data?.mockReason ?? null;
 
     const counts = hours.map((h) => h.forecastCount);
     totalCount.value = counts.reduce((a, b) => a + b, 0);
@@ -136,9 +152,9 @@ onMounted(ApiLoadFlow);
           .PageTraffic__stat-val {{ selectedDate }}
           .PageTraffic__stat-unit {{ terminalLabel }}
 
-      //- 模擬資料警告
+      //- 模擬資料警告（依 mockReason 顯示精準訊息）
       .PageTraffic__mock-badge(v-if="isMockData && !loading")
-        span ⚠️ 目前顯示模擬資料 — n8n 尚未寫入此日期的 XLS 預報至 Gist
+        span {{ mockMessage }}
 
       //- 圖表區
       .PageTraffic__chart-wrapper
