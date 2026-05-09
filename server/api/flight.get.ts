@@ -56,6 +56,32 @@ interface AeFutureEntry {
   flight?: AeFlight;
 }
 
+// /timetable endpoint 用，scheduledTime 為 ISO 字串、有 status
+interface AeTimetableAirport extends AeAirport {
+  scheduledTime?: string;       // ISO without timezone
+  estimatedTime?: string;
+  actualTime?: string;
+}
+interface AeTimetableEntry {
+  type?: Direction;
+  status?: string;
+  departure?: AeTimetableAirport;
+  arrival?: AeTimetableAirport;
+  airline?: AeAirline;
+  flight?: AeFlight;
+}
+
+const _statusMap: Record<string, FlightInfo['status']> = {
+  scheduled: 'scheduled',
+  active:    'active',
+  landed:    'landed',
+  delayed:   'delayed',
+  cancelled: 'cancelled',
+  redirected: 'delayed',
+  diverted:   'delayed',
+  unknown:    'scheduled',
+};
+
 // ── 簡易 in-memory cache（避免 rate limit）─────────────────
 // key = `${flightNo}|${direction}`，TTL 5 分鐘
 const _cache = new Map<string, { exp: number; data: FlightInfo | null }>();
@@ -132,6 +158,72 @@ const _mapAeFuture = (
 const _parseAirlineIata = (flightNoUpper: string): string => {
   const m = flightNoUpper.match(/^([A-Z0-9]{2})\d+$/);
   return m?.[1] ?? '';
+};
+
+// timetable 回的 ISO 沒帶 timezone，但實際是 TPE local time → 補 +08:00
+const _ensureTpeTimezone = (iso?: string): string => {
+  if (!iso) return '';
+  // 已帶 timezone（+/- 或 Z）就不動
+  if (/[+-]\d{2}:?\d{2}$/.test(iso) || iso.endsWith('Z')) return iso;
+  // 形如 '2026-05-09T23:40:00.000' → 補 '+08:00'
+  return `${iso}+08:00`;
+};
+
+// 把 Aviation Edge timetable entry 轉為 FlightInfo
+const _mapAeTimetable = (
+  entry: AeTimetableEntry,
+  flightNoUpper: string,
+  direction: Direction,
+): FlightInfo => {
+  const dep = entry.departure ?? {};
+  const arr = entry.arrival ?? {};
+  const terminal = _normalizeTerminal(direction === 'arrival' ? arr.terminal : dep.terminal);
+  const focus = direction === 'arrival' ? arr : dep;
+  const scheduledTime = _ensureTpeTimezone(focus.scheduledTime);
+  const estimatedTime = _ensureTpeTimezone(focus.estimatedTime ?? focus.actualTime ?? focus.scheduledTime);
+  return {
+    flightNo: flightNoUpper,
+    airline: {
+      iataCode: entry.airline?.iataCode?.toUpperCase() ?? '',
+      name: entry.airline?.name ?? '',
+    },
+    origin: {
+      iataCode: dep.iataCode?.toUpperCase() ?? '',
+      cityName: _airlineCityFallback(dep.iataCode),
+    },
+    destination: {
+      iataCode: arr.iataCode?.toUpperCase() ?? '',
+      cityName: _airlineCityFallback(arr.iataCode),
+    },
+    terminal,
+    scheduledTime,
+    estimatedTime,
+    status: _statusMap[(entry.status ?? '').toLowerCase()] ?? 'scheduled',
+    direction,
+  };
+};
+
+// 用 /timetable 查（即時 + 未來 1-2 天）
+const _queryTimetable = async (
+  apiKey: string,
+  flightNoUpper: string,
+  direction: Direction,
+): Promise<FlightInfo | null> => {
+  const airlineIata = _parseAirlineIata(flightNoUpper);
+  if (!airlineIata) return null;
+
+  const url = 'https://aviation-edge.com/v2/public/timetable';
+  const result = await $fetch<AeTimetableEntry[] | { error?: string } | null>(url, {
+    method: 'GET',
+    query: { key: apiKey, iataCode: 'TPE', type: direction, airline_iata: airlineIata },
+    timeout: 10000,
+  });
+  if (!Array.isArray(result) || result.length === 0) return null;
+
+  const flightLower = flightNoUpper.toLowerCase();
+  const exact = result.find((e) => (e.flight?.iataNumber ?? '').toLowerCase() === flightLower);
+  if (!exact) return null;
+  return _mapAeTimetable(exact, flightNoUpper, direction);
 };
 
 // ── 真實 API call ──────────────────────────────────────────
@@ -250,12 +342,24 @@ export default defineEventHandler(async (event) => {
   let data: FlightInfo | null = null;
   let usedSource: 'live' | 'mock' = 'mock';
 
+  // Aviation Edge 兩個 endpoint 互補：
+  // - timetable：即時 + 未來 1-2 天（含 status / actual time）
+  // - flightsFuture：7 天後排程（無 status，'date must be above' 錯誤拒絕近日）
+  // 依用車日期跟今天的差距決定走哪個
+  const today = _todayInTaipei();
+  const daysFromNow = Math.round(
+    (Date.parse(`${date}T00:00:00+08:00`) - Date.parse(`${today}T00:00:00+08:00`)) / 86400000,
+  );
+
   if (aviationEdgeKey) {
     try {
-      data = await _queryAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
+      if (daysFromNow < 7) {
+        data = await _queryTimetable(aviationEdgeKey, flightNoUpper, direction);
+      } else {
+        data = await _queryAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
+      }
       usedSource = 'live';
     } catch (err) {
-      // API 失敗（網路 / 401 / 5xx）：log + fallback to mock 維持基本可用性
       console.error('[api/flight] Aviation Edge call failed, falling back to mock:', err);
       data = _queryMock(flightNoUpper, direction);
     }
