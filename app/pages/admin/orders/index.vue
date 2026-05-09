@@ -208,28 +208,204 @@ const ApiSaveEdit = async () => {
   }
 };
 
-// ── 舊版指派彈窗（Commit C 會整合）──────────────────────
-const ClickOpenAssign = (orderId: string, currentDriverId: string) => {
-  assigningOrderId.value = orderId;
-  // 把 line: prefix 去掉再對 drivers.uid
-  selectedDriverUid.value = currentDriverId?.startsWith('line:') ? currentDriverId.slice(5) : (currentDriverId ?? '');
+// ── 指派司機（從 modal 內觸發）─────────────────────────
+const ClickOpenAssign = () => {
+  if (!selectedOrder.value) return;
+  assigningOrderId.value = selectedOrder.value.orderId;
+  const cur = selectedOrder.value.assignedDriverId ?? '';
+  selectedDriverUid.value = cur.startsWith('line:') ? cur.slice(5) : cur;
 };
 
 const ClickConfirmAssign = async () => {
   if (!assigningOrderId.value || !selectedDriverUid.value) return;
-  const res = await $api.PatchOrder(assigningOrderId.value, {
-    orderStatus: 'confirmed',
-    assignedDriverId: selectedDriverUid.value,
-  });
+  const order = orders.value.find((o) => o.orderId === assigningOrderId.value);
+  // pending 狀態指派時切到 confirmed；其他狀態僅換司機，不動狀態
+  const body: PatchOrderParams = { assignedDriverId: selectedDriverUid.value };
+  if (order && order.orderStatus === 'pending') body.orderStatus = 'confirmed';
+
+  const res = await $api.PatchOrder(assigningOrderId.value, body);
   if (res.status.code === 200) {
     ElMessage({ message: '指派成功', type: 'success' });
     await ApiLoadOrders();
   } else {
-    ElMessage({ message: '指派失敗', type: 'error' });
+    ElMessage({ message: res.status?.message?.zh_tw ?? '指派失敗', type: 'error' });
   }
   assigningOrderId.value = null;
   selectedDriverUid.value = '';
 };
+
+// ── 通知 sub-modal ─────────────────────────────────────────
+interface NotifyDialog {
+  open: boolean;
+  target: 'passenger' | 'driver';
+  message: string;
+  sending: boolean;
+}
+const notifyDialog = reactive<NotifyDialog>({
+  open: false,
+  target: 'passenger',
+  message: '',
+  sending: false,
+});
+
+const _formatDateTime = (iso: string) => $dayjs(iso).format('YYYY/MM/DD (ddd) HH:mm');
+
+const _BuildPassengerTemplate = (o: AdminOrder): string => {
+  const driverName = DriverNameOf(o.assignedDriverId) ?? '（未指派）';
+  const vehicleLabel = VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType;
+  const lines = [
+    '【DEST·ANYWHERE 訂單通知】',
+    `您的訂單 #${o.orderId.slice(0, 8).toUpperCase()} 已指派司機：`,
+    `司機：${driverName}`,
+    `車型：${vehicleLabel}`,
+    '',
+    `用車時間：${_formatDateTime(o.pickupDateTime)}`,
+    `上車點：${o.pickupLocation.displayName ?? o.pickupLocation.address}`,
+    `下車點：${o.dropoffLocation.displayName ?? o.dropoffLocation.address}`,
+    '',
+    '如有任何問題請透過 LINE 聯繫客服。',
+  ];
+  return lines.join('\n');
+};
+
+const _BuildDriverTemplate = (o: AdminOrder): string => {
+  const vehicleLabel = VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType;
+  const orderTypeLabel = ORDER_TYPE_LABEL[o.orderType] ?? o.orderType;
+  const lines = [
+    '【DEST·ANYWHERE 新行程任務】',
+    `訂單編號：#${o.orderId.slice(0, 8).toUpperCase()}`,
+    `行程類型：${orderTypeLabel}`,
+    `乘客：${o.passengerName || '（未提供）'}`,
+    `人數：${o.passengerCount} 人 / 行李：${o.luggageCount} 件`,
+    '',
+    `用車時間：${_formatDateTime(o.pickupDateTime)}`,
+    `上車點：${o.pickupLocation.displayName ?? o.pickupLocation.address}`,
+  ];
+  if (o.stopovers?.length) {
+    o.stopovers.forEach((s, i) => {
+      lines.push(`停靠 ${i + 1}：${s.displayName ?? s.address}`);
+    });
+  }
+  lines.push(`下車點：${o.dropoffLocation.displayName ?? o.dropoffLocation.address}`);
+  if (o.flightNumber) lines.push(`航班：${o.flightNumber}`);
+  if (o.terminal) lines.push(`航廈：${o.terminal}`);
+  lines.push(`車型：${vehicleLabel}`);
+  lines.push(`預估車資：NT$ ${o.estimatedFare.toLocaleString()}`);
+  if (o.extraServices?.length) {
+    const extras = o.extraServices.map((s) => EXTRA_SERVICE_LABEL[s] || s).join('、');
+    lines.push(`額外服務：${extras}`);
+  }
+  if (o.notes) lines.push(`備註：${o.notes}`);
+  return lines.join('\n');
+};
+
+const ClickOpenNotify = (target: 'passenger' | 'driver') => {
+  if (!selectedOrder.value) return;
+  if (target === 'driver' && !selectedOrder.value.assignedDriverId) {
+    ElMessage({ message: '訂單尚未指派司機', type: 'warning' });
+    return;
+  }
+  notifyDialog.target = target;
+  notifyDialog.message = target === 'passenger'
+    ? _BuildPassengerTemplate(selectedOrder.value)
+    : _BuildDriverTemplate(selectedOrder.value);
+  notifyDialog.open = true;
+};
+
+const ClickCloseNotify = () => {
+  if (notifyDialog.sending) return;
+  notifyDialog.open = false;
+};
+
+const ApiSendNotify = async () => {
+  if (!selectedOrder.value || !notifyDialog.message.trim()) {
+    ElMessage({ message: '訊息內容不可為空', type: 'warning' });
+    return;
+  }
+  notifyDialog.sending = true;
+  try {
+    const res = await $api.NotifyOrder(selectedOrder.value.orderId, {
+      target: notifyDialog.target,
+      message: notifyDialog.message,
+    });
+    if (res.status.code === 200) {
+      ElMessage({ message: '通知已發送', type: 'success' });
+      notifyDialog.open = false;
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '通知發送失敗', type: 'error' });
+    }
+  } finally {
+    notifyDialog.sending = false;
+  }
+};
+
+// ── 取消訂單 sub-modal ─────────────────────────────────────
+type CancelReasonKey = 'passenger' | 'driver' | 'system' | 'other';
+const CANCEL_REASON_OPTIONS: Array<{ value: CancelReasonKey; label: string }> = [
+  { value: 'passenger', label: '乘客取消' },
+  { value: 'driver',    label: '司機取消' },
+  { value: 'system',    label: '系統錯誤' },
+  { value: 'other',     label: '其他（自填）' },
+];
+
+interface CancelDialog {
+  open: boolean;
+  reasonKey: CancelReasonKey;
+  customText: string;
+  cancelling: boolean;
+}
+const cancelDialog = reactive<CancelDialog>({
+  open: false,
+  reasonKey: 'passenger',
+  customText: '',
+  cancelling: false,
+});
+
+const ClickOpenCancel = () => {
+  if (!selectedOrder.value) return;
+  cancelDialog.reasonKey = 'passenger';
+  cancelDialog.customText = '';
+  cancelDialog.open = true;
+};
+
+const ClickCloseCancel = () => {
+  if (cancelDialog.cancelling) return;
+  cancelDialog.open = false;
+};
+
+const ApiCancelOrder = async () => {
+  if (!selectedOrder.value) return;
+  let reason = CANCEL_REASON_OPTIONS.find((o) => o.value === cancelDialog.reasonKey)?.label ?? '';
+  if (cancelDialog.reasonKey === 'other') {
+    if (!cancelDialog.customText.trim()) {
+      ElMessage({ message: '請填寫取消原因', type: 'warning' });
+      return;
+    }
+    reason = cancelDialog.customText.trim();
+  }
+  cancelDialog.cancelling = true;
+  try {
+    const res = await $api.PatchOrder(selectedOrder.value.orderId, {
+      orderStatus: 'cancelled',
+      cancelReason: reason,
+    });
+    if (res.status.code === 200) {
+      ElMessage({ message: '訂單已取消', type: 'success' });
+      cancelDialog.open = false;
+      await ApiLoadOrders();
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '取消失敗', type: 'error' });
+    }
+  } finally {
+    cancelDialog.cancelling = false;
+  }
+};
+
+// 是否可取消（已完成 / 已取消無法取消）
+const canCancel = computed(() => {
+  if (!selectedOrder.value) return false;
+  return selectedOrder.value.orderStatus !== 'cancelled' && selectedOrder.value.orderStatus !== 'completed';
+});
 
 onMounted(() => {
   ApiLoadOrders();
@@ -290,11 +466,8 @@ onMounted(() => {
         .PageAdminOrders__cell.is-fare(data-label="費用") NT$ {{ o.estimatedFare.toLocaleString() }}
         .PageAdminOrders__cell.is-status(data-label="狀態")
           span.PageAdminOrders__status(:class="STATUS_CLASS[o.orderStatus]") {{ STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
-        .PageAdminOrders__cell.is-action(@click.stop)
-          button.PageAdminOrders__assign-btn(
-            v-if="o.orderStatus === 'pending' || o.orderStatus === 'confirmed'"
-            @click="ClickOpenAssign(o.orderId, o.assignedDriverId)"
-          ) 指派
+        .PageAdminOrders__cell.is-action
+          span.PageAdminOrders__row-chevron ›
 
   //- ── Modal 詳情 ──────────────────────────────────────
   Transition(name="fade")
@@ -332,10 +505,14 @@ onMounted(() => {
             //- 司機資訊
             .PageAdminOrders__section
               .PageAdminOrders__section-title 司機
-              .PageAdminOrders__section-row
-                span.PageAdminOrders__section-key 已指派
-                span.PageAdminOrders__section-val(v-if="DriverNameOf(selectedOrder.assignedDriverId)") {{ DriverNameOf(selectedOrder.assignedDriverId) }}
-                span.PageAdminOrders__section-val.is-muted(v-else) 未指派
+              .PageAdminOrders__driver-row
+                .PageAdminOrders__driver-info
+                  span.PageAdminOrders__driver-name(v-if="DriverNameOf(selectedOrder.assignedDriverId)") {{ DriverNameOf(selectedOrder.assignedDriverId) }}
+                  span.PageAdminOrders__driver-name.is-muted(v-else) 未指派
+                button.PageAdminOrders__driver-assign-btn(
+                  v-if="canCancel"
+                  @click="ClickOpenAssign"
+                ) {{ selectedOrder.assignedDriverId ? '更換司機' : '指派司機' }}
 
             //- 路線
             .PageAdminOrders__section
@@ -481,26 +658,89 @@ onMounted(() => {
         //- Footer 操作
         .PageAdminOrders__modal-foot
           template(v-if="!isEditing")
-            button.PageAdminOrders__action.is-secondary(@click="ClickEditMode") 編輯訂單
+            button.PageAdminOrders__action.is-danger(
+              v-if="canCancel"
+              @click="ClickOpenCancel"
+            ) 取消訂單
+            .PageAdminOrders__foot-spacer
+            button.PageAdminOrders__action.is-secondary(
+              :disabled="!selectedOrder.assignedDriverId"
+              @click="ClickOpenNotify('driver')"
+            ) 通知司機
+            button.PageAdminOrders__action.is-secondary(@click="ClickOpenNotify('passenger')") 通知乘客
+            button.PageAdminOrders__action.is-primary(@click="ClickEditMode") 編輯訂單
           template(v-else)
             button.PageAdminOrders__action.is-secondary(@click="ClickCancelEdit" :disabled="saving") 取消編輯
             button.PageAdminOrders__action.is-primary(@click="ApiSaveEdit" :disabled="saving") {{ saving ? '儲存中...' : '儲存修改' }}
 
-  //- 舊版指派司機彈窗（Commit C 會整合進新 modal）
-  .PageAdminOrders__modal-mask(v-if="assigningOrderId" @click.self="assigningOrderId = null")
-    .PageAdminOrders__assign-modal
-      .PageAdminOrders__assign-modal-title 指派司機
-      .PageAdminOrders__assign-modal-body
-        label.PageAdminOrders__edit-label 選擇司機
+  //- 指派司機 sub-modal（從訂單 modal 觸發）
+  .PageAdminOrders__sub-mask(v-if="assigningOrderId" @click.self="assigningOrderId = null")
+    .PageAdminOrders__sub-modal
+      .PageAdminOrders__sub-title 指派司機
+      .PageAdminOrders__sub-body
+        label.PageAdminOrders__edit-label 選擇司機（已核准）
         select.PageAdminOrders__edit-input(v-model="selectedDriverUid")
           option(value="" disabled) 請選擇司機
           option(v-for="d in drivers" :key="d.uid" :value="d.uid") {{ d.displayName }}
-      .PageAdminOrders__assign-modal-actions
+        p.PageAdminOrders__sub-hint 指派後不會自動通知司機；如需通知請使用「通知司機」按鈕。
+      .PageAdminOrders__sub-actions
         button.PageAdminOrders__action.is-secondary(@click="assigningOrderId = null") 取消
         button.PageAdminOrders__action.is-primary(
           :disabled="!selectedDriverUid"
           @click="ClickConfirmAssign"
         ) 確認指派
+
+  //- 通知 sub-modal（乘客 / 司機共用）
+  .PageAdminOrders__sub-mask(v-if="notifyDialog.open" @click.self="ClickCloseNotify")
+    .PageAdminOrders__sub-modal.is-wide
+      .PageAdminOrders__sub-title
+        | {{ notifyDialog.target === 'passenger' ? '通知乘客' : '通知司機' }}
+        span.PageAdminOrders__sub-subtitle  · 透過 LINE 推送
+      .PageAdminOrders__sub-body
+        label.PageAdminOrders__edit-label 訊息內容（可整段編輯）
+        textarea.PageAdminOrders__edit-textarea(
+          v-model="notifyDialog.message"
+          rows="12"
+          maxlength="2000"
+          placeholder="編輯訊息內容..."
+        )
+        .PageAdminOrders__char-count {{ notifyDialog.message.length }} / 2000
+      .PageAdminOrders__sub-actions
+        button.PageAdminOrders__action.is-secondary(
+          @click="ClickCloseNotify"
+          :disabled="notifyDialog.sending"
+        ) 取消
+        button.PageAdminOrders__action.is-primary(
+          :disabled="notifyDialog.sending || !notifyDialog.message.trim()"
+          @click="ApiSendNotify"
+        ) {{ notifyDialog.sending ? '發送中...' : '發送通知' }}
+
+  //- 取消訂單 sub-modal
+  .PageAdminOrders__sub-mask(v-if="cancelDialog.open" @click.self="ClickCloseCancel")
+    .PageAdminOrders__sub-modal
+      .PageAdminOrders__sub-title 取消訂單
+      .PageAdminOrders__sub-body
+        label.PageAdminOrders__edit-label 取消原因
+        select.PageAdminOrders__edit-input(v-model="cancelDialog.reasonKey")
+          option(v-for="opt in CANCEL_REASON_OPTIONS" :key="opt.value" :value="opt.value") {{ opt.label }}
+        textarea.PageAdminOrders__edit-textarea(
+          v-if="cancelDialog.reasonKey === 'other'"
+          v-model="cancelDialog.customText"
+          rows="3"
+          maxlength="200"
+          placeholder="請填寫取消原因..."
+          style="margin-top: 8px;"
+        )
+        p.PageAdminOrders__sub-hint.is-warn ⚠️ 取消後訂單狀態會改為「已取消」，且不會自動通知乘客 / 司機。如需通知請於取消後使用通知按鈕。
+      .PageAdminOrders__sub-actions
+        button.PageAdminOrders__action.is-secondary(
+          @click="ClickCloseCancel"
+          :disabled="cancelDialog.cancelling"
+        ) 返回
+        button.PageAdminOrders__action.is-danger(
+          :disabled="cancelDialog.cancelling"
+          @click="ApiCancelOrder"
+        ) {{ cancelDialog.cancelling ? '處理中...' : '確認取消訂單' }}
 </template>
 
 <style lang="scss" scoped>
@@ -681,8 +921,7 @@ $muted: rgba(255, 255, 255, 0.35);
       'id      status'
       'time    time'
       'driver  fare'
-      'type    vehicle'
-      'action  action';
+      'type    vehicle';
     min-width: 0;
     padding: 14px 14px 12px;
     gap: 8px 12px;
@@ -729,20 +968,7 @@ $muted: rgba(255, 255, 255, 0.35);
   .PageAdminOrders__cell.is-type { grid-area: type; }
   .PageAdminOrders__cell.is-vehicle { grid-area: vehicle; align-items: flex-end; }
 
-  .PageAdminOrders__cell.is-action {
-    grid-area: action;
-    margin-top: 4px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    align-items: flex-start;
-  }
-  .PageAdminOrders__cell.is-action::before { display: none; }
-
-  .PageAdminOrders__assign-btn {
-    width: 100%;
-    padding: 10px 14px;
-    font-size: 13px;
-  }
+  .PageAdminOrders__cell.is-action { display: none; }
 }
 
 @media (max-width: 479.98px) {
@@ -770,22 +996,6 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__unassigned {
   color: rgba(255, 255, 255, 0.2);
   font-size: 11px;
-}
-
-.PageAdminOrders__assign-btn {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba($amber, 0.35);
-  background: rgba($amber, 0.08);
-  color: $amber;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover { background: rgba($amber, 0.16); }
 }
 
 .PageAdminOrders__status {
@@ -1162,6 +1372,7 @@ $muted: rgba(255, 255, 255, 0.35);
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -1177,34 +1388,146 @@ $muted: rgba(255, 255, 255, 0.35);
     border-color: $border;
     &:hover:not(:disabled) { background: $surface-2; }
   }
+
+  &.is-danger {
+    background: rgba(255, 80, 80, 0.1);
+    color: rgba(255, 100, 100, 0.95);
+    border-color: rgba(255, 80, 80, 0.35);
+    &:hover:not(:disabled) { background: rgba(255, 80, 80, 0.18); }
+  }
 }
 
-// ── 舊版指派 modal ────────────────────────────────────────
-.PageAdminOrders__assign-modal {
+.PageAdminOrders__foot-spacer { flex: 1; }
+
+@media (max-width: 599.98px) {
+  .PageAdminOrders__modal-foot {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .PageAdminOrders__foot-spacer { display: none; }
+  .PageAdminOrders__action { flex: 1 1 calc(50% - 4px); padding: 9px 12px; font-size: 12px; }
+}
+
+// ── 列表 chevron ───────────────────────────────────────────
+.PageAdminOrders__row-chevron {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+  display: block;
+  line-height: 1;
+}
+
+@media (max-width: 767.98px) {
+  .PageAdminOrders__row-chevron { display: none; }
+}
+
+// ── modal 內司機列 ─────────────────────────────────────────
+.PageAdminOrders__driver-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid $border;
+  border-radius: 10px;
+}
+
+.PageAdminOrders__driver-info { flex: 1; min-width: 0; }
+
+.PageAdminOrders__driver-name {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  color: #fff;
+  font-weight: 700;
+
+  &.is-muted { color: $muted; font-weight: 400; }
+}
+
+.PageAdminOrders__driver-assign-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba($amber, 0.4);
+  background: rgba($amber, 0.1);
+  color: $amber;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+
+  &:hover { background: rgba($amber, 0.18); }
+}
+
+// ── 字數提示 ──────────────────────────────────────────────
+.PageAdminOrders__char-count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  color: $muted;
+  text-align: right;
+  margin-top: 4px;
+}
+
+// ── sub-modal（指派 / 通知 / 取消 共用）────────────────────
+.PageAdminOrders__sub-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.PageAdminOrders__sub-modal {
   background: #161b22;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 18px;
   padding: 22px;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
+
+  &.is-wide { max-width: 560px; }
 }
 
-.PageAdminOrders__assign-modal-title {
+.PageAdminOrders__sub-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 22px;
   letter-spacing: 0.06em;
   color: #fff;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
-.PageAdminOrders__assign-modal-body {
+.PageAdminOrders__sub-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: $muted;
+  margin-left: 4px;
+}
+
+.PageAdminOrders__sub-body {
   margin-bottom: 18px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.PageAdminOrders__assign-modal-actions {
+.PageAdminOrders__sub-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  margin-top: 8px;
+  line-height: 1.5;
+
+  &.is-warn { color: rgba(255, 200, 0, 0.7); }
+}
+
+.PageAdminOrders__sub-actions {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
