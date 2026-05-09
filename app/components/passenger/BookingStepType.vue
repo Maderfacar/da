@@ -48,8 +48,10 @@ const _LookupFlight = async (no: string) => {
   flightLoading.value = true;
   flightError.value = '';
   try {
+    // direction 依 orderType 推：airport-pickup → arrival、airport-dropoff → departure
+    const direction = selectedType.value === 'airport-dropoff' ? 'departure' : 'arrival';
     const res = await $fetch<{ ok: boolean; data?: FlightInfo; message?: string }>(
-      `/api/flight?flightNo=${cleaned}`,
+      `/api/flight?flightNo=${cleaned}&direction=${direction}`,
     );
     if (res.ok && res.data) {
       // 送機：預計起飛時間必須 >= 用車時間 + 3 小時
