@@ -54,17 +54,17 @@ const _LookupFlight = async (no: string) => {
       `/api/flight?flightNo=${cleaned}&direction=${direction}`,
     );
     if (res.ok && res.data) {
+      // 保留原始 flight 資料，方便 watch dateTime 變更時重新驗證
+      localFlightInfo.value = res.data;
       // 送機：預計起飛時間必須 >= 用車時間 + 3 小時
       if (selectedType.value === 'airport-dropoff' && dateTime.value) {
         const minDeparture = $dayjs(dateTime.value).add(3, 'hour');
         if ($dayjs(res.data.estimatedTime).isBefore(minDeparture)) {
-          localFlightInfo.value = null;
           flightError.value = t('booking.type.error.tooSoon', { flight: cleaned });
-          emit('update:flightInfo', null);
+          emit('update:flightInfo', null); // parent 不能拿 invalid flight 進下一步
           return;
         }
       }
-      localFlightInfo.value = res.data;
       emit('update:flightInfo', res.data);
     } else {
       localFlightInfo.value = null;
@@ -114,12 +114,16 @@ watch(selectedType, (val) => {
 watch(dateTime, (val) => {
   emit('update:pickupDateTime', val);
   // 用車時間變更時，重新驗證已查到的送機航班
+  // localFlightInfo 保留原始 flight 資料，所以即使原本顯示 tooSoon，新時間 OK 後可清除錯誤
   if (selectedType.value === 'airport-dropoff' && localFlightInfo.value && val) {
     const minDeparture = $dayjs(val).add(3, 'hour');
     if ($dayjs(localFlightInfo.value.estimatedTime).isBefore(minDeparture)) {
       flightError.value = t('booking.type.error.tooSoon', { flight: localFlightInfo.value.flightNo });
-      localFlightInfo.value = null;
       emit('update:flightInfo', null);
+    } else {
+      // 新時間滿足 3 小時前置，清除錯誤並 re-emit valid flight
+      flightError.value = '';
+      emit('update:flightInfo', localFlightInfo.value);
     }
   }
 });
