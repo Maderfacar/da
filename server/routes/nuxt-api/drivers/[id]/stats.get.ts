@@ -7,9 +7,11 @@ export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
 
-  const uid = getRouterParam(event, 'uid');
+  // P19 hotfix：route param 名稱改為 'id'（同層 [id] vs [uid] 並存會被 Nitro 視為衝突
+  // → 整個 [uid]/ 目錄不被註冊 → stats 永遠 404；location.put 也可能受影響）
+  const uid = getRouterParam(event, 'id');
   if (!uid) {
-    return badRequestError({ zh_tw: '缺少司機 ID', en: 'Missing uid', ja: 'ドライバー ID が不足しています' });
+    return badRequestError({ zh_tw: '缺少司機 ID', en: 'Missing id', ja: 'ドライバー ID が不足しています' });
   }
 
   // P14：caller 必須是 driver 本人或 admin（uid 兩種格式都比對）
