@@ -132,12 +132,25 @@ const _mapAeEntry = (entry: AeTimetableEntry, flightNoUpper: string): FlightInfo
   };
 };
 
+// 從 flightNo 拆出 airline IATA（前 2 碼字母 / 數字字母混合）
+// 'JX801' → 'JX'、'CI3' → 'CI'、'BR832' → 'BR'、'9W1' → '9W'
+const _parseAirlineIata = (flightNoUpper: string): string => {
+  const m = flightNoUpper.match(/^([A-Z0-9]{2})\d+$/);
+  return m?.[1] ?? '';
+};
+
 // ── 真實 API call ──────────────────────────────────────────
+// Aviation Edge 對 flight_iata / flight_num filter 不 work（都回 No Record Found），
+// 只有 airline_iata 過濾可用。策略：用 airline_iata 抓該航空公司全部 TPE timetable，
+// 再 server 端 filter 對應的 iataNumber。
 const _queryAviationEdge = async (
   apiKey: string,
   flightNoUpper: string,
   direction: Direction,
 ): Promise<FlightInfo | null> => {
+  const airlineIata = _parseAirlineIata(flightNoUpper);
+  if (!airlineIata) return null; // 不合法的航班號（無法解析航空公司）
+
   const url = 'https://aviation-edge.com/v2/public/timetable';
   const result = await $fetch<AeTimetableEntry[] | { error?: string } | null>(url, {
     method: 'GET',
@@ -145,19 +158,18 @@ const _queryAviationEdge = async (
       key: apiKey,
       iataCode: 'TPE',
       type: direction,
-      flight_iata: flightNoUpper,
+      airline_iata: airlineIata,
     },
-    timeout: 8000,
+    timeout: 10000,
   });
 
-  // Aviation Edge 沒結果回 { error: 'No Record Found' }；找到回 array
   if (!Array.isArray(result) || result.length === 0) return null;
 
-  // 先找 iataNumber 完全相符的，否則拿第一筆
-  const exact = result.find((e) => e.flight?.iataNumber?.toUpperCase() === flightNoUpper);
-  const entry = exact ?? result[0];
-  if (!entry) return null;
-  return _mapAeEntry(entry, flightNoUpper);
+  // 先找 iataNumber 完全相符的（大小寫無關）
+  const flightLower = flightNoUpper.toLowerCase();
+  const exact = result.find((e) => (e.flight?.iataNumber ?? '').toLowerCase() === flightLower);
+  if (!exact) return null;
+  return _mapAeEntry(exact, flightNoUpper);
 };
 
 // ── Mock 資料（dev 環境 fallback）────────────────────────────────────

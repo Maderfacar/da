@@ -71,9 +71,16 @@ const _LookupFlight = async (no: string) => {
       flightError.value = t('booking.type.error.notFound', { flight: cleaned });
       emit('update:flightInfo', null);
     }
-  } catch {
+  } catch (err: unknown) {
     localFlightInfo.value = null;
-    flightError.value = t('booking.type.error.queryFail');
+    // 404 (查無此航班) 與 其他錯誤 (網路 / 5xx) 文案分開
+    const statusCode = (err as { statusCode?: number; status?: number })?.statusCode
+      ?? (err as { statusCode?: number; status?: number })?.status;
+    if (statusCode === 404) {
+      flightError.value = t('booking.type.error.notFound', { flight: cleaned });
+    } else {
+      flightError.value = t('booking.type.error.queryFail');
+    }
     emit('update:flightInfo', null);
   } finally {
     flightLoading.value = false;
