@@ -27,6 +27,8 @@ const mapEl = ref<HTMLDivElement | null>(null);
 const drivers = ref<DriverInfo[]>([]);
 const lastRefresh = ref('');
 const filter = ref<FilterMode>('all');
+// P21：手機 bottom sheet 開合狀態（桌機側面板恆顯）
+const sheetOpen = ref(false);
 
 let gmMap: google.maps.Map | null = null;
 const markerMap = new Map<string, google.maps.Marker>();
@@ -230,8 +232,25 @@ onUnmounted(() => {
   //- 地圖
   .PageWarRoom__map(ref="mapEl")
 
-  //- 側邊資訊面板
-  .PageWarRoom__panel
+  //- 手機浮動按鈕（< 768px 顯示）
+  button.PageWarRoom__fab(
+    @click="sheetOpen = true"
+    aria-label="開啟司機列表"
+  )
+    span.PageWarRoom__fab-icon 🚗
+    span.PageWarRoom__fab-count {{ driverCounts.all }}
+
+  //- 手機 bottom sheet 遮罩
+  .PageWarRoom__sheet-mask(
+    :class="{ 'is-open': sheetOpen }"
+    @click="sheetOpen = false"
+  )
+
+  //- 側邊資訊面板（桌機常駐 / 手機 bottom sheet）
+  .PageWarRoom__panel(:class="{ 'is-sheet-open': sheetOpen }")
+    //- 手機 bottom sheet 拖把（視覺）
+    .PageWarRoom__sheet-handle(@click="sheetOpen = false")
+
     .PageWarRoom__panel-header
       .PageWarRoom__panel-title 即時作戰室
       .PageWarRoom__panel-sub WAR ROOM
@@ -289,12 +308,75 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   height: calc(100vh - 60px);
   background: #0f1115;
   overflow: hidden;
+  position: relative;
 }
 
 // ── 地圖 ──────────────────────────────────────────────────
 .PageWarRoom__map {
   flex: 1;
   height: 100%;
+}
+
+// ── 浮動按鈕（手機）──────────────────────────────────────
+.PageWarRoom__fab {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: 24px;
+  z-index: 60;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(212, 134, 10, 0.5);
+  background: var(--da-amber);
+  color: #fff;
+  font-family: $font-condensed;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:active { transform: scale(0.96); }
+}
+
+.PageWarRoom__fab-icon { font-size: 16px; line-height: 1; }
+.PageWarRoom__fab-count {
+  min-width: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+// ── Sheet 遮罩（手機）────────────────────────────────────
+.PageWarRoom__sheet-mask {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// ── Sheet 拖把（手機）────────────────────────────────────
+.PageWarRoom__sheet-handle {
+  display: none;
+  width: 40px;
+  height: 4px;
+  margin: 6px auto 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 // ── 側邊面板 ──────────────────────────────────────────────
@@ -307,6 +389,37 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-direction: column;
   padding: 20px 16px;
   overflow-y: auto;
+}
+
+// ── 手機（< 768px）：地圖滿版 / 面板改 bottom sheet ─────
+@media (max-width: 767.98px) {
+  .PageWarRoom {
+    flex-direction: column;
+    height: calc(100svh - 56px);
+  }
+
+  .PageWarRoom__map { height: 100%; }
+
+  .PageWarRoom__fab { display: inline-flex; }
+  .PageWarRoom__sheet-mask { display: block; }
+  .PageWarRoom__sheet-handle { display: block; }
+
+  .PageWarRoom__panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 80;
+    width: 100%;
+    max-height: 75vh;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px 20px 0 0;
+    padding: 4px 16px 24px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+
+    &.is-sheet-open { transform: translateY(0); }
+  }
 }
 
 .PageWarRoom__panel-header {

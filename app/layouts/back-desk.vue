@@ -45,6 +45,7 @@ function ClickNav(path: string) {
     button.LayoutBackDesk__hamburger(
       @click="drawerOpen = !drawerOpen"
       :class="{ 'is-open': drawerOpen }"
+      aria-label="切換選單"
     )
       span
       span
@@ -57,30 +58,31 @@ function ClickNav(path: string) {
       span.LayoutBackDesk__admin-badge ADMIN
       CommonHeaderUser
 
-  //- ── 側邊抽屜 ─────────────────────────────────────────────
-  transition(name="drawer")
-    .LayoutBackDesk__drawer(v-if="drawerOpen")
-      .LayoutBackDesk__drawer-header
-        .LayoutBackDesk__drawer-logo
-          | DEST
-          span ∙
-          | ANYWHERE
-        p.LayoutBackDesk__drawer-sub 管理者後台
-      nav.LayoutBackDesk__drawer-nav
-        .LayoutBackDesk__nav-item(
-          v-for="item in navItems"
-          :key="item.id"
-          :class="{ 'is-active': activeNav === item.id }"
-          @click="ClickNav(item.path)"
-        )
-          span.LayoutBackDesk__nav-icon {{ item.icon }}
-          span.LayoutBackDesk__nav-label {{ item.label }}
-      .LayoutBackDesk__drawer-footer
-        button.LayoutBackDesk__signout(@click="StoreAuth().SignOut()") 登出
+  //- ── 側邊抽屜（手機 overlay / 桌機常駐）────────────────────
+  aside.LayoutBackDesk__drawer(:class="{ 'is-open': drawerOpen }")
+    .LayoutBackDesk__drawer-header
+      .LayoutBackDesk__drawer-logo
+        | DEST
+        span ∙
+        | ANYWHERE
+      p.LayoutBackDesk__drawer-sub 管理者後台
+    nav.LayoutBackDesk__drawer-nav
+      .LayoutBackDesk__nav-item(
+        v-for="item in navItems"
+        :key="item.id"
+        :class="{ 'is-active': activeNav === item.id }"
+        @click="ClickNav(item.path)"
+      )
+        span.LayoutBackDesk__nav-icon {{ item.icon }}
+        span.LayoutBackDesk__nav-label {{ item.label }}
+    .LayoutBackDesk__drawer-footer
+      button.LayoutBackDesk__signout(@click="StoreAuth().SignOut()") 登出
 
-  //- ── 抽屜遮罩 ─────────────────────────────────────────────
-  transition(name="overlay")
-    .LayoutBackDesk__overlay(v-if="drawerOpen" @click="drawerOpen = false")
+  //- ── 抽屜遮罩（僅手機）─────────────────────────────────────
+  .LayoutBackDesk__overlay(
+    :class="{ 'is-open': drawerOpen }"
+    @click="drawerOpen = false"
+  )
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutBackDesk__body
@@ -217,6 +219,10 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-direction: column;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+
+  &.is-open { transform: translateX(0); }
 }
 
 .LayoutBackDesk__drawer-header {
@@ -316,6 +322,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   z-index: 250;
   background: rgba(26, 24, 20, 0.5);
   backdrop-filter: blur(2px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 // ── 頁面主體 ───────────────────────────────────────────────
@@ -324,16 +338,27 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   min-height: 100svh;
 }
 
-// ── 動畫 ──────────────────────────────────────────────────
-.drawer-enter-active,
-.drawer-leave-active { transition: transform 0.3s ease; }
+// ── 桌機 ≥ 768px：sidebar 常駐、hamburger 隱藏、overlay 隱藏 ──
+@media (min-width: 768px) {
+  .LayoutBackDesk__hamburger { display: none; }
 
-.drawer-enter-from,
-.drawer-leave-to { transform: translateX(-100%); }
+  .LayoutBackDesk__drawer {
+    transform: translateX(0);
+    transition: none;
+    z-index: 150;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
 
-.overlay-enter-active,
-.overlay-leave-active { transition: opacity 0.3s ease; }
+  .LayoutBackDesk__overlay {
+    display: none;
+  }
 
-.overlay-enter-from,
-.overlay-leave-to { opacity: 0; }
+  .LayoutBackDesk__top {
+    left: 280px;
+  }
+
+  .LayoutBackDesk__body {
+    padding-left: 280px;
+  }
+}
 </style>

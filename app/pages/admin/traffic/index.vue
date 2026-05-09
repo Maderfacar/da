@@ -222,6 +222,64 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   top: 72px;
 }
 
+// ── 手機（< 768px）：雙欄 → 單欄、aside 移到底部 ──────────
+@media (max-width: 767.98px) {
+  .PageTraffic {
+    padding: 16px 14px 60px;
+  }
+
+  .PageTraffic__header { margin-bottom: 20px; }
+  .PageTraffic__header-title { font-size: 30px; }
+
+  .PageTraffic__layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .PageTraffic__aside {
+    width: 100%;
+    position: static;
+    order: 2;
+  }
+
+  .PageTraffic__filters {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .PageTraffic__filter-group {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  // 統計三欄 → 兩欄（小手機再降 1 欄）
+  .PageTraffic__stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .PageTraffic__stat-card { padding: 12px 14px; }
+  .PageTraffic__stat-val { font-size: 22px; }
+
+  .PageTraffic__chart-wrapper {
+    height: 280px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 479.98px) {
+  .PageTraffic__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .PageTraffic__seg-btn,
+  .PageTraffic__shortcut {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
 .PageTraffic__aside-title {
   font-family: $font-condensed;
   font-size: 9px;

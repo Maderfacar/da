@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import { EXTRA_SERVICES, ORDER_TYPES, VEHICLE_CONFIGS } from '~shared/pricing';
+
 // P19：driver/trip 改為列表 + modal 詳情設計
 // - 列表卡片只顯示日期 / 時間 / 訂單號 / 路線簡略 / 狀態徽章
 // - 點卡片開 modal 顯示完整訂單資訊 + 四階段操作按鈕
 // - 上下車 + 停靠站地址點擊可開 Google Maps 導航
 // - 排序：pickupDateTime 升序（最早出發的在最上面）
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
-
-import { EXTRA_SERVICES, ORDER_TYPES, VEHICLE_CONFIGS } from '~shared/pricing';
 
 const driverGeo = useDriverGeolocation();
 

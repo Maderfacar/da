@@ -140,19 +140,19 @@ onMounted(() => {
         span 操作
 
       .PageAdminOrders__row(v-for="o in filteredOrders" :key="o.orderId")
-        .PageAdminOrders__cell.is-id
+        .PageAdminOrders__cell.is-id(data-label="訂單")
           span.PageAdminOrders__order-id \#{{ o.orderId.slice(0, 8).toUpperCase() }}
-        .PageAdminOrders__cell
+        .PageAdminOrders__cell.is-type(data-label="行程")
           span.PageAdminOrders__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
-        .PageAdminOrders__cell.is-time {{ $dayjs(o.pickupDateTime).format('MM/DD HH:mm') }}
-        .PageAdminOrders__cell
+        .PageAdminOrders__cell.is-time(data-label="用車時間") {{ $dayjs(o.pickupDateTime).format('MM/DD HH:mm') }}
+        .PageAdminOrders__cell.is-driver(data-label="司機")
           span(v-if="DriverNameOf(o.assignedDriverId)") {{ DriverNameOf(o.assignedDriverId) }}
           span.PageAdminOrders__unassigned(v-else) 未分派
-        .PageAdminOrders__cell {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
-        .PageAdminOrders__cell.is-fare NT$ {{ o.estimatedFare.toLocaleString() }}
-        .PageAdminOrders__cell
+        .PageAdminOrders__cell.is-vehicle(data-label="車型") {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
+        .PageAdminOrders__cell.is-fare(data-label="費用") NT$ {{ o.estimatedFare.toLocaleString() }}
+        .PageAdminOrders__cell.is-status(data-label="狀態")
           span.PageAdminOrders__status(:class="STATUS_CLASS[o.orderStatus]") {{ STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
-        .PageAdminOrders__cell
+        .PageAdminOrders__cell.is-action
           button.PageAdminOrders__assign-btn(
             v-if="o.orderStatus === 'pending' || o.orderStatus === 'confirmed'"
             @click="ClickOpenAssign(o.orderId, o.assignedDriverId)"
@@ -322,6 +322,126 @@ $muted: rgba(255, 255, 255, 0.35);
 
   &.is-time { color: rgba(255, 255, 255, 0.6); }
   &.is-fare { font-weight: 700; color: $amber; }
+}
+
+// ── 手機（< 768px）：表格 → 卡片堆疊 ────────────────────
+@media (max-width: 767.98px) {
+  .PageAdminOrders {
+    padding: 80px 12px 100px;
+  }
+
+  .PageAdminOrders__table {
+    overflow-x: visible;
+    gap: 10px;
+  }
+
+  .PageAdminOrders__row.is-head {
+    display: none;
+  }
+
+  .PageAdminOrders__row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'id      status'
+      'time    time'
+      'driver  fare'
+      'type    vehicle'
+      'action  action';
+    min-width: 0;
+    padding: 14px 14px 12px;
+    gap: 8px 12px;
+  }
+
+  .PageAdminOrders__cell {
+    overflow: visible;
+    white-space: normal;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  // data-label 樣式（小標題）
+  .PageAdminOrders__cell::before {
+    content: attr(data-label);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: $muted;
+  }
+
+  // 訂單號（右上 + 狀態同行）
+  .PageAdminOrders__cell.is-id {
+    grid-area: id;
+  }
+  .PageAdminOrders__order-id { font-size: 14px; color: #fff; font-weight: 700; }
+
+  // 狀態（右上）
+  .PageAdminOrders__cell.is-status {
+    grid-area: status;
+    align-items: flex-end;
+  }
+
+  // 用車時間（跨行強調）
+  .PageAdminOrders__cell.is-time {
+    grid-area: time;
+    font-size: 16px;
+    color: #fff;
+    font-weight: 700;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .PageAdminOrders__cell.is-time::before {
+    color: $muted;
+  }
+
+  // 司機 / 費用
+  .PageAdminOrders__cell.is-driver { grid-area: driver; }
+  .PageAdminOrders__cell.is-fare {
+    grid-area: fare;
+    align-items: flex-end;
+    font-size: 16px;
+  }
+
+  // 行程類型 / 車型
+  .PageAdminOrders__cell.is-type { grid-area: type; }
+  .PageAdminOrders__cell.is-vehicle {
+    grid-area: vehicle;
+    align-items: flex-end;
+  }
+
+  // 操作（跨行）
+  .PageAdminOrders__cell.is-action {
+    grid-area: action;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    align-items: flex-start;
+  }
+  .PageAdminOrders__cell.is-action::before {
+    display: none;
+  }
+
+  .PageAdminOrders__assign-btn {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+// ── 小手機（< 480px）：行程類型 / 車型 微調 ────────────
+@media (max-width: 479.98px) {
+  .PageAdminOrders__row {
+    padding: 12px;
+  }
+
+  .PageAdminOrders__cell.is-time {
+    font-size: 15px;
+  }
 }
 
 .PageAdminOrders__order-id {
