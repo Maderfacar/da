@@ -21,13 +21,17 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // assignedDriverId 在 orders 是 'line:Uxxx' 格式（auth.uid 同格式）
-  // admin 可帶 query.driverId（含 prefix 或不含都接受）查指定司機
+  // assignedDriverId 在 orders 應為 'line:Uxxx' 格式（auth.uid 同格式）
+  // P19 hotfix：admin 指派時帶的是 user.uid（doc.id，無 prefix），現已強制 normalize 寫入帶 prefix
+  // 但既有訂單可能仍是無 prefix 格式 → query 用 'in' 兼容雙格式（過渡期）
   const query = getQuery(event);
-  let targetDriverId = auth.uid; // driver 預設查自己
+  let targetDriverIdWithPrefix = auth.uid; // driver 預設查自己
   if (isAdmin && typeof query.driverId === 'string' && query.driverId.length > 0) {
-    targetDriverId = query.driverId.startsWith('line:') ? query.driverId : `line:${query.driverId}`;
+    targetDriverIdWithPrefix = query.driverId.startsWith('line:') ? query.driverId : `line:${query.driverId}`;
   }
+  const targetDriverIdNoPrefix = targetDriverIdWithPrefix.startsWith('line:')
+    ? targetDriverIdWithPrefix.slice(5)
+    : targetDriverIdWithPrefix;
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
@@ -38,7 +42,7 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     const snapshot = await db
       .collection('orders')
-      .where('assignedDriverId', '==', targetDriverId)
+      .where('assignedDriverId', 'in', [targetDriverIdWithPrefix, targetDriverIdNoPrefix])
       .where('orderStatus', 'in', ACTIVE_STATUSES)
       .get();
 

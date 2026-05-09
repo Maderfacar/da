@@ -10,7 +10,9 @@
 // 但本實作以「全域 singleton」為前提（同時多個呼叫者 share 同一份 state），所以底層 state
 // 用模組級 closure，不在 composable 內 new ref。
 
-const PERMISSION_TIMEOUT_MS = 5_000;       // 等使用者答覆授權的上限
+// P19 hotfix：5 秒 timeout 對真實 UX 太緊（使用者讀完授權彈框文字 + 決定 + 點擊都需時間），
+// 改 30 秒。實測 Chrome / LINE WebView 第一次授權彈框平均 8-15 秒；30 秒給充分緩衝且仍有上限。
+const PERMISSION_TIMEOUT_MS = 30_000;
 const UPLOAD_DISTANCE_THRESHOLD_M = 5;     // 5m 距離 threshold
 const UPLOAD_FORCE_REFRESH_MS = 60_000;    // 60s 強制 force refresh
 const ACCURACY_FILTER_M = 50;              // accuracy > 50m 不上傳
@@ -49,11 +51,16 @@ async function _DoUpload(pos: CurrentPos): Promise<void> {
   if (_uploading) return; // 避免併發
   const authStore = StoreAuth();
   const uid = authStore.user?.uid;
-  if (!uid) return;
+  if (!uid) {
+    console.warn('[useDriverGeolocation] skip upload: no auth uid yet');
+    return;
+  }
 
   _uploading = true;
   try {
-    await $api.UpdateDriverLocation(uid, {
+    // methods.put 用 .catch((err)=>err) 把 reject 包成 resolve；
+    // 必須檢查 res.status.code 才知道是否真的成功
+    const res = await $api.UpdateDriverLocation(uid, {
       lat: pos.lat,
       lng: pos.lng,
       heading: pos.heading ?? undefined,
@@ -61,10 +68,25 @@ async function _DoUpload(pos: CurrentPos): Promise<void> {
       displayName: authStore.lineProfile?.displayName ?? '',
       // status 缺省 → server 推導（有執行中訂單則 busy；否則 online）
     });
+    const code = res?.status?.code;
+    if (code !== 200) {
+      console.error('[useDriverGeolocation] upload returned error:', code, res?.status?.message);
+      // 不更新 _lastUploadedPos / _lastUploadAt，下次 watch tick 會再嘗試
+      return;
+    }
+    const isFirst = _lastUploadedPos === null;
     _lastUploadedPos = pos;
     _lastUploadAt = Date.now();
+    if (isFirst) {
+      // 首次上傳成功僅 log 一次，方便確認 driver 端確實開始送資料
+      console.info('[useDriverGeolocation] first upload succeeded', {
+        lat: pos.lat.toFixed(5),
+        lng: pos.lng.toFixed(5),
+        accuracy: pos.accuracy,
+      });
+    }
   } catch (err) {
-    console.error('[useDriverGeolocation] upload failed:', err);
+    console.error('[useDriverGeolocation] upload threw exception:', err);
   } finally {
     _uploading = false;
   }

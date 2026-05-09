@@ -59,13 +59,14 @@ export default defineEventHandler(async (_event) => {
     });
 
     // P19：busy driver 補 activeOrder（取一張執行中訂單），並行 query 提升效能
+    // P19 hotfix：兼容雙格式（既有資料可能無 prefix；新資料統一帶 prefix）
     const busyDrivers = driversWithLocation.filter((d) => d.status === 'busy');
     const activeOrderMap = new Map<string, { orderId: string; orderStatus: string }>();
     await Promise.all(
       busyDrivers.map(async (d) => {
         try {
           const orderSnap = await db.collection('orders')
-            .where('assignedDriverId', '==', `line:${d.driverId}`)
+            .where('assignedDriverId', 'in', [`line:${d.driverId}`, d.driverId])
             .where('orderStatus', 'in', EXECUTING_STATUSES)
             .limit(1)
             .get();

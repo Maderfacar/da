@@ -12,6 +12,15 @@ interface PatchOrderBody {
 const VALID_STATUSES = ['pending', 'confirmed', 'en_route', 'arrived_pickup', 'in_transit', 'completed', 'cancelled'] as const;
 type OrderStatus = typeof VALID_STATUSES[number];
 
+// P19 hotfix：assignedDriverId 強制 line: prefix（與 driver 搶單格式一致；既有 admin/users API
+// 回傳 uid 不帶 prefix，導致 admin 指派 orders.assignedDriverId 與 driver 搶單格式不一致，
+// 司機 GetAssignedOrders 永遠查不到 admin 指派的訂單）
+const _normalizeDriverId = (id: string | undefined | null): string => {
+  if (!id) return '';
+  return id.startsWith('line:') ? id : `line:${id}`;
+};
+const _stripLinePrefix = (id: string): string => id.startsWith('line:') ? id.slice(5) : id;
+
 // P19 driver 嚴格狀態機：driver 推進 status 必須照 confirmed → en_route → arrived_pickup → in_transit → completed
 const DRIVER_NEXT_STATUS: Record<string, OrderStatus> = {
   confirmed: 'en_route',
@@ -81,8 +90,10 @@ export default defineEventHandler(async (event) => {
     const isAdmin = auth.roles.includes('admin');
     const isDriver = auth.roles.includes('driver');
     const isOwner = orderUserId === auth.lineUid;
-    // assignedDriverId 在 orders 是 'line:Uxxx' 格式；auth.uid 同格式（Firebase UID）
-    const isAssignedDriver = isDriver && orderAssignedDriver === auth.uid;
+    // P19 hotfix：兼容雙格式（既有資料可能無 prefix；新資料統一帶 prefix）
+    // auth.uid 永遠是 'line:Uxxx'；比對時把 orderAssignedDriver 也 normalize
+    const orderAssignedNormalized = _normalizeDriverId(orderAssignedDriver);
+    const isAssignedDriver = isDriver && orderAssignedNormalized === auth.uid;
 
     if (!isAdmin && !isDriver && !isOwner) {
       return forbiddenError({ zh_tw: '無權變更此訂單', en: 'Not authorized to modify this order', ja: 'この注文を変更する権限がありません' });
@@ -136,7 +147,10 @@ export default defineEventHandler(async (event) => {
     // 組裝 update payload
     const updates: Record<string, unknown> = {};
     if (body.orderStatus !== undefined) updates.orderStatus = body.orderStatus;
-    if (body.assignedDriverId !== undefined) updates.assignedDriverId = body.assignedDriverId;
+    // P19 hotfix：寫入 assignedDriverId 強制統一 'line:Uxxx' 格式
+    if (body.assignedDriverId !== undefined) {
+      updates.assignedDriverId = _normalizeDriverId(body.assignedDriverId);
+    }
 
     // P19：status 變更時寫入 statusHistory.{state}At
     if (body.orderStatus && body.orderStatus !== prevStatus) {
@@ -149,11 +163,11 @@ export default defineEventHandler(async (event) => {
     await ref.update(updates);
 
     // P19：訂單 status 切 en_route 時，driver doc 自動切 busy（不是 confirmed）
-    // - assignedDriverId 在 orders 是 'line:Uxxx'，drivers doc key 是 lineUid（去 prefix）
+    // - drivers doc key 是 lineUid（去 prefix）；assignedDriverId 寫入時已 normalize 帶 prefix
     if (body.orderStatus === 'en_route' && prevStatus !== 'en_route') {
       const rawDriverId = orderAssignedDriver || (body.assignedDriverId as string | undefined);
       if (rawDriverId) {
-        const driverLineUid = rawDriverId.startsWith('line:') ? rawDriverId.slice(5) : rawDriverId;
+        const driverLineUid = _stripLinePrefix(rawDriverId);
         try {
           await db.collection('drivers').doc(driverLineUid).set({
             status: 'busy',
@@ -171,7 +185,8 @@ export default defineEventHandler(async (event) => {
     if (body.orderStatus === 'completed' && !wasCompleted) {
       const rawDriverId = orderAssignedDriver;
       if (rawDriverId) {
-        const driverLineUid = rawDriverId.startsWith('line:') ? rawDriverId.slice(5) : rawDriverId;
+        const driverLineUid = _stripLinePrefix(rawDriverId);
+        const driverIdWithPrefix = _normalizeDriverId(rawDriverId);
         const fare = (orderData.estimatedFare as number) ?? 0;
         const distance = (orderData.distanceKm as number) ?? 0;
 
@@ -190,10 +205,11 @@ export default defineEventHandler(async (event) => {
         }
 
         // P19：query 該 driver 是否仍有其他「執行中」訂單（en_route / arrived_pickup / in_transit）
-        // 注意排除剛 update 完的這張（剛改成 completed，但 Firestore 一致性可能需要 query 確認）
+        // 兼容雙格式（既有資料可能無 prefix；新資料統一帶 prefix）
         try {
+          const driverIdNoPrefix = driverLineUid;
           const remaining = await db.collection('orders')
-            .where('assignedDriverId', '==', rawDriverId)
+            .where('assignedDriverId', 'in', [driverIdWithPrefix, driverIdNoPrefix])
             .where('orderStatus', 'in', EXECUTING_STATUSES)
             .limit(1)
             .get();

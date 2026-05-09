@@ -57,11 +57,12 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
 
     // P19：status 缺省 → query 該 driver 是否有「執行中」訂單；有則 'busy'，無則 'online'
+    // P19 hotfix：兼容雙格式（既有資料可能無 prefix；新資料統一帶 prefix）
     let resolvedStatus: 'online' | 'busy' = body.status ?? 'online';
     if (body.status === undefined) {
       try {
         const exec = await db.collection('orders')
-          .where('assignedDriverId', '==', `line:${idAsLineUid}`)
+          .where('assignedDriverId', 'in', [`line:${idAsLineUid}`, idAsLineUid])
           .where('orderStatus', 'in', EXECUTING_STATUSES)
           .limit(1)
           .get();
