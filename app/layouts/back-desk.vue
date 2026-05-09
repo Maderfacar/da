@@ -5,6 +5,11 @@ const route = useRoute();
 const { authResolved } = storeToRefs(StoreAuth());
 const drawerOpen = ref(false);
 
+// 桌機（≥ 768px）首屏自動展開 sidebar，但 hamburger 永遠可 toggle
+onMounted(() => {
+  if (window.innerWidth >= 768) drawerOpen.value = true;
+});
+
 const navItems = [
   { id: 'orders',        icon: '📋', label: '訂單管理',  path: '/admin/orders'        },
   { id: 'war-room',      icon: '🎯', label: '即時戰情',  path: '/admin/war-room'      },
@@ -338,27 +343,30 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   min-height: 100svh;
 }
 
-// ── 桌機 ≥ 768px：sidebar 常駐、hamburger 隱藏、overlay 隱藏 ──
+// ── 桌機 ≥ 768px：drawer 開時 push 模式（main 縮邊不被遮罩擋），drawer 關時 main 滿版 ──
+// hamburger 永遠保留可 toggle（無論桌機/手機）
 @media (min-width: 768px) {
-  .LayoutBackDesk__hamburger { display: none; }
-
   .LayoutBackDesk__drawer {
-    transform: translateX(0);
-    transition: none;
     z-index: 150;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
   }
 
+  // 桌機 drawer 開啟時不顯示 overlay（避免擋主畫面）
   .LayoutBackDesk__overlay {
     display: none;
   }
 
-  .LayoutBackDesk__top {
-    left: 280px;
+  // drawer 開啟時 top bar + main 讓出 280px 空間（push 模式，不會被覆蓋）
+  // 用 :has() 偵測同層 drawer.is-open；現代瀏覽器（Chrome 105+ / Safari 15.4+）皆支援
+  .LayoutBackDesk:has(.LayoutBackDesk__drawer.is-open) {
+    .LayoutBackDesk__top  { left: 280px; }
+    .LayoutBackDesk__body { padding-left: 280px; }
   }
 
+  // 平滑過渡
+  .LayoutBackDesk__top,
   .LayoutBackDesk__body {
-    padding-left: 280px;
+    transition: left 0.3s ease, padding-left 0.3s ease;
   }
 }
 </style>
