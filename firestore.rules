@@ -75,10 +75,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── airport_flow 集合 ──────────────────────────────────────
-    // 機場人流預測（server lazy fetch + cache，client 不直接讀寫 Firestore）
-    match /airport_flow/{date} {
-      allow read, write: if false;  // 全經 server admin SDK
+    // ── airport_flow_forecast 集合 ─────────────────────────────
+    // 機場人流預測（已遷移至 GitHub Gist，但保留 Rules 以防回退）
+    match /airport_flow_forecast/{date} {
+      allow read: if true;     // 公開資料
+      allow write: if false;   // 僅由 n8n / server route 寫入
     }
 
     // ── 其他集合預設拒絕 ──────────────────────────────────────

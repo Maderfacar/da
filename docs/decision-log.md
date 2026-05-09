@@ -6,39 +6,6 @@
 
 ---
 
-### 2026/05/09 — 機場人流預報：棄用 n8n + Gist，改 server cheerio + xlsx + Firestore cache
-
-**類型**：架構重構
-
-**標題**：admin/traffic 後端從「n8n 抓 → Gist 寫入 → server 讀 Gist」改為「server 內建抓取 + Firestore cache」
-
-**背景**：
-- 2026/05/01 設計：n8n 每小時抓桃園機場 XLS → 解析 → PATCH 寫 GitHub Gist；admin/traffic 透過 `airportForecastGistUrl` env 直接讀 Gist raw URL
-- 2026/05/09 健檢發現 Gist 從 5/1 之後完全沒新檔（最後一筆 `airport-2026-05-02.json`），admin/traffic 連續 8 天顯示 mock
-- 根因不可考（n8n 服務狀態 / cron 是否觸發 / PAT 是否過期等都需登入 n8n 介面排查），維運面對外部依賴失控
-
-**決定**：
-- 移除 n8n + Gist 中介層，server 端直接整合「抓 → 解析 → 快取」
-- `server/utils/airport-xls-fetcher.ts`：直拼 `https://www.taoyuan-airport.com/uploads/fos/{YYYY_MM_DD}.xls` 為主路徑，cheerio 抓 `taoyuanairport.com.tw/flightforecast` 為 fallback；xlsx (SheetJS) 解析動態欄位
-- `server/api/airport/flow.get.ts`：lazy fetch 模式 — 讀 Firestore `airport_flow/{date}` cache → miss 才呼叫 fetcher → 寫回 Firestore → 順手刪除 7 天前舊 doc（一日只保留 2-3 筆）
-- 機場下載 URL 有反爬蟲，必帶 User-Agent + Referer headers（n8n workflow 已驗證的設計）
-
-**影響**：
-- 移除：`n8n-workflow-taoyuan-xls.json`、`data/airport-forecast/`、`server/api/airport/flow.post.ts`、`server/routes/nuxt-api/airport-forecast/{get,post}.ts`
-- 移除 env：`NUXT_AIRPORT_FORECAST_GIST_URL`（Vercel 端可手動刪除）
-- 新增依賴：`cheerio` ^1.2.0、`xlsx` ^0.18.5
-- Firestore 寫入成本：每日 2-4 筆（今+明各一次寫入，Free tier 每日 20,000 筆，用量 0.02%）
-- 儲存量：每筆 ~1.3KB，配合 7 天清理永遠只有 2-3 筆 doc
-- `app/components/admin/AirportForecastWidget.client.vue`（driver/dashboard 用）改透過 facade 走新 endpoint，widget 不變
-- `firestore.rules`：移除 `airport_flow_forecast` 規則，改為 `airport_flow` 全 deny（純 server admin SDK）
-
-**替代方案（已評估後否決）**：
-- 在 server 內建 in-memory cache（每 instance 各自 cache）：Vercel cold start 多 → cache 命中率低 → 形同每次都重抓 → 慢
-- 沿用 Gist：需新增 Vercel `NUXT_GITHUB_GIST_PAT` env，PAT 安全顧慮、寫入較慢、timeout 風險高
-- 重新修好 n8n：不可控因素過多（n8n 服務、cron、PAT、機場網站變動）
-
----
-
 ### 2026/05/09 — P19 Driver Trip Mission：五階段狀態流 + driver 自動定位 + war-room status filter
 
 **決策類型**：新功能 / 資料模型變更

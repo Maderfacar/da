@@ -12,8 +12,6 @@ interface AirportForecastData {
   peakCount: number;
   sourceFile: string;
   updatedAt: number;
-  isMock?: boolean;
-  mockReason?: string;
 }
 
 interface WeatherSummary {
