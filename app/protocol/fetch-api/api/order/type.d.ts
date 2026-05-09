@@ -93,9 +93,24 @@ interface AssignedOrder {
 
 // ===== 更新訂單 =====
 // P19：orderStatus 擴充新增 en_route / arrived_pickup
+// P22：admin 可改更多欄位（server 端依角色限制，passenger/driver 帶這些欄位會被拒）
 interface PatchOrderParams {
   orderStatus?: 'pending' | 'confirmed' | 'en_route' | 'arrived_pickup' | 'in_transit' | 'completed' | 'cancelled' | string;
   assignedDriverId?: string;
+  cancelReason?: string;
+  // admin-only
+  pickupDateTime?: string;
+  pickupLocation?: GooglePlace;
+  dropoffLocation?: GooglePlace;
+  stopovers?: GooglePlace[];
+  vehicleType?: string;
+  passengerCount?: number;
+  luggageCount?: number;
+  estimatedFare?: number;
+  extraServices?: string[];
+  flightNumber?: string | null;
+  terminal?: string | null;
+  notes?: string | null;
 }
 
 // ===== Maps =====

@@ -37,20 +37,62 @@ export interface AdminUser {
   createdAt: string
 }
 
+export interface GooglePlaceLite {
+  address: string
+  lat: number
+  lng: number
+  placeId?: string
+  displayName?: string
+}
+
 export interface AdminOrder {
   orderId: string
   userId: string
   lineUserId: string
   orderType: string
   pickupDateTime: string
-  pickupLocation: { address: string; displayName?: string }
-  dropoffLocation: { address: string; displayName?: string }
+  pickupLocation: GooglePlaceLite
+  dropoffLocation: GooglePlaceLite
+  stopovers: GooglePlaceLite[]
   vehicleType: string
+  passengerCount: number
+  luggageCount: number
   estimatedFare: number
+  estimatedTime: number
   distanceKm: number
+  extraServices: string[]
+  flightNumber: string | null
+  terminal: string | null
+  notes: string | null
   orderStatus: string
   assignedDriverId: string
+  cancelReason: string | null
   createdAt: number
+  passengerName: string
+  passengerPhone: string | null
+}
+
+export interface PatchAdminOrderBody {
+  orderStatus?: string
+  assignedDriverId?: string
+  cancelReason?: string
+  pickupDateTime?: string
+  pickupLocation?: GooglePlaceLite
+  dropoffLocation?: GooglePlaceLite
+  stopovers?: GooglePlaceLite[]
+  vehicleType?: string
+  passengerCount?: number
+  luggageCount?: number
+  estimatedFare?: number
+  extraServices?: string[]
+  flightNumber?: string | null
+  terminal?: string | null
+  notes?: string | null
+}
+
+export interface NotifyOrderBody {
+  target: 'passenger' | 'driver'
+  message: string
 }
 
 export interface PatchAdminUserBody {
@@ -78,6 +120,13 @@ export const GetAllOrders = (params: { status?: string } = {}) =>
 /** 廣播 LINE 推播通知 */
 export const BroadcastNotification = (body: { title: string; message: string; targetRole: 'all' | 'passenger' | 'driver' }) =>
   methods.post<{ sent: number; total: number }>('/nuxt-api/admin/broadcast', body);
+
+/** 點對點訂單通知（admin 對某筆訂單的乘客或司機發 LINE 推播） */
+export const NotifyOrder = (orderId: string, body: NotifyOrderBody) =>
+  methods.post<{ orderId: string; target: string; sentTo: string }>(
+    `/nuxt-api/admin/orders/${orderId}/notify`,
+    body as unknown as Record<string, unknown>,
+  );
 
 // P18：admins collection 相關 ----------------------------------------------------
 

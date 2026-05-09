@@ -3,10 +3,43 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { successResponse, badRequestError, notFoundError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
+interface GooglePlaceLite {
+  address: string;
+  lat: number;
+  lng: number;
+  placeId?: string;
+  displayName?: string;
+}
+
 interface PatchOrderBody {
+  // 通用欄位（admin / driver / passenger 依角色限制）
   orderStatus?: string;
   assignedDriverId?: string;
+  cancelReason?: string;
+  // admin-only 編輯欄位
+  pickupDateTime?: string;
+  pickupLocation?: GooglePlaceLite;
+  dropoffLocation?: GooglePlaceLite;
+  stopovers?: GooglePlaceLite[];
+  vehicleType?: string;
+  passengerCount?: number;
+  luggageCount?: number;
+  estimatedFare?: number;
+  extraServices?: string[];
+  flightNumber?: string | null;
+  terminal?: string | null;
+  notes?: string | null;
 }
+
+const VALID_VEHICLE_TYPES = ['sedan', 'suv', 'van', 'premium'] as const;
+const VALID_EXTRA_SERVICES = ['baby-seat', 'wheelchair', 'pickup-sign', 'flight-tracking'] as const;
+const ADMIN_ONLY_FIELDS = ['pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageCount', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes'] as const;
+
+const _isValidGooglePlace = (v: unknown): v is GooglePlaceLite => {
+  if (!v || typeof v !== 'object') return false;
+  const p = v as Record<string, unknown>;
+  return typeof p.address === 'string' && typeof p.lat === 'number' && typeof p.lng === 'number';
+};
 
 // P19：訂單狀態擴充為 7 個值
 const VALID_STATUSES = ['pending', 'confirmed', 'en_route', 'arrived_pickup', 'in_transit', 'completed', 'cancelled'] as const;
@@ -64,7 +97,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (body.orderStatus === undefined && body.assignedDriverId === undefined) {
+  // 至少需有一個可更新欄位
+  const hasAnyField = body.orderStatus !== undefined
+    || body.assignedDriverId !== undefined
+    || body.cancelReason !== undefined
+    || ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
+  if (!hasAnyField) {
     return badRequestError({ zh_tw: '沒有可更新的欄位', en: 'No fields to update', ja: '更新するフィールドがありません' });
   }
 
@@ -106,6 +144,54 @@ export default defineEventHandler(async (event) => {
       }
       if (body.orderStatus && body.orderStatus !== 'cancelled') {
         return forbiddenError({ zh_tw: '乘客僅能取消訂單', en: 'Passenger can only cancel order', ja: 'お客様はキャンセルのみ可能です' });
+      }
+      // 乘客不可改 admin-only 欄位
+      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
+      if (adminFieldUsed) {
+        return forbiddenError({ zh_tw: '乘客無權修改此欄位', en: 'Passenger cannot modify this field', ja: 'お客様はこの項目を変更する権限がありません' });
+      }
+    }
+
+    // P22：driver 不可改 admin-only 欄位（只能改 status / 取消 + cancelReason）
+    if (isDriver && !isAdmin) {
+      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
+      if (adminFieldUsed) {
+        return forbiddenError({ zh_tw: '司機無權修改此欄位', en: 'Driver cannot modify this field', ja: 'ドライバーはこの項目を変更する権限がありません' });
+      }
+    }
+
+    // P22：admin-only 欄位驗證（admin 才走到這裡，前面已擋）
+    if (isAdmin) {
+      if (body.vehicleType !== undefined && !VALID_VEHICLE_TYPES.includes(body.vehicleType as typeof VALID_VEHICLE_TYPES[number])) {
+        return badRequestError({ zh_tw: '車型無效', en: 'Invalid vehicle type', ja: '無効な車種' });
+      }
+      if (body.passengerCount !== undefined && (!Number.isInteger(body.passengerCount) || body.passengerCount < 1 || body.passengerCount > 20)) {
+        return badRequestError({ zh_tw: '人數須為 1-20', en: 'passengerCount must be 1-20', ja: '人数は 1-20 の整数' });
+      }
+      if (body.luggageCount !== undefined && (!Number.isInteger(body.luggageCount) || body.luggageCount < 0 || body.luggageCount > 20)) {
+        return badRequestError({ zh_tw: '行李數須為 0-20', en: 'luggageCount must be 0-20', ja: '荷物は 0-20 の整数' });
+      }
+      if (body.estimatedFare !== undefined && (typeof body.estimatedFare !== 'number' || body.estimatedFare < 0 || !Number.isFinite(body.estimatedFare))) {
+        return badRequestError({ zh_tw: '費用須為非負數', en: 'estimatedFare must be non-negative', ja: '料金は非負数' });
+      }
+      if (body.pickupDateTime !== undefined && (typeof body.pickupDateTime !== 'string' || Number.isNaN(Date.parse(body.pickupDateTime)))) {
+        return badRequestError({ zh_tw: '用車時間格式錯誤', en: 'Invalid pickupDateTime', ja: '日時形式が無効' });
+      }
+      if (body.pickupLocation !== undefined && !_isValidGooglePlace(body.pickupLocation)) {
+        return badRequestError({ zh_tw: '上車點格式錯誤', en: 'Invalid pickupLocation', ja: '乗車地形式が無効' });
+      }
+      if (body.dropoffLocation !== undefined && !_isValidGooglePlace(body.dropoffLocation)) {
+        return badRequestError({ zh_tw: '下車點格式錯誤', en: 'Invalid dropoffLocation', ja: '降車地形式が無効' });
+      }
+      if (body.stopovers !== undefined) {
+        if (!Array.isArray(body.stopovers) || !body.stopovers.every(_isValidGooglePlace)) {
+          return badRequestError({ zh_tw: '停靠站格式錯誤', en: 'Invalid stopovers', ja: '経由地形式が無効' });
+        }
+      }
+      if (body.extraServices !== undefined) {
+        if (!Array.isArray(body.extraServices) || !body.extraServices.every((s) => VALID_EXTRA_SERVICES.includes(s as typeof VALID_EXTRA_SERVICES[number]))) {
+          return badRequestError({ zh_tw: '額外服務格式錯誤', en: 'Invalid extraServices', ja: 'オプション形式が無効' });
+        }
       }
     }
 
@@ -150,6 +236,25 @@ export default defineEventHandler(async (event) => {
     // P19 hotfix：寫入 assignedDriverId 強制統一 'line:Uxxx' 格式
     if (body.assignedDriverId !== undefined) {
       updates.assignedDriverId = _normalizeDriverId(body.assignedDriverId);
+    }
+    // 取消原因（任何角色取消時都可帶；server 不限定原因內容）
+    if (body.cancelReason !== undefined) {
+      updates.cancelReason = body.cancelReason;
+    }
+    // admin-only 欄位寫入
+    if (isAdmin) {
+      if (body.pickupDateTime !== undefined) updates.pickupDateTime = body.pickupDateTime;
+      if (body.pickupLocation !== undefined) updates.pickupLocation = body.pickupLocation;
+      if (body.dropoffLocation !== undefined) updates.dropoffLocation = body.dropoffLocation;
+      if (body.stopovers !== undefined) updates.stopovers = body.stopovers;
+      if (body.vehicleType !== undefined) updates.vehicleType = body.vehicleType;
+      if (body.passengerCount !== undefined) updates.passengerCount = body.passengerCount;
+      if (body.luggageCount !== undefined) updates.luggageCount = body.luggageCount;
+      if (body.estimatedFare !== undefined) updates.estimatedFare = body.estimatedFare;
+      if (body.extraServices !== undefined) updates.extraServices = body.extraServices;
+      if (body.flightNumber !== undefined) updates.flightNumber = body.flightNumber;
+      if (body.terminal !== undefined) updates.terminal = body.terminal;
+      if (body.notes !== undefined) updates.notes = body.notes;
     }
 
     // P19：status 變更時寫入 statusHistory.{state}At
