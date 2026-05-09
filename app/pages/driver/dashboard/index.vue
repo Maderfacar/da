@@ -72,7 +72,7 @@ onMounted(ApiLoadStats);
 $amber: #d4860a;
 
 .PageDriverDashboard {
-  padding: 80px 20px 100px;
+  padding: 80px 20px 32px;
   min-height: 100svh;
   background: #0d0f14;
   color: #fff;
@@ -124,6 +124,13 @@ $amber: #d4860a;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 28px;
+}
+
+@media (max-width: 479.98px) {
+  .PageDriverDashboard__stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .PageDriverDashboard__stat {

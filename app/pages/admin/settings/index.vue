@@ -394,6 +394,7 @@ $muted: rgba(255, 255, 255, 0.35);
 // ── Tab ─────────────────────────────────────────────────────────
 .PageAdminSettings__tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   padding: 12px 16px 0;
   border-bottom: 1px solid $border;
@@ -416,6 +417,10 @@ $muted: rgba(255, 255, 255, 0.35);
     color: $amber;
     border-bottom-color: $amber;
   }
+}
+
+@media (max-width: 479.98px) {
+  .PageAdminSettings__tab { padding: 8px 12px; }
 }
 
 // ── 使用者清單 ────────────────────────────────────────────────────

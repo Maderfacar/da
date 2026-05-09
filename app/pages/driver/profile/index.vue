@@ -110,7 +110,7 @@ $amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.35);
 
 .PageDriverProfile {
-  padding: 80px 20px 100px;
+  padding: 80px 20px 32px;
   min-height: 100svh;
   background: $bg;
   color: #fff;
@@ -198,6 +198,13 @@ $muted: rgba(255, 255, 255, 0.35);
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 16px;
+}
+
+@media (max-width: 479.98px) {
+  .PageDriverProfile__stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .PageDriverProfile__stat {

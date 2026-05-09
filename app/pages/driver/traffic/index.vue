@@ -180,7 +180,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageTraffic {
-  padding: 24px 20px 60px;
+  padding: 80px 20px 32px;
   min-height: 100svh;
   background: #0f1115;
   color: #fff;
@@ -241,7 +241,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 手機（< 768px）：雙欄 → 單欄、aside 移到底部 ──────────
 @media (max-width: 767.98px) {
   .PageTraffic {
-    padding: 16px 14px 60px;
+    padding: 72px 14px 28px;
   }
 
   .PageTraffic__header { margin-bottom: 20px; }

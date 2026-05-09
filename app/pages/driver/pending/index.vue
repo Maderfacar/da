@@ -103,7 +103,7 @@ onMounted(ApiLoadOrders);
 $amber: #d4860a;
 
 .PageDriverPending {
-  padding: 80px 16px 100px;
+  padding: 80px 16px 32px;
   min-height: 100svh;
   background: #0d0f14;
   color: #fff;

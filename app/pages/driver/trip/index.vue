@@ -283,7 +283,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip {
-  padding: 20px 16px 100px;
+  padding: 20px 16px 32px;
   min-height: 100vh;
   background: var(--da-dark);
   color: #fff;

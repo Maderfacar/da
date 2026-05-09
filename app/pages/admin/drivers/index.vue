@@ -307,6 +307,19 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-bottom: 16px;
 }
 
+@media (max-width: 767.98px) {
+  .PageAdminDrivers__summary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 479.98px) {
+  .PageAdminDrivers__summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .PageAdminDrivers__summary-item {
   background: $surface;
   border: 1px solid $border;
