@@ -50,8 +50,11 @@ const _LookupFlight = async (no: string) => {
   try {
     // direction 依 orderType 推：airport-pickup → arrival、airport-dropoff → departure
     const direction = selectedType.value === 'airport-dropoff' ? 'departure' : 'arrival';
+    // date 從用車時間推（YYYY-MM-DD，TPE local）；尚未選用車時間時讓 server fallback 今天
+    const date = dateTime.value ? $dayjs(dateTime.value).format('YYYY-MM-DD') : '';
+    const dateParam = date ? `&date=${date}` : '';
     const res = await $fetch<{ ok: boolean; data?: FlightInfo; message?: string }>(
-      `/api/flight?flightNo=${cleaned}&direction=${direction}`,
+      `/api/flight?flightNo=${cleaned}&direction=${direction}${dateParam}`,
     );
     if (res.ok && res.data) {
       // 保留原始 flight 資料，方便 watch dateTime 變更時重新驗證
@@ -111,17 +114,23 @@ watch(selectedType, (val) => {
   }
 });
 
-watch(dateTime, (val) => {
+watch(dateTime, (val, oldVal) => {
   emit('update:pickupDateTime', val);
-  // 用車時間變更時，重新驗證已查到的送機航班
-  // localFlightInfo 保留原始 flight 資料，所以即使原本顯示 tooSoon，新時間 OK 後可清除錯誤
+  // 日期變更（YYYY-MM-DD 不同）→ 重新 lookup（API 依 date 查不同排程）
+  const newDate = val ? $dayjs(val).format('YYYY-MM-DD') : '';
+  const oldDate = oldVal ? $dayjs(oldVal).format('YYYY-MM-DD') : '';
+  if (newDate && newDate !== oldDate && flightNoInput.value.trim()) {
+    if (_debounceTimer) clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(() => _LookupFlight(flightNoInput.value), 300);
+    return; // re-lookup 時 API 結果回來會自己驗證 tooSoon
+  }
+  // 同日只動小時/分鐘 → 重新驗證已查到的送機航班 3h 前置
   if (selectedType.value === 'airport-dropoff' && localFlightInfo.value && val) {
     const minDeparture = $dayjs(val).add(3, 'hour');
     if ($dayjs(localFlightInfo.value.estimatedTime).isBefore(minDeparture)) {
       flightError.value = t('booking.type.error.tooSoon', { flight: localFlightInfo.value.flightNo });
       emit('update:flightInfo', null);
     } else {
-      // 新時間滿足 3 小時前置，清除錯誤並 re-emit valid flight
       flightError.value = '';
       emit('update:flightInfo', localFlightInfo.value);
     }

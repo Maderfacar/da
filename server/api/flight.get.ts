@@ -30,14 +30,13 @@ export interface FlightInfo {
 type Direction = 'arrival' | 'departure';
 
 // ── Aviation Edge response 型別（局部，僅取我們需要的欄位）──
+// flightsFuture endpoint 用，scheduledTime 為 'HH:mm' 字串、無 status / actualTime
 interface AeAirport {
   iataCode?: string;
   icaoCode?: string;
   terminal?: string | null;
   gate?: string | null;
-  scheduledTime?: string;
-  estimatedTime?: string;
-  actualTime?: string;
+  scheduledTime?: string; // flightsFuture: 'HH:mm'
 }
 interface AeAirline {
   name?: string;
@@ -49,9 +48,8 @@ interface AeFlight {
   iataNumber?: string;
   icaoNumber?: string;
 }
-interface AeTimetableEntry {
-  type: Direction;
-  status?: string;
+interface AeFutureEntry {
+  weekday?: string;
   departure?: AeAirport;
   arrival?: AeAirport;
   airline?: AeAirline;
@@ -62,18 +60,6 @@ interface AeTimetableEntry {
 // key = `${flightNo}|${direction}`，TTL 5 分鐘
 const _cache = new Map<string, { exp: number; data: FlightInfo | null }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
-
-const _statusMap: Record<string, FlightInfo['status']> = {
-  scheduled: 'scheduled',
-  active:    'active',
-  landed:    'landed',
-  delayed:   'delayed',
-  cancelled: 'cancelled',
-  // Aviation Edge 也可能回 'redirected'/'diverted' 等，視為 delayed
-  redirected: 'delayed',
-  diverted:   'delayed',
-  unknown:    'scheduled',
-};
 
 const _normalizeTerminal = (t?: string | null): '1' | '2' => {
   if (!t) return '1';
@@ -96,19 +82,28 @@ const _airlineCityFallback = (iataCode?: string): string => {
   return iataCode ? (m[iataCode.toUpperCase()] ?? iataCode) : '—';
 };
 
-// 把 Aviation Edge entry 轉為 FlightInfo
-const _mapAeEntry = (entry: AeTimetableEntry, flightNoUpper: string): FlightInfo => {
-  const direction = entry.type;
+// 把 'HH:mm' + 'YYYY-MM-DD' 組成 ISO（TPE 在 UTC+8 → 帶 +08:00 offset）
+const _composeIso = (date: string, hhmm: string): string => {
+  if (!hhmm || !/^\d{1,2}:\d{2}$/.test(hhmm)) return '';
+  const [h, m] = hhmm.split(':').map((s) => s.padStart(2, '0'));
+  return `${date}T${h}:${m}:00+08:00`;
+};
+
+// 把 Aviation Edge flightsFuture entry 轉為 FlightInfo
+const _mapAeFuture = (
+  entry: AeFutureEntry,
+  flightNoUpper: string,
+  direction: Direction,
+  date: string,
+): FlightInfo => {
   const dep = entry.departure ?? {};
   const arr = entry.arrival ?? {};
-  // 接機 (arrival)：航班從 origin 飛抵 TPE → terminal 看 arrival.terminal
-  // 送機 (departure)：航班從 TPE 飛去 destination → terminal 看 departure.terminal
+  // 接機 (arrival)：terminal 看 arrival 抵達 TPE 的航廈
+  // 送機 (departure)：terminal 看 departure 從 TPE 出去的航廈
   const terminal = _normalizeTerminal(direction === 'arrival' ? arr.terminal : dep.terminal);
-  // 時間：scheduledTime / estimatedTime 取 arrival 或 departure 的對應時間
-  // Aviation Edge 對 type=arrival → arrival.scheduledTime 是抵達時間；對 type=departure → departure.scheduledTime 是起飛時間
+  // 時間：focus 的 scheduledTime 是 'HH:mm' 字串
   const focus = direction === 'arrival' ? arr : dep;
-  const scheduledTime = focus.scheduledTime ?? '';
-  const estimatedTime = focus.estimatedTime ?? focus.actualTime ?? scheduledTime;
+  const scheduledTime = _composeIso(date, focus.scheduledTime ?? '');
 
   return {
     flightNo: flightNoUpper,
@@ -126,8 +121,8 @@ const _mapAeEntry = (entry: AeTimetableEntry, flightNoUpper: string): FlightInfo
     },
     terminal,
     scheduledTime,
-    estimatedTime,
-    status: _statusMap[(entry.status ?? '').toLowerCase()] ?? 'scheduled',
+    estimatedTime: scheduledTime, // future 沒有 estimate，用 scheduled
+    status: 'scheduled',
     direction,
   };
 };
@@ -140,24 +135,29 @@ const _parseAirlineIata = (flightNoUpper: string): string => {
 };
 
 // ── 真實 API call ──────────────────────────────────────────
+// 用 /flightsFuture（依日期查未來航班排程，覆蓋廣，可查任何日期）
+// /timetable 只涵蓋當前/未來 1-2 天即時排程，使用者訂遠日期會查不到，故不採用
+//
 // Aviation Edge 對 flight_iata / flight_num filter 不 work（都回 No Record Found），
-// 只有 airline_iata 過濾可用。策略：用 airline_iata 抓該航空公司全部 TPE timetable，
-// 再 server 端 filter 對應的 iataNumber。
+// 只有 airline_iata 過濾可用。策略：用 airline_iata 抓該航空公司全部 TPE 排程，
+// server 端 filter 對應的 iataNumber。
 const _queryAviationEdge = async (
   apiKey: string,
   flightNoUpper: string,
   direction: Direction,
+  date: string,
 ): Promise<FlightInfo | null> => {
   const airlineIata = _parseAirlineIata(flightNoUpper);
-  if (!airlineIata) return null; // 不合法的航班號（無法解析航空公司）
+  if (!airlineIata) return null;
 
-  const url = 'https://aviation-edge.com/v2/public/timetable';
-  const result = await $fetch<AeTimetableEntry[] | { error?: string } | null>(url, {
+  const url = 'https://aviation-edge.com/v2/public/flightsFuture';
+  const result = await $fetch<AeFutureEntry[] | { error?: string } | null>(url, {
     method: 'GET',
     query: {
       key: apiKey,
       iataCode: 'TPE',
       type: direction,
+      date,
       airline_iata: airlineIata,
     },
     timeout: 10000,
@@ -165,11 +165,11 @@ const _queryAviationEdge = async (
 
   if (!Array.isArray(result) || result.length === 0) return null;
 
-  // 先找 iataNumber 完全相符的（大小寫無關）
+  // 先找 iataNumber 完全相符的（Aviation Edge 回傳是 lowercase 'jx833'）
   const flightLower = flightNoUpper.toLowerCase();
   const exact = result.find((e) => (e.flight?.iataNumber ?? '').toLowerCase() === flightLower);
   if (!exact) return null;
-  return _mapAeEntry(exact, flightNoUpper);
+  return _mapAeFuture(exact, flightNoUpper, direction, date);
 };
 
 // ── Mock 資料（dev 環境 fallback）────────────────────────────────────
@@ -215,18 +215,29 @@ const _queryMock = (flightNoUpper: string, direction: Direction): FlightInfo | n
   };
 };
 
+// 驗證 'YYYY-MM-DD'（接受寬鬆但確認結構）
+const _isValidDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+
+// 取「今天 (Asia/Taipei)」的 YYYY-MM-DD（fallback 用）
+const _todayInTaipei = (): string => {
+  const now = new Date();
+  // toLocaleDateString with sv-SE locale → 'YYYY-MM-DD'
+  return now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+};
+
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event) as { flightNo?: string; direction?: string };
+  const query = getQuery(event) as { flightNo?: string; direction?: string; date?: string };
   const flightNoUpper = (query.flightNo ?? '').toUpperCase().replace(/\s/g, '');
   const direction: Direction = query.direction === 'departure' ? 'departure' : 'arrival';
+  const date = (query.date && _isValidDate(query.date)) ? query.date : _todayInTaipei();
 
   if (!flightNoUpper) {
     setResponseStatus(event, 400);
     return { ok: false, message: 'flightNo is required' };
   }
 
-  // cache 命中
-  const cacheKey = `${flightNoUpper}|${direction}`;
+  // cache 命中（key 含 date，避免不同日期共用結果）
+  const cacheKey = `${flightNoUpper}|${direction}|${date}`;
   const cached = _cache.get(cacheKey);
   if (cached && cached.exp > Date.now()) {
     if (cached.data) return { ok: true, data: cached.data };
@@ -241,7 +252,7 @@ export default defineEventHandler(async (event) => {
 
   if (aviationEdgeKey) {
     try {
-      data = await _queryAviationEdge(aviationEdgeKey, flightNoUpper, direction);
+      data = await _queryAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
       usedSource = 'live';
     } catch (err) {
       // API 失敗（網路 / 401 / 5xx）：log + fallback to mock 維持基本可用性
@@ -249,11 +260,10 @@ export default defineEventHandler(async (event) => {
       data = _queryMock(flightNoUpper, direction);
     }
   } else {
-    // 無 key（local dev）→ 直接 mock
     data = _queryMock(flightNoUpper, direction);
   }
 
-  // 寫 cache（包含 null 結果，避免持續打 API 查不存在航班）
+  // 寫 cache（含 null，避免持續打 API 查不存在航班）
   _cache.set(cacheKey, { exp: Date.now() + CACHE_TTL_MS, data });
 
   if (!data) {
