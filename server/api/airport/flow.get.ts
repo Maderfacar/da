@@ -14,7 +14,7 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { FetchTaoyuanForecast, type HourRecord } from '@@/utils/airport-xls-fetcher';
+import { FetchTaoyuanForecast, SCHEMA_VERSION, type HourRecord } from '@@/utils/airport-xls-fetcher';
 
 type MockReason = 'firebase-not-configured' | 'xls-not-found' | 'parse-failed' | 'unknown-error';
 
@@ -38,13 +38,17 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     const ref = db.collection(COLLECTION).doc(date);
 
-    // ── 1. 讀 Firestore cache ──────────────────────────────
+    // ── 1. 讀 Firestore cache（schemaVersion < 當前則視為 miss）──
     const snap = await ref.get();
     if (snap.exists) {
-      const data = snap.data() as { hours?: HourRecord[] };
-      if (Array.isArray(data?.hours) && data.hours.length > 0) {
+      const data = snap.data() as { hours?: HourRecord[]; schemaVersion?: number };
+      const cacheVersion = data?.schemaVersion ?? 1;
+      if (cacheVersion >= SCHEMA_VERSION && Array.isArray(data?.hours) && data.hours.length > 0) {
         hours = data.hours;
         return _filterAndRespond(date, hours, terminal, direction);
+      }
+      if (cacheVersion < SCHEMA_VERSION) {
+        console.info(`[airport/flow.get] cache schema ${cacheVersion} < ${SCHEMA_VERSION}，重抓 ${date}`);
       }
     }
 
@@ -59,6 +63,7 @@ export default defineEventHandler(async (event) => {
       sourceFile: result.sourceFile,
       hours: result.hours,
       fetchedAt: result.fetchedAt,
+      schemaVersion: result.schemaVersion,
       updatedAt: FieldValue.serverTimestamp(),
     });
     console.info(`[airport/flow.get] 已寫入 Firestore airport_flow/${date}（${hours.length} 筆）`);

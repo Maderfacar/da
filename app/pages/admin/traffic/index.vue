@@ -123,12 +123,9 @@ onMounted(ApiLoadFlow);
             button.PageTraffic__seg-btn(
               v-for="opt in TERMINAL_OPTIONS"
               :key="opt.value"
-              :class="{ 'is-active': selectedTerminal === opt.value, 'is-disabled': opt.value !== 'all' }"
-              :disabled="opt.value !== 'all'"
-              :title="opt.value !== 'all' ? '機場 XLS 資料來源不分航廈，目前僅提供合計' : ''"
-              @click="opt.value === 'all' && (selectedTerminal = opt.value as any)"
+              :class="{ 'is-active': selectedTerminal === opt.value }"
+              @click="selectedTerminal = opt.value as any"
             ) {{ opt.label }}
-          span.PageTraffic__filter-hint 資料來源不分航廈
 
         .PageTraffic__filter-group
           label.PageTraffic__filter-label 方向
@@ -382,22 +379,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     border-color: rgba(212, 134, 10, 0.5);
     color: var(--da-amber);
   }
-
-  &.is-disabled,
-  &:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-    text-decoration: line-through;
-  }
-}
-
-.PageTraffic__filter-hint {
-  font-family: $font-condensed;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.3);
-  margin-left: 6px;
-  font-style: italic;
 }
 
 // ── 統計摘要 ──────────────────────────────────────────────
