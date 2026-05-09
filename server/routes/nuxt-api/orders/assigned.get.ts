@@ -46,23 +46,60 @@ export default defineEventHandler(async (event) => {
       .where('orderStatus', 'in', ACTIVE_STATUSES)
       .get();
 
-    const orders = snapshot.docs
-      .map((doc) => {
-        const d = doc.data();
-        return {
-          orderId: d.orderId as string,
-          orderType: d.orderType as string,
-          pickupDateTime: d.pickupDateTime as string,
-          pickupLocation: d.pickupLocation as { address: string; lat: number; lng: number; displayName?: string },
-          dropoffLocation: d.dropoffLocation as { address: string; lat: number; lng: number; displayName?: string },
-          vehicleType: d.vehicleType as string,
-          passengerCount: (d.passengerCount as number) ?? 1,
-          estimatedFare: (d.estimatedFare as number) ?? 0,
-          distanceKm: (d.distanceKm as number) ?? 0,
-          orderStatus: d.orderStatus as string,
-          createdAt: d.createdAt?.toMillis?.() ?? 0,
-        };
-      })
+    // P19：完整訂單詳情（driver/trip modal 用）+ batch read users 取乘客 displayName
+    type GooglePlaceLite = { address: string; lat: number; lng: number; displayName?: string };
+
+    const baseOrders = snapshot.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        orderId: d.orderId as string,
+        userId: (d.userId as string) ?? '',
+        orderType: d.orderType as string,
+        pickupDateTime: d.pickupDateTime as string,
+        pickupLocation: d.pickupLocation as GooglePlaceLite,
+        dropoffLocation: d.dropoffLocation as GooglePlaceLite,
+        stopovers: ((d.stopovers as GooglePlaceLite[] | undefined) ?? []),
+        vehicleType: d.vehicleType as string,
+        passengerCount: (d.passengerCount as number) ?? 1,
+        luggageCount: (d.luggageCount as number) ?? 0,
+        estimatedFare: (d.estimatedFare as number) ?? 0,
+        estimatedTime: (d.estimatedTime as number) ?? 0,
+        distanceKm: (d.distanceKm as number) ?? 0,
+        extraServices: (d.extraServices as string[] | undefined) ?? [],
+        flightNumber: (d.flightNumber as string | undefined) ?? null,
+        terminal: (d.terminal as string | undefined) ?? null,
+        notes: (d.notes as string | undefined) ?? null,
+        orderStatus: d.orderStatus as string,
+        createdAt: d.createdAt?.toMillis?.() ?? 0,
+      };
+    });
+
+    // batch read users/{userId} 取 passenger displayName
+    // 既有 user 資料無 phone 欄位（passenger 訂車時只填姓名 via LINE displayName）；
+    // passengerPhone 暫回 null，UI 顯示「請透過 LINE 聯絡」
+    const userIds = Array.from(new Set(baseOrders.map((o) => o.userId).filter(Boolean)));
+    const userMap = new Map<string, { displayName: string }>();
+    if (userIds.length > 0) {
+      try {
+        const userRefs = userIds.map((uid) => db.collection('users').doc(uid));
+        const userSnaps = await db.getAll(...userRefs);
+        userSnaps.forEach((s) => {
+          if (s.exists) {
+            const data = s.data() ?? {};
+            userMap.set(s.id, { displayName: (data.displayName as string) ?? '' });
+          }
+        });
+      } catch (err) {
+        console.error('[orders/assigned] users batch read failed:', err);
+      }
+    }
+
+    const orders = baseOrders
+      .map((o) => ({
+        ...o,
+        passengerName: userMap.get(o.userId)?.displayName ?? '',
+        passengerPhone: null as string | null, // 暫無此欄位（booking 表單未收）
+      }))
       // pickupDateTime 升序（最早要去接的優先顯示）
       .sort((a, b) => {
         const ta = new Date(a.pickupDateTime).getTime();

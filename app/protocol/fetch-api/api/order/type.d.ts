@@ -69,16 +69,26 @@ type AssignedOrderStatus = 'confirmed' | 'en_route' | 'arrived_pickup' | 'in_tra
 
 interface AssignedOrder {
   orderId: string;
+  userId: string;
   orderType: string;
   pickupDateTime: string;
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
+  stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
+  luggageCount: number;
   estimatedFare: number;
+  estimatedTime: number;
   distanceKm: number;
+  extraServices: string[];
+  flightNumber: string | null;
+  terminal: string | null;
+  notes: string | null;
   orderStatus: AssignedOrderStatus;
   createdAt: number;
+  passengerName: string;
+  passengerPhone: string | null;
 }
 
 // ===== 更新訂單 =====

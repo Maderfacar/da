@@ -30,14 +30,19 @@ export interface UploadDocumentResponse {
   mime: string
 }
 
+// P19 hotfix：URL path 含 'line:' prefix（即 'line:Uxxx'）會在 Vercel/Nitro routing
+// 觸發冒號相關 edge case 導致 404；統一在 client side strip prefix，server 端原本就
+// 對 `[id]` `[uid]` 兩種格式都有 normalize 邏輯，雙端兼容。
+const _stripLinePrefix = (id: string): string => (id.startsWith('line:') ? id.slice(5) : id);
+
 export const UpdateDriverLocation = (driverId: string, params: UpdateLocationParams) =>
-  methods.put<{ ok: boolean }>(`/nuxt-api/drivers/${driverId}/location`, params);
+  methods.put<{ ok: boolean }>(`/nuxt-api/drivers/${_stripLinePrefix(driverId)}/location`, params);
 
 export const GetAvailableDrivers = () =>
   methods.get<DriverInfo[]>('/nuxt-api/drivers/available', {});
 
 export const GetDriverStats = (uid: string) =>
-  methods.get<DriverStats>(`/nuxt-api/drivers/${uid}/stats`, {});
+  methods.get<DriverStats>(`/nuxt-api/drivers/${_stripLinePrefix(uid)}/stats`, {});
 
 /** 司機申請送出（寫 driverApplication + arrayUnion 'driver' + approved=false） */
 export const ApplyDriver = (body: DriverApplyBody) =>

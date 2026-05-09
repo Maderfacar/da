@@ -223,9 +223,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
 
-    // 三端統一走 passenger LIFF App，身分由 Firestore roles[] 控制
-    const liffId = config.lineLiffIdPassenger || config.lineLiffIdDriver;
-    const clientType = 'passenger';
+    // P19：使用者已將 LINE Console 的兩個 LIFF App endpoint URL 分流：
+    //   - 乘客 LIFF endpoint = /home
+    //   - 司機 LIFF endpoint = /driver/dashboard
+    // client liff.init({ liffId }) 必須帶**對應 URL 的 LIFF ID**，否則 LIFF SDK 會 warn
+    // 「current URL is not under endpoint URL」。
+    // path 推導：當前 URL 在 /driver/* → 用 driver LIFF；其他 → 用 passenger LIFF。
+    // 從外部 URL 進入（不經 LIFF）時推導值不影響功能（liff.init 會因不在 LINE app 走 fallback）。
+    const isDriverEntry = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
+    const liffId = isDriverEntry
+      ? (config.lineLiffIdDriver || config.lineLiffIdPassenger)
+      : (config.lineLiffIdPassenger || config.lineLiffIdDriver);
+    const clientType: 'passenger' | 'driver' = isDriverEntry ? 'driver' : 'passenger';
 
     if (!liffId) { liffReady.value = true; return; }
 
