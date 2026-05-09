@@ -54,7 +54,6 @@ export default defineNuxtConfig({
     lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — server only
     internalApiKey: '',             // NUXT_INTERNAL_API_KEY — n8n 內部 API 認證
     cwaApiKey: '',                  // NUXT_CWA_API_KEY — 中央氣象署開放資料平台（伺服器端）
-    airportForecastGistUrl: '',     // NUXT_AIRPORT_FORECAST_GIST_URL — GitHub Gist raw URL
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
@@ -234,14 +233,12 @@ export default defineNuxtConfig({
       // brotli: true
     },
 
-    // 開發模式戶端代理
-    // devProxy: {
-    //   '/api': {
-    //     target: `${process.env.NUXT_API_BASE as string}/api`, // 這裡是接口地址
-    //     changeOrigin: true,
-    //     prependPath: true
-    //   }
-    // },
+    // xlsx (SheetJS) 內部用 dynamic require 載 cpexcel codepage 檔，
+    // 在 Vercel ESM bundle 後路徑解析失敗 → 整個 server bundle ERR_MODULE_NOT_FOUND。
+    // 解法：強制 inline bundle 全部 server-only XLS 解析依賴。
+    externals: {
+      inline: ['xlsx', 'cheerio'],
+    },
 
     // Nuxt route 路由設定 ------------
     // https://nuxt.com/docs/guide/concepts/rendering#route-rules
@@ -249,7 +246,7 @@ export default defineNuxtConfig({
       // '/api/**': { // 自訂反向代理
       //   proxy: `${process.env.NUXT_API_BASE as string}/api/**`
       // }
-      // '/': { ssr: true },  
+      // '/': { ssr: true },
     }
   },
 

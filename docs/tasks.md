@@ -169,14 +169,12 @@
 
 ### P4：外部整合
 
-- [✅] **n8n 桃園機場 XLS 爬取**（已全面重構）：
-  - ~~Firestore `airport_flow_forecast`~~ → **改用 GitHub Gist** 儲存（每日一檔 JSON）✅
-  - Server `GET /api/airport/flow` 改讀 Gist raw URL，支援 `date` / `terminal` / `direction` query ✅
-  - n8n workflow 重構（`n8n-workflow-taoyuan-xls.json`）：
-    - 排程改為**每小時**執行（原每日 17:00）✅
-    - 每次同時處理**今日與明日**兩個日期（SplitInBatches，下載失敗自動跳過）✅
-    - hours 改存 arrival / departure / all 三筆，前端方向篩選有真實數據 ✅
-    - 執行結束後**自動刪除 7 天前** Gist 檔案（PATCH null）✅
+- [✅] **桃園機場 XLS 爬取**（2026/05/09 再次重構，棄用 n8n + Gist 改 server lazy fetch）：
+  - ~~Firestore `airport_flow_forecast`~~ → ~~GitHub Gist~~ → **server 端 cheerio + xlsx + Firestore `airport_flow`** ✅
+  - 棄用原因：n8n 服務 5/1 後連續 8 天無更新（Gist 內最後一筆 5/2），維運成本高；改成 server 內建抓取無外部依賴
+  - 新流程：`GET /api/airport/flow` lazy fetch → 直拼 `taoyuan-airport.com/uploads/fos/{YYYY_MM_DD}.xls`（cheerio fallback）→ xlsx 解析 → 寫 Firestore cache → 自動清理 7 天前 doc
+  - 移除：`n8n-workflow-taoyuan-xls.json` / `data/airport-forecast/` / `server/api/airport/flow.post.ts` / `server/routes/nuxt-api/airport-forecast/`
+  - 移除 env：`NUXT_AIRPORT_FORECAST_GIST_URL`、Vercel 端可手動刪除
   - `admin/traffic` UI 重構：
     - 恢復 全端/第一航廈/第二航廈 及 進出境/入境/出境 篩選器 ✅
     - 移除自訂日期 input，保留今天/明天快捷鈕 ✅
@@ -523,10 +521,11 @@
 - [ ] G1~G12（spec tasks.md 內 stage gate）：driver 自動授權 / 拒絕踢退 / 五階段流 / busy 切換 / offline 推導 / war-room filter / driver 改他人單 403 / 跳階段 400
 
 **P19 後續工作（已記入 backlog）**：
-- driver/admin 端 i18n 多語化（目前 hard-coded 中文，與 upcoming 多語化機制不一致）
 - driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）
 - 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）
 - driver/dashboard online hours 統計實作（目前 hard-coded 0）
+
+> 註：driver/admin 端 i18n 多語化於 2026/05/09 由使用者決議移除（內部後台不需多語）
 
 ### P20：Booking 表單擴充（乘客端收尾查驗時做）
 
