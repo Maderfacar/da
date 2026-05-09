@@ -528,6 +528,27 @@
 - 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）
 - driver/dashboard online hours 統計實作（目前 hard-coded 0）
 
+### P20：Booking 表單擴充（乘客端收尾查驗時做）
+
+**觸發時機**：使用者在乘客端做收尾查驗時一併處理
+
+**為什麼需要**：P19 driver/trip modal 設計顯示「乘客電話 / 航班 / 航廈 / 備註」等欄位，但 booking 表單目前並未收集這些資訊：
+- `contactPhone`（聯絡電話）— driver/trip modal 目前顯示「請透過 LINE 聯絡」placeholder
+- `flightNumber`（航班編號）— 接送機情境必要
+- `terminal`（航廈）— 接送機情境必要
+- `notes`（備註）— 任何特殊需求
+
+**待修改範圍**：
+- `app/pages/booking/index.vue`：表單加 4 個欄位
+  - 聯絡電話（必填，配合 P17 規範驗證 09xxxxxxxx 格式）
+  - 航班編號（接送機才顯示，optional）
+  - 航廈（接送機才顯示，optional）
+  - 備註（textarea，optional，限 200 字）
+- `server/routes/nuxt-api/orders/index.post.ts`：`CreateOrderBody` 接收上述欄位 + Firestore 寫入
+- `app/protocol/fetch-api/api/order/type.d.ts`：`CreateOrderParams` type 補上欄位
+- `i18n/locales/{zh,en,ja}.js`：對應 label / placeholder / 錯誤訊息（三語言對齊 P17 強制規範）
+- 既有訂單資料**不影響**：新欄位 nullable，舊訂單顯示「—」即可
+
 ---
 
 **使用規則**
