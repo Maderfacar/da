@@ -250,13 +250,24 @@ const notifyDialog = reactive<NotifyDialog>({
 
 const _formatDateTime = (iso: string) => $dayjs(iso).format('YYYY/MM/DD (ddd) HH:mm');
 
+const _DriverDocOf = (assignedDriverId: string): AdminUser | undefined => {
+  if (!assignedDriverId) return undefined;
+  const cleanUid = assignedDriverId.startsWith('line:') ? assignedDriverId.slice(5) : assignedDriverId;
+  return drivers.value.find((d) => d.uid === cleanUid);
+};
+
 const _BuildPassengerTemplate = (o: AdminOrder): string => {
-  const driverName = DriverNameOf(o.assignedDriverId) ?? '（未指派）';
+  const driver = _DriverDocOf(o.assignedDriverId);
+  const driverName = driver?.driverApplication?.driverName ?? driver?.displayName ?? '（未指派）';
+  const driverPhone = driver?.driverApplication?.phone ?? '（未提供）';
+  const driverPlate = driver?.driverApplication?.plateNumber ?? '（未提供）';
   const vehicleLabel = VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType;
   const lines = [
     '【DEST·ANYWHERE 訂單通知】',
     `您的訂單 #${o.orderId.slice(0, 8).toUpperCase()} 已指派司機：`,
     `司機：${driverName}`,
+    `聯絡電話：${driverPhone}`,
+    `車牌：${driverPlate}`,
     `車型：${vehicleLabel}`,
     '',
     `用車時間：${_formatDateTime(o.pickupDateTime)}`,
@@ -1268,6 +1279,13 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__edit-input[type="datetime-local"] {
   color-scheme: dark;
+}
+
+// select 原生 popup 在 Windows/部分瀏覽器下會吃 OS theme（白底白字）。
+// 直接在 option 上設定 dark 配色強制覆寫
+.PageAdminOrders__edit-input option {
+  background: #161b22;
+  color: #fff;
 }
 
 .PageAdminOrders__stopover-list {
