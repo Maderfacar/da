@@ -6,6 +6,111 @@
 
 ---
 
+### 2026/05/09 — P19 Driver Trip Mission：五階段狀態流 + driver 自動定位 + war-room status filter
+
+**決策類型**：新功能 / 資料模型變更
+**標題**：driver/trip 重寫為任務列表 + 五階段操作（出發/到點/上車/下車）；driver 端 layout 自動定位（無上下線按鈕）；war-room 加 status filter + offline 由 lastActiveAt 推導
+
+**背景**：P18 收尾後盤點 driver 端缺口：
+1. 沒有「我被指派的訂單」頁面 — 搶單在 `/driver/pending`，但接單後無處看任務 + 行程進度
+2. 訂單狀態粒度太粗 — `confirmed → in_transit → completed` 中間缺「出發 / 到點」兩節點，admin 在 war-room 看不到司機目前在哪段
+3. 司機定位機制錯位 — 依賴司機在 `/driver/trip` 手動按「上線」啟動 GPS；P18 暴露問題後使用者要求改為「**登入 driver 端就自動授權 + 持續上傳**」，不再有手動上下線按鈕
+4. war-room 邏輯瑕疵 — markerMap 沒清理會 leak、stale 資料不過濾、靜止司機 heading=null 被當成指北
+5. 從乘客 LIFF URL 進入卻被導到司機端 — 真因為 `index.vue` 對 multi-role 使用者優先導 driver；使用者選擇純 LINE Console 端設定 LIFF endpoint URL（不需 code 改）
+
+**決定**：
+
+1. **訂單狀態擴充為 7 值**：`pending → confirmed → en_route → arrived_pickup → in_transit → completed`（+ cancelled）。新增 `en_route`（出發前往上車點）+ `arrived_pickup`（已到達上車點）對應司機操作節點。
+
+2. **driver 嚴格狀態機**：driver 改 status 必須照 `confirmed → en_route → arrived_pickup → in_transit → completed` 推進；server 端拒絕跳階段。owner（passenger）只能改 `cancelled`；admin 任意。driver 不可改 assignedDriverId（只能改自己被指派的訂單，例外是 driver/pending 搶單時把自己指派為司機）。
+
+3. **drivers.status 語意調整 — Firestore 只存 online/busy；offline 由 lastActiveAt 推導**：
+   - driver 端不再寫 `offline`（`location.put.ts` 拒絕 client 帶 'offline'）
+   - drivers.status 只能是 `online` 或 `busy`
+   - war-room client-side 比對 `lastActiveAt`，差距超過 **600 秒（10 分鐘）** 推導為 `offline`
+   - **busy 觸發點是 confirmed → en_route**（司機按「出發」），不是接單時。confirmed 階段 driver 仍 online + 有 active assigned order 顯示在 war-room 側邊面板
+
+4. **driver 自動定位 — layout 層級啟動 + 統一 composable**：
+   - 新建 `app/composables/use-driver-geolocation.ts`：模組級 singleton state，layout 啟動後整 driver 端期間 share；提供 `RequestPermission / StartWatch / StopWatch / UploadNow`
+   - 上傳節流：5m 距離 + 60s 強制 force refresh + 50m accuracy filter + status 變化必傳
+   - 拒絕授權 → blocking modal「司機端需要位置權限以執行任務追蹤」+「重試授權」按鈕；連續拒絕 2 次或 5 秒沒回應 → `navigateTo('/home')`
+   - layout `onUnmounted` 時 `clearWatch` 防 leak
+
+5. **driver/trip 重寫**：移除上下線按鈕（GPS 上移 layout）+ 顯示「我的任務列表」+ 30s polling + visibility 切回 refresh + 每張卡片依 status 顯示 ACTION_BY_STATUS 的主按鈕；按下時 `await driverGeo.UploadNow()` 強制上傳當前座標再 PatchOrder。
+
+6. **drivers/available.get 改撈所有有 location 的 drivers**：不再 `where status in [online, busy]`，讓 war-room 能切 4 狀態 filter。busy driver 額外回傳 `activeOrder: { orderId, orderStatus }`（並行 query 取執行中訂單摘要）。回傳新增 `lastActiveAt` `accuracy` 欄位。
+
+7. **war-room polish**：markerMap unmount 清理（防 leak）+ heading=null 改畫圓點（靜止司機不固定指北）+ 4 狀態 filter UI（全部/上線/任務中/離線）+ busy driver 側邊顯示 activeOrder（訂單號後 6 碼 + 中文 status）+ offline 司機 marker 灰色 opacity 0.4。
+
+8. **passenger 端歸併 status**：upcoming 頁 `_normalizeForPassenger` 把 `en_route` 與 `arrived_pickup` 都顯示為 `in_transit`（行程中），避免乘客看到太細節的進度。
+
+9. **driver/admin 端 i18n 多語化暫不做**：driver/trip 與 war-room hard-coded 中文，與 upcoming 多語機制不一致；列入 backlog。
+
+**強制規範（未來開發）**：
+
+- **訂單狀態 enum 修改 client/server/i18n 三處對齊**：新增狀態值前 grep `'pending'\|'confirmed'\|'in_transit'\|'completed'\|'cancelled'\|'en_route'\|'arrived_pickup'` 所有出現處，server `[orderId].patch.ts` VALID_STATUSES + DRIVER_NEXT_STATUS + STATUS_HISTORY_FIELD 三表同步、client TripStatus type、i18n `status.*` key 全部跟上
+- **driver/passenger 端訂單 status 顯示策略不同**：driver 端看細粒度（5 狀態各自顯示），passenger 端歸併為粗粒度（pending/confirmed/in_transit/completed/cancelled）；新增中間 status 必須在 passenger 端 `_normalizeForPassenger` 對應
+- **driver.status 不寫 offline**：driver 端 location.put.ts 拒絕 client 帶 'offline'；offline 由 war-room client-side 依 `lastActiveAt > 600s` 推導；新增 driver status 邏輯時，凡是「離線」概念都應走推導路線而非寫入
+- **busy 觸發點**：訂單由 confirmed → en_route 時 server 自動把 driver doc status 切 busy（**不是接單時**）；completed 時 query 是否仍有「執行中」訂單（en_route/arrived_pickup/in_transit，**不含 confirmed**）→ 無則切回 online
+- **client-side route middleware 對 async 狀態的等待已由 P18 hotfix v2 統一解決**：使用 `authStore.WaitForAuthResolved()` plain Promise + import.meta.server guard；新增需要等 auth 的場景沿用此 pattern，不要用 watch
+- **navigator.geolocation 第一次彈框不可繞過**：W3C 強制隱私機制；本 spec 改為 layout 層級觸發（一進 driver 端就彈一次），授權後整端期間不再彈
+- **watchPosition 啟動位置一致性**：driver 端只在 `app/layouts/driver.vue` onMounted 啟動 + onUnmounted clearWatch；新增 driver page **不要**自己再呼叫 `useDriverGeolocation().StartWatch()`（會 idempotent return，但語意混亂）
+- **war-room marker 必須在 unmount 清理**：`for (const [, m] of markerMap) m.setMap(null); markerMap.clear()`；任何 Google Maps Marker / Polyline 等資源在 component unmount 時務必釋放，否則 SPA 切頁累積會 leak
+
+**影響**：
+
+- 新增：
+  - `server/routes/nuxt-api/orders/assigned.get.ts`（driver 取執行中訂單）
+  - `app/composables/use-driver-geolocation.ts`（統一定位 composable）
+  - `openspec/changes/2026-05-09-p19-driver-trip-mission/{proposal,design,tasks}.md`
+- 修改 server（3）：`orders/[orderId].patch.ts`（狀態擴充 + driver 狀態機 + busy/online 自動切 + statusHistory）、`drivers/available.get.ts`（撈全部 + activeOrder + lastActiveAt + accuracy）、`drivers/[id]/location.put.ts`（accuracy 欄位 + 拒寫 offline）
+- 修改 client（4）：`app/layouts/driver.vue`（授權 flow + blocking modal）、`app/pages/driver/trip/index.vue`（重寫任務列表）、`app/pages/admin/war-room/index.vue`（polish + filter）、`app/pages/upcoming/index.vue`（_normalizeForPassenger）
+- 修改 type/api（3）：`api/order/index.ts`（GetAssignedOrders）、`api/order/type.d.ts`（AssignedOrder + PatchOrderParams.orderStatus 擴充）、`api/driver/type.d.ts`（accuracy + lastActiveAt + activeOrder + UpdateLocationParams 移除 'offline'）
+- firestore.rules **不變**（server 走 admin SDK bypass）
+- 既有資料**不需 migration**：drivers doc 既有 `status='offline'` 在 driver 下次登入 location.put 時會自動被 server 推導為 'online'；既有訂單仍是 5 狀態（pending/confirmed/in_transit/completed/cancelled），新狀態值僅新訂單會用到
+
+**過渡期風險**：
+- driver 端首次部署後，**正在執行中的訂單**（status=in_transit）司機操作「乘客已下車」會跳 completed → 通；但若有歷史訂單卡在 confirmed 階段，driver 進 trip 頁會看到並能按「前往上車點」→ 正常推進
+- war-room offline 推導 600 秒 threshold：剛部署時所有 driver lastActiveAt 都很舊 → 全部歸 offline；driver 端開啟 LIFF 後 60 秒內第一次 location.put 即會更新
+
+**替代方案**：
+- 接單即切 busy（confirmed → busy）：違反使用者「busy 從『出發』開始」需求，已捨棄
+- offline 由 server cron job 寫入：增加運維成本 + Firestore 寫入頻繁，已捨棄
+- watchPosition 在 page 層啟動：每次切 tab 重啟 watch + 重彈授權，已踩過坑，已捨棄
+- 在既有 `orders/index.get.ts` 加 `query.assignedDriverId` 取代新增 `orders/assigned.get.ts`：endpoint 職責變混雜（owner 訂單 vs driver 任務），語意分開更清楚，已採新 endpoint
+- driver/admin 端 i18n 一併補齊：本 spec 範圍已大，留待 P20 polish
+- LINE LIFF 分流改 code 邏輯（讀 liff.id 對應 clientType）：使用者選擇純 LINE Console 端設定 endpoint URL（A 方案），不需 code 改
+
+---
+
+### 2026/05/09 — P18 stage gate hotfix v2：middleware/auth 用 store Promise 真正 await（取代 watch）
+
+**決策類型**：Bug 修復（hotfix v1 失敗後重做）
+**標題**：`store-auth.ts` 暴露 `WaitForAuthResolved()` plain Promise；`middleware/auth.ts` 改 await 該 Promise + `import.meta.server` guard
+
+**背景**：P18 stage gate G4 重整 `/admin/orders` 後 401「未授權」收斂為 `middleware/auth.ts` 的 `if (!authResolved) return` 實際是放行而非等待。第一版 hotfix（commit 8817920）用 `watch(authResolved)` + `immediate: true` 等，但**SSR 上 `auth.client.ts` plugin 不跑 → `authResolved` 永遠 false → watch 永遠不 fire → 整站 hang 在 SSR**（front-desk 乘客頁面預設 SSR）。已 revert（commit b9938da）。
+
+**決定**：改 `app/stores/5.store-auth.ts` 暴露：
+- 私有 closure `_authResolvedPromise` + `_resolveAuthPromise`：第一次 caller 呼叫 `WaitForAuthResolved()` 時建立 Promise；`InitAuthFlow` 內所有 `authResolved.value = true` 都改用 helper `_markAuthResolved()`，同步 resolve Promise
+- 公開 action `WaitForAuthResolved(): Promise<void>` 給 caller `await`
+
+`app/middleware/auth.ts`：
+- `import.meta.server` 直接 return（SSR 沿用既有「v-if loading」behavior）
+- client 端 `await Promise.race([WaitForAuthResolved, 12s timeout])` — 12 秒對齊 InitAuthFlow safetyTimer，逾時也會被 safetyTimer 強制 mark resolved（雙保險）
+
+**強制規範**：
+- **任何需要等 async store state 的 client middleware / onMounted，使用 plain Promise 不用 watch**：watch 在無 active component / SSR context 行為不可靠；plain Promise 顯式且 deterministic
+- **新加的 store async state 若有 caller 需要 await，沿用此 pattern**：`_xxxPromise + _markXxx()` 暴露 `WaitForXxx()` action
+
+**影響**：修改 `app/middleware/auth.ts` + `app/stores/5.store-auth.ts`（5 處 `authResolved.value = true` → `_markAuthResolved()`）。commit `ea6d4b7`。
+
+**替代方案**：
+- 改 page onMounted 內各自 await：違反 DRY 且新加頁面易漏
+- 改 `methods.ts` onRequest 內 await：line-exchange 公開 endpoint + LIFF flow 內死鎖風險
+- 改 `GetFreshIdToken` 內 await：同樣死鎖風險
+
+---
+
 ### 2026/05/09 — P18 Collection Split：drivers / admins 獨立 collection + admin 三層分權
 
 **決策類型**：資料模型重構 / 業務邏輯擴展

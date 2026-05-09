@@ -1,9 +1,17 @@
+// P19：UpdateLocationParams 加 accuracy；status 移除 'offline'（driver 端不可主動寫）
 interface UpdateLocationParams {
   lat: number;
   lng: number;
   heading?: number;
-  status?: 'online' | 'offline' | 'busy';
+  accuracy?: number;
+  status?: 'online' | 'busy';
   displayName?: string;
+}
+
+// P19：DriverInfo 加 accuracy / lastActiveAt / activeOrder
+interface DriverActiveOrder {
+  orderId: string;
+  orderStatus: string;
 }
 
 interface DriverInfo {
@@ -13,7 +21,10 @@ interface DriverInfo {
   lat: number;
   lng: number;
   heading: number | null;
+  accuracy: number | null;
   updatedAt: number;
+  lastActiveAt: number;
+  activeOrder: DriverActiveOrder | null;
 }
 
 interface DriverStats {

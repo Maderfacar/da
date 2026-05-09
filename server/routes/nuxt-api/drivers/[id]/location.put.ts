@@ -6,9 +6,13 @@ interface LocationBody {
   lat: number;
   lng: number;
   heading?: number;
-  status?: 'online' | 'offline' | 'busy';
+  accuracy?: number;
+  status?: 'online' | 'busy'; // P19：不接受 'offline'
   displayName?: string;
 }
+
+// P19：driver 「執行中」訂單狀態（決定 status 缺省時的推導）
+const EXECUTING_STATUSES = ['en_route', 'arrived_pickup', 'in_transit'];
 
 export default defineEventHandler(async (event) => {
   // P14：必須登入；只能更新自己（除非 admin）
@@ -35,6 +39,15 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '座標格式錯誤', en: 'Invalid coordinates', ja: '座標の形式が正しくありません' });
   }
 
+  // P19：driver 端不應主動寫 'offline'（offline 由 war-room client-side 依 lastActiveAt 推導）
+  if ((body.status as string) === 'offline') {
+    return badRequestError({
+      zh_tw: 'offline 狀態由系統推導，不接受 client 寫入',
+      en: 'offline status is derived by system; client write rejected',
+      ja: 'offline ステータスはシステムで推測されます',
+    });
+  }
+
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
     return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
@@ -43,6 +56,23 @@ export default defineEventHandler(async (event) => {
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
 
+    // P19：status 缺省 → query 該 driver 是否有「執行中」訂單；有則 'busy'，無則 'online'
+    let resolvedStatus: 'online' | 'busy' = body.status ?? 'online';
+    if (body.status === undefined) {
+      try {
+        const exec = await db.collection('orders')
+          .where('assignedDriverId', '==', `line:${idAsLineUid}`)
+          .where('orderStatus', 'in', EXECUTING_STATUSES)
+          .limit(1)
+          .get();
+        resolvedStatus = exec.empty ? 'online' : 'busy';
+      } catch (err) {
+        console.error('[drivers/location.put] active order query failed:', err);
+        // query 失敗時保守取 'online'（避免錯認 busy）
+        resolvedStatus = 'online';
+      }
+    }
+
     // P18：drivers doc key 改為 lineUid（去 prefix），寫入路徑與位置都對齊
     const location: Record<string, unknown> = {
       lat: body.lat,
@@ -50,9 +80,10 @@ export default defineEventHandler(async (event) => {
       updatedAt: FieldValue.serverTimestamp(),
     };
     if (typeof body.heading === 'number') location.heading = body.heading;
+    if (typeof body.accuracy === 'number') location.accuracy = body.accuracy;
 
     const payload: Record<string, unknown> = {
-      status: body.status ?? 'online',
+      status: resolvedStatus,
       location,
       lastActiveAt: FieldValue.serverTimestamp(),
     };

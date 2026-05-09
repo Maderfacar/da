@@ -1,8 +1,16 @@
 <script setup lang="ts">
 // LayoutDriver 司機端佈局：頂部 Nav + 底部 4-Tab Bar
+//
+// P19：driver 端統一定位機制
+// - onMounted 跑授權 flow（getCurrentPosition 觸發 LIFF / 瀏覽器 授權框）
+// - 拒絕：blocking modal + 重試按鈕；連續拒絕 2 次或 5 秒沒回應 → navigateTo('/home')
+// - 通過：watchPosition 持續監聽 + 5m/60s/accuracy 節流上傳
+// - 整 driver 端期間（dashboard/pending/trip/profile）共用同一份 watch state
+// - onUnmounted 時 clearWatch 防 leak
 
 const route = useRoute();
 const { authResolved } = storeToRefs(StoreAuth());
+const driverGeo = useDriverGeolocation();
 
 const tabs = [
   { id: 'dashboard', icon: '🏠', label: '首頁',  path: '/driver/dashboard', dot: false },
@@ -19,6 +27,61 @@ const activeTab = computed(() => {
   if (p.startsWith('/driver/profile'))   return 'profile';
   return 'dashboard';
 });
+
+// ── 地理位置授權 flow ─────────────────────────────────────
+const showPermissionModal = ref(false);
+const permissionDenyCount = ref(0);
+const requestingPermission = ref(false);
+
+const _RequestGeoPermissionFlow = async () => {
+  if (requestingPermission.value) return;
+  requestingPermission.value = true;
+  const result = await driverGeo.RequestPermission();
+  requestingPermission.value = false;
+
+  if (result === 'granted') {
+    showPermissionModal.value = false;
+    driverGeo.StartWatch();
+    return;
+  }
+
+  // denied / timeout 都視為拒絕
+  permissionDenyCount.value++;
+  if (permissionDenyCount.value >= 2) {
+    // 連續拒絕 2 次 → 強制踢回 /home
+    showPermissionModal.value = false;
+    navigateTo('/home');
+    return;
+  }
+  showPermissionModal.value = true;
+};
+
+const ClickRetryPermission = async () => {
+  await _RequestGeoPermissionFlow();
+};
+
+const ClickGiveUpPermission = () => {
+  showPermissionModal.value = false;
+  navigateTo('/home');
+};
+
+onMounted(() => {
+  // 等 auth resolved 後再啟動，避免在 layout mount 與 auth init 競態
+  if (authResolved.value) {
+    _RequestGeoPermissionFlow();
+  } else {
+    const stop = watch(authResolved, (v) => {
+      if (v) {
+        stop();
+        _RequestGeoPermissionFlow();
+      }
+    });
+  }
+});
+
+onUnmounted(() => {
+  driverGeo.StopWatch();
+});
 </script>
 
 <template lang="pug">
@@ -34,6 +97,23 @@ const activeTab = computed(() => {
         span ∙
         | DRIVER
       .LayoutDriver__loading-spinner
+
+  //- ── 地理位置授權 Modal（拒絕授權時顯示）──────────────────
+  transition(name="auth-fade")
+    .LayoutDriver__perm-mask(v-if="showPermissionModal")
+      .LayoutDriver__perm-card
+        .LayoutDriver__perm-icon 📍
+        .LayoutDriver__perm-title 需要位置權限
+        .LayoutDriver__perm-body
+          | 司機端需要位置權限以執行任務追蹤。
+          br
+          | 請至 LINE / 瀏覽器設定開啟位置權限後重試。
+        .LayoutDriver__perm-actions
+          button.LayoutDriver__perm-btn.is-primary(
+            :disabled="requestingPermission"
+            @click="ClickRetryPermission"
+          ) {{ requestingPermission ? '請求中…' : '重試授權' }}
+          button.LayoutDriver__perm-btn.is-secondary(@click="ClickGiveUpPermission") 返回首頁
 
   //- ── 頂部 Nav ─────────────────────────────────────────────
   nav.LayoutDriver__top
@@ -113,6 +193,82 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .auth-fade-leave-active { transition: opacity 0.4s ease; }
 .auth-fade-leave-to { opacity: 0; }
+
+// ── 地理位置授權 Modal ─────────────────────────────────────
+.LayoutDriver__perm-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 17, 21, 0.92);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.LayoutDriver__perm-card {
+  max-width: 360px;
+  width: 100%;
+  background: #1a1a2e;
+  border: 1px solid rgba(212, 134, 10, 0.3);
+  border-radius: 18px;
+  padding: 28px 24px;
+  text-align: center;
+  color: #fff;
+}
+
+.LayoutDriver__perm-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.LayoutDriver__perm-title {
+  font-family: $font-display;
+  font-size: 24px;
+  letter-spacing: 0.04em;
+  color: var(--da-amber-light, #f7b96a);
+  margin-bottom: 12px;
+}
+
+.LayoutDriver__perm-body {
+  font-family: $font-body;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.LayoutDriver__perm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.LayoutDriver__perm-btn {
+  font-family: $font-condensed;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  &.is-primary {
+    background: var(--da-amber);
+    color: #fff;
+    &:active:not(:disabled) { transform: scale(0.98); }
+  }
+
+  &.is-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
 
 // ── 頂部 Nav ───────────────────────────────────────────────
 .LayoutDriver__top {

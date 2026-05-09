@@ -7,14 +7,56 @@ const TW_BOUNDS = {
   ne: { lat: 25.3, lng: 122.0 },
 };
 const POLL_INTERVAL = 15_000;
+const OFFLINE_THRESHOLD_MS = 600_000; // P19：10 分鐘沒位置更新 → derivedStatus='offline'
+
+type FilterMode = 'all' | 'online' | 'busy' | 'offline';
+type DerivedStatus = 'online' | 'busy' | 'offline';
+
+interface DriverWithDerived extends DriverInfo {
+  derivedStatus: DerivedStatus;
+}
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  confirmed: '待出發',
+  en_route: '前往上車',
+  arrived_pickup: '已到點',
+  in_transit: '載客中',
+};
 
 const mapEl = ref<HTMLDivElement | null>(null);
 const drivers = ref<DriverInfo[]>([]);
 const lastRefresh = ref('');
+const filter = ref<FilterMode>('all');
 
 let gmMap: google.maps.Map | null = null;
 const markerMap = new Map<string, google.maps.Marker>();
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// ── derivedStatus 推導（P19）────────────────────────────────
+const _DeriveStatus = (d: DriverInfo): DerivedStatus => {
+  const lastActive = d.lastActiveAt || d.updatedAt || 0;
+  if (Date.now() - lastActive > OFFLINE_THRESHOLD_MS) return 'offline';
+  return d.status;
+};
+
+const driversWithStatus = computed<DriverWithDerived[]>(() =>
+  drivers.value.map((d) => ({ ...d, derivedStatus: _DeriveStatus(d) }))
+);
+
+const filteredDrivers = computed<DriverWithDerived[]>(() =>
+  filter.value === 'all'
+    ? driversWithStatus.value
+    : driversWithStatus.value.filter((d) => d.derivedStatus === filter.value)
+);
+
+const driverCounts = computed(() => {
+  const c = { all: 0, online: 0, busy: 0, offline: 0 };
+  for (const d of driversWithStatus.value) {
+    c.all++;
+    c[d.derivedStatus]++;
+  }
+  return c;
+});
 
 // ── Google Maps 載入（同 MapRoutePreview 模式）─────────────
 function _loadGoogleMapsScript(apiKey: string): Promise<void> {
@@ -78,8 +120,44 @@ function _mapStyles(): google.maps.MapTypeStyle[] {
   ];
 }
 
-// ── Markers 更新 ─────────────────────────────────────────
-const _UpdateMarkers = (list: DriverInfo[]) => {
+// ── Markers 更新（P19 polish）─────────────────────────────
+const _IconForDriver = (d: DriverWithDerived): google.maps.Symbol => {
+  // P19：heading=null 時改畫圓點（避免靜止司機箭頭固定指北）
+  // offline 司機半透明
+  const colorMap: Record<DerivedStatus, string> = {
+    online:  '#22c55e',
+    busy:    '#d4860a',
+    offline: '#6b7280',
+  };
+  const fillColor = colorMap[d.derivedStatus];
+  const opacity = d.derivedStatus === 'offline' ? 0.4 : 1;
+
+  if (d.heading == null) {
+    // 靜止：圓點
+    return {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 7,
+      fillColor,
+      fillOpacity: opacity,
+      strokeColor: '#fff',
+      strokeWeight: 1.5,
+      strokeOpacity: opacity,
+    };
+  }
+  // 移動中：箭頭（指向 heading 方向）
+  return {
+    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+    scale: 5,
+    fillColor,
+    fillOpacity: opacity,
+    strokeColor: '#fff',
+    strokeWeight: 1.5,
+    strokeOpacity: opacity,
+    rotation: d.heading,
+  };
+};
+
+const _UpdateMarkers = (list: DriverWithDerived[]) => {
   if (!gmMap) return;
 
   const activeIds = new Set(list.map((d) => d.driverId));
@@ -94,29 +172,16 @@ const _UpdateMarkers = (list: DriverInfo[]) => {
 
   for (const d of list) {
     const pos = new google.maps.LatLng(d.lat, d.lng);
-    const isBusy = d.status === 'busy';
-    const icon: google.maps.Symbol = {
-      path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-      scale: 5,
-      fillColor: isBusy ? '#d4860a' : '#22c55e',
-      fillOpacity: 1,
-      strokeColor: '#fff',
-      strokeWeight: 1.5,
-      rotation: d.heading ?? 0,
-    };
+    const icon = _IconForDriver(d);
+    const title = `${d.displayName || d.driverId} (${d.derivedStatus})`;
 
     if (markerMap.has(d.driverId)) {
       const m = markerMap.get(d.driverId)!;
       m.setPosition(pos);
       m.setIcon(icon);
-      m.setTitle(`${d.displayName || d.driverId} (${d.status})`);
+      m.setTitle(title);
     } else {
-      const m = new google.maps.Marker({
-        position: pos,
-        map: gmMap,
-        icon,
-        title: `${d.displayName || d.driverId} (${d.status})`,
-      });
+      const m = new google.maps.Marker({ position: pos, map: gmMap, icon, title });
       markerMap.set(d.driverId, m);
     }
   }
@@ -126,10 +191,13 @@ const _UpdateMarkers = (list: DriverInfo[]) => {
 const ApiRefreshDrivers = async () => {
   const res = await $api.GetAvailableDrivers();
   if (res.status.code !== $enum.apiStatus.success && res.status.code !== 0) return;
-  drivers.value = res.data as DriverInfo[];
+  drivers.value = (res.data as DriverInfo[]) ?? [];
   lastRefresh.value = $dayjs().format('HH:mm:ss');
-  _UpdateMarkers(drivers.value);
+  _UpdateMarkers(filteredDrivers.value);
 };
+
+// 改變 filter 時即時更新地圖
+watch(filteredDrivers, (list) => _UpdateMarkers(list));
 
 const _StartPoll = () => {
   ApiRefreshDrivers();
@@ -140,12 +208,21 @@ const _StopPoll = () => {
   if (pollTimer !== null) { clearInterval(pollTimer); pollTimer = null; }
 };
 
+// P19：unmount 清理 markers 防 leak
+const _ClearAllMarkers = () => {
+  for (const [, m] of markerMap) m.setMap(null);
+  markerMap.clear();
+};
+
 onMounted(async () => {
   await _InitMapFlow();
   _StartPoll();
 });
 
-onUnmounted(_StopPoll);
+onUnmounted(() => {
+  _StopPoll();
+  _ClearAllMarkers();
+});
 </script>
 
 <template lang="pug">
@@ -158,24 +235,48 @@ onUnmounted(_StopPoll);
     .PageWarRoom__panel-header
       .PageWarRoom__panel-title 即時作戰室
       .PageWarRoom__panel-sub WAR ROOM
-    .PageWarRoom__panel-meta
-      span.PageWarRoom__meta-label 在線司機
-      span.PageWarRoom__meta-val {{ drivers.length }}
+
+    //- P19：狀態 filter
+    .PageWarRoom__filter
+      button.PageWarRoom__filter-btn(
+        :class="{ 'is-active': filter === 'all' }"
+        @click="filter = 'all'"
+      ) 全部 {{ driverCounts.all }}
+      button.PageWarRoom__filter-btn(
+        :class="{ 'is-active': filter === 'online' }"
+        @click="filter = 'online'"
+      ) 上線 {{ driverCounts.online }}
+      button.PageWarRoom__filter-btn(
+        :class="{ 'is-active': filter === 'busy' }"
+        @click="filter = 'busy'"
+      ) 任務中 {{ driverCounts.busy }}
+      button.PageWarRoom__filter-btn(
+        :class="{ 'is-active': filter === 'offline' }"
+        @click="filter = 'offline'"
+      ) 離線 {{ driverCounts.offline }}
+
     .PageWarRoom__panel-meta(v-if="lastRefresh")
       span.PageWarRoom__meta-label 最後更新
       span.PageWarRoom__meta-val {{ lastRefresh }}
 
     //- 司機列表
     .PageWarRoom__driver-list
-      .PageWarRoom__driver-item(v-for="d in drivers" :key="d.driverId")
-        .PageWarRoom__driver-dot(:class="d.status === 'busy' ? 'is-busy' : 'is-online'")
+      .PageWarRoom__driver-item(
+        v-for="d in filteredDrivers"
+        :key="d.driverId"
+        :class="`is-${d.derivedStatus}`"
+      )
+        .PageWarRoom__driver-dot(:class="`is-${d.derivedStatus}`")
         .PageWarRoom__driver-info
           .PageWarRoom__driver-name {{ d.displayName || d.driverId.slice(0, 8) }}
           .PageWarRoom__driver-coords {{ d.lat.toFixed(4) }}, {{ d.lng.toFixed(4) }}
-        .PageWarRoom__driver-status {{ d.status === 'busy' ? '任務中' : '待命' }}
+          //- P19：busy driver 顯示 activeOrder
+          .PageWarRoom__driver-order(v-if="d.derivedStatus === 'busy' && d.activeOrder")
+            span.PageWarRoom__driver-order-id \#{{ d.activeOrder.orderId.slice(-6).toUpperCase() }}
+            span.PageWarRoom__driver-order-status {{ ORDER_STATUS_LABEL[d.activeOrder.orderStatus] ?? d.activeOrder.orderStatus }}
 
-    .PageWarRoom__empty(v-if="!drivers.length")
-      | 目前無在線司機
+    .PageWarRoom__empty(v-if="!filteredDrivers.length")
+      | {{ filter === 'all' ? '目前無司機資料' : '此狀態下無司機' }}
 </template>
 
 <style lang="scss" scoped>
@@ -198,7 +299,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 側邊面板 ──────────────────────────────────────────────
 .PageWarRoom__panel {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
   background: #1a1a2e;
   border-left: 1px solid rgba(255, 255, 255, 0.06);
@@ -209,7 +310,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__panel-header {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .PageWarRoom__panel-title {
@@ -227,6 +328,35 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.25em;
   color: var(--da-amber);
   margin-top: 2px;
+}
+
+// ── Filter（P19）──────────────────────────────────────────
+.PageWarRoom__filter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.PageWarRoom__filter-btn {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &.is-active {
+    background: var(--da-amber);
+    border-color: var(--da-amber);
+    color: #fff;
+  }
 }
 
 // ── Meta ──────────────────────────────────────────────────
@@ -250,7 +380,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageWarRoom__meta-val {
   font-family: $font-condensed;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: #fff;
 }
@@ -265,21 +395,25 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageWarRoom__driver-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
   padding: 10px 12px;
+
+  &.is-offline { opacity: 0.55; }
 }
 
 .PageWarRoom__driver-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 6px;
 
-  &.is-online { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
-  &.is-busy   { background: var(--da-amber); box-shadow: 0 0 6px rgba(212, 134, 10, 0.5); }
+  &.is-online  { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+  &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px rgba(212, 134, 10, 0.5); }
+  &.is-offline { background: #6b7280; }
 }
 
 .PageWarRoom__driver-info {
@@ -305,13 +439,31 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-top: 2px;
 }
 
-.PageWarRoom__driver-status {
+// P19：active order 顯示
+.PageWarRoom__driver-order {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(212, 134, 10, 0.08);
+  border: 1px solid rgba(212, 134, 10, 0.2);
+  border-radius: 6px;
+}
+
+.PageWarRoom__driver-order-id {
   font-family: $font-condensed;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.4);
-  white-space: nowrap;
+  letter-spacing: 0.08em;
+  color: var(--da-amber);
+}
+
+.PageWarRoom__driver-order-status {
+  font-family: $font-condensed;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.05em;
 }
 
 // ── 空狀態 ────────────────────────────────────────────────

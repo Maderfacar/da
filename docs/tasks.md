@@ -1,6 +1,6 @@
 # 專案任務清單 (Project Tasks & Backlog)
 
-**總進度**：Stage 7 維護迭代中（P0~P11、P12~P15、P17、P18 完成，僅剩 P5 部分項與 P16 暫緩債待施作）
+**總進度**：Stage 7 維護迭代中（P0~P11、P12~P15、P17、P18、P19 程式碼層完成，僅剩 P5 部分項與 P16 暫緩債待施作）
 **最後更新**：2026/05/09
 
 ---
@@ -500,6 +500,34 @@
 - 司機評分系統（drivers.rating / ratingCount 欄位已預留）
 - 分區管理（drivers.assignedRegions 欄位已預留）
 
+### P19：Driver Trip Mission — 司機任務頁 + 五階段狀態流 + 自動定位（2026/05/09 程式碼層完成）
+
+> 完整設計與 tasks 見 `openspec/changes/2026-05-09-p19-driver-trip-mission/`：
+> - `proposal.md`：背景、範圍、影響
+> - `design.md`：6 個決策、schema、狀態機、i18n
+> - `tasks.md`：Stage 0~10 順序化 checklist + G1~G12 stage gate
+
+**P19 程式碼層改動（Stage 1~10 ✅ 完成）**：
+- [✅] **Stage 1**：`orders/[orderId].patch.ts` 訂單狀態擴充為 7 值 + driver 嚴格狀態機 + en_route 觸發 driver busy + completed 切回 online + statusHistory 寫入
+- [✅] **Stage 2**：新增 `orders/assigned.get.ts`（driver 取自己被指派的執行中訂單）
+- [✅] **Stage 3**：`drivers/available.get.ts` 撈所有 drivers + 加 activeOrder/lastActiveAt/accuracy；`drivers/[id]/location.put.ts` 接受 accuracy + 拒絕 client 寫 offline
+- [✅] **Stage 4**：新增 `app/composables/use-driver-geolocation.ts`（5m / 60s / 50m accuracy / Haversine + UploadNow force）
+- [✅] **Stage 5**：`app/layouts/driver.vue` 整合授權 flow + blocking modal + 重試 + 拒絕 2 次踢回 /home + onUnmounted clearWatch
+- [✅] **Stage 6**：`app/pages/driver/trip/index.vue` 重寫為任務列表 + 五階段操作按鈕 + 30s polling
+- [✅] **Stage 7**：API 介面層 + type 對齊（`order/index.ts` 加 GetAssignedOrders；`order/type.d.ts` 加 AssignedOrder + PatchOrderParams.orderStatus 擴充；`driver/type.d.ts` 加 accuracy / lastActiveAt / activeOrder）；`upcoming/index.vue` _normalizeForPassenger 把 en_route / arrived_pickup 歸併為 in_transit
+- [✅] **Stage 8**：`admin/war-room/index.vue` polish — markerMap unmount cleanup + heading null 改圓點 + 4 狀態 filter + busy driver 顯示 activeOrder + offline 半透明
+- [✅] **Stage 9**：firestore.rules 不需動（server admin SDK bypass）
+- [✅] **Stage 10**：docs/decision-log P19 條目 + tasks.md 更新
+
+**P19 待驗證（部署後）**：
+- [ ] G1~G12（spec tasks.md 內 stage gate）：driver 自動授權 / 拒絕踢退 / 五階段流 / busy 切換 / offline 推導 / war-room filter / driver 改他人單 403 / 跳階段 400
+
+**P19 後續工作（已記入 backlog）**：
+- driver/admin 端 i18n 多語化（目前 hard-coded 中文，與 upcoming 多語化機制不一致）
+- driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）
+- 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）
+- driver/dashboard online hours 統計實作（目前 hard-coded 0）
+
 ---
 
 **使用規則**
@@ -508,5 +536,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
 
 **版本紀錄**
-- 版本：v3.9（P18 collection split — drivers / admins 獨立 collection + admin 三層分權；程式碼層完成，待使用者執行 Stage 10 migration）
+- 版本：v3.10（P19 driver trip mission — 五階段狀態流 + driver 自動定位 + war-room status filter；程式碼層完成，待部署驗證 G1-G12）
 - 更新日期：2026/05/09

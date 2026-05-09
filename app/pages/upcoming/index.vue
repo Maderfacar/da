@@ -7,7 +7,17 @@ const { t } = useI18n();
 
 // P17：'in_transit' 對齊 server / Firestore 寫入值（原 'in-progress' 連字號是 bug，
 // 司機接單後乘客「行程中」分頁永遠空）
+// P19：server 訂單狀態擴充為 7 值（pending/confirmed/en_route/arrived_pickup/in_transit/completed/cancelled），
+// 乘客端不顯示細粒度進度，將 en_route / arrived_pickup 歸併為 in_transit「行程中」
 type TripStatus = 'pending' | 'confirmed' | 'in_transit' | 'completed' | 'cancelled';
+
+const _normalizeForPassenger = (status: string | undefined): TripStatus => {
+  if (status === 'en_route' || status === 'arrived_pickup') return 'in_transit';
+  if (status === 'pending' || status === 'confirmed' || status === 'in_transit' || status === 'completed' || status === 'cancelled') {
+    return status;
+  }
+  return 'pending';
+};
 
 interface TripItem {
   orderId: string;     // 完整 orderId 用於 PatchOrder
@@ -35,7 +45,7 @@ const _mapToTripItem = (o: OrderItem): TripItem => {
     id: o.orderId.slice(-8).toUpperCase(),
     from: _locationLabel(o.pickupLocation),
     to: _locationLabel(o.dropoffLocation),
-    status: (o.orderStatus as TripStatus) ?? 'pending',
+    status: _normalizeForPassenger(o.orderStatus),
     date: dt.isValid() ? dt.format('YYYY.MM.DD') : '',
     time: dt.isValid() ? dt.format('HH:mm') : '',
     vehicle: vehicleCfg ? `${vehicleCfg.label} ${vehicleCfg.labelEn}` : o.vehicleType,

@@ -22,6 +22,10 @@ export const GetOrderList = (params: GetOrderListParams) => {
 export const GetAvailableOrders = () =>
   methods.get<AvailableOrder[]>('/nuxt-api/orders/available', {});
 
+/** P19：取得司機被指派的執行中訂單（confirmed/en_route/arrived_pickup/in_transit） */
+export const GetAssignedOrders = () =>
+  methods.get<AssignedOrder[]>('/nuxt-api/orders/assigned', {});
+
 /** 更新訂單狀態或指派司機 */
 export const PatchOrder = (orderId: string, params: PatchOrderParams) =>
   methods.patch<{ orderId: string }>(`/nuxt-api/orders/${orderId}`, params);

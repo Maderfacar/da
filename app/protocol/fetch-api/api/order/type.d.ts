@@ -64,9 +64,27 @@ interface AvailableOrder {
   distanceKm: number;
 }
 
+// ===== P19：司機被指派的執行中訂單 =====
+type AssignedOrderStatus = 'confirmed' | 'en_route' | 'arrived_pickup' | 'in_transit';
+
+interface AssignedOrder {
+  orderId: string;
+  orderType: string;
+  pickupDateTime: string;
+  pickupLocation: GooglePlace;
+  dropoffLocation: GooglePlace;
+  vehicleType: string;
+  passengerCount: number;
+  estimatedFare: number;
+  distanceKm: number;
+  orderStatus: AssignedOrderStatus;
+  createdAt: number;
+}
+
 // ===== 更新訂單 =====
+// P19：orderStatus 擴充新增 en_route / arrived_pickup
 interface PatchOrderParams {
-  orderStatus?: string;
+  orderStatus?: 'pending' | 'confirmed' | 'en_route' | 'arrived_pickup' | 'in_transit' | 'completed' | 'cancelled' | string;
   assignedDriverId?: string;
 }
 
