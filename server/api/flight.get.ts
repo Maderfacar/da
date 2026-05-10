@@ -1,19 +1,43 @@
 /**
- * GET /api/flight?flightNo=CI102&direction=arrival
- * 查詢桃園機場 (TPE) 航班資訊
+ * GET /api/flight?flightNo=CI102&direction=arrival&date=YYYY-MM-DD
  *
- * - 有 NUXT_AVIATION_EDGE_KEY 時：呼叫 Aviation Edge timetable API
- * - 沒設 key（dev 環境）：fallback to _mockFlights，保持本地開發體驗
+ * 桃園機場 (TPE) 航班查詢 — 4 層 fallback + 自學 registry
  *
- * Aviation Edge:
- *   GET https://aviation-edge.com/v2/public/timetable?key={KEY}&iataCode=TPE&type={arrival|departure}&flight_iata={flightNo}
- *   docs: https://aviation-edge.com/developers/
+ *   Layer 1：in-memory hot cache（5 min, per process）
+ *           ↓ miss
+ *   Layer 2：Firestore `flight_registry`（per spec 2026-05-10）
+ *           - 命中且 schedule cache < 30 min → 秒渲染回傳
+ *           - 命中但 schedule cache 過期（仍在 60 天 TTL 內）→ 留作 stale fallback
+ *           ↓ miss / stale
+ *   Layer 3：TDX API（台灣機場即時數據；尚未實作，待 Stage 3）
+ *           ↓
+ *   Layer 4：Aviation Edge API（國際 / TDX 無資料）
+ *           - timetable endpoint：< 7 天用，含 status / actualTime
+ *           - flightsFuture endpoint：>= 7 天用，僅 schedule
+ *           - 取得後立即寫回 flight_registry（self-learning，silent log on fail）
+ *           ↓ failure
+ *   Layer 5（保險絲）：dev mock，prod → 404
  *
- * direction:
- *   - 'arrival'   接機（航班抵達 TPE）
- *   - 'departure' 送機（航班從 TPE 起飛）
- *   - 預設 arrival
+ * 額外機制：
+ *   - Request collapsing：同 flightNo|direction|date 同時來多 request 共享一個 in-flight Promise
+ *   - 寫 Firestore registry 失敗一律 silent log，不影響當次回應
  */
+
+import {
+  GetAirlineNameByIata,
+  GetAirportCityByIata,
+  ParseAirlineIataFromFlightNo,
+} from '@@/utils/airport-registry';
+import {
+  GetFlightFromRegistry,
+  GetCachedSchedule,
+  IsRegistryStaticFresh,
+  IsScheduleFresh,
+  SaveFlightToRegistry,
+  type FlightDirection,
+  type FlightRegistryDoc,
+  type FlightRegistrySchedule,
+} from '@@/utils/flight-registry';
 
 export interface FlightInfo {
   flightNo: string;
@@ -24,19 +48,18 @@ export interface FlightInfo {
   scheduledTime: string;   // ISO 8601
   estimatedTime: string;   // ISO 8601
   status: 'scheduled' | 'active' | 'landed' | 'delayed' | 'cancelled';
-  direction: 'arrival' | 'departure';
+  direction: FlightDirection;
 }
 
-type Direction = 'arrival' | 'departure';
+type FlightSource = 'cache' | 'registry' | 'live' | 'registry-stale' | 'mock';
 
 // ── Aviation Edge response 型別（局部，僅取我們需要的欄位）──
-// flightsFuture endpoint 用，scheduledTime 為 'HH:mm' 字串、無 status / actualTime
 interface AeAirport {
   iataCode?: string;
   icaoCode?: string;
   terminal?: string | null;
   gate?: string | null;
-  scheduledTime?: string; // flightsFuture: 'HH:mm'
+  scheduledTime?: string;
 }
 interface AeAirline {
   name?: string;
@@ -55,15 +78,13 @@ interface AeFutureEntry {
   airline?: AeAirline;
   flight?: AeFlight;
 }
-
-// /timetable endpoint 用，scheduledTime 為 ISO 字串、有 status
 interface AeTimetableAirport extends AeAirport {
-  scheduledTime?: string;       // ISO without timezone
+  scheduledTime?: string;
   estimatedTime?: string;
   actualTime?: string;
 }
 interface AeTimetableEntry {
-  type?: Direction;
+  type?: FlightDirection;
   status?: string;
   departure?: AeTimetableAirport;
   arrival?: AeTimetableAirport;
@@ -82,98 +103,76 @@ const _statusMap: Record<string, FlightInfo['status']> = {
   unknown:    'scheduled',
 };
 
-// ── 簡易 in-memory cache（避免 rate limit）─────────────────
-// key = `${flightNo}|${direction}`，TTL 5 分鐘
+// ── Layer 1：in-memory hot cache（5 min）+ request collapsing ────
 const _cache = new Map<string, { exp: number; data: FlightInfo | null }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
+/** 同 cacheKey 進行中的 promise，做請求合併避免重複打 API */
+const _inflight = new Map<string, Promise<FlightLookupResult>>();
+
+interface FlightLookupResult {
+  data: FlightInfo | null;
+  source: FlightSource;
+}
 
 const _normalizeTerminal = (t?: string | null): '1' | '2' => {
   if (!t) return '1';
   const v = t.trim();
   if (v === '1' || v === '2') return v;
-  // Aviation Edge 偶有 '1A', 'T1', '01' 等格式
   if (v.includes('1')) return '1';
   if (v.includes('2')) return '2';
   return '1';
 };
 
-const _airlineCityFallback = (iataCode?: string): string => {
-  // 簡易 IATA 城市對照（避免 Aviation Edge 不回 cityName 時 UI 空白）
-  const m: Record<string, string> = {
-    TPE: '台北', NRT: '東京', HND: '東京', KIX: '大阪', ITM: '大阪',
-    LAX: '洛杉磯', SFO: '舊金山', JFK: '紐約', LHR: '倫敦', FRA: '法蘭克福',
-    HKG: '香港', SIN: '新加坡', BKK: '曼谷', ICN: '首爾', GMP: '首爾',
-    PVG: '上海', PEK: '北京', CAN: '廣州', SZX: '深圳', MFM: '澳門',
-  };
-  return iataCode ? (m[iataCode.toUpperCase()] ?? iataCode) : '—';
-};
-
-// 把 'HH:mm' + 'YYYY-MM-DD' 組成 ISO（TPE 在 UTC+8 → 帶 +08:00 offset）
 const _composeIso = (date: string, hhmm: string): string => {
   if (!hhmm || !/^\d{1,2}:\d{2}$/.test(hhmm)) return '';
   const [h, m] = hhmm.split(':').map((s) => s.padStart(2, '0'));
   return `${date}T${h}:${m}:00+08:00`;
 };
 
-// 把 Aviation Edge flightsFuture entry 轉為 FlightInfo
+const _ensureTpeTimezone = (iso?: string): string => {
+  if (!iso) return '';
+  if (/[+-]\d{2}:?\d{2}$/.test(iso) || iso.endsWith('Z')) return iso;
+  return `${iso}+08:00`;
+};
+
+// ── Aviation Edge mapper ───────────────────────────────────
 const _mapAeFuture = (
   entry: AeFutureEntry,
   flightNoUpper: string,
-  direction: Direction,
+  direction: FlightDirection,
   date: string,
 ): FlightInfo => {
   const dep = entry.departure ?? {};
   const arr = entry.arrival ?? {};
-  // 接機 (arrival)：terminal 看 arrival 抵達 TPE 的航廈
-  // 送機 (departure)：terminal 看 departure 從 TPE 出去的航廈
   const terminal = _normalizeTerminal(direction === 'arrival' ? arr.terminal : dep.terminal);
-  // 時間：focus 的 scheduledTime 是 'HH:mm' 字串
   const focus = direction === 'arrival' ? arr : dep;
   const scheduledTime = _composeIso(date, focus.scheduledTime ?? '');
-
   return {
     flightNo: flightNoUpper,
     airline: {
       iataCode: entry.airline?.iataCode?.toUpperCase() ?? '',
-      name: entry.airline?.name ?? '',
+      name: entry.airline?.name || GetAirlineNameByIata(entry.airline?.iataCode),
     },
     origin: {
       iataCode: dep.iataCode?.toUpperCase() ?? '',
-      cityName: _airlineCityFallback(dep.iataCode),
+      cityName: GetAirportCityByIata(dep.iataCode),
     },
     destination: {
       iataCode: arr.iataCode?.toUpperCase() ?? '',
-      cityName: _airlineCityFallback(arr.iataCode),
+      cityName: GetAirportCityByIata(arr.iataCode),
     },
     terminal,
     scheduledTime,
-    estimatedTime: scheduledTime, // future 沒有 estimate，用 scheduled
+    estimatedTime: scheduledTime,
     status: 'scheduled',
     direction,
   };
 };
 
-// 從 flightNo 拆出 airline IATA（前 2 碼字母 / 數字字母混合）
-// 'JX801' → 'JX'、'CI3' → 'CI'、'BR832' → 'BR'、'9W1' → '9W'
-const _parseAirlineIata = (flightNoUpper: string): string => {
-  const m = flightNoUpper.match(/^([A-Z0-9]{2})\d+$/);
-  return m?.[1] ?? '';
-};
-
-// timetable 回的 ISO 沒帶 timezone，但實際是 TPE local time → 補 +08:00
-const _ensureTpeTimezone = (iso?: string): string => {
-  if (!iso) return '';
-  // 已帶 timezone（+/- 或 Z）就不動
-  if (/[+-]\d{2}:?\d{2}$/.test(iso) || iso.endsWith('Z')) return iso;
-  // 形如 '2026-05-09T23:40:00.000' → 補 '+08:00'
-  return `${iso}+08:00`;
-};
-
-// 把 Aviation Edge timetable entry 轉為 FlightInfo
 const _mapAeTimetable = (
   entry: AeTimetableEntry,
   flightNoUpper: string,
-  direction: Direction,
+  direction: FlightDirection,
 ): FlightInfo => {
   const dep = entry.departure ?? {};
   const arr = entry.arrival ?? {};
@@ -185,15 +184,15 @@ const _mapAeTimetable = (
     flightNo: flightNoUpper,
     airline: {
       iataCode: entry.airline?.iataCode?.toUpperCase() ?? '',
-      name: entry.airline?.name ?? '',
+      name: entry.airline?.name || GetAirlineNameByIata(entry.airline?.iataCode),
     },
     origin: {
       iataCode: dep.iataCode?.toUpperCase() ?? '',
-      cityName: _airlineCityFallback(dep.iataCode),
+      cityName: GetAirportCityByIata(dep.iataCode),
     },
     destination: {
       iataCode: arr.iataCode?.toUpperCase() ?? '',
-      cityName: _airlineCityFallback(arr.iataCode),
+      cityName: GetAirportCityByIata(arr.iataCode),
     },
     terminal,
     scheduledTime,
@@ -203,13 +202,13 @@ const _mapAeTimetable = (
   };
 };
 
-// 用 /timetable 查（即時 + 未來 1-2 天）
-const _queryTimetable = async (
+// ── Aviation Edge API call ─────────────────────────────────
+const _queryAeTimetable = async (
   apiKey: string,
   flightNoUpper: string,
-  direction: Direction,
+  direction: FlightDirection,
 ): Promise<FlightInfo | null> => {
-  const airlineIata = _parseAirlineIata(flightNoUpper);
+  const airlineIata = ParseAirlineIataFromFlightNo(flightNoUpper);
   if (!airlineIata) return null;
 
   const url = 'https://aviation-edge.com/v2/public/timetable';
@@ -226,20 +225,13 @@ const _queryTimetable = async (
   return _mapAeTimetable(exact, flightNoUpper, direction);
 };
 
-// ── 真實 API call ──────────────────────────────────────────
-// 用 /flightsFuture（依日期查未來航班排程，覆蓋廣，可查任何日期）
-// /timetable 只涵蓋當前/未來 1-2 天即時排程，使用者訂遠日期會查不到，故不採用
-//
-// Aviation Edge 對 flight_iata / flight_num filter 不 work（都回 No Record Found），
-// 只有 airline_iata 過濾可用。策略：用 airline_iata 抓該航空公司全部 TPE 排程，
-// server 端 filter 對應的 iataNumber。
-const _queryAviationEdge = async (
+const _queryAeFuture = async (
   apiKey: string,
   flightNoUpper: string,
-  direction: Direction,
+  direction: FlightDirection,
   date: string,
 ): Promise<FlightInfo | null> => {
-  const airlineIata = _parseAirlineIata(flightNoUpper);
+  const airlineIata = ParseAirlineIataFromFlightNo(flightNoUpper);
   if (!airlineIata) return null;
 
   const url = 'https://aviation-edge.com/v2/public/flightsFuture';
@@ -257,14 +249,71 @@ const _queryAviationEdge = async (
 
   if (!Array.isArray(result) || result.length === 0) return null;
 
-  // 先找 iataNumber 完全相符的（Aviation Edge 回傳是 lowercase 'jx833'）
   const flightLower = flightNoUpper.toLowerCase();
   const exact = result.find((e) => (e.flight?.iataNumber ?? '').toLowerCase() === flightLower);
   if (!exact) return null;
   return _mapAeFuture(exact, flightNoUpper, direction, date);
 };
 
-// ── Mock 資料（dev 環境 fallback）────────────────────────────────────
+const _callAviationEdge = async (
+  apiKey: string,
+  flightNoUpper: string,
+  direction: FlightDirection,
+  date: string,
+): Promise<FlightInfo | null> => {
+  const today = _todayInTaipei();
+  const daysFromNow = Math.round(
+    (Date.parse(`${date}T00:00:00+08:00`) - Date.parse(`${today}T00:00:00+08:00`)) / 86400000,
+  );
+  if (daysFromNow < 7) {
+    return _queryAeTimetable(apiKey, flightNoUpper, direction);
+  }
+  return _queryAeFuture(apiKey, flightNoUpper, direction, date);
+};
+
+// ── registry → FlightInfo / FlightInfo → registry schedule ──
+const _scheduleToFlightInfo = (
+  doc: FlightRegistryDoc,
+  schedule: FlightRegistrySchedule,
+  flightNoUpper: string,
+  direction: FlightDirection,
+): FlightInfo => {
+  return {
+    flightNo: flightNoUpper,
+    airline: {
+      iataCode: doc.airlineCode || ParseAirlineIataFromFlightNo(flightNoUpper),
+      name: doc.airlineName || GetAirlineNameByIata(doc.airlineCode),
+    },
+    origin: {
+      iataCode: schedule.departureIata,
+      cityName: schedule.departureCity || GetAirportCityByIata(schedule.departureIata),
+    },
+    destination: {
+      iataCode: schedule.arrivalIata,
+      cityName: schedule.arrivalCity || GetAirportCityByIata(schedule.arrivalIata),
+    },
+    terminal: _normalizeTerminal(schedule.terminal),
+    scheduledTime: schedule.scheduledTime,
+    estimatedTime: schedule.estimatedTime || schedule.scheduledTime,
+    status: (_statusMap[schedule.status?.toLowerCase()] ?? 'scheduled') as FlightInfo['status'],
+    direction,
+  };
+};
+
+const _flightInfoToScheduleData = (
+  info: FlightInfo,
+): Omit<FlightRegistrySchedule, 'fetchedAtMillis'> => ({
+  scheduledTime: info.scheduledTime,
+  estimatedTime: info.estimatedTime,
+  status: info.status,
+  terminal: info.terminal,
+  departureIata: info.origin.iataCode,
+  departureCity: info.origin.cityName,
+  arrivalIata: info.destination.iataCode,
+  arrivalCity: info.destination.cityName,
+});
+
+// ── Mock 資料（dev 環境 fallback）─────────────────────────────
 const _mockFlights: Record<string, Omit<FlightInfo, 'flightNo' | 'scheduledTime' | 'estimatedTime'>> = {
   CI102: { airline: { iataCode: 'CI', name: '中華航空' }, origin: { iataCode: 'NRT', cityName: '東京' },     destination: { iataCode: 'TPE', cityName: '台北' }, terminal: '1', status: 'active',    direction: 'arrival' },
   CI100: { airline: { iataCode: 'CI', name: '中華航空' }, origin: { iataCode: 'HND', cityName: '東京' },     destination: { iataCode: 'TPE', cityName: '台北' }, terminal: '1', status: 'scheduled', direction: 'arrival' },
@@ -285,10 +334,9 @@ const _buildMockTime = (offsetMinutes: number): string => {
   return d.toISOString();
 };
 
-const _queryMock = (flightNoUpper: string, direction: Direction): FlightInfo | null => {
+const _queryMock = (flightNoUpper: string, direction: FlightDirection): FlightInfo | null => {
   const mock = _mockFlights[flightNoUpper];
   if (!mock) return null;
-  // mock 只保留 direction 一致的；不一致回 null（同 real API 行為）
   if (mock.direction !== direction) return null;
   const BASE = mock.direction === 'departure' ? 25 * 60 : 0;
   const offsets: Record<FlightInfo['status'], [number, number]> = {
@@ -307,20 +355,90 @@ const _queryMock = (flightNoUpper: string, direction: Direction): FlightInfo | n
   };
 };
 
-// 驗證 'YYYY-MM-DD'（接受寬鬆但確認結構）
-const _isValidDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+// ── 工具 ─────────────────────────────────────────────────────
+const _isValidDate = (s: string): boolean =>
+  /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
 
-// 取「今天 (Asia/Taipei)」的 YYYY-MM-DD（fallback 用）
 const _todayInTaipei = (): string => {
   const now = new Date();
-  // toLocaleDateString with sv-SE locale → 'YYYY-MM-DD'
   return now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+};
+
+// ── 核心查詢流程（4 層 fallback + self-learning） ───────────────
+const _lookupFlight = async (
+  flightNoUpper: string,
+  direction: FlightDirection,
+  date: string,
+): Promise<FlightLookupResult> => {
+  const { aviationEdgeKey } = useRuntimeConfig();
+
+  // Layer 2：Firestore registry — 預先讀，後面 stale fallback 也用
+  let registryDoc: FlightRegistryDoc | null = null;
+  try {
+    registryDoc = await GetFlightFromRegistry(flightNoUpper);
+  } catch (err) {
+    console.error('[api/flight] registry read failed:', err);
+  }
+
+  if (registryDoc && IsRegistryStaticFresh(registryDoc)) {
+    const cachedSchedule = GetCachedSchedule(registryDoc, date, direction);
+    if (cachedSchedule && IsScheduleFresh(cachedSchedule)) {
+      const data = _scheduleToFlightInfo(registryDoc, cachedSchedule, flightNoUpper, direction);
+      return { data, source: 'registry' };
+    }
+  }
+
+  // Layer 3 (TDX) — 待 Stage 3 實作（user 提供 NUXT_TDX_CLIENT_ID/SECRET 後）
+
+  // Layer 4：Aviation Edge
+  if (aviationEdgeKey) {
+    try {
+      const data = await _callAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
+      if (data) {
+        // self-learning：寫回 Firestore（silent on failure）
+        void SaveFlightToRegistry({
+          flightNo: flightNoUpper,
+          airlineCode: data.airline.iataCode,
+          airlineName: data.airline.name || GetAirlineNameByIata(data.airline.iataCode),
+          departureAirport: data.origin.iataCode,
+          arrivalAirport: data.destination.iataCode,
+          terminal: data.terminal,
+          status: data.status,
+          schedule: {
+            date,
+            direction,
+            data: _flightInfoToScheduleData(data),
+          },
+        });
+        return { data, source: 'live' };
+      }
+    } catch (err) {
+      console.error('[api/flight] Aviation Edge call failed:', err);
+    }
+  }
+
+  // Layer 4 fallback：API 失敗但 registry 還有 stale schedule → 仍然回給使用者
+  if (registryDoc && IsRegistryStaticFresh(registryDoc)) {
+    const stale = GetCachedSchedule(registryDoc, date, direction);
+    if (stale) {
+      const data = _scheduleToFlightInfo(registryDoc, stale, flightNoUpper, direction);
+      return { data, source: 'registry-stale' };
+    }
+  }
+
+  // Layer 5（保險絲）：dev mock
+  if (!aviationEdgeKey) {
+    const mock = _queryMock(flightNoUpper, direction);
+    if (mock) return { data: mock, source: 'mock' };
+  }
+
+  return { data: null, source: aviationEdgeKey ? 'live' : 'mock' };
 };
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event) as { flightNo?: string; direction?: string; date?: string };
   const flightNoUpper = (query.flightNo ?? '').toUpperCase().replace(/\s/g, '');
-  const direction: Direction = query.direction === 'departure' ? 'departure' : 'arrival';
+  const direction: FlightDirection = query.direction === 'departure' ? 'departure' : 'arrival';
   const date = (query.date && _isValidDate(query.date)) ? query.date : _todayInTaipei();
 
   if (!flightNoUpper) {
@@ -328,51 +446,33 @@ export default defineEventHandler(async (event) => {
     return { ok: false, message: 'flightNo is required' };
   }
 
-  // cache 命中（key 含 date，避免不同日期共用結果）
   const cacheKey = `${flightNoUpper}|${direction}|${date}`;
+
+  // Layer 1：in-memory hot cache
   const cached = _cache.get(cacheKey);
   if (cached && cached.exp > Date.now()) {
-    if (cached.data) return { ok: true, data: cached.data };
+    if (cached.data) return { ok: true, data: cached.data, source: 'cache' as const };
     setResponseStatus(event, 404);
-    return { ok: false, message: `Flight ${flightNoUpper} not found` };
+    return { ok: false, message: `Flight ${flightNoUpper} not found`, source: 'cache' as const };
   }
 
-  const { aviationEdgeKey } = useRuntimeConfig();
-
-  let data: FlightInfo | null = null;
-  let usedSource: 'live' | 'mock' = 'mock';
-
-  // Aviation Edge 兩個 endpoint 互補：
-  // - timetable：即時 + 未來 1-2 天（含 status / actual time）
-  // - flightsFuture：7 天後排程（無 status，'date must be above' 錯誤拒絕近日）
-  // 依用車日期跟今天的差距決定走哪個
-  const today = _todayInTaipei();
-  const daysFromNow = Math.round(
-    (Date.parse(`${date}T00:00:00+08:00`) - Date.parse(`${today}T00:00:00+08:00`)) / 86400000,
-  );
-
-  if (aviationEdgeKey) {
-    try {
-      if (daysFromNow < 7) {
-        data = await _queryTimetable(aviationEdgeKey, flightNoUpper, direction);
-      } else {
-        data = await _queryAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
-      }
-      usedSource = 'live';
-    } catch (err) {
-      console.error('[api/flight] Aviation Edge call failed, falling back to mock:', err);
-      data = _queryMock(flightNoUpper, direction);
-    }
-  } else {
-    data = _queryMock(flightNoUpper, direction);
+  // Stage 2：Request collapsing — 同 key 同時來多 request 共用一個 promise
+  let inflight = _inflight.get(cacheKey);
+  if (!inflight) {
+    inflight = _lookupFlight(flightNoUpper, direction, date)
+      .finally(() => {
+        _inflight.delete(cacheKey);
+      });
+    _inflight.set(cacheKey, inflight);
   }
 
-  // 寫 cache（含 null，避免持續打 API 查不存在航班）
-  _cache.set(cacheKey, { exp: Date.now() + CACHE_TTL_MS, data });
+  const result = await inflight;
+  // 寫 hot cache（含 null，避免持續打 API 查不存在航班）
+  _cache.set(cacheKey, { exp: Date.now() + CACHE_TTL_MS, data: result.data });
 
-  if (!data) {
+  if (!result.data) {
     setResponseStatus(event, 404);
-    return { ok: false, message: `Flight ${flightNoUpper} not found`, source: usedSource };
+    return { ok: false, message: `Flight ${flightNoUpper} not found`, source: result.source };
   }
-  return { ok: true, data, source: usedSource };
+  return { ok: true, data: result.data, source: result.source };
 });
