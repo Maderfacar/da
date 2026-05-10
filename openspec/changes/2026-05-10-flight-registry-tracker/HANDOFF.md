@@ -1,5 +1,20 @@
 # Hand-off：航班系統重構 — Firestore flight_registry + 4 層 fallback + Silent Tracker
 
+## 進度狀態（2026-05-10 更新）
+
+| Stage | 範圍 | 狀態 |
+|---|---|---|
+| 1 | Firestore registry + Layer 1/2 fallback + self-learning | ✅ 已上 prod（commit `fa1310b`） |
+| 2 | 請求合併（in-flight Promise map） | ✅ 已上 prod（同 commit） |
+| 3 | TDX 第 3 層 fallback | 🟡 HOLD — User 卡在申請 TDX API key 階段 |
+| 4 | Silent Tracker + 數據分享 + 預熱 | 🟡 HOLD — 等 cron 機制（Q3）與廣播通道（Q4）拍板 |
+
+**回頭做時要先讀**：本檔「下個 Session 開場做這些」段，重新對齊 Q1/Q3/Q4。
+
+**目前運作狀態**：4 層 fallback 框架在 prod 跑，但實質只有 Layer 1（in-memory）+ Layer 2（Firestore）+ Layer 4（Aviation Edge）+ self-learning 寫回 + stale fallback。Layer 3（TDX）留空跳過。LCC 找不到航班的問題沒解（要靠 TDX 或 user 手動 fallback UI）。**對其他模組無影響** — API contract 沒變、任何階層失敗都自動 fall through。
+
+---
+
 ## 目前進度（2026-05-10 收工）
 
 ### 本 session 已完成 commits（按時序，往前）
