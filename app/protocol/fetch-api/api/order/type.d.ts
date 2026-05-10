@@ -9,6 +9,7 @@ interface GooglePlace {
 
 // ===== 建立訂單 =====
 // P17：userId / lineUserId 改為 optional — server 從 ID token 取，不再信任 client
+// P20：補上 contactPhone（必填）+ flightNumber / terminal / notes（optional）
 interface CreateOrderParams {
   userId?: string;
   lineUserId?: string;
@@ -21,6 +22,10 @@ interface CreateOrderParams {
   luggageCount: number;
   vehicleType: 'sedan' | 'suv' | 'van' | 'premium';
   extraServices?: string[];
+  contactPhone: string;
+  flightNumber?: string | null;
+  terminal?: string | null;
+  notes?: string | null;
 }
 
 interface CreateOrderRes {

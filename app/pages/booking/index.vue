@@ -44,6 +44,10 @@ const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as Ext
 const flightNo = ref('');
 const flightInfo = ref<FlightInfo | null>(null);
 
+// P20：聯絡資訊（contactPhone 必填、notes optional），跨步驟保留以 store draft sync
+const contactPhone = ref(storeOrder.draft.contactPhone ?? '');
+const notes = ref(storeOrder.draft.notes ?? '');
+
 // 桃園機場航廈對應地點
 const TERMINAL_PLACE: Record<'1' | '2', GooglePlace> = {
   '1': { address: '桃園市大園區航站南路9號', lat: 25.0797, lng: 121.2322, displayName: '桃園國際機場 第一航廈（T1）' },
@@ -90,6 +94,8 @@ const SyncToStore = () => {
     luggageCount: luggageCount.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
+    contactPhone: contactPhone.value,
+    notes: notes.value,
   });
 };
 
@@ -112,6 +118,9 @@ const ClickSubmit = async () => {
   // P17：userId / lineUserId 不再從 client 傳，server 強制從 ID token 取 auth.lineUid 寫入
   if (!orderType.value || !pickupDateTime.value || !pickupLocation.value || !dropoffLocation.value) return;
 
+  // P20：contactPhone 必填驗證，避免 BookingStepConfirm 的 disabled 被繞過
+  if (!/^09\d{8}$/.test(contactPhone.value)) return;
+
   isSubmitting.value = true;
   const res = await $api.CreateOrder({
     orderType: orderType.value,
@@ -123,6 +132,10 @@ const ClickSubmit = async () => {
     luggageCount: luggageCount.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
+    contactPhone: contactPhone.value,
+    flightNumber: flightInfo.value?.flightNo ?? null,
+    terminal: flightInfo.value?.terminal ?? null,
+    notes: notes.value || null,
   });
   isSubmitting.value = false;
 
@@ -147,6 +160,8 @@ const ClickNewOrder = () => {
   extraServices.value = [];
   flightNo.value = '';
   flightInfo.value = null;
+  contactPhone.value = '';
+  notes.value = '';
   distanceKm.value = 0;
   durationMinutes.value = 0;
   estimatedFare.value = 0;
@@ -241,6 +256,8 @@ const ClickNewOrder = () => {
           :estimated-fare="estimatedFare"
           :is-loading="isSubmitting"
           :flight-info="flightInfo"
+          v-model:contact-phone="contactPhone"
+          v-model:notes="notes"
           @submit="ClickSubmit"
           @back="GoBack"
         )

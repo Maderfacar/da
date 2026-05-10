@@ -26,7 +26,15 @@ interface CreateOrderBody {
   luggageCount: number;
   vehicleType: VehicleType;
   extraServices?: ExtraService[];
+  // P20：補上 driver/admin 端需要的欄位
+  contactPhone: string;
+  flightNumber?: string | null;
+  terminal?: string | null;
+  notes?: string | null;
 }
+
+const PHONE_REGEX = /^09\d{8}$/;
+const NOTES_MAX_LENGTH = 200;
 
 export default defineEventHandler(async (event) => {
   // P17：必須登入；userId / lineUserId 強制使用 auth.lineUid（去 'line:' prefix）
@@ -47,6 +55,24 @@ export default defineEventHandler(async (event) => {
 
   if (body.passengerCount < 1 || body.passengerCount > 8) {
     return badRequestError({ zh_tw: '乘客人數必須在 1–8 之間', en: 'Passenger count must be 1–8', ja: '乗客数は 1〜8 にしてください' });
+  }
+
+  // P20：contactPhone 為必填，必須符合台灣手機格式 09xxxxxxxx
+  if (!body.contactPhone || !PHONE_REGEX.test(body.contactPhone)) {
+    return badRequestError({
+      zh_tw: '聯絡電話格式錯誤（須為 09 開頭的 10 碼數字）',
+      en: 'Invalid contact phone (must be 10 digits starting with 09)',
+      ja: '連絡先電話番号の形式が不正です（09で始まる10桁の数字）',
+    });
+  }
+
+  // P20：notes 限制 200 字
+  if (body.notes && body.notes.length > NOTES_MAX_LENGTH) {
+    return badRequestError({
+      zh_tw: '備註長度不可超過 200 字',
+      en: 'Notes must be 200 characters or fewer',
+      ja: '備考は200文字以内で入力してください',
+    });
   }
 
   const { googleMapsApiKey, firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
@@ -100,6 +126,11 @@ export default defineEventHandler(async (event) => {
       estimatedFare,
       estimatedTime,
       distanceKm,
+      // P20：driver/admin 端顯示用欄位（contactPhone 必填；其他舊訂單留 null fallback）
+      contactPhone: body.contactPhone,
+      flightNumber: body.flightNumber ?? null,
+      terminal: body.terminal ?? null,
+      notes: body.notes ?? null,
       orderStatus: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });

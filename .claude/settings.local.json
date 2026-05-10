@@ -25,7 +25,9 @@
       "Bash(pnpm test *)",
       "Bash(pnpm vitest *)",
       "Bash(npx nuxt *)",
-      "Bash(findstr /C:\"\\\\\"test\\\\\"\" /C:\"\\\\\"scripts\\\\\"\")"
+      "Bash(findstr /C:\"\\\\\"test\\\\\"\" /C:\"\\\\\"scripts\\\\\"\")",
+      "Bash(pnpm nuxt *)",
+      "Bash(findstr /N \"test\")"
     ]
   }
 }

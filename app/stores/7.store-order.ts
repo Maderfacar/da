@@ -13,6 +13,8 @@ export const StoreOrder = defineStore('StoreOrder', () => {
     luggageCount: 0,
     vehicleType: 'sedan',
     extraServices: [],
+    contactPhone: '',
+    notes: '',
   });
 
   /** 路線資訊（Step 2 計算後暫存） */
@@ -59,6 +61,8 @@ export const StoreOrder = defineStore('StoreOrder', () => {
       luggageCount: 0,
       vehicleType: 'sedan',
       extraServices: [],
+      contactPhone: '',
+      notes: '',
     };
     routeInfo.value = null;
     estimatedFare.value = 0;

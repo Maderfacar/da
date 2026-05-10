@@ -9,12 +9,17 @@ interface Props {
   estimatedFare: number;
   isLoading: boolean;
   flightInfo?: FlightInfo | null;
+  contactPhone: string;
+  notes: string;
 }
 
 const props = defineProps<Props>();
 
 const { t } = useI18n();
-const emit = defineEmits<{ (e: 'submit' | 'back'): void }>();
+const emit = defineEmits<{
+  (e: 'submit' | 'back'): void;
+  (e: 'update:contactPhone' | 'update:notes', val: string): void;
+}>();
 
 const orderTypeLabel = computed(() =>
   ORDER_TYPES.find((t) => t.value === props.draft.orderType)?.label ?? '',
@@ -34,12 +39,95 @@ const formattedDateTime = computed(() => {
   if (!props.draft.pickupDateTime) return '';
   return $dayjs(props.draft.pickupDateTime).format('YYYY/MM/DD HH:mm');
 });
+
+// ── P20 聯絡資訊欄位 ─────────────────────────────────────────────────────────
+const PHONE_REGEX = /^09\d{8}$/;
+const NOTES_MAX = 200;
+
+const phoneInput = ref(props.contactPhone ?? '');
+const notesInput = ref(props.notes ?? '');
+
+watch(() => props.contactPhone, (v) => {
+  if (v !== phoneInput.value) phoneInput.value = v ?? '';
+});
+watch(() => props.notes, (v) => {
+  if (v !== notesInput.value) notesInput.value = v ?? '';
+});
+
+const phoneTouched = ref(false);
+
+const phoneValid = computed(() => PHONE_REGEX.test(phoneInput.value));
+const phoneErrorMsg = computed(() => {
+  if (!phoneTouched.value) return '';
+  if (!phoneInput.value) return t('booking.form.contactPhoneRequired');
+  if (!phoneValid.value) return t('booking.form.contactPhoneError');
+  return '';
+});
+
+const OnPhoneInput = (val: string) => {
+  // 只保留數字，最多 10 碼
+  const cleaned = val.replace(/\D/g, '').slice(0, 10);
+  phoneInput.value = cleaned;
+  emit('update:contactPhone', cleaned);
+};
+
+const OnPhoneBlur = () => {
+  phoneTouched.value = true;
+};
+
+const OnNotesInput = (val: string) => {
+  const trimmed = val.slice(0, NOTES_MAX);
+  notesInput.value = trimmed;
+  emit('update:notes', trimmed);
+};
+
+const canSubmit = computed(() => phoneValid.value && !props.isLoading);
+
+const ClickSubmit = () => {
+  phoneTouched.value = true;
+  if (!phoneValid.value) return;
+  emit('submit');
+};
 </script>
 
 <template lang="pug">
 .PassengerBookingStepConfirm
   .PassengerBookingStepConfirm__section-label CONFIRM ORDER
   h2.PassengerBookingStepConfirm__title {{ $t('booking.confirm.title') }}
+
+  //- P20：聯絡資訊（必填 + 備註）
+  .PassengerBookingStepConfirm__contact
+    .PassengerBookingStepConfirm__contact-label {{ $t('booking.form.contactSection') }}
+
+    .PassengerBookingStepConfirm__field
+      label.PassengerBookingStepConfirm__field-label
+        | {{ $t('booking.form.contactPhone') }}
+        span.PassengerBookingStepConfirm__field-required *
+      ElInput(
+        :model-value="phoneInput"
+        type="tel"
+        inputmode="numeric"
+        maxlength="10"
+        :placeholder="$t('booking.form.contactPhonePlaceholder')"
+        :class="{ 'is-error': phoneErrorMsg }"
+        @update:model-value="OnPhoneInput"
+        @blur="OnPhoneBlur"
+      )
+      .PassengerBookingStepConfirm__field-error(v-if="phoneErrorMsg") {{ phoneErrorMsg }}
+
+    .PassengerBookingStepConfirm__field
+      label.PassengerBookingStepConfirm__field-label
+        | {{ $t('booking.form.notes') }}
+        span.PassengerBookingStepConfirm__field-optional ({{ $t('booking.form.notesOptional') }})
+      ElInput(
+        :model-value="notesInput"
+        type="textarea"
+        :rows="3"
+        :maxlength="NOTES_MAX"
+        :placeholder="$t('booking.form.notesPlaceholder')"
+        show-word-limit
+        @update:model-value="OnNotesInput"
+      )
 
   .PassengerBookingStepConfirm__card
     .PassengerBookingStepConfirm__row
@@ -74,6 +162,12 @@ const formattedDateTime = computed(() => {
     .PassengerBookingStepConfirm__row(v-if="extraLabels")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.extras') }}
       span.PassengerBookingStepConfirm__row-value {{ extraLabels }}
+    .PassengerBookingStepConfirm__row(v-if="phoneInput")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.contactPhone') }}
+      span.PassengerBookingStepConfirm__row-value {{ phoneInput }}
+    .PassengerBookingStepConfirm__row(v-if="notesInput")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.notes') }}
+      span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi {{ notesInput }}
     .PassengerBookingStepConfirm__divider
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.distance') }}
@@ -94,7 +188,7 @@ const formattedDateTime = computed(() => {
 
   .PassengerBookingStepConfirm__actions
     UiButton(type="secondary" :disabled="isLoading" @click="$emit('back')") {{ $t('booking.confirm.back') }}
-    UiButton(type="primary" :loading="isLoading" @click="$emit('submit')") {{ $t('booking.confirm.submit') }}
+    UiButton(type="primary" :loading="isLoading" :disabled="!canSubmit" @click="ClickSubmit") {{ $t('booking.confirm.submit') }}
 </template>
 
 <style lang="scss" scoped>
@@ -130,6 +224,63 @@ const formattedDateTime = computed(() => {
     margin-top: -8px;
   }
 
+  // ── P20 聯絡資訊區 ───────────────────────────────────────────────────────
+  &__contact {
+    background: var(--da-glass-bg);
+    border: 1px solid var(--da-glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    backdrop-filter: blur(12px);
+  }
+
+  &__contact-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--da-amber);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__field-label {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    color: var(--da-dark);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__field-required {
+    color: #ef4444;
+    font-weight: 700;
+  }
+
+  &__field-optional {
+    color: var(--da-gray-light);
+    font-size: 12px;
+  }
+
+  &__field-error {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 2px;
+  }
+
+  :deep(.el-input.is-error .el-input__wrapper) {
+    box-shadow: 0 0 0 1px #ef4444 inset;
+  }
+
   &__card {
     background: var(--da-glass-bg);
     border: 1px solid var(--da-glass-border);
@@ -159,6 +310,11 @@ const formattedDateTime = computed(() => {
     color: var(--da-dark);
     font-weight: 500;
     text-align: right;
+  }
+
+  &__row-value--multi {
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   &__divider {
