@@ -1,30 +1,19 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
+const { t } = useI18n();
+
 const loading = ref(false);
 const orders = ref<OrderItem[]>([]);
 const cancellingId = ref<string>('');
 
-const STATUS_LABEL: Record<string, { text: string; color: string }> = {
-  pending:    { text: '等待確認', color: '#f59e0b' },
-  confirmed:  { text: '已確認',   color: '#38bdf8' },
-  in_transit: { text: '行程中',   color: '#4ade80' },
-  completed:  { text: '已完成',   color: 'rgba(255,255,255,0.4)' },
-  cancelled:  { text: '已取消',   color: '#f87171' },
-};
-
-const ORDER_TYPE_LABEL: Record<string, string> = {
-  'airport-pickup':  '接機',
-  'airport-dropoff': '送機',
-  'charter':         '包車',
-  'transfer':        '接送',
-};
-
-const VEHICLE_LABEL: Record<string, string> = {
-  sedan:   '房車',
-  suv:     'SUV',
-  van:     '廂型',
-  premium: '商務',
+// status 文字走 i18n（status.{key}）；色碼留在前端（不參與翻譯）
+const STATUS_COLOR: Record<string, string> = {
+  pending:    '#f59e0b',
+  confirmed:  '#38bdf8',
+  in_transit: '#4ade80',
+  completed:  'rgba(255,255,255,0.4)',
+  cancelled:  '#f87171',
 };
 
 // P17：可取消狀態（pending / confirmed 才允許乘客主動取消，行程中或已完成不可）
@@ -37,7 +26,7 @@ const ApiLoadOrders = async () => {
     const res = await $api.GetOrderList({});
     if (res.status?.code !== $enum.apiStatus.success) {
       console.error('[orders] load failed:', res.status?.message?.zh_tw);
-      ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
+      ElMessage({ message: res.status?.message?.zh_tw ?? t('orders.loadFailed'), type: 'error' });
       orders.value = [];
       return;
     }
@@ -51,16 +40,16 @@ const ApiLoadOrders = async () => {
 const ClickCancel = async (orderId: string, orderStatus: string) => {
   if (!CAN_CANCEL_STATUS.has(orderStatus)) return;
   if (cancellingId.value) return;
-  const ok = await UseAsk('確定要取消此訂單嗎？取消後無法復原。');
+  const ok = await UseAsk(t('orders.cancel.confirm'));
   if (!ok) return;
   cancellingId.value = orderId;
   const res = await $api.PatchOrder(orderId, { orderStatus: 'cancelled' });
   cancellingId.value = '';
   if (res.status?.code !== $enum.apiStatus.success) {
-    ElMessage({ message: res.status?.message?.zh_tw ?? '取消失敗，請稍後重試', type: 'error' });
+    ElMessage({ message: res.status?.message?.zh_tw ?? t('orders.cancel.failed'), type: 'error' });
     return;
   }
-  ElMessage({ message: '訂單已取消', type: 'success' });
+  ElMessage({ message: t('orders.cancel.success'), type: 'success' });
   await ApiLoadOrders();
 };
 
@@ -81,7 +70,10 @@ onUnmounted(() => {
 
 const FormatDate = (iso: string) => $dayjs(iso).format('MM/DD HH:mm');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
-const StatusOf = (status: string) => STATUS_LABEL[status] ?? { text: status, color: 'rgba(255,255,255,0.4)' };
+const StatusText = (status: string) => t(`status.${status}`, status);
+const StatusColor = (status: string) => STATUS_COLOR[status] ?? 'rgba(255,255,255,0.4)';
+const OrderTypeLabel = (orderType: string) => t(`orderType.${orderType}`, orderType);
+const VehicleLabel = (vehicleType: string) => t(`vehicle.${vehicleType}`, vehicleType);
 const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 </script>
 
@@ -89,7 +81,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 .PageOrders
   .PageOrders__header
     .PageOrders__header-label MY TRIPS
-    h1.PageOrders__header-title 我的訂單
+    h1.PageOrders__header-title {{ $t('orders.title') }}
 
   //- 載入中
   .PageOrders__loading(v-if="loading")
@@ -98,15 +90,15 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   //- 無訂單
   .PageOrders__empty(v-else-if="orders.length === 0")
     .PageOrders__empty-icon 🚗
-    p.PageOrders__empty-text 尚無訂單紀錄
-    NuxtLink.PageOrders__empty-link(to="/booking") 立即訂車
+    p.PageOrders__empty-text {{ $t('orders.empty.text') }}
+    NuxtLink.PageOrders__empty-link(to="/booking") {{ $t('orders.empty.btn') }}
 
   //- 訂單列表
   .PageOrders__list(v-else)
     .PageOrders__card(v-for="o in orders" :key="o.orderId")
       .PageOrders__card-top
-        .PageOrders__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
-        .PageOrders__status(:style="{ color: StatusOf(o.orderStatus).color }") {{ StatusOf(o.orderStatus).text }}
+        .PageOrders__type-badge {{ OrderTypeLabel(o.orderType) }}
+        .PageOrders__status(:style="{ color: StatusColor(o.orderStatus) }") {{ StatusText(o.orderStatus) }}
 
       .PageOrders__route
         .PageOrders__route-row
@@ -119,7 +111,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
       .PageOrders__card-footer
         span.PageOrders__date {{ FormatDate(o.pickupDateTime) }}
-        span.PageOrders__vehicle {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
+        span.PageOrders__vehicle {{ VehicleLabel(o.vehicleType) }}
         span.PageOrders__fare {{ FormatFare(o.estimatedFare) }}
 
       //- P17：取消按鈕（pending / confirmed 才顯示）
@@ -127,7 +119,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
         v-if="CanCancel(o.orderStatus)"
         :disabled="cancellingId === o.orderId"
         @click="ClickCancel(o.orderId, o.orderStatus)"
-      ) {{ cancellingId === o.orderId ? '取消中...' : '取消訂單' }}
+      ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
 </template>
 
 <style lang="scss" scoped>

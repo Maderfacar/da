@@ -21,6 +21,30 @@ export default {
     completed: 'Completed',
     cancelled: 'Cancelled',
   },
+  orderType: {
+    'airport-pickup': 'Airport Pickup',
+    'airport-dropoff': 'Airport Dropoff',
+    charter: 'Charter',
+    transfer: 'Transfer',
+  },
+  vehicle: {
+    sedan: 'Sedan',
+    suv: 'SUV',
+    van: 'Van',
+    premium: 'Premium',
+  },
+  orders: {
+    title: 'My Orders',
+    empty: { text: 'No order records yet', btn: 'Book Now' },
+    loadFailed: 'Failed to load orders',
+    cancel: {
+      btn: 'Cancel Order',
+      loading: 'Cancelling...',
+      confirm: 'Cancel this order? This action cannot be undone.',
+      success: 'Order cancelled',
+      failed: 'Cancellation failed, please try again later',
+    },
+  },
   home: {
     hero: {
       tag: '✈ Premium Airport Transfer',
@@ -91,6 +115,7 @@ export default {
       confirmed: 'Confirmed',
       in_transit: 'In Progress',
       completed: 'Completed',
+      cancelled: 'Cancelled',
     },
     section: {
       upcoming: 'Upcoming',

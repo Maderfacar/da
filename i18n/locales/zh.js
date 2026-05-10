@@ -25,6 +25,33 @@ export default {
     completed: '已完成',
     cancelled: '已取消',
   },
+  // ── 行程類型（跨頁共用）─────────────────────────────────
+  orderType: {
+    'airport-pickup': '接機',
+    'airport-dropoff': '送機',
+    charter: '包車',
+    transfer: '交通接送',
+  },
+  // ── 車種（跨頁共用）────────────────────────────────────
+  vehicle: {
+    sedan: '轎車',
+    suv: '休旅車',
+    van: '廂型車',
+    premium: '豪華轎車',
+  },
+  // ── 我的訂單 ─────────────────────────────────────────────
+  orders: {
+    title: '我的訂單',
+    empty: { text: '尚無訂單紀錄', btn: '立即訂車' },
+    loadFailed: '載入訂單失敗',
+    cancel: {
+      btn: '取消訂單',
+      loading: '取消中...',
+      confirm: '確定要取消此訂單嗎？取消後無法復原。',
+      success: '訂單已取消',
+      failed: '取消失敗，請稍後重試',
+    },
+  },
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
     hero: {
@@ -98,6 +125,7 @@ export default {
       confirmed: '已確認',
       in_transit: '進行中',
       completed: '已完成',
+      cancelled: '已取消',
     },
     section: {
       upcoming: '即將出發',

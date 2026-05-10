@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VEHICLE_CONFIGS, ORDER_TYPES } from '~shared/pricing';
+import { VEHICLE_CONFIGS } from '~shared/pricing';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
@@ -38,8 +38,6 @@ const _locationLabel = (loc: GooglePlace): string =>
 
 const _mapToTripItem = (o: OrderItem): TripItem => {
   const dt = $dayjs(o.pickupDateTime);
-  const vehicleCfg = VEHICLE_CONFIGS[o.vehicleType as keyof typeof VEHICLE_CONFIGS];
-  const orderTypeCfg = ORDER_TYPES.find((t) => t.value === o.orderType);
   return {
     orderId: o.orderId,
     id: o.orderId.slice(-8).toUpperCase(),
@@ -48,18 +46,26 @@ const _mapToTripItem = (o: OrderItem): TripItem => {
     status: _normalizeForPassenger(o.orderStatus),
     date: dt.isValid() ? dt.format('YYYY.MM.DD') : '',
     time: dt.isValid() ? dt.format('HH:mm') : '',
-    vehicle: vehicleCfg ? `${vehicleCfg.label} ${vehicleCfg.labelEn}` : o.vehicleType,
+    vehicle: o.vehicleType,
     passengerCount: o.passengerCount ?? 1,
     estimatedFare: o.estimatedFare,
-    orderType: orderTypeCfg?.label ?? o.orderType,
+    orderType: o.orderType,
   };
 };
+
+// 顯示標籤透過 i18n 動態產生（切語系時自動更新；vehicle 補 EN 後綴維持原 UX）
+const VehicleDisplay = (vehicleType: string) => {
+  const cfg = VEHICLE_CONFIGS[vehicleType as keyof typeof VEHICLE_CONFIGS];
+  const zh = t(`vehicle.${vehicleType}`, vehicleType);
+  return cfg ? `${zh} ${cfg.labelEn}` : zh;
+};
+const OrderTypeDisplay = (orderType: string) => t(`orderType.${orderType}`, orderType);
 
 const loading = ref(false);
 const trips = ref<TripItem[]>([]);
 const cancellingId = ref<string>('');
-// P17：'in-progress' → 'in_transit'（與 server 對齊）
-const STATUS_TAB_KEYS: Array<TripStatus | 'all'> = ['all', 'pending', 'confirmed', 'in_transit', 'completed'];
+// P17：'in-progress' → 'in_transit'（與 server 對齊）；補 'cancelled' filter 讓乘客查歷史取消單
+const STATUS_TAB_KEYS: Array<TripStatus | 'all'> = ['all', 'pending', 'confirmed', 'in_transit', 'completed', 'cancelled'];
 
 const STATUS_CLS: Record<TripStatus, string> = {
   pending:    'is-pending',
@@ -107,16 +113,16 @@ const ApiLoadOrders = async () => {
 const ClickCancel = async (orderId: string, status: TripStatus) => {
   if (!CAN_CANCEL_STATUS.has(status)) return;
   if (cancellingId.value) return;
-  const ok = await UseAsk('確定要取消此訂單嗎？取消後無法復原。');
+  const ok = await UseAsk(t('orders.cancel.confirm'));
   if (!ok) return;
   cancellingId.value = orderId;
   const res = await $api.PatchOrder(orderId, { orderStatus: 'cancelled' });
   cancellingId.value = '';
   if (res.status?.code !== $enum.apiStatus.success) {
-    ElMessage({ message: res.status?.message?.zh_tw ?? '取消失敗，請稍後重試', type: 'error' });
+    ElMessage({ message: res.status?.message?.zh_tw ?? t('orders.cancel.failed'), type: 'error' });
     return;
   }
-  ElMessage({ message: '訂單已取消', type: 'success' });
+  ElMessage({ message: t('orders.cancel.success'), type: 'success' });
   await ApiLoadOrders();
 };
 
@@ -179,7 +185,7 @@ onUnmounted(() => {
             .PageUpcoming__meta-row
               .PageUpcoming__meta-item
                 span.PageUpcoming__meta-label {{ $t('upcoming.meta.type') }}
-                span.PageUpcoming__meta-val {{ trip.orderType }}
+                span.PageUpcoming__meta-val {{ OrderTypeDisplay(trip.orderType) }}
               .PageUpcoming__meta-item
                 span.PageUpcoming__meta-label {{ $t('upcoming.meta.date') }}
                 span.PageUpcoming__meta-val {{ trip.date }}
@@ -189,7 +195,7 @@ onUnmounted(() => {
                 span.PageUpcoming__meta-val {{ trip.time }}
               .PageUpcoming__meta-item
                 span.PageUpcoming__meta-label {{ $t('upcoming.meta.vehicle') }}
-                span.PageUpcoming__meta-val {{ trip.vehicle }}
+                span.PageUpcoming__meta-val {{ VehicleDisplay(trip.vehicle) }}
             .PageUpcoming__meta-row
               .PageUpcoming__meta-item
                 span.PageUpcoming__meta-label {{ $t('upcoming.meta.passengers') }}
@@ -204,7 +210,7 @@ onUnmounted(() => {
               v-if="CanCancel(trip.status)"
               :disabled="cancellingId === trip.orderId"
               @click="ClickCancel(trip.orderId, trip.status)"
-            ) {{ cancellingId === trip.orderId ? '取消中...' : '取消訂單' }}
+            ) {{ cancellingId === trip.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
 
     //- 過去行程
     template(v-if="pastTrips.length")

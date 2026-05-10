@@ -21,6 +21,30 @@ export default {
     completed: '完了',
     cancelled: 'キャンセル',
   },
+  orderType: {
+    'airport-pickup': '空港送迎（到着）',
+    'airport-dropoff': '空港送迎（出発）',
+    charter: 'チャーター',
+    transfer: '送迎',
+  },
+  vehicle: {
+    sedan: 'セダン',
+    suv: 'SUV',
+    van: 'バン',
+    premium: 'プレミアム',
+  },
+  orders: {
+    title: '注文一覧',
+    empty: { text: '注文履歴がありません', btn: '今すぐ予約' },
+    loadFailed: '注文の読み込みに失敗しました',
+    cancel: {
+      btn: '注文をキャンセル',
+      loading: 'キャンセル中...',
+      confirm: 'この注文をキャンセルしますか？この操作は取り消せません。',
+      success: '注文をキャンセルしました',
+      failed: 'キャンセルに失敗しました。後ほど再度お試しください',
+    },
+  },
   home: {
     hero: {
       tag: '✈ プレミアム空港送迎',
@@ -91,6 +115,7 @@ export default {
       confirmed: '確認済み',
       in_transit: '進行中',
       completed: '完了',
+      cancelled: 'キャンセル済',
     },
     section: {
       upcoming: 'まもなく出発',
