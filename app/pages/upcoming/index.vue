@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { VEHICLE_CONFIGS } from '~shared/pricing';
-
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const storeConfig = StoreConfig();
 
 // P17：'in_transit' 對齊 server / Firestore 寫入值（原 'in-progress' 連字號是 bug，
 // 司機接單後乘客「行程中」分頁永遠空）
@@ -53,11 +52,14 @@ const _mapToTripItem = (o: OrderItem): TripItem => {
   };
 };
 
-// 顯示標籤透過 i18n 動態產生（切語系時自動更新；vehicle 補 EN 後綴維持原 UX）
+// P23：車型 label 改從 fleet config 取（三語），i18n vehicle.* 留 fallback 兼容
 const VehicleDisplay = (vehicleType: string) => {
-  const cfg = VEHICLE_CONFIGS[vehicleType as keyof typeof VEHICLE_CONFIGS];
-  const zh = t(`vehicle.${vehicleType}`, vehicleType);
-  return cfg ? `${zh} ${cfg.labelEn}` : zh;
+  const cfg = storeConfig.GetVehicle(vehicleType);
+  if (cfg) {
+    const localized = storeConfig.LabelOf(cfg.label, locale.value as 'zh' | 'en' | 'ja');
+    return cfg.label.en && localized !== cfg.label.en ? `${localized} ${cfg.label.en}` : localized;
+  }
+  return t(`vehicle.${vehicleType}`, vehicleType);
 };
 const OrderTypeDisplay = (orderType: string) => t(`orderType.${orderType}`, orderType);
 

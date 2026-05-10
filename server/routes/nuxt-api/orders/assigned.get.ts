@@ -48,6 +48,7 @@ export default defineEventHandler(async (event) => {
 
     // P19：完整訂單詳情（driver/trip modal 用）+ batch read users 取乘客 displayName
     type GooglePlaceLite = { address: string; lat: number; lng: number; displayName?: string };
+    type LuggageItemDoc = { typeId: string; count: number };
 
     const baseOrders = snapshot.docs.map((doc) => {
       const d = doc.data();
@@ -61,7 +62,8 @@ export default defineEventHandler(async (event) => {
         stopovers: ((d.stopovers as GooglePlaceLite[] | undefined) ?? []),
         vehicleType: d.vehicleType as string,
         passengerCount: (d.passengerCount as number) ?? 1,
-        luggageCount: (d.luggageCount as number) ?? 0,
+        // P23：行李改 luggageItems 陣列（typeId + count）
+        luggageItems: (d.luggageItems as LuggageItemDoc[] | undefined) ?? [],
         estimatedFare: (d.estimatedFare as number) ?? 0,
         estimatedTime: (d.estimatedTime as number) ?? 0,
         distanceKm: (d.distanceKm as number) ?? 0,
@@ -69,6 +71,8 @@ export default defineEventHandler(async (event) => {
         flightNumber: (d.flightNumber as string | undefined) ?? null,
         terminal: (d.terminal as string | undefined) ?? null,
         notes: (d.notes as string | undefined) ?? null,
+        // P20：contactPhone（per-order 聯絡電話，priority 高於 user.phone fallback）
+        contactPhone: (d.contactPhone as string | undefined) ?? null,
         orderStatus: d.orderStatus as string,
         createdAt: d.createdAt?.toMillis?.() ?? 0,
       };
@@ -98,7 +102,8 @@ export default defineEventHandler(async (event) => {
       .map((o) => ({
         ...o,
         passengerName: userMap.get(o.userId)?.displayName ?? '',
-        passengerPhone: null as string | null, // 暫無此欄位（booking 表單未收）
+        // P20：優先回 per-order contactPhone（booking 表單收的），未填則 null
+        passengerPhone: o.contactPhone,
       }))
       // pickupDateTime 升序（最早要去接的優先顯示）
       .sort((a, b) => {

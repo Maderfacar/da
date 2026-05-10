@@ -1,32 +1,30 @@
 <script setup lang="ts">
-import { VEHICLE_CONFIGS, EXTRA_SERVICES, EXTRA_SERVICE_PRICE } from '~shared/pricing';
 import type { VehicleType } from '~shared/pricing';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
-const VEHICLE_ORDER: VehicleType[] = ['sedan', 'suv', 'van', 'premium'];
+const storeConfig = StoreConfig();
 
-const VEHICLE_ICONS: Record<VehicleType, string> = {
-  sedan:   'mdi:car-side',
-  suv:     'mdi:car-estate',
-  van:     'mdi:van-utility',
-  premium: 'mdi:car-convertible',
-};
+// 預設 active 為第一台啟用車型（store ready 後才有值；config 載入前先用空字串）
+const activeVehicle = ref<VehicleType>('');
 
-const vehicles = VEHICLE_ORDER.map((type) => ({
-  ...VEHICLE_CONFIGS[type],
-  icon: VEHICLE_ICONS[type],
-}));
+watch(() => storeConfig.EnabledVehicles, (list) => {
+  if (!activeVehicle.value && list.length > 0) activeVehicle.value = list[0].id;
+}, { immediate: true });
 
-const activeVehicle = ref<VehicleType>('sedan');
-const selected = computed(() => vehicles.find((v) => v.type === activeVehicle.value)!);
+const vehicles = computed(() => storeConfig.EnabledVehicles);
+const selected = computed(() => storeConfig.GetVehicle(activeVehicle.value));
+
+const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
+  storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
 
 // 試算：25km 範例
 const SAMPLE_KM = 25;
 const sampleFare = computed(() => {
-  const cfg = VEHICLE_CONFIGS[activeVehicle.value];
+  const cfg = selected.value;
+  if (!cfg) return 0;
   return Math.ceil((cfg.baseFare + SAMPLE_KM * cfg.perKmRate) / 50) * 50;
 });
 </script>
@@ -45,21 +43,21 @@ const sampleFare = computed(() => {
   .PageFleet__selector
     button.PageFleet__selector-btn(
       v-for="v in vehicles"
-      :key="v.type"
-      :class="{ 'is-active': activeVehicle === v.type }"
-      @click="activeVehicle = v.type"
+      :key="v.id"
+      :class="{ 'is-active': activeVehicle === v.id }"
+      @click="activeVehicle = v.id"
     )
       NuxtIcon.PageFleet__selector-icon(:name="v.icon")
-      span.PageFleet__selector-label {{ v.label }}
-      span.PageFleet__selector-en {{ v.labelEn }}
+      span.PageFleet__selector-label {{ Loc(v.label) }}
+      span.PageFleet__selector-en {{ v.label.en }}
 
   //- 車型詳情卡
   Transition(name="fleet-fade" mode="out-in")
-    .PageFleet__detail(:key="activeVehicle")
+    .PageFleet__detail(v-if="selected" :key="activeVehicle")
       //- 車型圖示區
       .PageFleet__car-visual
-        NuxtIcon.PageFleet__car-icon(:name="VEHICLE_ICONS[activeVehicle]")
-        .PageFleet__car-badge {{ selected.labelEn }}
+        NuxtIcon.PageFleet__car-icon(:name="selected.icon")
+        .PageFleet__car-badge {{ selected.label.en }}
 
       //- 核心規格
       .PageFleet__specs
@@ -71,7 +69,7 @@ const sampleFare = computed(() => {
         .PageFleet__spec-item
           NuxtIcon(name="mdi:bag-suitcase")
           .PageFleet__spec-info
-            span.PageFleet__spec-val {{ selected.luggageCapacity }} {{ $t('fleet.unit.piece') }}
+            span.PageFleet__spec-val {{ selected.luggageSU }} SU
             span.PageFleet__spec-key {{ $t('fleet.spec.luggage') }}
         .PageFleet__spec-item
           NuxtIcon(name="mdi:currency-twd")
@@ -84,7 +82,7 @@ const sampleFare = computed(() => {
             span.PageFleet__spec-val NT$ {{ selected.perKmRate }}
             span.PageFleet__spec-key {{ $t('fleet.spec.perKm') }}
 
-      //- 車型描述
+      //- 車型描述（i18n key 仍依車型 id；admin 新增車型若沒對應 key 會 fallback 空字串）
       p.PageFleet__desc {{ $t('fleet.desc.' + activeVehicle) }}
 
       //- 試算區
@@ -106,10 +104,10 @@ const sampleFare = computed(() => {
     .PageFleet__extras-label EXTRA SERVICES
     h2.PageFleet__extras-title {{ $t('fleet.extras.title') }}
     .PageFleet__extras-grid
-      .PageFleet__extra-card(v-for="svc in EXTRA_SERVICES" :key="svc.value")
+      .PageFleet__extra-card(v-for="svc in storeConfig.EnabledExtras" :key="svc.id")
         NuxtIcon.PageFleet__extra-icon(:name="svc.icon")
-        span.PageFleet__extra-name {{ $t('fleet.extras.' + svc.value) }}
-        span.PageFleet__extra-price + NT$ {{ EXTRA_SERVICE_PRICE }}
+        span.PageFleet__extra-name {{ Loc(svc.label) }}
+        span.PageFleet__extra-price + NT$ {{ svc.price }}
 </template>
 
 <style lang="scss" scoped>

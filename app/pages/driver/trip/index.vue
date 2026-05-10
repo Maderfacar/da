@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EXTRA_SERVICES, ORDER_TYPES, VEHICLE_CONFIGS } from '~shared/pricing';
+import { ORDER_TYPES } from '~shared/pricing';
 
 // P19：driver/trip 改為列表 + modal 詳情設計
 // - 列表卡片只顯示日期 / 時間 / 訂單號 / 路線簡略 / 狀態徽章
@@ -29,9 +29,15 @@ const STATUS_LABEL: Record<string, string> = {
   in_transit:     '行程中',
 };
 
+const storeConfig = StoreConfig();
 const ORDER_TYPE_LABEL = Object.fromEntries(ORDER_TYPES.map((t) => [t.value, t.label])) as Record<string, string>;
-const VEHICLE_LABEL = Object.fromEntries(Object.entries(VEHICLE_CONFIGS).map(([k, v]) => [k, v.label])) as Record<string, string>;
-const EXTRA_SERVICE_LABEL = Object.fromEntries(EXTRA_SERVICES.map((s) => [s.value, s.label])) as Record<string, string>;
+// P23：fleet config 動態化 — 用 store getter 取代 hardcoded label map
+const VEHICLE_LABEL = (id: string) => storeConfig.GetVehicle(id)?.label.zh ?? id;
+const EXTRA_SERVICE_LABEL = (id: string) => storeConfig.GetExtra(id)?.label.zh ?? id;
+const LuggageSummary = (items: Array<{ typeId: string; count: number }> | undefined) =>
+  (items ?? []).map((i) => `${storeConfig.GetLuggageType(i.typeId)?.label.zh ?? i.typeId} × ${i.count}`).join('、') || '—';
+const LuggageTotalSU = (items: Array<{ typeId: string; count: number }> | undefined) =>
+  (items ?? []).reduce((sum, i) => sum + (storeConfig.GetLuggageType(i.typeId)?.su ?? 0) * i.count, 0);
 
 const orders = ref<AssignedOrder[]>([]);
 const loading = ref(false);
@@ -178,7 +184,7 @@ onUnmounted(() => {
         .PageDriverTrip__modal-head
           .PageDriverTrip__modal-head-left
             span.PageDriverTrip__modal-type {{ ORDER_TYPE_LABEL[selectedOrder.orderType] ?? selectedOrder.orderType }}
-            span.PageDriverTrip__modal-vehicle {{ VEHICLE_LABEL[selectedOrder.vehicleType] ?? selectedOrder.vehicleType }}
+            span.PageDriverTrip__modal-vehicle {{ VEHICLE_LABEL(selectedOrder.vehicleType) }}
           button.PageDriverTrip__modal-close(@click="ClickCloseDetail") ×
 
         .PageDriverTrip__modal-id \#{{ selectedOrder.orderId.toUpperCase() }}
@@ -204,7 +210,7 @@ onUnmounted(() => {
               span.PageDriverTrip__section-val.is-muted(v-else) 請透過 LINE 聯絡
             .PageDriverTrip__section-row
               span.PageDriverTrip__section-key 人數 / 行李
-              span.PageDriverTrip__section-val {{ selectedOrder.passengerCount }} 人 / {{ selectedOrder.luggageCount }} 件
+              span.PageDriverTrip__section-val {{ selectedOrder.passengerCount }} 人 / {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
 
           //- Section 3：路線（含 Google Maps 連結）
           .PageDriverTrip__section
@@ -248,7 +254,7 @@ onUnmounted(() => {
             .PageDriverTrip__section-title 額外服務
             .PageDriverTrip__extras
               span.PageDriverTrip__extra-tag(v-for="s in selectedOrder.extraServices" :key="s")
-                | {{ EXTRA_SERVICE_LABEL[s] || s }}
+                | {{ EXTRA_SERVICE_LABEL(s) }}
 
           //- Section 6：備註
           .PageDriverTrip__section(v-if="selectedOrder.notes")

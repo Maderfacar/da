@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import type { AdminOrder, AdminUser } from '@/protocol/fetch-api/api/admin';
-import { EXTRA_SERVICES, ORDER_TYPES, VEHICLE_CONFIGS } from '~shared/pricing';
+import type { AdminOrder, AdminOrderLuggageItem, AdminUser } from '@/protocol/fetch-api/api/admin';
+import { ORDER_TYPES } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
+const storeConfig = StoreConfig();
+
 const ORDER_TYPE_LABEL = Object.fromEntries(ORDER_TYPES.map((t) => [t.value, t.label])) as Record<string, string>;
-const VEHICLE_LABEL = Object.fromEntries(Object.entries(VEHICLE_CONFIGS).map(([k, v]) => [k, v.label])) as Record<string, string>;
-const EXTRA_SERVICE_LABEL = Object.fromEntries(EXTRA_SERVICES.map((s) => [s.value, s.label])) as Record<string, string>;
-const VEHICLE_OPTIONS = Object.values(VEHICLE_CONFIGS).map((c) => ({ value: c.type, label: c.label }));
+
+// P23：car / extras label 從 store 動態查（admin 改完不用重啟）
+const VEHICLE_LABEL = (id: string) =>
+  storeConfig.GetVehicle(id)?.label.zh ?? id;
+const EXTRA_SERVICE_LABEL = (id: string) =>
+  storeConfig.GetExtra(id)?.label.zh ?? id;
+const VEHICLE_OPTIONS = computed(() =>
+  storeConfig.EnabledVehicles.map((c) => ({ value: c.id, label: c.label.zh })),
+);
+
+const LUGGAGE_TYPE_LABEL = (id: string) =>
+  storeConfig.GetLuggageType(id)?.label.zh ?? id;
+const LuggageSummary = (items: AdminOrderLuggageItem[] | undefined) =>
+  (items ?? []).map((i) => `${LUGGAGE_TYPE_LABEL(i.typeId)} × ${i.count}`).join('、') || '—';
+const LuggageTotalSU = (items: AdminOrderLuggageItem[] | undefined) =>
+  (items ?? []).reduce((sum, i) => sum + (storeConfig.GetLuggageType(i.typeId)?.su ?? 0) * i.count, 0);
 
 const STATUS_LABEL: Record<string, string> = {
   pending:        '待確認',
@@ -49,7 +64,7 @@ interface EditForm {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
-  luggageCount: number;
+  luggageItems: AdminOrderLuggageItem[];
   estimatedFare: number;
   extraServices: string[];
   flightNumber: string;
@@ -63,7 +78,7 @@ const editForm = reactive<EditForm>({
   stopovers: [],
   vehicleType: '',
   passengerCount: 1,
-  luggageCount: 0,
+  luggageItems: [],
   estimatedFare: 0,
   extraServices: [],
   flightNumber: '',
@@ -132,7 +147,7 @@ const ClickEditMode = () => {
   editForm.stopovers = (o.stopovers ?? []).map((s) => ({ ...s } as GooglePlace));
   editForm.vehicleType = o.vehicleType;
   editForm.passengerCount = o.passengerCount ?? 1;
-  editForm.luggageCount = o.luggageCount ?? 0;
+  editForm.luggageItems = (o.luggageItems ?? []).map((i) => ({ ...i }));
   editForm.estimatedFare = o.estimatedFare ?? 0;
   editForm.extraServices = [...(o.extraServices ?? [])];
   editForm.flightNumber = o.flightNumber ?? '';
@@ -158,6 +173,22 @@ const ClickToggleExtra = (val: string) => {
   const i = editForm.extraServices.indexOf(val);
   if (i >= 0) editForm.extraServices.splice(i, 1);
   else editForm.extraServices.push(val);
+};
+
+// P23：行李 SU stepper（編輯模式）
+const EditLuggageCount = (typeId: string): number =>
+  editForm.luggageItems.find((i) => i.typeId === typeId)?.count ?? 0;
+
+const SetEditLuggage = (typeId: string, rawValue: number | string) => {
+  const count = Math.max(0, Math.min(20, Number(rawValue) || 0));
+  const idx = editForm.luggageItems.findIndex((i) => i.typeId === typeId);
+  if (count === 0) {
+    if (idx >= 0) editForm.luggageItems.splice(idx, 1);
+  } else if (idx >= 0) {
+    editForm.luggageItems[idx].count = count;
+  } else {
+    editForm.luggageItems.push({ typeId, count });
+  }
 };
 
 // 儲存
@@ -189,7 +220,7 @@ const ApiSaveEdit = async () => {
       stopovers: editForm.stopovers,
       vehicleType: editForm.vehicleType,
       passengerCount: editForm.passengerCount,
-      luggageCount: editForm.luggageCount,
+      luggageItems: editForm.luggageItems,
       estimatedFare: editForm.estimatedFare,
       extraServices: editForm.extraServices,
       flightNumber: editForm.flightNumber || null,
@@ -261,7 +292,7 @@ const _BuildPassengerTemplate = (o: AdminOrder): string => {
   const driverName = driver?.driverApplication?.driverName ?? driver?.displayName ?? '（未指派）';
   const driverPhone = driver?.driverApplication?.phone ?? '（未提供）';
   const driverPlate = driver?.driverApplication?.plateNumber ?? '（未提供）';
-  const vehicleLabel = VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType;
+  const vehicleLabel = VEHICLE_LABEL(o.vehicleType);
   const lines = [
     '【DEST·ANYWHERE 訂單通知】',
     `您的訂單 #${o.orderId.slice(0, 8).toUpperCase()} 已指派司機：`,
@@ -280,14 +311,14 @@ const _BuildPassengerTemplate = (o: AdminOrder): string => {
 };
 
 const _BuildDriverTemplate = (o: AdminOrder): string => {
-  const vehicleLabel = VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType;
+  const vehicleLabel = VEHICLE_LABEL(o.vehicleType);
   const orderTypeLabel = ORDER_TYPE_LABEL[o.orderType] ?? o.orderType;
   const lines = [
     '【DEST·ANYWHERE 新行程任務】',
     `訂單編號：#${o.orderId.slice(0, 8).toUpperCase()}`,
     `行程類型：${orderTypeLabel}`,
     `乘客：${o.passengerName || '（未提供）'}`,
-    `人數：${o.passengerCount} 人 / 行李：${o.luggageCount} 件`,
+    `人數：${o.passengerCount} 人 / 行李：${LuggageSummary(o.luggageItems)}（${LuggageTotalSU(o.luggageItems)} SU）`,
     '',
     `用車時間：${_formatDateTime(o.pickupDateTime)}`,
     `上車點：${o.pickupLocation.displayName ?? o.pickupLocation.address}`,
@@ -303,7 +334,7 @@ const _BuildDriverTemplate = (o: AdminOrder): string => {
   lines.push(`車型：${vehicleLabel}`);
   lines.push(`預估車資：NT$ ${o.estimatedFare.toLocaleString()}`);
   if (o.extraServices?.length) {
-    const extras = o.extraServices.map((s) => EXTRA_SERVICE_LABEL[s] || s).join('、');
+    const extras = o.extraServices.map((s) => EXTRA_SERVICE_LABEL(s)).join('、');
     lines.push(`額外服務：${extras}`);
   }
   if (o.notes) lines.push(`備註：${o.notes}`);
@@ -473,7 +504,7 @@ onMounted(() => {
         .PageAdminOrders__cell.is-driver(data-label="司機")
           span(v-if="DriverNameOf(o.assignedDriverId)") {{ DriverNameOf(o.assignedDriverId) }}
           span.PageAdminOrders__unassigned(v-else) 未分派
-        .PageAdminOrders__cell.is-vehicle(data-label="車型") {{ VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType }}
+        .PageAdminOrders__cell.is-vehicle(data-label="車型") {{ VEHICLE_LABEL(o.vehicleType) }}
         .PageAdminOrders__cell.is-fare(data-label="費用") NT$ {{ o.estimatedFare.toLocaleString() }}
         .PageAdminOrders__cell.is-status(data-label="狀態")
           span.PageAdminOrders__status(:class="STATUS_CLASS[o.orderStatus]") {{ STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
@@ -488,7 +519,7 @@ onMounted(() => {
         .PageAdminOrders__modal-head
           .PageAdminOrders__modal-head-left
             span.PageAdminOrders__modal-type {{ ORDER_TYPE_LABEL[selectedOrder.orderType] ?? selectedOrder.orderType }}
-            span.PageAdminOrders__modal-vehicle {{ VEHICLE_LABEL[selectedOrder.vehicleType] ?? selectedOrder.vehicleType }}
+            span.PageAdminOrders__modal-vehicle {{ VEHICLE_LABEL(selectedOrder.vehicleType) }}
             span.PageAdminOrders__modal-status(:class="STATUS_CLASS[selectedOrder.orderStatus]") {{ STATUS_LABEL[selectedOrder.orderStatus] ?? selectedOrder.orderStatus }}
           button.PageAdminOrders__modal-close(@click="ClickCloseDetail") ×
 
@@ -510,8 +541,11 @@ onMounted(() => {
                 span.PageAdminOrders__section-key 姓名
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerName || '—' }}
               .PageAdminOrders__section-row
-                span.PageAdminOrders__section-key 人數 / 行李
-                span.PageAdminOrders__section-val {{ selectedOrder.passengerCount }} 人 / {{ selectedOrder.luggageCount }} 件
+                span.PageAdminOrders__section-key 人數
+                span.PageAdminOrders__section-val {{ selectedOrder.passengerCount }} 人
+              .PageAdminOrders__section-row(v-if="selectedOrder.luggageItems?.length")
+                span.PageAdminOrders__section-key 行李
+                span.PageAdminOrders__section-val {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
 
             //- 司機資訊
             .PageAdminOrders__section
@@ -559,7 +593,7 @@ onMounted(() => {
             .PageAdminOrders__section(v-if="selectedOrder.extraServices && selectedOrder.extraServices.length")
               .PageAdminOrders__section-title 額外服務
               .PageAdminOrders__extras
-                span.PageAdminOrders__extra-tag(v-for="s in selectedOrder.extraServices" :key="s") {{ EXTRA_SERVICE_LABEL[s] || s }}
+                span.PageAdminOrders__extra-tag(v-for="s in selectedOrder.extraServices" :key="s") {{ EXTRA_SERVICE_LABEL(s) }}
 
             //- 備註
             .PageAdminOrders__section(v-if="selectedOrder.notes")
@@ -614,18 +648,27 @@ onMounted(() => {
                 label.PageAdminOrders__edit-label 車型
                 select.PageAdminOrders__edit-input(v-model="editForm.vehicleType")
                   option(v-for="opt in VEHICLE_OPTIONS" :key="opt.value" :value="opt.value") {{ opt.label }}
+                  option(v-if="editForm.vehicleType && !VEHICLE_OPTIONS.find(o => o.value === editForm.vehicleType)" :value="editForm.vehicleType") {{ editForm.vehicleType }}（已停用或刪除）
               .PageAdminOrders__edit-field
                 label.PageAdminOrders__edit-label 人數
                 input.PageAdminOrders__edit-input(
                   type="number" v-model.number="editForm.passengerCount"
                   inputmode="numeric" min="1" max="20"
                 )
-              .PageAdminOrders__edit-field
-                label.PageAdminOrders__edit-label 行李
-                input.PageAdminOrders__edit-input(
-                  type="number" v-model.number="editForm.luggageCount"
-                  inputmode="numeric" min="0" max="20"
+            //- P23：行李改 SU 多類型陣列（依 store.luggageTypes 動態渲染 stepper）
+            .PageAdminOrders__edit-field
+              label.PageAdminOrders__edit-label 行李（SU 計算）
+              .PageAdminOrders__luggage-edit
+                .PageAdminOrders__luggage-edit-row(
+                  v-for="lt in storeConfig.luggageTypes"
+                  :key="lt.id"
                 )
+                  span.PageAdminOrders__luggage-edit-name {{ lt.label.zh }}（{{ lt.su }} SU）
+                  input.PageAdminOrders__edit-input(
+                    type="number" min="0" max="20" inputmode="numeric"
+                    :value="EditLuggageCount(lt.id)"
+                    @input="(e) => SetEditLuggage(lt.id, ($event.target as HTMLInputElement).value)"
+                  )
 
             //- 費用
             .PageAdminOrders__edit-field
@@ -640,12 +683,12 @@ onMounted(() => {
               label.PageAdminOrders__edit-label 額外服務
               .PageAdminOrders__extras-pick
                 button.PageAdminOrders__extra-pick-btn(
-                  v-for="s in EXTRA_SERVICES"
-                  :key="s.value"
+                  v-for="s in storeConfig.EnabledExtras"
+                  :key="s.id"
                   type="button"
-                  :class="{ 'is-active': editForm.extraServices.includes(s.value) }"
-                  @click="ClickToggleExtra(s.value)"
-                ) {{ s.label }}
+                  :class="{ 'is-active': editForm.extraServices.includes(s.id) }"
+                  @click="ClickToggleExtra(s.id)"
+                ) {{ s.label.zh }}
 
             //- 航班 / 航廈（接送機才顯示但 admin 兩欄都可填）
             .PageAdminOrders__edit-grid

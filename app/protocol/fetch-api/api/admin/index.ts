@@ -45,6 +45,11 @@ export interface GooglePlaceLite {
   displayName?: string
 }
 
+export interface AdminOrderLuggageItem {
+  typeId: string
+  count: number
+}
+
 export interface AdminOrder {
   orderId: string
   userId: string
@@ -56,7 +61,7 @@ export interface AdminOrder {
   stopovers: GooglePlaceLite[]
   vehicleType: string
   passengerCount: number
-  luggageCount: number
+  luggageItems: AdminOrderLuggageItem[]
   estimatedFare: number
   estimatedTime: number
   distanceKm: number
@@ -82,7 +87,7 @@ export interface PatchAdminOrderBody {
   stopovers?: GooglePlaceLite[]
   vehicleType?: string
   passengerCount?: number
-  luggageCount?: number
+  luggageItems?: AdminOrderLuggageItem[]
   estimatedFare?: number
   extraServices?: string[]
   flightNumber?: string | null

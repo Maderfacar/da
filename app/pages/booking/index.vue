@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { VehicleType, ExtraService, OrderType } from '~shared/pricing';
+import type { VehicleType, OrderType } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
+import type { LuggageItem } from '@/components/passenger/BookingStepOptions.vue';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
@@ -37,9 +38,9 @@ const pickupLocation = ref<GooglePlace | null>(storeOrder.draft.pickupLocation ?
 const dropoffLocation = ref<GooglePlace | null>(storeOrder.draft.dropoffLocation ?? null);
 const stopovers = ref<GooglePlace[]>(storeOrder.draft.stopovers ?? []);
 const passengerCount = ref(storeOrder.draft.passengerCount ?? 1);
-const luggageCount = ref(storeOrder.draft.luggageCount ?? 0);
+const luggageItems = ref<LuggageItem[]>(storeOrder.draft.luggageItems ?? []);
 const vehicleType = ref<VehicleType>(_GetInitialVehicleType());
-const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as ExtraService[]) ?? []);
+const extraServices = ref<string[]>(storeOrder.draft.extraServices ?? []);
 
 const flightNo = ref('');
 const flightInfo = ref<FlightInfo | null>(null);
@@ -91,7 +92,7 @@ const SyncToStore = () => {
     dropoffLocation: dropoffLocation.value ?? undefined,
     stopovers: stopovers.value,
     passengerCount: passengerCount.value,
-    luggageCount: luggageCount.value,
+    luggageItems: luggageItems.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
     contactPhone: contactPhone.value,
@@ -129,7 +130,7 @@ const ClickSubmit = async () => {
     dropoffLocation: dropoffLocation.value,
     stopovers: stopovers.value.filter((s) => s.lat !== 0),
     passengerCount: passengerCount.value,
-    luggageCount: luggageCount.value,
+    luggageItems: luggageItems.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
     contactPhone: contactPhone.value,
@@ -155,7 +156,7 @@ const ClickNewOrder = () => {
   dropoffLocation.value = null;
   stopovers.value = [];
   passengerCount.value = 1;
-  luggageCount.value = 0;
+  luggageItems.value = [];
   vehicleType.value = 'sedan';
   extraServices.value = [];
   flightNo.value = '';
@@ -237,7 +238,7 @@ const ClickNewOrder = () => {
           v-else-if="currentStep === 3"
           key="step3"
           v-model:passenger-count="passengerCount"
-          v-model:luggage-count="luggageCount"
+          v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
           v-model:extra-services="extraServices"
           :distance-km="distanceKm"

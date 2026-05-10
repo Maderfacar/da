@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VEHICLE_CONFIGS, EXTRA_SERVICES, ORDER_TYPES } from '~shared/pricing';
+import { ORDER_TYPES } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 
 interface Props {
@@ -15,24 +15,50 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const emit = defineEmits<{
   (e: 'submit' | 'back'): void;
   (e: 'update:contactPhone' | 'update:notes', val: string): void;
 }>();
 
+const storeConfig = StoreConfig();
+
+const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
+  storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
+
 const orderTypeLabel = computed(() =>
   ORDER_TYPES.find((t) => t.value === props.draft.orderType)?.label ?? '',
 );
 
-const vehicleLabel = computed(() =>
-  props.draft.vehicleType ? VEHICLE_CONFIGS[props.draft.vehicleType]?.label : '',
-);
+const vehicleLabel = computed(() => {
+  if (!props.draft.vehicleType) return '';
+  return Loc(storeConfig.GetVehicle(props.draft.vehicleType)?.label);
+});
 
 const extraLabels = computed(() =>
   (props.draft.extraServices ?? [])
-    .map((s) => t(`fleet.extras.${s}`))
+    .map((id) => Loc(storeConfig.GetExtra(id)?.label))
+    .filter((s) => s)
     .join(t('booking.confirm.extrasSep')),
+);
+
+// P23：行李改 luggageItems 明細顯示
+const luggageDetails = computed(() => {
+  const items = props.draft.luggageItems ?? [];
+  return items
+    .map((item) => {
+      const lt = storeConfig.GetLuggageType(item.typeId);
+      if (!lt) return '';
+      return `${Loc(lt.label)} × ${item.count}`;
+    })
+    .filter((s) => s);
+});
+
+const totalSU = computed(() =>
+  (props.draft.luggageItems ?? []).reduce((sum, item) => {
+    const lt = storeConfig.GetLuggageType(item.typeId);
+    return sum + (lt?.su ?? 0) * item.count;
+  }, 0),
 );
 
 const formattedDateTime = computed(() => {
@@ -153,9 +179,11 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.passengers') }}
       span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.passengerUnit', { n: draft.passengerCount }) }}
-    .PassengerBookingStepConfirm__row
+    .PassengerBookingStepConfirm__row(v-if="luggageDetails.length")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.luggage') }}
-      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.luggageUnit', { n: draft.luggageCount }) }}
+      span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi
+        | {{ luggageDetails.join('、') }}
+        | （{{ totalSU }} SU）
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.vehicle') }}
       span.PassengerBookingStepConfirm__row-value {{ vehicleLabel }}

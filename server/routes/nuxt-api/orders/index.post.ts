@@ -1,9 +1,10 @@
 import { calculateFare } from '~shared/pricing';
-import type { VehicleType, OrderType, ExtraService } from '~shared/pricing';
+import type { OrderType } from '~shared/pricing';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { getFleetConfig } from '@@/utils/fleet-config';
 
 interface GooglePlace {
   address: string;
@@ -12,9 +13,13 @@ interface GooglePlace {
   placeId?: string;
 }
 
+interface LuggageItemBody {
+  typeId: string;
+  count: number;
+}
+
 interface CreateOrderBody {
   // P17：userId / lineUserId 不再從 client 接收，由 server 從 ID token 取
-  // body 仍接受這兩個欄位是為了向後相容，但會被忽略並用 auth.lineUid 覆寫
   userId?: string;
   lineUserId?: string;
   orderType: OrderType;
@@ -23,9 +28,10 @@ interface CreateOrderBody {
   dropoffLocation: GooglePlace;
   stopovers?: GooglePlace[];
   passengerCount: number;
-  luggageCount: number;
-  vehicleType: VehicleType;
-  extraServices?: ExtraService[];
+  // P23：行李改 luggageItems 陣列（每項含 typeId + count）；vehicleType / extraServices 改 string id
+  luggageItems: LuggageItemBody[];
+  vehicleType: string;
+  extraServices?: string[];
   // P20：補上 driver/admin 端需要的欄位
   contactPhone: string;
   flightNumber?: string | null;
@@ -76,6 +82,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const { googleMapsApiKey, firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
+
+  // P23：fleet config 撈 + Firestore 寫入皆需 firebaseServiceAccountJson；提前到 distance 計算前
+  if (!firebaseServiceAccountJson) {
+    console.error('[orders/post] firebaseServiceAccountJson is empty/missing');
+    return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
+  }
+
   let distanceKm = 25; // mock fallback
 
   if (googleMapsApiKey) {
@@ -95,21 +108,41 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const extraServices: ExtraService[] = body.extraServices ?? [];
-  const estimatedFare = calculateFare(body.vehicleType, distanceKm, extraServices);
+  // P23：從 Firestore fleet config 撈 vehicle / extras 算費用（不再用 hardcoded VEHICLE_CONFIGS）
+  const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+  const fleet = await getFleetConfig(db);
+  const vehicle = fleet.vehicles.find((v) => v.id === body.vehicleType);
+  if (!vehicle) {
+    return badRequestError({
+      zh_tw: `無效的車型：${body.vehicleType}`,
+      en: `Invalid vehicle type: ${body.vehicleType}`,
+      ja: `無効な車種：${body.vehicleType}`,
+    });
+  }
+  const extraServiceIds = body.extraServices ?? [];
+  const selectedExtras = extraServiceIds
+    .map((id) => fleet.extras.find((e) => e.id === id))
+    .filter((e): e is NonNullable<typeof e> => Boolean(e));
+  const estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras);
   const estimatedTime = Math.round(distanceKm * 1.8);
+
+  // P23：行李 SU 校驗（伺服器端最後一道把關，前端 UI 應已 disable 超 1.5 倍車型）
+  const luggageItems = Array.isArray(body.luggageItems) ? body.luggageItems : [];
+  const totalSU = luggageItems.reduce((sum, item) => {
+    const lt = fleet.luggageTypes.find((t) => t.id === item.typeId);
+    return sum + (lt?.su ?? 0) * (item.count ?? 0);
+  }, 0);
+  if (totalSU > vehicle.luggageSU * 1.5) {
+    return badRequestError({
+      zh_tw: `行李超出車型容量上限（${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU）`,
+      en: `Luggage exceeds vehicle capacity (${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU)`,
+      ja: `荷物が車種容量を超過（${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU）`,
+    });
+  }
 
   const orderId = crypto.randomUUID();
 
-  // P11-2：必須有 firebaseServiceAccountJson 才能寫入訂單，否則回 serverError
-  // 而非 silent 200，避免使用者以為訂單成立但實際沒寫進資料庫
-  if (!firebaseServiceAccountJson) {
-    console.error('[orders/post] firebaseServiceAccountJson is empty/missing');
-    return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
-  }
-
   try {
-    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     await db.collection('orders').doc(orderId).set({
       orderId,
       userId,
@@ -120,9 +153,10 @@ export default defineEventHandler(async (event) => {
       dropoffLocation: body.dropoffLocation,
       stopovers: body.stopovers ?? [],
       passengerCount: body.passengerCount,
-      luggageCount: body.luggageCount,
+      // P23：行李改 luggageItems 陣列（typeId + count）
+      luggageItems,
       vehicleType: body.vehicleType,
-      extraServices: body.extraServices ?? [],
+      extraServices: extraServiceIds,
       estimatedFare,
       estimatedTime,
       distanceKm,
@@ -144,14 +178,13 @@ export default defineEventHandler(async (event) => {
   if (lineUserId && lineChannelAccessToken) {
     const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
     const fareStr = estimatedFare.toLocaleString();
-    const vehicleLabel: Record<string, string> = {
-      sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
-    };
+    // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
+    const vehicleLabel = vehicle.label.zh || body.vehicleType;
     const msg = [
       '✅ 訂單確認',
       `📅 接送時間：${dateStr}`,
       `📍 上車地點：${body.pickupLocation.address}`,
-      `🚗 車型：${vehicleLabel[body.vehicleType] ?? body.vehicleType}`,
+      `🚗 車型：${vehicleLabel}`,
       `💰 預估費用：NT$ ${fareStr}`,
       `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
     ].join('\n');

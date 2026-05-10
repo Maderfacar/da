@@ -10,6 +10,12 @@ interface GooglePlace {
 // ===== 建立訂單 =====
 // P17：userId / lineUserId 改為 optional — server 從 ID token 取，不再信任 client
 // P20：補上 contactPhone（必填）+ flightNumber / terminal / notes（optional）
+// P23：vehicleType / extraServices 改 string（fleet config 動態化），luggageCount 改 luggageItems 陣列
+interface OrderLuggageItem {
+  typeId: string;
+  count: number;
+}
+
 interface CreateOrderParams {
   userId?: string;
   lineUserId?: string;
@@ -19,8 +25,8 @@ interface CreateOrderParams {
   dropoffLocation: GooglePlace;
   stopovers?: GooglePlace[];
   passengerCount: number;
-  luggageCount: number;
-  vehicleType: 'sedan' | 'suv' | 'van' | 'premium';
+  luggageItems: OrderLuggageItem[];
+  vehicleType: string;
   extraServices?: string[];
   contactPhone: string;
   flightNumber?: string | null;
@@ -82,7 +88,7 @@ interface AssignedOrder {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
-  luggageCount: number;
+  luggageItems: OrderLuggageItem[];
   estimatedFare: number;
   estimatedTime: number;
   distanceKm: number;
@@ -110,7 +116,7 @@ interface PatchOrderParams {
   stopovers?: GooglePlace[];
   vehicleType?: string;
   passengerCount?: number;
-  luggageCount?: number;
+  luggageItems?: OrderLuggageItem[];
   estimatedFare?: number;
   extraServices?: string[];
   flightNumber?: string | null;

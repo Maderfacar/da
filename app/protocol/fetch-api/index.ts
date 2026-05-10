@@ -6,6 +6,7 @@ import * as order from './api/order';
 import * as driver from './api/driver';
 import * as airport from './api/airport';
 import * as admin from './api/admin';
+import * as config from './api/config';
 
 export default {
   ...file,
@@ -16,6 +17,7 @@ export default {
   ...driver,
   ...airport,
   ...admin,
+  ...config,
 };
 
 

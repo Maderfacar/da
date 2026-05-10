@@ -23,7 +23,7 @@ interface PatchOrderBody {
   stopovers?: GooglePlaceLite[];
   vehicleType?: string;
   passengerCount?: number;
-  luggageCount?: number;
+  luggageItems?: Array<{ typeId: string; count: number }>;
   estimatedFare?: number;
   extraServices?: string[];
   flightNumber?: string | null;
@@ -31,9 +31,9 @@ interface PatchOrderBody {
   notes?: string | null;
 }
 
-const VALID_VEHICLE_TYPES = ['sedan', 'suv', 'van', 'premium'] as const;
-const VALID_EXTRA_SERVICES = ['baby-seat', 'wheelchair', 'pickup-sign', 'flight-tracking'] as const;
-const ADMIN_ONLY_FIELDS = ['pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageCount', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes'] as const;
+// P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
+// admin 可任意新增；body 驗證放寬至「字串/字串陣列」，存在性由 GET fleet 端確認
+const ADMIN_ONLY_FIELDS = ['pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes'] as const;
 
 const _isValidGooglePlace = (v: unknown): v is GooglePlaceLite => {
   if (!v || typeof v !== 'object') return false;
@@ -161,15 +161,23 @@ export default defineEventHandler(async (event) => {
     }
 
     // P22：admin-only 欄位驗證（admin 才走到這裡，前面已擋）
+    // P23：vehicleType / extraServices 改為字串驗證（不再 hardcoded enum）
     if (isAdmin) {
-      if (body.vehicleType !== undefined && !VALID_VEHICLE_TYPES.includes(body.vehicleType as typeof VALID_VEHICLE_TYPES[number])) {
-        return badRequestError({ zh_tw: '車型無效', en: 'Invalid vehicle type', ja: '無効な車種' });
+      if (body.vehicleType !== undefined && (typeof body.vehicleType !== 'string' || body.vehicleType.length === 0)) {
+        return badRequestError({ zh_tw: '車型必須是字串', en: 'vehicleType must be string', ja: '車種は文字列' });
       }
       if (body.passengerCount !== undefined && (!Number.isInteger(body.passengerCount) || body.passengerCount < 1 || body.passengerCount > 20)) {
         return badRequestError({ zh_tw: '人數須為 1-20', en: 'passengerCount must be 1-20', ja: '人数は 1-20 の整数' });
       }
-      if (body.luggageCount !== undefined && (!Number.isInteger(body.luggageCount) || body.luggageCount < 0 || body.luggageCount > 20)) {
-        return badRequestError({ zh_tw: '行李數須為 0-20', en: 'luggageCount must be 0-20', ja: '荷物は 0-20 の整数' });
+      if (body.luggageItems !== undefined) {
+        if (!Array.isArray(body.luggageItems)
+          || !body.luggageItems.every((i) =>
+            i && typeof i === 'object'
+            && typeof (i as { typeId?: unknown }).typeId === 'string'
+            && Number.isInteger((i as { count?: unknown }).count)
+            && (i as { count: number }).count >= 0)) {
+          return badRequestError({ zh_tw: '行李格式錯誤', en: 'Invalid luggageItems', ja: '荷物形式が無効' });
+        }
       }
       if (body.estimatedFare !== undefined && (typeof body.estimatedFare !== 'number' || body.estimatedFare < 0 || !Number.isFinite(body.estimatedFare))) {
         return badRequestError({ zh_tw: '費用須為非負數', en: 'estimatedFare must be non-negative', ja: '料金は非負数' });
@@ -189,7 +197,7 @@ export default defineEventHandler(async (event) => {
         }
       }
       if (body.extraServices !== undefined) {
-        if (!Array.isArray(body.extraServices) || !body.extraServices.every((s) => VALID_EXTRA_SERVICES.includes(s as typeof VALID_EXTRA_SERVICES[number]))) {
+        if (!Array.isArray(body.extraServices) || !body.extraServices.every((s) => typeof s === 'string')) {
           return badRequestError({ zh_tw: '額外服務格式錯誤', en: 'Invalid extraServices', ja: 'オプション形式が無効' });
         }
       }
@@ -249,7 +257,7 @@ export default defineEventHandler(async (event) => {
       if (body.stopovers !== undefined) updates.stopovers = body.stopovers;
       if (body.vehicleType !== undefined) updates.vehicleType = body.vehicleType;
       if (body.passengerCount !== undefined) updates.passengerCount = body.passengerCount;
-      if (body.luggageCount !== undefined) updates.luggageCount = body.luggageCount;
+      if (body.luggageItems !== undefined) updates.luggageItems = body.luggageItems;
       if (body.estimatedFare !== undefined) updates.estimatedFare = body.estimatedFare;
       if (body.extraServices !== undefined) updates.extraServices = body.extraServices;
       if (body.flightNumber !== undefined) updates.flightNumber = body.flightNumber;
