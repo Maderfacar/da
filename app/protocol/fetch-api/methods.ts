@@ -1,11 +1,17 @@
-// 登出
-const SignOut = () => {
-  // TODO
-  navigateTo('/sign-in');
-  // const localePath = useLocalePath(); // 語系路徑
-  // setTimeout(() => {
-  //   navigateTo(localePath('/sign-in'));
-  // }, 1000);
+// 401 自動登出守衛 — 平行 request 同時 401 時，只會觸發一次 SignOut
+let _isSigningOut = false;
+const HandleUnauthorized = () => {
+  if (_isSigningOut) return;
+  _isSigningOut = true;
+  // 改用 StoreAuth.SignOut（會清 Firebase session + 重置 store 狀態 + 導回 /）
+  // 過去 boilerplate 預設導 '/sign-in' 但本專案登入頁是 '/'（middleware 會依 roles 導入對應端）
+  try {
+    const authStore = StoreAuth();
+    void authStore.SignOut();
+  } catch {
+    // SSR 或 Pinia 未初始化時 fallback：直接導回根，由 middleware 接手
+    void navigateTo('/');
+  }
 };
 
 // 回傳調整
@@ -15,7 +21,7 @@ const FilterRes = (response: any, errCode = 9999, _showErr = true) => {
   if (r?.data) _res.data = r?.data;
   if (r?.status) _res.status = r?.status;
   if (_showErr /** code !==0 */) {
-    // TODO show error
+    // 全域錯誤 toast 由各頁面自行處理（避免雙 toast）
   }
   return _res as ApiRes<any>;
 };
@@ -57,14 +63,13 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
         // 響應攔截
         onResponse({ response }) {
           const _res = FilterRes(response, 9997, _showErr);
-
-          // TODO 確認登出情境
-          // SignOut();
           return Promise.reject(_res);
         },
 
         // 錯誤處理
         onResponseError({ response }) {
+          // P14 require-auth：401 → 觸發全域 SignOut 流程（清 Firebase + Pinia + 導回 /）
+          if (response?.status === 401) HandleUnauthorized();
           const _res = FilterRes(response, 9998, _showErr);
           return Promise.reject(_res);
         }
