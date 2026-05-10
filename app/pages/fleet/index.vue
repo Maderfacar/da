@@ -95,8 +95,8 @@ const sampleFare = computed(() => {
           strong {{ sampleFare.toLocaleString() }}
         p.PageFleet__estimate-note {{ $t('fleet.estimate.note') }}
 
-      //- 預約按鈕
-      UiButton(type="primary" style="width:100%" @click="navigateTo('/booking')") {{ $t('fleet.bookBtn') }}
+      //- 預約按鈕（帶 vehicleType query，booking 第三步預設為當前車型）
+      UiButton(type="primary" style="width:100%" @click="navigateTo({ path: '/booking', query: { vehicleType: activeVehicle } })") {{ $t('fleet.bookBtn') }}
 
   //- 分隔線
   .PageFleet__stripe

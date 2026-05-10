@@ -7,10 +7,21 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 const { t } = useI18n();
 
 const storeOrder = StoreOrder();
+const route = useRoute();
 
 // ── 步驟控制 ────────────────────────────────────────────────────────────────
 const currentStep = ref(1);
 const TOTAL_STEPS = 4;
+
+// fleet 頁帶 ?vehicleType=sedan|suv|van|premium 直連 booking 時，預選對應車型
+const _VALID_VEHICLES: VehicleType[] = ['sedan', 'suv', 'van', 'premium'];
+const _GetInitialVehicleType = (): VehicleType => {
+  const q = route.query.vehicleType;
+  if (typeof q === 'string' && (_VALID_VEHICLES as string[]).includes(q)) {
+    return q as VehicleType;
+  }
+  return (storeOrder.draft.vehicleType as VehicleType) ?? 'sedan';
+};
 
 const stepLabels = computed(() => [
   t('booking.step.1'),
@@ -27,7 +38,7 @@ const dropoffLocation = ref<GooglePlace | null>(storeOrder.draft.dropoffLocation
 const stopovers = ref<GooglePlace[]>(storeOrder.draft.stopovers ?? []);
 const passengerCount = ref(storeOrder.draft.passengerCount ?? 1);
 const luggageCount = ref(storeOrder.draft.luggageCount ?? 0);
-const vehicleType = ref<VehicleType>((storeOrder.draft.vehicleType as VehicleType) ?? 'sedan');
+const vehicleType = ref<VehicleType>(_GetInitialVehicleType());
 const extraServices = ref<ExtraService[]>((storeOrder.draft.extraServices as ExtraService[]) ?? []);
 
 const flightNo = ref('');
