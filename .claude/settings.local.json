@@ -23,7 +23,9 @@
       "Bash(nuxt prepare *)",
       "Bash(git checkout *)",
       "Bash(pnpm test *)",
-      "Bash(pnpm vitest *)"
+      "Bash(pnpm vitest *)",
+      "Bash(npx nuxt *)",
+      "Bash(findstr /C:\"\\\\\"test\\\\\"\" /C:\"\\\\\"scripts\\\\\"\")"
     ]
   }
 }
