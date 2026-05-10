@@ -151,6 +151,7 @@ export default {
         tooSoon: 'フライト {flight} の出発まで3時間未満です — 降機後送迎不可',
         notFound: 'フライト {flight} が見つかりません',
         queryFail: '照会に失敗しました。もう一度お試しください',
+        needDateTime: '先に乗車日時をお選びください',
       },
     },
     route: {

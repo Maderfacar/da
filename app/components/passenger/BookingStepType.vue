@@ -48,13 +48,19 @@ const _LookupFlight = async (no: string) => {
   flightLoading.value = true;
   flightError.value = '';
   try {
+    // 必須先選用車時間（Aviation Edge 依 date 查不同排程；
+    // 沒帶 date 用今天 fallback 對「未來訂車」情境會誤導）
+    if (!dateTime.value) {
+      flightLoading.value = false;
+      flightError.value = t('booking.type.error.needDateTime');
+      emit('update:flightInfo', null);
+      return;
+    }
     // direction 依 orderType 推：airport-pickup → arrival、airport-dropoff → departure
     const direction = selectedType.value === 'airport-dropoff' ? 'departure' : 'arrival';
-    // date 從用車時間推（YYYY-MM-DD，TPE local）；尚未選用車時間時讓 server fallback 今天
-    const date = dateTime.value ? $dayjs(dateTime.value).format('YYYY-MM-DD') : '';
-    const dateParam = date ? `&date=${date}` : '';
+    const date = $dayjs(dateTime.value).format('YYYY-MM-DD');
     const res = await $fetch<{ ok: boolean; data?: FlightInfo; message?: string }>(
-      `/api/flight?flightNo=${cleaned}&direction=${direction}${dateParam}`,
+      `/api/flight?flightNo=${cleaned}&direction=${direction}&date=${date}`,
     );
     if (res.ok && res.data) {
       // 保留原始 flight 資料，方便 watch dateTime 變更時重新驗證

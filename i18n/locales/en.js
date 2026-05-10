@@ -151,6 +151,7 @@ export default {
         tooSoon: 'Flight {flight} departs within 3 hrs of pickup — dropoff unavailable',
         notFound: 'Flight {flight} not found',
         queryFail: 'Query failed, please try again',
+        needDateTime: 'Please select pickup date & time first',
       },
     },
     route: {

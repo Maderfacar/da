@@ -159,6 +159,7 @@ export default {
         tooSoon: '航班 {flight} 起飛時間距用車時間不足 3 小時，無法受理送機',
         notFound: '找不到航班 {flight}',
         queryFail: '查詢失敗，請稍後再試',
+        needDateTime: '請先選擇用車日期與時間',
       },
     },
     route: {
