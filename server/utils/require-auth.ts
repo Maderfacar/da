@@ -37,6 +37,7 @@ export interface AdminPermissions {
   canManageOrders?: boolean;
   canBroadcast?: boolean;
   canViewFinance?: boolean;
+  canManageFleet?: boolean;
 }
 
 export interface AuthOk {

@@ -25,7 +25,8 @@ export type Permission =
   | 'canManageDrivers'
   | 'canManageOrders'
   | 'canBroadcast'
-  | 'canViewFinance';
+  | 'canViewFinance'
+  | 'canManageFleet';
 
 type AdminLevel = NonNullable<AuthOk['level']>;
 
@@ -42,12 +43,14 @@ export const LEVEL_TABLE: Record<AdminLevel, ReadonlySet<Permission>> = {
     'canManageOrders',
     'canBroadcast',
     'canViewFinance',
+    'canManageFleet',
   ]),
   admin: new Set<Permission>([
     'canManageDrivers',
     'canManageOrders',
     'canBroadcast',
     'canViewFinance',
+    'canManageFleet',
   ]),
   assistant: new Set<Permission>([
     'canManageOrders',
