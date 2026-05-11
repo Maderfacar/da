@@ -1,0 +1,645 @@
+<script setup lang="ts">
+// P23 Stage 5：admin/settings 車型 CRUD 區塊
+// 從 StoreConfig() 撈 vehicles 列表，提供新增/編輯/刪除/啟用切換。
+// 編輯 / 新增彈窗含三語 label（zh/en/ja）與 4 個數值欄位（capacity / luggageSU / baseFare / perKmRate）。
+
+type DialogMode = 'create' | 'edit';
+
+interface VehicleFormState {
+  id: string;
+  labelZh: string;
+  labelEn: string;
+  labelJa: string;
+  capacity: number;
+  luggageSU: number;
+  baseFare: number;
+  perKmRate: number;
+  icon: string;
+  sortOrder: number;
+  enabled: boolean;
+}
+
+const storeConfig = StoreConfig();
+
+const dialog = reactive<{ open: boolean; mode: DialogMode; original: FleetVehicleDto | null; saving: boolean; error: string }>({
+  open: false,
+  mode: 'create',
+  original: null,
+  saving: false,
+  error: '',
+});
+
+const form = reactive<VehicleFormState>(_emptyForm());
+const togglingId = ref('');
+const deletingId = ref('');
+
+function _emptyForm(): VehicleFormState {
+  return {
+    id: '',
+    labelZh: '',
+    labelEn: '',
+    labelJa: '',
+    capacity: 4,
+    luggageSU: 4,
+    baseFare: 300,
+    perKmRate: 25,
+    icon: 'mdi:car',
+    sortOrder: 99,
+    enabled: true,
+  };
+}
+
+const ClickOpenCreate = () => {
+  Object.assign(form, _emptyForm());
+  // 預設 sortOrder 接在最後一筆 +1
+  const maxOrder = storeConfig.vehicles.reduce((m, v) => Math.max(m, v.sortOrder), 0);
+  form.sortOrder = maxOrder + 1;
+  dialog.mode = 'create';
+  dialog.original = null;
+  dialog.error = '';
+  dialog.open = true;
+};
+
+const ClickOpenEdit = (v: FleetVehicleDto) => {
+  form.id = v.id;
+  form.labelZh = v.label.zh;
+  form.labelEn = v.label.en;
+  form.labelJa = v.label.ja;
+  form.capacity = v.capacity;
+  form.luggageSU = v.luggageSU;
+  form.baseFare = v.baseFare;
+  form.perKmRate = v.perKmRate;
+  form.icon = v.icon;
+  form.sortOrder = v.sortOrder;
+  form.enabled = v.enabled;
+  dialog.mode = 'edit';
+  dialog.original = v;
+  dialog.error = '';
+  dialog.open = true;
+};
+
+const ClickClose = () => {
+  if (dialog.saving) return;
+  dialog.open = false;
+};
+
+const _validate = (): string => {
+  if (dialog.mode === 'create') {
+    if (!form.id.trim()) return 'ID 必填';
+    if (!/^[a-z0-9][a-z0-9-]{0,49}$/.test(form.id.trim())) return 'ID 必須小寫字母 / 數字 / 連字號開頭，最長 50 字';
+    if (storeConfig.vehicles.some((v) => v.id === form.id.trim())) return 'ID 已存在';
+  }
+  if (!form.labelZh.trim() || !form.labelEn.trim() || !form.labelJa.trim()) return '三語 label 都必填';
+  if (!Number.isInteger(form.capacity) || form.capacity < 1) return 'capacity 必須是正整數';
+  if (!(form.luggageSU >= 0)) return 'luggageSU 必須 ≥ 0';
+  if (!(form.baseFare >= 0)) return 'baseFare 必須 ≥ 0';
+  if (!(form.perKmRate >= 0)) return 'perKmRate 必須 ≥ 0';
+  if (!form.icon.trim()) return 'icon 必填（例：mdi:car）';
+  if (!Number.isInteger(form.sortOrder)) return 'sortOrder 必須整數';
+  return '';
+};
+
+const ClickSave = async () => {
+  const err = _validate();
+  if (err) {
+    dialog.error = err;
+    return;
+  }
+  dialog.error = '';
+  dialog.saving = true;
+  try {
+    const payload: CreateVehiclePayload = {
+      label: { zh: form.labelZh.trim(), en: form.labelEn.trim(), ja: form.labelJa.trim() },
+      capacity: form.capacity,
+      luggageSU: form.luggageSU,
+      baseFare: form.baseFare,
+      perKmRate: form.perKmRate,
+      icon: form.icon.trim(),
+      sortOrder: form.sortOrder,
+      enabled: form.enabled,
+    };
+    const res = dialog.mode === 'create'
+      ? await $api.CreateFleetVehicle({ ...payload, id: form.id.trim() })
+      : await $api.UpdateFleetVehicle(form.id, payload);
+    if (res.status?.code !== 200) {
+      dialog.error = res.status?.message?.zh_tw ?? '儲存失敗';
+      return;
+    }
+    await storeConfig.Reload();
+    dialog.open = false;
+    ElMessage({ message: dialog.mode === 'create' ? '已新增車型' : '已更新車型', type: 'success' });
+  } finally {
+    dialog.saving = false;
+  }
+};
+
+const ClickToggleEnabled = async (v: FleetVehicleDto) => {
+  togglingId.value = v.id;
+  try {
+    const res = await $api.UpdateFleetVehicle(v.id, {
+      label: v.label,
+      capacity: v.capacity,
+      luggageSU: v.luggageSU,
+      baseFare: v.baseFare,
+      perKmRate: v.perKmRate,
+      icon: v.icon,
+      sortOrder: v.sortOrder,
+      enabled: !v.enabled,
+    });
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '切換失敗', type: 'error' });
+      return;
+    }
+    await storeConfig.Reload();
+  } finally {
+    togglingId.value = '';
+  }
+};
+
+const ClickDelete = async (v: FleetVehicleDto) => {
+  const $ask = UseAsk();
+  const ok = await $ask.Any(
+    `確定刪除車型「${v.label.zh}」？\n（既有訂單仍會保留 vehicleType 字串快照，但乘客 fleet 頁將不再顯示此選項）`,
+    '刪除車型',
+    '取消',
+    '確定刪除',
+    'warning',
+  );
+  if (!ok) return;
+  deletingId.value = v.id;
+  try {
+    const res = await $api.DeleteFleetVehicle(v.id);
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '刪除失敗', type: 'error' });
+      return;
+    }
+    await storeConfig.Reload();
+    ElMessage({ message: '已刪除', type: 'warning' });
+  } finally {
+    deletingId.value = '';
+  }
+};
+</script>
+
+<template lang="pug">
+.SettingsFleetVehicles
+  .SettingsFleetVehicles__head
+    .SettingsFleetVehicles__head-left
+      span.SettingsFleetVehicles__count {{ storeConfig.vehicles.length }} 種
+    button.SettingsFleetVehicles__add-btn(@click="ClickOpenCreate") + 新增車型
+
+  //- 列表
+  .SettingsFleetVehicles__empty(v-if="storeConfig.vehicles.length === 0") 尚無車型，按上方「新增車型」開始設定
+
+  .SettingsFleetVehicles__list(v-else)
+    .SettingsFleetVehicles__row(v-for="v in storeConfig.vehicles" :key="v.id" :class="{ 'is-disabled': !v.enabled }")
+      .SettingsFleetVehicles__row-main
+        .SettingsFleetVehicles__row-name
+          span.SettingsFleetVehicles__row-zh {{ v.label.zh }}
+          span.SettingsFleetVehicles__row-id {{ '#' + v.id }}
+          span.SettingsFleetVehicles__row-disabled-tag(v-if="!v.enabled") 已停用
+        .SettingsFleetVehicles__row-meta
+          span 載客 {{ v.capacity }} 人
+          span ·
+          span 行李 {{ v.luggageSU }} SU
+          span ·
+          span 起跳 NT$ {{ v.baseFare }}
+          span ·
+          span {{ v.perKmRate }}/km
+      .SettingsFleetVehicles__row-actions
+        button.SettingsFleetVehicles__btn.is-toggle(
+          :disabled="togglingId === v.id"
+          @click="ClickToggleEnabled(v)"
+        ) {{ v.enabled ? '停用' : '啟用' }}
+        button.SettingsFleetVehicles__btn.is-edit(@click="ClickOpenEdit(v)") 編輯
+        button.SettingsFleetVehicles__btn.is-delete(
+          :disabled="deletingId === v.id"
+          @click="ClickDelete(v)"
+        ) 刪除
+
+  //- 編輯 / 新增彈窗
+  .SettingsFleetVehicles__mask(v-if="dialog.open" @click.self="ClickClose")
+    .SettingsFleetVehicles__modal
+      .SettingsFleetVehicles__modal-title
+        | {{ dialog.mode === 'create' ? '新增車型' : `編輯車型「${form.labelZh || form.id}」` }}
+
+      .SettingsFleetVehicles__modal-body
+        //- ID（僅新增時可填）
+        .SettingsFleetVehicles__field(v-if="dialog.mode === 'create'")
+          label.SettingsFleetVehicles__label ID（doc id，小寫字母/數字/連字號）
+          input.SettingsFleetVehicles__input(
+            v-model="form.id"
+            placeholder="例：sedan / suv / van"
+            maxlength="50"
+          )
+
+        //- 三語 label
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 中文名稱
+            input.SettingsFleetVehicles__input(v-model="form.labelZh" maxlength="20" placeholder="例：轎車")
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 英文名稱
+            input.SettingsFleetVehicles__input(v-model="form.labelEn" maxlength="30" placeholder="例：Sedan")
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 日文名稱
+            input.SettingsFleetVehicles__input(v-model="form.labelJa" maxlength="30" placeholder="例：セダン")
+
+        //- 數值欄位
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 載客上限（人）
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.capacity"
+              type="number"
+              min="1"
+              inputmode="numeric"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 行李 SU 容量
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.luggageSU"
+              type="number"
+              min="0"
+              inputmode="numeric"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 起跳費 (NT$)
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.baseFare"
+              type="number"
+              min="0"
+              inputmode="numeric"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 每公里 (NT$/km)
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.perKmRate"
+              type="number"
+              min="0"
+              inputmode="numeric"
+            )
+
+        //- icon + sortOrder + enabled
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label icon（mdi 字串）
+            input.SettingsFleetVehicles__input(
+              v-model="form.icon"
+              maxlength="60"
+              placeholder="例：mdi:car / mdi:van-passenger"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 排序（小→大）
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.sortOrder"
+              type="number"
+              inputmode="numeric"
+            )
+          .SettingsFleetVehicles__field.is-toggle-row
+            label.SettingsFleetVehicles__label 啟用
+            button.SettingsFleetVehicles__switch(
+              :class="{ 'is-on': form.enabled }"
+              @click="form.enabled = !form.enabled"
+              type="button"
+            )
+              span.SettingsFleetVehicles__switch-thumb
+
+        .SettingsFleetVehicles__error(v-if="dialog.error") ⚠️ {{ dialog.error }}
+
+      .SettingsFleetVehicles__modal-foot
+        button.SettingsFleetVehicles__action.is-secondary(
+          :disabled="dialog.saving"
+          @click="ClickClose"
+        ) 取消
+        button.SettingsFleetVehicles__action.is-primary(
+          :disabled="dialog.saving"
+          @click="ClickSave"
+        ) {{ dialog.saving ? '儲存中...' : '儲存' }}
+</template>
+
+<style lang="scss" scoped>
+$amber: #d4860a;
+$muted: rgba(255, 255, 255, 0.4);
+$border: rgba(255, 255, 255, 0.08);
+$surface: rgba(255, 255, 255, 0.04);
+$surface-2: rgba(255, 255, 255, 0.08);
+
+.SettingsFleetVehicles {
+  display: flex;
+  flex-direction: column;
+}
+
+.SettingsFleetVehicles__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid $border;
+}
+
+.SettingsFleetVehicles__count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: $muted;
+}
+
+.SettingsFleetVehicles__add-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba($amber, 0.12);
+  border: 1px solid rgba($amber, 0.4);
+  color: $amber;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba($amber, 0.22); }
+}
+
+.SettingsFleetVehicles__empty {
+  padding: 24px 16px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  text-align: center;
+}
+
+.SettingsFleetVehicles__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.SettingsFleetVehicles__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba(255, 255, 255, 0.02); }
+  &.is-disabled { opacity: 0.5; }
+}
+
+.SettingsFleetVehicles__row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.SettingsFleetVehicles__row-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.SettingsFleetVehicles__row-zh {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.SettingsFleetVehicles__row-id {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: $muted;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $border;
+  border-radius: 100px;
+  padding: 1px 8px;
+}
+
+.SettingsFleetVehicles__row-disabled-tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: rgba(255, 100, 100, 0.85);
+  background: rgba(255, 80, 80, 0.1);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  border-radius: 100px;
+  padding: 1px 8px;
+}
+
+.SettingsFleetVehicles__row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: $muted;
+}
+
+.SettingsFleetVehicles__row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.SettingsFleetVehicles__btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &.is-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.7);
+    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  }
+
+  &.is-edit {
+    background: rgba($amber, 0.1);
+    border-color: rgba($amber, 0.35);
+    color: $amber;
+    &:hover:not(:disabled) { background: rgba($amber, 0.2); }
+  }
+
+  &.is-delete {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #f87171;
+    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
+  }
+}
+
+// ── Modal ────────────────────────────────────────────────
+.SettingsFleetVehicles__mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.SettingsFleetVehicles__modal {
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.SettingsFleetVehicles__modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  color: #fff;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid $border;
+}
+
+.SettingsFleetVehicles__modal-body {
+  padding: 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.SettingsFleetVehicles__field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 599.98px) {
+  .SettingsFleetVehicles__field-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.SettingsFleetVehicles__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &.is-toggle-row {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+}
+
+.SettingsFleetVehicles__label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: $muted;
+}
+
+.SettingsFleetVehicles__input {
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.03);
+  color: #fff;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+
+  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &:focus { border-color: rgba($amber, 0.4); }
+}
+
+.SettingsFleetVehicles__switch {
+  width: 44px;
+  height: 24px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 2px;
+  cursor: pointer;
+  transition: background 0.18s;
+  position: relative;
+
+  &.is-on {
+    background: rgba($amber, 0.7);
+    border-color: rgba($amber, 0.9);
+
+    .SettingsFleetVehicles__switch-thumb { transform: translateX(20px); }
+  }
+}
+
+.SettingsFleetVehicles__switch-thumb {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s;
+}
+
+.SettingsFleetVehicles__error {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 200, 0, 0.85);
+  background: rgba(255, 200, 0, 0.08);
+  border: 1px solid rgba(255, 200, 0, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.SettingsFleetVehicles__modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px 20px;
+  border-top: 1px solid $border;
+}
+
+.SettingsFleetVehicles__action {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &.is-primary {
+    background: $amber;
+    color: #fff;
+    &:hover:not(:disabled) { background: darken($amber, 6%); }
+  }
+
+  &.is-secondary {
+    background: $surface;
+    color: rgba(255, 255, 255, 0.7);
+    border-color: $border;
+    &:hover:not(:disabled) { background: $surface-2; }
+  }
+}
+</style>

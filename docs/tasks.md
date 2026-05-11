@@ -527,6 +527,29 @@
 
 > 註：driver/admin 端 i18n 多語化於 2026/05/09 由使用者決議移除（內部後台不需多語）
 
+### P23：Fleet 設定動態化（2026/05/11 ✅ 完成 — 計價參數 hardcode 退役）
+
+> 完整設計與 tasks 見 `openspec/changes/2026-05-11-p23-fleet-admin-config/`：
+> - `proposal.md`：背景、Firestore schema、SU 制設計、影響範圍
+> - `HANDOFF.md`：Stage 進度、API ref、Store ref、7 個已知陷阱
+
+**Stage 進度**：
+- [✅] **Stage 1**（commit `3183f3c`）：Firestore 3 collection schema + `server/utils/fleet-config.ts` + 公開 GET + admin CRUD endpoints + auto-seed defaults
+- [✅] **Stage 2-3**（commit `4668e06`）：`StoreConfig` Pinia store + plugin 啟動撈一次 + 8 個 caller 切換 + booking 行李 SU 制 UI + order schema (`luggageCount` → `luggageItems`)
+- [✅] **Stage 4**：fleet 頁讀動態 config（併進 Stage 2）
+- [✅] **Stage 5**（本 commit）：admin/settings 加 3 個 CRUD 區塊（車型 / 行李類型 / 加值服務），含三語 label 編輯
+- [✅] **Stage 6**：driver/admin trip modal 顯示行李明細（併進 Stage 3）
+
+**G5 驗收**：admin 可在 `/admin/settings` Fleet 區塊新增 / 編輯 / 啟用切換 / 刪除三種資源，乘客 booking 頁 reload 後即時看到變更生效
+
+**後續 backlog**：
+- admin 編輯後 real-time listener 推播給線上乘客（目前需 reload page）
+- icon picker 進階 UI（目前單純字串輸入 mdi 名稱）
+- 加值服務「按時計費 / 條件式定價」（目前單次定額）
+- 多幣別（目前 TWD only）
+
+---
+
 ### P20：Booking 表單擴充（乘客端收尾查驗時做）
 
 **觸發時機**：使用者在乘客端做收尾查驗時一併處理
@@ -556,5 +579,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
 
 **版本紀錄**
-- 版本：v3.10（P19 driver trip mission — 五階段狀態流 + driver 自動定位 + war-room status filter；程式碼層完成，待部署驗證 G1-G12）
-- 更新日期：2026/05/09
+- 版本：v3.11（P23 fleet 設定動態化 — hardcode 計價搬到 Firestore + admin/settings CRUD UI + 行李 SU 制；Stage 1+2+3+5 全完成，build pass）
+- 更新日期：2026/05/11

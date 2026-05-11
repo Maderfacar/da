@@ -40,6 +40,18 @@ const groups = [
 type AccessTab = 'admin' | 'driver';
 const activeTab = ref<AccessTab>('driver');
 
+// ── Fleet 設定 Tab（P23 Stage 5）─────────────────────────────
+type FleetTab = 'vehicles' | 'luggage' | 'extras';
+const fleetTab = ref<FleetTab>('vehicles');
+
+// 確保 StoreConfig 已載入（plugin 啟動時也會 Init，這裡加保險，避免 admin 直接深連結到此頁時空白）
+const storeConfig = StoreConfig();
+onMounted(() => {
+  if (!storeConfig.isLoaded && !storeConfig.isLoading) {
+    void storeConfig.Init();
+  }
+});
+
 // 管理員清單（P18：改從 admins collection 讀，含 level）
 const admins = ref<AdminEntry[]>([]);
 const adminsLoading = ref(false);
@@ -296,6 +308,34 @@ const ClickRevokeDriver = async (uid: string) => {
 
         .PageAdminSettings__empty(v-if="admins.length === 0")
           span 目前無管理員資料（請至 Firebase Console 設定首位管理員）
+
+  //- Fleet 設定（P23 Stage 5）
+  .PageAdminSettings__section
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label FLEET
+      span.PageAdminSettings__section-title 車型 / 行李 / 加值服務
+
+    //- Fleet sub-tab
+    .PageAdminSettings__tabs
+      button.PageAdminSettings__tab(
+        :class="{ 'is-active': fleetTab === 'vehicles' }"
+        @click="fleetTab = 'vehicles'"
+      ) 車型
+      button.PageAdminSettings__tab(
+        :class="{ 'is-active': fleetTab === 'luggage' }"
+        @click="fleetTab = 'luggage'"
+      ) 行李類型
+      button.PageAdminSettings__tab(
+        :class="{ 'is-active': fleetTab === 'extras' }"
+        @click="fleetTab = 'extras'"
+      ) 加值服務
+
+    .PageAdminSettings__loading(v-if="storeConfig.isLoading && !storeConfig.isLoaded") 載入中...
+
+    template(v-else)
+      AdminSettingsFleetVehicles(v-if="fleetTab === 'vehicles'")
+      AdminSettingsFleetLuggageTypes(v-if="fleetTab === 'luggage'")
+      AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
 
   //- 系統設定（只讀）
   .PageAdminSettings__notice

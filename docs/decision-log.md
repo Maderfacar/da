@@ -6,6 +6,46 @@
 
 ---
 
+### 2026/05/11 — P23 Fleet 設定動態化：hardcode 計價搬到 Firestore + admin/settings CRUD UI + 行李 SU 制
+
+**類型**：功能 / 資料模型變更
+
+**標題**：`shared/pricing.ts` 退役，4 種車型 + 4 項加值服務 + 4 種行李類型全面 Firestore 化；admin 可在 `/admin/settings` 即時編輯；booking 表單行李改 SU（Standard Unit）容量制
+
+**背景**：
+- P22 收尾後盤點，業務需求改變時 fleet 計價參數仍需改 code + redeploy（`VEHICLE_CONFIGS` / `EXTRA_SERVICES` / `EXTRA_SERVICE_PRICE` 全寫死於 `shared/pricing.ts`），admin 無法即時調整
+- booking `luggageCount: number` 無法區分行李尺寸（20" 登機箱 vs 32" 大型 vs 高爾夫袋容量差數倍），導致車型選擇邏輯失準
+- 加值服務一律共用 NT$ 200 單價、固定 4 項，admin 無法新增「接機舉牌」「兒童安全座椅」等選項
+
+**決定（分 5 Stage 上線）**：
+- **Stage 1**（commit `3183f3c`）：3 個 Firestore collection（`fleet_vehicles` / `fleet_luggage_types` / `fleet_extras`）+ `server/utils/fleet-config.ts`（type / validator / seed defaults / auto-seed if empty）+ 公開 GET `/nuxt-api/config/fleet` + admin CRUD `/nuxt-api/admin/config/:resource[/:id]`（需 `canManageFleet` 權限，super + admin 預設有、assistant 無）
+- **Stage 2-3**（commit `4668e06`）：`app/stores/8.store-config.ts` Pinia store（Init / Reload / GetVehicle / EnabledVehicles / LabelOf）+ `plugins/init-config.client.ts` 啟動時撈一次 cache 進 store；8 個既有 caller（fleet/booking/driver trip/admin orders/upcoming/store-order 等）全切換到 store；booking 行李 UI 改為 4 個 SU stepper + 即時 SU 容量校驗（≤capacity ok / ≤1.5x warn 可選 / >1.5x disabled 紅字）；`CreateOrderParams.luggageCount` 移除，新增 `luggageItems: { typeId, count }[]`
+- **Stage 5**（本 commit）：admin/settings 新增「Fleet 設定」section 含 3 個 sub-tab，3 個獨立組件（`SettingsFleetVehicles.vue` / `SettingsFleetLuggageTypes.vue` / `SettingsFleetExtras.vue`），每個含列表 + 新增 / 編輯彈窗 + 啟用切換 + 刪除確認，操作後 `await StoreConfig().Reload()` 即時刷新乘客 fleet/booking 頁
+- SU 換算 seed：small=1 / medium=2 / large=3 / special=4；車型 luggageSU 容量：sedan=4 / suv=7 / van=14 / premium=4
+- 既有測試訂單不兼容（user 確認上線前清庫）
+
+**影響**：
+- 新增 3 個 component（admin/SettingsFleet{Vehicles,LuggageTypes,Extras}.vue）+ 1 個 store（`app/stores/8.store-config.ts`）+ 1 個 server util（`server/utils/fleet-config.ts`）+ 4 個 server endpoint + 1 個 client API protocol（`app/protocol/fetch-api/api/config/`）
+- `shared/pricing.ts` 內 `VEHICLE_CONFIGS` / `EXTRA_SERVICES` / `EXTRA_SERVICE_PRICE` 全部移除，僅保留型別定義 + `calculateFare` 算法（簽名改為接 `vehicle` 物件 + `extras` 物件陣列）
+- order schema：`luggageCount` 移除，新增 `luggageItems`；driver/admin trip modal 顯示「20" 登機箱 × 2、24-26" 中型 × 1」明細
+- admin 編輯後乘客 reload page 才生效（未做 real-time listener，記入 backlog）
+
+**已知陷阱（給未來 admin/設計）**：
+- Pug template `#{...}` 與 Vue `{{ }}` 衝突，row id 顯示用 `{{ '#' + v.id }}` 而非 `#{{ v.id }}`
+- doc id slug 限制 `^[a-z0-9][a-z0-9-]{0,49}$`，UI 在 ID 欄位加說明
+- 刪車型不影響舊訂單（Firestore 內 vehicleType 是 string 快照），admin/orders 編輯模式車型 select 已加「（已停用或刪除）」option fallback
+
+**替代方案（已評估後否決）**：
+- 用 GitHub Gist 存 config：寫入需 PAT、admin UI 體驗差、Firestore 已有相同成本結構
+- 把 hardcode 從 `shared/pricing.ts` 改為環境變數：仍需 redeploy、無法多語 label、admin 無法操作
+- admin 編輯後 real-time listener 推播：本 spec 範圍刪減（reload page 已可接受，未來有需求再做）
+
+**verify**：lint pass + build pass（Nuxt 4.4.2 + Nitro 2.13.3，server bundle 36.5MB）
+
+**相關 spec**：`openspec/changes/2026-05-11-p23-fleet-admin-config/proposal.md`
+
+---
+
 ### 2026/05/09 — 機場人流預報：棄用 n8n + Gist，改 server cheerio + xlsx + Firestore cache
 
 **類型**：架構重構
