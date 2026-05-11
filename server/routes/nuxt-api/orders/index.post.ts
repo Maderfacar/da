@@ -5,6 +5,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
+import { calcRouteDistance } from '@@/utils/calc-route-distance';
 
 interface GooglePlace {
   address: string;
@@ -89,24 +90,17 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
   }
 
-  let distanceKm = 25; // mock fallback
-
-  if (googleMapsApiKey) {
-    const params = new URLSearchParams({
-      origins: `${body.pickupLocation.lat},${body.pickupLocation.lng}`,
-      destinations: `${body.dropoffLocation.lat},${body.dropoffLocation.lng}`,
-      key: googleMapsApiKey,
-      region: 'tw',
-    });
-    const res = await $fetch<any>(
-      `https://maps.googleapis.com/maps/api/distancematrix/json?${params}`,
-    ).catch(() => null);
-
-    const element = res?.rows?.[0]?.elements?.[0];
-    if (element?.status === 'OK') {
-      distanceKm = Math.round(element.distance.value / 100) / 10;
-    }
-  }
+  // 距離計算改用 Directions API 並帶入 stopovers（與前端 /api/maps/route 同一份來源），
+  // 避免前端確認頁顯示金額與下單金額不一致（Distance Matrix 不繞中途停靠站，距離較短）。
+  const validStopovers = (body.stopovers ?? []).filter((s) => s && s.lat !== 0);
+  const routeResult = await calcRouteDistance(
+    googleMapsApiKey,
+    { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
+    { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
+    validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
+  );
+  // 失敗時 fallback 25km（前端理論上不會到這步，因為前端要走完 BookingStepRoute 才有 distance）
+  const distanceKm = routeResult?.distanceKm ?? 25;
 
   // P23：從 Firestore fleet config 撈 vehicle / extras 算費用（不再用 hardcoded VEHICLE_CONFIGS）
   const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
