@@ -55,6 +55,8 @@ export default defineNuxtConfig({
     internalApiKey: '',             // NUXT_INTERNAL_API_KEY — n8n 內部 API 認證
     cwaApiKey: '',                  // NUXT_CWA_API_KEY — 中央氣象署開放資料平台（伺服器端）
     aviationEdgeKey: '',            // NUXT_AVIATION_EDGE_KEY — Aviation Edge 航班時刻表 API（伺服器端）
+    tdxClientId: '',                // NUXT_TDX_CLIENT_ID — 運輸部 TDX OAuth client_id（伺服器端）
+    tdxClientSecret: '',            // NUXT_TDX_CLIENT_SECRET — 運輸部 TDX OAuth client_secret（伺服器端）
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
