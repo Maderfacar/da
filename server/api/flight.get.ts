@@ -295,6 +295,110 @@ const _callAviationEdge = async (
   return _queryAeFuture(apiKey, flightNoUpper, direction, date);
 };
 
+// ── Aviation Edge debug trace（spec 2026-05-12 debug 擴充）─────────────────
+/**
+ * 與 _callAviationEdge 同邏輯，但回傳完整 trace 給 ?debug=1 使用。
+ * 包含 endpoint 選擇、實際 query、原始 response 第一筆（避免 dump 上百筆）、
+ * exact match 結果、mapped FlightInfo、error。
+ * 主流程仍呼叫原 _callAviationEdge，不影響既有 fallback 鏈行為。
+ */
+interface AviationEdgeTrace {
+  enabled: boolean;
+  endpoint: 'timetable' | 'flightsFuture' | null;
+  daysFromNow: number;
+  airlineIata: string;
+  query: Record<string, string> | null;
+  rawSample: unknown;          // 第一筆 raw（avoid dump 巨量）
+  rawCount: number;
+  exactMatch: unknown;
+  mapped: FlightInfo | null;
+  error: string | null;
+}
+
+const _callAviationEdgeWithTrace = async (
+  apiKey: string,
+  flightNoUpper: string,
+  direction: FlightDirection,
+  date: string,
+): Promise<AviationEdgeTrace> => {
+  const trace: AviationEdgeTrace = {
+    enabled: Boolean(apiKey),
+    endpoint: null,
+    daysFromNow: 0,
+    airlineIata: '',
+    query: null,
+    rawSample: null,
+    rawCount: 0,
+    exactMatch: null,
+    mapped: null,
+    error: null,
+  };
+
+  if (!apiKey) {
+    trace.error = 'aviationEdgeKey not configured';
+    return trace;
+  }
+
+  const airlineIata = ParseAirlineIataFromFlightNo(flightNoUpper);
+  trace.airlineIata = airlineIata;
+  if (!airlineIata) {
+    trace.error = 'cannot parse airline IATA from flightNo';
+    return trace;
+  }
+
+  const today = _todayInTaipei();
+  trace.daysFromNow = Math.round(
+    (Date.parse(`${date}T00:00:00+08:00`) - Date.parse(`${today}T00:00:00+08:00`)) / 86400000,
+  );
+  trace.endpoint = trace.daysFromNow < 7 ? 'timetable' : 'flightsFuture';
+
+  const baseQuery: Record<string, string> = {
+    key: '[REDACTED]',  // mask 不洩漏 key
+    iataCode: 'TPE',
+    type: direction,
+    airline_iata: airlineIata,
+  };
+  if (trace.endpoint === 'flightsFuture') baseQuery.date = date;
+  trace.query = baseQuery;
+
+  const url = trace.endpoint === 'timetable'
+    ? 'https://aviation-edge.com/v2/public/timetable'
+    : 'https://aviation-edge.com/v2/public/flightsFuture';
+  const actualQuery = { ...baseQuery, key: apiKey };
+
+  try {
+    const result = await $fetch<unknown>(url, {
+      method: 'GET',
+      query: actualQuery,
+      timeout: 10000,
+    });
+    if (!Array.isArray(result)) {
+      trace.rawSample = result;
+      trace.rawCount = 0;
+      return trace;
+    }
+    trace.rawCount = result.length;
+    trace.rawSample = result[0] ?? null;
+
+    const flightLower = flightNoUpper.toLowerCase();
+    const exact = result.find((e) => {
+      const entry = e as { flight?: { iataNumber?: string } };
+      return (entry.flight?.iataNumber ?? '').toLowerCase() === flightLower;
+    });
+    trace.exactMatch = exact ?? null;
+
+    if (exact) {
+      trace.mapped = trace.endpoint === 'timetable'
+        ? _mapAeTimetable(exact as AeTimetableEntry, flightNoUpper, direction)
+        : _mapAeFuture(exact as AeFutureEntry, flightNoUpper, direction, date);
+    }
+  } catch (err) {
+    trace.error = err instanceof Error ? err.message : String(err);
+  }
+
+  return trace;
+};
+
 // ── registry → FlightInfo / FlightInfo → registry schedule ──
 const _scheduleToFlightInfo = (
   doc: FlightRegistryDoc,
@@ -628,9 +732,13 @@ export default defineEventHandler(async (event) => {
     } catch (err) {
       registryErr = err instanceof Error ? err.message : String(err);
     }
-    const tdxTrace = (cfg.tdxClientId && cfg.tdxClientSecret)
-      ? await QueryTdxFlightWithTrace(cfg.tdxClientId, cfg.tdxClientSecret, flightNoUpper, direction, date)
-      : null;
+    // TDX + Aviation Edge trace 並行（無相依，省 latency）
+    const [tdxTrace, aeTrace] = await Promise.all([
+      (cfg.tdxClientId && cfg.tdxClientSecret)
+        ? QueryTdxFlightWithTrace(cfg.tdxClientId, cfg.tdxClientSecret, flightNoUpper, direction, date)
+        : Promise.resolve(null),
+      _callAviationEdgeWithTrace(cfg.aviationEdgeKey, flightNoUpper, direction, date),
+    ]);
     return {
       ok: Boolean(tdxTrace?.finalResult),
       debug: {
@@ -646,9 +754,12 @@ export default defineEventHandler(async (event) => {
           hasTdxBlock: Boolean(registryDoc?.tdx),
           tdxBlock: registryDoc?.tdx ?? null,
           scheduleKeys: registryDoc?.schedules ? Object.keys(registryDoc.schedules) : [],
+          manualScheduleKeys: registryDoc?.manualSchedules ? Object.keys(registryDoc.manualSchedules) : [],
+          hasManualScheduleForThisDate: Boolean(registryDoc?.manualSchedules?.[`${date}__${direction}`]),
           error: registryErr,
         },
         tdx: tdxTrace,
+        aviationEdge: aeTrace,
       },
     };
   }
