@@ -1,22 +1,25 @@
 /**
  * GET /api/flight?flightNo=CI102&direction=arrival&date=YYYY-MM-DD
  *
- * 桃園機場 (TPE) 航班查詢 — 4 層 fallback + 自學 registry
+ * 桃園機場 (TPE) + TSA / KHH / RMQ 航班查詢 — 多層 fallback + 自學 registry
  *
  *   Layer 1：in-memory hot cache（5 min, per process）
  *           ↓ miss
- *   Layer 2：Firestore `flight_registry`（per spec 2026-05-10）
- *           - 命中且 schedule cache < 30 min → 秒渲染回傳
- *           - 命中但 schedule cache 過期（仍在 60 天 TTL 內）→ 留作 stale fallback
+ *   Layer 2A：Firestore `flight_registry.tdx`（spec 2026-05-12）
+ *           - 命中且 tdx 子物件 < 24h → 秒渲染回傳（用 scheduledTime 當 estimatedTime）
  *           ↓ miss / stale
- *   Layer 3：TDX API（台灣機場即時數據；尚未實作，待 Stage 3）
- *           ↓
- *   Layer 4：Aviation Edge API（國際 / TDX 無資料）
- *           - timetable endpoint：< 7 天用，含 status / actualTime
- *           - flightsFuture endpoint：>= 7 天用，僅 schedule
- *           - 取得後立即寫回 flight_registry（self-learning，silent log on fail）
- *           ↓ failure
- *   Layer 5（保險絲）：dev mock，prod → 404
+ *   Layer 2B：Firestore `flight_registry.schedules`（Aviation Edge 既有寫入；保留向下相容）
+ *           - 命中且 schedule cache < 30 min → 秒渲染回傳
+ *           ↓ miss / stale
+ *   Layer 3：TDX API（spec 2026-05-12，booking 階段主要資料源）
+ *           - Domestic + International 雙 endpoint 並行
+ *           - Codeshare 雙向比對
+ *           - 4 條 validation：找得到 + 至少一端在台灣 + 日期在有效期 + weekday 符合
+ *           - 取得後立即寫回 flight_registry.tdx（self-learning）
+ *           ↓ miss / fail
+ *   Layer 4：Aviation Edge API（booking 階段已 hold；helper 保留不調用，等之後接「即時狀態」）
+ *
+ *   收尾：API 失敗但 registry 還有 stale → 仍回給使用者；都沒 → dev mock / prod 404
  *
  * 額外機制：
  *   - Request collapsing：同 flightNo|direction|date 同時來多 request 共享一個 in-flight Promise
@@ -33,11 +36,15 @@ import {
   GetCachedSchedule,
   IsRegistryStaticFresh,
   IsScheduleFresh,
+  IsTdxBlockFresh,
   SaveFlightToRegistry,
+  SaveTdxBlockToRegistry,
   type FlightDirection,
   type FlightRegistryDoc,
   type FlightRegistrySchedule,
+  type FlightRegistryTdxBlock,
 } from '@@/utils/flight-registry';
+import { ComposeTdxTimestamp, QueryTdxFlight, type TdxFlightResult } from '@@/utils/tdx-flight';
 
 export interface FlightInfo {
   flightNo: string;
@@ -51,7 +58,7 @@ export interface FlightInfo {
   direction: FlightDirection;
 }
 
-type FlightSource = 'cache' | 'registry' | 'live' | 'registry-stale' | 'mock';
+type FlightSource = 'cache' | 'registry' | 'registry-tdx' | 'tdx' | 'live' | 'registry-stale' | 'mock';
 
 // ── Aviation Edge response 型別（局部，僅取我們需要的欄位）──
 interface AeAirport {
@@ -313,6 +320,85 @@ const _flightInfoToScheduleData = (
   arrivalCity: info.destination.cityName,
 });
 
+// ── TDX → FlightInfo mapper（spec 2026-05-12）─────────────────
+/**
+ * TDX GeneralSchedule 是「週期性排程」，沒有 active/landed/delayed 動態狀態，也沒有 actualTime。
+ * 用 scheduledTime 當 estimatedTime（user 拍板方案 a），status 一律 'scheduled'。
+ * 等之後接 Aviation Edge 即時狀態時，會由另一條 endpoint 覆蓋這兩個欄位。
+ */
+const _tdxResultToFlightInfo = (
+  tdx: TdxFlightResult,
+  airlineName: string,
+  date: string,
+  direction: FlightDirection,
+): FlightInfo => {
+  // 取「對應 direction」的時間：arrival 用 scheduledArrival，departure 用 scheduledDeparture
+  const focusTime = direction === 'arrival' ? tdx.scheduledArrival : tdx.scheduledDeparture;
+  const scheduledIso = ComposeTdxTimestamp(date, focusTime);
+  return {
+    flightNo: tdx.flightNo,
+    airline: { iataCode: tdx.airlineCode, name: airlineName || GetAirlineNameByIata(tdx.airlineCode) },
+    origin: {
+      iataCode: tdx.departureAirport,
+      cityName: GetAirportCityByIata(tdx.departureAirport),
+    },
+    destination: {
+      iataCode: tdx.arrivalAirport,
+      cityName: GetAirportCityByIata(tdx.arrivalAirport),
+    },
+    terminal: _normalizeTerminal(tdx.terminal),
+    scheduledTime: scheduledIso,
+    estimatedTime: scheduledIso,
+    status: 'scheduled',
+    direction,
+  };
+};
+
+/** 從 flight_registry.tdx 子物件直接組 FlightInfo（Layer 2A 命中時用） */
+const _registryTdxToFlightInfo = (
+  doc: FlightRegistryDoc,
+  tdx: FlightRegistryTdxBlock,
+  flightNoUpper: string,
+  date: string,
+  direction: FlightDirection,
+): FlightInfo => {
+  const focusTime = direction === 'arrival' ? tdx.scheduledArrival : tdx.scheduledDeparture;
+  const scheduledIso = ComposeTdxTimestamp(date, focusTime);
+  return {
+    flightNo: flightNoUpper,
+    airline: {
+      iataCode: doc.airlineCode,
+      name: doc.airlineName || GetAirlineNameByIata(doc.airlineCode),
+    },
+    origin: {
+      iataCode: tdx.departureAirport,
+      cityName: GetAirportCityByIata(tdx.departureAirport),
+    },
+    destination: {
+      iataCode: tdx.arrivalAirport,
+      cityName: GetAirportCityByIata(tdx.arrivalAirport),
+    },
+    terminal: _normalizeTerminal(tdx.terminal),
+    scheduledTime: scheduledIso,
+    estimatedTime: scheduledIso,
+    status: 'scheduled',
+    direction,
+  };
+};
+
+/**
+ * 檢查 TDX 子物件對「指定 date + direction」是否仍有效（schedule 在有效期內 + weekday 符合）。
+ * registry 內的 tdx 子物件是「該航班的週期性排程快照」，不同 date 都共用同一份 — 故每次取用都要驗證。
+ */
+const _isTdxBlockApplicable = (tdx: FlightRegistryTdxBlock, date: string): boolean => {
+  if (tdx.effectiveStart && date < tdx.effectiveStart) return false;
+  if (tdx.effectiveEnd && date > tdx.effectiveEnd) return false;
+  const d = new Date(`${date}T00:00:00+08:00`);
+  const sunday0 = d.getDay();
+  const isoWeekDay = sunday0 === 0 ? 7 : sunday0;
+  return tdx.weekDays.includes(isoWeekDay);
+};
+
 // ── Mock 資料（dev 環境 fallback）─────────────────────────────
 const _mockFlights: Record<string, Omit<FlightInfo, 'flightNo' | 'scheduledTime' | 'estimatedTime'>> = {
   CI102: { airline: { iataCode: 'CI', name: '中華航空' }, origin: { iataCode: 'NRT', cityName: '東京' },     destination: { iataCode: 'TPE', cityName: '台北' }, terminal: '1', status: 'active',    direction: 'arrival' },
@@ -364,15 +450,17 @@ const _todayInTaipei = (): string => {
   return now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
 };
 
-// ── 核心查詢流程（4 層 fallback + self-learning） ───────────────
+// ── 核心查詢流程（多層 fallback + self-learning） ───────────────
+// spec 2026-05-12：Booking 階段改用 TDX 為主資料源，Aviation Edge 暫時 hold。
+// helper 保留在本檔（_callAviationEdge 等），等之後接「即時狀態」階段再啟用。
 const _lookupFlight = async (
   flightNoUpper: string,
   direction: FlightDirection,
   date: string,
 ): Promise<FlightLookupResult> => {
-  const { aviationEdgeKey } = useRuntimeConfig();
+  const { tdxClientId, tdxClientSecret, aviationEdgeKey } = useRuntimeConfig();
 
-  // Layer 2：Firestore registry — 預先讀，後面 stale fallback 也用
+  // 預先讀 Firestore registry — Layer 2A/2B + 後段 stale fallback 共用
   let registryDoc: FlightRegistryDoc | null = null;
   try {
     registryDoc = await GetFlightFromRegistry(flightNoUpper);
@@ -380,6 +468,14 @@ const _lookupFlight = async (
     console.error('[api/flight] registry read failed:', err);
   }
 
+  // ── Layer 2A：Firestore registry.tdx（spec 2026-05-12）──
+  // tdx 子物件 < 24h 且該 date 仍在 effective 區間 + weekday 符合 → 秒回
+  if (registryDoc?.tdx && IsTdxBlockFresh(registryDoc.tdx) && _isTdxBlockApplicable(registryDoc.tdx, date)) {
+    const data = _registryTdxToFlightInfo(registryDoc, registryDoc.tdx, flightNoUpper, date, direction);
+    return { data, source: 'registry-tdx' };
+  }
+
+  // ── Layer 2B：Firestore registry.schedules（Aviation Edge 既有寫入；保留向下相容）──
   if (registryDoc && IsRegistryStaticFresh(registryDoc)) {
     const cachedSchedule = GetCachedSchedule(registryDoc, date, direction);
     if (cachedSchedule && IsScheduleFresh(cachedSchedule)) {
@@ -388,36 +484,49 @@ const _lookupFlight = async (
     }
   }
 
-  // Layer 3 (TDX) — 待 Stage 3 實作（user 提供 NUXT_TDX_CLIENT_ID/SECRET 後）
-
-  // Layer 4：Aviation Edge
-  if (aviationEdgeKey) {
+  // ── Layer 3：TDX API（Booking 主資料源） ──
+  if (tdxClientId && tdxClientSecret) {
     try {
-      const data = await _callAviationEdge(aviationEdgeKey, flightNoUpper, direction, date);
-      if (data) {
-        // self-learning：寫回 Firestore（silent on failure）
-        void SaveFlightToRegistry({
+      const tdx = await QueryTdxFlight(tdxClientId, tdxClientSecret, flightNoUpper, direction, date);
+      if (tdx) {
+        const airlineName = registryDoc?.airlineName || GetAirlineNameByIata(tdx.airlineCode);
+        const data = _tdxResultToFlightInfo(tdx, airlineName, date, direction);
+        // self-learning：寫回 Firestore.tdx（silent on failure）
+        void SaveTdxBlockToRegistry({
           flightNo: flightNoUpper,
-          airlineCode: data.airline.iataCode,
-          airlineName: data.airline.name || GetAirlineNameByIata(data.airline.iataCode),
-          departureAirport: data.origin.iataCode,
-          arrivalAirport: data.destination.iataCode,
-          terminal: data.terminal,
-          status: data.status,
-          schedule: {
-            date,
-            direction,
-            data: _flightInfoToScheduleData(data),
+          airlineCode: tdx.airlineCode,
+          airlineName,
+          tdx: {
+            isDomestic: tdx.isDomestic,
+            departureAirport: tdx.departureAirport,
+            arrivalAirport: tdx.arrivalAirport,
+            terminal: tdx.terminal,
+            scheduledDeparture: tdx.scheduledDeparture,
+            scheduledArrival: tdx.scheduledArrival,
+            weekDays: tdx.weekDays,
+            effectiveStart: tdx.effectiveStart,
+            effectiveEnd: tdx.effectiveEnd,
+            codeShare: tdx.codeShare,
+            operatingAirlineCode: tdx.operatingAirlineCode,
+            operatingFlightNumber: tdx.operatingFlightNumber,
           },
         });
-        return { data, source: 'live' };
+        return { data, source: 'tdx' };
       }
     } catch (err) {
-      console.error('[api/flight] Aviation Edge call failed:', err);
+      console.error('[api/flight] TDX call failed:', err);
     }
   }
 
-  // Layer 4 fallback：API 失敗但 registry 還有 stale schedule → 仍然回給使用者
+  // ── Layer 4：Aviation Edge（spec 2026-05-12 booking 階段已 hold；helper 保留不調用）──
+  // 若之後接「即時狀態」階段，這段會被改回啟用 — _callAviationEdge / _queryAeTimetable
+  // / _queryAeFuture / _mapAeFuture / _mapAeTimetable 全部留在本檔。
+
+  // ── Stale fallback：所有 API miss 但 registry 還有任何排程資料 → 仍回給使用者 ──
+  if (registryDoc?.tdx && _isTdxBlockApplicable(registryDoc.tdx, date)) {
+    const data = _registryTdxToFlightInfo(registryDoc, registryDoc.tdx, flightNoUpper, date, direction);
+    return { data, source: 'registry-stale' };
+  }
   if (registryDoc && IsRegistryStaticFresh(registryDoc)) {
     const stale = GetCachedSchedule(registryDoc, date, direction);
     if (stale) {
@@ -426,13 +535,13 @@ const _lookupFlight = async (
     }
   }
 
-  // Layer 5（保險絲）：dev mock
-  if (!aviationEdgeKey) {
+  // ── 保險絲：dev mock（沒設 TDX 與 Aviation Edge key 才走，方便本地測試）──
+  if (!tdxClientId && !aviationEdgeKey) {
     const mock = _queryMock(flightNoUpper, direction);
     if (mock) return { data: mock, source: 'mock' };
   }
 
-  return { data: null, source: aviationEdgeKey ? 'live' : 'mock' };
+  return { data: null, source: tdxClientId ? 'tdx' : 'mock' };
 };
 
 export default defineEventHandler(async (event) => {
