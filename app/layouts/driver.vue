@@ -19,6 +19,7 @@ onMounted(() => {
 });
 
 const navItems = [
+  { id: 'cost',    icon: '💰', label: '營運成本', path: '/driver/cost'    },
   { id: 'pending', icon: '📋', label: '拉單',     path: '/driver/pending' },
   { id: 'trip',    icon: '✅', label: '任務',     path: '/driver/trip'    },
   { id: 'traffic', icon: '✈️', label: '機場人流', path: '/driver/traffic' },
