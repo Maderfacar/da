@@ -44,7 +44,7 @@ interface DriverDocuments {
 }
 
 // 司機申請資料（Firestore drivers/{uid}.application；P27 前位置為 users/{uid}.driverApplication）
-// admin/users.get 端點透過 batchReadDriverApplications helper 補資料；
+// admin/users.get 端點 batch read drivers/{uid} 補 application；
 // 回傳 shape 仍維持 `driverApplication` 欄位名以避免 client 改動
 interface DriverApplication {
   driverName: string;        // 司機真實姓名

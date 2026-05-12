@@ -3,7 +3,7 @@
  * 管理員查詢使用者清單（依 role 篩選 — array-contains）
  *
  * P27（2026-05-12 起）：driverApplication 已從 users 搬到 drivers/{uid}.application。
- * 本端點透過 batchReadDriverApplications helper 一次讀取（drivers 優先，users 舊位置 fallback）。
+ * 本端點 batch read drivers/{uid} 補 driverCategory + application。
  *
  * Query params:
  *   role — 'admin' | 'driver' | 'passenger'（必填，使用 array-contains 比對）
@@ -11,7 +11,6 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
-import { batchReadDriverApplications } from '@@/utils/driver-application';
 
 export default defineEventHandler(async (event) => {
   // P14：admin only
@@ -92,17 +91,6 @@ export default defineEventHandler(async (event) => {
         });
       } catch (err) {
         console.error('[admin/users.get] drivers batch read failed:', err);
-      }
-
-      // P27 Stage A：對 drivers 沒找到 application 的 driver，fallback 讀 users.driverApplication 舊位置
-      const driversMissingApp = driverUsers.filter((u) => !u.driverApplication);
-      if (driversMissingApp.length > 0) {
-        const fallbackMap = await batchReadDriverApplications(db, driversMissingApp.map((u) => u.uid));
-        users.forEach((u) => {
-          if (!u.driverApplication && fallbackMap.has(u.uid)) {
-            u.driverApplication = _serializeApplication(fallbackMap.get(u.uid)!);
-          }
-        });
       }
     }
 

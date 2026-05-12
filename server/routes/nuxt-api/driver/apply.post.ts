@@ -4,10 +4,10 @@
  *
  * P27（2026-05-12 起）：driverApplication 整包搬到 drivers/{lineUid}.application；
  * users/{lineUid} 不再寫 driverApplication 欄位。冷卻期檢查改讀 drivers.application.rejectedAt
- * （Stage A：透過 readDriverApplication helper 保留 users 舊位置 fallback）。
+ * （透過 readDriverApplication helper 統一讀新位置）。
  *
  * 流程：
- *   1. 驗證冷卻期（透過 helper dual-read 拿 application）
+ *   1. 驗證冷卻期（透過 helper 讀 drivers.application 拿 rejectedAt）
  *   2. 寫 users/{lineUid}：roles arrayUnion 'driver' + approved=false（**不再寫 driverApplication**）
  *   3. 寫 drivers/{lineUid}：含 application 完整資料 + top-level vehicleType / 統計初值（首次申請）
  *
@@ -92,7 +92,7 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      // 冷卻檢查：透過 helper dual-read（Stage A 兼容 users 舊位置）
+      // 冷卻檢查：讀 drivers/{uid}.application 取 rejectedAt
       const existingApp = await readDriverApplication(db, body.lineUserId);
       const rejectedAt = existingApp?.rejectedAt as { toMillis?: () => number } | string | null | undefined;
       const rejectedMs = typeof rejectedAt === 'string'

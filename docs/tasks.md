@@ -794,13 +794,16 @@
 - [✅] scripts/migrate-driver-application-to-drivers.mjs — 一次性 migration（支援 --dry-run / --apply）
 - [✅] storage.rules / driver/upload.post.ts / auth/line-exchange.post.ts 註解更新
 
-**Stage B 待辦**（migration 跑完後）：
-- [ ] prod 執行 `FIREBASE_SERVICE_ACCOUNT_JSON='...' pnpm migrate:driver-app --dry-run` 驗證影響筆數
-- [ ] 跑 `pnpm migrate:driver-app --apply` 執行搬遷
-- [ ] 驗證 admin/drivers + driver/register 兩端讀寫正常
-- [ ] 部署 Stage B：移除 server/utils/driver-application.ts 內 users fallback；移除 store-auth 內 fallback；移除 admin/users/index.get.ts 內 fallback batch read
+**Stage B 完成項目（2026/05/12 同日）**：
+- [✅] `pnpm migrate:driver-app --dry-run` 驗證影響筆數（scanned 2 / migrated 2 / 0.37s）
+- [✅] `pnpm migrate:driver-app --apply` 執行 prod 搬遷（migrated 2 / failed 0 / 0.63s）
+- [✅] Firebase Console 抽查 users/drivers + audit_logs；prod admin/drivers 列表資料完整顯示
+- [✅] 移除 server/utils/driver-application.ts 內 users fallback；整個刪除 batchReadDriverApplications
+- [✅] 移除 store-auth.ts 內 data.driverApplication fallback
+- [✅] 移除 admin/users/index.get.ts 內 driversMissingApp fallback block + import
+- [✅] apply.post.ts 註解修正（移除 Stage A dual-read 提及）
 
-**完成後解鎖**：P26 driver profile editor 即可開工
+**完成後解鎖**：P26 driver profile editor 開工
 
 ---
 

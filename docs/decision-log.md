@@ -44,7 +44,7 @@
 - 22 檔受影響：5 server / 5 frontend / 6 docs / 1 新 migration script
 
 **決定（Stage A + B 兩階段 deploy）**：
-- **Stage A**（本次完成，commit `b761ac4`）：程式碼支援 dual-read（drivers 優先，users fallback），寫入只進 drivers.application
+- **Stage A**（commit `b761ac4` + `57a42b2`）：程式碼支援 dual-read（drivers 優先，users fallback），寫入只進 drivers.application
   - 新 helper `server/utils/driver-application.ts`（readDriverApplication + batchReadDriverApplications）封裝雙讀邏輯
   - driver/apply.post.ts 寫 target 改 drivers.application；冷卻檢查走 helper
   - admin/users/[uid].patch.ts dot-path 改寫 drivers.application.*；driverCategory 合併同一次 drivers.set(merge)
@@ -52,14 +52,21 @@
   - app/stores/5.store-auth.ts client SDK 也走 dual-read（讀 drivers/{uid}.application，fallback users.driverApplication）
   - 新 `scripts/migrate-driver-application-to-drivers.mjs`：支援 --dry-run / --apply，idempotent（已搬過 skip 並清殘留）
   - AuditAction 加 `migration.driver_application_move`
-- **Stage B**（待 migration 跑完）：移除 fallback 兼容碼，只讀新位置
+- **Stage B**（2026-05-12 同日完成）：跑 prod migration + 移除 fallback 兼容碼
+  - prod migration 結果：scanned 2 / migrated 2 / skipped 0 / failed 0 / duration 0.63s
+  - audit log `migration.driver_application_move` 已寫入 prod audit_logs
+  - Firebase Console 抽查 + prod admin/drivers 列表驗證資料完整顯示後執行清理
+  - 移除 `server/utils/driver-application.ts` 內 users fallback；整個刪除 `batchReadDriverApplications`（admin/users 直接 batch read drivers 不再需要兩段式 fallback）
+  - 移除 `app/stores/5.store-auth.ts` client SDK 內 `data.driverApplication` fallback
+  - 移除 `server/routes/nuxt-api/admin/users/index.get.ts` 內 driversMissingApp fallback block
+  - 跳過 24h soak：兩個 driver 都已 approved 不會主動觸發新寫入；admin/drivers 列表已實際走過讀取路徑
 
-**部署順序**：
-1. Stage A code 上 prod（已 commit，等部署）
-2. 跑 `pnpm migrate:driver-app --dry-run` 驗證影響筆數
-3. 跑 `pnpm migrate:driver-app --apply` 執行搬遷（< 1 分鐘預估）
-4. 驗證 admin/drivers + driver/register 兩端正常
-5. Stage B code 部署（清理 fallback）
+**實際部署順序**：
+1. Stage A code 上 prod（`db51901` deployment）
+2. `pnpm migrate:driver-app --dry-run` 驗證影響筆數（2 筆 / 0.37s）
+3. `pnpm migrate:driver-app --apply` 執行搬遷（0.63s 完成）
+4. Firebase Console 抽查 + admin/drivers 列表驗證
+5. Stage B code 移除 fallback（本次 commit）
 6. P26 開工
 
 **影響**：
