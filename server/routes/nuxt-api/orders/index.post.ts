@@ -90,6 +90,26 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
   }
 
+  const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+
+  // P25：訂單上限檢查 — 同一使用者最多 4 筆未完成且未取消的訂單，避免單帳號亂訂
+  // 用單欄位 where + client filter（不需 composite index）；測試階段每位 user 訂單 < 10 可接受
+  const ACTIVE_ORDER_LIMIT = 4;
+  const FINISHED_STATUSES = new Set(['completed', 'cancelled']);
+  const userOrdersSnap = await db.collection('orders')
+    .where('userId', '==', auth.lineUid)
+    .get();
+  const activeCount = userOrdersSnap.docs.filter(
+    (d) => !FINISHED_STATUSES.has(d.data().orderStatus),
+  ).length;
+  if (activeCount >= ACTIVE_ORDER_LIMIT) {
+    return badRequestError({
+      zh_tw: `同一帳號最多 ${ACTIVE_ORDER_LIMIT} 筆未完成訂單，請先取消或等待現有訂單完成後再下單`,
+      en: `Max ${ACTIVE_ORDER_LIMIT} active orders per account. Cancel or wait for existing orders to complete.`,
+      ja: `1アカウントにつき未完了の予約は最大${ACTIVE_ORDER_LIMIT}件です。既存予約のキャンセルまたは完了をお待ちください。`,
+    });
+  }
+
   // 距離計算改用 Directions API 並帶入 stopovers（與前端 /api/maps/route 同一份來源），
   // 避免前端確認頁顯示金額與下單金額不一致（Distance Matrix 不繞中途停靠站，距離較短）。
   const validStopovers = (body.stopovers ?? []).filter((s) => s && s.lat !== 0);
@@ -103,7 +123,7 @@ export default defineEventHandler(async (event) => {
   const distanceKm = routeResult?.distanceKm ?? 25;
 
   // P23：從 Firestore fleet config 撈 vehicle / extras 算費用（不再用 hardcoded VEHICLE_CONFIGS）
-  const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+  // db 已在 P25 訂單上限檢查時取得
   const fleet = await getFleetConfig(db);
   const vehicle = fleet.vehicles.find((v) => v.id === body.vehicleType);
   if (!vehicle) {
