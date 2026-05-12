@@ -316,6 +316,9 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutDriver__hamburger {
   width: 32px; height: 32px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -327,6 +330,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   span {
     display: block;
+    width: 100%;
     height: 2px;
     background: var(--da-cream);
     border-radius: 2px;
@@ -341,12 +345,16 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutDriver__logo {
   flex: 1;
+  min-width: 0;
   font-family: $font-display;
   font-size: 20px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
   line-height: 1;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   span { color: var(--da-amber); }
 
@@ -372,6 +380,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+// 窄螢幕（< 768px）隱藏「待命中」文字，僅留綠點，避免擠掉 hamburger / logo
+@media (max-width: 767px) {
+  .LayoutDriver__status-label { display: none; }
 }
 
 // ── 側邊抽屜 ───────────────────────────────────────────────
