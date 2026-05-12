@@ -620,7 +620,7 @@
 | P25-1 | P1 | ✅ 完成 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
 | P25-2 | **P0** | ✅ 上 prod `fe6ac8b` | admin operation audit log（19 種 AuditAction + 8 endpoint instrument + super-only `/admin/audit-logs`） |
 | P25-3 | P3 | ⏳ 業務 5 問待拍板 | 司機評分系統（暫保留 schema，業務需求觸發再啟動） |
-| P25-4 | P3 | ⏳ 依賴 P25-2 + use case | admins.permissions 細粒度 override UI（有單獨 use case 再做） |
+| P25-4 | P3 | ✅ 2026-05-13 完成 (P34) | admins.permissions 細粒度 override UI — settings admin tab 加進階權限展開區（6 checkbox + reset） |
 
 ---
 
@@ -765,7 +765,15 @@
 
 ---
 
-#### P25-4：admins.permissions 細粒度 override UI（優先級 P3）
+#### P25-4：admins.permissions 細粒度 override UI（優先級 P3）— ✅ **2026-05-13 完成 (P34)**
+
+> **完成範圍**：
+> - [✅] [admin/admins/[uid].patch.ts](../server/routes/nuxt-api/admin/admins/%5Buid%5D.patch.ts) body 加 `permissions?: Partial<Record<Permission, boolean>> | null`；null 用 `FieldValue.delete()` 清欄位；6 個權限白名單驗證；audit log 寫 `admin.permissions_override` action
+> - [✅] [admin/admins/index.get.ts](../server/routes/nuxt-api/admin/admins/index.get.ts) 回傳 permissions 欄位
+> - [✅] `PatchAdmin` API + `AdminEntry` type 擴充（含 `AdminPermission` exported type）
+> - [✅] [admin/settings/index.vue](../app/pages/admin/settings/index.vue) admin row 加「進階權限」按鈕 + 展開區（6 checkbox + 重置為 LEVEL 預設按鈕）；override 後 row 顯示 `+N` 徽章
+> - [✅] super admin 不可被改 permissions（與 level_change 同保護機制）
+> - [✅] checkbox 與 LEVEL 預設一致自動清除 override（不寫無謂的 override）
 
 > **背景**：P18 Stage 2 已寫好 `hasPermission` 支援 `admins.permissions` override，但目前無 UI 寫入，等同未啟用。
 
@@ -833,5 +841,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.16（P25-1 today 歸零 + online hours 完成；P32 加好友橫幅 vs Hero 重疊修正；P19 driver 地圖中心追蹤決議移除）
+- 版本：v3.17（P33 driver/cost 樣式對齊 + 油費/過路費改每月；P34 admins.permissions override UI 完成 = P25-4 結案）
 - 更新日期：2026/05/13

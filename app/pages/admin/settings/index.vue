@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminEntry, AdminUser } from '@/protocol/fetch-api/api/admin';
+import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -167,6 +167,83 @@ const ClickChangeLevel = async (uid: string, newLevel: 'admin' | 'assistant') =>
   }
 };
 
+// ── P34：細粒度權限 override ─────────────────────────────────
+const PERMISSION_LIST: { key: AdminPermission; label: string; hint: string }[] = [
+  { key: 'canManageAdmins',  label: '管理管理員',   hint: '新增 / 撤銷 / 改 level' },
+  { key: 'canManageDrivers', label: '管理司機',     hint: '審核 / 撤銷 / 改 category' },
+  { key: 'canManageOrders',  label: '管理訂單',     hint: '指派 / 改狀態 / 取消' },
+  { key: 'canBroadcast',     label: 'LINE 廣播',     hint: '發送訊息給乘客 / 司機' },
+  { key: 'canViewFinance',   label: '檢視金流',     hint: '帳務 / 司機薪資資訊' },
+  { key: 'canManageFleet',   label: '管理車隊設定', hint: '車型 / 行李 / 加值服務' },
+];
+
+// level 對應 LEVEL_TABLE（與 server require-permission.ts 對齊）
+const LEVEL_DEFAULTS: Record<'super' | 'admin' | 'assistant', ReadonlySet<AdminPermission>> = {
+  super: new Set(['canManageAdmins', 'canManageDrivers', 'canManageOrders', 'canBroadcast', 'canViewFinance', 'canManageFleet']),
+  admin: new Set(['canManageDrivers', 'canManageOrders', 'canBroadcast', 'canViewFinance', 'canManageFleet']),
+  assistant: new Set(['canManageOrders', 'canBroadcast']),
+};
+
+const expandedAdminUid = ref<string>('');
+const savingPermissionsUid = ref<string>('');
+
+const ToggleExpand = (uid: string) => {
+  expandedAdminUid.value = expandedAdminUid.value === uid ? '' : uid;
+};
+
+// 取「實際生效權限」：override 優先 > LEVEL_TABLE 預設
+const GetEffectivePermission = (admin: AdminEntry, perm: AdminPermission): boolean => {
+  const override = admin.permissions?.[perm];
+  if (typeof override === 'boolean') return override;
+  return LEVEL_DEFAULTS[admin.level].has(perm);
+};
+
+// checkbox 切換：把該權限寫進 permissions（保留其他 override），跟 level 預設一致時不傳值
+const ClickTogglePermission = async (admin: AdminEntry, perm: AdminPermission) => {
+  if (admin.level === 'super') return;
+  const current = GetEffectivePermission(admin, perm);
+  const next = !current;
+  // 與 level 預設一致 → 視同清除該 key 的 override
+  const matchesDefault = next === LEVEL_DEFAULTS[admin.level].has(perm);
+  // 與 default 一致 → 排除該 key（不送 override）；否則寫入 next
+  const sourceEntries = Object.entries(admin.permissions ?? {}) as [AdminPermission, boolean][];
+  const filtered = sourceEntries.filter(([k]) => k !== perm);
+  const nextPermissions: Partial<Record<AdminPermission, boolean>> = Object.fromEntries(filtered);
+  if (!matchesDefault) nextPermissions[perm] = next;
+  const finalBody = Object.keys(nextPermissions).length === 0 ? null : nextPermissions;
+  savingPermissionsUid.value = admin.uid;
+  try {
+    const res = await $api.PatchAdmin(admin.uid, { permissions: finalBody });
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '權限更新失敗', type: 'error' });
+      return;
+    }
+    ElMessage({ message: '已更新', type: 'success' });
+    await ApiLoadAdmins();
+  } finally {
+    savingPermissionsUid.value = '';
+  }
+};
+
+// 重置 override（清空 permissions 走 LEVEL_TABLE）
+const ClickResetPermissions = async (admin: AdminEntry) => {
+  if (!admin.permissions || Object.keys(admin.permissions).length === 0) return;
+  const ok = await UseAsk('確定清除此管理員的所有細粒度權限 override？清除後將完全依 level 預設權限運作。');
+  if (!ok) return;
+  savingPermissionsUid.value = admin.uid;
+  try {
+    const res = await $api.PatchAdmin(admin.uid, { permissions: null });
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '清除失敗', type: 'error' });
+      return;
+    }
+    ElMessage({ message: '已重置為 level 預設', type: 'success' });
+    await ApiLoadAdmins();
+  } finally {
+    savingPermissionsUid.value = '';
+  }
+};
+
 // ── 司機審核操作 ─────────────────────────────────────────────────
 const ClickApproveDriver = async (uid: string) => {
   approvingUid.value = uid;
@@ -284,27 +361,64 @@ const ClickRevokeDriver = async (uid: string) => {
 
       template(v-else)
         .PageAdminSettings__user-list(v-if="admins.length > 0")
-          .PageAdminSettings__user-row(v-for="u in admins" :key="u.uid")
-            img.PageAdminSettings__avatar(:src="u.pictureUrl || '/img/avatar-default.png'" :alt="u.displayName")
-            .PageAdminSettings__user-info
-              .PageAdminSettings__user-name
-                | {{ u.displayName || '未知使用者' }}
-                span.PageAdminSettings__level-badge(:class="`is-${u.level}`") {{ u.level.toUpperCase() }}
-              .PageAdminSettings__user-uid {{ u.uid }}
-            .PageAdminSettings__user-actions
-              //- super 不可被改 level 也不可被撤銷
-              template(v-if="u.level !== 'super'")
-                button.PageAdminSettings__btn.is-toggle(
-                  v-if="u.level !== 'admin'"
-                  :disabled="changingLevelUid === u.uid"
-                  @click="ClickChangeLevel(u.uid, 'admin')"
-                ) 設為管理員
-                button.PageAdminSettings__btn.is-toggle(
-                  v-if="u.level !== 'assistant'"
-                  :disabled="changingLevelUid === u.uid"
-                  @click="ClickChangeLevel(u.uid, 'assistant')"
-                ) 設為助理
-                button.PageAdminSettings__btn.is-reject(@click="ClickRemoveAdmin(u.uid)") 撤銷
+          template(v-for="u in admins" :key="u.uid")
+            .PageAdminSettings__user-row
+              img.PageAdminSettings__avatar(:src="u.pictureUrl || '/img/avatar-default.png'" :alt="u.displayName")
+              .PageAdminSettings__user-info
+                .PageAdminSettings__user-name
+                  | {{ u.displayName || '未知使用者' }}
+                  span.PageAdminSettings__level-badge(:class="`is-${u.level}`") {{ u.level.toUpperCase() }}
+                  //- P34：有 override 顯示徽章
+                  span.PageAdminSettings__perm-badge(
+                    v-if="u.permissions && Object.keys(u.permissions).length > 0"
+                    title="已設定細粒度權限 override"
+                  ) +{{ Object.keys(u.permissions).length }}
+                .PageAdminSettings__user-uid {{ u.uid }}
+              .PageAdminSettings__user-actions
+                //- super 不可被改 level / permissions 也不可被撤銷
+                template(v-if="u.level !== 'super'")
+                  button.PageAdminSettings__btn.is-toggle(
+                    v-if="u.level !== 'admin'"
+                    :disabled="changingLevelUid === u.uid"
+                    @click="ClickChangeLevel(u.uid, 'admin')"
+                  ) 設為管理員
+                  button.PageAdminSettings__btn.is-toggle(
+                    v-if="u.level !== 'assistant'"
+                    :disabled="changingLevelUid === u.uid"
+                    @click="ClickChangeLevel(u.uid, 'assistant')"
+                  ) 設為助理
+                  button.PageAdminSettings__btn.is-toggle(
+                    :class="{ 'is-expanded': expandedAdminUid === u.uid }"
+                    @click="ToggleExpand(u.uid)"
+                  ) {{ expandedAdminUid === u.uid ? '收起權限' : '進階權限' }}
+                  button.PageAdminSettings__btn.is-reject(@click="ClickRemoveAdmin(u.uid)") 撤銷
+
+            //- P34：細粒度權限展開區（每 admin row 單獨展開）
+            .PageAdminSettings__perm-panel(v-if="expandedAdminUid === u.uid && u.level !== 'super'")
+              .PageAdminSettings__perm-head
+                span.PageAdminSettings__perm-head-label 細粒度權限 OVERRIDE
+                span.PageAdminSettings__perm-head-hint 與 LEVEL 預設不同時自動寫入 override；勾選後立即儲存
+                button.PageAdminSettings__btn.is-toggle.is-mini(
+                  v-if="u.permissions && Object.keys(u.permissions).length > 0"
+                  :disabled="savingPermissionsUid === u.uid"
+                  @click="ClickResetPermissions(u)"
+                ) 重置為 LEVEL 預設
+
+              .PageAdminSettings__perm-grid
+                .PageAdminSettings__perm-item(
+                  v-for="p in PERMISSION_LIST"
+                  :key="p.key"
+                  :class="{ 'is-override': u.permissions && p.key in u.permissions }"
+                )
+                  label.PageAdminSettings__perm-label
+                    input(
+                      type="checkbox"
+                      :checked="GetEffectivePermission(u, p.key)"
+                      :disabled="savingPermissionsUid === u.uid"
+                      @change="ClickTogglePermission(u, p.key)"
+                    )
+                    span.PageAdminSettings__perm-name {{ p.label }}
+                    span.PageAdminSettings__perm-hint {{ p.hint }}
 
         .PageAdminSettings__empty(v-if="admins.length === 0")
           span 目前無管理員資料（請至 Firebase Console 設定首位管理員）
@@ -599,7 +713,129 @@ $muted: rgba(255, 255, 255, 0.35);
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
     }
+
+    &.is-expanded {
+      background: rgba(212, 134, 10, 0.12);
+      border-color: rgba(212, 134, 10, 0.5);
+      color: #f5c842;
+    }
+
+    &.is-mini {
+      padding: 3px 10px;
+      font-size: 10px;
+    }
   }
+}
+
+// P34：細粒度權限 override 徽章 + 展開區
+.PageAdminSettings__perm-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #d4860a;
+  background: rgba(212, 134, 10, 0.12);
+  border: 1px solid rgba(212, 134, 10, 0.4);
+  border-radius: 100px;
+  padding: 1px 6px;
+  line-height: 1.4;
+  margin-left: 4px;
+}
+
+.PageAdminSettings__perm-panel {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(212, 134, 10, 0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: -4px 0 10px;
+}
+
+.PageAdminSettings__perm-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.PageAdminSettings__perm-head-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #d4860a;
+}
+
+.PageAdminSettings__perm-head-hint {
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  flex: 1;
+}
+
+.PageAdminSettings__perm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .PageAdminSettings__perm-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.PageAdminSettings__perm-item {
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.05); }
+
+  // 與 LEVEL 預設不同時用 amber 框
+  &.is-override {
+    background: rgba(212, 134, 10, 0.06);
+    border-color: rgba(212, 134, 10, 0.35);
+  }
+}
+
+.PageAdminSettings__perm-label {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: start;
+    margin-top: 4px;
+    accent-color: #d4860a;
+    cursor: pointer;
+  }
+}
+
+.PageAdminSettings__perm-name {
+  grid-column: 2;
+  grid-row: 1;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.PageAdminSettings__perm-hint {
+  grid-column: 2;
+  grid-row: 2;
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 1px;
 }
 
 // ── 新增管理員輸入列 ────────────────────────────────────────────

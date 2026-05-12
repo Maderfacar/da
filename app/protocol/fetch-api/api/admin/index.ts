@@ -147,23 +147,41 @@ export const NotifyOrder = (orderId: string, body: NotifyOrderBody) =>
 
 // P18：admins collection 相關 ----------------------------------------------------
 
+// P34：細粒度權限類型（與 server/utils/require-permission.ts Permission 對齊）
+export type AdminPermission =
+  | 'canManageAdmins'
+  | 'canManageDrivers'
+  | 'canManageOrders'
+  | 'canBroadcast'
+  | 'canViewFinance'
+  | 'canManageFleet';
+
 export interface AdminEntry {
   uid: string
   lineUserId: string
   displayName: string
   pictureUrl: string
   level: AdminLevel
+  // P34：null = 走 LEVEL_TABLE 預設；object = 細粒度 override
+  permissions?: Partial<Record<AdminPermission, boolean>> | null
   createdBy?: string | null
   createdAt: string
   lastLoginAt?: string | null
 }
 
-/** 列出所有管理員（含 level）— 需 canManageAdmins */
+/** 列出所有管理員（含 level + permissions override）— 需 canManageAdmins */
 export const GetAdmins = () =>
   methods.get<AdminEntry[]>('/nuxt-api/admin/admins');
 
-/** 修改某管理員 level（僅 'admin' | 'assistant'，不接受 super；target=super 也會被擋）— 需 canManageAdmins */
-export const PatchAdmin = (uid: string, body: { level: 'admin' | 'assistant' }) =>
+/**
+ * 修改某管理員 level / permissions override（P34）— 需 canManageAdmins
+ * - body.level：'admin' | 'assistant'（super 不接受；target=super 一律 403）
+ * - body.permissions：null 清除 override（走 LEVEL_TABLE） / object 細粒度設定
+ */
+export const PatchAdmin = (uid: string, body: {
+  level?: 'admin' | 'assistant';
+  permissions?: Partial<Record<AdminPermission, boolean>> | null;
+}) =>
   methods.patch<{ uid: string; level: AdminLevel }>(`/nuxt-api/admin/admins/${uid}`, body);
 
 // P26 admin/drivers ---------------------------------------------------------

@@ -39,6 +39,8 @@ export default defineEventHandler(async (event) => {
         displayName: (d.displayName as string) ?? '',
         pictureUrl: (d.pictureUrl as string) ?? '',
         level: (d.level as 'super' | 'admin' | 'assistant'),
+        // P34：細粒度 override（null = 走 LEVEL_TABLE 預設）
+        permissions: (d.permissions as Record<string, boolean> | null | undefined) ?? null,
         createdBy: (d.createdBy as string | undefined) ?? null,
         createdAt: d.createdAt?.toDate?.()?.toISOString?.() ?? '',
         lastLoginAt: d.lastLoginAt?.toDate?.()?.toISOString?.() ?? null,
