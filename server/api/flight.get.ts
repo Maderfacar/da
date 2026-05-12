@@ -44,7 +44,12 @@ import {
   type FlightRegistrySchedule,
   type FlightRegistryTdxBlock,
 } from '@@/utils/flight-registry';
-import { ComposeTdxTimestamp, QueryTdxFlight, type TdxFlightResult } from '@@/utils/tdx-flight';
+import {
+  ComposeTdxTimestamp,
+  QueryTdxFlight,
+  QueryTdxFlightWithTrace,
+  type TdxFlightResult,
+} from '@@/utils/tdx-flight';
 
 export interface FlightInfo {
   flightNo: string;
@@ -545,10 +550,11 @@ const _lookupFlight = async (
 };
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event) as { flightNo?: string; direction?: string; date?: string };
+  const query = getQuery(event) as { flightNo?: string; direction?: string; date?: string; debug?: string };
   const flightNoUpper = (query.flightNo ?? '').toUpperCase().replace(/\s/g, '');
   const direction: FlightDirection = query.direction === 'departure' ? 'departure' : 'arrival';
   const date = (query.date && _isValidDate(query.date)) ? query.date : _todayInTaipei();
+  const isDebug = query.debug === '1';
 
   if (!flightNoUpper) {
     setResponseStatus(event, 400);
@@ -556,6 +562,43 @@ export default defineEventHandler(async (event) => {
   }
 
   const cacheKey = `${flightNoUpper}|${direction}|${date}`;
+
+  // Debug 模式：繞過 cache，dump 完整 trace（OAuth / 雙 endpoint / 比對 / 4 條 validation）
+  // 順手清掉這個 key 的 in-memory cache（解 prod 上「之前失敗 cached null」的問題）
+  if (isDebug) {
+    _cache.delete(cacheKey);
+    const cfg = useRuntimeConfig();
+    let registryDoc: FlightRegistryDoc | null = null;
+    let registryErr: string | null = null;
+    try {
+      registryDoc = await GetFlightFromRegistry(flightNoUpper);
+    } catch (err) {
+      registryErr = err instanceof Error ? err.message : String(err);
+    }
+    const tdxTrace = (cfg.tdxClientId && cfg.tdxClientSecret)
+      ? await QueryTdxFlightWithTrace(cfg.tdxClientId, cfg.tdxClientSecret, flightNoUpper, direction, date)
+      : null;
+    return {
+      ok: Boolean(tdxTrace?.finalResult),
+      debug: {
+        env: {
+          hasTdxClientId: Boolean(cfg.tdxClientId),
+          hasTdxClientSecret: Boolean(cfg.tdxClientSecret),
+          hasAviationEdgeKey: Boolean(cfg.aviationEdgeKey),
+          hasFirebaseServiceAccount: Boolean(cfg.firebaseServiceAccountJson),
+        },
+        input: { flightNo: flightNoUpper, direction, date },
+        registry: {
+          hit: Boolean(registryDoc),
+          hasTdxBlock: Boolean(registryDoc?.tdx),
+          tdxBlock: registryDoc?.tdx ?? null,
+          scheduleKeys: registryDoc?.schedules ? Object.keys(registryDoc.schedules) : [],
+          error: registryErr,
+        },
+        tdx: tdxTrace,
+      },
+    };
+  }
 
   // Layer 1：in-memory hot cache
   const cached = _cache.get(cacheKey);

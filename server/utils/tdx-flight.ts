@@ -297,3 +297,147 @@ export const ComposeTdxTimestamp = (date: string, hhmm: string): string => {
   if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return '';
   return `${date}T${hhmm}:00+08:00`;
 };
+
+// ── Debug 模式（給 flight.get.ts ?debug=1 用）─────────────────────
+/**
+ * 等同 QueryTdxFlight 但同時回傳完整 trace：OAuth 狀態、雙 endpoint 各幾筆 + 第一筆 raw entry、
+ * 4 條 validation 哪條 fail。用於 prod 排查 TDX 欄位名 / 比對 / 驗證問題。
+ */
+export interface TdxQueryTrace {
+  input: { flightNo: string; direction: FlightDirection; date: string };
+  oauth: { ok: boolean; error: string | null };
+  domestic: { count: number; sample: TdxScheduleEntry | null; error: string | null };
+  international: { count: number; sample: TdxScheduleEntry | null; error: string | null };
+  matchAttempt1Precise: { matched: boolean };
+  matchAttempt2Codeshare: { triggered: boolean; matched: boolean };
+  matchedRawEntry: TdxScheduleEntry | null;
+  matchedIsDomestic: boolean | null;
+  /** 命中後依 direction 對應 mapping 出的中間結果 */
+  mappedResult: TdxFlightResult | null;
+  validation: {
+    flightFound: boolean;
+    atLeastOneTwAirport: { result: boolean; departure: string; arrival: string } | null;
+    dateInRange: { result: boolean; date: string; effectiveStart: string | null; effectiveEnd: string | null } | null;
+    weekdayMatches: { result: boolean; isoWeekDay: number; weekDays: number[] } | null;
+  };
+  finalResult: TdxFlightResult | null;
+}
+
+export const QueryTdxFlightWithTrace = async (
+  clientId: string,
+  clientSecret: string,
+  flightNoUpper: string,
+  direction: FlightDirection,
+  date: string,
+): Promise<TdxQueryTrace> => {
+  const trace: TdxQueryTrace = {
+    input: { flightNo: flightNoUpper, direction, date },
+    oauth: { ok: false, error: null },
+    domestic: { count: 0, sample: null, error: null },
+    international: { count: 0, sample: null, error: null },
+    matchAttempt1Precise: { matched: false },
+    matchAttempt2Codeshare: { triggered: false, matched: false },
+    matchedRawEntry: null,
+    matchedIsDomestic: null,
+    mappedResult: null,
+    validation: {
+      flightFound: false,
+      atLeastOneTwAirport: null,
+      dateInRange: null,
+      weekdayMatches: null,
+    },
+    finalResult: null,
+  };
+
+  let token: string;
+  try {
+    token = await _getToken(clientId, clientSecret);
+    trace.oauth.ok = Boolean(token);
+  } catch (err) {
+    trace.oauth.error = err instanceof Error ? err.message : String(err);
+    return trace;
+  }
+
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+  const query = { $format: 'JSON' };
+
+  const [domesticRes, internationalRes] = await Promise.all([
+    $fetch<TdxScheduleEntry[]>(SCHEDULE_DOMESTIC_URL, { headers, query, timeout: 10000 })
+      .catch((err) => {
+        trace.domestic.error = err instanceof Error ? err.message : String(err);
+        return [] as TdxScheduleEntry[];
+      }),
+    $fetch<TdxScheduleEntry[]>(SCHEDULE_INTERNATIONAL_URL, { headers, query, timeout: 10000 })
+      .catch((err) => {
+        trace.international.error = err instanceof Error ? err.message : String(err);
+        return [] as TdxScheduleEntry[];
+      }),
+  ]);
+
+  trace.domestic.count = Array.isArray(domesticRes) ? domesticRes.length : 0;
+  trace.international.count = Array.isArray(internationalRes) ? internationalRes.length : 0;
+  trace.domestic.sample = trace.domestic.count > 0 ? domesticRes[0] : null;
+  trace.international.sample = trace.international.count > 0 ? internationalRes[0] : null;
+
+  const allEntries: Array<{ entry: TdxScheduleEntry; isDomestic: boolean }> = [
+    ...(Array.isArray(domesticRes) ? domesticRes : []).map((entry) => ({ entry, isDomestic: true })),
+    ...(Array.isArray(internationalRes) ? internationalRes : []).map((entry) => ({ entry, isDomestic: false })),
+  ];
+
+  // 比對 attempt 1：精確
+  let matched = allEntries.find(
+    ({ entry }) => _normalizeFlightNo(entry.AirlineID, entry.FlightNumber) === flightNoUpper,
+  );
+  trace.matchAttempt1Precise.matched = Boolean(matched);
+
+  // 比對 attempt 2：codeshare fallback
+  if (!matched) {
+    trace.matchAttempt2Codeshare.triggered = true;
+    matched = allEntries.find(
+      ({ entry }) => _normalizeFlightNo(entry.OperatingAirlineID, entry.OperatingFlightNumber) === flightNoUpper,
+    );
+    trace.matchAttempt2Codeshare.matched = Boolean(matched);
+  }
+
+  if (!matched) return trace;
+
+  trace.matchedRawEntry = matched.entry;
+  trace.matchedIsDomestic = matched.isDomestic;
+  trace.validation.flightFound = true;
+
+  const result = _mapEntry(matched.entry, direction, matched.isDomestic);
+  trace.mappedResult = result;
+  if (!result) return trace;
+
+  // Validation 1：至少一端機場在台灣
+  const taiwanOk = _isTwAirport(result.departureAirport) || _isTwAirport(result.arrivalAirport);
+  trace.validation.atLeastOneTwAirport = {
+    result: taiwanOk,
+    departure: result.departureAirport,
+    arrival: result.arrivalAirport,
+  };
+  if (!taiwanOk) return trace;
+
+  // Validation 2：日期在有效期區間
+  const dateOk = _isInDateRange(date, result.effectiveStart, result.effectiveEnd);
+  trace.validation.dateInRange = {
+    result: dateOk,
+    date,
+    effectiveStart: result.effectiveStart,
+    effectiveEnd: result.effectiveEnd,
+  };
+  if (!dateOk) return trace;
+
+  // Validation 3：weekday
+  const weekDay = _isoWeekDay(date);
+  const weekdayOk = result.weekDays.includes(weekDay);
+  trace.validation.weekdayMatches = {
+    result: weekdayOk,
+    isoWeekDay: weekDay,
+    weekDays: result.weekDays,
+  };
+  if (!weekdayOk) return trace;
+
+  trace.finalResult = result;
+  return trace;
+};
