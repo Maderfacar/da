@@ -496,8 +496,10 @@ const _lookupFlight = async (
       if (tdx) {
         const airlineName = registryDoc?.airlineName || GetAirlineNameByIata(tdx.airlineCode);
         const data = _tdxResultToFlightInfo(tdx, airlineName, date, direction);
-        // self-learning：寫回 Firestore.tdx（silent on failure）
-        void SaveTdxBlockToRegistry({
+        // self-learning：await 寫回 Firestore.tdx（silent on failure）
+        // 不用 fire-and-forget（void）— Vercel serverless 在 response return 後有機率把
+        // 未完成 promise 砍掉，導致 self-learning 失效。await 多 ~100-300ms 但保證寫得到。
+        await SaveTdxBlockToRegistry({
           flightNo: flightNoUpper,
           airlineCode: tdx.airlineCode,
           airlineName,
