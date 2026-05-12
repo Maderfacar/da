@@ -4,25 +4,22 @@
  * 流程：
  *   1) 直拼 URL 嘗試下載 https://www.taoyuan-airport.com/uploads/fos/{YYYY_MM_DD}.xls
  *   2) 若 404，cheerio 抓 https://www.taoyuanairport.com.tw/flightforecast 列表頁，找該日對應 a 標籤
- *   3) xlsx 解析「總計 / 第一航廈 / 第二航廈」三區塊出協路資料
+ *   3) xlsx 解析「總計 / 第一航廈 / 第二航廈」三區塊全部 5 個流量欄位
  *
- * XLS 實際結構（驗證 2026/05/09）：
+ * XLS 實際結構（驗證 2026/05/09，2026/05/12 擴 5 欄）：
  *   第 1 列：標題行（總計 / 起降航機 / 第一航廈 / 第二航廈）
  *   第 2 列：欄位行（時間區間 出發 抵達 轉機離站 到站轉機 過境離站 ...）
  *   第 3-26 列：24 小時資料
  *
- *   Column index 對照：
- *     [0]  時間（總計）
- *     [1]  出發（總計）= departure all
- *     [2]  抵達（總計）= arrival all
- *     [10] 時間（第一航廈）
- *     [11] 出發（第一航廈）= departure T1
- *     [12] 抵達（第一航廈）= arrival T1
- *     [17] 時間（第二航廈）
- *     [18] 出發（第二航廈）= departure T2
- *     [19] 抵達（第二航廈）= arrival T2
+ *   Column index 對照（每航廈區塊 5 個流量欄位）：
+ *     總計區塊 [0] 時間 [1] 出發 [2] 抵達 [3] 轉機離站 [4] 到站轉機 [5] 過境離站
+ *     T1 區塊  [10] 時間 [11] 出發 [12] 抵達 [13] 轉機離站 [14] 到站轉機 [15] 過境離站
+ *     T2 區塊  [17] 時間 [18] 出發 [19] 抵達 [20] 轉機離站 [21] 到站轉機 [22] 過境離站
  *
- *   驗證：T1 出發 + T2 出發 = 總計出發；T1 抵達 + T2 抵達 = 總計抵達 ✓
+ *   驗證：T1 + T2 各欄位 = 總計各欄位 ✓（含微誤差 ≤ 3）
+ *
+ *   P28（2026/05/12）：原 fetcher 只讀出發/抵達 2 欄；user 反映「全端進出境合計」對不上
+ *   檔案總和，原因是漏抓轉機(11453+11619) + 過境(695)。本次擴 5 欄補齊資料層。
  *
  * 機場下載 URL 有反爬蟲檢測，必帶 User-Agent + Referer headers（n8n workflow 已驗證）。
  */
@@ -39,22 +36,48 @@ const BROWSER_HEADERS: Record<string, string> = {
   'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
 };
 
-// XLS column index 設定（依實測結果）
+// XLS column index 設定（依實測結果，2026/05/12 擴至 5 欄/航廈）
 const COL = {
   TOTAL_HOUR: 0,
   TOTAL_DEPARTURE: 1,
   TOTAL_ARRIVAL: 2,
+  TOTAL_TRANSIT_DEPARTURE: 3,   // 轉機離站
+  TOTAL_TRANSIT_ARRIVAL: 4,     // 到站轉機
+  TOTAL_OVERNIGHT_DEPARTURE: 5, // 過境離站
   T1_DEPARTURE: 11,
   T1_ARRIVAL: 12,
+  T1_TRANSIT_DEPARTURE: 13,
+  T1_TRANSIT_ARRIVAL: 14,
+  T1_OVERNIGHT_DEPARTURE: 15,
   T2_DEPARTURE: 18,
   T2_ARRIVAL: 19,
+  T2_TRANSIT_DEPARTURE: 20,
+  T2_TRANSIT_ARRIVAL: 21,
+  T2_OVERNIGHT_DEPARTURE: 22,
 } as const;
 
 // fetcher 解析的 schema 版本（cache 不相容時用來判斷重抓）
-export const SCHEMA_VERSION = 2;
+// v3（2026/05/12）：加入 transit + overnight 流量欄位
+export const SCHEMA_VERSION = 3;
 
 export type Terminal = 'all' | 'T1' | 'T2';
-export type Direction = 'arrival' | 'departure' | 'all';
+
+// direction 命名：
+//   - all                  進出境合計（出發 + 抵達）
+//   - arrival              入境（抵達）
+//   - departure            出境（出發）
+//   - transit-arrival      到站轉機
+//   - transit-departure    轉機離站
+//   - overnight-departure  過境離站
+//   - total                全部流量（出發 + 抵達 + 3 種轉/過境）
+export type Direction =
+  | 'all'
+  | 'arrival'
+  | 'departure'
+  | 'transit-arrival'
+  | 'transit-departure'
+  | 'overnight-departure'
+  | 'total';
 
 export interface HourRecord {
   hour: number;
@@ -177,24 +200,52 @@ function _ParseXlsBuffer(buffer: Buffer): HourRecord[] {
     const hour = Number.parseInt(match[1], 10);
     if (Number.isNaN(hour) || hour < 0 || hour > 23) continue;
 
-    const totalDep = _ToNumber(row[COL.TOTAL_DEPARTURE]);
-    const totalArr = _ToNumber(row[COL.TOTAL_ARRIVAL]);
-    const t1Dep = _ToNumber(row[COL.T1_DEPARTURE]);
-    const t1Arr = _ToNumber(row[COL.T1_ARRIVAL]);
-    const t2Dep = _ToNumber(row[COL.T2_DEPARTURE]);
-    const t2Arr = _ToNumber(row[COL.T2_ARRIVAL]);
+    const totalDep   = _ToNumber(row[COL.TOTAL_DEPARTURE]);
+    const totalArr   = _ToNumber(row[COL.TOTAL_ARRIVAL]);
+    const totalTrDep = _ToNumber(row[COL.TOTAL_TRANSIT_DEPARTURE]);
+    const totalTrArr = _ToNumber(row[COL.TOTAL_TRANSIT_ARRIVAL]);
+    const totalOvDep = _ToNumber(row[COL.TOTAL_OVERNIGHT_DEPARTURE]);
+    const t1Dep   = _ToNumber(row[COL.T1_DEPARTURE]);
+    const t1Arr   = _ToNumber(row[COL.T1_ARRIVAL]);
+    const t1TrDep = _ToNumber(row[COL.T1_TRANSIT_DEPARTURE]);
+    const t1TrArr = _ToNumber(row[COL.T1_TRANSIT_ARRIVAL]);
+    const t1OvDep = _ToNumber(row[COL.T1_OVERNIGHT_DEPARTURE]);
+    const t2Dep   = _ToNumber(row[COL.T2_DEPARTURE]);
+    const t2Arr   = _ToNumber(row[COL.T2_ARRIVAL]);
+    const t2TrDep = _ToNumber(row[COL.T2_TRANSIT_DEPARTURE]);
+    const t2TrArr = _ToNumber(row[COL.T2_TRANSIT_ARRIVAL]);
+    const t2OvDep = _ToNumber(row[COL.T2_OVERNIGHT_DEPARTURE]);
 
-    // 9 筆 / 小時：3 terminal × 3 direction
+    const totalSum = totalDep + totalArr + totalTrDep + totalTrArr + totalOvDep;
+    const t1Sum = t1Dep + t1Arr + t1TrDep + t1TrArr + t1OvDep;
+    const t2Sum = t2Dep + t2Arr + t2TrDep + t2TrArr + t2OvDep;
+
+    // 21 筆 / 小時：3 terminal × 7 direction
     out.push(
-      { hour, forecastCount: totalArr,            terminal: 'all', direction: 'arrival'   },
-      { hour, forecastCount: totalDep,            terminal: 'all', direction: 'departure' },
-      { hour, forecastCount: totalArr + totalDep, terminal: 'all', direction: 'all'       },
-      { hour, forecastCount: t1Arr,               terminal: 'T1',  direction: 'arrival'   },
-      { hour, forecastCount: t1Dep,               terminal: 'T1',  direction: 'departure' },
-      { hour, forecastCount: t1Arr + t1Dep,       terminal: 'T1',  direction: 'all'       },
-      { hour, forecastCount: t2Arr,               terminal: 'T2',  direction: 'arrival'   },
-      { hour, forecastCount: t2Dep,               terminal: 'T2',  direction: 'departure' },
-      { hour, forecastCount: t2Arr + t2Dep,       terminal: 'T2',  direction: 'all'       },
+      // 總計
+      { hour, forecastCount: totalArr,            terminal: 'all', direction: 'arrival'             },
+      { hour, forecastCount: totalDep,            terminal: 'all', direction: 'departure'           },
+      { hour, forecastCount: totalArr + totalDep, terminal: 'all', direction: 'all'                 },
+      { hour, forecastCount: totalTrArr,          terminal: 'all', direction: 'transit-arrival'     },
+      { hour, forecastCount: totalTrDep,          terminal: 'all', direction: 'transit-departure'   },
+      { hour, forecastCount: totalOvDep,          terminal: 'all', direction: 'overnight-departure' },
+      { hour, forecastCount: totalSum,            terminal: 'all', direction: 'total'               },
+      // T1
+      { hour, forecastCount: t1Arr,               terminal: 'T1',  direction: 'arrival'             },
+      { hour, forecastCount: t1Dep,               terminal: 'T1',  direction: 'departure'           },
+      { hour, forecastCount: t1Arr + t1Dep,       terminal: 'T1',  direction: 'all'                 },
+      { hour, forecastCount: t1TrArr,             terminal: 'T1',  direction: 'transit-arrival'     },
+      { hour, forecastCount: t1TrDep,             terminal: 'T1',  direction: 'transit-departure'   },
+      { hour, forecastCount: t1OvDep,             terminal: 'T1',  direction: 'overnight-departure' },
+      { hour, forecastCount: t1Sum,               terminal: 'T1',  direction: 'total'               },
+      // T2
+      { hour, forecastCount: t2Arr,               terminal: 'T2',  direction: 'arrival'             },
+      { hour, forecastCount: t2Dep,               terminal: 'T2',  direction: 'departure'           },
+      { hour, forecastCount: t2Arr + t2Dep,       terminal: 'T2',  direction: 'all'                 },
+      { hour, forecastCount: t2TrArr,             terminal: 'T2',  direction: 'transit-arrival'     },
+      { hour, forecastCount: t2TrDep,             terminal: 'T2',  direction: 'transit-departure'   },
+      { hour, forecastCount: t2OvDep,             terminal: 'T2',  direction: 'overnight-departure' },
+      { hour, forecastCount: t2Sum,               terminal: 'T2',  direction: 'total'               },
     );
   }
 

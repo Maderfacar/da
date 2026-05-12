@@ -8,13 +8,19 @@
  *   2) cache miss → 呼叫 fetcher 抓桃園機場 XLS → xlsx 解析 → 寫 Firestore → 回傳
  *   3) 寫入時順手清理 7 天前的舊 doc（保留近期 2-3 筆即可）
  *
- * Query: date (YYYY-MM-DD)、terminal ('all' | 'T1' | 'T2')、direction ('all' | 'arrival' | 'departure')
+ * Query: date (YYYY-MM-DD)、terminal ('all' | 'T1' | 'T2')、
+ *        direction ('all' | 'arrival' | 'departure' | 'transit-arrival' | 'transit-departure' | 'overnight-departure' | 'total')
  *
  * 回傳：data.isMock 為 true 時，data.mockReason 標明走 fallback 的原因，方便前端 banner 顯示精準提示。
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
-import { FetchTaoyuanForecast, SCHEMA_VERSION, type HourRecord } from '@@/utils/airport-xls-fetcher';
+import { FetchTaoyuanForecast, SCHEMA_VERSION, type HourRecord, type Direction } from '@@/utils/airport-xls-fetcher';
+
+const VALID_DIRECTIONS: Direction[] = [
+  'all', 'arrival', 'departure',
+  'transit-arrival', 'transit-departure', 'overnight-departure', 'total',
+];
 
 type MockReason = 'firebase-not-configured' | 'xls-not-found' | 'parse-failed' | 'unknown-error';
 
@@ -100,15 +106,11 @@ function _filterAndRespond(date: string, hours: HourRecord[], terminal: string, 
     terminalFiltered = hours.filter((h) => h.terminal === 'all');
   }
 
-  // 方向篩選
-  let directionFiltered: HourRecord[];
-  if (direction === 'all') {
-    directionFiltered = terminalFiltered.filter((h) => h.direction === 'all');
-  } else if (direction === 'arrival' || direction === 'departure') {
-    directionFiltered = terminalFiltered.filter((h) => h.direction === direction);
-  } else {
-    directionFiltered = terminalFiltered.filter((h) => h.direction === 'all');
-  }
+  // 方向篩選（P28：7 個 direction；未知值 fallback 'all'）
+  const safeDirection: Direction = (VALID_DIRECTIONS as string[]).includes(direction)
+    ? direction as Direction
+    : 'all';
+  const directionFiltered: HourRecord[] = terminalFiltered.filter((h) => h.direction === safeDirection);
 
   // 依小時彙總（24 筆，缺值補 0）
   const out = Array.from({ length: 24 }, (_, i) => {

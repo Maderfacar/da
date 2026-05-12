@@ -4,7 +4,9 @@ definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 // ── 篩選條件 ─────────────────────────────────────────────────
 const selectedDate = ref($dayjs().format('YYYY-MM-DD'));
 const selectedTerminal = ref<'all' | 'T1' | 'T2'>('all');
-const selectedDirection = ref<'all' | 'arrival' | 'departure'>('all');
+type DirectionValue = 'all' | 'arrival' | 'departure'
+  | 'transit-arrival' | 'transit-departure' | 'overnight-departure' | 'total';
+const selectedDirection = ref<DirectionValue>('all');
 
 const DATE_SHORTCUTS = [
   { label: '今天', offset: 0 },
@@ -17,10 +19,20 @@ const TERMINAL_OPTIONS = [
   { value: 'T2',  label: '第二航廈' },
 ];
 
+// P28：擴 4 個 direction 對齊 XLS 5 欄資料
+//   - all                  進出境合計（出+入，不含轉機/過境）
+//   - arrival / departure  單方向
+//   - transit-*            轉機（不出機場）
+//   - overnight-departure  過境離站
+//   - total                全部流量（5 欄總和）
 const DIRECTION_OPTIONS = [
-  { value: 'all',       label: '進出境合計' },
-  { value: 'arrival',   label: '入境' },
-  { value: 'departure', label: '出境' },
+  { value: 'all',                 label: '進出境合計' },
+  { value: 'arrival',             label: '入境' },
+  { value: 'departure',           label: '出境' },
+  { value: 'transit-arrival',     label: '到站轉機' },
+  { value: 'transit-departure',   label: '轉機離站' },
+  { value: 'overnight-departure', label: '過境離站' },
+  { value: 'total',               label: '全部流量' },
 ];
 
 // ── 資料狀態 ─────────────────────────────────────────────────
@@ -358,7 +370,9 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageTraffic__seg {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
+  row-gap: 6px;
 }
 
 .PageTraffic__seg-btn {
