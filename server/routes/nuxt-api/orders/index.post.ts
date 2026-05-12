@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { googleMapsApiKey, firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
+  const { googleMapsApiKey, firebaseServiceAccountJson } = useRuntimeConfig();
 
   // P23：fleet config 撈 + Firestore 寫入皆需 firebaseServiceAccountJson；提前到 distance 計算前
   if (!firebaseServiceAccountJson) {
@@ -189,7 +189,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── LINE 訂單確認推播（fire-and-forget，失敗不影響訂單成立）──
-  if (lineUserId && lineChannelAccessToken) {
+  // P29：訂單建立者 = 乘客，用 passenger OA 推播
+  if (lineUserId) {
     const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
     const fareStr = estimatedFare.toLocaleString();
     // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
@@ -202,7 +203,7 @@ export default defineEventHandler(async (event) => {
       `💰 預估費用：NT$ ${fareStr}`,
       `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
     ].join('\n');
-    sendLinePush(lineChannelAccessToken, lineUserId, [{ type: 'text', text: msg }]);
+    sendLinePush('passenger', lineUserId, [{ type: 'text', text: msg }]);
   }
 
   return successResponse({

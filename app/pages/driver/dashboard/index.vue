@@ -8,6 +8,21 @@ const now = computed(() => $dayjs().format('YYYY / MM / DD'));
 const tripsToday = ref(0);
 const earningsToday = ref(0);
 
+// P29：driver OA 加好友 CTA（核准後第一次進 dashboard 顯示，可 dismiss）
+const runtimeConfig = useRuntimeConfig();
+const driverOaUrl = computed(() => runtimeConfig.public.lineOaAddUrlDriver as string);
+const OA_DISMISS_KEY = 'driver-oa-cta-dismissed-v1';
+const showOaCta = ref(false);
+onMounted(() => {
+  if (!driverOaUrl.value) return;
+  if (localStorage.getItem(OA_DISMISS_KEY) === '1') return;
+  showOaCta.value = true;
+});
+const ClickDismissOaCta = () => {
+  localStorage.setItem(OA_DISMISS_KEY, '1');
+  showOaCta.value = false;
+};
+
 const ApiLoadStats = async () => {
   const uid = authStore.user?.uid;
   if (!uid) return;
@@ -30,6 +45,23 @@ onMounted(ApiLoadStats);
 
 <template lang="pug">
 .PageDriverDashboard
+  //- P29：加 driver OA 為好友 CTA（核准司機第一次進 dashboard 看到，dismiss 後不再出現）
+  .PageDriverDashboard__oa-cta(v-if="showOaCta")
+    .PageDriverDashboard__oa-cta-icon 🔔
+    .PageDriverDashboard__oa-cta-text
+      strong 加 Driver LINE 為好友
+      span 才能收到新派單與訂單更新通知
+    a.PageDriverDashboard__oa-cta-btn(
+      :href="driverOaUrl"
+      target="_blank"
+      rel="noopener"
+    ) 加為好友
+    button.PageDriverDashboard__oa-cta-dismiss(
+      type="button"
+      aria-label="關閉"
+      @click="ClickDismissOaCta"
+    ) ×
+
   //- 頁首
   .PageDriverDashboard__header
     .PageDriverDashboard__header-label DRIVER PORTAL
@@ -76,6 +108,72 @@ $amber: #d4860a;
   min-height: 100svh;
   background: #0d0f14;
   color: #fff;
+}
+
+// ── Driver OA CTA ──────────────────────────────────────────
+.PageDriverDashboard__oa-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  background: rgba(6, 199, 85, 0.12);
+  border: 1px solid rgba(6, 199, 85, 0.35);
+  border-radius: 12px;
+}
+
+.PageDriverDashboard__oa-cta-icon { font-size: 22px; }
+
+.PageDriverDashboard__oa-cta-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.PageDriverDashboard__oa-cta-text strong {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+.PageDriverDashboard__oa-cta-text span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
+.PageDriverDashboard__oa-cta-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #06c755;
+  color: #fff;
+  border-radius: 100px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { opacity: 0.9; }
+  &:active { transform: scale(0.97); }
+}
+
+.PageDriverDashboard__oa-cta-dismiss {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+
+  &:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
 }
 
 .PageDriverDashboard__header {

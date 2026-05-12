@@ -36,8 +36,8 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '訊息過長（最多 2000 字）', en: 'message too long (max 2000)', ja: 'メッセージが長すぎます' });
   }
 
-  const { firebaseServiceAccountJson, lineChannelAccessToken } = useRuntimeConfig();
-  if (!firebaseServiceAccountJson || !lineChannelAccessToken) {
+  const { firebaseServiceAccountJson } = useRuntimeConfig();
+  if (!firebaseServiceAccountJson) {
     return serverError();
   }
 
@@ -93,8 +93,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 推送
-    await sendLinePush(lineChannelAccessToken, targetLineUserId, [{ type: 'text', text: body.message }]);
+    // P29：依 target 推到對應 OA（passenger / driver 各自的 channel）
+    await sendLinePush(body.target, targetLineUserId, [{ type: 'text', text: body.message }]);
 
     // P25-2 audit log
     await writeAuditLog({

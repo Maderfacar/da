@@ -19,6 +19,10 @@ type RegisterMode = 'apply' | 'pending' | 'rejected';
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
+// P29：driver OA 加好友 URL（pending mode 顯示給待審核司機，鼓勵先加好友）
+const runtimeConfig = useRuntimeConfig();
+const driverOaUrl = computed(() => runtimeConfig.public.lineOaAddUrlDriver as string);
+
 const mode = computed<RegisterMode>(() => {
   if (authStore.roles.includes('driver') && !authStore.approved) {
     const rejectedAt = driverApplication.value?.rejectedAt;
@@ -308,6 +312,15 @@ onUnmounted(() => {
       p.PageDriverRegister__desc 您的司機申請正在審核中，管理員將於工作時間內處理，請耐心等候。
       p.PageDriverRegister__hint(v-if="driverApplication?.appliedAt")
         | 申請時間：{{ new Date(driverApplication.appliedAt).toLocaleString('zh-TW') }}
+      //- P29：審核期間鼓勵先加 driver OA 為好友，核准後即可收派單通知
+      a.PageDriverRegister__oa-cta(
+        v-if="driverOaUrl"
+        :href="driverOaUrl"
+        target="_blank"
+        rel="noopener"
+      )
+        span.PageDriverRegister__oa-cta-icon 🔔
+        span.PageDriverRegister__oa-cta-text 加 Driver LINE 為好友（核准後接收派單通知）
       button.PageDriverRegister__back-btn(@click="ClickBackHome") 返回乘客首頁
 
     //- ── 模式 3：已拒絕 / 冷卻中 ─────────────────────────
@@ -676,6 +689,35 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &:hover { background: rgba(212, 134, 10, 0.22); }
   &:active { transform: scale(0.98); }
+}
+
+// P29：driver OA 加好友 CTA（pending mode 顯示）
+.PageDriverRegister__oa-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 16px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: rgba(6, 199, 85, 0.16);
+  border: 1px solid rgba(6, 199, 85, 0.4);
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.2s;
+
+  &:hover { background: rgba(6, 199, 85, 0.24); }
+}
+
+.PageDriverRegister__oa-cta-icon { font-size: 18px; }
+
+.PageDriverRegister__oa-cta-text {
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4ade80;
+  text-align: center;
 }
 
 .PageDriverRegister__copy {

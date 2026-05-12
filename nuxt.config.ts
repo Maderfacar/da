@@ -50,8 +50,13 @@ export default defineNuxtConfig({
     firebaseServiceAccountJson: '', // NUXT_FIREBASE_SERVICE_ACCOUNT_JSON — server only
     firebaseStorageBucket: '',      // NUXT_FIREBASE_STORAGE_BUCKET — server only（覆寫預設 ${project_id}.appspot.com）
     googleMapsApiKey: '',           // NUXT_GOOGLE_MAPS_API_KEY — server only (BFF)
-    lineChannelSecret: '',          // NUXT_LINE_CHANNEL_SECRET — server only
-    lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — server only
+    lineChannelSecret: '',          // NUXT_LINE_CHANNEL_SECRET — legacy（P29 後 deprecated，僅作 fallback）
+    lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — legacy（P29 後 deprecated，僅作 fallback）
+    // P29 多 OA：passenger / driver 各自獨立 channel
+    lineChannelSecretPassenger: '',       // NUXT_LINE_CHANNEL_SECRET_PASSENGER
+    lineChannelAccessTokenPassenger: '',  // NUXT_LINE_CHANNEL_ACCESS_TOKEN_PASSENGER
+    lineChannelSecretDriver: '',          // NUXT_LINE_CHANNEL_SECRET_DRIVER
+    lineChannelAccessTokenDriver: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN_DRIVER
     internalApiKey: '',             // NUXT_INTERNAL_API_KEY — n8n 內部 API 認證
     cwaApiKey: '',                  // NUXT_CWA_API_KEY — 中央氣象署開放資料平台（伺服器端）
     aviationEdgeKey: '',            // NUXT_AVIATION_EDGE_KEY — Aviation Edge 航班時刻表 API（伺服器端）
@@ -70,7 +75,8 @@ export default defineNuxtConfig({
       lineLiffIdPassenger: '',
       lineLiffIdDriver: '',
       // LINE 官方帳號加好友連結
-      lineOaAddUrl: '',             // NUXT_PUBLIC_LINE_OA_ADD_URL
+      lineOaAddUrl: '',             // NUXT_PUBLIC_LINE_OA_ADD_URL — passenger OA
+      lineOaAddUrlDriver: '',       // NUXT_PUBLIC_LINE_OA_ADD_URL_DRIVER — driver OA（P29）
       // Google Maps（Browser Key，限制 HTTP Referrer）
       googleMapsBrowserKey: '',
     }
