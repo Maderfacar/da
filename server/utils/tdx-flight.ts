@@ -71,31 +71,61 @@ const _getToken = async (clientId: string, clientSecret: string): Promise<string
 
 // ── TDX response 型別（GeneralSchedule） ──────────────────────────
 /**
- * TDX 文件未必每個欄位都有，全部標 optional。
- * 命名遵循 TDX 慣例（PascalCase）。
+ * 實測 2026-05-12（debug=1 dump 真實 response）後對齊欄位：
+ *   - FlightNumber **已含 airline prefix**（例 "CI852" 不是 "852"）
+ *   - 七個獨立 boolean 欄位 Monday/.../Sunday，不是 WeekDays[] 也不是 WeekPattern[]
+ *   - ScheduleStartDate / ScheduleEndDate 不是 EffectiveDate / ExpireDate
+ *   - DepartureTime / ArrivalTime 不是 ScheduledDeparture/ArrivalTime
+ *   - CodeShare 是 array 不是 boolean，element 形如 { AirlineID, FlightNumber }
+ *
+ * 舊欄位名仍保留 union 標記，因 TDX 不同 endpoint 偶有不一致命名。
  */
 export interface TdxScheduleEntry {
   AirlineID?: string;
+  /** 已含 airline prefix（"CI852"）— 不要再拼 AirlineID */
   FlightNumber?: string;
   DepartureAirportID?: string;
   ArrivalAirportID?: string;
-  ScheduledDepartureTime?: string;   // "HH:mm" or "HH:mm:ss"
+  /** 實測欄位名 "DepartureTime" / "ArrivalTime"，"HH:mm" 或 "HH:mm:ss" */
+  DepartureTime?: string;
+  ArrivalTime?: string;
+  /** 舊命名相容（部分 endpoint 可能用） */
+  ScheduledDepartureTime?: string;
   ScheduledArrivalTime?: string;
   DepartureTerminal?: string;
   ArrivalTerminal?: string;
-  /** 數字陣列，1=週一 ... 7=週日（ISO 8601）；TDX 文件規格略有差異，相容讀取 */
+  /** 七個獨立 boolean — 實測為主要 weekday 欄位 */
+  Monday?: boolean;
+  Tuesday?: boolean;
+  Wednesday?: boolean;
+  Thursday?: boolean;
+  Friday?: boolean;
+  Saturday?: boolean;
+  Sunday?: boolean;
+  /** 舊命名相容 */
   WeekDays?: number[];
-  /** Fallback：[1,0,1,0,1,0,0] 七元素 boolean 陣列（[Mon..Sun]） */
   WeekPattern?: number[];
-  EffectiveDate?: string;            // "YYYY-MM-DD"
+  /** 實測欄位名 ScheduleStartDate / ScheduleEndDate */
+  ScheduleStartDate?: string;
+  ScheduleEndDate?: string;
+  /** 舊命名相容 */
+  EffectiveDate?: string;
   ExpireDate?: string;
-  CodeShare?: boolean;
+  /** 實測為 array，element 形如 { AirlineID, FlightNumber }，空 array 表「非 codeshare」 */
+  CodeShare?: Array<{ AirlineID?: string; FlightNumber?: string }>;
   OperatingAirlineID?: string;
   OperatingFlightNumber?: string;
-  /** TDX 部分 endpoint 用 ServiceType：Pax / Cargo / ... 過濾客運 */
   ServiceType?: string;
   [k: string]: unknown;
 }
+
+// ── 舊舊欄位 → 新欄位（單向相容讀取）helpers ──
+const _firstString = (...vals: Array<unknown>): string | undefined => {
+  for (const v of vals) {
+    if (typeof v === 'string' && v) return v;
+  }
+  return undefined;
+};
 
 // ── 公開回傳型別（給 flight.get.ts 用）────────────────────────────
 export type FlightDirection = 'arrival' | 'departure';
@@ -119,27 +149,64 @@ export interface TdxFlightResult {
 }
 
 // ── helpers ──────────────────────────────────────────────────────
-const _normalizeFlightNo = (airlineId?: string, flightNumber?: string): string => {
-  if (!airlineId || !flightNumber) return '';
-  // TDX FlightNumber 可能含前導 0（"0102"），合併時去掉前導 0 對齊用戶輸入習慣（CI102）
-  const num = flightNumber.replace(/^0+/, '') || flightNumber;
-  return `${airlineId.toUpperCase()}${num}`;
+/**
+ * 從 entry 取出規範化的航班號（已含 airline prefix，例 "CI852"）。
+ * TDX 實測 FlightNumber 已含 prefix，直接 trim+upper 回；空白時 fallback 拼 AirlineID。
+ */
+const _normalizeFlightNo = (entry: TdxScheduleEntry): string => {
+  const fn = (entry.FlightNumber ?? '').trim().toUpperCase();
+  if (!fn) return '';
+  // 若已含 airline prefix（TDX 主要格式）→ 直接用
+  if (entry.AirlineID) {
+    const aid = entry.AirlineID.toUpperCase();
+    if (fn.startsWith(aid)) return fn;
+    // Fallback：FlightNumber 不含 prefix（部分 endpoint 可能），拼上去並去前導 0
+    const num = fn.replace(/^0+/, '') || fn;
+    return `${aid}${num}`;
+  }
+  return fn;
+};
+
+/** Codeshare row 結構：嘗試比對某個 entry.CodeShare array 內是否含目標 flightNo */
+const _codeShareIncludes = (entry: TdxScheduleEntry, flightNoUpper: string): boolean => {
+  if (!Array.isArray(entry.CodeShare) || entry.CodeShare.length === 0) return false;
+  return entry.CodeShare.some((cs) => {
+    if (!cs?.FlightNumber) return false;
+    const fn = cs.FlightNumber.trim().toUpperCase();
+    if (!fn) return false;
+    if (fn === flightNoUpper) return true;
+    if (cs.AirlineID) {
+      const aid = cs.AirlineID.toUpperCase();
+      if (fn.startsWith(aid) && fn === flightNoUpper) return true;
+      const num = fn.replace(/^0+/, '') || fn;
+      if (`${aid}${num}` === flightNoUpper) return true;
+    }
+    return false;
+  });
 };
 
 const _normalizeWeekDays = (entry: TdxScheduleEntry): number[] => {
+  // 主要：七個獨立 boolean 欄位（TDX 實測格式）
+  const fromBool: number[] = [];
+  if (entry.Monday) fromBool.push(1);
+  if (entry.Tuesday) fromBool.push(2);
+  if (entry.Wednesday) fromBool.push(3);
+  if (entry.Thursday) fromBool.push(4);
+  if (entry.Friday) fromBool.push(5);
+  if (entry.Saturday) fromBool.push(6);
+  if (entry.Sunday) fromBool.push(7);
+  if (fromBool.length > 0) return fromBool;
+
+  // 舊命名相容（萬一某些 endpoint 仍用）
   if (Array.isArray(entry.WeekDays) && entry.WeekDays.length > 0) {
-    // 過濾合法值 1-7
     return entry.WeekDays.filter((n) => Number.isInteger(n) && n >= 1 && n <= 7);
   }
   if (Array.isArray(entry.WeekPattern) && entry.WeekPattern.length === 7) {
-    // [Mon=idx0, ..., Sun=idx6] → 轉成 [1..7]
     const days: number[] = [];
-    entry.WeekPattern.forEach((flag, idx) => {
-      if (flag) days.push(idx + 1);
-    });
+    entry.WeekPattern.forEach((flag, idx) => { if (flag) days.push(idx + 1); });
     return days;
   }
-  // 兩個欄位都沒 → 視為「全週可飛」（保守 fallback，避免誤判）
+  // 全部都沒 → 視為「全週可飛」（保守 fallback，避免誤判）
   return [1, 2, 3, 4, 5, 6, 7];
 };
 
@@ -177,13 +244,27 @@ const _mapEntry = (
   direction: FlightDirection,
   isDomestic: boolean,
 ): TdxFlightResult | null => {
-  const flightNo = _normalizeFlightNo(entry.AirlineID, entry.FlightNumber);
+  const flightNo = _normalizeFlightNo(entry);
   if (!flightNo) return null;
   const departureAirport = (entry.DepartureAirportID ?? '').toUpperCase();
   const arrivalAirport = (entry.ArrivalAirportID ?? '').toUpperCase();
   const terminal = direction === 'arrival'
     ? (entry.ArrivalTerminal ?? '')
     : (entry.DepartureTerminal ?? '');
+
+  // CodeShare 是 array：判斷 + 取第一個 partner 當 operating（Best-effort，TDX 文件不明）
+  const isCodeShare = Array.isArray(entry.CodeShare) && entry.CodeShare.length > 0;
+  let operatingAirlineCode: string | null = null;
+  let operatingFlightNumber: string | null = null;
+  if (isCodeShare) {
+    const op = entry.CodeShare?.[0];
+    operatingAirlineCode = op?.AirlineID ? op.AirlineID.toUpperCase() : null;
+    operatingFlightNumber = op?.FlightNumber ?? null;
+  } else if (entry.OperatingAirlineID) {
+    operatingAirlineCode = entry.OperatingAirlineID.toUpperCase();
+    operatingFlightNumber = entry.OperatingFlightNumber ?? null;
+  }
+
   return {
     flightNo,
     airlineCode: (entry.AirlineID ?? '').toUpperCase(),
@@ -191,15 +272,96 @@ const _mapEntry = (
     departureAirport,
     arrivalAirport,
     terminal: terminal.trim(),
-    scheduledDeparture: _normalizeTime(entry.ScheduledDepartureTime),
-    scheduledArrival: _normalizeTime(entry.ScheduledArrivalTime),
+    // 實測欄位 DepartureTime / ArrivalTime；舊命名 ScheduledDepartureTime / ScheduledArrivalTime fallback
+    scheduledDeparture: _normalizeTime(_firstString(entry.DepartureTime, entry.ScheduledDepartureTime)),
+    scheduledArrival: _normalizeTime(_firstString(entry.ArrivalTime, entry.ScheduledArrivalTime)),
     weekDays: _normalizeWeekDays(entry),
-    effectiveStart: _normalizeDate(entry.EffectiveDate),
-    effectiveEnd: _normalizeDate(entry.ExpireDate),
-    codeShare: Boolean(entry.CodeShare),
-    operatingAirlineCode: entry.OperatingAirlineID ? entry.OperatingAirlineID.toUpperCase() : null,
-    operatingFlightNumber: entry.OperatingFlightNumber ?? null,
+    // 實測欄位 ScheduleStartDate / ScheduleEndDate；舊命名 EffectiveDate / ExpireDate fallback
+    effectiveStart: _normalizeDate(_firstString(entry.ScheduleStartDate, entry.EffectiveDate)),
+    effectiveEnd: _normalizeDate(_firstString(entry.ScheduleEndDate, entry.ExpireDate)),
+    codeShare: isCodeShare,
+    operatingAirlineCode,
+    operatingFlightNumber,
   };
+};
+
+// ── Schedule cache（spec 2026-05-12 修正）─────────────────────────
+// TDX International endpoint 高機率 429（user 實測）→ 改 module-level cache 整份 schedule。
+// 每 30 分鐘只打 2 次 API（不是每查 1 個航班打 2 次），429 機率大幅降低。
+// International schedule ~ 5MB / Domestic ~ 1MB，Vercel function 1024MB 容得下。
+interface TdxSchedules { domestic: TdxScheduleEntry[]; international: TdxScheduleEntry[] }
+const SCHEDULE_CACHE_TTL_MS = 30 * 60 * 1000;
+let _scheduleCache: { data: TdxSchedules; exp: number } | null = null;
+let _scheduleInflight: Promise<TdxSchedules> | null = null;
+
+/** 429 → 等 1.5 秒重試一次（TDX 偶發 burst 限制）*/
+const _fetchScheduleWithRetry = async (
+  url: string,
+  token: string,
+  endpointLabel: string,
+): Promise<{ data: TdxScheduleEntry[]; error: string | null }> => {
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+  const query = { $format: 'JSON' };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await $fetch<TdxScheduleEntry[]>(url, { headers, query, timeout: 30000 });
+      return { data: Array.isArray(res) ? res : [], error: null };
+    } catch (err) {
+      const statusCode = (err as { statusCode?: number; status?: number })?.statusCode
+        ?? (err as { statusCode?: number; status?: number })?.status;
+      if (statusCode === 429 && attempt === 0) {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[tdx-flight] ${endpointLabel} fetch failed (attempt ${attempt + 1}):`, msg);
+      return { data: [], error: msg };
+    }
+  }
+  return { data: [], error: 'unreachable' };
+};
+
+const _getSchedules = async (token: string): Promise<TdxSchedules> => {
+  if (_scheduleCache && _scheduleCache.exp > Date.now()) return _scheduleCache.data;
+  if (_scheduleInflight) return _scheduleInflight;
+  _scheduleInflight = (async () => {
+    const [dom, intl] = await Promise.all([
+      _fetchScheduleWithRetry(SCHEDULE_DOMESTIC_URL, token, 'Domestic'),
+      _fetchScheduleWithRetry(SCHEDULE_INTERNATIONAL_URL, token, 'International'),
+    ]);
+    const data: TdxSchedules = { domestic: dom.data, international: intl.data };
+    // 任一 endpoint 都成功 → cache（國內/國際各自完整）
+    // 兩 endpoint 都失敗 → 不 cache（下次重試）
+    if (dom.data.length > 0 || intl.data.length > 0) {
+      _scheduleCache = { data, exp: Date.now() + SCHEDULE_CACHE_TTL_MS };
+    }
+    return data;
+  })().finally(() => { _scheduleInflight = null; });
+  return _scheduleInflight;
+};
+
+/** 給 debug=1 模式用：拿 cache 內整份原始 response（含 stale 也回，方便看欄位結構） */
+const _getSchedulesWithMeta = async (token: string): Promise<{
+  domestic: { data: TdxScheduleEntry[]; error: string | null };
+  international: { data: TdxScheduleEntry[]; error: string | null };
+}> => {
+  // 若 cache 有效直接回（不算 error）
+  if (_scheduleCache && _scheduleCache.exp > Date.now()) {
+    return {
+      domestic: { data: _scheduleCache.data.domestic, error: null },
+      international: { data: _scheduleCache.data.international, error: null },
+    };
+  }
+  // Cold fetch — 回個別 error 給 trace 看
+  const [dom, intl] = await Promise.all([
+    _fetchScheduleWithRetry(SCHEDULE_DOMESTIC_URL, token, 'Domestic'),
+    _fetchScheduleWithRetry(SCHEDULE_INTERNATIONAL_URL, token, 'International'),
+  ]);
+  const data: TdxSchedules = { domestic: dom.data, international: intl.data };
+  if (dom.data.length > 0 || intl.data.length > 0) {
+    _scheduleCache = { data, exp: Date.now() + SCHEDULE_CACHE_TTL_MS };
+  }
+  return { domestic: dom, international: intl };
 };
 
 // ── 主查詢 ──────────────────────────────────────────────────────
@@ -229,40 +391,25 @@ export const QueryTdxFlight = async (
     return null;
   }
 
-  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-  const query = { $format: 'JSON' };
-
-  // 兩個 endpoint 並行
-  const [domesticRes, internationalRes] = await Promise.all([
-    $fetch<TdxScheduleEntry[]>(SCHEDULE_DOMESTIC_URL, { headers, query, timeout: 10000 }).catch((err) => {
-      console.error('[tdx-flight] Domestic query failed:', err);
-      return [] as TdxScheduleEntry[];
-    }),
-    $fetch<TdxScheduleEntry[]>(SCHEDULE_INTERNATIONAL_URL, { headers, query, timeout: 10000 }).catch((err) => {
-      console.error('[tdx-flight] International query failed:', err);
-      return [] as TdxScheduleEntry[];
-    }),
-  ]);
+  const schedules = await _getSchedules(token);
 
   const allEntries: Array<{ entry: TdxScheduleEntry; isDomestic: boolean }> = [
-    ...(Array.isArray(domesticRes) ? domesticRes : []).map((entry) => ({ entry, isDomestic: true })),
-    ...(Array.isArray(internationalRes) ? internationalRes : []).map((entry) => ({ entry, isDomestic: false })),
+    ...schedules.domestic.map((entry) => ({ entry, isDomestic: true })),
+    ...schedules.international.map((entry) => ({ entry, isDomestic: false })),
   ];
 
   if (allEntries.length === 0) return null;
 
   // ── 比對航班號（含 codeshare 雙向）───────────────────
-  // 第一輪：精確匹配 AirlineID + FlightNumber
+  // 第一輪：直接比 entry.FlightNumber（TDX FlightNumber 已含 airline prefix）
   let matched = allEntries.find(
-    ({ entry }) => _normalizeFlightNo(entry.AirlineID, entry.FlightNumber) === flightNoUpper,
+    ({ entry }) => _normalizeFlightNo(entry) === flightNoUpper,
   );
 
-  // 第二輪 fallback：用 OperatingAirlineID + OperatingFlightNumber 比對
-  // （codeshare 場景下，用戶輸入的可能是「實體營運」的編號）
+  // 第二輪 fallback：迭代 entry.CodeShare array element 看有沒有對到目標 flightNo
+  // （用戶輸入的可能是「銷售編號」而非「實體營運編號」）
   if (!matched) {
-    matched = allEntries.find(
-      ({ entry }) => _normalizeFlightNo(entry.OperatingAirlineID, entry.OperatingFlightNumber) === flightNoUpper,
-    );
+    matched = allEntries.find(({ entry }) => _codeShareIncludes(entry, flightNoUpper));
   }
 
   if (!matched) return null;
@@ -358,44 +505,27 @@ export const QueryTdxFlightWithTrace = async (
     return trace;
   }
 
-  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
-  const query = { $format: 'JSON' };
-
-  const [domesticRes, internationalRes] = await Promise.all([
-    $fetch<TdxScheduleEntry[]>(SCHEDULE_DOMESTIC_URL, { headers, query, timeout: 10000 })
-      .catch((err) => {
-        trace.domestic.error = err instanceof Error ? err.message : String(err);
-        return [] as TdxScheduleEntry[];
-      }),
-    $fetch<TdxScheduleEntry[]>(SCHEDULE_INTERNATIONAL_URL, { headers, query, timeout: 10000 })
-      .catch((err) => {
-        trace.international.error = err instanceof Error ? err.message : String(err);
-        return [] as TdxScheduleEntry[];
-      }),
-  ]);
-
-  trace.domestic.count = Array.isArray(domesticRes) ? domesticRes.length : 0;
-  trace.international.count = Array.isArray(internationalRes) ? internationalRes.length : 0;
-  trace.domestic.sample = trace.domestic.count > 0 ? domesticRes[0] : null;
-  trace.international.sample = trace.international.count > 0 ? internationalRes[0] : null;
+  const meta = await _getSchedulesWithMeta(token);
+  trace.domestic.count = meta.domestic.data.length;
+  trace.international.count = meta.international.data.length;
+  trace.domestic.sample = trace.domestic.count > 0 ? meta.domestic.data[0] : null;
+  trace.international.sample = trace.international.count > 0 ? meta.international.data[0] : null;
+  trace.domestic.error = meta.domestic.error;
+  trace.international.error = meta.international.error;
 
   const allEntries: Array<{ entry: TdxScheduleEntry; isDomestic: boolean }> = [
-    ...(Array.isArray(domesticRes) ? domesticRes : []).map((entry) => ({ entry, isDomestic: true })),
-    ...(Array.isArray(internationalRes) ? internationalRes : []).map((entry) => ({ entry, isDomestic: false })),
+    ...meta.domestic.data.map((entry) => ({ entry, isDomestic: true })),
+    ...meta.international.data.map((entry) => ({ entry, isDomestic: false })),
   ];
 
-  // 比對 attempt 1：精確
-  let matched = allEntries.find(
-    ({ entry }) => _normalizeFlightNo(entry.AirlineID, entry.FlightNumber) === flightNoUpper,
-  );
+  // 比對 attempt 1：直接比 entry.FlightNumber（TDX FlightNumber 已含 airline prefix）
+  let matched = allEntries.find(({ entry }) => _normalizeFlightNo(entry) === flightNoUpper);
   trace.matchAttempt1Precise.matched = Boolean(matched);
 
-  // 比對 attempt 2：codeshare fallback
+  // 比對 attempt 2：codeshare array element fallback
   if (!matched) {
     trace.matchAttempt2Codeshare.triggered = true;
-    matched = allEntries.find(
-      ({ entry }) => _normalizeFlightNo(entry.OperatingAirlineID, entry.OperatingFlightNumber) === flightNoUpper,
-    );
+    matched = allEntries.find(({ entry }) => _codeShareIncludes(entry, flightNoUpper));
     trace.matchAttempt2Codeshare.matched = Boolean(matched);
   }
 
