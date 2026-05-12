@@ -6,6 +6,32 @@
 
 ---
 
+### 2026/05/12 — P28：機場人流 fetcher 補抓轉機+過境欄位 + UI 加 4 個方向選項
+
+**類型**：Bug fix / 資料層補齊
+
+**標題**：airport-xls-fetcher 從只讀 2 欄擴到 5 欄，UI direction options 從 3 個擴到 7 個
+
+**背景**：
+- user 比對桃機 XLS 與 admin/driver `/traffic` 頁，發現「全端 + 進出境合計」數字對不上檔案總計
+- 單看 T1/T2 各自的出/入境數字仍跟網頁相符 → 排除航廈級的解析錯誤
+- 根因：fetcher 只讀「出發/抵達」2 欄/航廈，**漏抓轉機離站 / 到站轉機 / 過境離站** 共 9 個 column（每航廈 3 個 × 3 航廈），造成 ~23767 人流被忽略
+
+**決定**：
+- fetcher COL 從 7 個擴到 17 個；HourRecord 每小時從 9 筆擴到 21 筆（3 terminal × 7 direction）
+- `SCHEMA_VERSION` 2 → 3 → 既有 Firestore cache 自動失效重抓
+- Direction 新增 4 值：`transit-arrival` / `transit-departure` / `overnight-departure` / `total`
+- 兩個 traffic 頁 UI（admin + driver）加對應 4 個 radio 選項，`.PageTraffic__seg` 加 `flex-wrap` 避免窄螢幕爆框
+- `all` 維持「進出境合計（出+入，不含轉機/過境）」語義不變；想看全量人流選 `total`
+
+**影響**：commit `6b8c98b`；user 比對檔案應該對齊；admin/driver 司機調度可看到準確的轉機/過境流量
+
+**替代方案（未採用）**：
+- 把 `all` 改成全 5 欄總和 → 語義不精確且破壞既有 API 約定
+- 純改 label 不擴資料 → 司機/admin 無法看到實際轉機人數
+
+---
+
 ### 2026/05/12 — P27：driverApplication 從 users 搬到 drivers/{uid}.application（P26 前置整理）
 
 **類型**：Schema 重構 / Collection Split 延伸
