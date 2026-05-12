@@ -6,6 +6,47 @@
 
 ---
 
+### 2026/05/12 — P27：driverApplication 從 users 搬到 drivers/{uid}.application（P26 前置整理）
+
+**類型**：Schema 重構 / Collection Split 延伸
+
+**標題**：driverApplication 整包搬遷 users → drivers 子欄位，以 dual-read + 一次性 migration 完成 Stage A
+
+**背景**：
+- P18 collection split 當時只搬了 driverCategory + 加 todayTrips/todayEarnings/vehicleType。`driverApplication` 整包仍留在 users，導致 driver 資料分散在 users / drivers 兩處
+- P26 driver profile editor 規劃讀寫 driver 完整資料（含 application），若不先整理 schema，P26 就被迫處理「兩處兼容讀寫」
+- 22 檔受影響：5 server / 5 frontend / 6 docs / 1 新 migration script
+
+**決定（Stage A + B 兩階段 deploy）**：
+- **Stage A**（本次完成，commit `b761ac4`）：程式碼支援 dual-read（drivers 優先，users fallback），寫入只進 drivers.application
+  - 新 helper `server/utils/driver-application.ts`（readDriverApplication + batchReadDriverApplications）封裝雙讀邏輯
+  - driver/apply.post.ts 寫 target 改 drivers.application；冷卻檢查走 helper
+  - admin/users/[uid].patch.ts dot-path 改寫 drivers.application.*；driverCategory 合併同一次 drivers.set(merge)
+  - admin/users/index.get.ts list 批次 dual-read（drivers batch 先，users batch fallback）
+  - app/stores/5.store-auth.ts client SDK 也走 dual-read（讀 drivers/{uid}.application，fallback users.driverApplication）
+  - 新 `scripts/migrate-driver-application-to-drivers.mjs`：支援 --dry-run / --apply，idempotent（已搬過 skip 並清殘留）
+  - AuditAction 加 `migration.driver_application_move`
+- **Stage B**（待 migration 跑完）：移除 fallback 兼容碼，只讀新位置
+
+**部署順序**：
+1. Stage A code 上 prod（已 commit，等部署）
+2. 跑 `pnpm migrate:driver-app --dry-run` 驗證影響筆數
+3. 跑 `pnpm migrate:driver-app --apply` 執行搬遷（< 1 分鐘預估）
+4. 驗證 admin/drivers + driver/register 兩端正常
+5. Stage B code 部署（清理 fallback）
+6. P26 開工
+
+**影響**：
+- prod data：每位 driver 的 driverApplication 從 users doc 移到 drivers doc，原欄位刪除
+- API contract：admin/users.get 回傳 shape 不變（仍有 driverApplication 欄位），client 無感
+- 解鎖 P26 driver profile editor
+
+**替代方案（未採用）**：
+- 一次性 deploy + 即時 migration：簡單但有 race window，prod 流量不可控時段不安全
+- 改用 nested 平鋪（drivers.driverApplication）：和 P18 風格（drivers.application 簡潔命名）不一致
+
+---
+
 ### 2026/05/12 — TDX 航班 GeneralSchedule 整合：Booking 階段排程驗證主資料源（取代 Aviation Edge）
 
 **類型**：架構重構 / 第三方 API 切換

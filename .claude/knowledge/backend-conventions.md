@@ -68,7 +68,8 @@ useFirebaseAdmin 已內建：
 
 ### 同步 Auth ↔ Firestore 文件禁用 `.set()` 直接覆寫
 
-Firebase Auth user 與 Firestore 文件可能不同步（前次 init 失敗、admin 手動預先設定文件等）。直接 `.set({...})` 會把使用者已有的 `roles` / `approved` / `driverApplication` 全清掉。
+Firebase Auth user 與 Firestore 文件可能不同步（前次 init 失敗、admin 手動預先設定文件等）。直接 `.set({...})` 會把使用者已有的 `roles` / `approved` 全清掉。
+P27（2026/05/12）後 driverApplication 已搬至 `drivers/{uid}.application`，users 文件不再含此欄位。
 
 **正確寫法**：先檢查存在性，文件已存在則 merge，不存在才完整建立：
 

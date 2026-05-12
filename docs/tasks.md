@@ -775,11 +775,40 @@
 
 ---
 
+### P27：driverApplication users → drivers 搬遷（2026/05/12 Stage A 完成）
+
+**背景**：P18 collection split 當時只搬了 driverCategory；driverApplication 整包仍留在 users，造成 driver 資料散在 users / drivers 兩處。P26 driver profile editor 開工前需先搬好，避免雙讀兼容碼污染。
+
+**目標**：
+- `users/{uid}.driverApplication` → `drivers/{uid}.application`
+- 22 檔讀寫 reference 切換
+- 一次性 migration script + idempotent 設計
+
+**Stage A 完成項目（2026/05/12）**：
+- [✅] server/utils/driver-application.ts — readDriverApplication + batchReadDriverApplications helper
+- [✅] AuditAction 加 'migration.driver_application_move' + AuditTargetType 加 'migration'
+- [✅] driver/apply.post.ts 寫入 target 改 drivers.application；冷卻檢查走 helper dual-read
+- [✅] admin/users/[uid].patch.ts dot-path 改寫 drivers.application.*
+- [✅] admin/users/index.get.ts list 改 batch dual-read（drivers 優先 users fallback）
+- [✅] app/stores/5.store-auth.ts client SDK 也走 dual-read
+- [✅] scripts/migrate-driver-application-to-drivers.mjs — 一次性 migration（支援 --dry-run / --apply）
+- [✅] storage.rules / driver/upload.post.ts / auth/line-exchange.post.ts 註解更新
+
+**Stage B 待辦**（migration 跑完後）：
+- [ ] prod 執行 `FIREBASE_SERVICE_ACCOUNT_JSON='...' pnpm migrate:driver-app --dry-run` 驗證影響筆數
+- [ ] 跑 `pnpm migrate:driver-app --apply` 執行搬遷
+- [ ] 驗證 admin/drivers + driver/register 兩端讀寫正常
+- [ ] 部署 Stage B：移除 server/utils/driver-application.ts 內 users fallback；移除 store-auth 內 fallback；移除 admin/users/index.get.ts 內 fallback batch read
+
+**完成後解鎖**：P26 driver profile editor 即可開工
+
+---
+
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
-- P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化，整合 P18/P19 backlog）
+- P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.13（P25 driver/admin 後續強化規劃 — 整合 P18+P19 backlog；4 個子任務：今日歸零+online hours 合併 / audit log P0 / 評分暫保留 / permissions override；分區管理決議移除）
+- 版本：v3.14（P27 driverApplication users→drivers 搬遷 Stage A 完成；待 Stage B prod migration 後 P26 開工）
 - 更新日期：2026/05/12
