@@ -392,12 +392,11 @@ const _registryTdxToFlightInfo = (
 };
 
 /**
- * 檢查 TDX 子物件對「指定 date + direction」是否仍有效（schedule 在有效期內 + weekday 符合）。
- * registry 內的 tdx 子物件是「該航班的週期性排程快照」，不同 date 都共用同一份 — 故每次取用都要驗證。
+ * 檢查 TDX 子物件對「指定 date + direction」是否仍有效。
+ * 與 tdx-flight.ts 的 validation 同步：只看 weekday，不擋 effective date
+ * （TDX schedule 版本更新落後常見，航班大概率仍飛）。
  */
 const _isTdxBlockApplicable = (tdx: FlightRegistryTdxBlock, date: string): boolean => {
-  if (tdx.effectiveStart && date < tdx.effectiveStart) return false;
-  if (tdx.effectiveEnd && date > tdx.effectiveEnd) return false;
   const d = new Date(`${date}T00:00:00+08:00`);
   const sunday0 = d.getDay();
   const isoWeekDay = sunday0 === 0 ? 7 : sunday0;

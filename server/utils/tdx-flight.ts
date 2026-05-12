@@ -10,11 +10,15 @@
  *   - GET /api/basic/v2/Air/GeneralSchedule/International
  *   - 兩個 endpoint **並行**打，union 結果，再用 flightNo 過濾
  *
- * 驗證 4 條（任一不過 → 視為查無此航班）：
+ * 驗證 3 條（任一不過 → 視為查無此航班）：
  *   1. flightNo 找得到（含 codeshare 雙向比對）
- *   2. 用車日期在 EffectiveStart ~ EffectiveEnd 區間內
+ *   2. 至少一端機場在台灣（TPE / TSA / KHH / RMQ）
  *   3. 用車日期當天的星期幾在 WeekDays 內（[1,3,5] 格式）
- *   4. 至少一端機場在台灣（TPE / TSA / KHH / RMQ）
+ *
+ * effectiveStart/End 不做 validation（spec 2026-05-12 修正）：
+ *   TDX GeneralSchedule 是「目前生效版本」，每週才更新，常出現「user 選 5/15 但 TDX
+ *   只到 5/14」這種「TDX 還沒上下一版」狀況。航班本身大概率仍在飛，擋下來讓 user 無
+ *   法下單沒道理。effective dates 保留在 mappedResult 內當 informative，但不擋 booking。
  *
  * Codeshare：第一輪精確匹配 `AirlineID + FlightNumber`；miss 則第二輪 fallback
  *           `OperatingAirlineID + OperatingFlightNumber`，best-effort（TDX 文件未必每筆都有）。
@@ -422,12 +426,8 @@ export const QueryTdxFlight = async (
     return null;
   }
 
-  // ── Validation 2：日期在有效期區間 ──
-  if (!_isInDateRange(date, result.effectiveStart, result.effectiveEnd)) {
-    return null;
-  }
-
-  // ── Validation 3：weekday 符合 schedule ──
+  // ── Validation 2：weekday 符合 schedule ──
+  // （effective date 不擋 — TDX schedule 版本更新落後常見，航班大概率仍飛）
   const weekDay = _isoWeekDay(date);
   if (!result.weekDays.includes(weekDay)) {
     return null;
@@ -548,17 +548,15 @@ export const QueryTdxFlightWithTrace = async (
   };
   if (!taiwanOk) return trace;
 
-  // Validation 2：日期在有效期區間
-  const dateOk = _isInDateRange(date, result.effectiveStart, result.effectiveEnd);
+  // Informative：日期在有效期區間（不再 fail-stop，僅供 trace 觀察）
   trace.validation.dateInRange = {
-    result: dateOk,
+    result: _isInDateRange(date, result.effectiveStart, result.effectiveEnd),
     date,
     effectiveStart: result.effectiveStart,
     effectiveEnd: result.effectiveEnd,
   };
-  if (!dateOk) return trace;
 
-  // Validation 3：weekday
+  // Validation 2：weekday（spec 2026-05-12 修正後成為最後一條 hard validation）
   const weekDay = _isoWeekDay(date);
   const weekdayOk = result.weekDays.includes(weekDay);
   trace.validation.weekdayMatches = {
