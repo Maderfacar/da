@@ -55,6 +55,8 @@ export interface FlightRegistryDoc {
   schedules?: Record<string, FlightRegistrySchedule>;
   /** TDX schedule 子物件（本 spec 2026-05-12 新增，獨立於 Aviation Edge schedules）*/
   tdx?: FlightRegistryTdxBlock;
+  /** 手動 fallback schedule（spec 2026-05-12 manual-fallback-ui；key 同 schedules）*/
+  manualSchedules?: Record<string, FlightRegistryManualSchedule>;
 }
 
 /** TDX schedule 子物件（GeneralSchedule API 回傳的「週期性排程」） */
@@ -78,6 +80,31 @@ export interface FlightRegistryTdxBlock {
 
 /** TDX 子物件視為「秒渲染可用」的最大年齡（毫秒）— booking 階段排程不會分鐘級變動，可放寬 */
 export const TDX_FRESH_MS = 24 * 60 * 60 * 1000; // 24h
+
+/**
+ * 手動 fallback schedule（spec 2026-05-12 manual-fallback-ui）
+ *
+ * 設計原則：
+ *   - 與 Aviation Edge `schedules` / TDX `tdx` 子物件**獨立**存放，避免 user 填錯污染 API 資料
+ *   - per-date + per-direction（key 同 schedules：'YYYY-MM-DD__direction'）
+ *   - lookup 順序：TDX > AE schedules > **manual** > stale（user 拍板「TDX 永遠優先」）
+ *   - submittedBy 記錄填寫者，方便日後查問題訂單；TTL 同 STATIC_TTL_DAYS（60 天）
+ */
+export interface FlightRegistryManualSchedule {
+  scheduledTime: string;       // ISO 8601 with +08:00
+  estimatedTime: string;       // 同 scheduledTime（manual 無 live 資料）
+  status: 'scheduled';
+  terminal: '1' | '2';
+  departureIata: string;       // 缺則填 ''
+  departureCity: string;
+  arrivalIata: string;
+  arrivalCity: string;
+  submittedAtMillis: number;
+  submittedByLineUid: string;
+}
+
+/** Manual schedule 視為有效的最大年齡（毫秒）— 同 static TTL（60 天） */
+export const MANUAL_FRESH_MS = REGISTRY_STATIC_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 /** 取一份 Firestore handle；Firebase 未設或 init 失敗則回 null（讓上層走 fallback） */
 function _getDb(): Firestore | null {
@@ -229,5 +256,65 @@ export const SaveTdxBlockToRegistry = async (input: SaveTdxBlockInput): Promise<
     }, { merge: true });
   } catch (err) {
     console.error(`[flight-registry] tdx write failed (${input.flightNo}):`, err);
+  }
+};
+
+// ── Manual schedule read / write helpers（spec 2026-05-12 manual-fallback-ui）──
+
+/** Manual schedule 是否還在 TTL 內（60 天） */
+export const IsManualScheduleFresh = (
+  schedule: FlightRegistryManualSchedule | undefined,
+): boolean => {
+  if (!schedule?.submittedAtMillis) return false;
+  return Date.now() - schedule.submittedAtMillis < MANUAL_FRESH_MS;
+};
+
+/** 取出指定日期 + 方向的 manual schedule（沒有則 null） */
+export const GetManualSchedule = (
+  doc: FlightRegistryDoc | null,
+  date: string,
+  direction: FlightDirection,
+): FlightRegistryManualSchedule | null => {
+  if (!doc?.manualSchedules) return null;
+  return doc.manualSchedules[MakeScheduleKey(date, direction)] ?? null;
+};
+
+export interface SaveManualScheduleInput {
+  flightNo: string;
+  airlineCode: string;
+  airlineName: string;
+  date: string;
+  direction: FlightDirection;
+  schedule: Omit<FlightRegistryManualSchedule, 'submittedAtMillis'>;
+}
+
+/**
+ * 寫入 / 更新 flight_registry doc 的 manualSchedules[key] 子物件
+ * - 用 dot path 精準寫 manualSchedules.{key}，不動 schedules / tdx 子物件
+ * - 共用識別欄位（airlineCode / airlineName / lastUpdated）也 merge 進去
+ * - 寫入失敗 silent log（不 throw）
+ */
+export const SaveManualScheduleToRegistry = async (
+  input: SaveManualScheduleInput,
+): Promise<void> => {
+  const db = _getDb();
+  if (!db) return;
+  try {
+    const ref = db.collection(COLLECTION).doc(input.flightNo);
+    const key = MakeScheduleKey(input.date, input.direction);
+    await ref.set({
+      flightNo: input.flightNo,
+      airlineCode: input.airlineCode,
+      airlineName: input.airlineName,
+      lastUpdated: FieldValue.serverTimestamp(),
+      manualSchedules: {
+        [key]: {
+          ...input.schedule,
+          submittedAtMillis: Date.now(),
+        },
+      },
+    }, { merge: true });
+  } catch (err) {
+    console.error(`[flight-registry] manual write failed (${input.flightNo}):`, err);
   }
 };

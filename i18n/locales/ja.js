@@ -180,6 +180,19 @@ export default {
         queryFail: '照会に失敗しました。もう一度お試しください',
         needDateTime: '先に乗車日時をお選びください',
       },
+      manual: {
+        linkText: '手動で入力 →',
+        title: 'フライト情報を手動で入力',
+        notice: 'このフライトが自動検索できませんでした。ターミナルと予定時刻をご入力ください。',
+        terminalLabel: 'ターミナル',
+        timeLabel: '予定時刻',
+        timePlaceholder: '例：14:30',
+        submit: '確認',
+        cancel: 'キャンセル',
+        error: {
+          submitFail: '送信に失敗しました。もう一度お試しください',
+        },
+      },
     },
     route: {
       title: 'ルートを設定',

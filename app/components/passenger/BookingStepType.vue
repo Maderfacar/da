@@ -34,19 +34,37 @@ const needsFlight = computed(() =>
 const flightLoading = ref(false);
 const flightError = ref('');
 const localFlightInfo = ref<FlightInfo | null>(props.flightInfo);
+/** 是否為「查無航班」錯誤（用來決定是否顯示手動輸入連結；其他類型錯誤不顯示） */
+const isFlightNotFound = ref(false);
+
+// ── 手動 fallback（spec 2026-05-12 manual-fallback-ui）─────────────────────────
+const manualFallbackOpen = ref(false);
+const manualTerminal = ref<'1' | '2' | ''>('');
+const manualTime = ref('');
+const manualSubmitting = ref(false);
+const manualError = ref('');
 
 let _debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 送機 3h 前置驗證（manual 與 API lookup 共用） */
+const _validateDropoffTime = (info: FlightInfo): boolean => {
+  if (selectedType.value !== 'airport-dropoff' || !dateTime.value) return true;
+  const minDeparture = $dayjs(dateTime.value).add(3, 'hour');
+  return !$dayjs(info.estimatedTime).isBefore(minDeparture);
+};
 
 const _LookupFlight = async (no: string) => {
   const cleaned = no.toUpperCase().replace(/\s/g, '');
   if (cleaned.length < 3) {
     localFlightInfo.value = null;
     flightError.value = '';
+    isFlightNotFound.value = false;
     emit('update:flightInfo', null);
     return;
   }
   flightLoading.value = true;
   flightError.value = '';
+  isFlightNotFound.value = false;
   try {
     // 必須先選用車時間（Aviation Edge 依 date 查不同排程；
     // 沒帶 date 用今天 fallback 對「未來訂車」情境會誤導）
@@ -66,18 +84,16 @@ const _LookupFlight = async (no: string) => {
       // 保留原始 flight 資料，方便 watch dateTime 變更時重新驗證
       localFlightInfo.value = res.data;
       // 送機：預計起飛時間必須 >= 用車時間 + 3 小時
-      if (selectedType.value === 'airport-dropoff' && dateTime.value) {
-        const minDeparture = $dayjs(dateTime.value).add(3, 'hour');
-        if ($dayjs(res.data.estimatedTime).isBefore(minDeparture)) {
-          flightError.value = t('booking.type.error.tooSoon', { flight: cleaned });
-          emit('update:flightInfo', null); // parent 不能拿 invalid flight 進下一步
-          return;
-        }
+      if (!_validateDropoffTime(res.data)) {
+        flightError.value = t('booking.type.error.tooSoon', { flight: cleaned });
+        emit('update:flightInfo', null); // parent 不能拿 invalid flight 進下一步
+        return;
       }
       emit('update:flightInfo', res.data);
     } else {
       localFlightInfo.value = null;
       flightError.value = t('booking.type.error.notFound', { flight: cleaned });
+      isFlightNotFound.value = true;
       emit('update:flightInfo', null);
     }
   } catch (err: unknown) {
@@ -87,6 +103,7 @@ const _LookupFlight = async (no: string) => {
       ?? (err as { statusCode?: number; status?: number })?.status;
     if (statusCode === 404) {
       flightError.value = t('booking.type.error.notFound', { flight: cleaned });
+      isFlightNotFound.value = true;
     } else {
       flightError.value = t('booking.type.error.queryFail');
     }
@@ -96,9 +113,96 @@ const _LookupFlight = async (no: string) => {
   }
 };
 
+// ── 手動 fallback flow ────────────────────────────────────────────────────────
+/** 進入手動模式 → 展開 form、預填若干欄位 */
+const ClickOpenManual = () => {
+  manualFallbackOpen.value = true;
+  manualError.value = '';
+  // 預填用車時間的 HH:mm（user 可調），但保留空白讓 user 主動確認也合理；先預填便利
+  if (dateTime.value && !manualTime.value) {
+    manualTime.value = $dayjs(dateTime.value).format('HH:mm');
+  }
+};
+
+const ClickCancelManual = () => {
+  manualFallbackOpen.value = false;
+  manualError.value = '';
+};
+
+/** 重置手動欄位（切換航班 / 行程類型 / 日期時呼叫） */
+const _ResetManualState = () => {
+  manualFallbackOpen.value = false;
+  manualTerminal.value = '';
+  manualTime.value = '';
+  manualError.value = '';
+  manualSubmitting.value = false;
+};
+
+const canSubmitManual = computed(() => {
+  if (!flightNoInput.value.trim() || !dateTime.value) return false;
+  if (manualTerminal.value !== '1' && manualTerminal.value !== '2') return false;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(manualTime.value)) return false;
+  return true;
+});
+
+const ClickSubmitManual = async () => {
+  if (!canSubmitManual.value || manualSubmitting.value) return;
+  manualSubmitting.value = true;
+  manualError.value = '';
+  try {
+    const cleaned = flightNoInput.value.toUpperCase().replace(/\s/g, '');
+    const direction = selectedType.value === 'airport-dropoff' ? 'departure' : 'arrival';
+    const date = $dayjs(dateTime.value).format('YYYY-MM-DD');
+
+    // 必須帶 Bearer ID token（manual endpoint require-auth）
+    const authStore = StoreAuth();
+    const idToken = await authStore.GetFreshIdToken();
+
+    const res = await $fetch<{ ok: boolean; data?: FlightInfo; message?: string }>(
+      '/api/flight/manual',
+      {
+        method: 'POST',
+        headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
+        body: {
+          flightNo: cleaned,
+          direction,
+          date,
+          terminal: manualTerminal.value,
+          scheduledTime: manualTime.value,
+        },
+      },
+    );
+
+    if (!res.ok || !res.data) {
+      manualError.value = t('booking.type.manual.error.submitFail');
+      return;
+    }
+
+    // 送機 3h 前置驗證（manual 時間也得守同樣規則）
+    if (!_validateDropoffTime(res.data)) {
+      manualError.value = t('booking.type.error.tooSoon', { flight: cleaned });
+      return;
+    }
+
+    // 成功：set flightInfo、收起手動 form、清 flightError、isNotFound
+    localFlightInfo.value = res.data;
+    emit('update:flightInfo', res.data);
+    flightError.value = '';
+    isFlightNotFound.value = false;
+    manualFallbackOpen.value = false;
+  } catch (_err) {
+    manualError.value = t('booking.type.manual.error.submitFail');
+  } finally {
+    manualSubmitting.value = false;
+  }
+};
+
 watch(flightNoInput, (val) => {
   emit('update:flightNo', val);
   if (_debounceTimer) clearTimeout(_debounceTimer);
+  // 換航班 → 重置手動 fallback 狀態（避免舊 form 殘留）
+  _ResetManualState();
+  isFlightNotFound.value = false;
   if (!val.trim()) {
     localFlightInfo.value = null;
     flightError.value = '';
@@ -111,6 +215,8 @@ watch(flightNoInput, (val) => {
 // 切換行程類型時清除航班資訊
 watch(selectedType, (val) => {
   if (val) emit('update:orderType', val);
+  _ResetManualState();
+  isFlightNotFound.value = false;
   if (val !== 'airport-pickup' && val !== 'airport-dropoff') {
     flightNoInput.value = '';
     localFlightInfo.value = null;
@@ -125,15 +231,18 @@ watch(dateTime, (val, oldVal) => {
   // 日期變更（YYYY-MM-DD 不同）→ 重新 lookup（API 依 date 查不同排程）
   const newDate = val ? $dayjs(val).format('YYYY-MM-DD') : '';
   const oldDate = oldVal ? $dayjs(oldVal).format('YYYY-MM-DD') : '';
-  if (newDate && newDate !== oldDate && flightNoInput.value.trim()) {
-    if (_debounceTimer) clearTimeout(_debounceTimer);
-    _debounceTimer = setTimeout(() => _LookupFlight(flightNoInput.value), 300);
-    return; // re-lookup 時 API 結果回來會自己驗證 tooSoon
+  if (newDate && newDate !== oldDate) {
+    // 日期換掉 → 手動 fallback 內容失效（manualSchedules 用 date 當 key）
+    _ResetManualState();
+    if (flightNoInput.value.trim()) {
+      if (_debounceTimer) clearTimeout(_debounceTimer);
+      _debounceTimer = setTimeout(() => _LookupFlight(flightNoInput.value), 300);
+      return; // re-lookup 時 API 結果回來會自己驗證 tooSoon
+    }
   }
   // 同日只動小時/分鐘 → 重新驗證已查到的送機航班 3h 前置
   if (selectedType.value === 'airport-dropoff' && localFlightInfo.value && val) {
-    const minDeparture = $dayjs(val).add(3, 'hour');
-    if ($dayjs(localFlightInfo.value.estimatedTime).isBefore(minDeparture)) {
+    if (!_validateDropoffTime(localFlightInfo.value)) {
       flightError.value = t('booking.type.error.tooSoon', { flight: localFlightInfo.value.flightNo });
       emit('update:flightInfo', null);
     } else {
@@ -189,7 +298,15 @@ const isPastDateTime = computed(() =>
 const canNext = computed(() => {
   if (!selectedType.value || !dateTime.value) return false;
   if (isPastDateTime.value) return false;
-  if (needsFlight.value && !localFlightInfo.value) return false;
+  // 接機：航班必填 → 必須有 flightInfo
+  if (selectedType.value === 'airport-pickup' && !localFlightInfo.value) return false;
+  // 送機：航班選填 — 沒填 flightNo 直接通過（user 在 step 2 自選下車點）；
+  //                   有填則必須驗證成功（避免帶半截 invalid flight 進下一步）
+  if (
+    selectedType.value === 'airport-dropoff'
+    && flightNoInput.value.trim()
+    && !localFlightInfo.value
+  ) return false;
   return true;
 });
 
@@ -231,7 +348,65 @@ const ClickNext = () => {
         )
         .PassengerBookingStepType__flight-spinner(v-if="flightLoading")
 
-      p.PassengerBookingStepType__flight-error(v-if="flightError") {{ flightError }}
+      p.PassengerBookingStepType__flight-error(v-if="flightError")
+        | {{ flightError }}
+        a.PassengerBookingStepType__manual-link(
+          v-if="isFlightNotFound && !manualFallbackOpen"
+          @click="ClickOpenManual"
+        ) {{ $t('booking.type.manual.linkText') }}
+
+      //- 手動 fallback 表單（spec 2026-05-12 manual-fallback-ui）
+      Transition(name="manual-slide")
+        .PassengerBookingStepType__manual(v-if="manualFallbackOpen")
+          .PassengerBookingStepType__manual-head
+            span.PassengerBookingStepType__manual-title {{ $t('booking.type.manual.title') }}
+            button.PassengerBookingStepType__manual-close(
+              type="button"
+              @click="ClickCancelManual"
+              :aria-label="$t('booking.type.manual.cancel')"
+            )
+              NuxtIcon(name="mdi:close")
+          p.PassengerBookingStepType__manual-hint {{ $t('booking.type.manual.notice') }}
+
+          .PassengerBookingStepType__manual-row
+            label.PassengerBookingStepType__manual-label {{ $t('booking.type.manual.terminalLabel') }}
+            .PassengerBookingStepType__manual-terminals
+              button.PassengerBookingStepType__manual-terminal(
+                type="button"
+                :class="{ 'is-active': manualTerminal === '1' }"
+                @click="manualTerminal = '1'"
+              ) T1
+              button.PassengerBookingStepType__manual-terminal(
+                type="button"
+                :class="{ 'is-active': manualTerminal === '2' }"
+                @click="manualTerminal = '2'"
+              ) T2
+
+          .PassengerBookingStepType__manual-row
+            label.PassengerBookingStepType__manual-label {{ $t('booking.type.manual.timeLabel') }}
+            input.PassengerBookingStepType__manual-input(
+              v-model="manualTime"
+              type="time"
+              step="60"
+              inputmode="numeric"
+              :placeholder="$t('booking.type.manual.timePlaceholder')"
+            )
+
+          p.PassengerBookingStepType__manual-error(v-if="manualError") {{ manualError }}
+
+          .PassengerBookingStepType__manual-buttons
+            UiButton(
+              type="secondary"
+              style="flex: 1"
+              @click="ClickCancelManual"
+            ) {{ $t('booking.type.manual.cancel') }}
+            UiButton(
+              type="primary"
+              style="flex: 1"
+              :disabled="!canSubmitManual || manualSubmitting"
+              :loading="manualSubmitting"
+              @click="ClickSubmitManual"
+            ) {{ $t('booking.type.manual.submit') }}
 
       //- 航班資訊卡片
       Transition(name="card-pop")
@@ -404,6 +579,144 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     margin: 0 0 8px;
   }
 
+  // ── 手動 fallback ────────────────────────────────────────────
+  &__manual-link {
+    display: inline-block;
+    margin-left: 8px;
+    font-family: $font-condensed;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--da-amber);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:hover { color: var(--da-amber-dark, #b56a08); }
+  }
+
+  &__manual {
+    margin-top: 8px;
+    margin-bottom: 12px;
+    background: var(--da-glass-bg);
+    border: 1.5px dashed var(--da-amber);
+    border-radius: 16px;
+    padding: 16px 14px 14px;
+    overflow: hidden;
+  }
+
+  &__manual-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  &__manual-title {
+    font-family: $font-display;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    color: var(--da-dark);
+  }
+
+  &__manual-close {
+    background: transparent;
+    border: 0;
+    padding: 4px;
+    font-size: 18px;
+    color: var(--da-gray);
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover { color: var(--da-dark); }
+  }
+
+  &__manual-hint {
+    font-family: $font-body;
+    font-size: 11px;
+    color: var(--da-gray);
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+
+  &__manual-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  &__manual-label {
+    font-family: $font-condensed;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--da-gray);
+    width: 64px;
+    flex-shrink: 0;
+  }
+
+  &__manual-terminals {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+  }
+
+  &__manual-terminal {
+    flex: 1;
+    padding: 8px 0;
+    font-family: $font-condensed;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    background: var(--da-glass-bg);
+    border: 1.5px solid var(--da-gray-pale);
+    border-radius: 10px;
+    color: var(--da-gray);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    user-select: none;
+
+    &:active { transform: scale(0.97); }
+    &.is-active {
+      border-color: var(--da-amber);
+      background: var(--da-amber-pale);
+      color: var(--da-amber);
+    }
+  }
+
+  &__manual-input {
+    flex: 1;
+    padding: 8px 12px;
+    font-family: $font-condensed;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border: 1.5px solid var(--da-gray-pale);
+    border-radius: 10px;
+    background: var(--da-glass-bg);
+    color: var(--da-dark);
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+
+    &:focus { border-color: var(--da-amber); }
+  }
+
+  &__manual-error {
+    font-family: $font-body;
+    font-size: 12px;
+    color: #e74c3c;
+    margin: 4px 0 8px;
+  }
+
+  &__manual-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
   // ── 航班資訊卡片 ──────────────────────────────────────────────
   &__flight-card {
     background: var(--da-glass-bg);
@@ -480,6 +793,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .card-pop-leave-active  { transition: all 0.2s ease; }
 .card-pop-enter-from    { opacity: 0; transform: scale(0.92) translateY(8px); }
 .card-pop-leave-to      { opacity: 0; transform: scale(0.96); }
+
+.manual-slide-enter-active,
+.manual-slide-leave-active { transition: all 0.25s ease; }
+.manual-slide-enter-from,
+.manual-slide-leave-to { opacity: 0; transform: translateY(-8px); max-height: 0; padding: 0 14px; }
 
 @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
 </style>

@@ -180,6 +180,19 @@ export default {
         queryFail: 'Query failed, please try again',
         needDateTime: 'Please select pickup date & time first',
       },
+      manual: {
+        linkText: 'Enter manually →',
+        title: 'Enter flight info manually',
+        notice: 'We can\'t find this flight automatically. Please fill in the terminal and time so we can prepare your ride.',
+        terminalLabel: 'Terminal',
+        timeLabel: 'Scheduled time',
+        timePlaceholder: 'e.g. 14:30',
+        submit: 'Confirm',
+        cancel: 'Cancel',
+        error: {
+          submitFail: 'Submission failed, please try again',
+        },
+      },
     },
     route: {
       title: 'Set Route',

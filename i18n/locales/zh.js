@@ -191,6 +191,19 @@ export default {
         queryFail: '查詢失敗，請稍後再試',
         needDateTime: '請先選擇用車日期與時間',
       },
+      manual: {
+        linkText: '手動輸入 →',
+        title: '手動輸入航班資訊',
+        notice: '系統暫時查不到此航班，請填寫航廈與預計時間，我們會用這份資料為您安排行程。',
+        terminalLabel: '航廈',
+        timeLabel: '預計時間',
+        timePlaceholder: '例：14:30',
+        submit: '確認',
+        cancel: '取消',
+        error: {
+          submitFail: '送出失敗，請稍後再試',
+        },
+      },
     },
     route: {
       title: '設定路線',

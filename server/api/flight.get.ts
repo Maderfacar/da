@@ -32,8 +32,10 @@ import {
   ParseAirlineIataFromFlightNo,
 } from '@@/utils/airport-registry';
 import {
-  GetFlightFromRegistry,
   GetCachedSchedule,
+  GetFlightFromRegistry,
+  GetManualSchedule,
+  IsManualScheduleFresh,
   IsRegistryStaticFresh,
   IsScheduleFresh,
   IsTdxBlockFresh,
@@ -41,6 +43,7 @@ import {
   SaveTdxBlockToRegistry,
   type FlightDirection,
   type FlightRegistryDoc,
+  type FlightRegistryManualSchedule,
   type FlightRegistrySchedule,
   type FlightRegistryTdxBlock,
 } from '@@/utils/flight-registry';
@@ -63,7 +66,16 @@ export interface FlightInfo {
   direction: FlightDirection;
 }
 
-type FlightSource = 'cache' | 'registry' | 'registry-tdx' | 'tdx' | 'live' | 'registry-stale' | 'mock';
+type FlightSource =
+  | 'cache'
+  | 'registry'
+  | 'registry-tdx'
+  | 'registry-manual'
+  | 'tdx'
+  | 'live'
+  | 'registry-stale'
+  | 'manual'
+  | 'mock';
 
 // ── Aviation Edge response 型別（局部，僅取我們需要的欄位）──
 interface AeAirport {
@@ -391,6 +403,35 @@ const _registryTdxToFlightInfo = (
   };
 };
 
+/** 從 flight_registry.manualSchedules[key] 直接組 FlightInfo（Layer 3.5 命中時用） */
+const _manualScheduleToFlightInfo = (
+  doc: FlightRegistryDoc,
+  schedule: FlightRegistryManualSchedule,
+  flightNoUpper: string,
+  direction: FlightDirection,
+): FlightInfo => {
+  return {
+    flightNo: flightNoUpper,
+    airline: {
+      iataCode: doc.airlineCode || ParseAirlineIataFromFlightNo(flightNoUpper),
+      name: doc.airlineName || GetAirlineNameByIata(doc.airlineCode),
+    },
+    origin: {
+      iataCode: schedule.departureIata,
+      cityName: schedule.departureCity || GetAirportCityByIata(schedule.departureIata),
+    },
+    destination: {
+      iataCode: schedule.arrivalIata,
+      cityName: schedule.arrivalCity || GetAirportCityByIata(schedule.arrivalIata),
+    },
+    terminal: _normalizeTerminal(schedule.terminal),
+    scheduledTime: schedule.scheduledTime,
+    estimatedTime: schedule.estimatedTime || schedule.scheduledTime,
+    status: 'scheduled',
+    direction,
+  };
+};
+
 /**
  * 檢查 TDX 子物件對「指定 date + direction」是否仍有效。
  * 與 tdx-flight.ts 的 validation 同步：只看 weekday，不擋 effective date
@@ -521,6 +562,17 @@ const _lookupFlight = async (
       }
     } catch (err) {
       console.error('[api/flight] TDX call failed:', err);
+    }
+  }
+
+  // ── Layer 3.5：Firestore registry.manualSchedules（spec 2026-05-12 manual-fallback-ui）──
+  // TDX 永遠優先（user 拍板）：TDX miss 才落到 manual，避免錯誤 manual 永久蓋住正確 TDX。
+  // < 60 天 TTL 視為有效。
+  if (registryDoc?.manualSchedules) {
+    const manual = GetManualSchedule(registryDoc, date, direction);
+    if (manual && IsManualScheduleFresh(manual)) {
+      const data = _manualScheduleToFlightInfo(registryDoc, manual, flightNoUpper, direction);
+      return { data, source: 'registry-manual' };
     }
   }
 
