@@ -491,12 +491,12 @@
 **P18 使用者操作（Stage 10）**：
 - [ ] 依 `openspec/changes/2026-05-09-collection-split/migration.md` 在 Firebase Console 手動建 admins/drivers doc + 清舊 driverCategory + 部署新 firestore.rules
 
-**P18 後續工作（已記入 backlog）**：
-- 司機統計 today 欄位每日歸零（cron 或讀取時依日期判斷）
-- admin operation 操作日誌（audit log）
-- admins.permissions 細粒度 override UI
-- 司機評分系統（drivers.rating / ratingCount 欄位已預留）
-- 分區管理（drivers.assignedRegions 欄位已預留）
+**P18 後續工作**（2026/05/12 全部整併進 P25 規劃；分區管理已決議**移除**）：
+- → 司機統計 today 欄位每日歸零：見 P25-1（與 online hours 合併，lazy reset）
+- → admin operation audit log：見 P25-2
+- → admins.permissions 細粒度 override UI：見 P25-4
+- → 司機評分系統：見 P25-3（暫保留至業務需求觸發）
+- ❌ 分區管理：2026/05/12 決議移除（不需要此功能；drivers.assignedRegions 欄位保留但 schema 文件標註 deprecated）
 
 ### P19：Driver Trip Mission — 司機任務頁 + 五階段狀態流 + 自動定位（2026/05/09 程式碼層完成）
 
@@ -520,10 +520,10 @@
 **P19 待驗證（部署後）**：
 - [ ] G1~G12（spec tasks.md 內 stage gate）：driver 自動授權 / 拒絕踢退 / 五階段流 / busy 切換 / offline 推導 / war-room filter / driver 改他人單 403 / 跳階段 400
 
-**P19 後續工作（已記入 backlog）**：
-- driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）
-- 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）
-- driver/dashboard online hours 統計實作（目前 hard-coded 0）
+**P19 後續工作**（2026/05/12 部分整併進 P25）：
+- driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）— 待業務優先級確認
+- 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）— 待業務優先級確認
+- → driver/dashboard online hours 統計：見 P25-1（與 today 歸零合併，共用 todayResetAt）
 
 > 註：driver/admin 端 i18n 多語化於 2026/05/09 由使用者決議移除（內部後台不需多語）
 
@@ -606,11 +606,180 @@
 
 ---
 
+### P25：Driver / Admin 後續強化（2026/05/12 規劃，整合 P18 + P19 backlog）
+
+> **背景**：P18 collection-split 與 P19 driver trip mission 完成後，drivers / admins schema 預留多個欄位但邏輯尚未實作。2026/05/12 與 Brain AI 對齊四項決議後彙整為 P25 統一規劃；分區管理（drivers.assignedRegions）已決議**移除**，不在此章節範圍。
+>
+> **觸發時機**：P24 TDX 部署驗收後啟動；P25-2（audit log）為**上線後 2 週內必補**，其餘依優先級排程。
+
+**範圍總覽**：
+| 子任務 | 優先級 | 說明 |
+|--------|--------|------|
+| P25-1 | P1 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
+| P25-2 | **P0** | admin operation audit log（多 admin 並存後 2 週內必補） |
+| P25-3 | P3 | 司機評分系統（暫保留 schema，業務需求觸發再啟動） |
+| P25-4 | P3 | admins.permissions 細粒度 override UI（有單獨 use case 再做） |
+
+---
+
+#### P25-1：driver 統計 today 歸零 + online hours 合併實作（優先級 P1）
+
+> **決議**：採用 lazy reset（方案 B），不依賴 Vercel Cron；today 歸零與 online hours 共用 `todayResetAt` 欄位避免雙寫。
+
+**Schema 擴充**：
+- `drivers/{lineUid}` 新增 4 個欄位：
+  - `todayResetAt: Timestamp`（最近一次 today 系列歸零時間，台北日期判斷依據）
+  - `currentOnlineSessionStartAt: Timestamp | null`（當前 online 段起點；offline / busy 為 null）
+  - `todayOnlineSeconds: number`（今日累計上線秒數，已結束的 online 段累加）
+  - `totalOnlineSeconds: number`（累計上線秒數）
+
+**Lazy Reset 邏輯**：
+- 共用 helper `server/utils/driver-stats.ts`：`maybeResetToday(driverDoc): { resetNeeded, patch }`
+  - 比對 `todayResetAt` 的 `dayjs().tz('Asia/Taipei').format('YYYY-MM-DD')` 與今天是否相同
+  - 不同 → 回傳 `patch = { todayTrips: 0, todayEarnings: 0, todayOnlineSeconds: 0, todayResetAt: now }`
+- 所有 today 系列寫入入口（completed 訂單、status 切換）都先過此 helper
+
+**Online Hours 狀態機**：
+- 新增 endpoint `PATCH /nuxt-api/drivers/[id]/status`（自己 or admin 可改）
+  - online → busy / offline：計算 `delta = now - currentOnlineSessionStartAt`，`todayOnlineSeconds += delta`、`totalOnlineSeconds += delta`、`currentOnlineSessionStartAt = null`
+  - offline → online：先過 maybeResetToday，再 `currentOnlineSessionStartAt = now`
+  - busy → online：恢復計時，`currentOnlineSessionStartAt = now`（busy 期間不計入 online hours）
+- 整合 P19 五階段：`orders/[orderId].patch.ts` 訂單 en_route → busy 時要結算當前 online 段；completed → online 時要恢復計時
+
+**UI 對齊**：
+- `app/pages/driver/dashboard/index.vue:25` 移除 hardcode `'0'`，改為 computed：
+  - 若 `status==='online'` → `(now - currentOnlineSessionStartAt + todayOnlineSeconds) / 3600`
+  - 否則 → `todayOnlineSeconds / 3600`
+  - 每 60s 刷新一次（已有頁面 polling 機制可複用）
+- `app/pages/driver/dashboard/index.vue` today trips / today earnings 也讀新欄位
+
+**Fallback 機制**（driver 忘了按下線就關 app）：
+- `drivers/available.get.ts` 讀取時，若 `status==='online'` 且 `lastActiveAt > 5 分鐘前` → 視為 offline、強制結算 online 段（lazy 寫回）
+- 與 P19 已存在的 offline 推導邏輯整合
+
+**驗證項**：
+- G25-1-1：driver 0:00 後第一次接單，todayTrips 從 0 開始累加（非接續昨日）
+- G25-1-2：driver 上線 1 小時 → busy 1 小時 → 下線，online hours = 1 小時（busy 期間不計）
+- G25-1-3：driver online 後關 app 不下線，5 分鐘後自動結算
+- G25-1-4：日期跨越時點正確（夏令時間 N/A，台北無夏令）
+
+---
+
+#### P25-2：Admin Operation Audit Log（優先級 **P0**，上線後 2 週內必補）
+
+> **背景**：目前 admin 在後台所有操作（核准司機、撤銷管理員、改訂單狀態、廣播 LINE、改加值服務）完全無紀錄。多 admin 並存後立即會成痛點。
+
+**Collection Schema**：
+- `audit_logs/{autoId}`：
+  ```typescript
+  {
+    actorUid: string;                 // 操作者 lineUid
+    actorDisplayName: string;          // 快照（避免後續 admin 改名導致歷史失準）
+    actorLevel: 'super' | 'admin' | 'assistant';
+    action: AuditAction;               // 列舉值，見下
+    targetType: 'driver' | 'admin' | 'order' | 'broadcast' | 'fleet';
+    targetId: string;                  // 被操作對象 ID
+    payload: Record<string, unknown>;  // before/after diff（敏感欄位需 mask）
+    ip?: string;                       // 從 event headers 取
+    userAgent?: string;
+    createdAt: Timestamp;
+  }
+
+  type AuditAction =
+    | 'driver.approve' | 'driver.reject' | 'driver.unblock_cooldown' | 'driver.category_change'
+    | 'admin.add' | 'admin.remove' | 'admin.level_change' | 'admin.permissions_override'
+    | 'order.assign' | 'order.status_change' | 'order.cancel_by_admin'
+    | 'broadcast.send'
+    | 'fleet.vehicle_update' | 'fleet.luggage_update' | 'fleet.extra_update' | 'fleet.delete';
+  ```
+
+**實作範圍**：
+- 新建 `server/utils/audit-log.ts`：`writeAuditLog(event, action, targetType, targetId, payload)` helper
+  - 自動從 event 抓 actor（require-auth context）、IP、UA
+  - fire-and-forget 失敗 console.error 不阻擋主流程（避免 audit 寫失敗導致業務失敗）
+- 全部 admin 端會改資料的 endpoint 加入呼叫（盤點 ~10 個）：
+  - `admin/users/[uid].patch.ts`（含 add/remove role、level、permissions、driverCategory、approve/reject）
+  - `admin/admins/[uid].patch.ts`
+  - `admin/broadcast.post.ts`
+  - `admin/orders/[orderId].patch.ts`（指派司機、改狀態）
+  - `admin/fleet/vehicles/*` + `luggage/*` + `extras/*`（P23 加值服務 CRUD）
+- 新建 `server/routes/nuxt-api/admin/audit-logs/index.get.ts`（super only，支援 actor / action / target / date range 篩選 + cursor pagination）
+- 新建 `app/pages/admin/audit-logs/index.vue`（super only；表格顯示最近 200 筆，搭配篩選器）
+- `app/layouts/back-desk.vue` 抽屜加「操作日誌」入口（僅 super 可見）
+
+**Firestore Rules**：
+- `audit_logs/{logId}`：client 全部禁止；僅 server admin SDK 讀寫
+
+**索引**：
+- 至少建立 `actorUid + createdAt desc`、`action + createdAt desc`、`targetType + targetId + createdAt desc` 三組複合索引
+
+**保留策略**：
+- 暫時無刪除策略（單筆 doc 約 1-2 KB，1 年累積估算 < 50 MB；先觀察）
+- 後續若量大可加 Cloud Function 月歸檔至 Storage
+
+**驗證項**：
+- G25-2-1：super admin 撤銷另一個 admin → audit_logs 出現 `admin.remove` 紀錄
+- G25-2-2：assistant 嘗試讀 audit-logs → 403
+- G25-2-3：audit 寫失敗（Firestore 故障）不影響主操作回 200
+- G25-2-4：payload 內 sensitive 欄位（如 LINE token）已 mask
+
+---
+
+#### P25-3：司機評分系統（優先級 P3，暫保留 schema）
+
+> **決議**：2026/05/12 決定**暫保留**功能規劃，業務需求觸發後再啟動實作。schema 已預留 `drivers.rating / ratingCount`，目前 server 不寫入。
+>
+> **業務 5 問待確認**（啟動前需先回答）：
+> 1. 誰評？乘客單向 or 雙向？
+> 2. 何時評？訂單 completed 後彈窗 or 可在 /orders 補評？是否可跳過？
+> 3. 評什麼？整體 1-5 星 or 分項（準時 / 態度 / 車況）？
+> 4. 誰看得到？admin only or 乘客訂車前能看？
+> 5. 文字評論？匿名與否？
+
+**預期實作範圍**（先記錄供未來實作）：
+- 新建 collection `ratings/{orderId}`：`{ orderId, driverLineUid, passengerLineUid, score: 1-5, comment?, createdAt }`
+- `orders` schema 加 `ratingId?: string`（防重複評）
+- 後端 `POST /nuxt-api/ratings`：transaction 寫 ratings doc + 更新 `drivers.rating`（移動平均）
+- 乘客端 `/orders` completed 訂單加「評分」按鈕
+- admin 端 `/admin/drivers` 司機卡片顯示平均評分
+
+---
+
+#### P25-4：admins.permissions 細粒度 override UI（優先級 P3）
+
+> **背景**：P18 Stage 2 已寫好 `hasPermission` 支援 `admins.permissions` override，但目前無 UI 寫入，等同未啟用。
+
+**使用場景**：
+- assistant 臨時要幫忙審核 driver → super 單獨給他 `canManageDrivers: true`，不升 admin
+- admin 是行銷專員不該看金流 → super 給他 `canViewFinance: false` 蓋掉 level 預設
+
+**實作範圍**：
+- `app/pages/admin/settings/index.vue` admin tab，每個 admin row 旁加「進階權限」展開按鈕
+- 展開後 5 個 checkbox（對應 5 個 Permission，預設值為 level 對應結果）
+  - 未動 checkbox → permissions 寫 null（走 LEVEL_TABLE）
+  - 勾掉或勾起 → permissions: { [perm]: false | true }
+- 後端 `admin/admins/[uid].patch.ts` body 加 `permissions: Partial<Record<Permission, boolean>> | null`
+- 與 P25-2 audit log 整合：override 變更寫 `admin.permissions_override` action
+
+---
+
+**P25 已決議移除項目**：
+- ❌ **分區管理（drivers.assignedRegions）**：2026/05/12 決議不需要此功能
+  - schema 欄位保留以避免破壞既有 doc，但 [openspec/changes/2026-05-09-collection-split/design.md](../openspec/changes/2026-05-09-collection-split/design.md) 需補註 `@deprecated`
+  - require-auth / require-permission / drivers endpoints 完全不引用此欄位
+
+**Stage 排程建議**：
+- 上線後第 1~2 週：P25-2（audit log）
+- 上線後第 2~3 週：P25-1（today 歸零 + online hours）
+- 業務需求觸發再啟動：P25-3 / P25-4
+
+---
+
 **使用規則**
 - 每完成一個子任務，立即更新狀態（[ ] → [✅] 或 [🔄]）
 - 重大決策必須同步記錄至 docs/decision-log.md
-- P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
+- P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化，整合 P18/P19 backlog）
 
 **版本紀錄**
-- 版本：v3.12（P24 TDX 航班 GeneralSchedule 整合 — booking 階段排程驗證主資料源取代 Aviation Edge；4 stage 全完成，待設 TDX env + LIFF 實測）
+- 版本：v3.13（P25 driver/admin 後續強化規劃 — 整合 P18+P19 backlog；4 個子任務：今日歸零+online hours 合併 / audit log P0 / 評分暫保留 / permissions override；分區管理決議移除）
 - 更新日期：2026/05/12
