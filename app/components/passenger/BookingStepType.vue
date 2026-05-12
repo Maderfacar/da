@@ -164,6 +164,22 @@ const statusBadge = computed(() => {
 const formatTime = (iso: string) =>
   $dayjs(iso).format('HH:mm');
 
+// 時間 label 依 direction 切換：接機 → 預計抵達時間、送機 → 預計起飛時間
+const timeLabel = computed(() => {
+  if (!localFlightInfo.value) return '';
+  return localFlightInfo.value.direction === 'arrival'
+    ? t('booking.type.arrivalTime')
+    : t('booking.type.departureTime');
+});
+
+// 航廈屬於 TPE 那端：接機 → 目的地是 TPE、送機 → 出發地是 TPE
+const originTerminal = computed(() =>
+  localFlightInfo.value?.direction === 'departure' ? localFlightInfo.value.terminal : '',
+);
+const destinationTerminal = computed(() =>
+  localFlightInfo.value?.direction === 'arrival' ? localFlightInfo.value.terminal : '',
+);
+
 const disabledDate = (d: Date) => $dayjs(d).isBefore($dayjs().startOf('day'));
 
 const isPastDateTime = computed(() =>
@@ -227,17 +243,18 @@ const ClickNext = () => {
 
           .PassengerBookingStepType__flight-card-body
             .PassengerBookingStepType__flight-row
-              span.PassengerBookingStepType__flight-label {{ $t('booking.type.terminal') }}
-              span.PassengerBookingStepType__flight-val T{{ localFlightInfo.terminal }}
-            .PassengerBookingStepType__flight-row
-              span.PassengerBookingStepType__flight-label {{ $t('booking.type.flightTime') }}
-              span.PassengerBookingStepType__flight-val {{ formatTime(localFlightInfo.estimatedTime) }}
-            .PassengerBookingStepType__flight-row(v-if="localFlightInfo.direction === 'arrival'")
               span.PassengerBookingStepType__flight-label {{ $t('booking.type.origin') }}
-              span.PassengerBookingStepType__flight-val {{ localFlightInfo.origin.cityName }}（{{ localFlightInfo.origin.iataCode }}）
-            .PassengerBookingStepType__flight-row(v-else)
+              span.PassengerBookingStepType__flight-val
+                | {{ localFlightInfo.origin.cityName }}（{{ localFlightInfo.origin.iataCode }}）
+                template(v-if="originTerminal")  · T{{ originTerminal }}
+            .PassengerBookingStepType__flight-row
               span.PassengerBookingStepType__flight-label {{ $t('booking.type.destination') }}
-              span.PassengerBookingStepType__flight-val {{ localFlightInfo.destination.cityName }}（{{ localFlightInfo.destination.iataCode }}）
+              span.PassengerBookingStepType__flight-val
+                | {{ localFlightInfo.destination.cityName }}（{{ localFlightInfo.destination.iataCode }}）
+                template(v-if="destinationTerminal")  · T{{ destinationTerminal }}
+            .PassengerBookingStepType__flight-row
+              span.PassengerBookingStepType__flight-label {{ timeLabel }}
+              span.PassengerBookingStepType__flight-val {{ formatTime(localFlightInfo.estimatedTime) }}
 
   .PassengerBookingStepType__section-label.mt DATE &amp; TIME
   h2.PassengerBookingStepType__title {{ $t('booking.type.dateTimeTitle') }}

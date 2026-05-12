@@ -159,6 +159,8 @@ export default {
       flightPlaceholder: 'e.g. CI102, BR12',
       terminal: 'Terminal',
       flightTime: 'Est. Time',
+      arrivalTime: 'Est. Arrival',
+      departureTime: 'Est. Departure',
       flightStatus: {
         scheduled: 'On Time',
         active: 'In Air',

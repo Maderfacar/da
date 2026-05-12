@@ -170,6 +170,8 @@ export default {
       flightPlaceholder: '例：CI102、BR12',
       terminal: '航廈',
       flightTime: '預計時間',
+      arrivalTime: '預計抵達時間',
+      departureTime: '預計起飛時間',
       flightStatus: {
         scheduled: '準時',
         active: '起飛中',
