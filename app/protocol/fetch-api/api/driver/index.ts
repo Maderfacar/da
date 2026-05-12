@@ -65,6 +65,27 @@ export const ReplaceDriverDocument = (body: {
   url: string;
 }) => methods.post<{ docType: string; status: 'pending' }>('/nuxt-api/drivers/me/document-replace', body);
 
+// ── P30：司機營運成本計算機跟帳號走 ───────────────────────────
+
+export interface DriverCostSettings {
+  carLoan?: number;       // 車貸（每月）
+  insurance?: number;     // 保險（每月）
+  maintenance?: number;   // 車輛保養（每月）
+  parking?: number;       // 停車月租（每月）
+  laborIns?: number;      // 勞健保（每月）
+  oilPerKm?: number;      // 油費（每公里）
+  tollPerKm?: number;     // 過路費（每公里）
+  tireCost?: number;      // 輪胎（每 5 萬公里）
+  miscDaily?: number;     // 雜項開支（每上班日）
+  dailyKm?: number;       // 每日行駛里程
+  dailyRevenue?: number;  // 每日營業收入
+  workDays?: number;      // 每月上班天數
+}
+
+/** 司機儲存營運成本計算機設定（drivers/{uid}.costSettings） */
+export const UpdateDriverCostSettings = (body: DriverCostSettings) =>
+  methods.patch<{ uid: string; updated: boolean }>('/nuxt-api/drivers/me/cost-settings', body as unknown as Record<string, unknown>);
+
 /**
  * 上傳司機證件圖片至 Firebase Storage，回傳 signed URL
  * 注意：此端點接受 multipart/form-data，必須直接使用 fetch 而非 methods.post

@@ -4,7 +4,12 @@
 // 改自 driver/driver.html（v2）：
 //   - 移除：header 標題列 / footer / 兩張 chart.js 圖表 / 每月+每年損益兩個結果欄位
 //   - 保留：即時結果（3 項）/ 成本項目設定（9 項）/ 營運參數（3 項）/ 每公里成本明細
-//   - 新增：localStorage 持久化（key='driver-cost-calculator-v1'），下次回來輸入值還在
+//
+// P30：跟帳號走（取代原本的 localStorage 持久化）
+//   - 12 欄位預設 0（過往為 driver.html v2 範例值，已改為 0 讓 driver 自行輸入）
+//   - onMounted：client SDK 讀 drivers/{uid}.costSettings 套入
+//   - 「儲存到帳號」按鈕：PATCH /nuxt-api/drivers/me/cost-settings 寫 Firestore
+//   - 跨裝置 / 重登後仍可載入
 //
 // 計算邏輯沿用原 driver.html calculate()：
 //   monthlyFixed = 車貸 + 保險 + 保養 + 停車 + 勞健保
@@ -15,26 +20,34 @@
 //   dailyTotalCost = (monthlyFixed + monthlyOil + monthlyToll + monthlyTire + monthlyMisc) / workDays
 //   costPerKm = dailyTotalCost / dailyKm
 //   dailyProfit = dailyRevenue − dailyTotalCost
+import type { DriverCostSettings } from '@/protocol/fetch-api/api/driver';
 
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
-// ── 輸入欄位 ─────────────────────────────────────────────
+const authStore = StoreAuth();
+const { user } = storeToRefs(authStore);
+const lineUid = computed(() => {
+  const uid = user.value?.uid ?? '';
+  return uid.startsWith('line:') ? uid.slice(5) : uid;
+});
+
+// ── 輸入欄位（P30：預設 0，等 driver 輸入後存到帳號）─────────────
 // 每月固定
-const carLoan = ref(30000);
-const insurance = ref(1667);
-const maintenance = ref(5000);
-const parking = ref(3500);
-const laborIns = ref(2950);
+const carLoan = ref(0);
+const insurance = ref(0);
+const maintenance = ref(0);
+const parking = ref(0);
+const laborIns = ref(0);
 // 每公里變動
-const oilPerKm = ref(2.5);
-const tollPerKm = ref(0.83);
-const tireCost = ref(20000);
+const oilPerKm = ref(0);
+const tollPerKm = ref(0);
+const tireCost = ref(0);
 // 每上班日
-const miscDaily = ref(500);
+const miscDaily = ref(0);
 // 營運參數
-const dailyKm = ref(300);
-const dailyRevenue = ref(3000);
-const workDays = ref(20);
+const dailyKm = ref(0);
+const dailyRevenue = ref(0);
+const workDays = ref(0);
 
 // ── 計算（純 computed，依賴變動自動 reactive）─────────────────
 const monthlyFixed = computed(() =>
@@ -53,7 +66,7 @@ const dailyTotalCost = computed(() => monthlyTotalCost.value / Math.max(workDays
 const costPerKmTotal = computed(() => (dailyKm.value > 0 ? dailyTotalCost.value / dailyKm.value : 0));
 const dailyProfit = computed(() => dailyRevenue.value - dailyTotalCost.value);
 
-const tirePerKm = computed(() => tireCost.value / 50000);
+const tirePerKm = computed(() => (tireCost.value > 0 ? tireCost.value / 50000 : 0));
 
 // 每公里成本明細（template 用）
 const breakdownRows = computed(() => [
@@ -72,71 +85,68 @@ const profitLabel = computed(() =>
   `${dailyProfit.value.toFixed(0)} 元（${dailyProfit.value < 0 ? '虧損' : '獲利'}）`,
 );
 
-// ── localStorage 持久化 ─────────────────────────────────
-const STORAGE_KEY = 'driver-cost-calculator-v1';
+// ── 跟帳號走：load + save ────────────────────────────────────
+const loading = ref(false);
+const saving = ref(false);
 
-interface PersistedState {
-  carLoan: number; insurance: number; maintenance: number; parking: number; laborIns: number;
-  oilPerKm: number; tollPerKm: number; tireCost: number;
-  miscDaily: number;
-  dailyKm: number; dailyRevenue: number; workDays: number;
-}
-
-const _LoadFromStorage = () => {
-  if (!import.meta.client) return;
+const ApiLoadCostSettings = async () => {
+  if (!lineUid.value) return;
+  loading.value = true;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const data = JSON.parse(raw) as Partial<PersistedState>;
-    if (typeof data.carLoan === 'number') carLoan.value = data.carLoan;
-    if (typeof data.insurance === 'number') insurance.value = data.insurance;
-    if (typeof data.maintenance === 'number') maintenance.value = data.maintenance;
-    if (typeof data.parking === 'number') parking.value = data.parking;
-    if (typeof data.laborIns === 'number') laborIns.value = data.laborIns;
-    if (typeof data.oilPerKm === 'number') oilPerKm.value = data.oilPerKm;
-    if (typeof data.tollPerKm === 'number') tollPerKm.value = data.tollPerKm;
-    if (typeof data.tireCost === 'number') tireCost.value = data.tireCost;
-    if (typeof data.miscDaily === 'number') miscDaily.value = data.miscDaily;
-    if (typeof data.dailyKm === 'number') dailyKm.value = data.dailyKm;
-    if (typeof data.dailyRevenue === 'number') dailyRevenue.value = data.dailyRevenue;
-    if (typeof data.workDays === 'number') workDays.value = data.workDays;
+    const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app) return;
+    const db = getFirestore(app);
+    const snap = await getDoc(doc(db, 'drivers', lineUid.value));
+    if (!snap.exists()) return;
+    const settings = snap.data()?.costSettings as DriverCostSettings | undefined;
+    if (!settings) return;
+
+    if (typeof settings.carLoan === 'number') carLoan.value = settings.carLoan;
+    if (typeof settings.insurance === 'number') insurance.value = settings.insurance;
+    if (typeof settings.maintenance === 'number') maintenance.value = settings.maintenance;
+    if (typeof settings.parking === 'number') parking.value = settings.parking;
+    if (typeof settings.laborIns === 'number') laborIns.value = settings.laborIns;
+    if (typeof settings.oilPerKm === 'number') oilPerKm.value = settings.oilPerKm;
+    if (typeof settings.tollPerKm === 'number') tollPerKm.value = settings.tollPerKm;
+    if (typeof settings.tireCost === 'number') tireCost.value = settings.tireCost;
+    if (typeof settings.miscDaily === 'number') miscDaily.value = settings.miscDaily;
+    if (typeof settings.dailyKm === 'number') dailyKm.value = settings.dailyKm;
+    if (typeof settings.dailyRevenue === 'number') dailyRevenue.value = settings.dailyRevenue;
+    if (typeof settings.workDays === 'number') workDays.value = settings.workDays;
   } catch (err) {
-    console.warn('[driver/cost] localStorage load failed:', err);
+    console.warn('[driver/cost] load from Firestore failed:', err);
+  } finally {
+    loading.value = false;
   }
 };
 
-const _SaveToStorage = () => {
-  if (!import.meta.client) return;
-  try {
-    const payload: PersistedState = {
-      carLoan: carLoan.value,
-      insurance: insurance.value,
-      maintenance: maintenance.value,
-      parking: parking.value,
-      laborIns: laborIns.value,
-      oilPerKm: oilPerKm.value,
-      tollPerKm: tollPerKm.value,
-      tireCost: tireCost.value,
-      miscDaily: miscDaily.value,
-      dailyKm: dailyKm.value,
-      dailyRevenue: dailyRevenue.value,
-      workDays: workDays.value,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (err) {
-    console.warn('[driver/cost] localStorage save failed:', err);
+const ClickSave = async () => {
+  saving.value = true;
+  const res = await $api.UpdateDriverCostSettings({
+    carLoan: carLoan.value,
+    insurance: insurance.value,
+    maintenance: maintenance.value,
+    parking: parking.value,
+    laborIns: laborIns.value,
+    oilPerKm: oilPerKm.value,
+    tollPerKm: tollPerKm.value,
+    tireCost: tireCost.value,
+    miscDaily: miscDaily.value,
+    dailyKm: dailyKm.value,
+    dailyRevenue: dailyRevenue.value,
+    workDays: workDays.value,
+  });
+  saving.value = false;
+  if (res.status.code === 200) {
+    ElMessage({ message: '已儲存到您的帳號', type: 'success' });
+  } else {
+    ElMessage({ message: res.status.message.zh_tw ?? '儲存失敗', type: 'error' });
   }
 };
 
-onMounted(_LoadFromStorage);
-
-// 任一欄位變動 → 寫 localStorage（reactivity 自動觸發）
-watch(
-  [carLoan, insurance, maintenance, parking, laborIns,
-    oilPerKm, tollPerKm, tireCost, miscDaily,
-    dailyKm, dailyRevenue, workDays],
-  _SaveToStorage,
-);
+onMounted(ApiLoadCostSettings);
 </script>
 
 <template lang="pug">
@@ -248,6 +258,17 @@ watch(
         tr.PageDriverCost__breakdown-total
           td 總計
           td.PageDriverCost__breakdown-num {{ costPerKmTotal.toFixed(2) }} 元
+
+  //- ── 儲存到帳號（P30 新增）──────────────────────────────────
+  .PageDriverCost__save-bar
+    button.PageDriverCost__save-btn(
+      :disabled="saving || loading"
+      @click="ClickSave"
+    )
+      template(v-if="saving") 儲存中...
+      template(v-else-if="loading") 載入中...
+      template(v-else) 儲存到我的帳號
+    .PageDriverCost__save-hint 儲存後跨裝置 / 重新登入皆可載入
 </template>
 
 <style lang="scss" scoped>
@@ -386,6 +407,46 @@ $border: #ecf0f1;
 
 .PageDriverCost__breakdown-total td { font-size: 1.05rem; }
 
+// ── 儲存區（P30）──────────────────────────────────────────
+.PageDriverCost__save-bar {
+  position: sticky;
+  bottom: 16px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.PageDriverCost__save-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  background: $accent;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  min-width: 160px;
+
+  &:hover:not(:disabled) { background: darken($accent, 8%); }
+  &:active:not(:disabled) { transform: scale(0.98); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.PageDriverCost__save-hint {
+  font-size: 0.85rem;
+  color: $muted;
+  flex: 1;
+  text-align: right;
+}
+
 // ── 手機版調整 ────────────────────────────────────────────
 @media (max-width: 600px) {
   .PageDriverCost { padding: 12px; }
@@ -394,5 +455,13 @@ $border: #ecf0f1;
   .PageDriverCost__cost-table th { width: 36%; }
   .PageDriverCost__cost-table th,
   .PageDriverCost__cost-table td { padding: 10px 8px; font-size: 0.9rem; }
+
+  .PageDriverCost__save-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .PageDriverCost__save-btn { width: 100%; }
+  .PageDriverCost__save-hint { text-align: center; }
 }
 </style>
