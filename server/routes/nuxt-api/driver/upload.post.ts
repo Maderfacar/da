@@ -118,15 +118,16 @@ export default defineEventHandler(async (event) => {
       mime,
     });
   } catch (err) {
-    // 把 err.message 暴露給 client，方便定位問題（如 "The specified bucket does not exist"
-    // 表示 storageBucket 名稱不對；"Permission denied" 表示 Service Account 缺權限）。
-    // 不會洩漏 secret，只是 SDK 訊息。
+    // 完整錯誤只記伺服器端 log；client 端依環境決定詳細度：
+    //   - dev：附 err.message 方便快速定位
+    //   - prod：通用訊息，避免 SDK 內部錯誤（bucket 名稱 / Service Account 權限細節）洩漏給未授權使用者
     console.error('[driver/upload] failed:', err);
-    const detail = err instanceof Error ? err.message : String(err);
+    const isDev = process.env.NODE_ENV === 'development';
+    const detail = isDev && err instanceof Error ? err.message : '';
     return serverError({
-      zh_tw: `上傳失敗：${detail}`,
-      en: `Upload failed: ${detail}`,
-      ja: `アップロード失敗: ${detail}`,
+      zh_tw: detail ? `上傳失敗：${detail}` : '上傳失敗，請稍後重試',
+      en: detail ? `Upload failed: ${detail}` : 'Upload failed, please retry',
+      ja: detail ? `アップロード失敗: ${detail}` : 'アップロードに失敗しました。再試行してください',
     });
   }
 });

@@ -423,14 +423,14 @@
 
 **P16-1：資安債（建議上線後 1 週內）**
 - [ ] **Signed URL TTL 縮短**：`server/routes/nuxt-api/driver/upload.post.ts:97` 1 年 → 4 小時；admin/owner 端每次 load 重新 sign（避免證件外洩 1 年內任何人能看）
-- [ ] **err.message 暴露 prod guard**：`server/routes/nuxt-api/driver/upload.post.ts:113` 加 `process.env.NODE_ENV === 'development'` 才顯示細節，prod 回通用訊息（避免洩漏 SDK 內部錯誤訊息）
+- [✅] **err.message 暴露 prod guard**：`server/routes/nuxt-api/driver/upload.post.ts` prod 只回通用「上傳失敗，請稍後重試」，dev 才附 err.message
 - [ ] **Rate limiting**：line-exchange / driver/apply / admin/broadcast 至少 IP 級限流（避免 LINE API 配額被打爆）
 
 **P16-2：體驗修飾（上線後可做）**
-- [ ] `/admin/war-room` `console.error` 殘留清理
-- [ ] `/driver/dashboard` ONLINE HRS 永遠顯示 0（無對應 API），隱藏或補後端
+- [✅] `/admin/war-room` `console.error` 加 prefix `[admin/war-room]` 對齊其他檔
+- [✅] `/driver/dashboard` ONLINE HRS 暫隱藏（永遠顯示 0 無參考價值；接後端上線時數累計 API 後再放回）
 - [ ] `/admin/notifications` 通知歷史只存 in-memory，重整就清空（無稽核需求可不做）
-- [ ] `/driver/profile` totalTrips 顯示「今日趟次」但 label 是「累計」（語意混淆）
+- [✅] `/driver/profile` totalTrips label 已對齊為 `TODAY TRIPS`（之前記錄 stale）
 
 **P16-3：基礎設施**
 - [ ] **使用者部署 firestore.rules**：Firebase Console → Firestore → Rules 貼上 `firestore.rules` 內容並 Publish
@@ -460,9 +460,9 @@
 **P17-3：體驗細節（先列入待辦）**
 - [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）
 - [ ] `profile` 頁加訂單統計（總趟數 / 累計里程）+ 客服聯絡資訊
-- [ ] `fleet/index.vue` 預約按鈕帶 `?vehicleType=` query 直連 `/booking` 預選車型
+- [✅] `fleet/index.vue` 預約按鈕已帶 `?vehicleType=` query 直連 `/booking` 預選車型
 - [ ] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（目前硬編碼中文）
-- [ ] `upcoming/index.vue` STATUS_TAB_KEYS 加 `cancelled` filter
+- [✅] `upcoming/index.vue` STATUS_TAB_KEYS 已含 `cancelled` filter
 - [ ] `app/protocol/fetch-api/methods.ts` 401 自動登出邏輯實作（line 3 / 18 / 61 三個 TODO）
 - [ ] 加好友橫幅與 home Hero 排版重疊檢查（P2）
 

@@ -88,8 +88,8 @@ const _InitMapFlow = async () => {
 
   try {
     await _loadGoogleMapsScript(googleMapsBrowserKey);
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error('[admin/war-room] Google Maps load failed:', err);
     return;
   }
 

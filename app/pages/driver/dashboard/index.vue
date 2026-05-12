@@ -34,10 +34,10 @@ const ApiLoadStats = async () => {
   }
 };
 
+// ONLINE HRS 暫時隱藏：永遠顯示 0 對 driver 沒參考價值；之後接後端上線時數累計 API 再放回
 const stats = computed(() => [
   { label: 'TRIPS TODAY', labelZh: '今日趟次', value: String(tripsToday.value), unit: '趟' },
   { label: 'EARNINGS',    labelZh: '今日收入', value: `NT$ ${earningsToday.value.toLocaleString()}`, unit: '' },
-  { label: 'ONLINE HRS',  labelZh: '上線時數', value: '0', unit: 'hr' },
 ]);
 
 onMounted(ApiLoadStats);
