@@ -96,6 +96,17 @@ const _airports: Record<string, string> = {
   RMQ: '台中清泉崗',
   HUN: '花蓮',
   KNH: '金門',
+  // 台灣國內離島 + 偏鄉機場
+  TTT: '台東',
+  MZG: '馬公(澎湖)',
+  CYI: '嘉義',
+  PIF: '屏東',
+  WOT: '望安',
+  KYD: '蘭嶼',
+  GNI: '綠島',
+  MFK: '馬祖北竿',
+  LZN: '馬祖南竿',
+  CMJ: '七美',
   // 日本
   NRT: '東京成田',
   HND: '東京羽田',

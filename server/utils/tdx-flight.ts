@@ -404,16 +404,35 @@ export const QueryTdxFlight = async (
 
   if (allEntries.length === 0) return null;
 
-  // ── 比對航班號（含 codeshare 雙向）───────────────────
+  // ── 比對航班號（含 multi-leg pick 與 codeshare 雙向）───
+  // 多 leg 航班可能用「同 FlightNumber 多筆 row」表示（HKG→TPE 一筆、TPE→SGN 一筆）。
+  // 依 direction 挑「TPE/TSA/KHH/RMQ 在對應端」那筆 leg：
+  //   - 接機 → 挑 ArrivalAirport 在台灣那筆（HKG→TPE 那段）
+  //   - 送機 → 挑 DepartureAirport 在台灣那筆（TPE→SGN 那段）
+
+  const _pickByDirection = (
+    candidates: Array<{ entry: TdxScheduleEntry; isDomestic: boolean }>,
+  ): typeof candidates[number] | undefined => {
+    if (candidates.length === 0) return undefined;
+    if (candidates.length === 1) return candidates[0];
+    const twPick = direction === 'arrival'
+      ? candidates.find(({ entry }) => _isTwAirport(entry.ArrivalAirportID))
+      : candidates.find(({ entry }) => _isTwAirport(entry.DepartureAirportID));
+    return twPick ?? candidates[0];
+  };
+
   // 第一輪：直接比 entry.FlightNumber（TDX FlightNumber 已含 airline prefix）
-  let matched = allEntries.find(
+  const directCandidates = allEntries.filter(
     ({ entry }) => _normalizeFlightNo(entry) === flightNoUpper,
   );
+  let matched = _pickByDirection(directCandidates);
 
-  // 第二輪 fallback：迭代 entry.CodeShare array element 看有沒有對到目標 flightNo
-  // （用戶輸入的可能是「銷售編號」而非「實體營運編號」）
+  // 第二輪 fallback：迭代 entry.CodeShare array element 比對
   if (!matched) {
-    matched = allEntries.find(({ entry }) => _codeShareIncludes(entry, flightNoUpper));
+    const codeshareCandidates = allEntries.filter(
+      ({ entry }) => _codeShareIncludes(entry, flightNoUpper),
+    );
+    matched = _pickByDirection(codeshareCandidates);
   }
 
   if (!matched) return null;
@@ -455,8 +474,18 @@ export interface TdxQueryTrace {
   oauth: { ok: boolean; error: string | null };
   domestic: { count: number; sample: TdxScheduleEntry | null; error: string | null };
   international: { count: number; sample: TdxScheduleEntry | null; error: string | null };
-  matchAttempt1Precise: { matched: boolean };
-  matchAttempt2Codeshare: { triggered: boolean; matched: boolean };
+  /** Multi-leg 偵測：candidates 數量 + 每段 leg 簡述（dep→arr），便於診斷轉機航班 */
+  matchAttempt1Precise: {
+    matched: boolean;
+    candidatesCount: number;
+    candidateLegs: Array<{ dep: string; arr: string; isDomestic: boolean }>;
+  };
+  matchAttempt2Codeshare: {
+    triggered: boolean;
+    matched: boolean;
+    candidatesCount: number;
+    candidateLegs: Array<{ dep: string; arr: string; isDomestic: boolean }>;
+  };
   matchedRawEntry: TdxScheduleEntry | null;
   matchedIsDomestic: boolean | null;
   /** 命中後依 direction 對應 mapping 出的中間結果 */
@@ -482,8 +511,8 @@ export const QueryTdxFlightWithTrace = async (
     oauth: { ok: false, error: null },
     domestic: { count: 0, sample: null, error: null },
     international: { count: 0, sample: null, error: null },
-    matchAttempt1Precise: { matched: false },
-    matchAttempt2Codeshare: { triggered: false, matched: false },
+    matchAttempt1Precise: { matched: false, candidatesCount: 0, candidateLegs: [] },
+    matchAttempt2Codeshare: { triggered: false, matched: false, candidatesCount: 0, candidateLegs: [] },
     matchedRawEntry: null,
     matchedIsDomestic: null,
     mappedResult: null,
@@ -518,14 +547,40 @@ export const QueryTdxFlightWithTrace = async (
     ...meta.international.data.map((entry) => ({ entry, isDomestic: false })),
   ];
 
-  // 比對 attempt 1：直接比 entry.FlightNumber（TDX FlightNumber 已含 airline prefix）
-  let matched = allEntries.find(({ entry }) => _normalizeFlightNo(entry) === flightNoUpper);
+  const _legSummary = (c: { entry: TdxScheduleEntry; isDomestic: boolean }) => ({
+    dep: (c.entry.DepartureAirportID ?? '').toUpperCase(),
+    arr: (c.entry.ArrivalAirportID ?? '').toUpperCase(),
+    isDomestic: c.isDomestic,
+  });
+  const _pickByDirection = (
+    candidates: Array<{ entry: TdxScheduleEntry; isDomestic: boolean }>,
+  ): typeof candidates[number] | undefined => {
+    if (candidates.length === 0) return undefined;
+    if (candidates.length === 1) return candidates[0];
+    const twPick = direction === 'arrival'
+      ? candidates.find(({ entry }) => _isTwAirport(entry.ArrivalAirportID))
+      : candidates.find(({ entry }) => _isTwAirport(entry.DepartureAirportID));
+    return twPick ?? candidates[0];
+  };
+
+  // 比對 attempt 1：所有匹配的 entries（multi-leg 航班可能 N 筆）
+  const directCandidates = allEntries.filter(
+    ({ entry }) => _normalizeFlightNo(entry) === flightNoUpper,
+  );
+  trace.matchAttempt1Precise.candidatesCount = directCandidates.length;
+  trace.matchAttempt1Precise.candidateLegs = directCandidates.map(_legSummary);
+  let matched = _pickByDirection(directCandidates);
   trace.matchAttempt1Precise.matched = Boolean(matched);
 
   // 比對 attempt 2：codeshare array element fallback
   if (!matched) {
     trace.matchAttempt2Codeshare.triggered = true;
-    matched = allEntries.find(({ entry }) => _codeShareIncludes(entry, flightNoUpper));
+    const codeshareCandidates = allEntries.filter(
+      ({ entry }) => _codeShareIncludes(entry, flightNoUpper),
+    );
+    trace.matchAttempt2Codeshare.candidatesCount = codeshareCandidates.length;
+    trace.matchAttempt2Codeshare.candidateLegs = codeshareCandidates.map(_legSummary);
+    matched = _pickByDirection(codeshareCandidates);
     trace.matchAttempt2Codeshare.matched = Boolean(matched);
   }
 
