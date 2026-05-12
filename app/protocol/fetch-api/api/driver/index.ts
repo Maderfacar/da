@@ -88,8 +88,10 @@ export interface DriverCostSettings {
   maintenance?: number;   // 車輛保養（每月）
   parking?: number;       // 停車月租（每月）
   laborIns?: number;      // 勞健保（每月）
-  oilPerKm?: number;      // 油費（每公里）
-  tollPerKm?: number;     // 過路費（每公里）
+  oilMonthly?: number;    // P33 油費（每月）
+  tollMonthly?: number;   // P33 過路費（每月）
+  oilPerKm?: number;      // P33 deprecated 舊每公里油費（read fallback only）
+  tollPerKm?: number;     // P33 deprecated 舊每公里過路費（read fallback only）
   tireCost?: number;      // 輪胎（每 5 萬公里）
   miscDaily?: number;     // 雜項開支（每上班日）
   dailyKm?: number;       // 每日行駛里程

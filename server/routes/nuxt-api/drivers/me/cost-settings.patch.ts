@@ -9,18 +9,28 @@
  *
  * Body 12 欄位皆 optional（partial update），都是 number。
  *   - 每月固定：carLoan / insurance / maintenance / parking / laborIns
- *   - 每公里變動：oilPerKm / tollPerKm / tireCost
+ *   - 每月變動：oilMonthly / tollMonthly（P33：原 oilPerKm/tollPerKm 每公里計算改每月直接輸入）
+ *   - 每 5 萬公里：tireCost
  *   - 每上班日：miscDaily
  *   - 營運參數：dailyKm / dailyRevenue / workDays
  *
  * 數值範圍驗證：≥ 0；過大值（> 1e9）拒收避免誤輸入
+ *
+ * P33 向下兼容：
+ *   - 既有 prod 資料仍有 oilPerKm/tollPerKm 欄位（單位每公里）；本端點仍接受寫入以免破壞 client
+ *     migration 中途行為；但新 client 改寫 oilMonthly/tollMonthly
+ *   - load 端（cost/index.vue）會優先讀新欄位，找不到再讀舊欄位
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 
 const FIELDS = [
   'carLoan', 'insurance', 'maintenance', 'parking', 'laborIns',
-  'oilPerKm', 'tollPerKm', 'tireCost',
+  // P33 新欄位（每月）
+  'oilMonthly', 'tollMonthly',
+  // P33 舊欄位（每公里）— 保留接受以免 in-flight migration 失敗；新 client 不再寫入
+  'oilPerKm', 'tollPerKm',
+  'tireCost',
   'miscDaily',
   'dailyKm', 'dailyRevenue', 'workDays',
 ] as const;
