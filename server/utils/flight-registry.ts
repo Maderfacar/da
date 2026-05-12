@@ -53,7 +53,31 @@ export interface FlightRegistryDoc {
   lastUpdated: Timestamp | null;
   /** Per-date schedule cache，key 由 makeScheduleKey() 產生 */
   schedules?: Record<string, FlightRegistrySchedule>;
+  /** TDX schedule 子物件（本 spec 2026-05-12 新增，獨立於 Aviation Edge schedules）*/
+  tdx?: FlightRegistryTdxBlock;
 }
+
+/** TDX schedule 子物件（GeneralSchedule API 回傳的「週期性排程」） */
+export interface FlightRegistryTdxBlock {
+  isDomestic: boolean;
+  departureAirport: string;
+  arrivalAirport: string;
+  /** TPE 端對應 direction 的航廈（國內線可能為 ''） */
+  terminal: string;
+  scheduledDeparture: string;        // 'HH:mm'
+  scheduledArrival: string;
+  weekDays: number[];                // [1,3,5] (1=週一, 7=週日)
+  effectiveStart: string | null;     // 'YYYY-MM-DD'
+  effectiveEnd: string | null;
+  codeShare: boolean;
+  operatingAirlineCode: string | null;
+  operatingFlightNumber: string | null;
+  /** TDX 撈回時間（毫秒），用於 staleness 判定 */
+  fetchedAtMillis: number;
+}
+
+/** TDX 子物件視為「秒渲染可用」的最大年齡（毫秒）— booking 階段排程不會分鐘級變動，可放寬 */
+export const TDX_FRESH_MS = 24 * 60 * 60 * 1000; // 24h
 
 /** 取一份 Firestore handle；Firebase 未設或 init 失敗則回 null（讓上層走 fallback） */
 function _getDb(): Firestore | null {
@@ -162,5 +186,48 @@ export const SaveFlightToRegistry = async (input: SaveFlightInput): Promise<void
     await ref.set(payload, { merge: true });
   } catch (err) {
     console.error(`[flight-registry] write failed (${input.flightNo}):`, err);
+  }
+};
+
+// ── TDX 子物件 read / write helpers（spec 2026-05-12）──────────────
+
+/** TDX 子物件是否在新鮮窗口內（< 24h） */
+export const IsTdxBlockFresh = (tdx: FlightRegistryTdxBlock | undefined): boolean => {
+  if (!tdx?.fetchedAtMillis) return false;
+  return Date.now() - tdx.fetchedAtMillis < TDX_FRESH_MS;
+};
+
+export interface SaveTdxBlockInput {
+  flightNo: string;
+  airlineCode: string;
+  airlineName: string;
+  tdx: Omit<FlightRegistryTdxBlock, 'fetchedAtMillis'>;
+}
+
+/**
+ * 寫入 / 更新 flight_registry doc 的 tdx 子物件 + 共用識別欄位
+ * - 不動既有 Aviation Edge 寫入的 schedules / departureAirport / arrivalAirport / terminal / status
+ *   （這些欄位由 SaveFlightToRegistry 維護，TDX 寫入時用 dot path 精準寫 tdx.* 子欄位避免覆蓋）
+ * - lastUpdated 用 serverTimestamp（任一來源更新都刷）
+ * - 寫入失敗 silent log（不 throw）
+ */
+export const SaveTdxBlockToRegistry = async (input: SaveTdxBlockInput): Promise<void> => {
+  const db = _getDb();
+  if (!db) return;
+  try {
+    const ref = db.collection(COLLECTION).doc(input.flightNo);
+    // 用 set + merge：tdx 整個物件覆蓋（含 fetchedAtMillis 重置），共用欄位 merge 進去
+    await ref.set({
+      flightNo: input.flightNo,
+      airlineCode: input.airlineCode,
+      airlineName: input.airlineName,
+      lastUpdated: FieldValue.serverTimestamp(),
+      tdx: {
+        ...input.tdx,
+        fetchedAtMillis: Date.now(),
+      },
+    }, { merge: true });
+  } catch (err) {
+    console.error(`[flight-registry] tdx write failed (${input.flightNo}):`, err);
   }
 };
