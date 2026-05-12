@@ -173,12 +173,16 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutBackDesk__logo {
   flex: 1;
+  min-width: 0;
   font-family: $font-display;
   font-size: 20px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
   line-height: 1;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   span { color: var(--da-amber); }
 
@@ -187,6 +191,9 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutBackDesk__hamburger {
   width: 32px; height: 32px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -198,6 +205,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   span {
     display: block;
+    width: 100%;
     height: 2px;
     background: var(--da-cream);
     border-radius: 2px;
