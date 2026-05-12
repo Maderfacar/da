@@ -5,6 +5,7 @@ import { successResponse, badRequestError, serverError, forbiddenError } from '@
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
+import { checkRateLimit, rateLimitedResponse } from '@@/utils/rate-limit';
 
 interface BroadcastBody {
   title: string;
@@ -33,6 +34,21 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+
+    // P31：限流 — 每位 admin uid 1 小時內最多 10 次廣播（避免 LINE messaging quota 被燒爆）
+    try {
+      const limit = await checkRateLimit(db, {
+        key: `admin-broadcast:uid:${auth.lineUid}`,
+        windowSec: 3600,
+        max: 10,
+      });
+      if (!limit.ok) {
+        setResponseHeader(event, 'Retry-After', limit.retryAfter ?? 3600);
+        return rateLimitedResponse(limit.retryAfter ?? 3600);
+      }
+    } catch {
+      // rate-limit fail-open
+    }
 
     let q = db.collection('users') as FirebaseFirestore.Query;
     if (body.targetRole !== 'all') {

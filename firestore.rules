@@ -88,6 +88,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── rate_limits 集合（P31）────────────────────────────────
+    // line-exchange / driver-apply / admin-broadcast 限流計數；client 全禁，
+    // 僅 server admin SDK 透過 server/utils/rate-limit.ts 讀寫
+    match /rate_limits/{key} {
+      allow read, write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

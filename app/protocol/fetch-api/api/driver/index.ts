@@ -65,6 +65,14 @@ export const ReplaceDriverDocument = (body: {
   url: string;
 }) => methods.post<{ docType: string; status: 'pending' }>('/nuxt-api/drivers/me/document-replace', body);
 
+/**
+ * P31：重簽司機證件 GCS URL（TTL 4h）— 資安債修補
+ * client 從 Firestore 讀到舊 URL（1y 或 4h 過期）後，呼叫本 API 換 fresh 4h URL。
+ * 後端會驗證 url owner（admin 或本人）。
+ */
+export const SignDriverDocument = (url: string) =>
+  methods.post<{ url: string }>('/nuxt-api/driver-docs/sign', { url });
+
 // ── P30：司機營運成本計算機跟帳號走 ───────────────────────────
 
 export interface DriverCostSettings {

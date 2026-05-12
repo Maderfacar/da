@@ -67,7 +67,21 @@ const ApiLoadDriverData = async () => {
       } | undefined;
 
       phone.value = application?.phone ?? '';
-      documents.value = application?.documents ?? {};
+
+      // P31：documents URL 透過 sign endpoint 重簽 4h（fallback 原 URL 不阻擋顯示）
+      const rawDocs = application?.documents ?? {};
+      const freshDocs: DriverDocs = {};
+      await Promise.all((Object.keys(rawDocs) as DocType[]).map(async (k) => {
+        const u = rawDocs[k];
+        if (!u) return;
+        try {
+          const r = await $api.SignDriverDocument(u);
+          freshDocs[k] = r.status?.code === $enum.apiStatus.success && r.data?.url ? r.data.url : u;
+        } catch {
+          freshDocs[k] = u;
+        }
+      }));
+      documents.value = freshDocs;
 
       const pending: Partial<Record<DocType, PendingDocument>> = {};
       const _ts = (v: unknown): string | null => {
@@ -79,8 +93,14 @@ const ApiLoadDriverData = async () => {
       for (const { type } of DOC_FIELDS) {
         const entry = application?.documentsPending?.[type];
         if (entry) {
+          // P31：pending URL 也 resign（fallback 原 URL）
+          let freshUrl = entry.url;
+          try {
+            const r = await $api.SignDriverDocument(entry.url);
+            if (r.status?.code === $enum.apiStatus.success && r.data?.url) freshUrl = r.data.url;
+          } catch { /* 保留原 url */ }
           pending[type] = {
-            url: entry.url,
+            url: freshUrl,
             uploadedAt: _ts(entry.uploadedAt),
             status: entry.status,
             rejectedAt: _ts(entry.rejectedAt),

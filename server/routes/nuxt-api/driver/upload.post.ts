@@ -19,6 +19,7 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { DRIVER_DOC_TTL_MS } from '@@/utils/signed-url';
 
 const ALLOWED_DOC_TYPES = ['licenseUrl', 'registrationUrl', 'insuranceUrl', 'goodCitizenUrl'] as const;
 type DocType = typeof ALLOWED_DOC_TYPES[number];
@@ -104,10 +105,12 @@ export default defineEventHandler(async (event) => {
       metadata: { contentType: mime, cacheControl: 'private, max-age=31536000' },
     });
 
-    // 產生長效 signed URL（1 年），admin / owner 端可直接顯示圖片，無需配置 Storage Rules public
+    // P31：TTL 4 小時（先前為 1 年；資安債）。所有顯示證件的端點 / 頁面
+    // 必須在回傳給 client 前用 server/utils/signed-url.ts 的 resignGcsUrl 重簽。
+    // register 流程通常 5~10 分鐘內完成，4h 足夠；admin 審件透過 resign 永遠 fresh。
     const [signedUrl] = await blob.getSignedUrl({
       action: 'read',
-      expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
+      expires: Date.now() + DRIVER_DOC_TTL_MS,
     });
 
     return successResponse({

@@ -17,6 +17,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { readDriverApplication } from '@@/utils/driver-application';
+import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 
 interface ApplyBody {
   lineUserId: string;
@@ -44,6 +45,33 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig();
     if (!config.firebaseServiceAccountJson) {
       return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
+    }
+
+    // P31：限流 — 每位 uid 1 小時內最多 3 次（cooldown 已有 24h，但要擋連打）
+    // 與 IP 級 10/hour 雙鎖（避免單 IP 跨多 uid 連灌）
+    try {
+      const { db: limitDb } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+      const ip = getClientIp(event);
+      const uidLimit = await checkRateLimit(limitDb, {
+        key: `driver-apply:uid:${auth.lineUid}`,
+        windowSec: 3600,
+        max: 3,
+      });
+      if (!uidLimit.ok) {
+        setResponseHeader(event, 'Retry-After', uidLimit.retryAfter ?? 3600);
+        return rateLimitedResponse(uidLimit.retryAfter ?? 3600);
+      }
+      const ipLimit = await checkRateLimit(limitDb, {
+        key: `driver-apply:ip:${ip}`,
+        windowSec: 3600,
+        max: 10,
+      });
+      if (!ipLimit.ok) {
+        setResponseHeader(event, 'Retry-After', ipLimit.retryAfter ?? 3600);
+        return rateLimitedResponse(ipLimit.retryAfter ?? 3600);
+      }
+    } catch {
+      // rate-limit 內部已 fail-open
     }
 
     const body = await readBody<ApplyBody>(event).catch(() => null);

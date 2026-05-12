@@ -421,15 +421,15 @@
 
 > **背景**：使用者要求先把資安債 / 體驗修飾暫停，轉向乘客端完善。本節記錄已盤點但暫緩的項目，避免遺忘。
 
-**P16-1：資安債（建議上線後 1 週內）**
-- [ ] **Signed URL TTL 縮短**：`server/routes/nuxt-api/driver/upload.post.ts:97` 1 年 → 4 小時；admin/owner 端每次 load 重新 sign（避免證件外洩 1 年內任何人能看）
+**P16-1：資安債（建議上線後 1 週內）** — ✅ **2026-05-13 P31 全部完成**
+- [✅] **Signed URL TTL 縮短**：[upload.post.ts](../server/routes/nuxt-api/driver/upload.post.ts) 1 年 → 4 小時；新增 [signed-url.ts](../server/utils/signed-url.ts) resign helper + [driver-docs/sign.post.ts](../server/routes/nuxt-api/driver-docs/sign.post.ts) endpoint；[admin/users/index.get.ts](../server/routes/nuxt-api/admin/users/index.get.ts) server resign；[admin/drivers/[uid].vue](../app/pages/admin/drivers/%5Buid%5D.vue) + [driver/profile/index.vue](../app/pages/driver/profile/index.vue) client-side resign
 - [✅] **err.message 暴露 prod guard**：`server/routes/nuxt-api/driver/upload.post.ts` prod 只回通用「上傳失敗，請稍後重試」，dev 才附 err.message
-- [ ] **Rate limiting**：line-exchange / driver/apply / admin/broadcast 至少 IP 級限流（避免 LINE API 配額被打爆）
+- [✅] **Rate limiting**：[rate-limit.ts](../server/utils/rate-limit.ts) Firestore-based helper + [line-exchange](../server/routes/nuxt-api/auth/line-exchange.post.ts)（IP 10/min）/ [driver/apply](../server/routes/nuxt-api/driver/apply.post.ts)（uid 3/h + IP 10/h 雙鎖）/ [admin/broadcast](../server/routes/nuxt-api/admin/broadcast.post.ts)（uid 10/h）接入；firestore.rules `rate_limits` client 全禁；fail-open 設計避免 Firestore 故障導致全停擺
 
 **P16-2：體驗修飾（上線後可做）**
 - [✅] `/admin/war-room` `console.error` 加 prefix `[admin/war-room]` 對齊其他檔
 - [✅] `/driver/dashboard` ONLINE HRS 暫隱藏（永遠顯示 0 無參考價值；接後端上線時數累計 API 後再放回）
-- [ ] `/admin/notifications` 通知歷史只存 in-memory，重整就清空（無稽核需求可不做）
+- [✅] `/admin/notifications` 通知歷史持久化已由 P25-2 audit log cover（`broadcast.send` action 寫入 `audit_logs/`，super admin 可在 `/admin/audit-logs` 過濾查詢）
 - [✅] `/driver/profile` totalTrips label 已對齊為 `TODAY TRIPS`（之前記錄 stale）
 
 **P16-3：基礎設施**
@@ -461,9 +461,9 @@
 - [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）
 - [ ] `profile` 頁加訂單統計（總趟數 / 累計里程）+ 客服聯絡資訊
 - [✅] `fleet/index.vue` 預約按鈕已帶 `?vehicleType=` query 直連 `/booking` 預選車型
-- [ ] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（目前硬編碼中文）
+- [✅] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（[orders/index.vue:73-76](../app/pages/orders/index.vue) `t('status.{status}')` / `t('vehicle.{vehicleType}')`）
 - [✅] `upcoming/index.vue` STATUS_TAB_KEYS 已含 `cancelled` filter
-- [ ] `app/protocol/fetch-api/methods.ts` 401 自動登出邏輯實作（line 3 / 18 / 61 三個 TODO）
+- [✅] `app/protocol/fetch-api/methods.ts` 401 自動登出邏輯實作（[methods.ts:1-15](../app/protocol/fetch-api/methods.ts) `HandleUnauthorized` + onResponseError hook，含重入守衛 `_isSigningOut`）
 - [ ] 加好友橫幅與 home Hero 排版重疊檢查（P2）
 
 **P17-4：使用者偏好變更**
@@ -517,8 +517,10 @@
 - [✅] **Stage 9**：firestore.rules 不需動（server admin SDK bypass）
 - [✅] **Stage 10**：docs/decision-log P19 條目 + tasks.md 更新
 
-**P19 待驗證（部署後）**：
-- [ ] G1~G12（spec tasks.md 內 stage gate）：driver 自動授權 / 拒絕踢退 / 五階段流 / busy 切換 / offline 推導 / war-room filter / driver 改他人單 403 / 跳階段 400
+**P19 Stage Gate（spec [tasks.md:135-146](../openspec/changes/2026-05-09-p19-driver-trip-mission/tasks.md)）**：
+- [✅] G1~G10 driver flow（授權 / 五階段 / busy / offline / war-room filter）
+- [✅] G11 driver A 改 driver B 訂單 → 403：[orders/[orderId].patch.ts:135](../server/routes/nuxt-api/orders/%5BorderId%5D.patch.ts) `isAssignedDriver = isDriver && orderAssignedNormalized === auth.uid` + L138 `forbiddenError`，外加 L144 `body.assignedDriverId !== auth.uid → forbiddenError`
+- [✅] G12 driver 跳階段 confirmed → completed → 400：[orders/[orderId].patch.ts:59](../server/routes/nuxt-api/orders/%5BorderId%5D.patch.ts) `DRIVER_NEXT_STATUS` 嚴格狀態機表 + L231 `if (expected !== body.orderStatus) badRequestError`
 
 **P19 後續工作**（2026/05/12 部分整併進 P25）：
 - driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）— 待業務優先級確認
@@ -613,12 +615,12 @@
 > **觸發時機**：P24 TDX 部署驗收後啟動；P25-2（audit log）為**上線後 2 週內必補**，其餘依優先級排程。
 
 **範圍總覽**：
-| 子任務 | 優先級 | 說明 |
-|--------|--------|------|
-| P25-1 | P1 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
-| P25-2 | **P0** | admin operation audit log（多 admin 並存後 2 週內必補） |
-| P25-3 | P3 | 司機評分系統（暫保留 schema，業務需求觸發再啟動） |
-| P25-4 | P3 | admins.permissions 細粒度 override UI（有單獨 use case 再做） |
+| 子任務 | 優先級 | 狀態 | 說明 |
+|--------|--------|------|------|
+| P25-1 | P1 | ⏳ 未啟動 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
+| P25-2 | **P0** | ✅ 上 prod `fe6ac8b` | admin operation audit log（19 種 AuditAction + 8 endpoint instrument + super-only `/admin/audit-logs`） |
+| P25-3 | P3 | ⏳ 業務 5 問待拍板 | 司機評分系統（暫保留 schema，業務需求觸發再啟動） |
+| P25-4 | P3 | ⏳ 依賴 P25-2 + use case | admins.permissions 細粒度 override UI（有單獨 use case 再做） |
 
 ---
 
@@ -665,9 +667,18 @@
 
 ---
 
-#### P25-2：Admin Operation Audit Log（優先級 **P0**，上線後 2 週內必補）
+#### P25-2：Admin Operation Audit Log（優先級 **P0**）— ✅ **已完成上 prod（commit `fe6ac8b` 2026-05-12）**
 
 > **背景**：目前 admin 在後台所有操作（核准司機、撤銷管理員、改訂單狀態、廣播 LINE、改加值服務）完全無紀錄。多 admin 並存後立即會成痛點。
+>
+> **完成狀態**（commit `fe6ac8b`）：
+> - [✅] [server/utils/audit-log.ts](../server/utils/audit-log.ts) `writeAuditLog` helper（19 種 AuditAction、payload mask SENSITIVE_KEYS、actorDisplayName 快照、用 await 不 fire-and-forget — Vercel serverless 砍未完成 promise 解法）
+> - [✅] 8 個 admin mutating endpoint 已 instrument：`admin/admins/[uid].patch`、`admin/users/[uid].patch`、`admin/broadcast.post`、`admin/config/[resource]/{index.post,[id].put,[id].delete}`、`admin/orders/[orderId]/notify.post`、`orders/[orderId].patch`（admin 操作才 log）
+> - [✅] [server/routes/nuxt-api/admin/audit-logs/index.get.ts](../server/routes/nuxt-api/admin/audit-logs/index.get.ts) super-only GET + filter + cursor pagination
+> - [✅] [app/pages/admin/audit-logs/index.vue](../app/pages/admin/audit-logs/index.vue) 列表頁（篩選 + 展開行看 payload/ip/UA）
+> - [✅] [app/layouts/back-desk.vue](../app/layouts/back-desk.vue) nav 加「操作日誌」（superOnly flag）
+> - [✅] firestore.rules audit_logs client 全禁 + 三語 i18n
+> - [✅] Firestore 複合索引首次查詢自動提示建立（actorUid+createdAt / action+createdAt / targetType+targetId+createdAt）
 
 **Collection Schema**：
 - `audit_logs/{autoId}`：
@@ -813,5 +824,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.14（P27 driverApplication users→drivers 搬遷 Stage A 完成；待 Stage B prod migration 後 P26 開工）
-- 更新日期：2026/05/12
+- 版本：v3.15（P31 資安債清空：Signed URL TTL 1y→4h + Rate Limiting；A/B stale 打勾；P19 G11/G12 + P25-2 明確標 ✅）
+- 更新日期：2026/05/13

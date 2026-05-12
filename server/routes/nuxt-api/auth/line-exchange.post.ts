@@ -7,6 +7,7 @@
 //   2. 同步 Firebase Auth ↔ Firestore 文件時禁用 .set() 直接覆寫
 //      → 必須 merge: true 或先 .get() 檢查存在性
 //   3. handler 整體 wrap try-catch，避免 unhandled exception 讓 Nitro 回 HTTP 500
+import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 
 interface LineUserInfo {
   sub: string
@@ -36,6 +37,23 @@ export default defineEventHandler(async (event) => {
 
     if (!config.firebaseServiceAccountJson) {
       return serverError({ zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' });
+    }
+
+    // P31：IP 級限流 — 10 次 / 分鐘（LIFF 首次登入會連續打 token / refresh / idToken，需稍寬）
+    try {
+      const { db: limitDb } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+      const ip = getClientIp(event);
+      const limit = await checkRateLimit(limitDb, {
+        key: `line-exchange:ip:${ip}`,
+        windowSec: 60,
+        max: 10,
+      });
+      if (!limit.ok) {
+        setResponseHeader(event, 'Retry-After', limit.retryAfter ?? 60);
+        return rateLimitedResponse(limit.retryAfter ?? 60);
+      }
+    } catch {
+      // rate-limit 內部已 fail-open；catch 是雙保險
     }
 
     // ── 1. 驗證 LINE Access Token ────────────────────────────

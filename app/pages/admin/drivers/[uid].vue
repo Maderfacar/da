@@ -107,6 +107,28 @@ const ApiLoadDriver = async () => {
       }
     }
 
+    // P31：documents + documentsPending 透過 sign endpoint 重簽 4h URL（fallback 原 URL 不阻擋）
+    const rawDocs = (app1.documents ?? {}) as DriverDocs;
+    const freshDocs: DriverDocs = {};
+    await Promise.all((Object.keys(rawDocs) as DocType[]).map(async (k) => {
+      const u = rawDocs[k];
+      if (!u) return;
+      try {
+        const r = await $api.SignDriverDocument(u);
+        freshDocs[k] = r.status?.code === $enum.apiStatus.success && r.data?.url ? r.data.url : u;
+      } catch {
+        freshDocs[k] = u;
+      }
+    }));
+    await Promise.all((Object.keys(pending) as DocType[]).map(async (k) => {
+      const e = pending[k];
+      if (!e?.url) return;
+      try {
+        const r = await $api.SignDriverDocument(e.url);
+        if (r.status?.code === $enum.apiStatus.success && r.data?.url) e.url = r.data.url;
+      } catch { /* 保留原 url */ }
+    }));
+
     driver.value = {
       displayName: (userData.displayName as string) ?? '',
       pictureUrl: (userData.pictureUrl as string) ?? '',
@@ -119,7 +141,7 @@ const ApiLoadDriver = async () => {
         vehicleType: (app1.vehicleType as string) ?? '',
         bankCode: (app1.bankCode as string) ?? '',
         bankAccount: (app1.bankAccount as string) ?? '',
-        documents: (app1.documents ?? {}) as DriverDocs,
+        documents: freshDocs,
         documentsPending: pending,
         appliedAt: _ts(app1.appliedAt) ?? '',
         reviewedAt: _ts(app1.reviewedAt) ?? '',

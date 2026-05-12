@@ -11,6 +11,8 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { resignGcsUrl } from '@@/utils/signed-url';
+import type { Storage } from 'firebase-admin/storage';
 
 export default defineEventHandler(async (event) => {
   // P14：admin only
@@ -32,7 +34,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+    const { db, storage } = useFirebaseAdmin(config.firebaseServiceAccountJson);
     // 注意：where('roles', 'array-contains') + orderBy('createdAt') 是複合查詢，
     // Firestore 需要建 composite index 才能跑（沒建會 throw FAILED_PRECONDITION）。
     // 這裡刻意省掉 orderBy，改在 map 後 in-memory 排序，避開使用者額外部署 index 的成本。
@@ -82,13 +84,13 @@ export default defineEventHandler(async (event) => {
             });
           }
         });
-        users.forEach((u) => {
+        // P31：documents 內 signed URL 重簽 4h（避免回傳 1 年舊 URL）
+        await Promise.all(users.map(async (u) => {
           const entry = driverDataByUid.get(u.uid);
-          if (entry) {
-            u.driverCategory = entry.category;
-            if (entry.app) u.driverApplication = _serializeApplication(entry.app);
-          }
-        });
+          if (!entry) return;
+          u.driverCategory = entry.category;
+          if (entry.app) u.driverApplication = await _serializeApplication(entry.app, storage);
+        }));
       } catch (err) {
         console.error('[admin/users.get] drivers batch read failed:', err);
       }
@@ -105,13 +107,24 @@ export default defineEventHandler(async (event) => {
  * Timestamp + null-safety 序列化：Firestore Timestamp → ISO string；string → 維持；
  * null/undefined → null。對齊原本 inline 寫法。
  */
-function _serializeApplication(app: Record<string, unknown>): Record<string, unknown> {
+async function _serializeApplication(app: Record<string, unknown>, storage: Storage): Promise<Record<string, unknown>> {
   const toIso = (v: unknown): string | null => {
     if (!v) return null;
     if (typeof v === 'string') return v;
     const ts = v as { toDate?: () => Date };
     return ts.toDate?.()?.toISOString?.() ?? null;
   };
+
+  // P31：documents URL 重簽 4h（fallback 舊資料原 URL）
+  const rawDocs = app.documents as Record<string, string> | undefined;
+  let documents: Record<string, string> | undefined;
+  if (rawDocs) {
+    documents = {};
+    await Promise.all(Object.entries(rawDocs).map(async ([k, v]) => {
+      documents![k] = await resignGcsUrl(storage, v);
+    }));
+  }
+
   return {
     driverName: app.driverName as string | undefined,
     phone: app.phone as string | undefined,
@@ -119,7 +132,7 @@ function _serializeApplication(app: Record<string, unknown>): Record<string, unk
     vehicleType: app.vehicleType as string | undefined,
     bankCode: app.bankCode as string | undefined,
     bankAccount: app.bankAccount as string | undefined,
-    documents: app.documents as Record<string, string> | undefined,
+    documents,
     appliedAt: toIso(app.appliedAt),
     reviewedAt: toIso(app.reviewedAt),
     reviewedBy: (app.reviewedBy as string | null) ?? null,
