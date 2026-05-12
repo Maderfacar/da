@@ -188,6 +188,11 @@ const DOC_LABEL: Record<string, string> = {
             template(v-if="d.approved") 已核准
             template(v-else-if="isCoolingDown(d)") 冷卻 {{ CooldownText(d) }}
             template(v-else) 待審核
+          //- P26：每張卡片右上加詳情頁連結（不刪 expand 行為，admin 仍可快速展開檢視）
+          NuxtLink.PageAdminDrivers__detail-link(
+            :to="`/admin/drivers/${d.uid}`"
+            @click.stop
+          ) 詳情 →
           .PageAdminDrivers__chevron(:class="{ 'is-up': expandedUid === d.uid }") ▾
 
         //- 展開區：申請資料 + 證件 + 操作
@@ -482,6 +487,24 @@ $muted: rgba(255, 255, 255, 0.35);
   &.is-approved { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
   &.is-pending  { background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
   &.is-rejected { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: #f87171; }
+}
+
+.PageAdminDrivers__detail-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba($amber, 0.1);
+  color: $amber;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  margin-left: 8px;
+  transition: background 0.15s;
+
+  &:hover { background: rgba($amber, 0.2); }
 }
 
 .PageAdminDrivers__chevron {

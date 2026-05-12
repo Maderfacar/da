@@ -40,6 +40,11 @@ export type AuditAction =
   | 'driver.category_change'
   | 'driver.role_add'
   | 'driver.role_remove'
+  // P26 driver profile editor
+  | 'driver.self_profile_edit'     // driver 自編非證件欄位（phone 等）
+  | 'driver.profile_edit'          // admin 編 driver 的 profile
+  | 'driver.document_replace'      // driver 上傳新證件（pending 狀態）
+  | 'driver.document_review'       // admin 核准 / 退回 pending 證件
   // admin
   | 'admin.add'
   | 'admin.remove'

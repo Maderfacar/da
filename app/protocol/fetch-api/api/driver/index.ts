@@ -48,6 +48,23 @@ export const GetDriverStats = (uid: string) =>
 export const ApplyDriver = (body: DriverApplyBody) =>
   methods.post<DriverApplyResponse>('/nuxt-api/driver/apply', body);
 
+// ── P26 driver self-edit ───────────────────────────────────────────
+
+/** 司機自編 profile（目前只開放 phone） */
+export const UpdateDriverSelfProfile = (body: { phone: string }) =>
+  methods.patch<{ uid: string; updated: boolean }>('/nuxt-api/drivers/me/profile', body);
+
+/**
+ * 司機自上傳新證件 — 兩步流程的第 2 步：
+ *   1. 先用 UploadDriverDocument 上傳檔案拿 signed URL
+ *   2. 用本 API 把 (docType, url) 寫入 drivers.application.documentsPending.{docType}
+ * admin 核准前不會覆蓋現用證件
+ */
+export const ReplaceDriverDocument = (body: {
+  docType: 'licenseUrl' | 'registrationUrl' | 'insuranceUrl' | 'goodCitizenUrl';
+  url: string;
+}) => methods.post<{ docType: string; status: 'pending' }>('/nuxt-api/drivers/me/document-replace', body);
+
 /**
  * 上傳司機證件圖片至 Firebase Storage，回傳 signed URL
  * 注意：此端點接受 multipart/form-data，必須直接使用 fetch 而非 methods.post

@@ -5,6 +5,17 @@ export type Role = 'passenger' | 'driver' | 'admin';
 /** P18：admin 三層分權 */
 export type AdminLevel = 'super' | 'admin' | 'assistant';
 
+export type DocType = 'licenseUrl' | 'registrationUrl' | 'insuranceUrl' | 'goodCitizenUrl'
+
+/** P26：driver 上傳的待審核證件 */
+export interface PendingDocument {
+  url: string
+  uploadedAt: string | null
+  status: 'pending' | 'rejected'
+  rejectedAt?: string | null
+  rejectReason?: string | null
+}
+
 export interface DriverApplication {
   driverName?: string
   phone?: string
@@ -18,6 +29,7 @@ export interface DriverApplication {
     insuranceUrl?: string
     goodCitizenUrl?: string
   }
+  documentsPending?: Partial<Record<DocType, PendingDocument>>
   appliedAt?: string | null
   reviewedAt?: string | null
   reviewedBy?: string | null
@@ -153,3 +165,19 @@ export const GetAdmins = () =>
 /** 修改某管理員 level（僅 'admin' | 'assistant'，不接受 super；target=super 也會被擋）— 需 canManageAdmins */
 export const PatchAdmin = (uid: string, body: { level: 'admin' | 'assistant' }) =>
   methods.patch<{ uid: string; level: AdminLevel }>(`/nuxt-api/admin/admins/${uid}`, body);
+
+// P26 admin/drivers ---------------------------------------------------------
+
+/** Admin 編輯司機 profile 業務欄位（目前只開放 phone）— 需 canManageDrivers */
+export const PatchAdminDriver = (uid: string, body: { phone?: string }) =>
+  methods.patch<{ uid: string; updated: boolean }>(`/nuxt-api/admin/drivers/${uid}`, body);
+
+/** Admin 核准 / 退回司機 pending 證件 — 需 canManageDrivers */
+export const ReviewDriverDocument = (uid: string, body: {
+  docType: DocType
+  decision: 'approve' | 'reject'
+  reason?: string
+}) => methods.post<{ uid: string; docType: string; decision: string }>(
+  `/nuxt-api/admin/drivers/${uid}/document-review`,
+  body as unknown as Record<string, unknown>,
+);
