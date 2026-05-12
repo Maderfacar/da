@@ -68,7 +68,8 @@ const activeTab = computed(() => {
       CommonHeaderUser
 
   //- ── 頁面內容 ─────────────────────────────────────────────
-  main.LayoutFrontDesk__body
+  //- P32：加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
+  main.LayoutFrontDesk__body(:class="{ 'has-banner': showFriendBanner }")
     slot
 
   //- ── 固定底部 Tab Bar ─────────────────────────────────────
@@ -235,6 +236,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 頁面主體 ───────────────────────────────────────────────
 .LayoutFrontDesk__body {
   padding-bottom: 80px;
+}
+
+// P32：加好友橫幅顯示時下移 40px（banner 高度 = 10px padding × 2 + 20px content）
+.LayoutFrontDesk__body.has-banner {
+  padding-top: 40px;
 }
 
 // ── 底部 Tab Bar ───────────────────────────────────────────

@@ -6,6 +6,81 @@
 
 ---
 
+### 2026/05/13 — P25-1：driver today 歸零 + online hours 合併實作
+
+**類型**：Feature / Schema 擴充 + 狀態流整合
+
+**標題**：lazy reset + 共用 todayResetAt 欄位避免雙寫；online hours 共用 currentOnlineSessionStartAt
+
+**背景**：
+- `drivers/{lineUid}` 內 `todayTrips` / `todayEarnings` 跨日不歸零 → driver/dashboard 顯示假數據
+- ONLINE HRS 永遠 0 → 已暫隱藏
+- 不想引入 Vercel Cron（增加維護面 + 沒有原子保證）
+
+**決定**：
+- **方案 B（lazy reset）**：所有 today 系列寫入入口先過 `maybeResetTodayPatch` helper
+- **共用 `todayResetAt` 欄位**：歸零與 online hours 用同一個時間戳判斷台北今日，避免兩個 cron 寫同一欄
+- **時區嚴格**：`dayjs.tz('Asia/Taipei').format('YYYY-MM-DD')` 比對；UTC 直接比會在台北 0:00~8:00 之間算錯日
+- **busy 期間不計入 online hours**：busy → online 時重啟 `currentOnlineSessionStartAt`，busy 段那部分時數直接拋棄
+- **fallback 5min stale**：drivers/available.get 讀取時若 online 但 lastActiveAt > 5min → 強制結算 + 標 offline（涵蓋 driver 關 app 不下線情境；用 lastActiveAt 結算，不算「離線後」假時數）
+- **新 helper `composeStatusTransitionPatch`**：整合「歸零 + 結算 + session 重啟」單一函式，避免呼叫端各自寫 race-prone 流程
+
+**影響**：
+- drivers schema +4 欄：`todayResetAt` / `currentOnlineSessionStartAt` / `todayOnlineSeconds` / `totalOnlineSeconds`
+- orders/[orderId].patch：en_route 結算 online 段；completed 累加前 maybeResetToday + 切回 online 重啟 session
+- drivers/[id]/status.patch 新 endpoint（busy 中拒絕；只接受 online / offline）
+- drivers/[id]/location.put heartbeat：30s 一次順便檢查跨日歸零（最遲過 00:00 後 30s）
+- drivers/[id]/stats.get：回傳 `todayOnlineSeconds`（含當前 session live delta）+ `status`
+- driver/dashboard：ONLINE HRS 復活、上下線開關 UI、60s polling
+
+**替代方案**：
+- ❌ Vercel Cron 每日 00:00 批次歸零：增加單點維護面、無原子保證、Vercel 免費額度限制 → 採 lazy reset
+- ❌ 雙欄位（lastTripDate + lastOnlineDate）：兩個時間戳會 race（同一段操作分兩次寫）→ 採共用 `todayResetAt`
+- ❌ realtime listen heartbeat（每秒推）：成本爆 → 採 60s polling，UI 自然平滑
+
+---
+
+### 2026/05/13 — P32：加好友橫幅 vs Home Hero 排版重疊修正
+
+**類型**：Bug fix / Layout
+
+**標題**：layout main 偵測 banner 顯示加 40px padding-top，避免遮擋
+
+**背景**：
+- 加好友橫幅 [front-desk.vue:100-102](../app/layouts/front-desk.vue) `position: fixed; top: 56px` 高約 40px
+- Hero 區塊 [home/index.vue:238](../app/pages/home/index.vue) `padding-top: 56px` 只預留 nav 高度，沒給橫幅讓位
+- 結果：橫幅顯示時遮 Hero 內容約 40px
+
+**決定**：
+- layout main 加 reactive class：`:class="{ 'has-banner': showFriendBanner }"`
+- `.has-banner` CSS 補 `padding-top: 40px`
+- 影響所有 front-desk 頁（home / booking / orders / upcoming / fleet / profile）— 一致下移，無例外處理
+
+**影響**：1 個檔案修改（[front-desk.vue](../app/layouts/front-desk.vue)）
+
+**替代方案**：
+- ❌ 每個頁面自己偵測：DRY 破壞 + 容易漏；改 layout 級處理一次
+- ❌ banner 改成 sticky 在 flow 內：會影響滾動行為，與既有設計衝突
+
+---
+
+### 2026/05/13 — P19 backlog：driver 地圖中心追蹤決議移除
+
+**類型**：Scope cut
+
+**標題**：passenger 看自己訂單司機位置不在 roadmap 內
+
+**背景**：P19 完成後留下「passenger 看自己訂單司機位置」backlog，原為「待業務優先級確認」
+
+**決定**：Brain AI 2026/05/13 確認**完全移除**，不會做。理由：
+- driver 隱私顧慮（即時位置給乘客 = 業務面新增 opt-out 機制）
+- passenger 端已有訂單詳情 + status push 通知足夠
+- LINE messaging 推送（接單 / 抵達 / 完成）能覆蓋同等需求，工程量低很多
+
+**影響**：tasks.md P19 後續工作章節該項標 ❌；不影響 schema / 既有 driver 定位邏輯（war-room 仍需要 driver 即時位置）
+
+---
+
 ### 2026/05/12 — P28：機場人流 fetcher 補抓轉機+過境欄位 + UI 加 4 個方向選項
 
 **類型**：Bug fix / 資料層補齊

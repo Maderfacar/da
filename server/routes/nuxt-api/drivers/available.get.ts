@@ -1,5 +1,6 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { serverError } from '@@/utils/response';
+import { settleOnlineSessionPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 
 // P19：撈所有 location 不為 null 的 drivers（不限 status='online'/'busy'），讓 war-room
 // 能切「全部 / 上線 / 任務中 / 離線」filter；offline 由 client-side 比對 lastActiveAt 推導
@@ -22,6 +23,36 @@ export default defineEventHandler(async (_event) => {
 
     // P19：撈所有 drivers（不再 where status in [online, busy]），只過濾掉沒位置資料的
     const snapshot = await db.collection('drivers').get();
+
+    // P25-1：fallback — driver online 但 lastActiveAt > 5 分鐘前 → 視為 offline + lazy 結算 online 段
+    // 涵蓋 driver 關 app 沒按下線的情境（避免 online hours 一直累加假時數）
+    const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+    const nowMs = Date.now();
+    const settleTasks: Promise<unknown>[] = [];
+    for (const doc of snapshot.docs) {
+      const data = doc.data() as DriverStatsDoc;
+      if (data.status !== 'online') continue;
+      const lastActiveMs = data.lastActiveAt?.toMillis?.() ?? 0;
+      if (lastActiveMs === 0 || nowMs - lastActiveMs < STALE_THRESHOLD_MS) continue;
+
+      const patch = settleOnlineSessionPatch(data, lastActiveMs); // 用 lastActiveAt 結算，不算「離線後」時數
+      if (patch) {
+        settleTasks.push(
+          db.collection('drivers').doc(doc.id).set({
+            ...patch,
+            status: 'offline',
+          }, { merge: true }).catch((err) => {
+            console.warn('[drivers/available.get] stale settle failed:', doc.id, err);
+          }),
+        );
+      } else {
+        // 沒有 currentOnlineSessionStartAt 也要切 offline
+        settleTasks.push(
+          db.collection('drivers').doc(doc.id).set({ status: 'offline' }, { merge: true }).catch(() => null),
+        );
+      }
+    }
+    if (settleTasks.length > 0) await Promise.all(settleTasks);
 
     // P18：drivers schema 改為 nested location；保持對外 flat response 不變（戰情室相容）
     // P19：filter 改在 application 層，過濾掉 location 缺失的 doc

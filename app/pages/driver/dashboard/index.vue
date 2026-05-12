@@ -3,10 +3,16 @@ definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
 const driverName = computed(() => authStore.lineProfile?.displayName ?? '司機');
+const lineUid = computed(() => {
+  const uid = authStore.user?.uid ?? '';
+  return uid.startsWith('line:') ? uid.slice(5) : uid;
+});
 const now = computed(() => $dayjs().format('YYYY / MM / DD'));
 
 const tripsToday = ref(0);
 const earningsToday = ref(0);
+const todayOnlineSeconds = ref(0);
+const driverStatus = ref<'online' | 'busy' | 'offline'>('offline');
 
 // P29：driver OA 加好友 CTA（核准後第一次進 dashboard 顯示，可 dismiss）
 const runtimeConfig = useRuntimeConfig();
@@ -29,18 +35,56 @@ const ApiLoadStats = async () => {
   const res = await $api.GetDriverStats(uid);
   if (res.status.code === 200 && res.data) {
     const data = res.data as DriverStats;
-    tripsToday.value = data.tripsToday;
-    earningsToday.value = data.earningsToday;
+    tripsToday.value = data.todayTrips ?? data.tripsToday ?? 0;
+    earningsToday.value = data.todayEarnings ?? data.earningsToday ?? 0;
+    todayOnlineSeconds.value = data.todayOnlineSeconds ?? 0;
+    driverStatus.value = data.status ?? 'offline';
   }
 };
 
-// ONLINE HRS 暫時隱藏：永遠顯示 0 對 driver 沒參考價值；之後接後端上線時數累計 API 再放回
+// P25-1：ONLINE HRS — 從 server stats.get 拿 todayOnlineSeconds（已含當前 session live delta）
+// 每 60s refresh 一次（與既有 dashboard polling 一致）
+const formatOnlineHrs = computed(() => {
+  const sec = todayOnlineSeconds.value;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return `${h}h ${m.toString().padStart(2, '0')}m`;
+});
+
 const stats = computed(() => [
-  { label: 'TRIPS TODAY', labelZh: '今日趟次', value: String(tripsToday.value), unit: '趟' },
-  { label: 'EARNINGS',    labelZh: '今日收入', value: `NT$ ${earningsToday.value.toLocaleString()}`, unit: '' },
+  { label: 'TRIPS TODAY', labelZh: '今日趟次',  value: String(tripsToday.value), unit: '趟' },
+  { label: 'EARNINGS',    labelZh: '今日收入',  value: `NT$ ${earningsToday.value.toLocaleString()}`, unit: '' },
+  { label: 'ONLINE HRS',  labelZh: '今日上線',  value: formatOnlineHrs.value,    unit: '' },
 ]);
 
-onMounted(ApiLoadStats);
+// P25-1：上下線開關（busy 中禁用）
+const statusToggling = ref(false);
+const ClickToggleStatus = async () => {
+  if (driverStatus.value === 'busy') {
+    ElMessage({ message: '任務中無法切換，請先完成或取消訂單', type: 'warning' });
+    return;
+  }
+  if (statusToggling.value) return;
+  const next = driverStatus.value === 'online' ? 'offline' : 'online';
+  statusToggling.value = true;
+  const res = await $api.PatchDriverStatus(lineUid.value, next);
+  statusToggling.value = false;
+  if (res.status.code === 200) {
+    driverStatus.value = next;
+    ElMessage({ message: next === 'online' ? '已上線' : '已下線', type: 'success' });
+    await ApiLoadStats();
+  } else {
+    ElMessage({ message: res.status.message?.zh_tw ?? '切換失敗', type: 'error' });
+  }
+};
+
+// 60s polling 重新撈統計（含 todayOnlineSeconds live delta）
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => {
+  ApiLoadStats();
+  pollTimer = setInterval(ApiLoadStats, 60_000);
+});
+onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 </script>
 
 <template lang="pug">
@@ -68,6 +112,22 @@ onMounted(ApiLoadStats);
     h1.PageDriverDashboard__header-title 歡迎回來
     p.PageDriverDashboard__header-name {{ driverName }}
     p.PageDriverDashboard__header-date {{ now }}
+
+    //- P25-1：上下線開關
+    .PageDriverDashboard__status-row
+      span.PageDriverDashboard__status-dot(:class="`is-${driverStatus}`")
+      span.PageDriverDashboard__status-text
+        template(v-if="driverStatus === 'online'") 上線中
+        template(v-else-if="driverStatus === 'busy'") 任務中
+        template(v-else) 已下線
+      button.PageDriverDashboard__status-btn(
+        type="button"
+        :disabled="driverStatus === 'busy' || statusToggling"
+        @click="ClickToggleStatus"
+      )
+        template(v-if="driverStatus === 'online'") 下線
+        template(v-else-if="driverStatus === 'busy'") 任務中
+        template(v-else) 上線
 
   //- 今日統計
   .PageDriverDashboard__stats
@@ -215,6 +275,51 @@ $amber: #d4860a;
     color: rgba(255, 255, 255, 0.3);
     margin-top: 2px;
   }
+}
+
+// P25-1：上下線開關
+.PageDriverDashboard__status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.PageDriverDashboard__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+
+  &.is-online { background: #50c878; box-shadow: 0 0 0 3px rgba(80, 200, 120, 0.18); }
+  &.is-busy   { background: #d4860a; box-shadow: 0 0 0 3px rgba(212, 134, 10, 0.18); }
+  &.is-offline { background: rgba(255, 255, 255, 0.25); }
+}
+
+.PageDriverDashboard__status-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.8);
+  flex: 1;
+}
+
+.PageDriverDashboard__status-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 6px 16px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(212, 134, 10, 0.6);
+  background: rgba(212, 134, 10, 0.1);
+  color: #f5c842;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover:not(:disabled) { opacity: 0.85; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .PageDriverDashboard__stats {

@@ -1,6 +1,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 
 interface LocationBody {
   lat: number;
@@ -91,7 +92,17 @@ export default defineEventHandler(async (event) => {
     // displayName 由 driver/apply 寫入；若 client 仍帶來則 merge 更新（容錯既有資料）
     if (body.displayName) payload.displayName = body.displayName;
 
-    await db.collection('drivers').doc(idAsLineUid).set(payload, { merge: true });
+    // P25-1：heartbeat 順便檢查跨日歸零（lazy reset，不需 Vercel Cron）
+    // 30s 一次 heartbeat，最遲在過 0:00 後 30s 內歸零
+    const driverRef = db.collection('drivers').doc(idAsLineUid);
+    const driverSnap = await driverRef.get();
+    if (driverSnap.exists) {
+      const driverData = driverSnap.data() as DriverStatsDoc;
+      const resetPatch = maybeResetTodayPatch(driverData);
+      if (resetPatch) Object.assign(payload, resetPatch);
+    }
+
+    await driverRef.set(payload, { merge: true });
 
     return successResponse({ ok: true });
   } catch (err) {

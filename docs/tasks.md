@@ -464,7 +464,7 @@
 - [✅] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（[orders/index.vue:73-76](../app/pages/orders/index.vue) `t('status.{status}')` / `t('vehicle.{vehicleType}')`）
 - [✅] `upcoming/index.vue` STATUS_TAB_KEYS 已含 `cancelled` filter
 - [✅] `app/protocol/fetch-api/methods.ts` 401 自動登出邏輯實作（[methods.ts:1-15](../app/protocol/fetch-api/methods.ts) `HandleUnauthorized` + onResponseError hook，含重入守衛 `_isSigningOut`）
-- [ ] 加好友橫幅與 home Hero 排版重疊檢查（P2）
+- [✅] 加好友橫幅與 home Hero 排版重疊修正（P32）：[front-desk.vue:71](../app/layouts/front-desk.vue) main 加 `has-banner` class + 顯示橫幅時整體下移 40px（橫幅高 = 10px padding × 2 + 20px content），所有 front-desk 頁面自然避開遮擋
 
 **P17-4：使用者偏好變更**
 - [✅] **乘客端登出按鈕**：早於 commit `473ada0` 移除（不需重做；司機端 / Admin 端保留）
@@ -523,9 +523,9 @@
 - [✅] G12 driver 跳階段 confirmed → completed → 400：[orders/[orderId].patch.ts:59](../server/routes/nuxt-api/orders/%5BorderId%5D.patch.ts) `DRIVER_NEXT_STATUS` 嚴格狀態機表 + L231 `if (expected !== body.orderStatus) badRequestError`
 
 **P19 後續工作**（2026/05/12 部分整併進 P25）：
-- driver 端自動駛離地圖中心追蹤（passenger 也能看到自己訂單的司機位置）— 待業務優先級確認
+- ❌ **passenger 看自己訂單司機位置（driver 地圖中心追蹤）**：2026/05/13 Brain AI 決議**移除**，不在 roadmap 內
 - 訂單推送通知（接單 / status 變更時推 LINE 訊息給乘客）— 待業務優先級確認
-- → driver/dashboard online hours 統計：見 P25-1（與 today 歸零合併，共用 todayResetAt）
+- → driver/dashboard online hours 統計：✅ **2026-05-13 已完成 P25-1**
 
 > 註：driver/admin 端 i18n 多語化於 2026/05/09 由使用者決議移除（內部後台不需多語）
 
@@ -617,16 +617,25 @@
 **範圍總覽**：
 | 子任務 | 優先級 | 狀態 | 說明 |
 |--------|--------|------|------|
-| P25-1 | P1 | ⏳ 未啟動 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
+| P25-1 | P1 | ✅ 完成 | driver 統計 today 歸零 + online hours（合併實作，共用 todayResetAt） |
 | P25-2 | **P0** | ✅ 上 prod `fe6ac8b` | admin operation audit log（19 種 AuditAction + 8 endpoint instrument + super-only `/admin/audit-logs`） |
 | P25-3 | P3 | ⏳ 業務 5 問待拍板 | 司機評分系統（暫保留 schema，業務需求觸發再啟動） |
 | P25-4 | P3 | ⏳ 依賴 P25-2 + use case | admins.permissions 細粒度 override UI（有單獨 use case 再做） |
 
 ---
 
-#### P25-1：driver 統計 today 歸零 + online hours 合併實作（優先級 P1）
+#### P25-1：driver 統計 today 歸零 + online hours 合併實作（優先級 P1）— ✅ **2026-05-13 完成**
 
 > **決議**：採用 lazy reset（方案 B），不依賴 Vercel Cron；today 歸零與 online hours 共用 `todayResetAt` 欄位避免雙寫。
+>
+> **完成範圍**：
+> - [✅] [server/utils/driver-stats.ts](../server/utils/driver-stats.ts)：`maybeResetTodayPatch` / `settleOnlineSessionPatch` / `composeStatusTransitionPatch` / `computeTodayOnlineSeconds`（dayjs.tz('Asia/Taipei') 跨日判斷）
+> - [✅] [PATCH /drivers/[id]/status](../server/routes/nuxt-api/drivers/%5Bid%5D/status.patch.ts)：driver/admin 切 online ↔ offline，busy 中拒絕
+> - [✅] [orders/[orderId].patch.ts](../server/routes/nuxt-api/orders/%5BorderId%5D.patch.ts)：en_route → busy 結算 online 段；completed → 累加前先 maybeResetToday、無 remaining 訂單時切回 online 重啟 session
+> - [✅] [drivers/available.get.ts](../server/routes/nuxt-api/drivers/available.get.ts)：fallback — online 且 lastActiveAt > 5min 視為 offline + lazy 結算（用 lastActiveAt 結算，不算「離線後」假時數）
+> - [✅] [drivers/[id]/location.put.ts](../server/routes/nuxt-api/drivers/%5Bid%5D/location.put.ts)：heartbeat 順便檢查跨日歸零（30s 一次，最遲過 00:00 後 30s 歸零）
+> - [✅] [drivers/[id]/stats.get.ts](../server/routes/nuxt-api/drivers/%5Bid%5D/stats.get.ts)：回傳 `todayOnlineSeconds`（含當前 session live delta）+ `status`
+> - [✅] [driver/dashboard/index.vue](../app/pages/driver/dashboard/index.vue)：ONLINE HRS 顯示 + 上下線開關（busy 中禁用）+ 60s polling
 
 **Schema 擴充**：
 - `drivers/{lineUid}` 新增 4 個欄位：
@@ -824,5 +833,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.15（P31 資安債清空：Signed URL TTL 1y→4h + Rate Limiting；A/B stale 打勾；P19 G11/G12 + P25-2 明確標 ✅）
+- 版本：v3.16（P25-1 today 歸零 + online hours 完成；P32 加好友橫幅 vs Hero 重疊修正；P19 driver 地圖中心追蹤決議移除）
 - 更新日期：2026/05/13

@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { successResponse, badRequestError, notFoundError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
+import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 
 interface GooglePlaceLite {
   address: string;
@@ -278,15 +279,18 @@ export default defineEventHandler(async (event) => {
 
     // P19：訂單 status 切 en_route 時，driver doc 自動切 busy（不是 confirmed）
     // - drivers doc key 是 lineUid（去 prefix）；assignedDriverId 寫入時已 normalize 帶 prefix
+    // P25-1：busy 切換時必須結算當前 online 段（busy 期間不計入 online hours）
     if (body.orderStatus === 'en_route' && prevStatus !== 'en_route') {
       const rawDriverId = orderAssignedDriver || (body.assignedDriverId as string | undefined);
       if (rawDriverId) {
         const driverLineUid = _stripLinePrefix(rawDriverId);
         try {
-          await db.collection('drivers').doc(driverLineUid).set({
-            status: 'busy',
-            lastActiveAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
+          const driverRef = db.collection('drivers').doc(driverLineUid);
+          const driverSnap = await driverRef.get();
+          const driverData = (driverSnap.exists ? driverSnap.data() : {}) as DriverStatsDoc;
+          const patch = composeStatusTransitionPatch(driverData, 'busy');
+          patch.lastActiveAt = FieldValue.serverTimestamp();
+          await driverRef.set(patch, { merge: true });
         } catch (err) {
           console.error('[orders/patch] driver busy switch failed:', err);
         }
@@ -295,6 +299,8 @@ export default defineEventHandler(async (event) => {
 
     // P18：當訂單狀態剛切換為 'completed'（前一狀態非 completed），對司機 drivers doc 累加統計
     // P19：同時 query 該 driver 是否仍有「執行中」訂單；無則 status 切回 'online'
+    // P25-1：統計累加前先過 maybeResetTodayPatch（跨日歸零）；切回 online 時透過
+    //        composeStatusTransitionPatch 重啟 currentOnlineSessionStartAt 以恢復計時
     const wasCompleted = prevStatus === 'completed';
     if (body.orderStatus === 'completed' && !wasCompleted) {
       const rawDriverId = orderAssignedDriver;
@@ -304,23 +310,31 @@ export default defineEventHandler(async (event) => {
         const fare = (orderData.estimatedFare as number) ?? 0;
         const distance = (orderData.distanceKm as number) ?? 0;
 
-        // 累加統計
         try {
-          await db.collection('drivers').doc(driverLineUid).set({
+          const driverRef = db.collection('drivers').doc(driverLineUid);
+          const driverSnap = await driverRef.get();
+          const driverData = (driverSnap.exists ? driverSnap.data() : {}) as DriverStatsDoc;
+
+          // P25-1：先看是否跨日歸零（今日統計用）— 歸零 patch 含 todayTrips/todayEarnings/todayOnlineSeconds = 0
+          const resetPatch = maybeResetTodayPatch(driverData);
+
+          // 累加：若歸零，從 0 累加；若未歸零，FieldValue.increment 累加既有值
+          const todayBase = resetPatch ? 0 : (driverData.todayTrips ?? 0);
+          const todayEarnBase = resetPatch ? 0 : (driverData.todayEarnings ?? 0);
+
+          const incrementPatch: Record<string, unknown> = {
             totalTrips: FieldValue.increment(1),
             totalEarnings: FieldValue.increment(fare),
             totalDistanceKm: FieldValue.increment(distance),
-            todayTrips: FieldValue.increment(1),
-            todayEarnings: FieldValue.increment(fare),
+            todayTrips: todayBase + 1,
+            todayEarnings: todayEarnBase + fare,
             lastTripAt: FieldValue.serverTimestamp(),
-          }, { merge: true });
-        } catch (err) {
-          console.error('[orders/patch] driver stats increment failed:', err);
-        }
+            ...(resetPatch ?? {}),
+            // 歸零 patch 內 todayResetAt 用 Date；保留覆蓋
+          };
+          await driverRef.set(incrementPatch, { merge: true });
 
-        // P19：query 該 driver 是否仍有其他「執行中」訂單（en_route / arrived_pickup / in_transit）
-        // 兼容雙格式（既有資料可能無 prefix；新資料統一帶 prefix）
-        try {
+          // P19：query 是否仍有其他「執行中」訂單（兼容雙格式）
           const driverIdNoPrefix = driverLineUid;
           const remaining = await db.collection('orders')
             .where('assignedDriverId', 'in', [driverIdWithPrefix, driverIdNoPrefix])
@@ -328,13 +342,16 @@ export default defineEventHandler(async (event) => {
             .limit(1)
             .get();
           if (remaining.empty) {
-            await db.collection('drivers').doc(driverLineUid).set({
-              status: 'online',
-              lastActiveAt: FieldValue.serverTimestamp(),
-            }, { merge: true });
+            // P25-1：切回 online 時透過 composeStatusTransitionPatch 重啟 session
+            // 用剛剛 increment 後的最新資料（status 仍是 busy，currentOnlineSessionStartAt 應為 null）
+            const refreshSnap = await driverRef.get();
+            const refreshData = (refreshSnap.exists ? refreshSnap.data() : {}) as DriverStatsDoc;
+            const onlinePatch = composeStatusTransitionPatch(refreshData, 'online');
+            onlinePatch.lastActiveAt = FieldValue.serverTimestamp();
+            await driverRef.set(onlinePatch, { merge: true });
           }
         } catch (err) {
-          console.error('[orders/patch] driver online switch query failed:', err);
+          console.error('[orders/patch] driver completion update failed:', err);
         }
       }
     }

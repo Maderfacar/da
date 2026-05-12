@@ -1,6 +1,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, badRequestError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { computeTodayOnlineSeconds, type DriverStatsDoc } from '@@/utils/driver-stats';
 
 export default defineEventHandler(async (event) => {
   // P14：必須登入；只能讀自己（除非 admin）
@@ -42,6 +43,11 @@ export default defineEventHandler(async (event) => {
     const totalEarnings = (data.totalEarnings as number) ?? 0;
     const totalDistanceKm = (data.totalDistanceKm as number) ?? 0;
 
+    // P25-1：online hours 即時計算（含當前 session live delta）
+    const driverStatsDoc = data as DriverStatsDoc;
+    const todayOnlineSeconds = computeTodayOnlineSeconds(driverStatsDoc);
+    const totalOnlineSeconds = (data.totalOnlineSeconds as number) ?? 0;
+
     // 舊欄位 (tripsToday/earningsToday) 保留供既有 client 相容；新欄位（totalTrips 等）併同回傳
     return successResponse({
       tripsToday: todayTrips,
@@ -51,6 +57,9 @@ export default defineEventHandler(async (event) => {
       totalTrips,
       totalEarnings,
       totalDistanceKm,
+      todayOnlineSeconds,
+      totalOnlineSeconds,
+      status: (data.status as string) ?? 'offline',
     });
   } catch (err) {
     console.error('[drivers/stats] Firestore read failed:', err);

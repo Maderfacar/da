@@ -73,6 +73,13 @@ export const ReplaceDriverDocument = (body: {
 export const SignDriverDocument = (url: string) =>
   methods.post<{ url: string }>('/nuxt-api/driver-docs/sign', { url });
 
+/**
+ * P25-1：司機切換上下線 — driver 自己（或 admin）改 drivers.status
+ * busy 狀態不接受（必須由訂單流程切換）
+ */
+export const PatchDriverStatus = (id: string, status: 'online' | 'offline') =>
+  methods.patch<{ id: string; status: string }>(`/nuxt-api/drivers/${_stripLinePrefix(id)}/status`, { status });
+
 // ── P30：司機營運成本計算機跟帳號走 ───────────────────────────
 
 export interface DriverCostSettings {

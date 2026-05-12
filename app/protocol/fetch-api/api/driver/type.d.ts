@@ -30,4 +30,13 @@ interface DriverInfo {
 interface DriverStats {
   tripsToday: number;
   earningsToday: number;
+  // P25-1 新增欄位（既有 stats.get 已回傳，client 漸進使用）
+  todayTrips?: number;
+  todayEarnings?: number;
+  totalTrips?: number;
+  totalEarnings?: number;
+  totalDistanceKm?: number;
+  todayOnlineSeconds?: number;   // 今日累計上線秒數（含當前 session live delta）
+  totalOnlineSeconds?: number;
+  status?: 'online' | 'busy' | 'offline';
 }
