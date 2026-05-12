@@ -20,8 +20,13 @@ const PERMISSION_TIMEOUT_MS = 30_000;
 //   50m 太嚴會在弱訊號 / 第一次 fix 全部 skip → 司機位置卡在最初不準的座標永不更新；
 //   100m 仍能擋掉真正爛的 fix（>100m 通常 GPS 完全不可信）
 const UPLOAD_DISTANCE_THRESHOLD_M = 10;
-const UPLOAD_FORCE_REFRESH_MS = 60_000;    // 60s 強制 force refresh（war-room alive ping）
 const ACCURACY_FILTER_M = 100;
+// 2026/05/12：司機登入後背景 ping 改為 30s 主動上傳一次（不依賴位置變化觸發）
+// 舊版用 watchPosition + 60s force refresh，依賴 GPS tick 才會觸發；若 LINE WebView 暫停 watch
+// 或司機靜止超過 60s 不動 → admin war-room 可能看到「司機消失」誤判。
+// 新版獨立 setInterval 30s ping：watchPosition 仍維持移動 10m+ 立即上傳（即時性），
+// setInterval 保證靜止時每 30s 至少 ping 一次（用最新一次 watch 的座標）。
+const BACKGROUND_PING_INTERVAL_MS = 30_000;
 
 type PermissionState = 'pending' | 'granted' | 'denied';
 
@@ -37,6 +42,7 @@ interface CurrentPos {
 const _permissionState = ref<PermissionState>('pending');
 const _currentPos = ref<CurrentPos | null>(null);
 let _watchId: number | null = null;
+let _backgroundPingId: ReturnType<typeof setInterval> | null = null;
 let _lastUploadedPos: CurrentPos | null = null;
 let _lastUploadAt = 0;
 let _uploading = false;
@@ -99,14 +105,12 @@ async function _DoUpload(pos: CurrentPos): Promise<void> {
 }
 
 function _shouldUpload(pos: CurrentPos): boolean {
-  // accuracy > 50m → cold start 期間不上傳，等收斂
+  // accuracy > 100m → cold start 期間不上傳，等收斂
   if (pos.accuracy > ACCURACY_FILTER_M) return false;
   // 第一次必傳
   if (!_lastUploadedPos) return true;
-  // 距離 >= 5m 必傳
+  // 距離 >= 10m 必傳（移動觸發；靜止時靠 _StartBackgroundPing 每 30s 強制上傳）
   if (_distanceMeters(pos, _lastUploadedPos) >= UPLOAD_DISTANCE_THRESHOLD_M) return true;
-  // 距離不足但時間 >= 60s → force refresh（war-room alive ping）
-  if (Date.now() - _lastUploadAt >= UPLOAD_FORCE_REFRESH_MS) return true;
   return false;
 }
 
@@ -134,6 +138,25 @@ function _StopWatch(): void {
   if (_watchId !== null && navigator.geolocation) {
     navigator.geolocation.clearWatch(_watchId);
     _watchId = null;
+  }
+}
+
+// 背景定時 ping：司機登入後每 30s 主動把當前最新座標上傳一次
+// 與 watchPosition 雙軌：watch 負責移動 10m+ 立即上傳，ping 負責靜止保險
+// 不重複套用 _shouldUpload accuracy/距離過濾（強制當前最新值上傳，讓 admin war-room 有 freshness）
+function _StartBackgroundPing(): void {
+  if (_backgroundPingId !== null) return;
+  _backgroundPingId = setInterval(() => {
+    if (_currentPos.value) {
+      _DoUpload(_currentPos.value);
+    }
+  }, BACKGROUND_PING_INTERVAL_MS);
+}
+
+function _StopBackgroundPing(): void {
+  if (_backgroundPingId !== null) {
+    clearInterval(_backgroundPingId);
+    _backgroundPingId = null;
   }
 }
 
@@ -187,8 +210,12 @@ export function useDriverGeolocation() {
   };
 
   /**
-   * 啟動 watchPosition 持續監聽 + 自動節流上傳。
+   * 啟動 watchPosition 持續監聽 + 30s 背景定時 ping。
    * 只能在 permission='granted' 後呼叫。
+   *
+   * 雙軌設計：
+   * - watchPosition：移動 10m+ 立即上傳（即時性，位置變化驅動）
+   * - background ping：每 30s 主動把當前座標上傳（保險，時間驅動）
    */
   const StartWatch = (): void => {
     if (typeof window === 'undefined' || !navigator.geolocation) return;
@@ -198,14 +225,16 @@ export function useDriverGeolocation() {
       _PositionError,
       { enableHighAccuracy: true, maximumAge: 10_000, timeout: 15_000 },
     );
+    _StartBackgroundPing();
   };
 
   /**
-   * 停止 watch + 重置 state。
+   * 停止 watch + 背景 ping + 重置 state。
    * driver layout onUnmounted 時呼叫。
    */
   const StopWatch = (): void => {
     _StopWatch();
+    _StopBackgroundPing();
     _currentPos.value = null;
     _lastUploadedPos = null;
     _lastUploadAt = 0;
