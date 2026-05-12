@@ -186,8 +186,29 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       if (displayName && pictureUrl) {
         lineProfile.value = { displayName, pictureUrl };
       }
-      // 補回司機申請狀態（P8）
-      const appData = data.driverApplication as Record<string, unknown> | undefined;
+      // 補回司機申請狀態（P8 + P27 dual-read）
+      // P27：driverApplication 整包搬到 drivers/{uid}.application。
+      // Stage A 期間 dual-read：先試 drivers，找不到 fallback 舊位置 users.driverApplication。
+      let appData: Record<string, unknown> | undefined;
+      if (roles.value.includes('driver')) {
+        try {
+          const driverSnap = await getDoc(doc(db, 'drivers', lineUid));
+          if (driverSnap.exists()) {
+            const driverData = driverSnap.data();
+            const candidate = driverData?.application;
+            if (candidate && typeof candidate === 'object') {
+              appData = candidate as Record<string, unknown>;
+            }
+          }
+        } catch {
+          // Rules 阻擋或 doc 不存在 → 走 fallback
+        }
+      }
+      if (!appData) {
+        const fallback = data.driverApplication as Record<string, unknown> | undefined;
+        if (fallback) appData = fallback;
+      }
+
       if (appData) {
         driverApplication.value = {
           appliedAt: (appData.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.appliedAt as string | null) ?? null,

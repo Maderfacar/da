@@ -10,7 +10,8 @@
     "preview": "nuxt preview",
     "postinstall": "node scripts/copy-tinymce.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "migrate:driver-app": "node scripts/migrate-driver-application-to-drivers.mjs"
   },
   "dependencies": {
     "@line/liff": "^2.28.0",

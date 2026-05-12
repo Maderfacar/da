@@ -56,9 +56,11 @@ export type AuditAction =
   // fleet
   | 'fleet.create'
   | 'fleet.update'
-  | 'fleet.delete';
+  | 'fleet.delete'
+  // migration（P27 一次性）
+  | 'migration.driver_application_move';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'fleet';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'fleet' | 'migration';
 
 interface WriteAuditLogInput {
   event: H3Event;

@@ -149,36 +149,41 @@ export default defineEventHandler(async (event) => {
     }
 
     // P18：removeRole='driver'（拒絕司機）不刪除 drivers doc，保留歷史統計
+    // P27：driverApplication.* 改寫 drivers/{uid}.application.*（不再寫 users）
     const update: Record<string, unknown> = {};
     if (body!.addRole) update.roles = FieldValue.arrayUnion(body!.addRole);
     if (body!.removeRole) update.roles = FieldValue.arrayRemove(body!.removeRole);
     if (body!.approved !== undefined) update.approved = body!.approved;
-    // P18：driverCategory 改寫 drivers/{uid}，不再寫 users
 
-    // P8 司機審核：rejectedAt / rejectReason 寫入巢狀 driverApplication
-    // null 代表解除冷卻（清空 rejectedAt + rejectReason），admin 端「解除冷卻」按鈕用
+    if (Object.keys(update).length > 0) {
+      await ref.update(update);
+    }
+
+    // P27：rejectedAt / rejectReason / reviewedAt 寫到 drivers/{uid}.application.*（dot-path nested）
+    // null rejectedAt 代表解除冷卻（清空 rejectedAt + rejectReason）
+    const driverUpdate: Record<string, unknown> = {};
     if (body!.rejectedAt !== undefined) {
-      update['driverApplication.rejectedAt'] = body!.rejectedAt === null ? null : new Date(body!.rejectedAt);
+      driverUpdate['application.rejectedAt'] = body!.rejectedAt === null ? null : new Date(body!.rejectedAt);
       if (body!.rejectedAt === null) {
-        update['driverApplication.rejectReason'] = null;
+        driverUpdate['application.rejectReason'] = null;
       }
     }
     if (body!.rejectReason !== undefined) {
-      update['driverApplication.rejectReason'] = body!.rejectReason;
+      driverUpdate['application.rejectReason'] = body!.rejectReason;
     }
     if (body!.approved !== undefined && body!.approved === true) {
       // 核准司機時，順帶寫入審核時戳（不寫 reviewedBy，因為 admin uid 此處未取）
-      update['driverApplication.reviewedAt'] = FieldValue.serverTimestamp();
+      driverUpdate['application.reviewedAt'] = FieldValue.serverTimestamp();
+    }
+    // P18：driverCategory 寫到 drivers/{uid} 頂層
+    if (body!.driverCategory !== undefined) {
+      driverUpdate.driverCategory = body!.driverCategory;
     }
 
-    await ref.update(update);
-
-    // P18：driverCategory 寫到 drivers/{uid} doc（merge:true，doc 不存在會建一個僅含此欄位的 stub doc；
-    // 正常流程下 drivers doc 由 driver/apply 建立，此處 merge 即可）
-    if (body!.driverCategory !== undefined) {
-      await db.collection('drivers').doc(uid).set({
-        driverCategory: body!.driverCategory,
-      }, { merge: true });
+    if (Object.keys(driverUpdate).length > 0) {
+      // merge:true：drivers doc 不存在會建一個僅含這幾個欄位的 stub doc；
+      // 正常流程下 drivers doc 由 driver/apply 建立，此處 set + merge 等價於 update + safety
+      await db.collection('drivers').doc(uid).set(driverUpdate, { merge: true });
     }
 
     // P18：addRole='admin' 同步建 admins/{uid} doc（首次預設 level='admin'，重複 addRole 不覆寫 level）

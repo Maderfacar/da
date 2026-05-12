@@ -61,7 +61,8 @@ export default defineEventHandler(async (event) => {
 
     // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
     // P10：新使用者一律建為 ['passenger']，由 admin 加入額外 role
-    // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 roles / approved / driverApplication）
+    // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 roles / approved）
+    // P27：driverApplication 已搬至 drivers/{uid}.application，users doc 不再含此欄位
     let isNewUser = false;
     try {
       await auth.getUser(uid);
@@ -78,7 +79,8 @@ export default defineEventHandler(async (event) => {
         });
         // 重要：用 merge: true 避免覆寫既有 Firestore 文件中的手動設定（admin 預先設好的
         // roles / approved）。Firebase Auth user 可能因前次失敗而從未建成功，但 Firestore
-        // 文件已存在，直接 .set() 會把使用者已有的 roles / approved / driverApplication 全清掉。
+        // 文件已存在，直接 .set() 會把使用者已有的 roles / approved 全清掉。
+        // P27：driverApplication 已搬至 drivers/{uid}.application，users doc 不再含此欄位
         const docRef = db.collection('users').doc(lineProfile.sub);
         const existingSnap = await docRef.get();
         if (existingSnap.exists) {

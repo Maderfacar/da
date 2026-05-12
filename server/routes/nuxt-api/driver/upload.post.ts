@@ -6,7 +6,8 @@
  *   1. 接收 multipart/form-data（單一檔案 + docType + lineUserId）
  *   2. 驗證檔案大小 / MIME / docType
  *   3. 上傳至 Firebase Storage 路徑 `drivers/{lineUserId}/{docType}-{timestamp}.{ext}`
- *   4. 產生長效 signed URL（1 年）回傳給 client，存進 driverApplication.documents
+ *   4. 產生長效 signed URL（1 年）回傳給 client，存進 drivers/{lineUid}.application.documents
+ *      （P27 後位置；P27 之前是 users/{lineUid}.driverApplication.documents）
  *
  * docType 限制：licenseUrl | registrationUrl | insuranceUrl | goodCitizenUrl
  *   - 駕照 / 行照 / 保險卡 / 良民證

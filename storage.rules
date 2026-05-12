@@ -5,8 +5,10 @@ rules_version = '2';
 // 安全策略：
 // - 所有寫入透過 server-side admin SDK 上傳（/nuxt-api/driver/upload）
 // - client 端不直接寫 Storage（避免被竄改檔案、繞過 MIME / 大小驗證）
-// - 讀取走 signed URL（後端產生 1 年有效，存進 driverApplication.documents）
+// - 讀取走 signed URL（後端產生 1 年有效，存進 drivers/{lineUid}.application.documents）
 //   → 不需要 client read 權限，admin 端與司機本人都拿 signed URL 直接顯示
+//   P27（2026-05-12）：documents 位置已從 users/{uid}.driverApplication.documents
+//   搬到 drivers/{uid}.application.documents
 //
 // 部署方式（任選）：
 //   方式 A（推薦）：Firebase Console → Storage → Rules → 貼上本檔內容 → Publish

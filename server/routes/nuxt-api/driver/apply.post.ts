@@ -1,27 +1,22 @@
 /**
  * POST /nuxt-api/driver/apply
- * 司機申請送出：寫入 driverApplication + arrayUnion('driver') + approved=false
+ * 司機申請送出
+ *
+ * P27（2026-05-12 起）：driverApplication 整包搬到 drivers/{lineUid}.application；
+ * users/{lineUid} 不再寫 driverApplication 欄位。冷卻期檢查改讀 drivers.application.rejectedAt
+ * （Stage A：透過 readDriverApplication helper 保留 users 舊位置 fallback）。
  *
  * 流程：
- *   1. 驗證使用者是否在冷卻期（rejectedAt 在 24h 內 → 拒絕）
- *   2. 寫入 users/{lineUserId}.driverApplication 完整申請資料
- *   3. roles arrayUnion 'driver'（保留現有 passenger / admin 等其他身分）
- *   4. approved 設為 false 等待 admin 審核
- *   5. 同步建立 / 更新 drivers/{lineUid} doc（P18 collection split 後 driverCategory 改寫此處）
- *      - doc 不存在 → 寫完整 defaults（含 driverCategory='0'、totalTrips=0 等統計初值）
- *      - doc 已存在（重複申請） → 只 merge 身分與車型欄位，保留 admin 既有設定（driverCategory）
- *        與歷史統計（totalTrips/totalEarnings 等）
+ *   1. 驗證冷卻期（透過 helper dual-read 拿 application）
+ *   2. 寫 users/{lineUid}：roles arrayUnion 'driver' + approved=false（**不再寫 driverApplication**）
+ *   3. 寫 drivers/{lineUid}：含 application 完整資料 + top-level vehicleType / 統計初值（首次申請）
  *
- * 業務規則：
- *   - 已是 approved driver → 拒絕（不需重新申請）
- *   - 被拒絕後 24h 內 → 回 403 含 cooldownUntil
- *   - 圖片需先透過 /nuxt-api/driver/upload 上傳取得 4 個 signed URL
- *
- * 對應 docs/decision-log.md 2026/05/06 司機申請流程設計、P18 collection split
+ * 對應 docs/decision-log.md 2026/05/06 + 2026-05-12 P27 條目
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { readDriverApplication } from '@@/utils/driver-application';
 
 interface ApplyBody {
   lineUserId: string;
@@ -43,7 +38,6 @@ const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時
 
 export default defineEventHandler(async (event) => {
   try {
-    // P14：必須登入；申請只能申請自己（admin 例外）
     const auth = await getAuthFromEvent(event);
     if (!auth.ok) return authFailResponse(auth);
 
@@ -57,13 +51,11 @@ export default defineEventHandler(async (event) => {
       return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
     }
 
-    // P14：caller 必須是 lineUserId 本人，或具 admin 身分（admin 代他人提交）
     const isAdmin = auth.roles.includes('admin');
     if (!isAdmin && auth.lineUid !== body.lineUserId) {
       return forbiddenError({ zh_tw: '無權代他人申請', en: 'Cannot apply for other user', ja: '他人の申請はできません' });
     }
 
-    // 必填驗證
     const requiredFields: (keyof ApplyBody)[] = [
       'lineUserId', 'driverName', 'phone', 'plateNumber',
       'vehicleType', 'bankCode', 'bankAccount', 'documents',
@@ -85,15 +77,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
-    const docRef = db.collection('users').doc(body.lineUserId);
-    const snap = await docRef.get();
+    const userRef = db.collection('users').doc(body.lineUserId);
+    const userSnap = await userRef.get();
 
-    if (snap.exists) {
-      const data = snap.data() ?? {};
-      const roles = Array.isArray(data.roles) ? data.roles as string[] : [];
-      const approved = data.approved as boolean ?? false;
+    if (userSnap.exists) {
+      const userData = userSnap.data() ?? {};
+      const roles = Array.isArray(userData.roles) ? userData.roles as string[] : [];
+      const approved = userData.approved as boolean ?? false;
 
-      // 已是 approved driver → 拒絕重複申請
       if (roles.includes('driver') && approved) {
         return {
           data: {},
@@ -101,9 +92,9 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      // 冷卻檢查：rejectedAt 在 24h 內 → 拒絕
-      const application = data.driverApplication as Record<string, unknown> | undefined;
-      const rejectedAt = application?.rejectedAt as { toMillis?: () => number } | string | null | undefined;
+      // 冷卻檢查：透過 helper dual-read（Stage A 兼容 users 舊位置）
+      const existingApp = await readDriverApplication(db, body.lineUserId);
+      const rejectedAt = existingApp?.rejectedAt as { toMillis?: () => number } | string | null | undefined;
       const rejectedMs = typeof rejectedAt === 'string'
         ? new Date(rejectedAt).getTime()
         : rejectedAt?.toMillis?.() ?? 0;
@@ -116,39 +107,38 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 寫入 users/{lineUserId} driverApplication + roles arrayUnion('driver') + approved=false
-    // P18：driverCategory 改寫 drivers/{lineUid}，不再寫 users
-    await docRef.set({
+    // ── 1. 寫 users/{lineUid}：只動 roles + approved，不再含 driverApplication ──
+    await userRef.set({
       roles: FieldValue.arrayUnion('driver'),
       approved: false,
-      driverApplication: {
-        driverName: body.driverName,
-        phone: body.phone,
-        plateNumber: body.plateNumber,
-        vehicleType: body.vehicleType,
-        bankCode: body.bankCode,
-        bankAccount: body.bankAccount,
-        documents: {
-          licenseUrl: docs.licenseUrl,
-          registrationUrl: docs.registrationUrl,
-          insuranceUrl: docs.insuranceUrl,
-          goodCitizenUrl: docs.goodCitizenUrl,
-        },
-        appliedAt: FieldValue.serverTimestamp(),
-        reviewedAt: null,
-        reviewedBy: null,
-        rejectedAt: null,
-        rejectReason: null,
-      },
     }, { merge: true });
 
-    // P18：同步建立 / 更新 drivers/{lineUid} doc
-    // - 從 users 同步取 displayName / pictureUrl（snap 此時通常已 exists；若不存在則 fallback）
-    // - drivers doc 不存在 → 寫完整 defaults（首次申請）
-    // - drivers doc 已存在 → 只 merge 身分與車型欄位（重複申請保留 admin 既設 driverCategory + 歷史統計）
-    const userData = snap.exists ? (snap.data() ?? {}) : {};
+    // ── 2. 寫 drivers/{lineUid}：含 application 完整資料 ──
+    // - drivers doc 不存在 → 寫完整 defaults（首次申請）+ application
+    // - drivers doc 已存在 → merge 身分 + 車型 + application（重複申請保留 admin 既設與歷史統計）
+    const userData = userSnap.exists ? (userSnap.data() ?? {}) : {};
     const displayName = (userData.displayName as string) ?? body.driverName;
     const pictureUrl = (userData.pictureUrl as string) ?? '';
+
+    const applicationPayload = {
+      driverName: body.driverName,
+      phone: body.phone,
+      plateNumber: body.plateNumber,
+      vehicleType: body.vehicleType,
+      bankCode: body.bankCode,
+      bankAccount: body.bankAccount,
+      documents: {
+        licenseUrl: docs.licenseUrl,
+        registrationUrl: docs.registrationUrl,
+        insuranceUrl: docs.insuranceUrl,
+        goodCitizenUrl: docs.goodCitizenUrl,
+      },
+      appliedAt: FieldValue.serverTimestamp(),
+      reviewedAt: null,
+      reviewedBy: null,
+      rejectedAt: null,
+      rejectReason: null,
+    };
 
     const driverRef = db.collection('drivers').doc(body.lineUserId);
     const driverSnap = await driverRef.get();
@@ -167,6 +157,7 @@ export default defineEventHandler(async (event) => {
         todayEarnings: 0,
         driverCategory: '0',
         vehicleType: body.vehicleType,
+        application: applicationPayload,
         createdAt: FieldValue.serverTimestamp(),
         lastActiveAt: FieldValue.serverTimestamp(),
       });
@@ -176,6 +167,7 @@ export default defineEventHandler(async (event) => {
         displayName,
         pictureUrl,
         vehicleType: body.vehicleType,
+        application: applicationPayload,
         lastActiveAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     }
