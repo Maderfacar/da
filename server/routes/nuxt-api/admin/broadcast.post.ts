@@ -3,6 +3,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { successResponse, badRequestError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 
 interface BroadcastBody {
   title: string;
@@ -52,6 +53,22 @@ export default defineEventHandler(async (event) => {
     );
 
     const sent = pushResults.filter((r) => r.status === 'fulfilled').length;
+
+    // P25-2 audit log（廣播訊息內容 mask 200 字避免 audit_logs 暴量）
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'broadcast.send',
+      targetType: 'broadcast',
+      targetId: body.targetRole,
+      payload: {
+        targetRole: body.targetRole,
+        title: body.title ?? '',
+        messagePreview: body.message.slice(0, 200),
+        sent,
+        total: lineUserIds.length,
+      },
+    });
 
     return successResponse({ sent, total: lineUserIds.length });
   } catch (err) {

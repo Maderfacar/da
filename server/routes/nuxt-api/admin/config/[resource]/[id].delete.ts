@@ -9,6 +9,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 import { isFleetResource, getCollectionName } from '@@/utils/fleet-config';
 
 export default defineEventHandler(async (event) => {
@@ -40,7 +41,17 @@ export default defineEventHandler(async (event) => {
       return notFoundError({ zh_tw: `找不到項目：${id}`, en: `Not found: ${id}`, ja: `項目が見つかりません：${id}` });
     }
 
+    const before = existing.data() ?? {};
     await docRef.delete();
+    // P25-2 audit log
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'fleet.delete',
+      targetType: 'fleet',
+      targetId: `${resource}/${id}`,
+      payload: { resource, id, before },
+    });
     return successResponse({ id });
   } catch (err) {
     console.error('[admin/config DELETE] failed:', err);

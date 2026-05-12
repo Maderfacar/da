@@ -7,6 +7,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 import {
   isFleetResource,
   getCollectionName,
@@ -58,7 +59,17 @@ export default defineEventHandler(async (event) => {
       return notFoundError({ zh_tw: `找不到項目：${id}`, en: `Not found: ${id}`, ja: `項目が見つかりません：${id}` });
     }
 
+    const before = existing.data() ?? {};
     await docRef.set(validation.data);
+    // P25-2 audit log
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'fleet.update',
+      targetType: 'fleet',
+      targetId: `${resource}/${id}`,
+      payload: { resource, id, before, after: validation.data as Record<string, unknown> },
+    });
     return successResponse({ id, ...validation.data });
   } catch (err) {
     console.error('[admin/config PUT] write failed:', err);

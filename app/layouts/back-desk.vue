@@ -2,7 +2,7 @@
 // LayoutBackDesk 管理者端佈局：頂部 Bar + 左側抽屜導航
 
 const route = useRoute();
-const { authResolved } = storeToRefs(StoreAuth());
+const { authResolved, isSuper } = storeToRefs(StoreAuth());
 const drawerOpen = ref(false);
 
 // 桌機（≥ 768px）首屏自動展開 sidebar，但 hamburger 永遠可 toggle
@@ -10,18 +10,30 @@ onMounted(() => {
   if (window.innerWidth >= 768) drawerOpen.value = true;
 });
 
-const navItems = [
+interface NavItem {
+  id: string;
+  icon: string;
+  label: string;
+  path: string;
+  superOnly?: boolean;
+}
+
+const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'orders',        icon: '📋', label: '訂單管理',  path: '/admin/orders'        },
   { id: 'war-room',      icon: '🎯', label: '即時戰情',  path: '/admin/war-room'      },
   { id: 'traffic',       icon: '✈️', label: '機場人流',  path: '/admin/traffic'       },
   { id: 'notifications', icon: '🔔', label: '通知管理',  path: '/admin/notifications' },
   { id: 'drivers',       icon: '🚗', label: '司機管理',  path: '/admin/drivers'       },
   { id: 'settings',      icon: '⚙️', label: '系統設定',  path: '/admin/settings'      },
+  // P25-2：操作日誌僅 super 可見
+  { id: 'audit-logs',    icon: '📜', label: '操作日誌',  path: '/admin/audit-logs', superOnly: true },
 ];
+
+const navItems = computed(() => ALL_NAV_ITEMS.filter((i) => !i.superOnly || isSuper.value));
 
 const activeNav = computed(() => {
   const p = route.path;
-  const match = navItems.find((item) => p.startsWith(item.path));
+  const match = navItems.value.find((item) => p.startsWith(item.path));
   return match?.id ?? 'orders';
 });
 

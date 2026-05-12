@@ -2,6 +2,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { successResponse, badRequestError, notFoundError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 
 interface GooglePlaceLite {
   address: string;
@@ -335,6 +336,29 @@ export default defineEventHandler(async (event) => {
         } catch (err) {
           console.error('[orders/patch] driver online switch query failed:', err);
         }
+      }
+    }
+
+    // P25-2 audit log：僅 admin 操作 log；driver / passenger 動作不入 audit_logs
+    if (isAdmin) {
+      const auditActions: Array<{ action: AuditAction; payload: Record<string, unknown> }> = [];
+      if (body.assignedDriverId !== undefined) {
+        auditActions.push({ action: 'order.assign', payload: { driverId: body.assignedDriverId } });
+      }
+      if (body.orderStatus !== undefined && body.orderStatus !== prevStatus) {
+        if (body.orderStatus === 'cancelled') {
+          auditActions.push({ action: 'order.cancel_by_admin', payload: { before: prevStatus, reason: body.cancelReason ?? '' } });
+        } else {
+          auditActions.push({ action: 'order.status_change', payload: { before: prevStatus, after: body.orderStatus } });
+        }
+      }
+      // admin 改 admin-only 欄位（pickupDateTime / locations / vehicle / etc）→ order.edit
+      const editedAdminFields = ADMIN_ONLY_FIELDS.filter((k) => body[k] !== undefined);
+      if (editedAdminFields.length > 0) {
+        auditActions.push({ action: 'order.edit', payload: { fields: editedAdminFields, after: editedAdminFields.reduce((acc, k) => { acc[k] = body[k]; return acc; }, {} as Record<string, unknown>) } });
+      }
+      for (const a of auditActions) {
+        await writeAuditLog({ event, auth, action: a.action, targetType: 'order', targetId: orderId, payload: a.payload });
       }
     }
 

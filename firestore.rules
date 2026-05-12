@@ -81,6 +81,13 @@ service cloud.firestore {
       allow read, write: if false;  // 全經 server admin SDK
     }
 
+    // ── audit_logs 集合（P25-2）────────────────────────────────
+    // Admin 操作日誌；client 全禁讀寫，僅 server admin SDK 透過
+    // /nuxt-api/admin/audit-logs（super only）讀取
+    match /audit_logs/{logId} {
+      allow read, write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

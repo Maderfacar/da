@@ -3,6 +3,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { successResponse, badRequestError, notFoundError, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 
 interface NotifyBody {
   target: 'passenger' | 'driver';
@@ -94,6 +95,16 @@ export default defineEventHandler(async (event) => {
 
     // 推送
     await sendLinePush(lineChannelAccessToken, targetLineUserId, [{ type: 'text', text: body.message }]);
+
+    // P25-2 audit log
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'broadcast.notify_one',
+      targetType: 'order',
+      targetId: orderId,
+      payload: { target: body.target, messagePreview: body.message.slice(0, 200) },
+    });
 
     return successResponse({ orderId, target: body.target, sentTo: targetLineUserId });
   } catch (err) {

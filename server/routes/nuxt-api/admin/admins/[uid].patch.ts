@@ -16,6 +16,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 
 interface PatchAdminBody {
   level?: 'admin' | 'assistant';
@@ -75,7 +76,17 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const previousLevel = snap.data()?.level ?? 'unknown';
     await ref.update({ level: body.level });
+    // P25-2 audit log
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'admin.level_change',
+      targetType: 'admin',
+      targetId: uid,
+      payload: { before: { level: previousLevel }, after: { level: body.level } },
+    });
     return successResponse({ uid, level: body.level });
   } catch (err) {
     console.error('[admin/admins.patch] Firestore update failed:', err);

@@ -8,6 +8,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog } from '@@/utils/audit-log';
 import {
   isFleetResource,
   getCollectionName,
@@ -68,6 +69,15 @@ export default defineEventHandler(async (event) => {
     }
 
     await docRef.set(validation.data);
+    // P25-2 audit log
+    await writeAuditLog({
+      event,
+      auth,
+      action: 'fleet.create',
+      targetType: 'fleet',
+      targetId: `${resource}/${docId}`,
+      payload: { resource, id: docId, data: validation.data as Record<string, unknown> },
+    });
     return successResponse({ id: docId, ...validation.data });
   } catch (err) {
     console.error('[admin/config POST] write failed:', err);

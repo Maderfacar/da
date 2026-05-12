@@ -4,6 +4,31 @@ export default {
     orders: '訂單',
     book: '預約',
   },
+  // ── 操作日誌（P25-2，super only）──────────────────────────
+  audit: {
+    title: '操作日誌',
+    subtitle: 'OPERATION AUDIT TRAIL',
+    forbidden: '此頁僅最高管理員可讀。',
+    empty: '沒有符合條件的紀錄',
+    loadMore: '載入更多',
+    totalShown: '已顯示 {n} 筆',
+    filter: {
+      actorUid: '操作者 UID',
+      action: 'Action',
+      targetType: 'Target Type',
+      targetId: 'Target ID',
+      apply: '套用篩選',
+      reset: '重置',
+    },
+    col: {
+      time: '時間',
+      actor: '操作者',
+      level: 'Level',
+      action: 'Action',
+      targetType: 'Target',
+      targetId: 'Target ID',
+    },
+  },
   // ── 加好友橫幅 ────────────────────────────────────────────
   banner: {
     addFriend: '加入官方帳號，即時接收行程通知',

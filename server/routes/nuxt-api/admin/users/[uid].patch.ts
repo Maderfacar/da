@@ -23,6 +23,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 
 type Role = 'passenger' | 'driver' | 'admin';
 
@@ -121,6 +122,15 @@ export default defineEventHandler(async (event) => {
           createdBy: auth.lineUid,
           createdAt: FieldValue.serverTimestamp(),
         });
+        // P25-2 audit log
+        await writeAuditLog({
+          event,
+          auth,
+          action: 'admin.add',
+          targetType: 'admin',
+          targetId: uid,
+          payload: { addedBy: auth.lineUid, newUser: true, displayName: newData.displayName ?? '' },
+        });
       }
 
       return successResponse({ uid, ...newData });
@@ -197,6 +207,36 @@ export default defineEventHandler(async (event) => {
     // P18：removeRole='admin' 同步刪 admins/{uid} doc（super 已在前面 guard 擋住）
     if (body!.removeRole === 'admin') {
       await db.collection('admins').doc(uid).delete();
+    }
+
+    // P25-2 audit log：依 body 推算 action（一次 PATCH 可能對應多種 action，逐筆寫）
+    const auditActions: Array<{ action: AuditAction; targetType: 'driver' | 'admin'; payload: Record<string, unknown> }> = [];
+    if (body!.addRole === 'admin') {
+      auditActions.push({ action: 'admin.add', targetType: 'admin', payload: { addedBy: auth.lineUid } });
+    }
+    if (body!.removeRole === 'admin') {
+      auditActions.push({ action: 'admin.remove', targetType: 'admin', payload: {} });
+    }
+    if (body!.addRole === 'driver') {
+      auditActions.push({ action: 'driver.role_add', targetType: 'driver', payload: {} });
+    }
+    if (body!.removeRole === 'driver') {
+      auditActions.push({ action: 'driver.role_remove', targetType: 'driver', payload: { reason: body!.rejectReason ?? '' } });
+    }
+    if (body!.approved === true) {
+      auditActions.push({ action: 'driver.approve', targetType: 'driver', payload: {} });
+    }
+    if (body!.approved === false) {
+      auditActions.push({ action: 'driver.reject', targetType: 'driver', payload: { reason: body!.rejectReason ?? '' } });
+    }
+    if (body!.rejectedAt === null) {
+      auditActions.push({ action: 'driver.unblock_cooldown', targetType: 'driver', payload: {} });
+    }
+    if (body!.driverCategory !== undefined) {
+      auditActions.push({ action: 'driver.category_change', targetType: 'driver', payload: { category: body!.driverCategory } });
+    }
+    for (const a of auditActions) {
+      await writeAuditLog({ event, auth, action: a.action, targetType: a.targetType, targetId: uid, payload: a.payload });
     }
 
     return successResponse({ uid, updated: true });
