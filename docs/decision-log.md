@@ -6,6 +6,87 @@
 
 ---
 
+### 2026/05/12 — TDX 航班 GeneralSchedule 整合：Booking 階段排程驗證主資料源（取代 Aviation Edge）
+
+**類型**：架構重構 / 第三方 API 切換
+
+**標題**：booking 頁航班輸入欄位的 schedule 驗證從 Aviation Edge 切換到運輸部 TDX；Aviation Edge 暫時 hold 等之後接「即時狀態查詢」階段
+
+**背景**：
+- Aviation Edge Developer plan 實測 LCC / 區域航空涵蓋率極差（LJ 0、SQ 3、KE 4 筆，CI/BR/JX 等大航空 OK），純靠它 booking 頁查詢 UX 不可接受
+- TDX 為運輸部開放資料平台，免費，提供台灣航空時刻表（含國內 + 國際），符合 booking 階段「驗證 schedule 是否存在 + 用車日期是否符合排程」需求
+- 之後 Aviation Edge 仍會接回，但只用於「查單筆訂單當天的實際執飛狀態」（status / estimatedTime / actualTime / 延誤），跟 booking 階段的 schedule 完全分離
+
+**決定（分 4 Stage 上線，每 stage 獨立 commit）**：
+- **Stage 1**（commit `60b0c73`）：[server/utils/tdx-flight.ts](server/utils/tdx-flight.ts) helper（~280 行）
+  * OAuth2 client_credentials grant，token in-memory cache（24h TTL，提早 60s refresh）
+  * 並發拿 token 共用 promise，避免 race condition 重複 OAuth
+  * Domestic + International 雙 endpoint 並行打，union 結果，flightNo 二次過濾
+  * Codeshare 雙向比對：第一輪精確 `AirlineID + FlightNumber`，miss 則 fallback `OperatingAirlineID + OperatingFlightNumber`
+  * 4 條 validation：找得到 + 至少一端在台灣（TPE/TSA/KHH/RMQ）+ 用車日期在 EffectiveDate~ExpireDate 內 + weekday 在 WeekDays 內（[1,3,5] 格式）
+  * 任一不過 → 回 null，呼叫端自行 fallback
+  * 相容讀取 TDX 兩種 weekday 欄位（WeekDays[] 或 WeekPattern 七元素 [Mon..Sun] flag）
+  * `nuxt.config.ts` 新增 `tdxClientId` / `tdxClientSecret` runtimeConfig
+- **Stage 2**（commit `e667a28`）：[server/utils/flight-registry.ts](server/utils/flight-registry.ts) 擴 `tdx` 子物件
+  * 新 `FlightRegistryTdxBlock` interface + `IsTdxBlockFresh()` (24h) + `SaveTdxBlockToRegistry()`
+  * 不動既有 Aviation Edge 寫入的 `schedules` / `departureAirport` 等欄位，TDX 寫入透過 dot path 精準寫 `tdx.*` 子欄位避免覆蓋
+- **Stage 3**（commit `bc66738`）：[server/api/flight.get.ts](server/api/flight.get.ts) `_lookupFlight` 整合
+  * 新 Layer 順序：in-memory → registry.tdx (24h+適用驗證) → registry.schedules (向下相容) → TDX API → Aviation Edge (HOLD 不調用) → stale fallback → mock
+  * `_tdxResultToFlightInfo()` 把 TDX schedule 轉 FlightInfo，`estimatedTime = scheduledTime`（user 拍板方案 a），`status='scheduled'`
+  * `_isTdxBlockApplicable()` 每次取 registry.tdx 都驗證該 date 仍在 effective 區間 + weekday 適用
+  * Aviation Edge helper（_callAviationEdge / _queryAeTimetable / _queryAeFuture / 兩個 mapper）**全部保留在檔案內**，僅 `_lookupFlight` 不調用，等之後接「即時狀態」階段啟用
+  * BookingStepType.vue **完全不動**：API contract 沒變、estimatedTime fallback 讓送機 3h 檢查仍成立、所有 validation 失敗統一回 404 沿用 `notFound` 文案
+
+**驗證 4 條（任一不過 → 視為查無此航班）**：
+1. flightNo 找得到（含 codeshare 雙向比對）
+2. 至少一端機場在台灣（TPE / TSA / KHH / RMQ）
+3. 用車日期在 schedule 的 EffectiveStart~ExpireDate 區間內
+4. 用車日期當天的 ISO weekday 在該班的 WeekDays 內
+
+**影響**：
+- 新增 [server/utils/tdx-flight.ts](server/utils/tdx-flight.ts) (~280 行) + [openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md](openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md) (~213 行)
+- 修改 [server/utils/flight-registry.ts](server/utils/flight-registry.ts) (+67 行) + [server/api/flight.get.ts](server/api/flight.get.ts) (+148 / -39 行) + [nuxt.config.ts](nuxt.config.ts) (+2 行 runtimeConfig)
+- 新增 Vercel env：`NUXT_TDX_CLIENT_ID` + `NUXT_TDX_CLIENT_SECRET`（user 自行設定，**絕不可外洩到 client**）
+- Firestore `flight_registry` doc 結構擴充（向下相容）：新增 `tdx` 子物件，與既有 Aviation Edge 寫入的 `schedules` 並存
+- API contract 完全沒變（client BookingStepType.vue 不需動），所有失敗情境統一回 404 → UI 顯示既有 `notFound` 文案
+
+**已知限制與後續**：
+- Aviation Edge **booking 階段不打**，但 helper 全保留（成本 = 0，等之後 unhold 直接接「即時狀態」endpoint 啟用）
+- TDX rate limit：標準會員 50 req/sec、50k req/day，雙 endpoint 並行 = 2 req/查詢，遠低於上限
+- Codeshare 雙向比對 best-effort（TDX 文件未必每筆都帶 OperatingAirline），漏網航班可未來加 manual fallback UI
+
+**替代方案（已評估後否決）**：
+- 純 Aviation Edge：LCC 涵蓋差，UX 不可接受
+- 預熱 100 條常見 TPE 航線 import Firestore：工作量大，TDX self-learning 會慢慢補上，Open
+- Layer 3 改 client-side 直接打 TDX：違反「TDX key 不可外洩」原則
+- token cache 走 Firestore 跨 instance 共用：每次多 1 次 Firestore read，比 in-memory 重拿 token 還貴
+
+**verify**：lint pass + nuxt build pass（4 commits 階段獨立，皆可獨立回滾）
+
+**相關 spec**：[openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md](openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md)（含 stage 拆解 + 接手注意事項 + TDX response 範例）
+
+---
+
+### 2026/05/11 — orders POST 距離計算：Distance Matrix 改 Directions API + waypoints
+
+**類型**：bug 修復
+
+**標題**：訂單確認頁顯示金額與下單後實際金額不一致
+
+**背景**：
+- 前端 BookingStepRoute 用 `/api/maps/route`（Google Directions API + via: waypoints）算距離，含中途停靠站繞行
+- server `orders/index.post.ts` 卻用 Distance Matrix（origin → destination 直線），完全沒帶 `body.stopovers`
+- 同一車型 + 同一份 fleet config，但距離不同 → `calculateFare` 結果不同 → 乘客在 confirm 頁看到 NT$ X，下單成立後變成 NT$ Y
+
+**決定**：
+- 抽 [server/utils/calc-route-distance.ts](server/utils/calc-route-distance.ts) helper（Directions API + via: waypoints + 全 legs 加總）
+- `orders/index.post.ts` 換用 helper，並把 `body.stopovers`（過濾 lat===0）傳進去
+- 前後端皆走 Directions API，結果一致
+
+**verify**：lint pass + build pass（commit `8115ae8`）
+
+---
+
 ### 2026/05/11 — P23 Fleet 設定動態化：hardcode 計價搬到 Firestore + admin/settings CRUD UI + 行李 SU 制
 
 **類型**：功能 / 資料模型變更

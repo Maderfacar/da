@@ -527,6 +527,39 @@
 
 > 註：driver/admin 端 i18n 多語化於 2026/05/09 由使用者決議移除（內部後台不需多語）
 
+### P24：TDX 航班 GeneralSchedule 整合（2026/05/12 ✅ 完成 — Booking 階段排程驗證主資料源）
+
+> 完整設計與 stage 拆解見 [`openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md`](../openspec/changes/2026-05-12-tdx-flight-integration/HANDOFF.md)
+>
+> 接續前一輪 [`2026-05-10-flight-registry-tracker/HANDOFF.md`](../openspec/changes/2026-05-10-flight-registry-tracker/HANDOFF.md) Stage 3。
+
+**Stage 進度**：
+- [✅] **Stage 0**：HANDOFF spec 文件（commit `5b676ab`）
+- [✅] **Stage 1**：[server/utils/tdx-flight.ts](../server/utils/tdx-flight.ts) helper（OAuth + 雙 endpoint + 4 條 validation + codeshare 雙向；commit `60b0c73`）
+- [✅] **Stage 2**：[server/utils/flight-registry.ts](../server/utils/flight-registry.ts) 擴 tdx 子物件 + read/write helpers（commit `e667a28`）
+- [✅] **Stage 3**：[server/api/flight.get.ts](../server/api/flight.get.ts) `_lookupFlight` 整合 TDX layer + 拔 Aviation Edge 調用（commit `bc66738`）
+- [✅] **Stage 4**：docs/decision-log + tasks.md 更新（本 commit）
+
+**驗證 4 條**：
+1. flightNo 找得到（含 codeshare 雙向比對）
+2. 至少一端機場在台灣（TPE / TSA / KHH / RMQ）
+3. 用車日期在 EffectiveDate~ExpireDate 區間內
+4. 用車日期當天的 ISO weekday 在該班的 WeekDays 內
+
+任一不過 → 統一回 404 → UI 顯示既有 `notFound` 文案。
+
+**Aviation Edge 處置**：
+- booking 階段 helper 全保留在 [server/api/flight.get.ts](../server/api/flight.get.ts) 內，僅 `_lookupFlight` 不調用
+- 等之後接「即時狀態查詢」階段（單筆訂單當天的 status / estimatedTime / actualTime / 延誤）才啟用，可能改成單獨 endpoint `/api/flight/realtime`
+
+**待 user 部署後驗收**：
+- [ ] 設定 Vercel env：`NUXT_TDX_CLIENT_ID` + `NUXT_TDX_CLIENT_SECRET`
+- [ ] LIFF 實測：訂車 → 輸入 CI102（中華大航班）→ 應秒回；輸入未來 30 天日期應驗證 schedule
+- [ ] LIFF 實測：輸入查不到的航班 → 顯示 `notFound`
+- [ ] LIFF 實測：codeshare 案例（如 JL 與 CI 共用 TPE-NRT）兩個編號都能查到
+
+---
+
 ### P23：Fleet 設定動態化（2026/05/11 ✅ 完成 — 計價參數 hardcode 退役）
 
 > 完整設計與 tasks 見 `openspec/changes/2026-05-11-p23-fleet-admin-config/`：
@@ -579,5 +612,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善
 
 **版本紀錄**
-- 版本：v3.11（P23 fleet 設定動態化 — hardcode 計價搬到 Firestore + admin/settings CRUD UI + 行李 SU 制；Stage 1+2+3+5 全完成，build pass）
-- 更新日期：2026/05/11
+- 版本：v3.12（P24 TDX 航班 GeneralSchedule 整合 — booking 階段排程驗證主資料源取代 Aviation Edge；4 stage 全完成，待設 TDX env + LIFF 實測）
+- 更新日期：2026/05/12
