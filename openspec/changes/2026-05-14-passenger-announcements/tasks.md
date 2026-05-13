@@ -30,7 +30,11 @@
   - [ ] 移除 `tabs` / `activeTab` / `.LayoutFrontDesk__bottom` 相關
   - [ ] 頂部 nav 右側加 hamburger button
   - [ ] body `padding-bottom` 砍掉
-- [ ] Drawer 內容（user info / nav links / 登出 / 客服）
+- [ ] Drawer 內容（依 Brain AI 拍板順序）：
+  - [ ] 使用者資訊區（頭像 + displayName）
+  - [ ] 主導航 7 項：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服（外連 LINE OA）
+  - [ ] 底部：app 版本號（**不放登出**）
+  - [ ] logo 點擊回 `/home`（不在 drawer 內列「首頁」）
 
 ### 1.3 主 CTA 補位
 
@@ -70,9 +74,11 @@
 - [ ] `GET    /nuxt-api/admin/announcements`（列表 + status filter + 分頁）
 - [ ] `GET    /nuxt-api/admin/announcements/[id]`（單筆）
 - [ ] `POST   /nuxt-api/admin/announcements`（建草稿）
-- [ ] `PATCH  /nuxt-api/admin/announcements/[id]`（編輯 / publish / archive）
-  - publish 觸發：撈 targets → push LINE（若 channels.line）→ 寫 pushStats → audit log
-- [ ] `DELETE /nuxt-api/admin/announcements/[id]`
+- [ ] `PATCH  /nuxt-api/admin/announcements/[id]`（編輯 / publish / archive，**status 可循環**）
+  - **LINE push 觸發**精確判定：`oldStatus !== 'published' && newStatus === 'published'` 才推（draft→published + archived→published 都推；published→published 純編輯不推）
+  - publish 觸發時：撈 targets → push LINE（若 channels.line）→ 寫 pushStats → audit log
+  - audit action：`announcement.publish`（首發）/ `announcement.republish`（archived→published）/ `announcement.update`（內容編輯）/ `announcement.archive`
+- [ ] `DELETE /nuxt-api/admin/announcements/[id]`（**任何 status 都可刪**，含 published / archived）
 - [ ] 全部套 `hasPermission(auth, 'canBroadcast')` + audit log + rate-limit（沿用 broadcast.post.ts）
 
 ### 2.4 圖片上傳 endpoint
@@ -83,10 +89,11 @@
 ### 2.5 Audit actions 擴充
 
 - [ ] [server/utils/audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加：
-  - `announcement.create`
-  - `announcement.update`
-  - `announcement.publish`
-  - `announcement.archive`
+  - `announcement.create`（建草稿）
+  - `announcement.update`（內容編輯，不變動 status）
+  - `announcement.publish`（draft → published 首發）
+  - `announcement.republish`（archived → published 重發）
+  - `announcement.archive`（任意 → archived）
   - `announcement.delete`
 
 ### 2.6 Stage Gate
@@ -103,7 +110,10 @@
 
 - [ ] [app/pages/admin/notifications/index.vue](app/pages/admin/notifications/index.vue) 改為 announcement 管理頁：
   - [ ] 三 tab：草稿 / 已發佈 / 已下架（query state）
-  - [ ] 列表卡片：標題 / 目標 / 推送數據 / 動作按鈕（編輯 / 發佈 / 下架 / 刪除）
+  - [ ] 列表卡片：標題 / 目標 / 推送數據 / 動作按鈕（依 status 動態）
+    - **draft**：編輯 / 發佈 / 刪除
+    - **published**：編輯 / 下架 / 刪除（**編輯不重推 LINE**）
+    - **archived**：編輯 / **重新發佈**（會再推一次 LINE，UseAsk 二次確認） / 刪除
   - [ ] 「新增公告」按鈕 → 開編輯彈窗
 
 ### 3.2 編輯彈窗
@@ -150,14 +160,17 @@
 - [ ] `server/utils/announcement-flex.ts`：
   - `buildAnnouncementFlex(announcement): FlexMessage` 依 design.md 規格組裝
 
-### 4.3 訂單事件自動推（Q2 a）
+### 4.3 訂單事件自動推（Q2 a，5 個觸發點 — Brain AI 拍板）
 
-- [ ] [server/utils/i18n-message.ts](server/utils/i18n-message.ts) 新增 — 三語訊息表（5 個 `order.*` key）
-- [ ] [server/routes/nuxt-api/orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 5 個 status 切換點各 inline 加：
+- [ ] [server/utils/i18n-message.ts](server/utils/i18n-message.ts) 新增 — 三語訊息表（5 個 `order.*` key：`pending` / `confirmed` / `en_route` / `completed` / `cancelled`）
+- [ ] **訂單建立**（**新增點**）：[server/routes/nuxt-api/orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) Firestore write 後加：
+  - 撈 `users/{lineUid}.lang`
+  - `sendLinePush('passenger', lineUid, [{ type: 'text', text: getOrderMessage('order.pending', lang) }])`
+- [ ] **status 切換**：[server/routes/nuxt-api/orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 在 **confirmed / en_route / completed / cancelled** 4 個切換點各 inline 加 sendLinePush（注意：**arrived_pickup 不推**）
   - 撈 `users/{order.userId}.lang`
-  - `getOrderMessage('order.{status}', lang, { ... })`
+  - `getOrderMessage('order.{status}', lang, { cancelReason })`
   - `sendLinePush('passenger', order.userId, [{ type: 'text', text }])`
-  - 全部 fire-and-forget（catch 內部）
+- [ ] 全部 fire-and-forget（catch 內部）
 
 ### 4.4 Admin 手動推單筆（Q2 b）
 
@@ -171,7 +184,7 @@
 
 - [ ] G4.1 lint + build pass
 - [ ] G4.2 手測：發佈 announcement（channels.line=true）→ 手機 LINE OA 收到 Flex
-- [ ] G4.3 手測：訂單 status 改 confirmed → 手機收到「✅ 訂單已確認」text
+- [ ] G4.3 手測 5 個訂單事件：建單 (pending) / 切 confirmed / 切 en_route / 切 completed / 切 cancelled → 乘客手機 LINE 各收到對應 text；切 arrived_pickup → 乘客**不**收到（驗證移除點）
 - [ ] G4.4 手測：admin 訂單詳情頁點「通知乘客」→ 乘客收到自訂訊息
 - [ ] G4.5 commit + push origin :main
 
@@ -234,9 +247,12 @@
 - [ ] admin 發佈純 in-app announcement（channels.line=false, inApp=true）→ LINE 沒收 + App 列表出現
 - [ ] admin 發佈含圖 + CTA Flex（line=true, inApp=true）→ 兩端都正確顯示
 - [ ] admin target=order 指定特定訂單 → 只該乘客收到
-- [ ] 訂單事件 5 個推播 → 乘客 LINE 確實收到對應訊息
+- [ ] **status 循環驗證**：published → 編輯 → 不重推 LINE / archived → 重新發佈 → 重推 LINE / archived → 刪除 OK
+- [ ] 訂單事件 5 個推播：建單 / confirmed / en_route / completed / cancelled → 乘客 LINE 收到；arrived_pickup → **不**推
 - [ ] admin 訂單詳情點「通知乘客」 → 乘客收到自訂訊息
 - [ ] 未讀紅點：開未讀消息後紅點 -1 / 全部讀完紅點消失
+- [ ] **drawer menu 順序驗證**：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服 — 順序與 label 正確；無「登出」「首頁」項
+- [ ] logo 點擊回 `/home` 可運作
 
 ### 6.3 decision-log
 

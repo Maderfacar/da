@@ -18,10 +18,17 @@
 - **改用 admin 風格 hamburger drawer**：頂部右側 hamburger 按鈕 → 左側抽屜 280px
 - Drawer 內容：
   - 使用者資訊區（頭像 + displayName + LINE friend status）
-  - 主導航：首頁 / 訂車 / 我的行程 / 訂單 / 車隊 / **最新消息**（含未讀紅點）/ 個人設定
-  - 底部：登出 / 客服 / app 版本號
+  - 主導航（**Brain AI 拍板順序**）：
+    1. **最新消息**（含未讀紅點，本次新增）
+    2. 訂車（`/booking`）
+    3. 我的行程（`/upcoming`）
+    4. 歷史訂單（`/orders`，原「訂單」改名）
+    5. 車型介紹（`/fleet`，原「車隊」改名）
+    6. 個人設定（`/profile`）
+    7. 客服（外連 LINE OA）
+  - 底部：app 版本號（**不放登出**，沿用乘客端無登出政策 commit `473ada0`；首頁由 logo 點擊回 `/home`）
 - 頂部 nav 簡化：左 logo / 中央頁面標題 / 右 LangSwitcher + hamburger
-- 主要 CTA「訂車」改為頂部 nav 浮動或 home hero 卡片，不再倚賴底部 tab
+- 主要 CTA「訂車」改為 home hero 卡片，不再倚賴底部 tab
 
 ### 2. Announcements Firestore Collection
 
@@ -37,13 +44,24 @@
 - 通道勾選（解耦 b 方案）：☐ 推 LINE OA  ☐ 顯示在 App 內列表（兩個獨立 checkbox）
 - 動作：草稿 / 立即發佈 / 排程（v2 backlog）
 - 預覽：右側即時 LINE Flex preview + App 內卡片 preview
+- **狀態可循環**（Brain AI 拍板）：
+  - draft ↔ published ↔ archived 任意流轉
+  - published / archived 都可編輯與刪除
+  - archived 可重新發佈（**重發會再推一次 LINE**，admin 須有意識）
+  - 純編輯 published 內容不重推 LINE（避免騷擾），只更新 App 內顯示
 
 ### 4. LINE 推送整合
 
 - 擴充 [line-push.ts](server/utils/line-push.ts) `LineMessage` 型別：支援 `text` 與 `flex`
 - `text` 訊息維持現狀；`flex` 訊息組 L1 Flex Bubble：Hero image + Title + Body + CTA button
 - announcement publish → 依目標分群撈 lineUid 列表 + Promise.allSettled 批次推
-- **訂單事件自動推（Q2 a）**：[orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 在 `confirmed` / `en_route` / `arrived_pickup` / `completed` / `cancelled` 區塊各加一次 sendLinePush 給 owner（lineUid = order.userId）
+- **訂單事件自動推（Q2 a）**：5 個觸發點各推一次 sendLinePush 給 owner（lineUid = order.userId）
+  - **pending（待確認）**：在 [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) 訂單建立後推（**新增點**）
+  - **confirmed（已確認）**：在 [orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 切 confirmed 時推
+  - **en_route**：同上
+  - **completed**：同上
+  - **cancelled**：同上
+  - **不推 arrived_pickup**（Brain AI 拍板移除：乘客通常已在現場，多餘）
 - **Admin 手動推單筆（Q2 b）**：訂單詳情頁加「通知乘客」按鈕 → 開彈窗（標題 + 訊息）→ POST `/nuxt-api/admin/orders/[orderId]/notify`（已存在 endpoint，擴充 channel 走 passenger OA）
 
 ### 5. 乘客端 /notifications 頁

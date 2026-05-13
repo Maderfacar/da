@@ -89,19 +89,20 @@
 
 ### 2.3 訂單事件推送（Q2 a）
 
-在 [orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 既有 status 切換區塊內 inline 加 `sendLinePush('passenger', orderOwnerLineUid, ...)`，不開新 endpoint。
+5 個觸發點（**Brain AI 拍板：移除 arrived_pickup、新增 pending**）：
 
-5 個觸發點：
+| 觸發時機 | 寫入檔案 | 推送內容（繁中為例，需三語） |
+|---|---|---|
+| **訂單建立**（status=pending） | [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) Firestore write 後 | 📝 訂單已建立\n您的訂單已送出，正在媒合司機，請耐心稍候。 |
+| `* → confirmed`（已確認） | [orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) status 切換區塊 | ✅ 司機已接單\n司機已接受您的訂單，準備前往接您。 |
+| `* → en_route` | 同上 | 🚗 司機已出發\n司機正在前往上車點，請至約定地點等候。 |
+| `* → completed` | 同上 | 🎉 行程已完成\n感謝您搭乘 Destination Anywhere！期待再次為您服務。 |
+| `* → cancelled` | 同上 | ⚠️ 訂單已取消\n{cancelReason ? '原因：${cancelReason}\\n' : ''}如需協助請聯絡客服。 |
 
-| status 變化 | 推送內容（繁中為例，需三語） |
-|---|---|
-| `pending → confirmed` | ✅ 訂單已確認\n司機已接單，準備出發前往接您。 |
-| `confirmed → en_route` | 🚗 司機已出發\n預計 N 分鐘後抵達上車點。 |
-| `en_route → arrived_pickup` | 📍 司機已抵達\n請至上車地點上車。 |
-| `* → completed` | 🎉 行程已完成\n感謝您搭乘 Destination Anywhere！ |
-| `* → cancelled` | ⚠️ 訂單已取消\n{cancelReason ? '原因：${cancelReason}\\n' : ''}如需協助請聯絡客服。 |
+**移除原因**：
+- ~~`en_route → arrived_pickup`~~：乘客通常已在現場等候，多一條 LINE 訊息反而干擾；司機端會看到 status 切換、有需要可直接撥電話聯繫（P36 已實作真實電話撥號）
 
-**i18n**：依 `users/{lineUid}.lang` 取乘客偏好語系（zh / en / ja），fallback zh。新增 `server/utils/i18n-message.ts` helper 維護三語訊息表（首版只做這 5 個 status）。
+**i18n**：依 `users/{lineUid}.lang` 取乘客偏好語系（zh / en / ja），fallback zh。新增 `server/utils/i18n-message.ts` helper 維護三語訊息表（首版只做這 5 個 trigger）。
 
 ### 2.4 Admin 手動推單筆（Q2 b）
 
@@ -159,7 +160,7 @@
 .LayoutFrontDesk
   //- 頂部 nav（簡化）
   nav.LayoutFrontDesk__top
-    .LayoutFrontDesk__logo  //- 左 logo
+    .LayoutFrontDesk__logo(@click="navigateTo('/home')") //- 左 logo（點擊回首頁）
     .LayoutFrontDesk__title //- 中 頁面標題（由 route meta 傳入）
     .LayoutFrontDesk__right
       LangSwitcher
@@ -174,24 +175,38 @@
         .LayoutFrontDesk__drawer-user
           img(:src="lineProfile.pictureUrl")
           .name {{ lineProfile.displayName }}
+        //- Brain AI 拍板順序（2026-05-14）：最新消息為主軸放最上
         nav.LayoutFrontDesk__drawer-nav
-          NuxtLink(to="/home") 首頁
-          NuxtLink(to="/booking") 訂車
-          NuxtLink(to="/upcoming") 我的行程
-          NuxtLink(to="/orders") 訂單
-          NuxtLink(to="/fleet") 車隊
           NuxtLink(to="/notifications")
             | 最新消息
             span.badge(v-if="unreadCount > 0") {{ unreadCount }}
+          NuxtLink(to="/booking") 訂車
+          NuxtLink(to="/upcoming") 我的行程
+          NuxtLink(to="/orders") 歷史訂單
+          NuxtLink(to="/fleet") 車型介紹
           NuxtLink(to="/profile") 個人設定
+          a(:href="lineOaAddUrl" target="_blank") 客服
         .LayoutFrontDesk__drawer-bottom
-          button(@click="ClickSignOut") 登出
-          a(:href="lineOaAddUrl") 客服
+          //- 不放登出（沿用乘客端無登出政策 commit 473ada0）
+          .version v{{ appVersion }}
 
   //- 主內容（無底部 tab，padding-bottom 砍掉）
   main.LayoutFrontDesk__body
     slot
 ```
+
+**頁面 label 對映**（route 不變，只改 menu 文字）：
+
+| Route | 舊 menu | 新 menu |
+|---|---|---|
+| `/notifications` | （無） | **最新消息**（本次新增）|
+| `/booking` | 訂車 | 訂車 |
+| `/upcoming` | 我的行程 | 我的行程 |
+| `/orders` | 訂單 | **歷史訂單**（重命名）|
+| `/fleet` | 車隊 | **車型介紹**（重命名）|
+| `/profile` | （無對應 tab） | 個人設定 |
+| 外連 LINE OA | （banner only） | 客服 |
+| `/home` | 首頁（tab） | （logo 點擊，不放 menu） |
 
 ### 4.2 桌機 vs 手機
 
@@ -282,9 +297,39 @@ User 明確選擇。實作上極簡：DB 多兩個 boolean 欄位 + UI 多兩個
 
 LIFF 場景手機 > 95%，避免桌機獨立 layout 增加 surface 維護面積。drawer 280px 在桌機展開仍佔比合理（1440 寬螢幕 < 20%）。
 
+### 8.6 為什麼 announcement status 可循環流轉（Brain AI 拍板）
+
+**決議**：draft ↔ published ↔ archived 任意流轉；published / archived 都可編輯與刪除；archived 可重新發佈（重發會再推 LINE，admin 須有意識）。
+
+**理由**：
+- 活動公告有重複性（節慶 / 月度活動），允許重發避免每次都重建一篇
+- archived 不等於刪除，是「暫時收起」的概念
+- 編輯彈性給 admin 改錯字 / 補圖
+- 但編輯 published 不重推 LINE，避免騷擾使用者（重推必須走 archived → published 路徑，admin 有意識）
+
+**LINE push 觸發點精確定義**：
+- ✅ 觸發：`status: draft → published`
+- ✅ 觸發：`status: archived → published`（重發）
+- ❌ 不觸發：`status: published → published`（純編輯內容）
+- ❌ 不觸發：`status: * → archived`（下架）
+- ❌ 不觸發：`status: * → draft`（收回草稿）
+
+App 內列表顯示規則：
+- 草稿（draft）：不顯示
+- 已發佈（published）：顯示
+- 已下架（archived）：**不顯示**（已讀過的使用者也看不到）
+
+### 8.7 為什麼移除 arrived_pickup 推播（Brain AI 拍板）
+
+乘客在出發前已知司機資訊 + 預計抵達時間，且通常已在現場等候。司機抵達時：
+- in-app 訂單狀態會顯示 arrived_pickup（推流式更新）
+- 司機可直接撥電話（P36 真實電話撥號已實作）
+
+多一條 LINE 訊息反而干擾現場上車情境。
+
 ## 9. 開放問題（implementation 時若遇到再回頭問）
 
 - ❓ Flex Message 在 LINE OA 推送失敗時是否 fallback 成 text？→ 預設 fallback（altText 已備）
-- ❓ archived announcement 是否還在 App 內列表顯示？→ 不顯示，只 admin 看
-- ❓ announcement 是否要支援編輯後重推？→ 第一版不做，published 後只能 archive 不能 republish
-- ❓ 訂單事件推 5 個區塊都加會不會洗版？→ 5 個關鍵節點實際時間跨度大（從接單到完成至少幾十分鐘），不會洗版
+- ✅ archived announcement 是否還在 App 內列表顯示？→ **不顯示，只 admin 看**（§8.6 確認）
+- ✅ announcement 是否要支援編輯後重推？→ **archived 可重發、編輯 published 不重推**（§8.6 確認）
+- ❓ 訂單事件推 4 個 status change + 1 個 create 會不會洗版？→ 5 個關鍵節點實際時間跨度大（從建單到完成至少幾十分鐘），不會洗版
