@@ -58,6 +58,13 @@ export type AuditAction =
   // broadcast / notify
   | 'broadcast.send'
   | 'broadcast.notify_one'
+  // P37 announcement（取代 broadcast.* 的後續發展）
+  | 'announcement.create'      // 建草稿
+  | 'announcement.update'      // 編輯內容（不變動 status）
+  | 'announcement.publish'     // draft → published 首發
+  | 'announcement.republish'   // archived → published 重發
+  | 'announcement.archive'     // 任意 → archived
+  | 'announcement.delete'      // 刪除
   // fleet
   | 'fleet.create'
   | 'fleet.update'
@@ -65,7 +72,7 @@ export type AuditAction =
   // migration（P27 一次性）
   | 'migration.driver_application_move';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'fleet' | 'migration';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration';
 
 interface WriteAuditLogInput {
   event: H3Event;

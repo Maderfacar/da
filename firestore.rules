@@ -95,6 +95,23 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── announcements 集合（P37）─────────────────────────────
+    // 公告主檔；admin client SDK 可讀全部（settings/list 展示用），其他角色一律走 server endpoint
+    // 寫入一律透過 server admin SDK（server/routes/nuxt-api/admin/announcements/*）
+    match /announcements/{announcementId} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
+    // ── announcement_reads 集合（P37）────────────────────────
+    // 公告已讀狀態 sub-collection；client 全禁讀寫，僅 server 透過
+    // /nuxt-api/passenger/announcements/* 讀寫
+    match /announcement_reads/{lineUid}/items/{announcementId} {
+      allow read, write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
