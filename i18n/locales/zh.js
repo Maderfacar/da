@@ -34,13 +34,27 @@ export default {
     addFriend: '加入官方帳號，即時接收行程通知',
     addBtn: '+ 加好友',
   },
-  // ── 底部 Tab ──────────────────────────────────────────────
+  // ── 底部 Tab（2026/05/14 改造後保留 key 給 fleet / orders 等頁面內部使用，不再用於底部 tab bar）──
   tab: {
     home: '首頁',
     trips: '行程',
     book: '預約',
     fleet: '車型',
     orders: '訂單',
+  },
+  // ── 側邊選單（hamburger drawer，2026/05/14 改造）─────────
+  drawer: {
+    notifications: '最新消息',
+    booking: '訂車',
+    upcoming: '我的行程',
+    orders: '歷史訂單',
+    fleet: '車型介紹',
+    profile: '個人設定',
+    support: '客服',
+    memberLabel: 'MEMBER',
+    guestName: '訪客',
+    ariaOpen: '開啟選單',
+    ariaDialog: '主選單',
   },
   // ── 訂單狀態（跨頁共用）─────────────────────────────────
   status: {

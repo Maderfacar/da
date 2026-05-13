@@ -1,7 +1,12 @@
 <script setup lang="ts">
-// LayoutFrontDesk 乘客端佈局：固定頂部 Nav + 底部 5-Tab Bar
+// LayoutFrontDesk 乘客端佈局
+//
+// 2026/05/14 改造（Brain AI 拍板）：
+//   - 移除底部 5-tab bar
+//   - 改 admin 風格 hamburger drawer（CommonDrawer）
+//   - 桌機 / 手機行為一致（皆 hamburger 收合，無 sticky 側欄）
+//   - logo 點擊回 /home（不在 drawer 列「首頁」）
 
-const route = useRoute();
 const authStore = StoreAuth();
 const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
@@ -10,25 +15,13 @@ const showFriendBanner = computed(
   () => isSignIn.value && isFriend.value === false,
 );
 
-const { t } = useI18n();
+const drawerOpen = ref(false);
+const ClickHamburger = () => { drawerOpen.value = true; };
+const ClickLogo = () => navigateTo('/home');
 
-const tabs = computed(() => [
-  { id: 'home',   icon: '🏠', label: t('tab.home'),   path: '/home',     dot: false },
-  { id: 'trips',  icon: '✈',  label: t('tab.trips'),  path: '/upcoming', dot: true  },
-  { id: 'book',   icon: '＋', label: t('tab.book'),   path: '/booking',  dot: false },
-  { id: 'fleet',  icon: '🚗', label: t('tab.fleet'),  path: '/fleet',    dot: false },
-  { id: 'orders', icon: '📋', label: t('tab.orders'), path: '/orders',   dot: false },
-]);
-
-const activeTab = computed(() => {
-  const p = route.path;
-  if (p === '/home' || p === '/') return 'home';
-  if (p.startsWith('/upcoming'))  return 'trips';
-  if (p.startsWith('/booking'))   return 'book';
-  if (p.startsWith('/fleet'))     return 'fleet';
-  if (p.startsWith('/orders'))    return 'orders';
-  return 'home';
-});
+// 未讀公告數（Phase 5 接 /nuxt-api/passenger/announcements/unread-count）
+// Phase 1 留 placeholder ref(0)，UI 紅點 v-if=" > 0" 不會顯示
+const unreadCount = ref(0);
 </script>
 
 <template lang="pug">
@@ -59,30 +52,34 @@ const activeTab = computed(() => {
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
   nav.LayoutFrontDesk__top
-    .LayoutFrontDesk__logo(@click="navigateTo('/home')")
+    .LayoutFrontDesk__logo(@click="ClickLogo")
       | DEST
       span ∙
       | ANYWHERE
     .LayoutFrontDesk__nav-right
       LangSwitcher
       CommonHeaderUser
+      //- Hamburger 按鈕（觸發 CommonDrawer）
+      button.LayoutFrontDesk__hamburger(
+        type="button"
+        :aria-label="$t('drawer.ariaOpen')"
+        @click="ClickHamburger"
+      )
+        span.LayoutFrontDesk__hamburger-line
+        span.LayoutFrontDesk__hamburger-line
+        span.LayoutFrontDesk__hamburger-line
 
   //- ── 頁面內容 ─────────────────────────────────────────────
-  //- P32：加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
+  //- 加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
   main.LayoutFrontDesk__body(:class="{ 'has-banner': showFriendBanner }")
     slot
 
-  //- ── 固定底部 Tab Bar ─────────────────────────────────────
-  nav.LayoutFrontDesk__bottom
-    .LayoutFrontDesk__tab(
-      v-for="tab in tabs"
-      :key="tab.id"
-      :class="{ 'is-active': activeTab === tab.id }"
-      @click="navigateTo(tab.path)"
+  //- ── Drawer ──────────────────────────────────────────────
+  ClientOnly
+    CommonDrawer(
+      v-model="drawerOpen"
+      :unread-count="unreadCount"
     )
-      .LayoutFrontDesk__tab-icon {{ tab.icon }}
-      .LayoutFrontDesk__tab-label {{ tab.label }}
-      .LayoutFrontDesk__tab-dot(v-if="tab.dot")
 </template>
 
 <style lang="scss" scoped>
@@ -210,93 +207,46 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   gap: 8px;
 }
 
-.LayoutFrontDesk__nav-btn {
-  font-family: $font-body;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 7px 14px;
-  border-radius: 100px;
-  border: 1.5px solid var(--da-dark);
-  background: transparent;
-  color: var(--da-dark);
-  cursor: pointer;
-  transition: opacity 0.2s;
-
-  &:hover { opacity: 0.7; }
-
-  &.is-primary {
-    background: var(--da-dark);
-    color: var(--da-cream);
-    border-color: var(--da-dark);
-  }
-}
-
-// ── 頁面主體 ───────────────────────────────────────────────
-.LayoutFrontDesk__body {
-  padding-bottom: 80px;
-}
-
-// P32：加好友橫幅顯示時下移 40px（banner 高度 = 10px padding × 2 + 20px content）
-.LayoutFrontDesk__body.has-banner {
-  padding-top: 40px;
-}
-
-// ── 底部 Tab Bar ───────────────────────────────────────────
-.LayoutFrontDesk__bottom {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  z-index: 100;
-  height: 64px;
-  padding: 0 8px;
-  padding-bottom: env(safe-area-inset-bottom, 8px);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  background: rgba(250, 248, 244, 0.92);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-top: 1px solid var(--da-glass-border);
-}
-
-.LayoutFrontDesk__tab {
+// ── Hamburger 按鈕 ────────────────────────────────────────
+.LayoutFrontDesk__hamburger {
+  width: 36px;
+  height: 36px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  transition: all 0.2s;
-  padding: 6px 10px;
-  border-radius: 12px;
-  min-width: 52px;
-  position: relative;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+  &:active { transform: scale(0.96); }
 }
 
-.LayoutFrontDesk__tab-icon {
-  font-size: 20px;
-  line-height: 1;
-  color: var(--da-gray-light);
+.LayoutFrontDesk__hamburger-line {
+  width: 16px;
+  height: 1.5px;
+  background: var(--da-dark);
+  border-radius: 1px;
 }
 
-.LayoutFrontDesk__tab-label {
-  font-family: $font-condensed;
-  font-size: $fs-label;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--da-gray-light);
+// ── 頁面主體 ───────────────────────────────────────────────
+// 對齊改造前行為：頁面自行處理 padding-top 避開 56px fixed nav
+// 底部 tab bar 移除後，padding-bottom 從 80px 改為 0（保留 iOS safe-area）
+.LayoutFrontDesk__body {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.LayoutFrontDesk__tab.is-active .LayoutFrontDesk__tab-icon,
-.LayoutFrontDesk__tab.is-active .LayoutFrontDesk__tab-label {
-  color: var(--da-dark);
-}
-
-.LayoutFrontDesk__tab-dot {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--da-amber);
-  position: absolute;
-  top: 6px; right: 8px;
+// 加好友橫幅顯示時下移 40px（banner 高度 = 10px padding × 2 + 20px content）
+// 此項與改造前一致
+.LayoutFrontDesk__body.has-banner {
+  padding-top: 40px;
 }
 </style>

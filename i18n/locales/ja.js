@@ -38,6 +38,20 @@ export default {
     fleet: '車種',
     orders: '注文',
   },
+  // サイドメニュー（hamburger drawer、2026/05/14 リニューアル）
+  drawer: {
+    notifications: 'お知らせ',
+    booking: 'ご予約',
+    upcoming: 'マイ旅程',
+    orders: '過去の注文',
+    fleet: '車種のご紹介',
+    profile: '個人設定',
+    support: 'サポート',
+    memberLabel: 'MEMBER',
+    guestName: 'ゲスト',
+    ariaOpen: 'メニューを開く',
+    ariaDialog: 'メインメニュー',
+  },
   status: {
     confirmed: '確認済み',
     pending: '確認待ち',

@@ -38,6 +38,20 @@ export default {
     fleet: 'Fleet',
     orders: 'Orders',
   },
+  // Side menu (hamburger drawer, 2026/05/14 redesign)
+  drawer: {
+    notifications: 'News',
+    booking: 'Book a Ride',
+    upcoming: 'My Trips',
+    orders: 'Order History',
+    fleet: 'Our Fleet',
+    profile: 'Profile',
+    support: 'Support',
+    memberLabel: 'MEMBER',
+    guestName: 'Guest',
+    ariaOpen: 'Open menu',
+    ariaDialog: 'Main menu',
+  },
   status: {
     confirmed: 'Confirmed',
     pending: 'Pending',
