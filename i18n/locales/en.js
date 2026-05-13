@@ -41,6 +41,8 @@ export default {
   status: {
     confirmed: 'Confirmed',
     pending: 'Pending',
+    en_route: 'Driver En Route',
+    arrived_pickup: 'Driver Arrived',
     in_transit: 'In Progress',
     completed: 'Completed',
     cancelled: 'Cancelled',
@@ -67,6 +69,32 @@ export default {
       confirm: 'Cancel this order? This action cannot be undone.',
       success: 'Order cancelled',
       failed: 'Cancellation failed, please try again later',
+    },
+  },
+  orderDetail: {
+    backToList: 'Back to orders',
+    notFound: 'Order not found or has been removed',
+    loadFailed: 'Failed to load order detail',
+    route: {
+      pickup: 'Pickup',
+      stopover: 'Stopover {n}',
+      dropoff: 'Drop-off',
+      eta: 'about {min} min',
+    },
+    driverCard: {
+      call: 'Call driver',
+      noPhone: 'No phone available',
+      unknownName: 'Driver',
+    },
+    info: {
+      pickupTime: 'Pickup time',
+      vehicle: 'Vehicle',
+      passengers: 'Passengers',
+      passengerVal: '{n} people',
+      extras: 'Extras',
+      flight: 'Flight / Terminal',
+      notes: 'Notes',
+      fare: 'Estimated fare',
     },
   },
   home: {

@@ -6,6 +6,45 @@
 
 ---
 
+### 2026/05/14 — P36：訂單詳情頁 + 司機真實電話撥號
+
+**類型**：Feature / 乘客端體驗
+
+**標題**：/orders/[orderId] 詳情頁完整化（含 stopovers / 距離 / ETA / 司機資訊）
+
+**背景**：
+- 乘客在 /orders 列表僅見「狀態 / 起訖 / 車種 / 時間」，看不到中途停靠點、預估距離 / 車程、司機資訊、備註與航班 / 航廈
+- P17 體驗細節最後一塊空白；P35 profile 統計落地後乘客端剩此一缺口
+- 業務未拍板司機聯絡方式：A 真實電話 / B LINE OA 中繼 / C placeholder
+
+**決定**：
+- **endpoint：** [server/routes/nuxt-api/orders/[orderId].get.ts](../server/routes/nuxt-api/orders/[orderId].get.ts) — owner / admin / assigned driver 三角色分流；`_normalizeDriverId` + `_stripLinePrefix` 兼容雙格式比對；Timestamp 序列化為 ISO string
+- **司機資訊揭露：** 僅在 orderStatus ∈ {confirmed, en_route, arrived_pickup, in_transit, completed} 才回 driver 物件；pending / cancelled 為 null
+- **司機聯絡方式：Brain AI 拍板採 A — 真實電話**（`drivers.application.phone`），前端 `tel:` 直接撥號
+  - 理由：接送中真的找不到車比隱私風險更剛性；遲到 / 找不到車是 P0 痛點
+  - 風險揭露：司機真實號碼會被乘客拿到；後續可考慮升級為 number masking 服務（Twilio / Vonage proxy）
+- **30s polling + visibility refresh** 沿用 orders/index 模式
+- **403 / 404 自動 router.replace('/orders')** 避免長停留損壞 URL
+- **三語 i18n 強制對齊**：zh/en/ja 各 236 keys 完全相同（**Why:** 乘客端必須三語；driver/admin 內部頁不適用此規則）
+
+**影響**：
+- 新檔：1 server endpoint、1 頁面、1 type 區塊
+- 修改：app/protocol/fetch-api/api/order/index.ts 加 `GetOrder`、orders/index.vue 卡片改 NuxtLink、3 個 locale 補 `status.en_route` / `status.arrived_pickup` / `orderDetail.*`
+- 不影響既有 orders/index.vue 列表 schema 與 orders/[orderId].patch 邏輯
+- driver phone 自此暴露給乘客；若日後改用 masking 服務，server endpoint 內 `driver.phone` 出口改寫即可，前端不需改
+
+**替代方案**：
+- ❌ B（LINE OA 中繼）：客服值班壓力 + 體驗繞圈圈，遲到場景無法即時通
+- ❌ C（placeholder `(TBD)`）：當下接送找不到車就尷尬；雖最低成本但業務不接受
+- ❌ 在 orders/index.vue 直接展開全部欄位：列表 UI 會爆，且每張卡都要拉司機資料（N+1）
+
+**待手動驗證（部署後）**：
+- 拿 driver A 帳號 idToken 打 `/nuxt-api/orders/{driver_B 的訂單 ID}` → 預期 403 `無權檢視此訂單`
+- 拿 passenger 帳號 idToken 打他人訂單 → 預期 403
+- 司機卡在 `pending` 訂單應**不顯示**（即使有人為設定 assignedDriverId）
+
+---
+
 ### 2026/05/13 — P25-1：driver today 歸零 + online hours 合併實作
 
 **類型**：Feature / Schema 擴充 + 狀態流整合

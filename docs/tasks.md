@@ -458,7 +458,7 @@
 - [✅] **訂單狀態 polling**：`/orders` 與 `/upcoming` 加 30s setInterval + visibility 切回時 refresh，onUnmounted 清理 timer
 
 **P17-3：體驗細節（先列入待辦）**
-- [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）
+- [✅] 訂單詳情頁（/orders/:orderId）— P36 完成 2026-05-14：[server/routes/nuxt-api/orders/[orderId].get.ts](../server/routes/nuxt-api/orders/[orderId].get.ts) owner/admin/assigned driver 三角色分流；[app/pages/orders/[orderId].vue](../app/pages/orders/[orderId].vue) 顯示路徑卡（含 stopovers + 距離 + ETA）、司機卡（confirmed 後 displayName/車牌/車種 + tel: 真實電話）、訂單資訊、取消按鈕；30s polling + visibility refresh；orders/index 每張卡改 NuxtLink；三語 i18n 對齊（zh/en/ja status 補 en_route/arrived_pickup + orderDetail.*）
 - [✅] `profile` 頁加訂單統計 + 客服聯絡資訊（P35）：[passengers/me/stats.get.ts](../server/routes/nuxt-api/passengers/me/stats.get.ts) aggregate completed 訂單；[profile/index.vue](../app/pages/profile/index.vue) 加「我的旅程」3 stat 卡（趟數 / 累計里程 / 累計消費）+ 客服 section（LINE OA + 電話），客服電話 / 服務時段由 `NUXT_PUBLIC_CUSTOMER_SERVICE_PHONE` + `NUXT_PUBLIC_CUSTOMER_SERVICE_HOURS` env vars 控制（未設 fallback 只顯示 LINE OA）
 - [✅] `fleet/index.vue` 預約按鈕已帶 `?vehicleType=` query 直連 `/booking` 預選車型
 - [✅] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（[orders/index.vue:73-76](../app/pages/orders/index.vue) `t('status.{status}')` / `t('vehicle.{vehicleType}')`）
@@ -841,5 +841,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.18（P35 profile 頁訂單統計 + 客服資訊；firestore.rules 已部署到 Firebase Console）
-- 更新日期：2026/05/13
+- 版本：v3.19（P36 訂單詳情頁 /orders/:orderId — 路徑卡 + 司機卡 + 真實電話撥號 + 三語 i18n + status 補 en_route/arrived_pickup）
+- 更新日期：2026/05/14

@@ -41,6 +41,8 @@ export default {
   status: {
     confirmed: '確認済み',
     pending: '確認待ち',
+    en_route: 'ドライバー向かい中',
+    arrived_pickup: 'ドライバー到着',
     in_transit: '進行中',
     completed: '完了',
     cancelled: 'キャンセル',
@@ -67,6 +69,32 @@ export default {
       confirm: 'この注文をキャンセルしますか？この操作は取り消せません。',
       success: '注文をキャンセルしました',
       failed: 'キャンセルに失敗しました。後ほど再度お試しください',
+    },
+  },
+  orderDetail: {
+    backToList: '注文一覧に戻る',
+    notFound: '注文が見つかりません',
+    loadFailed: '注文詳細の読み込みに失敗しました',
+    route: {
+      pickup: '乗車地点',
+      stopover: '経由地 {n}',
+      dropoff: '降車地点',
+      eta: '約 {min} 分',
+    },
+    driverCard: {
+      call: 'ドライバーに電話',
+      noPhone: '電話番号未登録',
+      unknownName: 'ドライバー',
+    },
+    info: {
+      pickupTime: '送迎日時',
+      vehicle: '車種',
+      passengers: '乗客数',
+      passengerVal: '{n} 名',
+      extras: 'オプション',
+      flight: 'フライト / ターミナル',
+      notes: '備考',
+      fare: '予想料金',
     },
   },
   home: {
