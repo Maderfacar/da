@@ -127,9 +127,12 @@ function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
     { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
     { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a9a' }] },
     { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
-    // 道路（ON，保持暗色不高亮）
+    // 道路（ON）
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
+    // 高速公路高亮：灰薄荷 #8fb59e（低飽和、跟 TrafficLayer 鮮綠車流線一眼可辨）
+    { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#8fb59e' }] },
+    { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#6b8b7a' }] },
     // 水域（地理基礎，保留）
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
     // 行政邊界（province / locality ON，其他子類關）
@@ -153,6 +156,9 @@ function _mapStylesFull(): google.maps.MapTypeStyle[] {
     { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
+    // 高速公路高亮：灰薄荷 #8fb59e（低飽和、跟 TrafficLayer 鮮綠車流線一眼可辨）
+    { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#8fb59e' }] },
+    { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#6b8b7a' }] },
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
     { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
     // POI labels 顯示但壓暗色，icon 仍隱藏避免太雜
