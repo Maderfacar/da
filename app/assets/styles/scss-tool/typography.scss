@@ -1,0 +1,36 @@
+// 字級 design token — 三端共用
+//
+// 設計準則：
+// 1. 新元件**只能**從這裡挑字級，禁止寫 hard-coded px
+// 2. 最小字級為 $fs-label (12px)，不再使用 9 / 10 / 11px
+//    （舊代碼 11px 仍存在 100+ 處，後續以 PR 漸進收斂）
+// 3. body 標準從原本混用的 13/14px 統一提到 15px（提升可讀性）
+// 4. line-height / letter-spacing 一同 token 化，避免每處重寫
+
+// ── 巨型字 ────────────────────────────────────────────────
+$fs-hero:      72px;   // 訂單詳情大數字 / landing hero
+$fs-display:   48px;   // permission modal icon / loading logo（巨）
+
+// ── Heading ──────────────────────────────────────────────
+$fs-h1:        32px;   // 頁面 H1（Bebas Neue 大標題）
+$fs-h2:        24px;   // 區塊標題
+$fs-h3:        20px;   // 子標題 / 大型 stat
+$fs-h4:        18px;   // 小型 heading
+
+// ── Body ─────────────────────────────────────────────────
+$fs-body-lg:   16px;   // modal body / 重點段落
+$fs-body:      15px;   // 標準 body（從 13-14 升到 15）
+$fs-body-sm:   13px;   // 次要 body / hint / footnote
+
+// ── Label / Chip / Nav ────────────────────────────────────
+$fs-label:     12px;   // UPPERCASE kicker / chip / nav label / badge（最小可讀字級，取代舊 9-11px）
+
+// ── line-height ──────────────────────────────────────────
+$lh-tight:     1.2;    // heading / 大字
+$lh-normal:    1.5;    // body 預設
+$lh-relaxed:   1.7;    // 長段落
+
+// ── letter-spacing ───────────────────────────────────────
+$ls-heading:   0.06em; // 一般標題
+$ls-label:     0.08em; // 小寫 label
+$ls-uppercase: 0.15em; // 強烈 UPPERCASE（chip / badge）

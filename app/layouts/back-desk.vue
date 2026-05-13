@@ -222,7 +222,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutBackDesk__admin-badge {
   font-family: $font-condensed;
-  font-size: 10px;
+  font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.15em;
   color: var(--da-amber);

@@ -275,6 +275,7 @@ export default defineNuxtConfig({
             @use '@/assets/styles/scss-tool/fn.scss' as *;
             @use '@/assets/styles/scss-tool/mixin.scss' as *;
             @use '@/assets/styles/scss-tool/font-size.scss' as *;
+            @use '@/assets/styles/scss-tool/typography.scss' as *;
             @use '@/assets/styles/scss-tool/rwd.scss' as *;
             @use '@/assets/styles/scss-tool/element-plus/index.scss' as *;
           `,

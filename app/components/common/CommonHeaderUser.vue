@@ -82,7 +82,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .CommonHeaderUser__admin-btn,
 .CommonHeaderUser__passenger-btn {
   font-family: $font-condensed;
-  font-size: 11px;
+  font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.15em;
   padding: 5px 12px;

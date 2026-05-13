@@ -51,7 +51,7 @@ const model = defineModel<string | number>();
 
 .UiInput__label {
   font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 10px;
+  font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;

@@ -17,7 +17,7 @@ span.UiBadge(:class="`is-${variant}`")
 .UiBadge {
   display: inline-block;
   font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  font-size: 11px;
+  font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
