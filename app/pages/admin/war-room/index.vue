@@ -140,10 +140,14 @@ function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
     { featureType: 'administrative.country', stylers: [{ visibility: 'off' }] },
     { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
     { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
-    // OFF：POI（景點 / 商家 / 醫院 / 學校 / 公園等全關）
-    { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-    // OFF：landscape（建築 / 自然地景）
-    { featureType: 'landscape', stylers: [{ visibility: 'off' }] },
+    // OFF：POI labels（景點 / 商家 / 醫院 / 學校 / 公園等文字 + icon）— 但保留 geometry 吃頂層 #1a1a2e，避免灰底露出
+    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+    // POI park 區域顯式壓暗（避免綠色公園斑塊跑出）
+    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+    // OFF：landscape labels（地景名「林口」「龜山」等）— 但保留 geometry 吃頂層暗色
+    { featureType: 'landscape', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+    // landscape.man_made（建築物）壓更深一階，呼應 full 版視覺
+    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#1f1f35' }] },
   ];
 }
 
