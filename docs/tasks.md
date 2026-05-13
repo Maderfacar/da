@@ -433,8 +433,8 @@
 - [✅] `/driver/profile` totalTrips label 已對齊為 `TODAY TRIPS`（之前記錄 stale）
 
 **P16-3：基礎設施**
-- [ ] **使用者部署 firestore.rules**：Firebase Console → Firestore → Rules 貼上 `firestore.rules` 內容並 Publish
-- [ ] **使用者部署 storage.rules**（P8 建立但用戶以自有規則覆寫，已 OK）
+- [✅] **使用者部署 firestore.rules**：2026-05-13 已部署到 Firebase Console（含 P25-2 audit_logs + P31 rate_limits 兩個 block）
+- [✅] **使用者部署 storage.rules**（P8 建立但用戶以自有規則覆寫，已 OK）
 - [ ] **刪除 Vercel `cc_da` 舊專案**：避免與 `da-line-liff-app` 混淆
 - [ ] **真實航空 API 替換 Aviation Edge mock**（`server/api/flight.get.ts`）：需業務 RFP 決定來源
 - [ ] **pnpm audit 排程**：寫進 GitHub Actions 月排程
