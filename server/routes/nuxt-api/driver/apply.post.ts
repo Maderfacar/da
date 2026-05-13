@@ -18,6 +18,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { readDriverApplication } from '@@/utils/driver-application';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
+import { sendLinePush } from '@@/utils/line-push';
 
 interface ApplyBody {
   lineUserId: string;
@@ -199,6 +200,12 @@ export default defineEventHandler(async (event) => {
         lastActiveAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     }
+
+    // 通知司機申請已送出（fire-and-forget；line-push 內部 catch）
+    await sendLinePush('driver', body.lineUserId, [{
+      type: 'text',
+      text: '✅ 司機申請已送出\n您的申請已成功送出，我們將盡快審核您的證件資料。\n審核期間請耐心等候，結果將透過 LINE 通知您。',
+    }]);
 
     return successResponse({
       applied: true,

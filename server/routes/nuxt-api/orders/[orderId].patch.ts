@@ -4,6 +4,7 @@ import { successResponse, badRequestError, notFoundError, serverError, forbidden
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
+import { sendLinePush } from '@@/utils/line-push';
 
 interface GooglePlaceLite {
   address: string;
@@ -277,6 +278,16 @@ export default defineEventHandler(async (event) => {
 
     await ref.update(updates);
 
+    // 通知司機訂單已取消（pending 無指派司機則不通知；fire-and-forget）
+    if (body.orderStatus === 'cancelled' && prevStatus !== 'cancelled' && orderAssignedDriver) {
+      const driverLineUid = _stripLinePrefix(orderAssignedDriver);
+      const reasonLine = body.cancelReason ? `原因：${body.cancelReason}\n` : '';
+      await sendLinePush('driver', driverLineUid, [{
+        type: 'text',
+        text: `⚠️ 訂單已取消\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已被取消。\n${reasonLine}如有疑問請聯絡客服。`,
+      }]);
+    }
+
     // P19：訂單 status 切 en_route 時，driver doc 自動切 busy（不是 confirmed）
     // - drivers doc key 是 lineUid（去 prefix）；assignedDriverId 寫入時已 normalize 帶 prefix
     // P25-1：busy 切換時必須結算當前 online 段（busy 期間不計入 online hours）
@@ -353,6 +364,12 @@ export default defineEventHandler(async (event) => {
         } catch (err) {
           console.error('[orders/patch] driver completion update failed:', err);
         }
+
+        // 通知司機訂單已完成 + 收入入帳（fire-and-forget）
+        await sendLinePush('driver', driverLineUid, [{
+          type: 'text',
+          text: `✅ 訂單已完成\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已完成。\n收入 NT$ ${fare.toLocaleString()} 已計入今日統計。\n辛苦了！`,
+        }]);
       }
     }
 

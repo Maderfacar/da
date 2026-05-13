@@ -24,6 +24,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
+import { sendLinePush } from '@@/utils/line-push';
 
 type Role = 'passenger' | 'driver' | 'admin';
 
@@ -242,6 +243,14 @@ export default defineEventHandler(async (event) => {
     }
     for (const a of auditActions) {
       await writeAuditLog({ event, auth, action: a.action, targetType: a.targetType, targetId: uid, payload: a.payload });
+    }
+
+    // 司機核准通過時通知司機（fire-and-forget；line-push 內部 catch）
+    if (body!.approved === true) {
+      await sendLinePush('driver', uid, [{
+        type: 'text',
+        text: '🎉 司機申請已通過審核\n恭喜！您已成為核准司機，可開始接單。\n請至司機端 /driver/dashboard 開始服務。',
+      }]);
     }
 
     return successResponse({ uid, updated: true });
