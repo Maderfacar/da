@@ -46,6 +46,8 @@ export default {
   status: {
     confirmed: '已確認',
     pending: '候補確認',
+    en_route: '司機前往中',
+    arrived_pickup: '司機已抵達',
     in_transit: '進行中',
     completed: '已完成',
     cancelled: '已取消',
@@ -75,6 +77,33 @@ export default {
       confirm: '確定要取消此訂單嗎？取消後無法復原。',
       success: '訂單已取消',
       failed: '取消失敗，請稍後重試',
+    },
+  },
+  // ── P36：訂單詳情頁 ──────────────────────────────────────
+  orderDetail: {
+    backToList: '返回訂單列表',
+    notFound: '訂單不存在或已被刪除',
+    loadFailed: '載入訂單詳情失敗',
+    route: {
+      pickup: '上車地點',
+      stopover: '停靠站 {n}',
+      dropoff: '下車地點',
+      eta: '約 {min} 分鐘',
+    },
+    driverCard: {
+      call: '撥打司機電話',
+      noPhone: '司機未提供電話',
+      unknownName: '司機',
+    },
+    info: {
+      pickupTime: '用車時間',
+      vehicle: '車種',
+      passengers: '乘客人數',
+      passengerVal: '{n} 人',
+      extras: '額外服務',
+      flight: '航班 / 航廈',
+      notes: '備註',
+      fare: '預估車資',
     },
   },
   // ── 首頁 ──────────────────────────────────────────────────

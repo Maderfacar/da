@@ -37,7 +37,10 @@ const ApiLoadOrders = async () => {
 };
 
 // P17：訂單取消（pending / confirmed 才可取消）
-const ClickCancel = async (orderId: string, orderStatus: string) => {
+// P36：取消按鈕被 NuxtLink 卡片包覆，需 stop 冒泡避免一邊取消一邊跳詳情頁
+const ClickCancel = async (e: Event, orderId: string, orderStatus: string) => {
+  e.preventDefault();
+  e.stopPropagation();
   if (!CAN_CANCEL_STATUS.has(orderStatus)) return;
   if (cancellingId.value) return;
   const ok = await UseAsk(t('orders.cancel.confirm'));
@@ -95,7 +98,11 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
   //- 訂單列表
   .PageOrders__list(v-else)
-    .PageOrders__card(v-for="o in orders" :key="o.orderId")
+    NuxtLink.PageOrders__card(
+      v-for="o in orders"
+      :key="o.orderId"
+      :to="`/orders/${o.orderId}`"
+    )
       .PageOrders__card-top
         .PageOrders__type-badge {{ OrderTypeLabel(o.orderType) }}
         .PageOrders__status(:style="{ color: StatusColor(o.orderStatus) }") {{ StatusText(o.orderStatus) }}
@@ -115,10 +122,11 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
         span.PageOrders__fare {{ FormatFare(o.estimatedFare) }}
 
       //- P17：取消按鈕（pending / confirmed 才顯示）
+      //- P36：卡片改為 NuxtLink，取消按鈕需 stop 冒泡避免一邊取消一邊跳詳情頁
       button.PageOrders__cancel(
         v-if="CanCancel(o.orderStatus)"
         :disabled="cancellingId === o.orderId"
-        @click="ClickCancel(o.orderId, o.orderStatus)"
+        @click="ClickCancel($event, o.orderId, o.orderStatus)"
       ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
 </template>
 
@@ -214,10 +222,22 @@ $amber: #d4860a;
 }
 
 .PageOrders__card {
+  display: block;
   background: $surface;
   border: 1px solid $border;
   border-radius: 16px;
   padding: 14px 16px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba($amber, 0.28);
+  }
+
+  &:active { transform: scale(0.998); }
 }
 
 // P17：取消按鈕（pending / confirmed 狀態才顯示）
