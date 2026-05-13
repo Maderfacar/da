@@ -11,8 +11,9 @@
  */
 
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
+// Vercel Node 22 ESM 嚴格：dayjs subpath 必須帶 .js 副檔名（package.json exports 只列 .js 版本）
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
