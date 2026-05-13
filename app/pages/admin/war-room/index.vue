@@ -2,6 +2,8 @@
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
 const TW_CENTER = { lat: 23.7, lng: 121.0 };
+// 進場聚焦北台灣（接送主要服務區：基隆 / 台北 / 新北 / 桃園 / 宜蘭頭）
+const NORTH_TW_CENTER = { lat: 25.05, lng: 121.45 };
 const TW_BOUNDS = {
   sw: { lat: 21.8, lng: 120.0 },
   ne: { lat: 25.3, lng: 122.0 },
@@ -31,8 +33,13 @@ const filter = ref<FilterMode>('all');
 const sheetOpen = ref(false);
 
 let gmMap: google.maps.Map | null = null;
+let trafficLayer: google.maps.TrafficLayer | null = null;
 const markerMap = new Map<string, google.maps.Marker>();
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// ── 地圖控制 toggle ────────────────────────────────────────
+const showTraffic = ref(true);     // 預設開：即時車流（紅黃綠線）
+const showLandmarks = ref(false);  // 預設關：精簡版（拔 POI / landscape）
 
 // ── derivedStatus 推導（P19）────────────────────────────────
 const _DeriveStatus = (d: DriverInfo): DerivedStatus => {
@@ -99,18 +106,47 @@ const _InitMapFlow = async () => {
   );
 
   gmMap = new google.maps.Map(mapEl.value, {
-    center: TW_CENTER,
-    zoom: 8,
+    center: NORTH_TW_CENTER,
+    zoom: 10,
     restriction: { latLngBounds: taBounds, strictBounds: true },
     disableDefaultUI: true,
     zoomControl: true,
     gestureHandling: 'cooperative',
-    styles: _mapStyles(),
+    styles: showLandmarks.value ? _mapStylesFull() : _mapStylesMinimal(),
   });
+
+  // 套上預設車流 layer
+  _ApplyTrafficLayer();
 };
 
-// ── 地圖樣式（暗色主題）────────────────────────────────────
-function _mapStyles(): google.maps.MapTypeStyle[] {
+// ── 地圖樣式：精簡版（預設）─────────────────────────────────
+// 規格：transit / road / administrative.province / .locality ON，其餘全 OFF；保留原暗色主題（不做國道高亮）
+function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
+  return [
+    // 基礎暗色
+    { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a9a' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+    // 道路（ON，保持暗色不高亮）
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
+    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
+    // 水域（地理基礎，保留）
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
+    // 行政邊界（province / locality ON，其他子類關）
+    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
+    { featureType: 'administrative.country', stylers: [{ visibility: 'off' }] },
+    { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
+    { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+    // OFF：POI（景點 / 商家 / 醫院 / 學校 / 公園等全關）
+    { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+    // OFF：landscape（建築 / 自然地景）
+    { featureType: 'landscape', stylers: [{ visibility: 'off' }] },
+  ];
+}
+
+// ── 地圖樣式：完整版（toggle 開啟時用）──────────────────────
+// 顯示 POI / landscape，但保留暗色基底（避免太亮喧賓奪主）
+function _mapStylesFull(): google.maps.MapTypeStyle[] {
   return [
     { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
     { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a9a' }] },
@@ -119,8 +155,39 @@ function _mapStyles(): google.maps.MapTypeStyle[] {
     { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
     { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
+    // POI labels 顯示但壓暗色，icon 仍隱藏避免太雜
+    { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#6a6a8a' }] },
+    // 建築物深色
+    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#1f1f35' }] },
   ];
 }
+
+// ── Toggle 套用邏輯 ────────────────────────────────────────
+const _ApplyMapStyles = () => {
+  if (!gmMap) return;
+  gmMap.setOptions({ styles: showLandmarks.value ? _mapStylesFull() : _mapStylesMinimal() });
+};
+
+const _ApplyTrafficLayer = () => {
+  if (!gmMap) return;
+  if (showTraffic.value) {
+    if (!trafficLayer) trafficLayer = new google.maps.TrafficLayer();
+    trafficLayer.setMap(gmMap);
+  } else if (trafficLayer) {
+    trafficLayer.setMap(null);
+  }
+};
+
+const ClickToggleTraffic = () => {
+  showTraffic.value = !showTraffic.value;
+  _ApplyTrafficLayer();
+};
+
+const ClickToggleLandmarks = () => {
+  showLandmarks.value = !showLandmarks.value;
+  _ApplyMapStyles();
+};
 
 // ── Markers 更新（P19 polish）─────────────────────────────
 const _IconForDriver = (d: DriverWithDerived): google.maps.Symbol => {
@@ -232,13 +299,28 @@ onUnmounted(() => {
   //- 地圖
   .PageWarRoom__map(ref="mapEl")
 
-  //- 手機浮動按鈕（< 768px 顯示）
-  button.PageWarRoom__fab(
-    @click="sheetOpen = true"
-    aria-label="開啟司機列表"
-  )
-    span.PageWarRoom__fab-icon 🚗
-    span.PageWarRoom__fab-count {{ driverCounts.all }}
+  //- 地圖控制（車流 / 地標 toggle + 手機司機列表 FAB）
+  .PageWarRoom__controls
+    button.PageWarRoom__ctrl(
+      :class="{ 'is-active': showTraffic }"
+      @click="ClickToggleTraffic"
+      aria-label="切換即時車流"
+    )
+      span.PageWarRoom__ctrl-icon 🚦
+      span.PageWarRoom__ctrl-label 車流 {{ showTraffic ? 'ON' : 'OFF' }}
+    button.PageWarRoom__ctrl(
+      :class="{ 'is-active': showLandmarks }"
+      @click="ClickToggleLandmarks"
+      aria-label="切換地標顯示"
+    )
+      span.PageWarRoom__ctrl-icon 📍
+      span.PageWarRoom__ctrl-label 地標 {{ showLandmarks ? '完整' : '精簡' }}
+    button.PageWarRoom__ctrl.is-mobile-only(
+      @click="sheetOpen = true"
+      aria-label="開啟司機列表"
+    )
+      span.PageWarRoom__ctrl-icon 🚗
+      span.PageWarRoom__ctrl-label {{ driverCounts.all }}
 
   //- 手機 bottom sheet 遮罩
   .PageWarRoom__sheet-mask(
@@ -317,37 +399,54 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   height: 100%;
 }
 
-// ── 浮動按鈕（手機）──────────────────────────────────────
-.PageWarRoom__fab {
-  display: none;
-  position: fixed;
-  right: 16px;
+// ── 地圖控制 controls（車流 / 地標 / 司機列表）─────────────
+.PageWarRoom__controls {
+  position: absolute;
+  right: calc(300px + 16px); // 桌機：避開右側 300px panel
   bottom: 24px;
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PageWarRoom__ctrl {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 100px;
-  border: 1px solid rgba(212, 134, 10, 0.5);
-  background: var(--da-amber);
-  color: #fff;
+  border: 1px solid rgba(212, 134, 10, 0.3);
+  background: rgba(26, 26, 46, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.75);
   font-family: $font-condensed;
-  font-size: 13px;
+  font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.08em;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
 
+  &:hover { background: rgba(212, 134, 10, 0.18); }
   &:active { transform: scale(0.96); }
+
+  &.is-active {
+    background: var(--da-amber);
+    border-color: var(--da-amber);
+    color: #fff;
+  }
 }
 
-.PageWarRoom__fab-icon { font-size: 16px; line-height: 1; }
-.PageWarRoom__fab-count {
-  min-width: 18px;
-  text-align: center;
+.PageWarRoom__ctrl-icon { font-size: 14px; line-height: 1; }
+.PageWarRoom__ctrl-label {
   font-variant-numeric: tabular-nums;
 }
+
+// 司機 FAB 僅手機顯示
+.PageWarRoom__ctrl.is-mobile-only { display: none; }
 
 // ── Sheet 遮罩（手機）────────────────────────────────────
 .PageWarRoom__sheet-mask {
@@ -400,7 +499,9 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   .PageWarRoom__map { height: 100%; }
 
-  .PageWarRoom__fab { display: inline-flex; }
+  // 手機：controls 貼右（panel 變 bottom sheet，無遮擋）
+  .PageWarRoom__controls { right: 16px; }
+  .PageWarRoom__ctrl.is-mobile-only { display: inline-flex; }
   .PageWarRoom__sheet-mask { display: block; }
   .PageWarRoom__sheet-handle { display: block; }
 
