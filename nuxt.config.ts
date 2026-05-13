@@ -77,6 +77,9 @@ export default defineNuxtConfig({
       // LINE 官方帳號加好友連結
       lineOaAddUrl: '',             // NUXT_PUBLIC_LINE_OA_ADD_URL — passenger OA
       lineOaAddUrlDriver: '',       // NUXT_PUBLIC_LINE_OA_ADD_URL_DRIVER — driver OA（P29）
+      // 客服資訊（P35；profile 頁顯示，未設則 fallback 提示透過 LINE 聯繫）
+      customerServicePhone: '',     // NUXT_PUBLIC_CUSTOMER_SERVICE_PHONE — 客服電話（含國碼，e.g. +886-2-xxxx）
+      customerServiceHours: '',     // NUXT_PUBLIC_CUSTOMER_SERVICE_HOURS — 服務時段（e.g. 平日 09:00-21:00）
       // Google Maps（Browser Key，限制 HTTP Referrer）
       googleMapsBrowserKey: '',
     }

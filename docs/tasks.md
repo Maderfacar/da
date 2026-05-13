@@ -459,7 +459,7 @@
 
 **P17-3：體驗細節（先列入待辦）**
 - [ ] 訂單詳情頁（/orders/:orderId）— 乘客看不到 stopovers、距離、車程、司機資訊（成本：大，需新增路由）
-- [ ] `profile` 頁加訂單統計（總趟數 / 累計里程）+ 客服聯絡資訊
+- [✅] `profile` 頁加訂單統計 + 客服聯絡資訊（P35）：[passengers/me/stats.get.ts](../server/routes/nuxt-api/passengers/me/stats.get.ts) aggregate completed 訂單；[profile/index.vue](../app/pages/profile/index.vue) 加「我的旅程」3 stat 卡（趟數 / 累計里程 / 累計消費）+ 客服 section（LINE OA + 電話），客服電話 / 服務時段由 `NUXT_PUBLIC_CUSTOMER_SERVICE_PHONE` + `NUXT_PUBLIC_CUSTOMER_SERVICE_HOURS` env vars 控制（未設 fallback 只顯示 LINE OA）
 - [✅] `fleet/index.vue` 預約按鈕已帶 `?vehicleType=` query 直連 `/booking` 預選車型
 - [✅] `orders/index.vue` STATUS_LABEL / VEHICLE_LABEL 走 i18n（[orders/index.vue:73-76](../app/pages/orders/index.vue) `t('status.{status}')` / `t('vehicle.{vehicleType}')`）
 - [✅] `upcoming/index.vue` STATUS_TAB_KEYS 已含 `cancelled` filter
@@ -841,5 +841,5 @@
 - P12 為 2026/05/08 新增，P13 同日 storage 修復，P14 / P15 為 2026/05/09 新增（上線安全修復、路由整理、silent failure），P16 為暫緩清單，P17 為乘客端完善，P25 為 2026/05/12 新增（driver/admin 後續強化），P27 為 2026/05/12 新增（driverApplication 搬遷，P26 前置）
 
 **版本紀錄**
-- 版本：v3.17（P33 driver/cost 樣式對齊 + 油費/過路費改每月；P34 admins.permissions override UI 完成 = P25-4 結案）
+- 版本：v3.18（P35 profile 頁訂單統計 + 客服資訊；firestore.rules 已部署到 Firebase Console）
 - 更新日期：2026/05/13

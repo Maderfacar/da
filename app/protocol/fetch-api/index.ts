@@ -7,6 +7,7 @@ import * as driver from './api/driver';
 import * as airport from './api/airport';
 import * as admin from './api/admin';
 import * as config from './api/config';
+import * as passenger from './api/passenger';
 
 export default {
   ...file,
@@ -18,6 +19,7 @@ export default {
   ...airport,
   ...admin,
   ...config,
+  ...passenger,
 };
 
 
