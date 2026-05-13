@@ -18,6 +18,10 @@ export const GetOrderList = (params: GetOrderListParams) => {
   return methods.get<OrderItem[]>('/nuxt-api/orders', params);
 };
 
+/** P36：取得單筆訂單詳情（含司機資訊） */
+export const GetOrder = (orderId: string) =>
+  methods.get<OrderDetail>(`/nuxt-api/orders/${orderId}`, {});
+
 /** 取得可接待接訂單（司機搶單） */
 export const GetAvailableOrders = () =>
   methods.get<AvailableOrder[]>('/nuxt-api/orders/available', {});

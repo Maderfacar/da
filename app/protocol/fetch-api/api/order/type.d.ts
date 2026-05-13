@@ -102,6 +102,61 @@ interface AssignedOrder {
   passengerPhone: string | null;
 }
 
+// ===== P36：訂單詳情（單筆完整資訊）=====
+type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'en_route'
+  | 'arrived_pickup'
+  | 'in_transit'
+  | 'completed'
+  | 'cancelled';
+
+interface OrderStatusHistory {
+  confirmedAt: string | null;
+  enRouteAt: string | null;
+  arrivedPickupAt: string | null;
+  inTransitAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+}
+
+interface OrderDriverInfo {
+  displayName: string;
+  pictureUrl: string;
+  plateNumber: string;
+  vehicleType: string;
+  /** P36 選項 A：真實電話（drivers.application.phone）；未設定回 null */
+  phone: string | null;
+}
+
+/** P36：/nuxt-api/orders/[orderId] 回傳完整訂單 + 司機資訊（confirmed 後才有） */
+interface OrderDetail {
+  orderId: string;
+  userId: string;
+  orderType: string;
+  orderStatus: OrderStatus | string;
+  pickupDateTime: string;
+  pickupLocation: GooglePlace | null;
+  dropoffLocation: GooglePlace | null;
+  stopovers: GooglePlace[];
+  vehicleType: string;
+  passengerCount: number;
+  luggageItems: OrderLuggageItem[];
+  extraServices: string[];
+  estimatedFare: number;
+  estimatedTime: number;
+  distanceKm: number;
+  contactPhone: string | null;
+  flightNumber: string | null;
+  terminal: string | null;
+  notes: string | null;
+  cancelReason: string | null;
+  createdAt: string | null;
+  statusHistory: OrderStatusHistory;
+  driver: OrderDriverInfo | null;
+}
+
 // ===== 更新訂單 =====
 // P19：orderStatus 擴充新增 en_route / arrived_pickup
 // P22：admin 可改更多欄位（server 端依角色限制，passenger/driver 帶這些欄位會被拒）
