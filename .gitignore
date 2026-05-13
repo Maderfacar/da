@@ -42,5 +42,11 @@ docs/*.json
 *adminsdk*.json
 .vercel
 
+# 業務規格文件僅保留本地，不部署到 GitHub（含 prd / tasks / decision-log 等）
+docs/
+
+# Playwright e2e 執行紀錄
+test-results/
+
 # Git worktrees（由 Claude Code 管理，不 commit）
 .claude/worktrees/
