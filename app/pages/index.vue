@@ -1,14 +1,9 @@
 <script setup lang="ts">
-// PageIndex — 三端分流入口
+// PageIndex — 根路徑入口
 //
-// 路由規則：
+// 多角色設計：roles 僅判別「能否進入特定路由」，不搶分流。
 //   - 未登入 → /login
-//   - 已登入：
-//     - admin（無 driver / 純 admin）→ /admin/orders
-//     - approved driver → /driver/dashboard
-//     - 其他（passenger / 未核准 driver / 多重身分含 passenger）→ /home
-//
-// 多重身分優先順序：driver > admin > passenger（核准司機進駕駛端為主，可由 Header 切回乘客端）
+//   - 已登入 → /home（乘客首頁；想進 driver/admin 端從 layout Header 的切換按鈕進入）
 //
 // SSR 關閉以避免 hydration mismatch（Firebase auth state 只在 client 解析）
 definePageMeta({ layout: false, ssr: false });
@@ -16,19 +11,11 @@ definePageMeta({ layout: false, ssr: false });
 const authStore = StoreAuth();
 
 watch(
-  () => [authStore.authResolved, authStore.isSignIn, authStore.roles.join(',')],
+  () => [authStore.authResolved, authStore.isSignIn],
   () => {
     if (!authStore.authResolved) return;
     if (!authStore.isSignIn) {
       navigateTo('/login', { replace: true });
-      return;
-    }
-    if (authStore.isApprovedDriver) {
-      navigateTo('/driver/dashboard', { replace: true });
-      return;
-    }
-    if (authStore.isAdmin) {
-      navigateTo('/admin/orders', { replace: true });
       return;
     }
     navigateTo('/home', { replace: true });
