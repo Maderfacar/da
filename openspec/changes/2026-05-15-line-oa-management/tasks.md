@@ -140,54 +140,75 @@
 
 ---
 
-## Phase 3：Template Registry + 通用 Builder + Endpoints（1.0 天）
+## Phase 3：Template Registry + 通用 Builder + Endpoints（1.0 天）✅
 
-> **前置**：Q4 / Q5 / Q6 拍板。
+> **前置**：Q4 / Q5 / Q6 拍板（已完成）。
+> **commit**：`f09bd0b` push main 2026-05-15。
 
-### 3.1 Template Registry
+### 3.1 Template Registry ✅
 
-- [ ] 新增 `server/utils/template-registry.ts`（[design.md §3](design.md#3-template-registryq44a-推-spec-預設)）：
-  - `TEMPLATE_REGISTRY` 含 Q6 拍板的所有 templateKey（6a=1個 / 6b=5個 / 6c=9+個）
-  - `buildTemplateFlex(template, params)` 通用 Flex builder（取代 A1 `buildOrderPendingFlex` 寫死邏輯）
-  - `loadTemplate(db, templateKey)` 通用 loader
+- [x] [server/utils/template-registry.ts](server/utils/template-registry.ts)：
+  - `TEMPLATE_REGISTRY` 含 5 個 order templateKey（Q6=6b）：pending / confirmed / en_route / completed / cancelled
+  - 每個 entry 含 placeholder schema + defaultContent + fallbackI18nKey
+  - `buildTemplateFlex(template, params)` 通用 Flex builder（取代 A1 hard-coded `buildOrderPendingFlex`）
+  - `loadTemplate(db, key)` 雙路徑讀（新 collection 優先；order.pending 缺值 fallback A1）
+  - `saveTemplate` / `resetTemplate` helper
+  - ctaButton.action 三型別（Q7=7a：uri / message / postback）
 
-### 3.2 既有 A1 wrapper 改為 alias（Q5=5b）
+### 3.2 既有 A1 wrapper 改為 alias（Q5=5b）✅
 
-- [ ] [server/utils/order-pending-flex.ts](server/utils/order-pending-flex.ts) 內部改 call `loadTemplate` + `buildTemplateFlex`，export 簽名維持（向下相容）
-- [ ] 雙路徑讀寫：先讀新 collection `notification_templates/order.pending`；不存在 fallback 舊 `admin_settings_notification_templates/order-pending`（migration 過渡）
+- [x] [server/utils/order-pending-flex.ts](server/utils/order-pending-flex.ts) 改為 thin wrapper：
+  - `buildOrderPendingFlex` / `loadOrderPendingTemplate` export 簽名維持
+  - 內部呼叫 `buildTemplateFlex` + `loadTemplate('order.pending')`
+  - ctaButton schema 自動轉換（A1 `{label, url}` → 新 `{label, action: {type: 'uri', url}}`）
+- [x] [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) 無需改（透過 wrapper）
 
-### 3.3 Migration script（一次性）
+### 3.3 Migration endpoint ✅
 
-- [ ] 新增 `server/utils/migrations/migrate-a1-template.ts`：
-  - 讀 `admin_settings_notification_templates/order-pending` → 寫 `notification_templates/order.pending`（含 ctaButton.action 結構轉換：A1 `{ label, url }` → 新 `{ label, action: { type: 'uri', url } }`）
-- [ ] 提供 `POST /nuxt-api/admin/migrations/a1-template`（super only，single-shot）
-- [ ] 部署後 User 手動 trigger 一次
+- [x] [server/routes/nuxt-api/admin/migrations/a1-template.post.ts](server/routes/nuxt-api/admin/migrations/a1-template.post.ts)：
+  - 讀 A1 doc → 寫新 collection（ctaButton 結構轉換）
+  - **super only** 權限（一次性 ops 任務）
+  - 冪等：新 doc 已存在 → no-op；body `{ overwrite: true }` 才覆蓋
+  - 不刪舊 doc（P41 cleanup 才處理）
 
-### 3.4 通用 endpoints
+### 3.4 通用 endpoints ✅
 
-- [ ] `GET /nuxt-api/admin/notification-templates`（列 registry × doc merge）
-- [ ] `GET /nuxt-api/admin/notification-templates/[key]`
-- [ ] `PUT /nuxt-api/admin/notification-templates/[key]`（validation 依 registry placeholder schema）
-- [ ] `POST /nuxt-api/admin/notification-templates/[key]/upload-cover`
-- [ ] `POST /nuxt-api/admin/notification-templates/[key]/reset`
-- [ ] 全部 `canBroadcast` + audit log（`line.template.update` / `.reset`；保留 `notification_template.update` alias）
+- [x] `GET /nuxt-api/admin/notification-templates`（list；registry × doc merge）
+- [x] `GET /nuxt-api/admin/notification-templates/[key]`
+- [x] `PUT /nuxt-api/admin/notification-templates/[key]`（驗證 + order.pending dual-write 舊 collection）
+- [x] `POST /nuxt-api/admin/notification-templates/[key]/upload-cover`（multipart Storage signed URL）
+- [x] `POST /nuxt-api/admin/notification-templates/[key]/reset`（還原 registry default）
+- [x] 全部 `canBroadcast` + audit log（`line.template.update` / `.reset`；保留 `notification_template.update` legacy alias）
 
-### 3.5 A1 既有 endpoint 雙寫 / alias
+### 3.5 A1 既有 endpoint 雙寫 / alias ✅
 
-- [ ] [server/routes/nuxt-api/admin/settings/notification-templates/order-pending.get.ts](server/routes/nuxt-api/admin/settings/notification-templates/order-pending.get.ts) 內部 redirect / shared handler 讀新 collection
-- [ ] PUT 同上 + 同時寫舊 collection（過渡期保持）
+- [x] [A1 GET endpoint](server/routes/nuxt-api/admin/settings/notification-templates/order-pending.get.ts) 透過 wrapper 自動讀新 collection 優先
+- [x] [A1 PUT endpoint](server/routes/nuxt-api/admin/settings/notification-templates/order-pending.put.ts) 加 dual-write：同時寫舊 + 新 collection，ctaButton 自動轉新 schema
 
-### 3.6 Firestore rules + indexes
+### 3.6 Firestore rules ✅
 
-- [ ] `firestore.rules` 加 `notification_templates` 規則
-- [ ] `(category ASC, enabled ASC, templateKey ASC)` composite index（如 list 頁需排序）
+- [x] [firestore.rules](firestore.rules) 加 `notification_templates` 規則（admin client read，server-only write）
+- [ ] **User 部署 rules**（與 Phase 1 留尾一併）
+- [ ] **User 一次性 trigger** `POST /nuxt-api/admin/migrations/a1-template`（super 帳號）把 A1 doc 搬到新 collection
 
-### 3.7 Stage Gate
+### 3.7 訂單事件 4 個推送點抽 template（spec §11.6 連動）✅
 
-- [ ] G3.1 lint + build pass
-- [ ] G3.2 **e2e 建單回歸**：乘客建單 → 確認新 collection 不存在時 fallback 舊 collection 正常推 Flex；migrate 完後新 collection 走通用 builder 推 Flex 與舊一致
-- [ ] G3.3 手測 5 個 templateKey（Q6=6b）各 PUT 後 doc 寫入正確
-- [ ] G3.4 commit + push origin HEAD:main
+- [x] [orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) confirmed / en_route / completed / cancelled 4 個事件：
+  - 先 loadTemplate + buildTemplateFlex → 推 Flex
+  - 缺值 fallback `getOrderMessage` 三語 text（保證向下相容）
+  - confirmed/en_route 補 `driverName` / `vehiclePlate`（drivers doc lookup）
+  - completed 帶 `fare`；cancelled 帶 `cancelReason`
+
+### 3.8 Stage Gate ✅
+
+- [x] G3.1 `pnpm lint` pass
+- [x] G3.2 `pnpm build` pass
+- [ ] G3.3 **e2e 建單回歸**（**Brain AI / User 行動**）：
+  - [ ] 部署 rules + migration trigger
+  - [ ] 乘客建單 → 確認 fallback 正常（未 migrate 走舊 doc，已 migrate 走新 doc，結果應一致）
+  - [ ] 5 個 templateKey 各 PUT 後 doc 寫入正確
+  - [ ] 4 個 status change 推送點實機驗證（confirmed / en_route / completed / cancelled）
+- [x] G3.4 commit + push origin HEAD:main（`f09bd0b`）
 
 ---
 
