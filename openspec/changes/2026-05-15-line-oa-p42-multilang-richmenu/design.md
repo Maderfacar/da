@@ -416,16 +416,20 @@ publish 後顯示影響統計：
 
 ---
 
-## 7. 拍板紀錄（Brain AI 簽核後補）
+## 7. 拍板紀錄
+
+**2026-05-15 Brain AI 一句「預設即可」拍板** — 全部採推 spec 預設，無需重寫 design 其他 section。
 
 | Q | 拍板 | 摘要 | 時間 |
 |---|---|---|---|
-| Q1 | ⏳ | | |
-| Q2 | ⏳ | | |
-| Q3 | ⏳ | | |
-| Q4 | ⏳ | | |
-| Q5 | ⏳ | | |
-| Q6 | ⏳ | | |
-| Q7 | ⏳ | | |
+| Q1 | **1a** | 每 lang 一獨立 doc，加 `lang` field；unique = channel × lang × status='active'；既有資料 grandfather zh_tw | 2026-05-15 |
+| Q2 | **2b** | 含 user lang 切換 webhook（順帶加 PATCH /api/self/lang endpoint + 前端 i18n switcher 改 call） | 2026-05-15 |
+| Q3 | **3b** | `users/{lineUid}.lang` 為唯一來源（本案順帶加 persist 機制，與 Q2=2b 連動） | 2026-05-15 |
+| Q4 | **4a** | 各 lang 獨立編輯（channel sub-tab 內加 lang sub-tab + 「從其他 lang 複製」按鈕） | 2026-05-15 |
+| Q5 | **5a** | zh_tw → en → ja fallback chain（與 i18n locale default 一致；每 lang 找不到時對應 fallback chain） | 2026-05-15 |
+| Q6 | **6a** | 三語全做（zh_tw / en / ja） | 2026-05-15 |
+| Q7 | **7a** | 既有 active richmenu 視為 zh_tw 版本自動 grandfather（migration endpoint 冪等 + dry-run mode） | 2026-05-15 |
 
-> 拍板後 design.md 其他 section 同步重寫，並更新 [tasks.md](tasks.md) 對應 task。
+設計即落地：§1.1 schema / §1.3 migration / §2 binding helper / §3 webhook follow / §4 user lang persist endpoint / §5 admin UI 全部依 §1-5 推 spec 預設展開，**無 section 需重寫**。
+
+進入 [Phase 1](tasks.md#phase-1schema--binding-helper--webhook-follow-integration05-天) 實作。

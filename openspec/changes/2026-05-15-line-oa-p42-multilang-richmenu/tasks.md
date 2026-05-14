@@ -13,9 +13,9 @@
 - [x] 0.3 撰寫 [proposal.md](proposal.md)
 - [x] 0.4 撰寫 [design.md](design.md)
 - [x] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
-- [ ] 0.6 commit + push origin HEAD:main
-- [ ] 0.7 **Brain AI 拍板 Q1-Q7**（最簡寫法：「預設即可」一句）
-- [ ] 0.8 design.md §7 補拍板紀錄 → 同步重寫被改 default 的 section → commit + push → 進 Phase 1
+- [x] 0.6 commit + push origin HEAD:main（commit `88fd455`）
+- [x] 0.7 **Brain AI 拍板 Q1-Q7**（2026-05-15「預設即可」一句 → 全採推 spec 預設 1a/2b/3b/4a/5a/6a/7a）
+- [x] 0.8 design.md §7 補拍板紀錄；推 spec 預設全採用故無 section 需重寫 → commit + push → 進 Phase 1
 
 ---
 
