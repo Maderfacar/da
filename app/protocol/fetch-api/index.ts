@@ -9,6 +9,7 @@ import * as admin from './api/admin';
 import * as config from './api/config';
 import * as passenger from './api/passenger';
 import * as announcement from './api/announcement';
+import * as self from './api/self';
 
 export default {
   ...file,
@@ -22,6 +23,7 @@ export default {
   ...config,
   ...passenger,
   ...announcement,
+  ...self,
 };
 
 

@@ -90,26 +90,29 @@
 
 ### 2.1 PATCH /nuxt-api/self/lang endpoint
 
-- [ ] 新檔 `server/routes/nuxt-api/self/lang.patch.ts`：
-  - Zod validate body
-  - update `users/{lineUid}.lang`
-  - 依 auth.roles 推 channels → `bindRichmenuForUser` per channel
-  - audit log `user.lang.update`（含 prev / new lang + 重綁結果）
+- [x] 新檔 `server/routes/nuxt-api/self/lang.patch.ts`：
+  - 純手動 validate body（與 driver/me/profile pattern 一致；非 Zod，沿用既有 endpoint 風格）
+  - 取 prev lang（給 audit log 比對）
+  - update `users/{lineUid}.lang`（merge：不破壞既有 displayName / pictureUrl / lastSeenAt）
+  - 依 auth.roles 推 channels → `bindRichmenuForUser` per channel（fail-open；per channel 進 rebinds[i]）
+  - audit log `user.lang.update`（含 prev / new lang + per channel rebind 結果）
 
 ### 2.2 Audit log action 註冊
 
-- [ ] `server/utils/audit-log.ts`：加 `user.lang.update` action + 對應 targetType `user`
+- [x] `server/utils/audit-log.ts`：加 `user.lang.update` action + `user` targetType
 
 ### 2.3 Protocol module
 
-- [ ] `app/protocol/fetch-api/api/self/lang.ts`：`PatchSelfLang({ lang }): Promise<...>`
-- [ ] `app/protocol/fetch-api/index.ts` wire export
+- [x] `app/protocol/fetch-api/api/self/index.ts`：`PatchSelfLang({ lang })` method + re-export type
+- [x] `app/protocol/fetch-api/api/self/type.d.ts`：SelfLang / SelfRebindEntry / PatchSelfLangResponse 型別
+- [x] `app/protocol/fetch-api/index.ts` wire `* as self` import + 聚合
 
 ### 2.4 Stage Gate
 
-- [ ] G2.1 lint + build pass
-- [ ] G2.2 手測：passenger 切 lang → users.lang 寫入 → 對應 lang richmenu 綁定（或 fallback）
-- [ ] G2.3 commit + push origin HEAD:main
+- [x] G2.1 lint pass
+- [x] G2.2 build pass
+- [ ] G2.3 手測：延後到 Phase 5 e2e（需先有 active richmenu 才能驗 rebind；目前 prod 只有 1 個 draft / 無 active）
+- [ ] G2.4 commit + push origin HEAD:main
 
 ---
 

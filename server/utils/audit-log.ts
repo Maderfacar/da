@@ -87,10 +87,12 @@ export type AuditAction =
   | 'fleet.create'
   | 'fleet.update'
   | 'fleet.delete'
+  // P42 user 自助設定
+  | 'user.lang.update'
   // migration（P27 一次性）
   | 'migration.driver_application_move';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user';
 
 interface WriteAuditLogInput {
   event: H3Event;
