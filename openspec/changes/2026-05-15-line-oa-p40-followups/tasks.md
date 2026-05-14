@@ -13,9 +13,9 @@
 - [x] 0.3 撰寫 [proposal.md](proposal.md)
 - [x] 0.4 撰寫 [design.md](design.md)
 - [x] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
-- [ ] 0.6 commit + push origin HEAD:main
-- [ ] 0.7 **等 Brain AI 拍板 Q1-Q5** → 任一改 default 則 spec 重寫
-- [ ] 0.8 拍板後 design.md §7 補拍板紀錄 → commit + push → 進 Phase 1
+- [x] 0.6 commit + push origin HEAD:main（commit `2ce7f76`）
+- [x] 0.7 **Brain AI 拍板 Q1-Q5**（2026-05-15 全採推 spec 預設：Q1=1a / Q2=2a / Q3=3b / Q4=4b / Q5=5a）
+- [x] 0.8 design.md §7 補拍板紀錄 → commit + push → 進 Phase 1
 
 ---
 

@@ -305,12 +305,43 @@ A1 doc 在 prod 不存在（2026-05-15 firestore MCP check 確認），新 colle
 | **5a 推 spec 預設**：本案處理（A1 doc 不存在已驗證，cleanup 風險低） |
 | 5b 延後 P41（保守）|
 
-## 7. 決策紀錄（保留結構）
+## 7. 決策紀錄
 
-> Brain AI 拍板後填入。
+**2026-05-15 Brain AI 拍板：Q1-Q5 全部採推 spec 預設。**
 
-### 7.1 Q1 拍板（待填）
+| Q | 拍板 | 摘要 | 連動影響 |
+|---|---|---|---|
+| Q1 | **1a** | LIFF URL 取自 `runtimeConfig.public.liffBaseUrl`（先查既有 env，缺則新增） | Phase 1 開工先驗 prod 是否已設 `NUXT_PUBLIC_LIFF_BASE_URL`；若缺則列 Vercel UI 設定為 User 行動（MCP 無工具） |
+| Q2 | **2a** | 抽進專屬 `bot_replies/{client}.{type}` collection（4 doc：`passenger.follow` / `passenger.text` / `driver.follow` / `driver.text`） | Phase 2 新增 1 個 Firestore collection + 1 條 rules + Claude 自跑 `firebase deploy --only firestore:rules`；audit log 加 `line.bot_reply.update` + `bot_reply` targetType |
+| Q3 | **3b** | 公告整合走混合策略：`announcement-flex.ts` 內部改 call `buildTemplateFlex` 共用 Flex builder，對外簽名 + admin UI / multicast 流程完全不變 | Phase 3 動 `announcement-flex.ts` 一檔；公告 admin UI 不動；e2e 跑公告發佈確認 Flex 結構與 P38 一致 |
+| Q4 | **4b** | Diagnostics MVP：只做 richmenu sync overview（GET 本地 active vs LINE listRichmenus / getDefaultRichmenuId 比對 + 孤兒/stale 一致性 dashboard + 重試 sync + 清理孤兒）；不寫 `line_event_logs` / `line_api_errors` collection | Phase 3 新增 1 endpoint + admin Diagnostics tab；零 Firestore 寫入成本；event/error log 完整版延後 P43 |
+| Q5 | **5a** | 本案處理 A1 cleanup：移除 A1 collection + 2 endpoint + admin/settings NOTIFICATIONS section + `AdminSettingsNotificationTemplate.vue` + `order-pending-flex.ts` wrapper + `AuditAction.notification_template.update` alias；`orders/index.post.ts` 改直接 call `loadTemplate('order.pending')` | Phase 4 內處理；A1 doc prod 已驗證不存在，cleanup 風險最低；無 P41 留尾 |
 
-### 7.2 Q2 拍板（待填）
+### 7.1 Q1=1a 細節
 
-…（Q3-Q5 同）
+第一版 8 個 entry handler 全部 reply text 訊息（含 LIFF URL），不做 Flex Bubble；後續視使用情境再進化。Admin UI（[richmenu Edit.vue](app/components/open/dialog/line-richmenu/Edit.vue) + [TemplateEditor.vue](app/components/admin/line-management/TemplateEditor.vue)）postback action input 改 `<el-select>` 從 `GET /nuxt-api/admin/line-postback-whitelist?channel=...` 撈；free-form 仍允許但 disabled 警示「whitelist 外的 data 需 dev 接 handler」。
+
+### 7.2 Q2=2a 細節
+
+`bot_replies` schema：`{ replyKey, enabled, text(1-500), updatedBy, updatedAt }`。`_loadBotReply(db, client, type)` helper 內 fallback hard-coded `FOLLOW_MESSAGES` / `TEXT_REPLY_MESSAGES`（保留既有字串作為 default 預覽 + 還原預設按鈕）。Admin tab 4 row × { type 標籤 + enabled toggle + textarea + 字數計 + 儲存 / 還原預設 }。
+
+### 7.3 Q3=3b 細節
+
+`buildAnnouncementFlex` 接受相同 input → 內部組 `TemplateContent` → call `buildTemplateFlex` → `null` 結果視為錯誤（公告必有 title/body）。公告 HTML strip 維持現狀（`replace(/<[^>]+>/g, '').slice(0, 200)`）。通用 TemplateEditor **不含**公告 category（公告是動態多筆 doc，與 registry 靜態 schema 不對稱）。
+
+### 7.4 Q4=4b 細節
+
+`GET /admin/line-richmenus/sync-overview?channel=passenger|driver` 回 `{ local: {activeDoc, lineRichMenuId}, line: {defaultId, allMenus[]}, match, inconsistencies[] }`。Diagnostics tab 兩 panel（passenger / driver），不一致時提供「重試 sync」+「清理孤兒」按鈕（後者復用 DELETE / 新增 cleanup endpoint）。
+
+### 7.5 Q5=5a 細節
+
+cleanup 順序：
+1. 改 `orders/index.post.ts` caller 改 call template-registry path（無 import wrapper）
+2. 移除 `order-pending-flex.ts`
+3. 移除 A1 endpoint 2 個
+4. 移除 admin/settings NOTIFICATIONS section + `AdminSettingsNotificationTemplate.vue`
+5. 移除 protocol 2 method + interface
+6. 移除 `AuditAction.notification_template.update` alias（targetType `notification_template` 保留供新 action 使用）
+7. firestore MCP 驗 prod doc 不存在（已驗 / 跳過）
+
+P41 留尾項目本案吸收，無後續 cleanup wave 待辦。
