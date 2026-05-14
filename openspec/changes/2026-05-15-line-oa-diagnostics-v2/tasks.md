@@ -95,35 +95,34 @@
 
 ### 3.1 Sub-tab 結構
 
-- [ ] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) Diagnostics tab 加 sub-tab：
+- [x] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) Diagnostics tab 加 sub-tab switcher（DIAG_SUB_TABS = 3 個 entry）
   - Sync Overview（既有 P40，predefault）
   - Event Log
   - Error Log
-- [ ] sub-tab 切換 lazy load（避免進頁同時打三組 API）
+- [x] sub-tab 切換 lazy load（首次切到時才 fetch；watch activeDiagSubTab）
 
 ### 3.2 Event Log sub-tab
 
-- [ ] state（events / loading / filters）
-- [ ] filter UI（channel / eventType / handlerResult）
-- [ ] list 顯示（time / channel / type / uid / detail / result）
-- [ ] expand row 看完整資料
-- [ ] limit 50 提示（Q8=8a）
+- [x] state（eventLogs / eventLogsLoading / 3 filters）
+- [x] filter UI（channel select + eventType select + handlerResult select + 重新整理按鈕）
+- [x] list 顯示（6 col grid：time / channel / type / uid / detail / result）
+- [x] expand row 看完整資料（Full UID / Postback Data / Message Text / Created）
+- [x] handler_failed row 紅底 + result column 依狀態著色（綠/紅/橘/灰）
 
 ### 3.3 Error Log sub-tab
 
-- [ ] state + filter UI（channel / api）
-- [ ] list 顯示（time / channel / api / method / status / message）
-- [ ] expand row 看 errorDetails / context
+- [x] state + filter UI（channel select + api substring text input + 重新整理）
+- [x] list 顯示（6 col grid：time / channel / api / method / status / message）
+- [x] expand row 看 errorDetails / context（Target UID / RichMenu ID）
+- [x] status column 依 4xx/5xx 著色（橘/紅）
 
-### 3.4 Time Series Chart（依 Q6 範圍）
+### 3.4 Time Series Chart（Q6=6a 不做）
 
-- [ ] Q6=6a：跳過
-- [ ] Q6=6b：加 24h heatmap chart（chart.js）+ aggregate endpoint
-- [ ] Q6=6c：3 chart 完整 dashboard + 多 aggregate endpoint（估時 +0.5d）
+- [x] Q6=6a 跳過（spec 預設）
 
 ### 3.5 Stage Gate
 
-- [ ] G3.1 lint + build pass
+- [x] G3.1 lint + build pass
 - [ ] G3.2 commit + push origin HEAD:main
 
 ---

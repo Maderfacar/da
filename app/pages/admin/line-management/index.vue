@@ -16,6 +16,12 @@ import type {
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
 import type { NotificationTemplateItem } from '@/protocol/fetch-api/api/admin/notification-template';
 import type { BotReplyItem, BotReplyKey } from '@/protocol/fetch-api/api/admin/bot-reply';
+import type {
+  EventLogDto,
+  EventLogType,
+  EventLogHandlerResult,
+} from '@/protocol/fetch-api/api/admin/line-event-log';
+import type { ApiErrorDto } from '@/protocol/fetch-api/api/admin/line-api-error';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -321,13 +327,125 @@ const ClickSaveBotReply = async (item: BotReplyItem) => {
   }
 };
 
-// ── Diagnostics tab（P40 Phase 3） ────────────────────────
+// ── Diagnostics tab（P40 Phase 3 + P43 Phase 3 sub-tab） ──
+type DiagSubTab = 'overview' | 'event-log' | 'error-log';
+
+const DIAG_SUB_TABS: Array<{ key: DiagSubTab; label: string }> = [
+  { key: 'overview', label: 'Sync Overview' },
+  { key: 'event-log', label: 'Event Log' },
+  { key: 'error-log', label: 'Error Log' },
+];
+
+const activeDiagSubTab = ref<DiagSubTab>('overview');
+
 const diagnostics = reactive<{
   passenger: SyncOverviewRes | null;
   driver: SyncOverviewRes | null;
 }>({ passenger: null, driver: null });
 const diagnosticsLoading = reactive<Record<LineClient, boolean>>({ passenger: false, driver: false });
 const cleaningOrphanId = ref<string>('');
+
+// ── Event Log sub-tab ──────────────────────────────────────
+const EVENT_TYPE_OPTIONS: Array<{ value: EventLogType | ''; label: string }> = [
+  { value: '', label: '全部' },
+  { value: 'follow', label: 'Follow' },
+  { value: 'unfollow', label: 'Unfollow' },
+  { value: 'message', label: 'Message' },
+  { value: 'postback', label: 'Postback' },
+  { value: 'beacon', label: 'Beacon' },
+  { value: 'memberJoined', label: 'MemberJoined' },
+  { value: 'memberLeft', label: 'MemberLeft' },
+  { value: 'unknown', label: '其他' },
+];
+
+const HANDLER_RESULT_OPTIONS: Array<{ value: EventLogHandlerResult | ''; label: string }> = [
+  { value: '', label: '全部' },
+  { value: 'replied', label: 'Replied' },
+  { value: 'ignored', label: 'Ignored' },
+  { value: 'handler_failed', label: 'Handler Failed' },
+  { value: 'no_handler', label: 'No Handler' },
+];
+
+const eventLogChannel = ref<LineClient>('passenger');
+const eventLogTypeFilter = ref<EventLogType | ''>('');
+const eventLogResultFilter = ref<EventLogHandlerResult | ''>('');
+const eventLogs = ref<EventLogDto[]>([]);
+const eventLogsLoading = ref(false);
+const expandedEventLogId = ref<string>('');
+
+const ApiLoadEventLogs = async () => {
+  eventLogsLoading.value = true;
+  try {
+    const res = await $api.GetLineEventLogs({
+      channel: eventLogChannel.value,
+      ...(eventLogTypeFilter.value ? { eventType: eventLogTypeFilter.value } : {}),
+      ...(eventLogResultFilter.value ? { handlerResult: eventLogResultFilter.value } : {}),
+      limit: 50,
+    });
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({ message: res.status.message?.zh_tw || '載入 Event Log 失敗', type: 'error' });
+      eventLogs.value = [];
+      return;
+    }
+    eventLogs.value = res.data?.items ?? [];
+  } finally {
+    eventLogsLoading.value = false;
+  }
+};
+
+watch([eventLogChannel, eventLogTypeFilter, eventLogResultFilter], () => {
+  if (activeDiagSubTab.value === 'event-log') void ApiLoadEventLogs();
+});
+
+const ToggleExpandEventLog = (id: string) => {
+  expandedEventLogId.value = expandedEventLogId.value === id ? '' : id;
+};
+
+// ── Error Log sub-tab ──────────────────────────────────────
+const ERROR_CHANNEL_OPTIONS: Array<{ value: 'passenger' | 'driver' | 'unknown'; label: string }> = [
+  { value: 'passenger', label: '乘客 OA' },
+  { value: 'driver', label: '司機 OA' },
+  { value: 'unknown', label: 'Unknown' },
+];
+
+const errorLogChannel = ref<'passenger' | 'driver' | 'unknown'>('passenger');
+const errorLogApiFilter = ref<string>('');
+const errorLogs = ref<ApiErrorDto[]>([]);
+const errorLogsLoading = ref(false);
+const expandedErrorLogId = ref<string>('');
+
+const ApiLoadErrorLogs = async () => {
+  errorLogsLoading.value = true;
+  try {
+    const res = await $api.GetLineApiErrors({
+      channel: errorLogChannel.value,
+      ...(errorLogApiFilter.value ? { api: errorLogApiFilter.value } : {}),
+      limit: 50,
+    });
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({ message: res.status.message?.zh_tw || '載入 Error Log 失敗', type: 'error' });
+      errorLogs.value = [];
+      return;
+    }
+    errorLogs.value = res.data?.items ?? [];
+  } finally {
+    errorLogsLoading.value = false;
+  }
+};
+
+watch([errorLogChannel, errorLogApiFilter], () => {
+  if (activeDiagSubTab.value === 'error-log') void ApiLoadErrorLogs();
+});
+
+const ToggleExpandErrorLog = (id: string) => {
+  expandedErrorLogId.value = expandedErrorLogId.value === id ? '' : id;
+};
+
+// 切 sub-tab 時 lazy load 對應 API
+watch(activeDiagSubTab, (sub) => {
+  if (sub === 'event-log' && eventLogs.value.length === 0) void ApiLoadEventLogs();
+  if (sub === 'error-log' && errorLogs.value.length === 0) void ApiLoadErrorLogs();
+});
 
 const ApiLoadDiagnostics = async (channel: LineClient) => {
   diagnosticsLoading[channel] = true;
@@ -596,72 +714,201 @@ onMounted(() => {
                 @click="ClickSaveBotReply(item)"
               ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
 
-  //- ── Diagnostics Tab（P40 Phase 3 MVP）─────────────────
+  //- ── Diagnostics Tab（P40 MVP + P43 sub-tab 完整版）────
   .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'diagnostics'")
-    .PageAdminLineManagement__diag-intro
-      | 對比本地 line_richmenus collection 與 LINE 端 listRichmenus / default 設定。發現孤兒選單可一鍵清理。
-    .PageAdminLineManagement__diag-grid
-      template(v-for="ch in (['passenger', 'driver'] as LineClient[])" :key="ch")
-        section.PageAdminLineManagement__diag-card(:class="`is-${ch}`")
-          header.PageAdminLineManagement__diag-head
-            span.PageAdminLineManagement__diag-channel(:class="`is-${ch}`")
-              | {{ ch === 'passenger' ? '乘客 OA' : '司機 OA' }}
-            span.PageAdminLineManagement__diag-flex
-            button.PageAdminLineManagement__btn.is-toggle(
-              :disabled="diagnosticsLoading[ch]"
-              @click="ApiLoadDiagnostics(ch)"
-            ) {{ diagnosticsLoading[ch] ? '查詢中...' : '重新檢查' }}
+    //- sub-tab switcher（P43 Phase 3）
+    .PageAdminLineManagement__diag-sub-tabs
+      button.PageAdminLineManagement__diag-sub-tab(
+        v-for="t in DIAG_SUB_TABS"
+        :key="t.key"
+        :class="{ 'is-active': activeDiagSubTab === t.key }"
+        @click="activeDiagSubTab = t.key"
+      ) {{ t.label }}
 
-          .PageAdminLineManagement__diag-loading(v-if="diagnosticsLoading[ch] && !diagnostics[ch]") 載入中...
-          .PageAdminLineManagement__diag-empty(v-else-if="!diagnostics[ch]") 尚未查詢
+    //- ── Overview sub-panel（P40 既有） ────────────────
+    template(v-if="activeDiagSubTab === 'overview'")
+      .PageAdminLineManagement__diag-intro
+        | 對比本地 line_richmenus collection 與 LINE 端 listRichmenus / default 設定。發現孤兒選單可一鍵清理。
+      .PageAdminLineManagement__diag-grid
+        template(v-for="ch in (['passenger', 'driver'] as LineClient[])" :key="ch")
+          section.PageAdminLineManagement__diag-card(:class="`is-${ch}`")
+            header.PageAdminLineManagement__diag-head
+              span.PageAdminLineManagement__diag-channel(:class="`is-${ch}`")
+                | {{ ch === 'passenger' ? '乘客 OA' : '司機 OA' }}
+              span.PageAdminLineManagement__diag-flex
+              button.PageAdminLineManagement__btn.is-toggle(
+                :disabled="diagnosticsLoading[ch]"
+                @click="ApiLoadDiagnostics(ch)"
+              ) {{ diagnosticsLoading[ch] ? '查詢中...' : '重新檢查' }}
 
-          template(v-else-if="diagnostics[ch]")
-            //- 一致性 banner
-            .PageAdminLineManagement__diag-banner(v-if="diagnostics[ch]!.match")
-              span.PageAdminLineManagement__diag-banner-icon ✓
-              | LINE 端與本地一致
-            .PageAdminLineManagement__diag-banner.is-warning(v-else)
-              span.PageAdminLineManagement__diag-banner-icon ⚠
-              | 偵測到不一致
-            ul.PageAdminLineManagement__diag-inc(v-if="diagnostics[ch]!.inconsistencies.length > 0")
-              li(v-for="msg in diagnostics[ch]!.inconsistencies" :key="msg") {{ msg }}
+            .PageAdminLineManagement__diag-loading(v-if="diagnosticsLoading[ch] && !diagnostics[ch]") 載入中...
+            .PageAdminLineManagement__diag-empty(v-else-if="!diagnostics[ch]") 尚未查詢
 
-            //- LINE 端 listRichmenus
-            .PageAdminLineManagement__diag-section
-              .PageAdminLineManagement__diag-section-label LINE 端選單（{{ diagnostics[ch]!.line.allMenus.length }} 個）
-              .PageAdminLineManagement__diag-meta-row
-                span.k Default ID
-                span.v.mono {{ diagnostics[ch]!.line.defaultRichMenuId ?? '無' }}
-              ul.PageAdminLineManagement__diag-menus(v-if="diagnostics[ch]!.line.allMenus.length > 0")
-                li.PageAdminLineManagement__diag-menu-item(
-                  v-for="m in diagnostics[ch]!.line.allMenus"
-                  :key="m.richMenuId"
-                  :class="{ 'is-default': m.isDefault, 'is-orphan': !m.hasLocalDoc }"
-                )
-                  span.PageAdminLineManagement__diag-menu-name {{ m.name || '(no name)' }}
-                  span.PageAdminLineManagement__diag-menu-id {{ m.richMenuId.slice(0, 18) }}…
-                  span.PageAdminLineManagement__diag-menu-badge.is-default(v-if="m.isDefault") DEFAULT
-                  span.PageAdminLineManagement__diag-menu-badge.is-orphan(v-if="!m.hasLocalDoc") ORPHAN
-                  span.PageAdminLineManagement__diag-menu-flex
-                  button.PageAdminLineManagement__btn.is-reject(
-                    v-if="!m.hasLocalDoc"
-                    :disabled="cleaningOrphanId === m.richMenuId"
-                    @click="ClickCleanupOrphan(ch, { richMenuId: m.richMenuId, name: m.name })"
-                  ) {{ cleaningOrphanId === m.richMenuId ? '清理中...' : '清理' }}
-              .PageAdminLineManagement__diag-empty(v-else) 無
+            template(v-else-if="diagnostics[ch]")
+              //- 一致性 banner
+              .PageAdminLineManagement__diag-banner(v-if="diagnostics[ch]!.match")
+                span.PageAdminLineManagement__diag-banner-icon ✓
+                | LINE 端與本地一致
+              .PageAdminLineManagement__diag-banner.is-warning(v-else)
+                span.PageAdminLineManagement__diag-banner-icon ⚠
+                | 偵測到不一致
+              ul.PageAdminLineManagement__diag-inc(v-if="diagnostics[ch]!.inconsistencies.length > 0")
+                li(v-for="msg in diagnostics[ch]!.inconsistencies" :key="msg") {{ msg }}
 
-            //- 本地 docs
-            .PageAdminLineManagement__diag-section
-              .PageAdminLineManagement__diag-section-label 本地 line_richmenus（{{ diagnostics[ch]!.local.docs.length }} 筆）
-              .PageAdminLineManagement__diag-meta-row(v-if="diagnostics[ch]!.local.activeDoc")
-                span.k Active doc
-                span.v {{ diagnostics[ch]!.local.activeDoc!.name }} / {{ diagnostics[ch]!.local.activeDoc!.lineRichMenuId ?? '無' }}
-              .PageAdminLineManagement__diag-meta-row(v-else)
-                span.k Active doc
-                span.v.muted 無
-              ul.PageAdminLineManagement__diag-stale(v-if="diagnostics[ch]!.stale.length > 0")
-                li(v-for="s in diagnostics[ch]!.stale" :key="s.docId")
-                  | 🔗 doc 「{{ s.name }}」記錄 lineRichMenuId {{ s.lineRichMenuId.slice(0, 18) }}… 但 LINE 端不存在 → 重新發佈或請開發者清理
+              //- LINE 端 listRichmenus
+              .PageAdminLineManagement__diag-section
+                .PageAdminLineManagement__diag-section-label LINE 端選單（{{ diagnostics[ch]!.line.allMenus.length }} 個）
+                .PageAdminLineManagement__diag-meta-row
+                  span.k Default ID
+                  span.v.mono {{ diagnostics[ch]!.line.defaultRichMenuId ?? '無' }}
+                ul.PageAdminLineManagement__diag-menus(v-if="diagnostics[ch]!.line.allMenus.length > 0")
+                  li.PageAdminLineManagement__diag-menu-item(
+                    v-for="m in diagnostics[ch]!.line.allMenus"
+                    :key="m.richMenuId"
+                    :class="{ 'is-default': m.isDefault, 'is-orphan': !m.hasLocalDoc }"
+                  )
+                    span.PageAdminLineManagement__diag-menu-name {{ m.name || '(no name)' }}
+                    span.PageAdminLineManagement__diag-menu-id {{ m.richMenuId.slice(0, 18) }}…
+                    span.PageAdminLineManagement__diag-menu-badge.is-default(v-if="m.isDefault") DEFAULT
+                    span.PageAdminLineManagement__diag-menu-badge.is-orphan(v-if="!m.hasLocalDoc") ORPHAN
+                    span.PageAdminLineManagement__diag-menu-flex
+                    button.PageAdminLineManagement__btn.is-reject(
+                      v-if="!m.hasLocalDoc"
+                      :disabled="cleaningOrphanId === m.richMenuId"
+                      @click="ClickCleanupOrphan(ch, { richMenuId: m.richMenuId, name: m.name })"
+                    ) {{ cleaningOrphanId === m.richMenuId ? '清理中...' : '清理' }}
+                .PageAdminLineManagement__diag-empty(v-else) 無
+
+              //- 本地 docs
+              .PageAdminLineManagement__diag-section
+                .PageAdminLineManagement__diag-section-label 本地 line_richmenus（{{ diagnostics[ch]!.local.docs.length }} 筆）
+                .PageAdminLineManagement__diag-meta-row(v-if="diagnostics[ch]!.local.activeDoc")
+                  span.k Active doc
+                  span.v {{ diagnostics[ch]!.local.activeDoc!.name }} / {{ diagnostics[ch]!.local.activeDoc!.lineRichMenuId ?? '無' }}
+                .PageAdminLineManagement__diag-meta-row(v-else)
+                  span.k Active doc
+                  span.v.muted 無
+                ul.PageAdminLineManagement__diag-stale(v-if="diagnostics[ch]!.stale.length > 0")
+                  li(v-for="s in diagnostics[ch]!.stale" :key="s.docId")
+                    | 🔗 doc 「{{ s.name }}」記錄 lineRichMenuId {{ s.lineRichMenuId.slice(0, 18) }}… 但 LINE 端不存在 → 重新發佈或請開發者清理
+
+    //- ── Event Log sub-panel（P43 Phase 3） ────────────
+    template(v-if="activeDiagSubTab === 'event-log'")
+      .PageAdminLineManagement__diag-intro
+        | 列最近 50 筆 webhook event（依 createdAt desc）。要查更舊紀錄請至 Firestore Console。
+      .PageAdminLineManagement__diag-filters
+        label.PageAdminLineManagement__diag-filter
+          span.k Channel
+          select(v-model="eventLogChannel")
+            option(value="passenger") 乘客 OA
+            option(value="driver") 司機 OA
+        label.PageAdminLineManagement__diag-filter
+          span.k Event Type
+          select(v-model="eventLogTypeFilter")
+            option(v-for="o in EVENT_TYPE_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
+        label.PageAdminLineManagement__diag-filter
+          span.k Handler Result
+          select(v-model="eventLogResultFilter")
+            option(v-for="o in HANDLER_RESULT_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
+        button.PageAdminLineManagement__btn.is-toggle(
+          :disabled="eventLogsLoading"
+          @click="ApiLoadEventLogs"
+        ) {{ eventLogsLoading ? '查詢中...' : '重新整理' }}
+
+      .PageAdminLineManagement__diag-loading(v-if="eventLogsLoading && eventLogs.length === 0") 載入中...
+      .PageAdminLineManagement__diag-empty(v-else-if="eventLogs.length === 0") 無 event log
+      .PageAdminLineManagement__diag-table(v-else)
+        .PageAdminLineManagement__diag-row.is-head
+          .col.time 時間
+          .col.channel Channel
+          .col.type Type
+          .col.uid UID
+          .col.detail Detail
+          .col.result Result
+        template(v-for="ev in eventLogs" :key="ev.id")
+          .PageAdminLineManagement__diag-row(
+            :class="{ 'is-expanded': expandedEventLogId === ev.id, 'is-failed': ev.handlerResult === 'handler_failed' }"
+            @click="ToggleExpandEventLog(ev.id)"
+          )
+            .col.time {{ ev.createdAt ? $dayjs(ev.createdAt).format('MM/DD HH:mm:ss') : '—' }}
+            .col.channel {{ ev.channel === 'passenger' ? '乘客' : '司機' }}
+            .col.type {{ ev.eventType }}
+            .col.uid.mono {{ ev.lineUid ? ev.lineUid.slice(0, 12) + '…' : '—' }}
+            .col.detail {{ ev.postbackData ?? ev.messageText ?? '—' }}
+            .col.result(:class="`is-${ev.handlerResult}`") {{ ev.handlerResult }}
+          .PageAdminLineManagement__diag-expand(v-if="expandedEventLogId === ev.id")
+            .row
+              span.k Full UID
+              span.v.mono {{ ev.lineUid ?? '—' }}
+            .row(v-if="ev.postbackData !== null")
+              span.k Postback Data
+              span.v.mono {{ ev.postbackData }}
+            .row(v-if="ev.messageText !== null")
+              span.k Message Text
+              span.v {{ ev.messageText }}
+            .row
+              span.k Created
+              span.v {{ ev.createdAt ? $dayjs(ev.createdAt).format('YYYY/MM/DD HH:mm:ss') : '—' }}
+
+    //- ── Error Log sub-panel（P43 Phase 3） ────────────
+    template(v-if="activeDiagSubTab === 'error-log'")
+      .PageAdminLineManagement__diag-intro
+        | 列最近 50 筆 LINE API error log（依 createdAt desc）。要查更舊紀錄請至 Firestore Console。
+      .PageAdminLineManagement__diag-filters
+        label.PageAdminLineManagement__diag-filter
+          span.k Channel
+          select(v-model="errorLogChannel")
+            option(v-for="o in ERROR_CHANNEL_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
+        label.PageAdminLineManagement__diag-filter
+          span.k API（含字串過濾）
+          input(
+            v-model="errorLogApiFilter"
+            type="text"
+            maxlength="50"
+            placeholder="例：message / richmenu"
+          )
+        button.PageAdminLineManagement__btn.is-toggle(
+          :disabled="errorLogsLoading"
+          @click="ApiLoadErrorLogs"
+        ) {{ errorLogsLoading ? '查詢中...' : '重新整理' }}
+
+      .PageAdminLineManagement__diag-loading(v-if="errorLogsLoading && errorLogs.length === 0") 載入中...
+      .PageAdminLineManagement__diag-empty(v-else-if="errorLogs.length === 0") 無 error log
+      .PageAdminLineManagement__diag-table(v-else)
+        .PageAdminLineManagement__diag-row.is-head
+          .col.time 時間
+          .col.channel Channel
+          .col.api API
+          .col.method Method
+          .col.status Status
+          .col.message Message
+        template(v-for="er in errorLogs" :key="er.id")
+          .PageAdminLineManagement__diag-row.is-error(
+            :class="{ 'is-expanded': expandedErrorLogId === er.id }"
+            @click="ToggleExpandErrorLog(er.id)"
+          )
+            .col.time {{ er.createdAt ? $dayjs(er.createdAt).format('MM/DD HH:mm:ss') : '—' }}
+            .col.channel {{ er.channel === 'passenger' ? '乘客' : er.channel === 'driver' ? '司機' : '—' }}
+            .col.api.mono {{ er.api }}
+            .col.method {{ er.method }}
+            .col.status(:class="er.statusCode >= 500 ? 'is-5xx' : er.statusCode >= 400 ? 'is-4xx' : ''") {{ er.statusCode }}
+            .col.message {{ er.errorMessage.slice(0, 60) }}{{ er.errorMessage.length > 60 ? '…' : '' }}
+          .PageAdminLineManagement__diag-expand(v-if="expandedErrorLogId === er.id")
+            .row
+              span.k Full Message
+              span.v {{ er.errorMessage }}
+            .row(v-if="er.errorDetails")
+              span.k Details
+              span.v.mono {{ er.errorDetails }}
+            .row(v-if="er.context?.targetUid")
+              span.k Target UID
+              span.v.mono {{ er.context.targetUid }}
+            .row(v-if="er.context?.richMenuId")
+              span.k RichMenu ID
+              span.v.mono {{ er.context.richMenuId }}
+            .row
+              span.k Created
+              span.v {{ er.createdAt ? $dayjs(er.createdAt).format('YYYY/MM/DD HH:mm:ss') : '—' }}
 
   //- ── Other fallback（不會走到）────────────────────────
   .PageAdminLineManagement__panel(v-else)
@@ -1454,6 +1701,167 @@ $border: rgba(212, 134, 10, 0.18);
   color: #d4860a;
   list-style: disc;
   line-height: 1.6;
+}
+
+// ── Diagnostics sub-tab + Event/Error Log（P43 Phase 3）──
+.PageAdminLineManagement__diag-sub-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid $border;
+  padding: 0 12px;
+}
+
+.PageAdminLineManagement__diag-sub-tab {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.is-active {
+    color: $amber;
+    border-bottom-color: $amber;
+  }
+}
+
+.PageAdminLineManagement__diag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 14px 18px;
+  border-bottom: 1px solid $border;
+}
+
+.PageAdminLineManagement__diag-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .k {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: $muted;
+  }
+
+  select,
+  input[type='text'] {
+    padding: 5px 10px;
+    border: 1px solid $border;
+    border-radius: 6px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    background: white;
+    min-width: 120px;
+
+    &:focus {
+      outline: none;
+      border-color: $amber;
+    }
+  }
+}
+
+.PageAdminLineManagement__diag-table {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.PageAdminLineManagement__diag-row {
+  display: grid;
+  grid-template-columns: 90px 60px 90px 110px 1fr 90px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 18px;
+  border-bottom: 1px solid $border;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(212, 134, 10, 0.04); }
+  &.is-head {
+    background: rgba(0, 0, 0, 0.03);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: $muted;
+    cursor: default;
+    &:hover { background: rgba(0, 0, 0, 0.03); }
+  }
+  &.is-expanded { background: rgba(212, 134, 10, 0.06); }
+  &.is-failed { background: rgba(239, 68, 68, 0.05); }
+  &.is-error { color: #b91c1c; }
+
+  .col {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.mono { font-family: monospace; font-size: 11px; }
+    &.result {
+      font-weight: 700;
+      &.is-replied { color: #059669; }
+      &.is-handler_failed { color: #ef4444; }
+      &.is-no_handler { color: #d97706; }
+      &.is-ignored { color: $muted; }
+    }
+    &.status {
+      font-family: monospace;
+      &.is-4xx { color: #d97706; }
+      &.is-5xx { color: #ef4444; font-weight: 700; }
+    }
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    .col.detail, .col.message { grid-column: 1 / 3; }
+  }
+}
+
+// error log 版面（列 = time/ch/api/method/status/msg）
+.PageAdminLineManagement__diag-row.is-error,
+.PageAdminLineManagement__diag-row.is-head + .PageAdminLineManagement__diag-row {
+  // 沿用同一 grid；error 表頭結構稍異但用 6 col 對齊
+}
+
+.PageAdminLineManagement__diag-expand {
+  padding: 10px 18px 14px;
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+
+    .k {
+      min-width: 100px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: $muted;
+    }
+    .v {
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+      color: rgba(0, 0, 0, 0.85);
+      &.mono { font-family: monospace; font-size: 11px; }
+    }
+  }
 }
 
 // ── 其他 tab placeholder ────────────────────────────────────
