@@ -60,6 +60,9 @@ export default {
   DialogImageEdit: () => Open<File>('OpenDialogImageSelect'),
   /** P37：公告編輯（mode=create | edit | republish） */
   DialogAnnouncementEdit: (params: DialogAnnouncementEditParams) =>
-    Open<'saved' | 'published' | 'archived' | 'cancelled'>('OpenDialogAnnouncementEdit', params)
+    Open<'saved' | 'published' | 'archived' | 'cancelled'>('OpenDialogAnnouncementEdit', params),
+  /** P38：LINE richmenu 編輯（mode=create | edit） */
+  DialogLineRichmenuEdit: (params: DialogLineRichmenuEditParams) =>
+    Open<'saved' | 'published' | 'cancelled'>('OpenDialogLineRichmenuEdit', params)
   // TODO 組件加完後，要設定
 };

@@ -5,6 +5,7 @@ type OpenComponent =
   | 'OpenDialogVideoRecording' // 影片錄製
   | 'OpenDialogImageSelect' // 圖片選擇
   | 'OpenDialogAnnouncementEdit' // P37：公告編輯
+  | 'OpenDialogLineRichmenuEdit' // P38：LINE richmenu 編輯
   // | 'OpenDialogDemo2'
   // TODO 組件加完後，要設定
 
@@ -23,5 +24,12 @@ type DialogDemoParams = {
 type DialogAnnouncementEditParams = {
   mode: 'create' | 'edit' | 'republish' | 'duplicate'
   id?: string // edit / republish / duplicate 模式必填（duplicate = 載入 source 內容後 POST 新 doc）
+}
+
+/** P38：LINE richmenu 編輯彈窗參數 */
+type DialogLineRichmenuEditParams = {
+  mode: 'create' | 'edit'
+  channel: 'passenger' | 'driver' // create 模式必填；edit 模式由 server 既有 doc 決定（忽略此值）
+  id?: string // edit 模式必填
 }
 // TODO 組件加完後，要設定

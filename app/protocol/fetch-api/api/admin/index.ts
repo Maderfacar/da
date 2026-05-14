@@ -2,6 +2,8 @@ import methods from '@/protocol/fetch-api/methods';
 
 // P37 Phase 3：公告 sub-module
 export * from './announcement';
+// P38 Phase 2：LINE richmenu sub-module
+export * from './line-richmenu';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
