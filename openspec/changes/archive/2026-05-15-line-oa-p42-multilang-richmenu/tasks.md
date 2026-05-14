@@ -201,9 +201,9 @@
 
 ### 4.5 Stage Gate
 
-- [x] G4.1 lint + build pass（lint 修兩個 `let → const` 後綠；build 進行中等候）
+- [x] G4.1 lint + build pass（lint 修兩個 `let → const` 後綠；build 40.8 MB / 11.6 MB gzip）
 - [ ] G4.2 手測：publish zh_tw → batch re-bind（延 Phase 5 e2e；prod 目前 0 個 lang 寫入 user）
-- [ ] G4.3 commit + push origin HEAD:main
+- [x] G4.3 commit + push origin HEAD:main（commit `7621669`）
 
 ---
 
@@ -211,9 +211,9 @@
 
 ### 5.1 前端 i18n switcher 整合（passenger 端）
 
-- [ ] `app/stores/8.store-config.ts`：i18n changeLocale 新增 hook：登入 user 時 call `$api.PatchSelfLang`
-- [ ] passenger settings page i18n switcher 行為對齊（既有 UI 不動，只在 store 層接 endpoint）
-- [ ] driver 端 i18n switcher 不動（UI 尚未實作；endpoint 已備好）
+- [x] `app/components/LangSwitcher.vue`：ClickLang 中加 PatchSelfLang 呼叫（登入 user 才 call；'zh' → 'zh_tw' map；失敗 console.warn 不阻擋體驗）
+- [x] 直接改 LangSwitcher（不繞 store-config，因 i18n switcher 邏輯本來就在 LangSwitcher.vue 內）
+- [x] driver 端 i18n switcher 不動（UI 尚未實作；endpoint 已備好）
 
 ### 5.2 E2E 真機驗收清單
 
@@ -228,16 +228,16 @@
 
 ### 5.3 Archive 收尾
 
-- [ ] version bump（v0.3.24 → v0.3.25）
-- [ ] 撰寫 HANDOFF.md（實作摘要 / 拍板紀錄 / 部署狀態 / 程式碼總覽 / 留尾清單）
-- [ ] `git mv` openspec change 至 `openspec/changes/archive/2026-05-15-line-oa-p42-multilang-richmenu/`
-- [ ] memory 同步：新建 `project-p42-richmenu-multilang.md` + 更新 MEMORY.md index
+- [x] version bump（v0.3.24 → v0.3.25）
+- [x] 撰寫 HANDOFF.md（實作摘要 / 拍板紀錄 / 部署狀態 / 程式碼總覽 / 留尾清單）
+- [x] `git mv` openspec change 至 `openspec/changes/archive/2026-05-15-line-oa-p42-multilang-richmenu/`
+- [x] memory 同步：新建 `project-p42-richmenu-multilang.md` + 更新 MEMORY.md index
 
 ### 5.4 Stage Gate
 
-- [ ] G5.1 lint + build pass
-- [ ] G5.2 全部 e2e 5.2.* 綠
-- [ ] G5.3 commit + push origin HEAD:main
+- [x] G5.1 lint + build pass（40.8 MB / 11.7 MB gzip）
+- [ ] G5.2 全部 e2e 5.2.* 綠 — Brain AI 真機驗收範圍
+- [ ] G5.3 commit + push origin HEAD:main（本次 archive commit）
 
 ---
 

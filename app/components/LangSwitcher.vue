@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SelfLang } from '@/protocol/fetch-api/api/self';
+
 const { locale, locales, setLocale } = useI18n();
 
 const LANG_LABELS: Record<string, string> = { zh: '中', en: 'EN', ja: 'JP' };
@@ -9,8 +11,36 @@ const others = computed(() =>
 
 const isOpen = ref(false);
 
+/**
+ * P42：i18n locale code → server SelfLang
+ * - i18n 用 'zh' / 'en' / 'ja'（與 i18n locale 檔名對齊）
+ * - server users.lang / richmenu lang 用 'zh_tw' / 'en' / 'ja'（與 i18n-message.ts Lang type 對齊）
+ */
+const _toServerLang = (code: string): SelfLang | null => {
+  if (code === 'zh') return 'zh_tw';
+  if (code === 'en') return 'en';
+  if (code === 'ja') return 'ja';
+  return null;
+};
+
 const ClickLang = async (code: string) => {
   await setLocale(code);
+
+  // P42：登入 user 同步 lang 至 Firestore + 觸發 LINE richmenu 重綁
+  // 訪客 / 未登入 → 只切 cookie（不 call endpoint）
+  const authStore = StoreAuth();
+  if (authStore.isSignIn) {
+    const serverLang = _toServerLang(code);
+    if (serverLang) {
+      try {
+        await $api.PatchSelfLang({ lang: serverLang });
+      } catch (err) {
+        // 切換失敗不阻擋 i18n 體驗（cookie 已切；下次 login 會同步）
+        console.warn('[LangSwitcher] sync lang to server failed:', err);
+      }
+    }
+  }
+
   isOpen.value = false;
 };
 
