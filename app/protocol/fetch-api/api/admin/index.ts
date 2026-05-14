@@ -228,3 +228,23 @@ export const ReviewDriverDocument = (uid: string, body: {
   `/nuxt-api/admin/drivers/${uid}/document-review`,
   body as unknown as Record<string, unknown>,
 );
+
+// ── P40 Phase 1：LINE Postback Whitelist（admin 編輯 richmenu / template 時下拉選用） ────
+export interface LinePostbackWhitelistItem {
+  data: string
+  label: string
+  channel: 'passenger' | 'driver' | 'both'
+}
+export interface LinePostbackWhitelistRes {
+  items: LinePostbackWhitelistItem[]
+}
+
+/**
+ * 列 admin 可選的 postback whitelist（依 channel 過濾；不傳 channel 則回全部含 both）
+ * 用於 richmenu Edit dialog / TemplateEditor postback action input 下拉
+ */
+export const GetLinePostbackWhitelist = (params: { channel?: 'passenger' | 'driver' } = {}) =>
+  methods.get<LinePostbackWhitelistRes>(
+    '/nuxt-api/admin/line-postback-whitelist',
+    params as Record<string, unknown>,
+  );

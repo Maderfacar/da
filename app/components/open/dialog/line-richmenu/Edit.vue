@@ -20,6 +20,7 @@ import type {
   RichmenuArea,
   RichmenuSize,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
+import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
 
 interface DialogLineRichmenuEditParamsLocal {
   mode: 'create' | 'edit';
@@ -68,6 +69,11 @@ const submitting = ref(false); // 儲存中
 const uploading = ref(false);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const selectedAreaIdx = ref<number>(-1);
+
+// P40 Phase 1：postback whitelist 下拉選項（依本 dialog 的 channel 過濾）
+const postbackWhitelist = ref<LinePostbackWhitelistItem[]>([]);
+const postbackDataSet = computed(() => new Set(postbackWhitelist.value.map((e) => e.data)));
+const IsPostbackInWhitelist = (data: string) => postbackDataSet.value.has(data);
 
 // ── 載入 detail（edit mode） ─────────────────────────────────
 const ApiLoadDetail = async () => {
@@ -321,9 +327,17 @@ const ClickCancel = () => {
   props.resolve('cancelled');
 };
 
+// ── Postback whitelist 載入（P40 Phase 1） ─────────────────
+const ApiLoadPostbackWhitelist = async () => {
+  const res = await $api.GetLinePostbackWhitelist({ channel: props.params.channel });
+  if (res.status.code !== $enum.apiStatus.success || !res.data) return;
+  postbackWhitelist.value = res.data.items;
+};
+
 // ── 初始化 ───────────────────────────────────────────────────
 onMounted(() => {
   void ApiLoadDetail();
+  void ApiLoadPostbackWhitelist();
 });
 </script>
 
@@ -481,17 +495,26 @@ onMounted(() => {
                   placeholder="user 點到會送的訊息"
                 )
 
-              //- postback input
+              //- postback input（P40 Phase 1：ElSelect with allow-create）
               template(v-if="a.action.type === 'postback'")
-                input(
+                el-select.DialogLineRichmenuEdit__postback-select(
                   v-model="a.action.data"
-                  type="text"
-                  :maxlength="POSTBACK_DATA_MAX"
-                  placeholder="例：OPEN_BOOKING"
+                  filterable
+                  allow-create
+                  clearable
+                  default-first-option
+                  value-on-clear=""
+                  placeholder="從 whitelist 選，或輸入自訂 data"
                 )
-                .DialogLineRichmenuEdit__warn(v-if="a.action.type === 'postback'")
-                  | ⚠ postback 需要 server/utils/line-postback-handlers.ts 對應 handler 才會生效。
-                  | Phase 2 whitelist 尚未填，data 字串需開發者後續接 handler。
+                  el-option(
+                    v-for="opt in postbackWhitelist"
+                    :key="opt.data"
+                    :value="opt.data"
+                    :label="`${opt.data} - ${opt.label}`"
+                  )
+                .DialogLineRichmenuEdit__warn(v-if="a.action.data && !IsPostbackInWhitelist(a.action.data)")
+                  | ⚠ "{{ a.action.data }}" 不在 server whitelist；user 點擊後無對應 handler 不會收到回應。
+                  | 請改從下拉選 whitelist 內項目，或請開發者補 server/utils/line-postback-handlers.ts。
 
               //- label（共用）
               .DialogLineRichmenuEdit__action-label
@@ -843,6 +866,20 @@ $border: rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   font-family: 'Barlow', sans-serif;
   font-size: 13px;
+}
+
+.DialogLineRichmenuEdit__postback-select {
+  width: 100%;
+
+  :deep(.el-select__wrapper) {
+    border-radius: 6px;
+    min-height: 32px;
+    box-shadow: 0 0 0 1px $border;
+    background: white;
+
+    &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
+    &.is-focused { box-shadow: 0 0 0 1px $amber; }
+  }
 }
 
 .DialogLineRichmenuEdit__warn {

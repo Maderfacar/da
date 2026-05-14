@@ -15,6 +15,7 @@ import type {
   TemplateAction,
   TemplateCtaButton,
 } from '@/protocol/fetch-api/api/admin/notification-template';
+import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
 
 interface Props {
   templateKey: string;
@@ -98,6 +99,22 @@ const ApiLoadDetail = async () => {
 watch(() => props.templateKey, () => {
   void ApiLoadDetail();
 }, { immediate: true });
+
+// ── Postback whitelist 載入（P40 Phase 1） ─────────────────
+// template 不綁 channel，fetch 全部含 'both'；admin 看 channel 標籤自行選
+const postbackWhitelist = ref<LinePostbackWhitelistItem[]>([]);
+const postbackDataSet = computed(() => new Set(postbackWhitelist.value.map((e) => e.data)));
+const IsPostbackInWhitelist = (data: string) => postbackDataSet.value.has(data);
+
+const ApiLoadPostbackWhitelist = async () => {
+  const res = await $api.GetLinePostbackWhitelist();
+  if (res.status.code !== $enum.apiStatus.success || !res.data) return;
+  postbackWhitelist.value = res.data.items;
+};
+
+onMounted(() => {
+  void ApiLoadPostbackWhitelist();
+});
 
 // ── placeholder chip 插入 ───────────────────────────────────
 const InsertPlaceholder = (key: string) => {
@@ -413,14 +430,24 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
           template(v-if="form.ctaActionType === 'postback'")
             .TemplateEditor__field
               label Postback data
-              input(
+              el-select.TemplateEditor__postback-select(
                 v-model="form.ctaPostback"
-                type="text"
-                :maxlength="DATA_MAX"
-                placeholder="例：OPEN_BOOKING"
+                filterable
+                allow-create
+                clearable
+                default-first-option
+                value-on-clear=""
+                placeholder="從 whitelist 選，或輸入自訂 data"
               )
-              .TemplateEditor__warn
-                | ⚠ postback 需 server/utils/line-postback-handlers.ts 有對應 handler 才會生效（Phase 1 whitelist 為空，需 dev 補入）
+                el-option(
+                  v-for="opt in postbackWhitelist"
+                  :key="opt.data"
+                  :value="opt.data"
+                  :label="`${opt.data} - ${opt.label}（${opt.channel === 'both' ? '雙 OA' : opt.channel === 'driver' ? '司機' : '乘客'}）`"
+                )
+              .TemplateEditor__warn(v-if="form.ctaPostback && !IsPostbackInWhitelist(form.ctaPostback)")
+                | ⚠ "{{ form.ctaPostback }}" 不在 server whitelist；user 點擊後無對應 handler 不會收到回應。
+                | 請改從下拉選 whitelist 內項目，或請開發者補 server/utils/line-postback-handlers.ts。
             .TemplateEditor__field
               label Display Text（選填）
               input(
@@ -641,6 +668,20 @@ $border: rgba(0, 0, 0, 0.1);
     cursor: pointer;
     font-weight: 500;
     color: inherit;
+  }
+}
+
+.TemplateEditor__postback-select {
+  width: 100%;
+
+  :deep(.el-select__wrapper) {
+    border-radius: 8px;
+    min-height: 36px;
+    box-shadow: 0 0 0 1px $border;
+    background: white;
+
+    &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
+    &.is-focused { box-shadow: 0 0 0 1px $amber; }
   }
 }
 

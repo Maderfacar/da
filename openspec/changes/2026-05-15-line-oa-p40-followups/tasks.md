@@ -25,28 +25,29 @@
 
 ### 1.1 LIFF URL 設定
 
-- [ ] 確認 `runtimeConfig.public.liffBaseUrl` 是否已存在；不存在則新增 + 文件化
-- [ ] Vercel 設 env var（若 prod 缺）— **此項屬「Vercel UI 操作」，需 User**
+- [x] 確認既有 env var：`runtimeConfig.public.lineLiffIdPassenger` / `lineLiffIdDriver` 已存在（雙 LIFF app）
+- [x] **不新增 env var**：用既有雙 LIFF ID 推導 URL（`https://liff.line.me/${liffId}${path}`），符合 spec「先檢查既有 env var」精神且自然支援雙 LIFF 場景
 
 ### 1.2 Whitelist 補入 8 個 entry
 
-- [ ] [server/utils/line-postback-handlers.ts](server/utils/line-postback-handlers.ts) `POSTBACK_WHITELIST` 補：
-  - passenger：OPEN_BOOKING / OPEN_NOTIFICATIONS / CONTACT_SUPPORT / MY_TRIP
+- [x] [server/utils/line-postback-handlers.ts](server/utils/line-postback-handlers.ts) `POSTBACK_WHITELIST` 補：
+  - passenger：OPEN_BOOKING / OPEN_NOTIFICATIONS / MY_TRIP / CONTACT_SUPPORT（channel='both'）
   - driver：OPEN_DASHBOARD / PENDING_LIST / MY_PROFILE / TRIP_GPS
-  - 每 entry：data + label + channel + handler（回 reply text 含 LIFF URL）
+  - 每 entry：data + label + channel + handler（reply text 含 LIFF URL）
+  - 新增 `_getLiffUrl(client, subPath)` 與 `_buildSupportReply()` 內部 helper
 
 ### 1.3 Admin UI 整合（postback 下拉選單）
 
-- [ ] 新增 `GET /nuxt-api/admin/line-postback-whitelist?channel=...`：回 listPostbackWhitelist(channel)
-- [ ] `app/protocol/fetch-api/api/admin/line-richmenu/` 加 `GetPostbackWhitelist` method
-- [ ] [richmenu Edit.vue](app/components/open/dialog/line-richmenu/Edit.vue) postback action input 改 `<el-select>` 從 whitelist 撈
-- [ ] [TemplateEditor.vue](app/components/admin/line-management/TemplateEditor.vue) postback action input 同上
-- [ ] free-form input 仍允許（fallback），但顯示警示「whitelist 外需 dev 接 handler」
+- [x] 新增 `GET /nuxt-api/admin/line-postback-whitelist`（channel query 可選；無則回全 whitelist 含 'both'）
+- [x] `app/protocol/fetch-api/api/admin/index.ts` 加 `GetLinePostbackWhitelist` method + types
+- [x] [richmenu Edit.vue](app/components/open/dialog/line-richmenu/Edit.vue) postback action input 改 `<el-select>` + allow-create / filterable / clearable
+- [x] [TemplateEditor.vue](app/components/admin/line-management/TemplateEditor.vue) postback action input 同上（不傳 channel 看全 whitelist + channel 標籤）
+- [x] free-form 仍允許（allow-create），whitelist 外 data 顯示警示
 
 ### 1.4 Stage Gate
 
-- [ ] G1.1 lint + build pass
-- [ ] G1.2 真機驗證：passenger OA richmenu 設一個 area type=postback data=OPEN_BOOKING → 點擊 → user 收到 reply 含 LIFF /booking URL
+- [x] G1.1 lint + build pass（`admin/index.get4.mjs` 即新 endpoint chunk）
+- [ ] G1.2 真機驗證（彙整至 Phase 4 e2e checklist）
 - [ ] G1.3 commit + push origin HEAD:main
 
 ---
