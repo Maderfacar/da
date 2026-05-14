@@ -13,6 +13,7 @@ import type {
   LineRichmenuDto,
   RichmenuStatus,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
+import type { NotificationTemplateItem } from '@/protocol/fetch-api/api/admin/notification-template';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -20,7 +21,7 @@ type MainTab = 'richmenu' | 'templates' | 'bot-replies' | 'diagnostics';
 
 const MAIN_TABS: Array<{ key: MainTab; label: string; ready: boolean }> = [
   { key: 'richmenu', label: '圖文選單', ready: true },
-  { key: 'templates', label: 'Flex 模板', ready: false },
+  { key: 'templates', label: 'Flex 模板', ready: true },
   { key: 'bot-replies', label: '自動回覆', ready: false },
   { key: 'diagnostics', label: '診斷', ready: false },
 ];
@@ -214,6 +215,56 @@ const ClickTestBind = async (m: LineRichmenuDto) => {
 
 // ── helpers ─────────────────────────────────────────────────
 const FormatTime = (iso: string | null): string => (iso ? $dayjs(iso).format('YYYY/MM/DD HH:mm') : '—');
+
+// ── Templates tab ────────────────────────────────────────────
+const templates = ref<NotificationTemplateItem[]>([]);
+const templatesLoading = ref(false);
+const selectedTemplateKey = ref<string>('');
+
+const ApiLoadTemplates = async () => {
+  templatesLoading.value = true;
+  try {
+    const res = await $api.GetNotificationTemplates();
+    if (res.status.code !== 200) {
+      ElMessage({ message: res.status.message?.zh_tw || '載入模板失敗', type: 'error' });
+      templates.value = [];
+      return;
+    }
+    templates.value = res.data?.items ?? [];
+    if (!selectedTemplateKey.value && templates.value.length > 0) {
+      selectedTemplateKey.value = templates.value[0]!.meta.templateKey;
+    }
+  } finally {
+    templatesLoading.value = false;
+  }
+};
+
+const TemplatesByCategory = computed(() => {
+  const groups = new Map<string, NotificationTemplateItem[]>();
+  for (const t of templates.value) {
+    const cat = t.meta.category;
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat)!.push(t);
+  }
+  return groups;
+});
+
+const CATEGORY_LABEL: Record<string, string> = {
+  order: '訂單事件',
+  announcement: '公告',
+  bot: 'Bot 自動回覆',
+  broadcast: '廣播',
+};
+
+const OnTemplateSaved = () => {
+  void ApiLoadTemplates();
+};
+
+watch(activeMainTab, (tab) => {
+  if (tab === 'templates' && templates.value.length === 0) {
+    void ApiLoadTemplates();
+  }
+}, { immediate: false });
 const FormatBytes = (bytes: number | null): string => {
   if (!bytes) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -224,6 +275,9 @@ const FormatSize = (s: LineRichmenuDto['imageSize']): string => (s ? `${s.width}
 
 onMounted(() => {
   void ApiLoadList();
+  if (activeMainTab.value === 'templates') {
+    void ApiLoadTemplates();
+  }
 });
 </script>
 
@@ -350,11 +404,41 @@ onMounted(() => {
               @click="ClickDelete(m)"
             ) 刪除
 
+  //- ── Templates Tab ────────────────────────────────────
+  .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'templates'")
+    .PageAdminLineManagement__loading(v-if="templatesLoading") 載入中...
+    template(v-else)
+      .PageAdminLineManagement__templates
+        //- 左側 list（依 category 分組）
+        aside.PageAdminLineManagement__template-list
+          template(v-for="[cat, items] in TemplatesByCategory" :key="cat")
+            .PageAdminLineManagement__template-cat-label {{ CATEGORY_LABEL[cat] || cat }}
+            button.PageAdminLineManagement__template-entry(
+              v-for="t in items"
+              :key="t.meta.templateKey"
+              :class="{ 'is-active': selectedTemplateKey === t.meta.templateKey, 'is-customized': t.content !== null, 'is-disabled': !t.enabled }"
+              @click="selectedTemplateKey = t.meta.templateKey"
+            )
+              span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
+              span.PageAdminLineManagement__template-dot(
+                :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
+              )
+
+        //- 右側 editor
+        main.PageAdminLineManagement__template-editor
+          AdminLineManagementTemplateEditor(
+            v-if="selectedTemplateKey"
+            :template-key="selectedTemplateKey"
+            @saved="OnTemplateSaved"
+          )
+          .PageAdminLineManagement__placeholder(v-else)
+            span.PageAdminLineManagement__placeholder-text 選擇左側模板開始編輯
+
   //- ── 其他 Tab 占位 ─────────────────────────────────────
   .PageAdminLineManagement__panel(v-else)
     .PageAdminLineManagement__placeholder
       span.PageAdminLineManagement__placeholder-icon 🛠
-      span.PageAdminLineManagement__placeholder-text Phase {{ activeMainTab === 'templates' ? '3-4' : activeMainTab === 'bot-replies' ? '5' : '5' }} 準備中
+      span.PageAdminLineManagement__placeholder-text Phase 5（P40 留尾）準備中
 </template>
 
 <style lang="scss" scoped>
@@ -736,6 +820,82 @@ $border: rgba(212, 134, 10, 0.18);
   }
 }
 
+// ── Templates Tab ─────────────────────────────────────────
+.PageAdminLineManagement__templates {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 600px;
+}
+
+.PageAdminLineManagement__template-list {
+  border-right: 1px solid $border;
+  padding: 12px 0;
+  overflow-y: auto;
+}
+
+.PageAdminLineManagement__template-cat-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: $muted;
+  padding: 8px 16px 4px;
+}
+
+.PageAdminLineManagement__template-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.7);
+  text-align: left;
+  border-left: 3px solid transparent;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(0, 0, 0, 0.03); }
+  &.is-active {
+    background: rgba(212, 134, 10, 0.08);
+    color: rgba(0, 0, 0, 0.9);
+    border-left-color: $amber;
+    font-weight: 700;
+  }
+  &.is-disabled .PageAdminLineManagement__template-name {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+}
+
+.PageAdminLineManagement__template-name {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.PageAdminLineManagement__template-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.PageAdminLineManagement__template-entry.is-customized .PageAdminLineManagement__template-dot {
+  background: #059669;
+}
+.PageAdminLineManagement__template-entry.is-customized.is-disabled .PageAdminLineManagement__template-dot {
+  background: #ef4444;
+}
+
+.PageAdminLineManagement__template-editor {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 // ── 其他 tab placeholder ────────────────────────────────────
 .PageAdminLineManagement__placeholder {
   padding: 60px 40px;
@@ -761,6 +921,14 @@ $border: rgba(212, 134, 10, 0.18);
   .PageAdminLineManagement__thumb {
     width: 100%;
     height: 160px;
+  }
+  .PageAdminLineManagement__templates {
+    grid-template-columns: 1fr;
+  }
+  .PageAdminLineManagement__template-list {
+    border-right: none;
+    border-bottom: 1px solid $border;
+    max-height: 240px;
   }
 }
 </style>

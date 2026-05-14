@@ -4,6 +4,8 @@ import methods from '@/protocol/fetch-api/methods';
 export * from './announcement';
 // P38 Phase 2：LINE richmenu sub-module
 export * from './line-richmenu';
+// P38 Phase 4：通用 notification template sub-module
+export * from './notification-template';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
