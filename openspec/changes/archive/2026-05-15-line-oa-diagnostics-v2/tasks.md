@@ -129,25 +129,30 @@
 
 ## Phase 4：e2e + Archive（0.25 天）
 
-### 4.1 e2e checklist
+### 4.1 e2e checklist（彙整給 Brain AI 真機驗收）
 
-- [ ] Event log：手動觸發各 event type（follow / message / postback）→ Diagnostics tab 看到對應 log
-- [ ] Error log：故意送錯誤 LINE API（如 admin test-bind 假 uid）→ Error log 看到 4xx 紀錄
-- [ ] Filter：channel + type 組合過濾正常
-- [ ] Expand row 看完整 payload / errorDetails 正常
+> 程式碼層全綠（lint + build pass + firebase deploy 完成）；下列由 Brain AI 在 prod 真機操作。
+
+- [ ] **Event log basic**：lineUid 用測試帳號加 OA 為好友 → Diagnostics → Event Log 應看到一筆 `follow` event（handlerResult=replied）
+- [ ] **Event log postback**：點 richmenu area type=postback data=OPEN_BOOKING → Event Log 看到一筆 postback（handlerResult=replied，detail 顯示 postbackData）
+- [ ] **Event log handler_failed**：（可選）admin 設計一個故意拋錯的 postback handler → 點擊 → Event Log row 紅底 + result=handler_failed
+- [ ] **Error log push**：故意 push 給不合法 lineUid（如手填一個 fake uid 跑 admin notify-order）→ Error Log 應看到 `message/push` 4xx 紀錄
+- [ ] **Error log richmenu**：故意上傳尺寸不對的 richmenu 圖片 → Error Log 看到 `richmenu/content` 400 紀錄（含 errorDetails）
+- [ ] **Filter**：Event Log channel + eventType + handlerResult 三維組合過濾正確顯示
+- [ ] **Expand row**：點 Event/Error Log row 展開，看到完整 UID / Postback Data / errorDetails / context
 
 ### 4.2 文件 + Archive
 
-- [ ] [version.ts](version.ts) bump v0.3.23 → v0.3.24
-- [ ] [HANDOFF.md](HANDOFF.md) 撰寫（沿用 P40 archive 格式）
-- [ ] `openspec/changes/2026-05-15-line-oa-diagnostics-v2/` mv 至 `archive/`
-- [ ] memory `project-p43-diagnostics-v2.md` 新增；MEMORY 索引同步
+- [x] [version.ts](version.ts) bump v0.3.23 → v0.3.24
+- [x] [HANDOFF.md](HANDOFF.md) 撰寫（沿用 P40 archive 格式）
+- [x] `openspec/changes/2026-05-15-line-oa-diagnostics-v2/` mv 至 `archive/`
+- [x] memory `project-p43-diagnostics-v2.md` 新增；MEMORY 索引同步
 
 ### 4.3 Stage Gate
 
-- [ ] G4.1 lint + build pass
-- [ ] G4.2 Brain AI 真機驗收
-- [ ] G4.3 commit + push origin HEAD:main（含 archive mv）
+- [x] G4.1 lint + build pass
+- [ ] G4.2 Brain AI 真機驗收（§4.1 checklist）
+- [x] G4.3 commit + push origin HEAD:main（含 archive mv）
 
 ---
 
