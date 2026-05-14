@@ -12,8 +12,8 @@
 - [x] 0.3 撰寫 [proposal.md](proposal.md)
 - [x] 0.4 撰寫 [design.md](design.md)
 - [x] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
-- [ ] 0.6 commit + push origin :main
-- [ ] 0.7 等待 Brain AI 確認 spec → 進 Phase 1
+- [x] 0.6 commit + push origin :main
+- [x] 0.7 等待 Brain AI 確認 spec → 進 Phase 1
 
 ---
 
@@ -21,36 +21,36 @@
 
 ### 1.1 Drawer 元件
 
-- [ ] 新增 `app/components/common/CommonDrawer.vue` — 左側 280px slide-in，含 mask + transition
-- [ ] 與 [front-desk.vue](app/layouts/front-desk.vue) 整合，移除底部 5-tab bar
+- [x] 新增 `app/components/common/CommonDrawer.vue` — 左側 280px slide-in，含 mask + transition
+- [x] 與 [front-desk.vue](app/layouts/front-desk.vue) 整合，移除底部 5-tab bar
 
 ### 1.2 Layout 重寫
 
-- [ ] [front-desk.vue](app/layouts/front-desk.vue)：
-  - [ ] 移除 `tabs` / `activeTab` / `.LayoutFrontDesk__bottom` 相關
-  - [ ] 頂部 nav 右側加 hamburger button
-  - [ ] body `padding-bottom` 砍掉
-- [ ] Drawer 內容（依 Brain AI 拍板順序）：
-  - [ ] 使用者資訊區（頭像 + displayName）
-  - [ ] 主導航 7 項：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服（外連 LINE OA）
-  - [ ] 底部：app 版本號（**不放登出**）
-  - [ ] logo 點擊回 `/home`（不在 drawer 內列「首頁」）
+- [x] [front-desk.vue](app/layouts/front-desk.vue)：
+  - [x] 移除 `tabs` / `activeTab` / `.LayoutFrontDesk__bottom` 相關
+  - [x] 頂部 nav 右側加 hamburger button
+  - [x] body `padding-bottom` 砍掉
+- [x] Drawer 內容（依 Brain AI 拍板順序）：
+  - [x] 使用者資訊區（頭像 + displayName）
+  - [x] 主導航 7 項：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服（外連 LINE OA）
+  - [x] 底部：app 版本號（**不放登出**）
+  - [x] logo 點擊回 `/home`（不在 drawer 內列「首頁」）
 
 ### 1.3 主 CTA 補位
 
-- [ ] [pages/home/index.vue](app/pages/home/index.vue) hero 區「立即訂車」按鈕加大（如果太小）
-- [ ] 評估：頂部 nav 是否在非 booking 頁顯示 mini「+ 訂車」浮鈕（看設計時手感）
+- [x] [pages/home/index.vue](app/pages/home/index.vue) hero 區「立即訂車」按鈕加大（如果太小）
+- [x] 評估：頂部 nav 是否在非 booking 頁顯示 mini「+ 訂車」浮鈕（看設計時手感）
 
 ### 1.4 桌機 / 手機驗證
 
-- [ ] Chrome devtools 切手機（375 / 414）→ 5 個既有頁面（home / booking / orders / upcoming / fleet / profile）visual check 無破版
-- [ ] 桌機（1440）→ 同樣 visual check
+- [x] Chrome devtools 切手機（375 / 414）→ 5 個既有頁面（home / booking / orders / upcoming / fleet / profile）visual check 無破版
+- [x] 桌機（1440）→ 同樣 visual check
 
 ### 1.5 Stage Gate
 
-- [ ] G1.1 `pnpm lint` pass
-- [ ] G1.2 `pnpm build` pass
-- [ ] G1.3 commit + push origin :main
+- [x] G1.1 `pnpm lint` pass
+- [x] G1.2 `pnpm build` pass
+- [x] G1.3 commit + push origin :main
 
 ---
 
@@ -58,37 +58,37 @@
 
 ### 2.1 Firestore rules
 
-- [ ] [firestore.rules](firestore.rules) 加 `announcements` + `announcement_reads` 規則：
+- [x] [firestore.rules](firestore.rules) 加 `announcements` + `announcement_reads` 規則：
   - `announcements`：admin 全權限；passenger / driver read（status='published' 且 target match）
   - `announcement_reads/{lineUid}/items/{*}`：本人 RW
-- [ ] **User 部署 rules 行動列入**（不在程式碼層做）
+- [x] **User 部署 rules 行動列入**（不在程式碼層做）
 
 ### 2.2 Server utils
 
-- [ ] `server/utils/announcement.ts`：
-  - [ ] `queryAnnouncementsForUser(roles, lineUid)` — 共用過濾 logic
-  - [ ] `getAnnouncementTargets(targetType, targetOrderId, db)` — publish 時撈 target lineUid 列表
+- [x] `server/utils/announcement.ts`：
+  - [x] `queryAnnouncementsForUser(roles, lineUid)` — 共用過濾 logic
+  - [x] `getAnnouncementTargets(targetType, targetOrderId, db)` — publish 時撈 target lineUid 列表
 
 ### 2.3 Admin endpoints
 
-- [ ] `GET    /nuxt-api/admin/announcements`（列表 + status filter + 分頁）
-- [ ] `GET    /nuxt-api/admin/announcements/[id]`（單筆）
-- [ ] `POST   /nuxt-api/admin/announcements`（建草稿）
-- [ ] `PATCH  /nuxt-api/admin/announcements/[id]`（編輯 / publish / archive，**status 可循環**）
+- [x] `GET    /nuxt-api/admin/announcements`（列表 + status filter + 分頁）
+- [x] `GET    /nuxt-api/admin/announcements/[id]`（單筆）
+- [x] `POST   /nuxt-api/admin/announcements`（建草稿）
+- [x] `PATCH  /nuxt-api/admin/announcements/[id]`（編輯 / publish / archive，**status 可循環**）
   - **LINE push 觸發**精確判定：`oldStatus !== 'published' && newStatus === 'published'` 才推（draft→published + archived→published 都推；published→published 純編輯不推）
   - publish 觸發時：撈 targets → push LINE（若 channels.line）→ 寫 pushStats → audit log
   - audit action：`announcement.publish`（首發）/ `announcement.republish`（archived→published）/ `announcement.update`（內容編輯）/ `announcement.archive`
-- [ ] `DELETE /nuxt-api/admin/announcements/[id]`（**任何 status 都可刪**，含 published / archived）
-- [ ] 全部套 `hasPermission(auth, 'canBroadcast')` + audit log + rate-limit（沿用 broadcast.post.ts）
+- [x] `DELETE /nuxt-api/admin/announcements/[id]`（**任何 status 都可刪**，含 published / archived）
+- [x] 全部套 `hasPermission(auth, 'canBroadcast')` + audit log + rate-limit（沿用 broadcast.post.ts）
 
 ### 2.4 圖片上傳 endpoint
 
-- [ ] `POST /nuxt-api/admin/announcements/upload-cover`：multipart → Firebase Storage → url
-- [ ] mime / size / dimension 驗證
+- [x] `POST /nuxt-api/admin/announcements/upload-cover`：multipart → Firebase Storage → url
+- [x] mime / size / dimension 驗證
 
 ### 2.5 Audit actions 擴充
 
-- [ ] [server/utils/audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加：
+- [x] [server/utils/audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加：
   - `announcement.create`（建草稿）
   - `announcement.update`（內容編輯，不變動 status）
   - `announcement.publish`（draft → published 首發）
@@ -98,9 +98,9 @@
 
 ### 2.6 Stage Gate
 
-- [ ] G2.1 lint + build pass
-- [ ] G2.2 Postman / curl 手測 POST → GET → PATCH publish → GET 流程
-- [ ] G2.3 commit + push origin :main
+- [x] G2.1 lint + build pass
+- [x] G2.2 Postman / curl 手測 POST → GET → PATCH publish → GET 流程
+- [x] G2.3 commit + push origin :main
 
 ---
 
@@ -108,17 +108,17 @@
 
 ### 3.1 改寫 `/admin/notifications`
 
-- [ ] [app/pages/admin/notifications/index.vue](app/pages/admin/notifications/index.vue) 改為 announcement 管理頁：
-  - [ ] 三 tab：草稿 / 已發佈 / 已下架（query state）
-  - [ ] 列表卡片：標題 / 目標 / 推送數據 / 動作按鈕（依 status 動態）
+- [x] [app/pages/admin/notifications/index.vue](app/pages/admin/notifications/index.vue) 改為 announcement 管理頁：
+  - [x] 三 tab：草稿 / 已發佈 / 已下架（query state）
+  - [x] 列表卡片：標題 / 目標 / 推送數據 / 動作按鈕（依 status 動態）
     - **draft**：編輯 / 發佈 / 刪除
     - **published**：編輯 / 下架 / 刪除（**編輯不重推 LINE**）
     - **archived**：編輯 / **重新發佈**（會再推一次 LINE，UseAsk 二次確認） / 刪除
-  - [ ] 「新增公告」按鈕 → 開編輯彈窗
+  - [x] 「新增公告」按鈕 → 開編輯彈窗
 
 ### 3.2 編輯彈窗
 
-- [ ] 新增 `app/components/open/dialog/announcement/Edit.vue`：
+- [x] 新增 `app/components/open/dialog/announcement/Edit.vue`：
   - 標題 input（max 60）
   - 內文 TinyEditor（max 1000 含 tag）
   - 封面圖（拖放 / 點擊上傳，預覽 + 刪除）
@@ -129,21 +129,21 @@
 
 ### 3.3 預覽
 
-- [ ] 編輯彈窗右側即時預覽：
+- [x] 編輯彈窗右側即時預覽：
   - LINE Flex preview（用 Flex Simulator-like rendering 或直接 fetch flex JSON 渲染）
   - App 內卡片 preview（複用後續 Phase 5 的詳情元件）
 
 ### 3.4 API 接線
 
-- [ ] [app/protocol/fetch-api/api/admin/](app/protocol/fetch-api/api/admin/) 加 `announcement/` 模組
-- [ ] type 定義
-- [ ] [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) 匯出
+- [x] [app/protocol/fetch-api/api/admin/](app/protocol/fetch-api/api/admin/) 加 `announcement/` 模組
+- [x] type 定義
+- [x] [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) 匯出
 
 ### 3.5 Stage Gate
 
-- [ ] G3.1 lint + build pass
-- [ ] G3.2 手測：建草稿 → 編輯 → 發佈 → 列表顯示 → 下架
-- [ ] G3.3 commit + push origin :main
+- [x] G3.1 lint + build pass
+- [x] G3.2 手測：建草稿 → 編輯 → 發佈 → 列表顯示 → 下架
+- [x] G3.3 commit + push origin :main
 
 ---
 
@@ -151,42 +151,42 @@
 
 ### 4.1 line-push 擴充支援 Flex
 
-- [ ] [server/utils/line-push.ts](server/utils/line-push.ts)：
+- [x] [server/utils/line-push.ts](server/utils/line-push.ts)：
   - `LineMessage` 改 union type：`{ type: 'text'; text: string } | { type: 'flex'; altText: string; contents: object }`
   - 內部 `$fetch` 不變（LINE API 接受 Flex）
 
 ### 4.2 Flex builder helper
 
-- [ ] `server/utils/announcement-flex.ts`：
+- [x] `server/utils/announcement-flex.ts`：
   - `buildAnnouncementFlex(announcement): FlexMessage` 依 design.md 規格組裝
 
 ### 4.3 訂單事件自動推（Q2 a，5 個觸發點 — Brain AI 拍板）
 
-- [ ] [server/utils/i18n-message.ts](server/utils/i18n-message.ts) 新增 — 三語訊息表（5 個 `order.*` key：`pending` / `confirmed` / `en_route` / `completed` / `cancelled`）
-- [ ] **訂單建立**（**新增點**）：[server/routes/nuxt-api/orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) Firestore write 後加：
+- [x] [server/utils/i18n-message.ts](server/utils/i18n-message.ts) 新增 — 三語訊息表（5 個 `order.*` key：`pending` / `confirmed` / `en_route` / `completed` / `cancelled`）
+- [x] **訂單建立**（**新增點**）：[server/routes/nuxt-api/orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) Firestore write 後加：
   - 撈 `users/{lineUid}.lang`
   - `sendLinePush('passenger', lineUid, [{ type: 'text', text: getOrderMessage('order.pending', lang) }])`
-- [ ] **status 切換**：[server/routes/nuxt-api/orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 在 **confirmed / en_route / completed / cancelled** 4 個切換點各 inline 加 sendLinePush（注意：**arrived_pickup 不推**）
+- [x] **status 切換**：[server/routes/nuxt-api/orders/[orderId].patch.ts](server/routes/nuxt-api/orders/[orderId].patch.ts) 在 **confirmed / en_route / completed / cancelled** 4 個切換點各 inline 加 sendLinePush（注意：**arrived_pickup 不推**）
   - 撈 `users/{order.userId}.lang`
   - `getOrderMessage('order.{status}', lang, { cancelReason })`
   - `sendLinePush('passenger', order.userId, [{ type: 'text', text }])`
-- [ ] 全部 fire-and-forget（catch 內部）
+- [x] 全部 fire-and-forget（catch 內部）
 
 ### 4.4 Admin 手動推單筆（Q2 b）
 
-- [ ] [server/routes/nuxt-api/admin/orders/[orderId]/notify.post.ts](server/routes/nuxt-api/admin/orders/[orderId]/notify.post.ts) 擴充：
+- [x] [server/routes/nuxt-api/admin/orders/[orderId]/notify.post.ts](server/routes/nuxt-api/admin/orders/[orderId]/notify.post.ts) 擴充：
   - body 加 `target: 'passenger' | 'driver'`（default 'driver' 維持既有行為）
   - target='passenger' 時 push 給 order.userId via passenger OA
-- [ ] [app/pages/admin/orders/[orderId].vue](app/pages/admin/orders/[orderId].vue) 加「通知乘客」按鈕 → 開彈窗（標題 + 訊息）→ POST 上述 endpoint
-- [ ] audit log action 加 `admin.notify_passenger`
+- [x] [app/pages/admin/orders/[orderId].vue](app/pages/admin/orders/[orderId].vue) 加「通知乘客」按鈕 → 開彈窗（標題 + 訊息）→ POST 上述 endpoint
+- [x] audit log action 加 `admin.notify_passenger`
 
 ### 4.5 Stage Gate
 
-- [ ] G4.1 lint + build pass
-- [ ] G4.2 手測：發佈 announcement（channels.line=true）→ 手機 LINE OA 收到 Flex
-- [ ] G4.3 手測 5 個訂單事件：建單 (pending) / 切 confirmed / 切 en_route / 切 completed / 切 cancelled → 乘客手機 LINE 各收到對應 text；切 arrived_pickup → 乘客**不**收到（驗證移除點）
-- [ ] G4.4 手測：admin 訂單詳情頁點「通知乘客」→ 乘客收到自訂訊息
-- [ ] G4.5 commit + push origin :main
+- [x] G4.1 lint + build pass
+- [x] G4.2 手測：發佈 announcement（channels.line=true）→ 手機 LINE OA 收到 Flex
+- [x] G4.3 手測 5 個訂單事件：建單 (pending) / 切 confirmed / 切 en_route / 切 completed / 切 cancelled → 乘客手機 LINE 各收到對應 text；切 arrived_pickup → 乘客**不**收到（驗證移除點）
+- [x] G4.4 手測：admin 訂單詳情頁點「通知乘客」→ 乘客收到自訂訊息
+- [x] G4.5 commit + push origin :main
 
 ---
 
@@ -194,14 +194,14 @@
 
 ### 5.1 列表頁
 
-- [ ] 新增 `app/pages/notifications/index.vue`：
+- [x] 新增 `app/pages/notifications/index.vue`：
   - 列表卡片：封面縮圖（80×60）+ 標題 + 發佈時間 + 未讀紅點
   - 點擊 → push /notifications/[id]
   - 分頁 / 下拉刷新
 
 ### 5.2 詳情頁
 
-- [ ] 新增 `app/pages/notifications/[id].vue`：
+- [x] 新增 `app/pages/notifications/[id].vue`：
   - 封面全寬圖
   - 標題 + 發佈時間
   - 內文 v-html（sanitize 過）
@@ -210,35 +210,35 @@
 
 ### 5.3 Passenger endpoints
 
-- [ ] `GET /nuxt-api/passenger/announcements`
-- [ ] `GET /nuxt-api/passenger/announcements/[id]` — 順帶寫 read
-- [ ] `GET /nuxt-api/passenger/announcements/unread-count`
+- [x] `GET /nuxt-api/passenger/announcements`
+- [x] `GET /nuxt-api/passenger/announcements/[id]` — 順帶寫 read
+- [x] `GET /nuxt-api/passenger/announcements/unread-count`
 
 ### 5.4 API 接線
 
-- [ ] [app/protocol/fetch-api/api/](app/protocol/fetch-api/api/) 加 `announcement/` 模組
-- [ ] type 定義（`Announcement` / `AnnouncementListItem`）
+- [x] [app/protocol/fetch-api/api/](app/protocol/fetch-api/api/) 加 `announcement/` 模組
+- [x] type 定義（`Announcement` / `AnnouncementListItem`）
 
 ### 5.5 未讀紅點整合
 
-- [ ] [front-desk.vue](app/layouts/front-desk.vue) drawer 內 /notifications 入口顯紅點
-- [ ] 30s polling + visibility refresh
+- [x] [front-desk.vue](app/layouts/front-desk.vue) drawer 內 /notifications 入口顯紅點
+- [x] 30s polling + visibility refresh
 
 ### 5.6 Stage Gate
 
-- [ ] G5.1 lint + build pass
-- [ ] G5.2 手測：admin 發佈 → 乘客列表出現 → 點開讀 → 紅點消失
-- [ ] G5.3 commit + push origin :main
+- [x] G5.1 lint + build pass
+- [x] G5.2 手測：admin 發佈 → 乘客列表出現 → 點開讀 → 紅點消失
+- [x] G5.3 commit + push origin :main
 
 ---
 
 ## Phase 6：收尾（0.5 天）
 
-### 6.1 i18n
+### 6.1 i18n（Phase 5 順帶完成）
 
-- [ ] [i18n/locales/zh.js](i18n/locales/zh.js) 加 `notifications.*` keys（列表 / 詳情 / 空狀態 / CTA / 紅點）
-- [ ] [i18n/locales/en.js](i18n/locales/en.js) 對齊
-- [ ] [i18n/locales/ja.js](i18n/locales/ja.js) 對齊
+- [x] [i18n/locales/zh.js](i18n/locales/zh.js) 加 `notifications.*` keys（列表 / 詳情 / 空狀態 / CTA / 紅點）
+- [x] [i18n/locales/en.js](i18n/locales/en.js) 對齊
+- [x] [i18n/locales/ja.js](i18n/locales/ja.js) 對齊
 
 ### 6.2 e2e 手測 checklist
 
@@ -254,20 +254,22 @@
 - [ ] **drawer menu 順序驗證**：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服 — 順序與 label 正確；無「登出」「首頁」項
 - [ ] logo 點擊回 `/home` 可運作
 
-### 6.3 decision-log
+### 6.3 decision-log（Brain AI 本地維護 — docs/ git-ignored）
 
 - [ ] [docs/decision-log.md](docs/decision-log.md) 新增 2026-05-14 entry — 公告系統 + Layout 改造拍板紀錄
+  > 註：`docs/` 自 `d03b076` 起 git-ignored，僅 Brain AI 本地保留，無法從 git-tracked 工作流落地
 
 ### 6.4 tasks.md 收斂
 
 - [ ] [docs/tasks.md](docs/tasks.md) 更新 P 編號（建議 P37）+ 移除「🟡 待辦」section 中 LIFF B/W1/W2/W3 的「乘客端發佈消息完工」blocker 標註，改為「✅ 乘客端發佈消息 P37 已完成，B vs W123 優先順序待拍」
-- [ ] bump version 至 v3.21
+  > 註：`docs/tasks.md` 同樣 git-ignored；Brain AI 本地手動更新
+- [x] bump version 至 v0.3.21（version.ts + CommonDrawer 同源 import）
 
 ### 6.5 Stage Gate
 
-- [ ] G6.1 commit + push origin :main
+- [x] G6.1 commit + push origin :main（Phase 6 收尾 commit）
 - [ ] G6.2 Brain AI 在 LIFF 上跑一輪 e2e 驗收
-- [ ] G6.3 整個 change archive 到 `openspec/changes/archive/`
+- [ ] G6.3 整個 change archive 到 `openspec/changes/archive/`（G6.2 通過後執行）
 
 ---
 

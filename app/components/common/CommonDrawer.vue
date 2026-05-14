@@ -7,6 +7,9 @@
 //   - menu 順序：最新消息 / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服
 //   - 不放登出（沿用乘客端無登出政策 commit 473ada0）
 //   - logo 點擊回 /home（不在 drawer 內列「首頁」）
+//
+// P37 Phase 6：版本號改由 version.ts 同源（之前 hardcode '0.3.20'）
+import appVersion from '../../../version';
 
 interface Props {
   modelValue: boolean;
@@ -26,9 +29,6 @@ const authStore = StoreAuth();
 const { lineProfile } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
 const { t } = useI18n();
-
-// 版本號（Phase 6 收尾改接 runtimeConfig 或 ~~/version 同源；此處暫保 hardcode）
-const appVersion = '0.3.20';
 
 const fallbackChar = computed(() => {
   const name = lineProfile.value?.displayName ?? '';
