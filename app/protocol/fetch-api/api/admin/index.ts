@@ -1,5 +1,8 @@
 import methods from '@/protocol/fetch-api/methods';
 
+// P37 Phase 3：公告 sub-module
+export * from './announcement';
+
 export type Role = 'passenger' | 'driver' | 'admin';
 
 /** P18：admin 三層分權 */

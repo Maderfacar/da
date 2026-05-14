@@ -57,6 +57,9 @@ export default {
   /** 影片錄製 */
   DialogVideoRecording: () => Open<File>('OpenDialogVideoRecording'),
   /** 圖片選擇 */
-  DialogImageEdit: () => Open<File>('OpenDialogImageSelect')
+  DialogImageEdit: () => Open<File>('OpenDialogImageSelect'),
+  /** P37：公告編輯（mode=create | edit | republish） */
+  DialogAnnouncementEdit: (params: DialogAnnouncementEditParams) =>
+    Open<'saved' | 'published' | 'archived' | 'cancelled'>('OpenDialogAnnouncementEdit', params)
   // TODO 組件加完後，要設定
 };
