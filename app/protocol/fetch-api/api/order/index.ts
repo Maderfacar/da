@@ -34,6 +34,10 @@ export const GetAssignedOrders = () =>
 export const GetDriverOrderHistory = (params: { from?: string; to?: string } = {}) =>
   methods.get<DriverHistoryOrder[]>('/nuxt-api/orders/history', params as Record<string, unknown>);
 
+/** Wave 2 P4：取乘客自己「下一趟」訂單（pickupDateTime 最近 active 一筆）— 不存在回 null */
+export const GetUpcomingOrder = () =>
+  methods.get<UpcomingOrder | null>('/nuxt-api/orders/upcoming', {});
+
 /** 更新訂單狀態或指派司機 */
 export const PatchOrder = (orderId: string, params: PatchOrderParams) =>
   methods.patch<{ orderId: string }>(`/nuxt-api/orders/${orderId}`, params);

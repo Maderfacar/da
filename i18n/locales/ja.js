@@ -54,7 +54,7 @@ export default {
   drawer: {
     notifications: 'お知らせ',
     booking: 'ご予約',
-    upcoming: 'マイ旅程',
+    // Wave 2 P4：upcoming を削除（/upcoming 廃止、ホームの「次の旅程」カードへ統合）
     orders: '過去の注文',
     fleet: '車種のご紹介',
     profile: '個人設定',
@@ -138,15 +138,16 @@ export default {
       rating: '評価',
       service: 'サービス',
     },
-    upcoming: {
-      title: 'まもなく出発の旅程',
-      desc: '次の旅の準備が整いました。ドライバーがお待ちしております。',
+    // Wave 2 P4：home.upcoming を置換 — ホーム「次の旅程」単一カード（旅程ありは詳細、なしは CTA）
+    nextTrip: {
+      title: '次の旅程',
+      descHas: '次の旅の準備が整いました。タップで詳細を確認。',
+      descEmpty: '今後の旅程はありません。今すぐ予約を。',
       date: '日付',
-      pickupTime: '出迎え時間',
-      dropoffTime: '送り届け時間',
+      time: '時間',
       vehicle: '車種',
-      driver: 'ドライバー',
       passengers: '乗客数',
+      emptyCta: '今すぐ予約',
     },
     book: {
       title: '旅程を予約する',
@@ -185,36 +186,7 @@ export default {
       'flight-tracking': 'フライト追跡',
     },
   },
-  upcoming: {
-    title: '旅程一覧',
-    tab: {
-      all: 'すべて',
-      pending: '確認待ち',
-      confirmed: '確認済み',
-      in_transit: '進行中',
-      completed: '完了',
-      cancelled: 'キャンセル済',
-    },
-    section: {
-      upcoming: 'まもなく出発',
-      past: '過去の旅程',
-    },
-    meta: {
-      type: '旅程タイプ',
-      date: '日付',
-      time: '時間',
-      vehicle: '車種',
-      passengers: '乗客数',
-      fare: '予想料金',
-    },
-    unit: { person: '名' },
-    empty: {
-      text: '該当する旅程が見つかりません',
-      btn: '今すぐ予約',
-    },
-    cta: '✈ 新しい旅程を予約',
-    detail: '詳細を見る',
-  },
+  // Wave 2 P4：トップレベル upcoming を削除（/upcoming 廃止、home.nextTrip + /orders に統合）
   booking: {
     step: {
       1: '旅程タイプ',

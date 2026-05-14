@@ -184,7 +184,12 @@ const ClickNewOrder = () => {
         span {{ $t('booking.success.orderLabel') }}
         strong {{ storeOrder.currentOrder?.orderId?.slice(0, 8).toUpperCase() }}
       //- P17：成功後雙按鈕 — 查看行程（主） + 再訂一張（次）
-      UiButton(type="primary" style="margin-top: 24px; width: 100%" @click="navigateTo('/upcoming')") 查看行程
+      //- Wave 2 P4：/upcoming 已刪 → 改跳剛成立的訂單詳情頁；無 orderId 時退回訂單列表
+      UiButton(
+        type="primary"
+        style="margin-top: 24px; width: 100%"
+        @click="navigateTo(storeOrder.currentOrder?.orderId ? `/orders/${storeOrder.currentOrder.orderId}` : '/orders')"
+      ) 查看行程
       UiButton(type="secondary" style="margin-top: 12px; width: 100%" @click="ClickNewOrder") {{ $t('booking.newOrder') }}
 
   //- 表單主體

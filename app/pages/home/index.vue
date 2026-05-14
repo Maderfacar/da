@@ -29,55 +29,74 @@ const displayNums = reactive<Record<string, string>>({
 const statsBarRef = ref<HTMLElement | null>(null);
 let statsTriggered = false;
 
-// ── 近期行程（Firestore 真實資料）──────────────────────────────
-const { user } = storeToRefs(StoreAuth());
+// ── Wave 2 P4：「下一趟」單張卡片（取代原 upcoming 三筆列表，/upcoming 整頁刪除）──
+const { isSignIn } = storeToRefs(StoreAuth());
+const storeConfig = StoreConfig();
 
-const VEHICLE_LABEL: Record<string, string> = {
-  sedan: '房車', suv: 'SUV', van: '廂型', premium: '商務',
+const nextTrip = ref<UpcomingOrder | null>(null);
+const nextTripLoaded = ref(false);
+
+const _LocLabel = (loc: GooglePlace | undefined): string => {
+  if (!loc) return '--';
+  const raw = loc.displayName ?? loc.address ?? '--';
+  return raw.split(',')[0].split('(')[0].trim();
 };
 
-const upcomingTrips = ref<{
-  from: string; to: string; status: string;
-  date: string; time: string; vehicle: string;
-  timeLabelKey: string; infoLabelKey: string; passengerCount: string;
-}[]>([]);
+const nextTripDisplay = computed(() => {
+  if (!nextTrip.value) return null;
+  const o = nextTrip.value;
+  const dt = $dayjs(o.pickupDateTime);
+  const vehicleCfg = storeConfig.GetVehicle(o.vehicleType);
+  return {
+    orderId: o.orderId,
+    from: _LocLabel(o.pickupLocation),
+    to: _LocLabel(o.dropoffLocation),
+    status: o.orderStatus,
+    date: dt.isValid() ? dt.format('YYYY.MM.DD') : '',
+    time: dt.isValid() ? dt.format('HH:mm') : '',
+    vehicle: vehicleCfg?.label.zh ?? t(`vehicle.${o.vehicleType}`, o.vehicleType),
+    passengers: o.passengerCount,
+  };
+});
 
-const ApiLoadUpcomingTrips = async () => {
-  if (!user.value?.uid) return;
-  const res = await $api.GetOrderList({ userId: user.value.uid });
-  // P15：API 失敗不 silent 隱藏，至少 log 出來；首頁不彈提示避免吵
-  if (res.status?.code !== 200) {
-    console.error('[home/upcoming] load failed:', res.status?.message?.zh_tw);
-    upcomingTrips.value = [];
+const ApiLoadNextTrip = async () => {
+  if (!isSignIn.value) {
+    nextTrip.value = null;
+    nextTripLoaded.value = true;
     return;
   }
-  const orders = Array.isArray(res.data) ? res.data : [];
-  const now = Date.now();
-  const upcoming = orders
-    .filter((o) => {
-      const isPending = ['pending', 'confirmed'].includes(o.orderStatus);
-      const isFuture = new Date(o.pickupDateTime).getTime() > now;
-      return isPending && isFuture;
-    })
-    .slice(0, 3)
-    .map((o) => ({
-      from: o.pickupLocation?.displayName?.split('(')?.[0]?.trim() ?? o.pickupLocation?.address?.slice(0, 6) ?? '--',
-      to:   o.dropoffLocation?.displayName?.split('(')?.[0]?.trim() ?? o.dropoffLocation?.address?.slice(0, 6) ?? '--',
-      status: o.orderStatus,
-      date: $dayjs(o.pickupDateTime).format('YYYY.MM.DD'),
-      time: $dayjs(o.pickupDateTime).format('HH:mm'),
-      vehicle: VEHICLE_LABEL[o.vehicleType] ?? o.vehicleType,
-      timeLabelKey: 'home.upcoming.pickupTime',
-      infoLabelKey: 'home.upcoming.passengers',
-      passengerCount: String(o.passengerCount ?? 1),
-    }));
-  upcomingTrips.value = upcoming;
+  try {
+    const res = await $api.GetUpcomingOrder();
+    if (res.status?.code !== 200) {
+      console.error('[home/nextTrip] load failed:', res.status?.message?.zh_tw);
+      return;
+    }
+    nextTrip.value = (res.data as UpcomingOrder | null) ?? null;
+  } catch (err) {
+    console.error('[home/nextTrip] exception:', err);
+  } finally {
+    nextTripLoaded.value = true;
+  }
 };
+
+const ClickOpenNextTrip = () => {
+  if (nextTrip.value) navigateTo(`/orders/${nextTrip.value.orderId}`);
+};
+
+// 30s polling + visibility refresh（與 admin/driver/passenger orders 一致）
+let nextTripTimer: ReturnType<typeof setInterval> | null = null;
+const NEXT_TRIP_POLL_MS = 30_000;
+const _OnVisibilityChange = () => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') ApiLoadNextTrip();
+};
+watch(isSignIn, () => { ApiLoadNextTrip(); });
 
 // ── 生命週期 ──────────────────────────────────────────────
 onMounted(() => {
-  // 載入近期行程
-  ApiLoadUpcomingTrips();
+  // 載入下一趟
+  ApiLoadNextTrip();
+  nextTripTimer = setInterval(ApiLoadNextTrip, NEXT_TRIP_POLL_MS);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', _OnVisibilityChange);
 
   // Scroll reveal
   const revealObserver = new IntersectionObserver((entries) => {
@@ -100,6 +119,11 @@ onMounted(() => {
   }, { threshold: 0.4 });
 
   if (statsBarRef.value) flipObserver.observe(statsBarRef.value);
+});
+
+onUnmounted(() => {
+  if (nextTripTimer) clearInterval(nextTripTimer);
+  if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', _OnVisibilityChange);
 });
 </script>
 
@@ -143,39 +167,51 @@ onMounted(() => {
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
 
-  //- ── UPCOMING TRIPS ──────────────────────────────────────────
-  section#upcoming.PageHome__section.is-cream
+  //- ── Wave 2 P4：下一趟（單張卡 / 無單 CTA）──────────────────
+  section#nextTrip.PageHome__section.is-cream
     .PageHome__section-label DEPARTURE & ARRIVAL
-    h2.PageHome__section-title {{ $t('home.upcoming.title') }}
-    p.PageHome__section-desc {{ $t('home.upcoming.desc') }}
+    h2.PageHome__section-title {{ $t('home.nextTrip.title') }}
+    p.PageHome__section-desc {{ nextTripDisplay ? $t('home.nextTrip.descHas') : $t('home.nextTrip.descEmpty') }}
 
-    .PageHome__trip-card.reveal(
-      v-for="(trip, idx) in upcomingTrips"
-      :key="idx"
-      :style="{ animationDelay: `${idx * 0.12}s` }"
+    //- 有單：點擊跳訂單詳情頁
+    .PageHome__trip-card.is-clickable.reveal(
+      v-if="nextTripDisplay"
+      role="button"
+      tabindex="0"
+      @click="ClickOpenNextTrip"
+      @keydown.enter="ClickOpenNextTrip"
     )
       .PageHome__trip-header
         .PageHome__trip-route
-          .PageHome__route-code {{ trip.from }}
+          .PageHome__route-code {{ nextTripDisplay.from }}
           .PageHome__route-arrow
             .PageHome__route-line
             span ✈
             .PageHome__route-line
-          .PageHome__route-code {{ trip.to }}
-        span.PageHome__trip-status(:class="`is-${trip.status}`") {{ $t('status.' + trip.status) }}
+          .PageHome__route-code {{ nextTripDisplay.to }}
+        span.PageHome__trip-status(:class="`is-${nextTripDisplay.status}`") {{ $t('status.' + nextTripDisplay.status) }}
       .PageHome__trip-info
         .PageHome__info-item
-          .PageHome__info-label {{ $t('home.upcoming.date') }}
-          .PageHome__info-val {{ trip.date }}
+          .PageHome__info-label {{ $t('home.nextTrip.date') }}
+          .PageHome__info-val {{ nextTripDisplay.date }}
         .PageHome__info-item
-          .PageHome__info-label {{ $t(trip.timeLabelKey) }}
-          .PageHome__info-val {{ trip.time }}
+          .PageHome__info-label {{ $t('home.nextTrip.time') }}
+          .PageHome__info-val {{ nextTripDisplay.time }}
         .PageHome__info-item
-          .PageHome__info-label {{ $t('home.upcoming.vehicle') }}
-          .PageHome__info-val {{ trip.vehicle }}
+          .PageHome__info-label {{ $t('home.nextTrip.vehicle') }}
+          .PageHome__info-val {{ nextTripDisplay.vehicle }}
         .PageHome__info-item
-          .PageHome__info-label {{ $t(trip.infoLabelKey) }}
-          .PageHome__info-val {{ trip.passengerCount }}
+          .PageHome__info-label {{ $t('home.nextTrip.passengers') }}
+          .PageHome__info-val {{ nextTripDisplay.passengers }}
+
+    //- 無單：CTA 卡（已登入但無 active order；未登入也走此分支以鼓勵訂車）
+    button.PageHome__next-trip-empty.reveal(
+      v-else-if="nextTripLoaded"
+      type="button"
+      @click="navigateTo('/booking')"
+    )
+      span.PageHome__next-trip-empty-icon ＋
+      span.PageHome__next-trip-empty-text {{ $t('home.nextTrip.emptyCta') }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
@@ -516,6 +552,59 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
     background: var(--da-amber);
     border-radius: 20px 0 0 20px;
   }
+
+  // Wave 2 P4：可點擊整卡跳訂單詳情頁
+  &.is-clickable {
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+
+    &:hover {
+      border-color: rgba(212, 134, 10, 0.35);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+    }
+    &:active { transform: scale(0.99); }
+    &:focus-visible {
+      outline: 2px solid var(--da-amber);
+      outline-offset: 2px;
+    }
+  }
+}
+
+// Wave 2 P4：無單時的 CTA 卡（樣式與 trip-card 同框，但偏 dashed 邀請感）
+.PageHome__next-trip-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 28px 20px;
+  border-radius: 20px;
+  border: 1.5px dashed rgba(212, 134, 10, 0.45);
+  background: rgba(212, 134, 10, 0.04);
+  color: var(--da-amber);
+  font-family: $font-condensed;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+
+  &:hover {
+    background: rgba(212, 134, 10, 0.1);
+    border-color: rgba(212, 134, 10, 0.7);
+  }
+  &:active { transform: scale(0.99); }
+}
+
+.PageHome__next-trip-empty-icon {
+  font-family: $font-display;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.PageHome__next-trip-empty-text {
+  letter-spacing: 0.12em;
 }
 
 .PageHome__trip-header {

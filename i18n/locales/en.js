@@ -54,7 +54,7 @@ export default {
   drawer: {
     notifications: 'News',
     booking: 'Book a Ride',
-    upcoming: 'My Trips',
+    // Wave 2 P4: removed (/upcoming deleted; replaced by home Next Trip card)
     orders: 'Order History',
     fleet: 'Our Fleet',
     profile: 'Profile',
@@ -138,15 +138,16 @@ export default {
       rating: 'Rating',
       service: 'Service',
     },
-    upcoming: {
-      title: 'Upcoming Trips',
-      desc: 'Your next journey is ready. Your driver will be waiting.',
+    // Wave 2 P4: replaces home.upcoming — single Next Trip card on home (with details, or CTA when empty)
+    nextTrip: {
+      title: 'Next Trip',
+      descHas: 'Your next journey is ready. Tap to view details.',
+      descEmpty: 'No upcoming trip — book one now.',
       date: 'Date',
-      pickupTime: 'Pickup Time',
-      dropoffTime: 'Drop-off Time',
+      time: 'Time',
       vehicle: 'Vehicle',
-      driver: 'Driver',
       passengers: 'Passengers',
+      emptyCta: 'Book Now',
     },
     book: {
       title: 'Book Your Trip',
@@ -185,36 +186,7 @@ export default {
       'flight-tracking': 'Flight Tracking',
     },
   },
-  upcoming: {
-    title: 'My Trips',
-    tab: {
-      all: 'All',
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      in_transit: 'In Progress',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-    },
-    section: {
-      upcoming: 'Upcoming',
-      past: 'Past Trips',
-    },
-    meta: {
-      type: 'Trip Type',
-      date: 'Date',
-      time: 'Time',
-      vehicle: 'Vehicle',
-      passengers: 'Passengers',
-      fare: 'Est. Fare',
-    },
-    unit: { person: 'pax' },
-    empty: {
-      text: 'No matching trips found',
-      btn: 'Book Now',
-    },
-    cta: '✈ Book New Trip',
-    detail: 'Details',
-  },
+  // Wave 2 P4: removed top-level upcoming (/upcoming deleted; replaced by home.nextTrip + /orders)
   booking: {
     step: {
       1: 'Trip Type',

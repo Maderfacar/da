@@ -4,10 +4,12 @@
 // 設計（2026/05/14 Brain AI 拍板）：
 //   - 移除底部 5-tab bar，改用 hamburger drawer
 //   - 桌機 / 手機行為一致（皆 hamburger 收合，無 sticky 側欄）
-//   - menu 順序：最新消息 / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服
+//   - menu 順序：最新消息 / 訂車 / 訂單 / 車型介紹 / 個人設定 / 客服
 //   - 不放登出（沿用乘客端無登出政策 commit 473ada0）
 //   - logo 點擊回 /home（不在 drawer 內列「首頁」）
 //
+// Wave 2 P4（2026/05/14）：拿掉「我的行程」（/upcoming 已刪），
+//   首頁加「下一趟」單卡取代；drawer.upcoming i18n key 一併移除。
 // P37 Phase 6：版本號改由 version.ts 同源（之前 hardcode '0.3.20'）
 import appVersion from '../../../version';
 
@@ -38,7 +40,7 @@ const fallbackChar = computed(() => {
 const items = computed(() => [
   { id: 'notifications', path: '/notifications', label: t('drawer.notifications'), badge: props.unreadCount },
   { id: 'booking',       path: '/booking',       label: t('drawer.booking'),       badge: 0 },
-  { id: 'upcoming',      path: '/upcoming',      label: t('drawer.upcoming'),      badge: 0 },
+  // Wave 2 P4：移除「我的行程」（/upcoming 已刪，首頁「下一趟」卡取代）
   { id: 'orders',        path: '/orders',        label: t('drawer.orders'),        badge: 0 },
   { id: 'fleet',         path: '/fleet',         label: t('drawer.fleet'),         badge: 0 },
   { id: 'profile',       path: '/profile',       label: t('drawer.profile'),       badge: 0 },

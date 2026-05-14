@@ -58,7 +58,7 @@ export default {
   drawer: {
     notifications: '最新消息',
     booking: '訂車',
-    upcoming: '我的行程',
+    // Wave 2 P4：移除 upcoming（/upcoming 已刪），首頁「下一趟」單卡取代
     orders: '歷史訂單',
     fleet: '車型介紹',
     profile: '個人設定',
@@ -148,15 +148,16 @@ export default {
       rating: '用戶評分',
       service: '全天候服務',
     },
-    upcoming: {
-      title: '即將出發的行程',
-      desc: '您的下一段旅程已就緒，司機即將為您候駕。',
+    // Wave 2 P4：取代 home.upcoming — 首頁「下一趟」單卡（有單顯示資訊；無單顯示 CTA）
+    nextTrip: {
+      title: '下一趟',
+      descHas: '您的下一段旅程已就緒，點擊查看詳情。',
+      descEmpty: '目前沒有即將出發的行程，立即訂車吧。',
       date: '日期',
-      pickupTime: '接機時間',
-      dropoffTime: '送機時間',
+      time: '時間',
       vehicle: '車型',
-      driver: '司機',
       passengers: '人數',
+      emptyCta: '立即訂車',
     },
     book: {
       title: '預約您的行程',
@@ -196,37 +197,8 @@ export default {
       'flight-tracking': '即時航班追蹤',
     },
   },
-  // ── 我的行程 ──────────────────────────────────────────────
-  upcoming: {
-    title: '我的行程',
-    tab: {
-      all: '全部',
-      pending: '待確認',
-      confirmed: '已確認',
-      in_transit: '進行中',
-      completed: '已完成',
-      cancelled: '已取消',
-    },
-    section: {
-      upcoming: '即將出發',
-      past: '過去行程',
-    },
-    meta: {
-      type: '行程類型',
-      date: '日期',
-      time: '時間',
-      vehicle: '車種',
-      passengers: '人數',
-      fare: '預估車資',
-    },
-    unit: { person: '人' },
-    empty: {
-      text: '尚無符合的行程紀錄',
-      btn: '立即預約',
-    },
-    cta: '✈ 預約新行程',
-    detail: '查看詳情',
-  },
+  // Wave 2 P4：移除頂層 upcoming（/upcoming 整頁刪除，
+  //   功能由首頁 home.nextTrip 卡片 + /orders 列表 + /orders/[id] 詳情頁取代）
   // ── 訂車流程 ──────────────────────────────────────────────
   booking: {
     step: {

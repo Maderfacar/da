@@ -121,6 +121,19 @@ interface DriverHistoryOrder {
   createdAt: number;
 }
 
+// ===== Wave 2 P4：乘客下一趟訂單 =====
+interface UpcomingOrder {
+  orderId: string;
+  orderType: string;
+  pickupDateTime: string;
+  pickupLocation: GooglePlace;
+  dropoffLocation: GooglePlace;
+  vehicleType: string;
+  passengerCount: number;
+  estimatedFare: number;
+  orderStatus: string;
+}
+
 // ===== P36：訂單詳情（單筆完整資訊）=====
 type OrderStatus =
   | 'pending'
