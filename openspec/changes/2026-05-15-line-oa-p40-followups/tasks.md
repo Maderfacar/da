@@ -1,0 +1,161 @@
+# Tasks — P40 LINE OA 系統收尾
+
+> **總時程**：≈ 2.0-3.0 工作天 / 4-5 Phase。新視窗執行。
+> **決策依據**：Brain AI 拍板 [design.md §6](design.md#6-開放問題待-brain-ai-拍板) Q1-Q5（必拍才能進 Phase 1）。
+> **推 spec 預設**：Q1=1a runtimeConfig / Q2=2a 專屬 collection / Q3=3b 混合 / Q4=4b MVP / Q5=5a 本案 cleanup
+
+---
+
+## Phase 0：Spec + Brain AI 拍板（0.5 天）
+
+- [x] 0.1 P38 完工 audit（commits 742abcf..d6377a6 + firebase deploy 完成 + A1 doc 不存在驗證）
+- [x] 0.2 4 子範圍盤點（postback / bot replies / 公告整合 / diagnostics / A1 cleanup）
+- [x] 0.3 撰寫 [proposal.md](proposal.md)
+- [x] 0.4 撰寫 [design.md](design.md)
+- [x] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
+- [ ] 0.6 commit + push origin HEAD:main
+- [ ] 0.7 **等 Brain AI 拍板 Q1-Q5** → 任一改 default 則 spec 重寫
+- [ ] 0.8 拍板後 design.md §7 補拍板紀錄 → commit + push → 進 Phase 1
+
+---
+
+## Phase 1：Postback Whitelist + handler（0.5 天）
+
+> **前置**：Q1 拍板。
+
+### 1.1 LIFF URL 設定
+
+- [ ] 確認 `runtimeConfig.public.liffBaseUrl` 是否已存在；不存在則新增 + 文件化
+- [ ] Vercel 設 env var（若 prod 缺）— **此項屬「Vercel UI 操作」，需 User**
+
+### 1.2 Whitelist 補入 8 個 entry
+
+- [ ] [server/utils/line-postback-handlers.ts](server/utils/line-postback-handlers.ts) `POSTBACK_WHITELIST` 補：
+  - passenger：OPEN_BOOKING / OPEN_NOTIFICATIONS / CONTACT_SUPPORT / MY_TRIP
+  - driver：OPEN_DASHBOARD / PENDING_LIST / MY_PROFILE / TRIP_GPS
+  - 每 entry：data + label + channel + handler（回 reply text 含 LIFF URL）
+
+### 1.3 Admin UI 整合（postback 下拉選單）
+
+- [ ] 新增 `GET /nuxt-api/admin/line-postback-whitelist?channel=...`：回 listPostbackWhitelist(channel)
+- [ ] `app/protocol/fetch-api/api/admin/line-richmenu/` 加 `GetPostbackWhitelist` method
+- [ ] [richmenu Edit.vue](app/components/open/dialog/line-richmenu/Edit.vue) postback action input 改 `<el-select>` 從 whitelist 撈
+- [ ] [TemplateEditor.vue](app/components/admin/line-management/TemplateEditor.vue) postback action input 同上
+- [ ] free-form input 仍允許（fallback），但顯示警示「whitelist 外需 dev 接 handler」
+
+### 1.4 Stage Gate
+
+- [ ] G1.1 lint + build pass
+- [ ] G1.2 真機驗證：passenger OA richmenu 設一個 area type=postback data=OPEN_BOOKING → 點擊 → user 收到 reply 含 LIFF /booking URL
+- [ ] G1.3 commit + push origin HEAD:main
+
+---
+
+## Phase 2：Bot Replies Template 化（0.5 天）
+
+> **前置**：Q2 拍板。
+
+### 2.1 Firestore schema + rules
+
+- [ ] [firestore.rules](firestore.rules) 加 `bot_replies` 規則（admin read，server-only write）
+- [ ] firebase deploy rules（Claude 自跑）
+
+### 2.2 Server util
+
+- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) 加 `_loadBotReply(db, client, type)` helper
+- [ ] `handleLineWebhook` follow / message branch 改 call `_loadBotReply`（fallback hard-coded）
+
+### 2.3 Admin endpoints
+
+- [ ] `GET /nuxt-api/admin/bot-replies`（列 4 個 replyKey，doc 不存在回 hard-coded default 預覽）
+- [ ] `PUT /nuxt-api/admin/bot-replies/[key]`（upsert + audit log `line.bot_reply.update`）
+
+### 2.4 Audit + Protocol + UI
+
+- [ ] [audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加 `line.bot_reply.update` + `bot_reply` targetType
+- [ ] `app/protocol/fetch-api/api/admin/bot-reply/` 模組（GetBotReplies / PutBotReply）
+- [ ] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `bot-replies` tab：4 row × { type 標籤 + enabled toggle + textarea + 字數計 + 儲存按鈕 }
+- [ ] MAIN_TABS 'bot-replies' ready=true
+
+### 2.5 Stage Gate
+
+- [ ] G2.1 lint + build pass
+- [ ] G2.2 真機驗證：admin 改 passenger.follow 文案 → 新 user 加 OA → 收到新文案
+- [ ] G2.3 commit + push origin HEAD:main
+
+---
+
+## Phase 3：Diagnostics MVP + 公告整合（0.5-1.0 天）
+
+> **前置**：Q3 + Q4 拍板。
+
+### 3.1 公告整合（Q3=3b）
+
+- [ ] [server/utils/announcement-flex.ts](server/utils/announcement-flex.ts) 內部改 call template-registry `buildTemplateFlex`
+- [ ] 對外簽名 + 外部 caller（announcement publish 流程）行為完全不變
+- [ ] 公告 admin UI 不動
+
+### 3.2 Diagnostics MVP（Q4=4b）
+
+- [ ] 新增 `GET /nuxt-api/admin/line-richmenus/sync-overview?channel=...`
+- [ ] `app/protocol/fetch-api/api/admin/line-richmenu/` 加 `GetRichmenuSyncOverview` method
+- [ ] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `diagnostics` tab：
+  - passenger / driver 兩 panel
+  - 顯示本地 active vs LINE default 一致性 + 孤兒 richmenu list
+  - 「重試 sync」+「清理孤兒」按鈕（後者需新增 endpoint 或復用 DELETE）
+- [ ] MAIN_TABS 'diagnostics' ready=true
+
+### 3.3 Stage Gate
+
+- [ ] G3.1 lint + build pass
+- [ ] G3.2 真機驗證：故意製造一個 LINE 端孤兒 richmenu（手動透過 LINE Console 建）→ Diagnostics tab 偵測到並顯示
+- [ ] G3.3 e2e 公告發佈 → 推播 Flex 結構與 P38 一致
+- [ ] G3.4 commit + push origin HEAD:main
+
+---
+
+## Phase 4：A1 cleanup + e2e + Archive（0.5 天）
+
+> **前置**：Q5 拍板。Q5=5b 時跳過 §4.1，直接 §4.2 收尾。
+
+### 4.1 A1 cleanup（Q5=5a）
+
+- [ ] [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) 改直接 call `loadTemplate('order.pending')` + `buildTemplateFlex`
+- [ ] 移除 `server/utils/order-pending-flex.ts`
+- [ ] 移除 `server/routes/nuxt-api/admin/settings/notification-templates/order-pending.{get,put}.ts`
+- [ ] 移除 [app/pages/admin/settings/index.vue](app/pages/admin/settings/index.vue) NOTIFICATIONS section
+- [ ] 移除 `app/components/admin/settings/NotificationTemplate.vue` 元件
+- [ ] 移除 [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) `GetOrderPendingTemplate` / `PutOrderPendingTemplate` 兩個 method + OrderPendingTemplate interface
+- [ ] 移除 [audit-log.ts](server/utils/audit-log.ts) `AuditAction.notification_template.update` alias（保留 targetType `notification_template` 供新 action 使用）
+- [ ] 透過 firestore MCP 刪除 `admin_settings_notification_templates/order-pending` doc（若存在；prod 已驗證不存在）
+
+### 4.2 e2e 完整 checklist
+
+- [ ] Postback：passenger / driver 各 8 個 entry 各觸發一次 → 收到對應 reply
+- [ ] Bot replies：4 個 key 各改字 → 新 LINE 帳號加好友 → 收到新文案；切回預設 → 收到 hard-coded fallback
+- [ ] 公告整合（Q3=3b）：公告發佈 → 推播 Flex 結構與 P38 一致（無 regression）
+- [ ] Diagnostics MVP：偽造孤兒 richmenu → 偵測到；清理後重新檢查 → 一致
+- [ ] A1 cleanup（Q5=5a）：訂單建立 → 推播正常（透過新 template-registry path，無需 A1 wrapper）
+- [ ] Audit log：新 action（`line.bot_reply.update` 等）都寫入
+
+### 4.3 文件 + Archive
+
+- [ ] [version.ts](version.ts) bump v0.3.22 → v0.3.23（或 v0.4.0 視範圍）
+- [ ] [HANDOFF.md](HANDOFF.md) 撰寫（沿用 P38 archive 格式）
+- [ ] `openspec/changes/2026-05-15-line-oa-p40-followups/` mv 至 `archive/`
+- [ ] memory `project-p40-line-oa-followups.md` 新增；MEMORY 索引同步
+
+### 4.4 Stage Gate
+
+- [ ] G4.1 lint + build pass
+- [ ] G4.2 Brain AI 在 prod 跑 e2e 驗收
+- [ ] G4.3 commit + push origin HEAD:main（含 archive mv）
+
+---
+
+## 完成後解鎖
+
+- **P41**：（若 Q5=5b 留尾）A1 cleanup
+- **P42**：richmenu 多語版本
+- **P43**：（若 Q4=4c 留尾）Diagnostics 完整版（event log + error log + raw list）/ richmenu alias / 分頁切換
+- **P44**：richmenu 圖層合成器 + area editor 拖拉互動
