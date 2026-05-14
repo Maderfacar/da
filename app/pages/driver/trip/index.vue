@@ -45,6 +45,18 @@ const advancing = ref<string | null>(null);
 const selectedOrder = ref<AssignedOrder | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+// Wave 1 D1：Tab 切換 + 已完成歷史列表
+type TripTab = 'active' | 'history';
+const activeTab = ref<TripTab>('active');
+const historyOrders = ref<DriverHistoryOrder[]>([]);
+const historyLoading = ref(false);
+const historyDateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
+
+const HISTORY_STATUS_LABEL: Record<string, string> = {
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
 const ApiLoadAssignedOrders = async () => {
   loading.value = true;
   try {
@@ -68,12 +80,70 @@ const ApiLoadAssignedOrders = async () => {
   }
 };
 
+// Wave 1 D1：載入歷史（completed / cancelled）— 由 historyDateRange 變更或切 tab 觸發
+const ApiLoadHistory = async () => {
+  historyLoading.value = true;
+  try {
+    const params: { from?: string; to?: string } = {};
+    if (historyDateRange.value.from) params.from = historyDateRange.value.from;
+    if (historyDateRange.value.to) params.to = historyDateRange.value.to;
+    const res = await $api.GetDriverOrderHistory(params);
+    if (res.status.code === $enum.apiStatus.success && Array.isArray(res.data)) {
+      historyOrders.value = res.data as DriverHistoryOrder[];
+    } else {
+      historyOrders.value = [];
+    }
+  } finally {
+    historyLoading.value = false;
+  }
+};
+
+const ClickTab = (tab: TripTab) => {
+  if (activeTab.value === tab) return;
+  activeTab.value = tab;
+  if (tab === 'history' && historyOrders.value.length === 0) ApiLoadHistory();
+};
+
 const ClickOpenDetail = (order: AssignedOrder) => {
   selectedOrder.value = order;
 };
 
 const ClickCloseDetail = () => {
   selectedOrder.value = null;
+};
+
+// Wave 1 D2：4 個目標狀態按鈕按下時取得當下 GPS（不阻擋；fallback 到 watch 的最後一筆 currentPos）
+// 寫入 schema：orders/{orderId}.statusHistoryLocations.{state} = { lat, lng, address, recordedAt }
+const _GetFreshLocation = (): Promise<{ lat: number; lng: number } | null> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    let settled = false;
+    const settle = (val: { lat: number; lng: number } | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(val);
+    };
+    // 8 秒上限：避免 GPS cold-start 卡住司機操作；timeout 時退到 watch 既有 currentPos
+    const timer = setTimeout(() => {
+      const fallback = driverGeo.currentPos.value;
+      settle(fallback ? { lat: fallback.lat, lng: fallback.lng } : null);
+    }, 8_000);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(timer);
+        settle({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => {
+        clearTimeout(timer);
+        const fallback = driverGeo.currentPos.value;
+        settle(fallback ? { lat: fallback.lat, lng: fallback.lng } : null);
+      },
+      { enableHighAccuracy: true, timeout: 8_000, maximumAge: 5_000 },
+    );
+  });
 };
 
 const ClickAdvance = async (order: AssignedOrder) => {
@@ -86,7 +156,13 @@ const ClickAdvance = async (order: AssignedOrder) => {
     // P19：操作訂單時即時上傳當前座標（跳過 5m / 60s / accuracy 檢查）
     await driverGeo.UploadNow();
 
-    const res = await $api.PatchOrder(order.orderId, { orderStatus: cfg.next });
+    // Wave 1 D2：取得當下 GPS（fresh）；拿不到就 null，server 端會跳過 statusHistoryLocations 寫入
+    const driverLocation = await _GetFreshLocation();
+
+    const patchBody: PatchOrderParams = { orderStatus: cfg.next };
+    if (driverLocation) patchBody.driverLocation = driverLocation;
+
+    const res = await $api.PatchOrder(order.orderId, patchBody);
     if (res.status.code === $enum.apiStatus.success) {
       ElMessage({ message: `已更新：${cfg.label}`, type: 'success' });
       // completed 後該訂單不再屬於 active 列表，關閉 modal
@@ -141,40 +217,92 @@ onUnmounted(() => {
     h1.PageDriverTrip__header-title 我的任務
     p.PageDriverTrip__header-sub DRIVER OPERATIONS
 
-  //- Loading
-  .PageDriverTrip__loading(v-if="loading && !orders.length")
-    .PageDriverTrip__spinner
+  //- Wave 1 D1：Tab 切換（進行中 / 已完成）
+  .PageDriverTrip__tabs
+    button.PageDriverTrip__tab(
+      type="button"
+      :class="{ 'is-active': activeTab === 'active' }"
+      @click="ClickTab('active')"
+    ) 進行中
+    button.PageDriverTrip__tab(
+      type="button"
+      :class="{ 'is-active': activeTab === 'history' }"
+      @click="ClickTab('history')"
+    ) 已完成
 
-  //- 空狀態
-  .PageDriverTrip__empty(v-else-if="!orders.length")
-    .PageDriverTrip__empty-icon 📭
-    p 目前沒有指派任務
-    small 請至「搶單」頁查看可接訂單
+  //- 已完成 tab：日期過濾
+  .PageDriverTrip__history-toolbar(v-if="activeTab === 'history'")
+    UiDateRangeFilter(
+      v-model="historyDateRange"
+      mode="single"
+      granularity="day"
+      @change="ApiLoadHistory"
+    )
 
-  //- 任務列表（簡略卡片）
+  //- 進行中 tab
+  template(v-if="activeTab === 'active'")
+    //- Loading
+    .PageDriverTrip__loading(v-if="loading && !orders.length")
+      .PageDriverTrip__spinner
+
+    //- 空狀態
+    .PageDriverTrip__empty(v-else-if="!orders.length")
+      .PageDriverTrip__empty-icon 📭
+      p 目前沒有指派任務
+      small 請至「搶單」頁查看可接訂單
+
+    //- 任務列表（簡略卡片）
+    template(v-else)
+      .PageDriverTrip__list
+        .PageDriverTrip__card(
+          v-for="order in orders"
+          :key="order.orderId"
+          @click="ClickOpenDetail(order)"
+        )
+          //- 日期時間
+          .PageDriverTrip__card-time
+            .PageDriverTrip__card-date {{ $dayjs(order.pickupDateTime).format('MM/DD') }}
+            .PageDriverTrip__card-clock {{ $dayjs(order.pickupDateTime).format('HH:mm') }}
+          //- 主資訊
+          .PageDriverTrip__card-main
+            .PageDriverTrip__card-row
+              span.PageDriverTrip__type-badge {{ ORDER_TYPE_LABEL[order.orderType] ?? order.orderType }}
+              span.PageDriverTrip__id \#{{ order.orderId.slice(-6).toUpperCase() }}
+            .PageDriverTrip__card-route
+              span.PageDriverTrip__route-from {{ order.pickupLocation?.displayName?.split(',')[0] || order.pickupLocation?.address }}
+              span.PageDriverTrip__route-arrow →
+              span.PageDriverTrip__route-to {{ order.dropoffLocation?.displayName?.split(',')[0] || order.dropoffLocation?.address }}
+            .PageDriverTrip__card-foot
+              span.PageDriverTrip__status-badge(:class="`is-${order.orderStatus}`") {{ STATUS_LABEL[order.orderStatus] }}
+              span.PageDriverTrip__card-fare NT$ {{ order.estimatedFare.toLocaleString() }}
+
+  //- 已完成 tab
   template(v-else)
-    .PageDriverTrip__list
-      .PageDriverTrip__card(
-        v-for="order in orders"
-        :key="order.orderId"
-        @click="ClickOpenDetail(order)"
+    .PageDriverTrip__loading(v-if="historyLoading && !historyOrders.length")
+      .PageDriverTrip__spinner
+    .PageDriverTrip__empty(v-else-if="!historyOrders.length")
+      .PageDriverTrip__empty-icon 📜
+      p 沒有符合條件的歷史訂單
+      small 試試清除日期或選擇其他日期
+    .PageDriverTrip__list(v-else)
+      .PageDriverTrip__card.is-history(
+        v-for="o in historyOrders"
+        :key="o.orderId"
       )
-        //- 日期時間
         .PageDriverTrip__card-time
-          .PageDriverTrip__card-date {{ $dayjs(order.pickupDateTime).format('MM/DD') }}
-          .PageDriverTrip__card-clock {{ $dayjs(order.pickupDateTime).format('HH:mm') }}
-        //- 主資訊
+          .PageDriverTrip__card-date {{ $dayjs(o.pickupDateTime).format('MM/DD') }}
+          .PageDriverTrip__card-clock {{ $dayjs(o.pickupDateTime).format('HH:mm') }}
         .PageDriverTrip__card-main
           .PageDriverTrip__card-row
-            span.PageDriverTrip__type-badge {{ ORDER_TYPE_LABEL[order.orderType] ?? order.orderType }}
-            span.PageDriverTrip__id \#{{ order.orderId.slice(-6).toUpperCase() }}
+            span.PageDriverTrip__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
+            span.PageDriverTrip__id \#{{ o.orderId.slice(-6).toUpperCase() }}
           .PageDriverTrip__card-route
-            span.PageDriverTrip__route-from {{ order.pickupLocation?.displayName?.split(',')[0] || order.pickupLocation?.address }}
+            span.PageDriverTrip__route-from {{ o.pickupLocation?.displayName?.split(',')[0] || o.pickupLocation?.address }}
             span.PageDriverTrip__route-arrow →
-            span.PageDriverTrip__route-to {{ order.dropoffLocation?.displayName?.split(',')[0] || order.dropoffLocation?.address }}
+            span.PageDriverTrip__route-to {{ o.dropoffLocation?.displayName?.split(',')[0] || o.dropoffLocation?.address }}
           .PageDriverTrip__card-foot
-            span.PageDriverTrip__status-badge(:class="`is-${order.orderStatus}`") {{ STATUS_LABEL[order.orderStatus] }}
-            span.PageDriverTrip__card-fare NT$ {{ order.estimatedFare.toLocaleString() }}
+            span.PageDriverTrip__history-badge(:class="`is-${o.orderStatus}`") {{ HISTORY_STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
+            span.PageDriverTrip__card-fare NT$ {{ o.estimatedFare.toLocaleString() }}
 
   //- ── Modal 詳情 ──────────────────────────────────────
   Transition(name="fade")
@@ -325,6 +453,58 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.2em;
   color: rgba(255, 255, 255, 0.3);
   margin-top: 4px;
+}
+
+// ── Wave 1 D1：Tab 切換 + 歷史 toolbar ──────────────────
+.PageDriverTrip__tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.PageDriverTrip__tab {
+  font-family: $font-condensed;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { color: rgba(255, 255, 255, 0.75); }
+  &.is-active { background: rgba($amber, 0.18); color: $amber; }
+}
+
+.PageDriverTrip__history-toolbar {
+  margin-bottom: 14px;
+}
+
+.PageDriverTrip__history-badge {
+  display: inline-block;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 6px;
+
+  &.is-completed { background: rgba(80, 200, 120, 0.12); color: #50c878; border: 1px solid rgba(80, 200, 120, 0.3); }
+  &.is-cancelled { background: rgba(248, 113, 113, 0.12); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+}
+
+.PageDriverTrip__card.is-history {
+  cursor: default;
+  &:hover { border-color: rgba(255, 255, 255, 0.08); }
+  &:active { transform: none; background: rgba(255, 255, 255, 0.04); }
 }
 
 // ── Loading ──────────────────────────────────────────

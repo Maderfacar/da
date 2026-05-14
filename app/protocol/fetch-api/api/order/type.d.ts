@@ -45,8 +45,11 @@ interface CreateOrderRes {
 // ===== 取得訂單列表 =====
 // P17：userId 改為 optional — passenger 由 server 強制使用 auth.lineUid，
 // 此參數僅 admin / driver 可帶用於查指定使用者
+// Wave 1 P3：from / to 為 ISO string（exclusive end）— server 內存過濾 pickupDateTime
 interface GetOrderListParams {
   userId?: string;
+  from?: string;
+  to?: string;
 }
 
 interface OrderItem {
@@ -100,6 +103,22 @@ interface AssignedOrder {
   createdAt: number;
   passengerName: string;
   passengerPhone: string | null;
+}
+
+// ===== Wave 1 D1：司機歷史訂單（completed / cancelled）=====
+interface DriverHistoryOrder {
+  orderId: string;
+  orderType: string;
+  pickupDateTime: string;
+  pickupLocation: GooglePlace;
+  dropoffLocation: GooglePlace;
+  vehicleType: string;
+  passengerCount: number;
+  estimatedFare: number;
+  distanceKm: number;
+  orderStatus: 'completed' | 'cancelled' | string;
+  cancelReason: string | null;
+  createdAt: number;
 }
 
 // ===== P36：訂單詳情（單筆完整資訊）=====
@@ -177,6 +196,10 @@ interface PatchOrderParams {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  /** Wave 1 D2：driver 推進 4 個狀態 (en_route/arrived_pickup/in_transit/completed) 時，
+   *  附上當下 GPS 座標。server 寫入 orders.statusHistoryLocations.{state}。
+   *  其他角色 / 其他狀態提供本欄位會被 server 忽略。*/
+  driverLocation?: { lat: number; lng: number };
 }
 
 // ===== Maps =====

@@ -133,8 +133,8 @@ export const GetAdminUsers = (params: { role: Role; approved?: boolean }) =>
 export const PatchAdminUser = (uid: string, body: PatchAdminUserBody) =>
   methods.patch<{ uid: string; updated?: boolean }>(`/nuxt-api/admin/users/${uid}`, body);
 
-/** 查詢所有訂單（Admin 用） */
-export const GetAllOrders = (params: { status?: string } = {}) =>
+/** 查詢所有訂單（Admin 用）— Wave 1 A3：支援 from/to ISO 範圍過濾 pickupDateTime */
+export const GetAllOrders = (params: { status?: string; from?: string; to?: string } = {}) =>
   methods.get<AdminOrder[]>('/nuxt-api/admin/orders', params as Record<string, unknown>);
 
 /** 廣播 LINE 推播通知 */

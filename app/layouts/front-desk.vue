@@ -86,14 +86,9 @@ onUnmounted(() => {
         ) {{ $t('banner.addBtn') }}
 
   //- ── 固定頂部 Nav ─────────────────────────────────────────
+  //- Wave 1 P2：hamburger 改放左上，logo 與右側功能區順序不變
   nav.LayoutFrontDesk__top
-    .LayoutFrontDesk__logo(@click="ClickLogo")
-      | DEST
-      span ∙
-      | ANYWHERE
-    .LayoutFrontDesk__nav-right
-      LangSwitcher
-      CommonHeaderUser
+    .LayoutFrontDesk__nav-left
       //- Hamburger 按鈕（觸發 CommonDrawer）
       button.LayoutFrontDesk__hamburger(
         type="button"
@@ -103,6 +98,13 @@ onUnmounted(() => {
         span.LayoutFrontDesk__hamburger-line
         span.LayoutFrontDesk__hamburger-line
         span.LayoutFrontDesk__hamburger-line
+      .LayoutFrontDesk__logo(@click="ClickLogo")
+        | DEST
+        span ∙
+        | ANYWHERE
+    .LayoutFrontDesk__nav-right
+      LangSwitcher
+      CommonHeaderUser
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   //- 加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
@@ -236,6 +238,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   span { color: var(--da-amber); }
 }
 
+.LayoutFrontDesk__nav-left,
 .LayoutFrontDesk__nav-right {
   display: flex;
   align-items: center;

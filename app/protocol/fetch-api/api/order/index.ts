@@ -30,6 +30,10 @@ export const GetAvailableOrders = () =>
 export const GetAssignedOrders = () =>
   methods.get<AssignedOrder[]>('/nuxt-api/orders/assigned', {});
 
+/** Wave 1 D1：取得司機自己的歷史訂單（completed / cancelled）— 支援 from/to 過濾 pickupDateTime */
+export const GetDriverOrderHistory = (params: { from?: string; to?: string } = {}) =>
+  methods.get<DriverHistoryOrder[]>('/nuxt-api/orders/history', params as Record<string, unknown>);
+
 /** 更新訂單狀態或指派司機 */
 export const PatchOrder = (orderId: string, params: PatchOrderParams) =>
   methods.patch<{ orderId: string }>(`/nuxt-api/orders/${orderId}`, params);

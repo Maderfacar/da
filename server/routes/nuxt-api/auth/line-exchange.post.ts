@@ -7,6 +7,7 @@
 //   2. 同步 Firebase Auth ↔ Firestore 文件時禁用 .set() 直接覆寫
 //      → 必須 merge: true 或先 .get() 檢查存在性
 //   3. handler 整體 wrap try-catch，避免 unhandled exception 讓 Nitro 回 HTTP 500
+import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 
 interface LineUserInfo {
@@ -106,6 +107,8 @@ export default defineEventHandler(async (event) => {
             lineUserId: lineProfile.sub,
             displayName: lineProfile.name,
             pictureUrl: lineProfile.picture,
+            // Wave 1 P5：每次 LINE 登入交換時刷新 lastSeenAt（serverTimestamp 由 Firestore 寫入）
+            lastSeenAt: FieldValue.serverTimestamp(),
           }, { merge: true });
         } else {
           await docRef.set({
@@ -115,6 +118,8 @@ export default defineEventHandler(async (event) => {
             displayName: lineProfile.name,
             pictureUrl: lineProfile.picture,
             createdAt: new Date(),
+            // Wave 1 P5：新使用者建立時亦寫入 lastSeenAt（與 createdAt 同時）
+            lastSeenAt: FieldValue.serverTimestamp(),
           });
         }
       } catch (err) {
@@ -123,10 +128,12 @@ export default defineEventHandler(async (event) => {
       }
     } else {
       // 既有使用者：merge 寫入最新 displayName / pictureUrl
+      // Wave 1 P5：每次登入刷新 lastSeenAt（serverTimestamp）以利後續使用者活躍度分析
       try {
         await db.collection('users').doc(lineProfile.sub).set({
           displayName: lineProfile.name,
           pictureUrl: lineProfile.picture,
+          lastSeenAt: FieldValue.serverTimestamp(),
         }, { merge: true });
       } catch (err) {
         // 同步失敗不阻擋登入流程，但要 log（避免 displayName / pictureUrl 永遠不更新無人發現）

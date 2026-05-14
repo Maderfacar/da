@@ -7,6 +7,9 @@ const loading = ref(false);
 const orders = ref<OrderItem[]>([]);
 const cancellingId = ref<string>('');
 
+// Wave 1 P3：日期過濾（共用 UiDateRangeFilter）
+const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
+
 // status 文字走 i18n（status.{key}）；色碼留在前端（不參與翻譯）
 const STATUS_COLOR: Record<string, string> = {
   pending:    '#f59e0b',
@@ -21,9 +24,13 @@ const CAN_CANCEL_STATUS = new Set(['pending', 'confirmed']);
 
 const ApiLoadOrders = async () => {
   // P17：query.userId 不傳，server 強制使用 auth.lineUid（passenger 只能讀自己）
+  // Wave 1 P3：from / to 範圍過濾 pickupDateTime
   loading.value = true;
   try {
-    const res = await $api.GetOrderList({});
+    const params: GetOrderListParams = {};
+    if (dateRange.value.from) params.from = dateRange.value.from;
+    if (dateRange.value.to) params.to = dateRange.value.to;
+    const res = await $api.GetOrderList(params);
     if (res.status?.code !== $enum.apiStatus.success) {
       console.error('[orders] load failed:', res.status?.message?.zh_tw);
       ElMessage({ message: res.status?.message?.zh_tw ?? t('orders.loadFailed'), type: 'error' });
@@ -86,6 +93,15 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
     .PageOrders__header-label MY TRIPS
     h1.PageOrders__header-title {{ $t('orders.title') }}
 
+  //- Wave 1 P3：日期過濾
+  .PageOrders__toolbar
+    UiDateRangeFilter(
+      v-model="dateRange"
+      mode="single"
+      granularity="day"
+      @change="ApiLoadOrders"
+    )
+
   //- 載入中
   .PageOrders__loading(v-if="loading")
     .PageOrders__spinner
@@ -141,6 +157,13 @@ $amber: #d4860a;
   min-height: 100svh;
   background: $bg;
   color: #fff;
+}
+
+// ── Wave 1 P3：日期過濾 toolbar ────────────────────────────────
+.PageOrders__toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 16px;
 }
 
 // ── 頁首 ───────────────────────────────────────────────────────

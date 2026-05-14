@@ -33,6 +33,8 @@ interface PatchOrderBody {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  // Wave 1 D2：driver 推進 4 階段時附上當下 GPS（lat, lng）
+  driverLocation?: { lat: number; lng: number };
 }
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
@@ -78,6 +80,16 @@ const STATUS_HISTORY_FIELD: Record<OrderStatus, string | null> = {
   in_transit: 'statusHistory.inTransitAt',
   completed: 'statusHistory.completedAt',
   cancelled: 'statusHistory.cancelledAt',
+};
+
+// Wave 1 D2：driver 推進的 4 個狀態（其它狀態不寫 statusHistoryLocations）
+// schema：orders/{orderId}.statusHistoryLocations.{state} = { lat, lng, address, recordedAt: Timestamp }
+const DRIVER_LOCATION_STATUSES = new Set<OrderStatus>(['en_route', 'arrived_pickup', 'in_transit', 'completed']);
+const _isValidDriverLocation = (v: unknown): v is { lat: number; lng: number } => {
+  if (!v || typeof v !== 'object') return false;
+  const p = v as Record<string, unknown>;
+  return typeof p.lat === 'number' && Number.isFinite(p.lat)
+    && typeof p.lng === 'number' && Number.isFinite(p.lng);
 };
 
 export default defineEventHandler(async (event) => {
@@ -275,6 +287,24 @@ export default defineEventHandler(async (event) => {
       if (historyField) {
         updates[historyField] = FieldValue.serverTimestamp();
       }
+    }
+
+    // Wave 1 D2：driver 推進 4 個狀態 + 帶 driverLocation 時，寫入 statusHistoryLocations.{state}
+    // 條件：(1) 此次 status 變更 (2) status ∈ DRIVER_LOCATION_STATUSES (3) driverLocation 合法
+    // address 暫留空字串（schema 預留欄位，後續可由 reverse geocoding 補）
+    if (
+      body.orderStatus
+      && body.orderStatus !== prevStatus
+      && DRIVER_LOCATION_STATUSES.has(body.orderStatus as OrderStatus)
+      && _isValidDriverLocation(body.driverLocation)
+    ) {
+      const loc = body.driverLocation;
+      updates[`statusHistoryLocations.${body.orderStatus}`] = {
+        lat: loc.lat,
+        lng: loc.lng,
+        address: '',
+        recordedAt: FieldValue.serverTimestamp(),
+      };
     }
 
     await ref.update(updates);

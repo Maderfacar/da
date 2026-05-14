@@ -7,11 +7,17 @@ export default defineEventHandler(async (event) => {
   if (!auth.ok) return authFailResponse(auth);
 
   const query = getQuery(event);
-  const { userId: queryUserId } = query as { userId?: string };
+  const { userId: queryUserId, from, to } = query as { userId?: string; from?: string; to?: string };
 
   const isPrivileged = auth.roles.includes('admin') || auth.roles.includes('driver');
   // 純 passenger 帶的 userId 一律忽略，強制使用自己的 lineUid
   const targetUserId = isPrivileged && queryUserId ? queryUserId : auth.lineUid;
+
+  // Wave 1 P3：from / to ISO 範圍過濾 pickupDateTime（server 內存過濾，避免動 Firestore index）
+  const fromMs = from ? Date.parse(from) : NaN;
+  const toMs = to ? Date.parse(to) : NaN;
+  const hasFrom = Number.isFinite(fromMs);
+  const hasTo = Number.isFinite(toMs);
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
 
@@ -42,6 +48,14 @@ export default defineEventHandler(async (event) => {
           orderStatus: (d.orderStatus as string) ?? 'pending',
           createdAt: d.createdAt?.toMillis?.() ?? 0,
         };
+      })
+      .filter((o) => {
+        if (!hasFrom && !hasTo) return true;
+        const t = Date.parse(o.pickupDateTime);
+        if (!Number.isFinite(t)) return false;
+        if (hasFrom && t < fromMs) return false;
+        if (hasTo && t >= toMs) return false;
+        return true;
       })
       .sort((a, b) => b.createdAt - a.createdAt);
 

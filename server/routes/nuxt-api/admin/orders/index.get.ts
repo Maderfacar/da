@@ -14,7 +14,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event);
-  const { status } = query as { status?: string };
+  const { status, from, to } = query as { status?: string; from?: string; to?: string };
+
+  // Wave 1 A3：from / to 為 ISO string（exclusive end）；於 server 內存 filter
+  // pickupDateTime（避免動 Firestore composite index）。
+  const fromMs = from ? Date.parse(from) : NaN;
+  const toMs = to ? Date.parse(to) : NaN;
+  const hasFrom = Number.isFinite(fromMs);
+  const hasTo = Number.isFinite(toMs);
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
@@ -30,7 +37,8 @@ export default defineEventHandler(async (event) => {
     const snapshot = await q.get();
 
     // 完整訂單欄位（admin/orders modal 用）
-    const baseOrders = snapshot.docs.map((doc) => {
+    // Wave 1 A3：先 map 後依 from/to 過濾 pickupDateTime
+    const baseOrdersAll = snapshot.docs.map((doc) => {
       const d = doc.data();
       return {
         orderId: d.orderId as string,
@@ -57,6 +65,16 @@ export default defineEventHandler(async (event) => {
         createdAt: d.createdAt?.toMillis?.() ?? 0,
       };
     });
+
+    const baseOrders = (hasFrom || hasTo)
+      ? baseOrdersAll.filter((o) => {
+        const t = Date.parse(o.pickupDateTime);
+        if (!Number.isFinite(t)) return false;
+        if (hasFrom && t < fromMs) return false;
+        if (hasTo && t >= toMs) return false;
+        return true;
+      })
+      : baseOrdersAll;
 
     // batch read users/{userId} 取乘客顯示名（既有 user 資料無 phone，passengerPhone 暫 null）
     const userIds = Array.from(new Set(baseOrders.map((o) => o.userId).filter(Boolean)));

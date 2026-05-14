@@ -48,6 +48,9 @@ const orders = ref<AdminOrder[]>([]);
 const drivers = ref<AdminUser[]>([]);
 const filterStatus = ref('');
 
+// Wave 1 A3：日期過濾（共用 UiDateRangeFilter）
+const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
+
 // 舊版「指派彈窗」狀態（Commit C 會整合進新 modal；先保留以維持指派功能）
 const assigningOrderId = ref<string | null>(null);
 const selectedDriverUid = ref('');
@@ -93,7 +96,10 @@ const filteredOrders = computed(() =>
 const ApiLoadOrders = async () => {
   loading.value = true;
   try {
-    const res = await $api.GetAllOrders();
+    const params: { status?: string; from?: string; to?: string } = {};
+    if (dateRange.value.from) params.from = dateRange.value.from;
+    if (dateRange.value.to) params.to = dateRange.value.to;
+    const res = await $api.GetAllOrders(params);
     if (res.status?.code !== 200) {
       ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
       orders.value = [];
@@ -469,6 +475,13 @@ onMounted(() => {
         :class="{ 'is-active': filterStatus === key }"
         @click="filterStatus = key"
       ) {{ label }}
+    //- Wave 1 A3：日期過濾（pickupDateTime 範圍）
+    UiDateRangeFilter(
+      v-model="dateRange"
+      mode="single"
+      granularity="day"
+      @change="ApiLoadOrders"
+    )
     .PageAdminOrders__count {{ filteredOrders.length }} 筆
 
   //- Loading
