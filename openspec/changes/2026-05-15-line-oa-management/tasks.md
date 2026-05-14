@@ -6,18 +6,20 @@
 
 ---
 
-## Phase 0：Spec + Brain AI 拍板（0.5 天）
+## Phase 0：Spec + Brain AI 拍板（0.5 天）✅
 
-- [ ] 0.1 盤點現況：Wave 3-A1 既有結構 audit（`admin_settings_notification_templates/order-pending` doc + `order-pending-flex.ts` + `NotificationTemplate.vue` + 2 endpoint）
-- [ ] 0.2 LINE Messaging API richmenu spec 整理（[design.md §1](design.md#1-line-messaging-api-整理richmenu-部分)）
-- [ ] 0.3 撰寫 [proposal.md](proposal.md)
-- [ ] 0.4 撰寫 [design.md](design.md)
-- [ ] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
-- [ ] 0.6 commit + push origin HEAD:main
-- [ ] 0.7 **等 Brain AI 拍板 Q1-Q8** → 任一未拍 / 改 default 則 spec 重寫 → 重 push → 再等
-- [ ] 0.8 拍板確認後 design.md §11 補上每個 Q 的結論 → commit + push
+- [x] 0.1 盤點現況：Wave 3-A1 既有結構 audit（`admin_settings_notification_templates/order-pending` doc + `order-pending-flex.ts` + `NotificationTemplate.vue` + 2 endpoint）
+- [x] 0.2 LINE Messaging API richmenu spec 整理（[design.md §1](design.md#1-line-messaging-api-整理richmenu-部分)）
+- [x] 0.3 撰寫 [proposal.md](proposal.md)
+- [x] 0.4 撰寫 [design.md](design.md)
+- [x] 0.5 撰寫 [tasks.md](tasks.md)（本檔）
+- [x] 0.6 commit + push origin HEAD:main（commit `742abcf`）
+- [x] 0.7 **Brain AI 拍板 2026-05-15**：Q1-Q8 全用推 spec 預設（1a / 2a / 3a / 4a / 5b / 6b / 7a / 8b）
+- [x] 0.8 design.md §11 補上每個 Q 拍板結論 → commit + push
 
-**進 Phase 1 的條件**：Q1-Q8 全部拍板（至少 Q1, Q2, Q3, Q4, Q5, Q6 是阻塞性，Q7, Q8 可延後但建議一起拍）。
+**Phase 1 解鎖** — 可直接開工。
+
+> **Q6=6b 影響 Phase 5 範圍收斂**：bot replies / 公告整合 移除，Phase 5 純剩 Diagnostics（可選 / 看時間延後）。
 
 ---
 
@@ -209,38 +211,28 @@
 
 ---
 
-## Phase 5：Bot Replies / 公告整合 / Diagnostics（0.5-1.0 天，依 Q6/Q8）
+## Phase 5：Diagnostics（0.5 天，可延後）
 
-> **前置**：Phase 4 全綠 + Q6, Q8 拍板。
+> **前置**：Phase 4 全綠。Q6=6b 拍板後 Bot Replies / 公告整合移除，本 Phase 純剩 Diagnostics。
+> **可延後**：若 Phase 1-4 時程吃緊，本 Phase 整個延到 P40，archive 時不阻塞。
 
-### 5.1 Bot Replies（若 Q6=6c）
+### 5.1 Event log 基建
 
-- [ ] `bot_replies` collection schema + rules
-- [ ] `GET / PUT /nuxt-api/admin/bot-replies` + `/[key]`
-- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) `_reply()` 改讀 `bot_replies/{client}.{follow|text}` doc → fallback hard-coded（向下相容）
-- [ ] admin UI Bot Replies tab：4 row × { enabled + textarea }
-- [ ] audit log `line.bot_reply.update`
+- [ ] 新增 `line_event_logs` / `line_api_errors` collection + Firestore TTL 7d
+- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 入口寫 `line_event_logs`（type / channel / userId / timestamp）
+- [ ] `server/utils/line-richmenu.ts` + `server/utils/line-push.ts` catch 內統一寫 `line_api_errors`
 
-### 5.2 公告系統整合（若 Q6=6c）
+### 5.2 Diagnostics Tab
 
-- [ ] `server/utils/announcement-flex.ts` 評估能否完全併入 `template-registry.ts`（announcement category）
-- [ ] 若可併：建 templateKey `announcement.default` 走通用 builder
-- [ ] 若不可（announcement 走 multicast、有 target 過濾、不適合 template static schema）：保留 announcement-flex.ts 獨立、不併
+- [ ] admin UI Diagnostics tab（`/admin/line-management`）：
+  - 最近 50 筆 webhook event（channel filter）
+  - 最近 LINE API error log
+  - richmenu sync 狀態總覽：本地 active doc 對 LINE actual default ID 一致性檢查；不一致 highlight + 「重試 sync」按鈕
 
-### 5.3 Diagnostics（若 Q8=8b 含）
-
-- [ ] 新增 `line_event_logs` / `line_api_errors` collection + TTL 7d
-- [ ] webhook handler 寫 log
-- [ ] LINE API client catch 內統一寫 error log
-- [ ] admin UI Diagnostics tab：
-  - 最近 50 筆 webhook event（依 channel filter）
-  - 最近錯誤 log
-  - richmenu sync 狀態總覽（本地 active doc vs LINE actual default ID）
-
-### 5.4 Stage Gate
+### 5.3 Stage Gate
 
 - [ ] G5.1 lint + build pass
-- [ ] G5.2 手測：bot reply 改字 → 用新 LINE 帳號 follow OA → 收到新文案 / 傳訊息 → 收到新自動回覆
+- [ ] G5.2 手測：故意斷 LINE token → publish richmenu → 確認 `line_api_errors` 寫入 + Diagnostics 顯示
 - [ ] G5.3 commit + push origin HEAD:main
 
 ---
@@ -285,11 +277,13 @@
 
 ## 完成後解鎖（後續 Wave）
 
-- **P39**（若 Q6=6a 留尾）：另 4 個訂單事件 template 化（confirmed / en_route / completed / cancelled）— 直接在通用編輯器加新 registry entry 即可
-- **P40**：A1 舊 collection `admin_settings_notification_templates` + 舊 audit log alias 清理
-- **P41**：richmenu 多語版本（每 channel × {zh, en, ja}）
-- **P42**：richmenu alias / 分頁切換（richmenuswitch）
-- **P43**：richmenu 圖層合成器（admin 不需設計師外部工具產圖）
+> Q6=6b 已含 5 個 order template，P39 原規劃內容（另 4 個 order 事件）併入 P38 完成。
+
+- **P40**：Bot Replies template 化（`bot.follow.passenger` / `bot.text.passenger` / `bot.follow.driver` / `bot.text.driver`） + 公告系統整合（`announcement-flex.ts` 併入 `template-registry.ts`）
+- **P41**：A1 舊 collection `admin_settings_notification_templates` + 舊 audit log alias 清理（migration 完成後 cutover）
+- **P42**：richmenu 多語版本（每 channel × {zh, en, ja}）— 依 `users/{lineUid}.lang` 自動切 per-user richmenu
+- **P43**：richmenu alias / 分頁切換（richmenuswitch action）
+- **P44**：richmenu 圖層合成器（admin 不需設計師外部工具產圖）
 
 ---
 
