@@ -143,16 +143,16 @@ const phoneTelLink = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d1117;
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.07);
-$amber: #d4860a;
+// Wave 3-P1：cream theme 對齊 booking 家族
+$font-display:   'Bebas Neue', sans-serif;
+$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageProfile {
   padding: 72px 16px 120px;
   min-height: 100svh;
-  background: $bg;
-  color: #fff;
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
 // ── 頁首 ───────────────────────────────────────────────────────
@@ -160,31 +160,31 @@ $amber: #d4860a;
   margin-bottom: 20px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: $font-condensed;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.25em;
-    color: $amber;
+    color: var(--da-amber);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 4px;
-    &::before { content: ''; width: 16px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 16px; height: 1.5px; background: var(--da-amber); }
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: $font-display;
     font-size: 32px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--da-dark);
   }
 }
 
-// ── 使用者卡 ──────────────────────────────────────────────────
+// ── 使用者卡（cream 主卡）─────────────────────────────────────
 .PageProfile__card {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 20px;
+  background: var(--da-glass-bg);
+  border: 1px solid var(--da-glass-border);
+  border-radius: 24px;
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -192,6 +192,9 @@ $amber: #d4860a;
   gap: 12px;
   text-align: center;
   margin-bottom: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--da-glass-shadow);
 }
 
 .PageProfile__avatar {
@@ -199,21 +202,21 @@ $amber: #d4860a;
   height: 72px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba($amber, 0.4);
+  border: 2px solid rgba(212, 134, 10, 0.5);
 }
 
 .PageProfile__name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--da-dark);
   letter-spacing: 0.04em;
 }
 
 .PageProfile__uid {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.25);
-  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--da-gray-light);
+  font-family: $font-condensed;
   letter-spacing: 0.05em;
 }
 
@@ -224,22 +227,22 @@ $amber: #d4860a;
   gap: 6px;
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--da-gray);
 }
 
 .PageProfile__friend-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--da-gray-pale);
   flex-shrink: 0;
 
-  &.is-friend { background: #4ade80; }
+  &.is-friend { background: #16a34a; }
 }
 
 .PageProfile__add-friend {
   display: inline-block;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -252,36 +255,39 @@ $amber: #d4860a;
 
 // ── P35：通用 section ─────────────────────────────────────────
 .PageProfile__section {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--da-glass-bg);
+  border: 1px solid var(--da-glass-border);
+  border-radius: 18px;
   padding: 18px 16px;
   margin-bottom: 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--da-glass-shadow);
 }
 
 .PageProfile__section-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: $amber;
+  color: var(--da-amber);
   margin-bottom: 6px;
 }
 
 .PageProfile__section-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 22px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--da-dark);
   margin-bottom: 14px;
 }
 
 // ── P35：我的旅程 ─────────────────────────────────────────────
 .PageProfile__stat-loading {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
   text-align: center;
   padding: 20px 0;
 }
@@ -299,8 +305,8 @@ $amber: #d4860a;
 }
 
 .PageProfile__stat {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--da-gray-pale);
   border-radius: 12px;
   padding: 12px 10px;
   display: flex;
@@ -309,38 +315,38 @@ $amber: #d4860a;
 }
 
 .PageProfile__stat-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--da-gray);
 }
 
 .PageProfile__stat-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 24px;
   line-height: 1;
-  color: #fff;
+  color: var(--da-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .PageProfile__stat-unit {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--da-gray);
 }
 
 .PageProfile__stat-hint {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: $font-body;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--da-gray);
   margin-top: 12px;
   text-align: center;
 }
 
 .PageProfile__inline-link {
-  color: $amber;
+  color: var(--da-amber);
   text-decoration: none;
   &:hover { text-decoration: underline; }
 }
@@ -357,16 +363,16 @@ $amber: #d4860a;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--da-gray-pale);
   border-radius: 12px;
   color: inherit;
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba($amber, 0.3);
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(212, 134, 10, 0.35);
   }
 }
 
@@ -384,29 +390,29 @@ $amber: #d4860a;
 }
 
 .PageProfile__support-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: $amber;
+  color: var(--da-amber);
 }
 
 .PageProfile__support-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--da-dark);
   letter-spacing: 0.04em;
 }
 
 .PageProfile__support-sub {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: $font-body;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
 }
 
 .PageProfile__support-arrow {
   font-size: 20px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--da-gray-light);
   flex-shrink: 0;
 }
 
@@ -420,7 +426,7 @@ $amber: #d4860a;
   &-text {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--da-gray);
   }
 }
 </style>
