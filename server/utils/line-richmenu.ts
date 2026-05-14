@@ -21,6 +21,7 @@
  *   - 寬高必須與 createRichmenu 時 size 完全一致
  */
 import { getLineChannel, type LineClient } from '@@/utils/line-channel';
+import { writeLineApiError, extractApiPath } from '@@/utils/line-api-error-log';
 
 const API_BASE = 'https://api.line.me/v2/bot/richmenu';
 const DATA_BASE = 'https://api-data.line.me/v2/bot/richmenu';
@@ -104,6 +105,8 @@ const _getToken = (client: LineClient): string => {
 /**
  * 統一 fetch + retry（5xx 重試 1 次；4xx 直接拋）。
  *
+ * P43 Phase 2：throw 前自動寫 line_api_errors log（若 errorContext 提供）。
+ *
  * @returns 解析後的 json（responseType='binary' 時回 Buffer）
  */
 async function _lineFetch<T>(
@@ -114,6 +117,11 @@ async function _lineFetch<T>(
     body?: object | Buffer;
     contentType?: string;
     responseType?: 'json' | 'binary' | 'none';
+    errorContext?: {
+      client: LineClient;
+      richMenuId?: string;
+      targetUid?: string;
+    };
   },
 ): Promise<T> {
   const isBinary = init.body instanceof Buffer;
@@ -144,11 +152,9 @@ async function _lineFetch<T>(
         await _sleep(RETRY_DELAY_MS);
         continue;
       }
-      throw new LineApiError(
-        `LINE API network failure: ${(err as Error).message}`,
-        599,
-        { url, attempt },
-      );
+      const errorMessage = `LINE API network failure: ${(err as Error).message}`;
+      await _logError(init.errorContext, url, init.method, 599, errorMessage, { url, attempt });
+      throw new LineApiError(errorMessage, 599, { url, attempt });
     }
 
     // 2xx success
@@ -163,7 +169,9 @@ async function _lineFetch<T>(
       try {
         return JSON.parse(text) as T;
       } catch {
-        throw new LineApiError(`LINE API response not valid JSON: ${text.slice(0, 200)}`, res.status, { url });
+        const errorMessage = `LINE API response not valid JSON: ${text.slice(0, 200)}`;
+        await _logError(init.errorContext, url, init.method, res.status, errorMessage, { url });
+        throw new LineApiError(errorMessage, res.status, { url });
       }
     }
 
@@ -180,12 +188,42 @@ async function _lineFetch<T>(
     } catch {
       try { details = await res.text(); } catch { /* swallow */ }
     }
-    throw new LineApiError(
-      `LINE API ${init.method} ${url} failed: ${res.status}`,
-      res.status,
-      details,
-    );
+    const errorMessage = `LINE API ${init.method} ${url} failed: ${res.status}`;
+    await _logError(init.errorContext, url, init.method, res.status, errorMessage, details);
+    throw new LineApiError(errorMessage, res.status, details);
   }
+}
+
+/** 取消雜訊：404 (richmenu detail / default) 視為「正常的沒有」不寫 log */
+function _shouldSkipLog(statusCode: number, url: string): boolean {
+  if (statusCode !== 404) return false;
+  // 404 在 getDefaultRichmenuId / getRichmenuDetail 是正常情境（caller 已處理）
+  return /\/v2\/bot\/(user\/all\/richmenu|richmenu\/[^/]+)$/.test(url);
+}
+
+/** _lineFetch 內部 throw 前寫 error log；無 errorContext 時 skip */
+async function _logError(
+  errorContext: { client: LineClient; richMenuId?: string; targetUid?: string } | undefined,
+  url: string,
+  method: 'GET' | 'POST' | 'DELETE',
+  statusCode: number,
+  errorMessage: string,
+  details: unknown,
+): Promise<void> {
+  if (!errorContext) return;
+  if (_shouldSkipLog(statusCode, url)) return;
+  await writeLineApiError({
+    channel: errorContext.client,
+    api: extractApiPath(url),
+    method,
+    statusCode,
+    errorMessage,
+    errorDetails: details,
+    context: {
+      targetUid: errorContext.targetUid ?? null,
+      richMenuId: errorContext.richMenuId ?? null,
+    },
+  });
 }
 
 // ── Public API ────────────────────────────────────────────────────
@@ -204,6 +242,7 @@ export async function createRichmenu(
     method: 'POST',
     token,
     body: payload as unknown as object,
+    errorContext: { client },
   });
 }
 
@@ -225,6 +264,7 @@ export async function uploadRichmenuImage(
     body: imageBuffer,
     contentType: mime,
     responseType: 'none',
+    errorContext: { client, richMenuId },
   });
 }
 
@@ -240,6 +280,7 @@ export async function setDefaultRichmenu(
     method: 'POST',
     token,
     responseType: 'none',
+    errorContext: { client, richMenuId },
   });
 }
 
@@ -252,6 +293,7 @@ export async function clearDefaultRichmenu(client: LineClient): Promise<void> {
     method: 'DELETE',
     token,
     responseType: 'none',
+    errorContext: { client },
   });
 }
 
@@ -264,6 +306,7 @@ export async function getDefaultRichmenuId(client: LineClient): Promise<string |
     const res = await _lineFetch<{ richMenuId: string }>(`${USER_API_BASE}/all/richmenu`, {
       method: 'GET',
       token,
+      errorContext: { client },
     });
     return res?.richMenuId ?? null;
   } catch (err) {
@@ -280,6 +323,7 @@ export async function listRichmenus(client: LineClient): Promise<RichmenuRemote[
   const res = await _lineFetch<{ richmenus: RichmenuRemote[] }>(`${API_BASE}/list`, {
     method: 'GET',
     token,
+    errorContext: { client },
   });
   return res?.richmenus ?? [];
 }
@@ -296,6 +340,7 @@ export async function getRichmenuDetail(
     return await _lineFetch<RichmenuRemote>(`${API_BASE}/${richMenuId}`, {
       method: 'GET',
       token,
+      errorContext: { client, richMenuId },
     });
   } catch (err) {
     if (err instanceof LineApiError && err.statusCode === 404) return null;
@@ -318,6 +363,7 @@ export async function deleteRichmenu(
     method: 'DELETE',
     token,
     responseType: 'none',
+    errorContext: { client, richMenuId },
   });
 }
 
@@ -334,6 +380,7 @@ export async function linkRichmenuToUser(
     method: 'POST',
     token,
     responseType: 'none',
+    errorContext: { client, richMenuId, targetUid: userId },
   });
 }
 
@@ -349,5 +396,6 @@ export async function unlinkRichmenuFromUser(
     method: 'DELETE',
     token,
     responseType: 'none',
+    errorContext: { client, targetUid: userId },
   });
 }

@@ -61,32 +61,30 @@
 
 ### 2.1 Util + Schema
 
-- [ ] 新建 `server/utils/line-api-error-log.ts`
-  - `writeLineApiError(input)` await
-  - schema 對齊 design.md §2.1
+- [x] 新建 `server/utils/line-api-error-log.ts` — `writeLineApiError(input): Promise<void>` await + `extractApiPath(url)` helper（去 v2/bot prefix + 去 id-like 段，避免 path explosion）
+- [x] schema 對齊 design.md §2.1（Q2=2a 基本版：errorDetails / errorMessage 各 trim 500 字；不存 requestBody）
 
 ### 2.2 散播到 catch 點
 
-- [ ] [line-richmenu.ts](server/utils/line-richmenu.ts) `_lineFetch` retry 後 throw 前呼 writeLineApiError
-  - 從 url 取 api path 後綴（如 `https://api.line.me/v2/bot/richmenu/create` → `richmenu/create`）
-- [ ] [line-push.ts](server/utils/line-push.ts) sendLinePush catch 內呼
-- [ ] [line-channel.ts](server/utils/line-channel.ts) `_reply` catch 內呼
+- [x] [line-richmenu.ts](server/utils/line-richmenu.ts) `_lineFetch` 加 errorContext 參數；throw 前內部 `_logError` 呼 writeLineApiError（404 在 getDefaultRichmenuId / getRichmenuDetail 視為正常 skip log）；9 個 public helper 全傳 errorContext
+- [x] [line-push.ts](server/utils/line-push.ts) sendLinePush + sendLineMulticast catch 內 await writeLineApiError（不 rethrow，維持 silent fail 契約）
+- [x] [line-channel.ts](server/utils/line-channel.ts) `_reply` 加 ctx 參數；catch 內 await writeLineApiError；3 處 caller 全傳 ctx
 
 ### 2.3 Endpoint + Rules + Index
 
-- [ ] `GET /nuxt-api/admin/line-api-errors?channel=&api=&limit=50`
-- [ ] `firestore.rules` 加 `line_api_errors`
-- [ ] `firestore.indexes.json` 加 composite index
-- [ ] firebase deploy rules + indexes（與 Phase 1 一併或分開；Claude 自跑）
+- [x] `GET /nuxt-api/admin/line-api-errors?channel=&api=&limit=50`（channel server filter + api client substring post-filter）
+- [x] `firestore.rules` 加 `line_api_errors`
+- [x] `firestore.indexes.json` 加 channel ASC + createdAt DESC composite index
+- [x] firebase deploy rules + indexes 成功（Claude 自跑）
 
 ### 2.4 Protocol
 
-- [ ] `app/protocol/fetch-api/api/admin/line-api-error/`（GetLineApiErrors + types）
-- [ ] admin/index.ts wire export
+- [x] `app/protocol/fetch-api/api/admin/line-api-error/`（GetLineApiErrors + types）
+- [x] admin/index.ts wire export
 
 ### 2.5 Stage Gate
 
-- [ ] G2.1 lint + build pass
+- [x] G2.1 lint + build pass
 - [ ] G2.2 commit + push origin HEAD:main
 
 ---

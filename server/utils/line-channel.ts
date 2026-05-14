@@ -19,6 +19,7 @@ import { verifyLineSignature } from '@@/utils/line-signature';
 import { handlePostbackEvent } from '@@/utils/line-postback-handlers';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { writeLineEventLog, type EventType, type HandlerResult } from '@@/utils/line-event-log';
+import { writeLineApiError } from '@@/utils/line-api-error-log';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -66,15 +67,35 @@ interface LineWebhookBody {
 
 const LINE_REPLY_URL = 'https://api.line.me/v2/bot/message/reply';
 
-async function _reply(accessToken: string, replyToken: string, messages: object[]) {
-  await $fetch(LINE_REPLY_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: { replyToken, messages },
-  }).catch((err) => console.error('[line-webhook] reply failed:', err));
+async function _reply(
+  accessToken: string,
+  replyToken: string,
+  messages: object[],
+  ctx: { client: LineClient; targetUid: string | null },
+) {
+  try {
+    await $fetch(LINE_REPLY_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: { replyToken, messages },
+    });
+  } catch (err) {
+    const e = err as { data?: unknown; statusCode?: number; message?: string };
+    console.error('[line-webhook] reply failed:', e?.data ?? err);
+    // P43 Phase 2：寫 error log（reply token TTL 1min，失敗常見於延遲處理 / 已 consumed）
+    await writeLineApiError({
+      channel: ctx.client,
+      api: 'message/reply',
+      method: 'POST',
+      statusCode: e?.statusCode ?? 0,
+      errorMessage: e?.message ?? 'reply failed',
+      errorDetails: e?.data ?? null,
+      context: { targetUid: ctx.targetUid },
+    });
+  }
 }
 
 /**
@@ -162,9 +183,11 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
     let postbackData: string | null = null;
     let messageText: string | null = null;
 
+    const replyCtx = { client, targetUid: ev.source.userId ?? null };
+
     if (ev.type === 'follow' && ev.replyToken && accessToken) {
       const text = await loadBotReply(client, 'follow');
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
+      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
       handlerResult = 'replied';
     } else if (ev.type === 'follow') {
       handlerResult = 'no_handler';  // 無 replyToken 或 accessToken
@@ -173,7 +196,7 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {
       messageText = ev.message.text;
       const text = await loadBotReply(client, 'text');
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
+      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
       handlerResult = 'replied';
     } else if (ev.type === 'message' && ev.message?.type === 'text') {
       messageText = ev.message.text;
@@ -190,7 +213,7 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
           data: ev.postback.data,
         });
         if (result?.replyMessages && ev.replyToken) {
-          await _reply(accessToken, ev.replyToken, result.replyMessages);
+          await _reply(accessToken, ev.replyToken, result.replyMessages, replyCtx);
           handlerResult = 'replied';
         } else {
           handlerResult = 'no_handler';

@@ -10,6 +10,8 @@ export * from './notification-template';
 export * from './bot-reply';
 // P43 Phase 1：LINE event log sub-module
 export * from './line-event-log';
+// P43 Phase 2：LINE API error log sub-module
+export * from './line-api-error';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

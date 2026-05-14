@@ -11,6 +11,7 @@
  *   await sendLineMulticast('passenger', lineUserIds, [msg]);
  */
 import { getLineChannel, type LineClient } from '@@/utils/line-channel';
+import { writeLineApiError } from '@@/utils/line-api-error-log';
 
 export type LineMessage =
   | { type: 'text'; text: string }
@@ -31,16 +32,29 @@ export async function sendLinePush(
     console.warn(`[line-push] ${client} accessToken 未設定，skip push to ${to}`);
     return;
   }
-  await $fetch(LINE_PUSH_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: { to, messages },
-  }).catch((err) => {
-    console.error(`[line-push] ${client} push failed:`, err?.data ?? err);
-  });
+  try {
+    await $fetch(LINE_PUSH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: { to, messages },
+    });
+  } catch (err) {
+    const e = err as { data?: unknown; statusCode?: number; message?: string };
+    console.error(`[line-push] ${client} push failed:`, e?.data ?? e);
+    // P43 Phase 2：寫 error log（不 rethrow — sendLinePush 既有契約為 silent fail）
+    await writeLineApiError({
+      channel: client,
+      api: 'message/push',
+      method: 'POST',
+      statusCode: e?.statusCode ?? 0,
+      errorMessage: e?.message ?? 'push failed',
+      errorDetails: e?.data ?? null,
+      context: { targetUid: to },
+    });
+  }
 }
 
 /**
@@ -86,7 +100,17 @@ export async function sendLineMulticast(
       sent += batch.length;
     } catch (err) {
       failed += batch.length;
-      console.error(`[line-multicast] ${client} batch failed (size=${batch.length}):`, (err as { data?: unknown })?.data ?? err);
+      const e = err as { data?: unknown; statusCode?: number; message?: string };
+      console.error(`[line-multicast] ${client} batch failed (size=${batch.length}):`, e?.data ?? err);
+      // P43 Phase 2：寫 error log（batch 統一一筆，含 size 標示）
+      await writeLineApiError({
+        channel: client,
+        api: 'message/multicast',
+        method: 'POST',
+        statusCode: e?.statusCode ?? 0,
+        errorMessage: `multicast batch failed (size=${batch.length}): ${e?.message ?? 'unknown'}`,
+        errorDetails: e?.data ?? null,
+      });
     }
   }
   return { sent, failed };
