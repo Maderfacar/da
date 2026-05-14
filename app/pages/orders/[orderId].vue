@@ -13,14 +13,15 @@ const errorMsg = ref<string>('');
 const cancelling = ref(false);
 
 // 狀態色卡（沿用 orders/index.vue + 補 en_route / arrived_pickup）
+// Wave 3-P1：cream 底色 → 全部調整為深色系（rgba 白色系不可讀）
 const STATUS_COLOR: Record<string, string> = {
-  pending:        '#f59e0b',
-  confirmed:      '#38bdf8',
-  en_route:       '#a78bfa',
-  arrived_pickup: '#22d3ee',
-  in_transit:     '#4ade80',
-  completed:      'rgba(255,255,255,0.4)',
-  cancelled:      '#f87171',
+  pending:        '#b45309',  // amber-700
+  confirmed:      '#1B4F8A',  // navy（與 dropoff dot 同色）
+  en_route:       '#6d28d9',  // violet-700
+  arrived_pickup: '#0e7490',  // cyan-700
+  in_transit:     '#15803d',  // green-700
+  completed:      '#6B6560',  // var(--da-gray)
+  cancelled:      '#dc2626',
 };
 
 // 乘客可主動取消的狀態（行程中 / 已完成 / 已取消 都不可）
@@ -29,7 +30,7 @@ const CAN_CANCEL_STATUS = new Set(['pending', 'confirmed']);
 const DRIVER_VISIBLE_STATUSES = new Set(['confirmed', 'en_route', 'arrived_pickup', 'in_transit', 'completed']);
 
 const StatusText = (status: string) => t(`status.${status}`, status);
-const StatusColor = (status: string) => STATUS_COLOR[status] ?? 'rgba(255,255,255,0.4)';
+const StatusColor = (status: string) => STATUS_COLOR[status] ?? '#6B6560';
 const FormatDate = (iso: string) => (iso ? $dayjs(iso).format('YYYY/MM/DD HH:mm') : '');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
 const FormatDistance = (km: number) => `${km.toFixed(1)} km`;
@@ -229,16 +230,16 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d1117;
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.07);
-$amber: #d4860a;
+// Wave 3-P1：cream theme 對齊 booking 家族；司機卡採 dark accent（對應 booking success-id pattern）
+$font-display:   'Bebas Neue', sans-serif;
+$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrderDetail {
-  padding: 16px 16px 100px;
+  padding: 72px 16px 100px;
   min-height: 100svh;
-  background: $bg;
-  color: #fff;
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
 // ── Topbar ───────────────────────────────────────────────
@@ -248,14 +249,14 @@ $amber: #d4860a;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--da-gray);
   text-decoration: none;
   transition: color 0.15s;
 
-  &:hover { color: $amber; }
+  &:hover { color: var(--da-amber); }
 }
 
 // ── 載入中 ───────────────────────────────────────────────
@@ -268,8 +269,8 @@ $amber: #d4860a;
 .PageOrderDetail__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid rgba(212, 134, 10, 0.2);
+  border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -286,19 +287,19 @@ $amber: #d4860a;
   &-text {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--da-gray);
     margin-bottom: 18px;
   }
 
   &-link {
     display: inline-block;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: $font-condensed;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 9px 22px;
     border-radius: 100px;
-    background: $amber;
+    background: var(--da-amber);
     color: #fff;
     text-decoration: none;
   }
@@ -308,17 +309,17 @@ $amber: #d4860a;
 .PageOrderDetail__header { margin-bottom: 16px; }
 
 .PageOrderDetail__header-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: $amber;
+  color: var(--da-amber);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 
-  &::before { content: ''; width: 16px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 16px; height: 1.5px; background: var(--da-amber); }
 }
 
 .PageOrderDetail__header-row {
@@ -329,38 +330,49 @@ $amber: #d4860a;
 }
 
 .PageOrderDetail__header-id {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 26px;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--da-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .PageOrderDetail__status {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
-// ── Section ─────────────────────────────────────────────
+// ── Section（cream 玻璃卡）──────────────────────────────
 .PageOrderDetail__section {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--da-glass-bg);
+  border: 1px solid var(--da-glass-border);
+  border-radius: 18px;
   padding: 18px 16px;
   margin-bottom: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--da-glass-shadow);
 
-  &.is-driver { border-color: rgba($amber, 0.22); }
+  // 司機卡：dark accent（對應 booking success-id pattern，視覺重點突顯）
+  &.is-driver {
+    background: var(--da-dark);
+    border-color: rgba(212, 134, 10, 0.35);
+    color: var(--da-cream);
+    box-shadow: 0 8px 32px rgba(26, 24, 20, 0.18);
+  }
 }
 
 .PageOrderDetail__section-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: $amber;
+  color: var(--da-amber);
   margin-bottom: 12px;
+
+  .is-driver & { color: var(--da-amber-light); }
 }
 
 // ── Route ──────────────────────────────────────────────
@@ -379,26 +391,26 @@ $amber: #d4860a;
   flex-shrink: 0;
   margin-top: 5px;
 
-  &.is-pickup   { background: $amber; }
-  &.is-stopover { background: rgba(255, 255, 255, 0.5); }
-  &.is-dropoff  { background: #38bdf8; }
+  &.is-pickup   { background: var(--da-amber); }
+  &.is-stopover { background: var(--da-gray-light); }
+  &.is-dropoff  { background: #1B4F8A; }
 }
 
 .PageOrderDetail__route-text { min-width: 0; flex: 1; }
 
 .PageOrderDetail__route-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--da-gray-light);
 }
 
 .PageOrderDetail__route-addr {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 13px;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--da-dark);
   margin-top: 2px;
   word-break: break-word;
 }
@@ -406,7 +418,7 @@ $amber: #d4860a;
 .PageOrderDetail__route-line {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--da-gray-pale);
   margin-left: 4.5px;
 }
 
@@ -418,30 +430,30 @@ $amber: #d4860a;
 }
 
 .PageOrderDetail__route-meta-item {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--da-gray-pale);
+  border-radius: 12px;
   padding: 10px 12px;
 }
 
 .PageOrderDetail__route-meta-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--da-gray);
 }
 
 .PageOrderDetail__route-meta-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 20px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--da-dark);
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
 }
 
-// ── Driver ─────────────────────────────────────────────
+// ── Driver（dark accent 內元素）──────────────────────────
 .PageOrderDetail__driver {
   display: flex;
   align-items: center;
@@ -454,7 +466,7 @@ $amber: #d4860a;
   height: 52px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba($amber, 0.4);
+  border: 2px solid rgba(240, 168, 48, 0.5);
   flex-shrink: 0;
 }
 
@@ -463,32 +475,32 @@ $amber: #d4860a;
   align-items: center;
   justify-content: center;
   font-size: 26px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .PageOrderDetail__driver-info { flex: 1; min-width: 0; }
 
 .PageOrderDetail__driver-name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--da-cream);
 }
 
 .PageOrderDetail__driver-meta {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(245, 242, 236, 0.6);
   letter-spacing: 0.06em;
   margin-top: 3px;
 
   & > span + span {
     padding-left: 8px;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -497,25 +509,25 @@ $amber: #d4860a;
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: rgba($amber, 0.15);
-  border: 1px solid rgba($amber, 0.4);
+  background: var(--da-amber);
+  border: 1px solid var(--da-amber);
   border-radius: 100px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: $amber;
+  color: #fff;
   text-decoration: none;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 
-  &:hover { background: rgba($amber, 0.22); }
+  &:hover { background: var(--da-amber-light); border-color: var(--da-amber-light); }
 
   &.is-disabled {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(245, 242, 236, 0.4);
     cursor: not-allowed;
   }
 }
@@ -534,30 +546,30 @@ $amber: #d4860a;
   align-items: flex-start;
   gap: 12px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--da-gray-pale);
 
   &:last-child { border-bottom: 0; padding-bottom: 0; }
 
   &.is-fare {
     padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(212, 134, 10, 0.25);
     border-bottom: 0;
     margin-top: 4px;
   }
 }
 
 .PageOrderDetail__info-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
   flex-shrink: 0;
 }
 
 .PageOrderDetail__info-val {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--da-dark);
   text-align: right;
   margin: 0;
 
@@ -570,30 +582,30 @@ $amber: #d4860a;
   }
 
   &.is-fare {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: $font-display;
     font-size: 22px;
-    color: $amber;
+    color: var(--da-amber);
     letter-spacing: 0.04em;
   }
 }
 
-// ── Cancel button ──────────────────────────────────────
+// ── Cancel button（cream 版紅色 light）──────────────────
 .PageOrderDetail__cancel {
   display: block;
   width: 100%;
   padding: 12px;
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #f87171;
+  color: #dc2626;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
 
-  &:hover { opacity: 0.85; }
+  &:hover:not(:disabled) { background: rgba(220, 38, 38, 0.14); }
   &:active { transform: scale(0.99); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

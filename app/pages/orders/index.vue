@@ -11,12 +11,13 @@ const cancellingId = ref<string>('');
 const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
 
 // status 文字走 i18n（status.{key}）；色碼留在前端（不參與翻譯）
+// Wave 3-P1：cream 底色 → 調整為深色系，completed 用 muted gray、cancelled 用 #dc2626
 const STATUS_COLOR: Record<string, string> = {
-  pending:    '#f59e0b',
-  confirmed:  '#38bdf8',
-  in_transit: '#4ade80',
-  completed:  'rgba(255,255,255,0.4)',
-  cancelled:  '#f87171',
+  pending:    '#b45309',  // amber-700（cream 底可讀）
+  confirmed:  '#1B4F8A',  // 與 dropoff dot 同色
+  in_transit: '#15803d',  // green-700
+  completed:  '#6B6560',  // var(--da-gray)
+  cancelled:  '#dc2626',
 };
 
 // P17：可取消狀態（pending / confirmed 才允許乘客主動取消，行程中或已完成不可）
@@ -81,7 +82,7 @@ onUnmounted(() => {
 const FormatDate = (iso: string) => $dayjs(iso).format('MM/DD HH:mm');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
 const StatusText = (status: string) => t(`status.${status}`, status);
-const StatusColor = (status: string) => STATUS_COLOR[status] ?? 'rgba(255,255,255,0.4)';
+const StatusColor = (status: string) => STATUS_COLOR[status] ?? '#6B6560';
 const OrderTypeLabel = (orderType: string) => t(`orderType.${orderType}`, orderType);
 const VehicleLabel = (vehicleType: string) => t(`vehicle.${vehicleType}`, vehicleType);
 const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
@@ -147,16 +148,16 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d1117;
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.07);
-$amber: #d4860a;
+// Wave 3-P1：cream theme 對齊 booking 家族
+$font-display:   'Bebas Neue', sans-serif;
+$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrders {
   padding: 72px 16px 100px;
   min-height: 100svh;
-  background: $bg;
-  color: #fff;
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
 // ── Wave 1 P3：日期過濾 toolbar ────────────────────────────────
@@ -171,23 +172,23 @@ $amber: #d4860a;
   margin-bottom: 20px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: $font-condensed;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.25em;
-    color: $amber;
+    color: var(--da-amber);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 4px;
-    &::before { content: ''; width: 16px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 16px; height: 1.5px; background: var(--da-amber); }
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: $font-display;
     font-size: 32px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--da-dark);
   }
 }
 
@@ -201,8 +202,8 @@ $amber: #d4860a;
 .PageOrders__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid rgba(212, 134, 10, 0.2);
+  border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -219,19 +220,19 @@ $amber: #d4860a;
   &-text {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--da-gray);
     margin-bottom: 20px;
   }
 
   &-link {
     display: inline-block;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: $font-condensed;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 10px 24px;
     border-radius: 100px;
-    background: $amber;
+    background: var(--da-amber);
     color: #fff;
     text-decoration: none;
   }
@@ -246,41 +247,45 @@ $amber: #d4860a;
 
 .PageOrders__card {
   display: block;
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--da-glass-bg);
+  border: 1px solid var(--da-glass-border);
+  border-radius: 18px;
   padding: 14px 16px;
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--da-glass-shadow);
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba($amber, 0.28);
+    background: rgba(250, 248, 244, 0.92);
+    border-color: rgba(212, 134, 10, 0.32);
+    box-shadow: 0 6px 24px rgba(26, 24, 20, 0.08);
   }
 
   &:active { transform: scale(0.998); }
 }
 
-// P17：取消按鈕（pending / confirmed 狀態才顯示）
+// P17：取消按鈕（pending / confirmed 狀態才顯示）— cream 版紅色 light
 .PageOrders__cancel {
   display: block;
   width: 100%;
   margin-top: 12px;
   padding: 8px 12px;
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: 10px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #f87171;
+  color: #dc2626;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
 
-  &:hover { opacity: 0.85; }
+  &:hover:not(:disabled) { background: rgba(220, 38, 38, 0.14); }
   &:active { transform: scale(0.99); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -293,19 +298,19 @@ $amber: #d4860a;
 }
 
 .PageOrders__type-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: $amber;
-  background: rgba($amber, 0.1);
-  border: 1px solid rgba($amber, 0.25);
+  color: var(--da-amber);
+  background: var(--da-amber-pale);
+  border: 1px solid rgba(212, 134, 10, 0.30);
   border-radius: 100px;
   padding: 2px 10px;
 }
 
 .PageOrders__status {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -328,21 +333,21 @@ $amber: #d4860a;
   border-radius: 50%;
   flex-shrink: 0;
 
-  &.is-pickup  { background: $amber; }
-  &.is-dropoff { background: #38bdf8; }
+  &.is-pickup  { background: var(--da-amber); }
+  &.is-dropoff { background: #1B4F8A; }
 }
 
 .PageOrders__route-line {
   width: 1px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--da-gray-pale);
   margin-left: 3.5px;
 }
 
 .PageOrders__route-addr {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--da-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -353,22 +358,22 @@ $amber: #d4860a;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--da-gray-pale);
   padding-top: 10px;
 }
 
 .PageOrders__date,
 .PageOrders__vehicle {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
 }
 
 .PageOrders__fare {
   margin-left: auto;
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 16px;
-  color: $amber;
+  color: var(--da-amber);
   letter-spacing: 0.05em;
 }
 </style>
