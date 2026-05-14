@@ -79,6 +79,13 @@ export default defineEventHandler(async (event) => {
     return successResponse({ items, nextCursor });
   } catch (err) {
     console.error('[admin/announcements GET] failed:', err);
-    return serverError();
+    // Firestore 缺 composite index 時 err.message 會帶 console URL，dev mode 暴露給 client 方便部署
+    const isDev = process.env.NODE_ENV === 'development';
+    const detail = isDev && err instanceof Error ? err.message : '';
+    return serverError({
+      zh_tw: detail ? `伺服器錯誤：${detail}` : '伺服器錯誤',
+      en: detail ? `Server error: ${detail}` : 'Server error',
+      ja: detail ? `サーバーエラー: ${detail}` : 'サーバーエラー',
+    });
   }
 });

@@ -105,6 +105,12 @@ export default defineEventHandler(async (event) => {
     return successResponse({ items, nextCursor });
   } catch (err) {
     console.error('[passenger/announcements GET] failed:', err);
-    return serverError();
+    const isDev = process.env.NODE_ENV === 'development';
+    const detail = isDev && err instanceof Error ? err.message : '';
+    return serverError({
+      zh_tw: detail ? `伺服器錯誤：${detail}` : '伺服器錯誤',
+      en: detail ? `Server error: ${detail}` : 'Server error',
+      ja: detail ? `サーバーエラー: ${detail}` : 'サーバーエラー',
+    });
   }
 });

@@ -376,6 +376,10 @@ export default defineEventHandler(async (event) => {
 
     // ── P37 Phase 4：訂單事件推播給乘客（4 個觸發點 + design.md §8.7 移除 arrived_pickup）──
     // fire-and-forget；錯誤吞掉。passenger OA 推播。
+    //
+    // 2026-05-14 hotfix：admin 指派司機 (pending → confirmed) 不主動推「司機已接單」，
+    // 改由 admin 用「通知乘客」按鈕手動推（admin 場景常見：先指派 + 改其他欄位 + 才通知）。
+    // driver 自己搶單觸發的 confirmed 仍會推（isAdmin=false / isDriver=true 路徑）。
     if (body.orderStatus && body.orderStatus !== prevStatus) {
       const PUSH_MAP: Partial<Record<OrderStatus, OrderMessageKey>> = {
         confirmed: 'order.confirmed',
@@ -384,9 +388,10 @@ export default defineEventHandler(async (event) => {
         cancelled: 'order.cancelled',
         // arrived_pickup / in_transit / pending 不推（spec 拍板）
       };
+      const isAdminConfirmAssign = isAdmin && body.orderStatus === 'confirmed';
       const messageKey = PUSH_MAP[body.orderStatus as OrderStatus];
       const passengerLineUid = (orderData.lineUserId as string | undefined) || orderUserId;
-      if (messageKey && passengerLineUid) {
+      if (messageKey && passengerLineUid && !isAdminConfirmAssign) {
         void (async () => {
           try {
             const lang = await getUserLang(db, passengerLineUid);
