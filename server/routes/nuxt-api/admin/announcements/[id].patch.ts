@@ -48,7 +48,6 @@ import {
 } from '@@/utils/announcement';
 import { sendLineMulticast, type LineMessage } from '@@/utils/line-push';
 import { buildAnnouncementFlex } from '@@/utils/announcement-flex';
-import type { LineClient } from '@@/utils/line-channel';
 
 interface PatchBody extends AnnouncementWriteInput {
   status?: AnnouncementStatus;
@@ -154,40 +153,58 @@ export default defineEventHandler(async (event) => {
         ? body.ctaButton
         : existing.ctaButton) as { label: string; url: string } | null;
 
-      interface PushTarget { lineUserId: string; client: LineClient }
-      const targets: PushTarget[] = [];
+      // 路由規則（2026-05-14 hotfix）：
+      //   - order      → 訂單 owner 的 passenger OA
+      //   - passenger  → roles 含 passenger 的 users → passenger OA
+      //   - driver     → roles 含 driver 的 users → driver OA
+      //   - all        → 所有 users 同時推 passenger OA + driver OA（雙 OA 廣播）
+      //                  原本「依 user role 分配單一 OA」會讓 dual-role 使用者只在某一 OA 收到；
+      //                  全體公告改採雙推，LINE multicast 對非好友會 silently 跳過（API 仍回 200）。
+      //                  trade-off：sentCount 可能 > targetCount（dual-friend 使用者算兩次發送），可接受。
+      let targetCount = 0;
+      let passengerIds: string[] = [];
+      let driverIds: string[] = [];
 
       if (mergedTargetType === 'order') {
         if (mergedTargetOrderId) {
           const orderSnap = await db.collection('orders').doc(mergedTargetOrderId).get();
           if (orderSnap.exists) {
             const ownerLineUid = orderSnap.data()?.userId as string | undefined;
-            if (ownerLineUid) targets.push({ lineUserId: ownerLineUid, client: 'passenger' });
+            if (ownerLineUid) {
+              passengerIds = [ownerLineUid];
+              targetCount = 1;
+            }
           }
         }
-      } else {
-        let q = db.collection('users') as FirebaseFirestore.Query;
-        if (mergedTargetType !== 'all') {
-          q = q.where('roles', 'array-contains', mergedTargetType);
-        }
-        const usersSnap = await q.get();
+      } else if (mergedTargetType === 'all') {
+        const usersSnap = await db.collection('users').get();
+        const allIds: string[] = [];
         usersSnap.docs.forEach((doc) => {
-          const data = doc.data();
-          const lineUserId = data.lineUserId as string | undefined;
-          if (!lineUserId) return;
-          const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
-          let client: LineClient;
-          if (mergedTargetType === 'driver') client = 'driver';
-          else if (mergedTargetType === 'passenger') client = 'passenger';
-          else client = roles.includes('driver') ? 'driver' : 'passenger'; // 'all'
-          targets.push({ lineUserId, client });
+          const lineUserId = doc.data().lineUserId as string | undefined;
+          if (lineUserId) allIds.push(lineUserId);
         });
+        passengerIds = [...allIds];
+        driverIds = [...allIds];
+        targetCount = allIds.length;
+      } else {
+        // passenger / driver
+        const snap = await db.collection('users')
+          .where('roles', 'array-contains', mergedTargetType)
+          .get();
+        const ids: string[] = [];
+        snap.docs.forEach((doc) => {
+          const lineUserId = doc.data().lineUserId as string | undefined;
+          if (lineUserId) ids.push(lineUserId);
+        });
+        if (mergedTargetType === 'passenger') passengerIds = ids;
+        else driverIds = ids;
+        targetCount = ids.length;
       }
 
       let sentCount = 0;
       let failedCount = 0;
 
-      if (mergedChannels.line && targets.length > 0) {
+      if (mergedChannels.line && targetCount > 0) {
         // 有 coverImageUrl 或 ctaButton → Flex；否則 text fallback
         const hasRichContent = !!mergedCover || !!mergedCta;
         const flexMsg: LineMessage = hasRichContent
@@ -202,9 +219,6 @@ export default defineEventHandler(async (event) => {
             text: [`📢 ${mergedTitle}`, '', mergedBody.replace(/<[^>]+>/g, '').slice(0, 1000)].join('\n'),
           };
 
-        const passengerIds = targets.filter((t) => t.client === 'passenger').map((t) => t.lineUserId);
-        const driverIds    = targets.filter((t) => t.client === 'driver').map((t) => t.lineUserId);
-
         const [pRes, dRes] = await Promise.all([
           passengerIds.length > 0 ? sendLineMulticast('passenger', passengerIds, [flexMsg]) : Promise.resolve({ sent: 0, failed: 0 }),
           driverIds.length > 0    ? sendLineMulticast('driver',    driverIds,    [flexMsg]) : Promise.resolve({ sent: 0, failed: 0 }),
@@ -214,7 +228,7 @@ export default defineEventHandler(async (event) => {
       }
 
       update.pushStats = {
-        targetCount: targets.length,
+        targetCount,
         sentCount,
         failedCount,
       };

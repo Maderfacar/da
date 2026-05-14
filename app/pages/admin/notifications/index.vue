@@ -105,6 +105,15 @@ const ClickRepublish = async (a: Announcement) => {
   }
 };
 
+// ── 動作：再發佈（複製 — published 公告 → 新建獨立 doc 並發佈） ──
+//   舊那筆 published 不動；新那筆獨立成一條 published（list 重撈後出現在最上）。
+const ClickDuplicate = async (a: Announcement) => {
+  const result = await $open.DialogAnnouncementEdit({ mode: 'duplicate', id: a.id });
+  if (result === 'published' || result === 'saved') {
+    await ApiLoadList();
+  }
+};
+
 // ── 動作：發佈（draft → published 直接發） ────────────────────
 const ClickPublishNow = async (a: Announcement) => {
   const ok = await UseAsk(`確定要立即發佈「${a.title}」？\n若已啟用 LINE 渠道將推送給目標對象。`);
@@ -257,13 +266,18 @@ onMounted(() => {
                 :disabled="actingId === a.id"
                 @click="ClickDelete(a)"
               ) 刪除
-            //- published：編輯 / 下架 / 刪除
+            //- published：編輯 / 再發佈（複製成新公告）/ 下架 / 刪除
             template(v-else-if="a.status === 'published'")
               button.PageAdminAnnouncements__actionBtn(
                 type="button"
                 :disabled="actingId === a.id"
                 @click="ClickEdit(a)"
               ) 編輯
+              button.PageAdminAnnouncements__actionBtn.PageAdminAnnouncements__actionBtn--primary(
+                type="button"
+                :disabled="actingId === a.id"
+                @click="ClickDuplicate(a)"
+              ) 再發佈
               button.PageAdminAnnouncements__actionBtn(
                 type="button"
                 :disabled="actingId === a.id"

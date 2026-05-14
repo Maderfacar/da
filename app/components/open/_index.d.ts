@@ -21,7 +21,7 @@ type DialogDemoParams = {
 
 /** P37：公告編輯彈窗參數 */
 type DialogAnnouncementEditParams = {
-  mode: 'create' | 'edit' | 'republish'
-  id?: string // edit / republish 模式必填
+  mode: 'create' | 'edit' | 'republish' | 'duplicate'
+  id?: string // edit / republish / duplicate 模式必填（duplicate = 載入 source 內容後 POST 新 doc）
 }
 // TODO 組件加完後，要設定

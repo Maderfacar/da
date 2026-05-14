@@ -17,7 +17,7 @@ import type {
   PatchAnnouncementBody,
 } from '@/protocol/fetch-api/api/admin/announcement';
 
-type AnnouncementEditMode = 'create' | 'edit' | 'republish';
+type AnnouncementEditMode = 'create' | 'edit' | 'republish' | 'duplicate';
 
 interface DialogAnnouncementEditParamsLocal {
   mode: AnnouncementEditMode;
@@ -60,7 +60,9 @@ const titleLen = computed(() => form.title.length);
 const TITLE_MAX = 60;
 const CTA_LABEL_MAX = 20;
 
-// ── 載入既有公告（edit / republish） ───────────────────────────
+// ── 載入既有公告（edit / republish / duplicate） ─────────────
+// duplicate 模式：載入 source 內容當「新草稿」起點，但**不**綁定 source id；
+//   提交時走 POST 新 doc，不會動到原本的 source。
 const ApiLoadDetail = async () => {
   if (props.params.mode === 'create' || !props.params.id) return;
   loading.value = true;
@@ -85,7 +87,8 @@ const ApiLoadDetail = async () => {
     form.targetOrderId = a.targetOrderId ?? '';
     form.channelLine = a.channels.line;
     form.channelInApp = a.channels.inApp;
-    currentStatus.value = a.status;
+    // duplicate 模式不繼承 status（視為全新草稿）；edit / republish 才綁 source status
+    currentStatus.value = props.params.mode === 'duplicate' ? null : a.status;
   } finally {
     loading.value = false;
   }
@@ -179,7 +182,18 @@ const BuildBody = (): CreateAnnouncementBody => {
 };
 
 // ── 動作 ─────────────────────────────────────────────────────
-/** 儲存草稿（create: POST as draft / edit: PATCH 內容不動 status） */
+// 模式行為：
+//   create     POST 新 doc（草稿或直接 publish）
+//   edit       PATCH 現有 doc（不變動 status，可選擇 publish）
+//   republish  PATCH 現有 doc 改 status=published（archived → published 重發路徑，會重推 LINE）
+//   duplicate  POST 新 doc（內容繼承 source 但獨立，原 source 不動）
+
+/** 是否走「新增」路徑（POST 新 doc，不動 source） */
+const isCreateLike = computed(() =>
+  props.params.mode === 'create' || props.params.mode === 'duplicate'
+);
+
+/** 儲存草稿（create / duplicate: POST as draft；edit: PATCH 內容不動 status） */
 const ClickSaveDraft = async () => {
   const err = ValidateForm();
   if (err) {
@@ -188,7 +202,7 @@ const ClickSaveDraft = async () => {
   }
   submitting.value = true;
   try {
-    if (props.params.mode === 'create') {
+    if (isCreateLike.value) {
       const res = await $api.CreateAdminAnnouncement(BuildBody());
       if (res.status.code !== 200) {
         ElMessage({ message: res.status.message?.zh_tw || '建立失敗', type: 'error' });
@@ -198,10 +212,9 @@ const ClickSaveDraft = async () => {
       props.resolve('saved');
       emit('on-close');
     } else {
-      // edit 或 republish 模式都走 PATCH（republish 一般不會用「儲存草稿」，但保留邏輯）
+      // edit / republish 走 PATCH
       if (!props.params.id) return;
       const body: PatchAnnouncementBody = BuildBody();
-      // republish 模式不該用儲存草稿（按鈕已隱藏）；edit 模式存內容不動 status
       const res = await $api.PatchAdminAnnouncement(props.params.id, body);
       if (res.status.code !== 200) {
         ElMessage({ message: res.status.message?.zh_tw || '更新失敗', type: 'error' });
@@ -221,22 +234,22 @@ const ClickSaveDraft = async () => {
   }
 };
 
-/** 立即發佈 / 重新發佈 */
+/** 立即發佈 / 重新發佈 / 複製發佈 */
 const ClickPublish = async () => {
   const err = ValidateForm();
   if (err) {
     ElMessage({ message: err, type: 'warning' });
     return;
   }
-  // 重發要二次警告
-  if (props.params.mode === 'republish' || currentStatus.value === 'archived') {
-    const ok = await UseAsk('將再次推送 LINE 給目標對象，確定要重新發佈？');
+  // 重發 / 複製發佈都要二次警告（會送一次 LINE）
+  if (props.params.mode === 'republish' || props.params.mode === 'duplicate' || currentStatus.value === 'archived') {
+    const ok = await UseAsk('將推送 LINE 給目標對象，確定要發佈？');
     if (!ok) return;
   }
   submitting.value = true;
   try {
-    if (props.params.mode === 'create') {
-      // create + 立即發佈 = POST 草稿後 PATCH publish
+    if (isCreateLike.value) {
+      // create / duplicate + 立即發佈 = POST 新 doc 後 PATCH publish
       const createRes = await $api.CreateAdminAnnouncement(BuildBody());
       if (createRes.status.code !== 200 || !createRes.data?.id) {
         ElMessage({ message: createRes.status.message?.zh_tw || '建立失敗', type: 'error' });
@@ -282,23 +295,25 @@ const ClickCancel = () => {
 const dialogTitle = computed(() => {
   if (props.params.mode === 'create') return '新增公告';
   if (props.params.mode === 'republish') return '重新發佈公告';
+  if (props.params.mode === 'duplicate') return '再發佈一則公告（複製）';
   return '編輯公告';
 });
 
 const publishButtonLabel = computed(() => {
   if (props.params.mode === 'republish') return '重新發佈';
+  if (props.params.mode === 'duplicate') return '建立並發佈';
   if (currentStatus.value === 'published') return '更新公告';
   return '立即發佈';
 });
 
 const showSaveDraft = computed(() => {
   // republish 不顯示「儲存草稿」（避免誤把 archived 收回 draft）
-  // 已發佈狀態下，「儲存草稿」改成「更新內容」入口（功能上是 PATCH 內容不動 status）
+  // duplicate 顯示「儲存草稿」可獨立留底（不立即發佈）
   return props.params.mode !== 'republish';
 });
 
 const saveDraftLabel = computed(() => {
-  if (props.params.mode === 'create') return '儲存草稿';
+  if (isCreateLike.value) return '儲存草稿';
   if (currentStatus.value === 'draft') return '儲存草稿';
   // edit 模式且 status 為 published / archived → 純更新內容
   return '只儲存（不變動狀態）';
@@ -344,6 +359,10 @@ onMounted(() => {
           v-if="props.params.mode === 'republish'"
         )
           | ⚠ 此動作會再次推送 LINE 給目標對象（如已啟用 LINE 渠道）。
+        .OpenDialogAnnouncementEdit__warning.is-info(
+          v-else-if="props.params.mode === 'duplicate'"
+        )
+          | ℹ 將以目前內容建立一則**新**公告（原公告保留不動）。「建立並發佈」會推送 LINE。
 
         //- 標題
         .OpenDialogAnnouncementEdit__field
@@ -628,6 +647,12 @@ $muted: rgba(255, 255, 255, 0.4);
   border-radius: 10px;
   font-size: 13px;
   line-height: 1.5;
+
+  &.is-info {
+    background: rgba($amber, 0.08);
+    border-color: rgba($amber, 0.35);
+    color: rgba(255, 220, 170, 0.95);
+  }
 }
 
 // ── Field ─────────────────────────────────────────────────
