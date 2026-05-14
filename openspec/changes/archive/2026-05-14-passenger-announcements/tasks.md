@@ -242,34 +242,45 @@
 
 ### 6.2 e2e 手測 checklist
 
-- [ ] Layout 改造後 5 個既有頁面（home/booking/orders/upcoming/fleet/profile）visual ok
-- [ ] admin 發佈純 text announcement（channels.line=true, inApp=false） → LINE 收到 text + App 列表不出現
-- [ ] admin 發佈純 in-app announcement（channels.line=false, inApp=true）→ LINE 沒收 + App 列表出現
-- [ ] admin 發佈含圖 + CTA Flex（line=true, inApp=true）→ 兩端都正確顯示
-- [ ] admin target=order 指定特定訂單 → 只該乘客收到
-- [ ] **status 循環驗證**：published → 編輯 → 不重推 LINE / archived → 重新發佈 → 重推 LINE / archived → 刪除 OK
-- [ ] 訂單事件 5 個推播：建單 / confirmed / en_route / completed / cancelled → 乘客 LINE 收到；arrived_pickup → **不**推
-- [ ] admin 訂單詳情點「通知乘客」 → 乘客收到自訂訊息
-- [ ] 未讀紅點：開未讀消息後紅點 -1 / 全部讀完紅點消失
-- [ ] **drawer menu 順序驗證**：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服 — 順序與 label 正確；無「登出」「首頁」項
-- [ ] logo 點擊回 `/home` 可運作
+- [x] Layout 改造後 5 個既有頁面（home/booking/orders/upcoming/fleet/profile）visual ok
+- [x] admin 發佈純 text announcement（channels.line=true, inApp=false） → LINE 收到 text + App 列表不出現
+- [x] admin 發佈純 in-app announcement（channels.line=false, inApp=true）→ LINE 沒收 + App 列表出現
+- [x] admin 發佈含圖 + CTA Flex（line=true, inApp=true）→ 兩端都正確顯示
+- [x] admin target=order 指定特定訂單 → 只該乘客收到
+- [x] **status 循環驗證**：published → 編輯 → 不重推 LINE / archived → 重新發佈 → 重推 LINE / archived → 刪除 OK
+- [x] 訂單事件 5 個推播：建單 / confirmed / en_route / completed / cancelled → 乘客 LINE 收到；arrived_pickup → **不**推
+- [x] admin 訂單詳情點「通知乘客」 → 乘客收到自訂訊息
+- [x] 未讀紅點：開未讀消息後紅點 -1 / 全部讀完紅點消失
+- [x] **drawer menu 順序驗證**：最新消息（紅點） / 訂車 / 我的行程 / 歷史訂單 / 車型介紹 / 個人設定 / 客服 — 順序與 label 正確；無「登出」「首頁」項
+- [x] logo 點擊回 `/home` 可運作
 
 ### 6.3 decision-log（Brain AI 本地維護 — docs/ git-ignored）
 
-- [ ] [docs/decision-log.md](docs/decision-log.md) 新增 2026-05-14 entry — 公告系統 + Layout 改造拍板紀錄
+- [x] [docs/decision-log.md](docs/decision-log.md) 新增 2026-05-14 entry — 公告系統 + Layout 改造拍板紀錄
   > 註：`docs/` 自 `d03b076` 起 git-ignored，僅 Brain AI 本地保留，無法從 git-tracked 工作流落地
 
 ### 6.4 tasks.md 收斂
 
-- [ ] [docs/tasks.md](docs/tasks.md) 更新 P 編號（建議 P37）+ 移除「🟡 待辦」section 中 LIFF B/W1/W2/W3 的「乘客端發佈消息完工」blocker 標註，改為「✅ 乘客端發佈消息 P37 已完成，B vs W123 優先順序待拍」
+- [x] [docs/tasks.md](docs/tasks.md) 更新 P 編號（建議 P37）+ 移除「🟡 待辦」section 中 LIFF B/W1/W2/W3 的「乘客端發佈消息完工」blocker 標註，改為「✅ 乘客端發佈消息 P37 已完成，B vs W123 優先順序待拍」
   > 註：`docs/tasks.md` 同樣 git-ignored；Brain AI 本地手動更新
 - [x] bump version 至 v0.3.21（version.ts + CommonDrawer 同源 import）
 
 ### 6.5 Stage Gate
 
 - [x] G6.1 commit + push origin :main（Phase 6 收尾 commit）
-- [ ] G6.2 Brain AI 在 LIFF 上跑一輪 e2e 驗收
-- [ ] G6.3 整個 change archive 到 `openspec/changes/archive/`（G6.2 通過後執行）
+- [x] G6.2 Brain AI 在 LIFF 上跑一輪 e2e 驗收（2026-05-14 通過）
+- [x] G6.3 整個 change archive 到 `openspec/changes/archive/`
+
+---
+
+## 上線後 hotfix（archive 前一併紀錄）
+
+- `e88d440` — composite indexes 缺失修復：建立 `firestore.indexes.json` + `firebase.json` + `.firebaserc`；admin/orders 指派司機 path 改不推 `order.confirmed`（改用「通知乘客」按鈕手動觸發）
+- `41beb18` — firestore.indexes.json 同步 prod 5 indexes（含 3 個 legacy orders 索引保留）
+- `dcd9cb4` — target=all 改雙 OA multicast（原依 role 路由讓 dual-role 使用者只收 driver OA）+ published 卡新增「再發佈」按鈕（duplicate mode = POST 新獨立 doc 不動原 source）
+
+Firebase 部署（也在 2026-05-14 完成）：
+- `firebase deploy --only firestore:indexes,firestore:rules,storage` 成功；2 個 announcements composite indexes building → enabled
 
 ---
 
