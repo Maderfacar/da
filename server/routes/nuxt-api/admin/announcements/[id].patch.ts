@@ -24,8 +24,11 @@
  *     - archived → published：audit `announcement.republish`
  *   - 其他狀態變化 / 純編輯 → 不推 LINE
  *
- * Phase 2：LINE push 邏輯**留 stub**（pushStats 寫 targetCount，sentCount=0 標 TODO）。
- * Phase 4 才正式 wire 進 sendLinePush + Flex builder。
+ * P37 Phase 4：實推 LINE（取代 Phase 2 stub）
+ *   - 撈 audience（target='order' → 訂單 owner；其餘 → users where roles）
+ *   - 依 target 分流 OA：passenger / driver；'all' 則 driver role 走 driver OA、其餘 passenger OA
+ *   - 有 coverImageUrl/ctaButton → Flex Message；否則 text fallback
+ *   - sendLineMulticast 批次推（每 500 / call）
  *
  * 副作用：
  *   - audit log（依 status 變化或編輯動作）
@@ -40,10 +43,12 @@ import { checkRateLimit, rateLimitedResponse } from '@@/utils/rate-limit';
 import {
   validateAnnouncementBody,
   sanitizeBody,
-  getAnnouncementTargets,
   type AnnouncementWriteInput,
   type AnnouncementStatus,
 } from '@@/utils/announcement';
+import { sendLineMulticast, type LineMessage } from '@@/utils/line-push';
+import { buildAnnouncementFlex } from '@@/utils/announcement-flex';
+import type { LineClient } from '@@/utils/line-channel';
 
 interface PatchBody extends AnnouncementWriteInput {
   status?: AnnouncementStatus;
@@ -132,22 +137,86 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // ── Publish 額外動作：撈 targets + 寫 pushStats（LINE push 留 Phase 4）────
+    // ── Publish 額外動作：撈 targets + push LINE + 寫 pushStats ──────────────
+    // P37 Phase 4：取代 Phase 2 留的 stub；inline 處理 role-aware OA 分流 + Flex 組裝。
     if (isPublishing) {
       const mergedTargetType = (body.targetType ?? existing.targetType) as 'all' | 'passenger' | 'driver' | 'order';
       const mergedTargetOrderId = (body.targetOrderId !== undefined
         ? body.targetOrderId
         : existing.targetOrderId) as string | null;
       const mergedChannels = (body.channels ?? existing.channels) as { line: boolean; inApp: boolean };
+      const mergedTitle = (body.title ?? existing.title) as string;
+      const mergedBody = (body.body ?? existing.body) as string;
+      const mergedCover = (body.coverImageUrl !== undefined
+        ? body.coverImageUrl
+        : existing.coverImageUrl) as string | null;
+      const mergedCta = (body.ctaButton !== undefined
+        ? body.ctaButton
+        : existing.ctaButton) as { label: string; url: string } | null;
 
-      const targets = await getAnnouncementTargets(db, mergedTargetType, mergedTargetOrderId);
+      interface PushTarget { lineUserId: string; client: LineClient }
+      const targets: PushTarget[] = [];
 
-      // TODO Phase 4：mergedChannels.line === true 時 batch sendLinePush（含 Flex builder）
-      // 目前留 stub：sentCount = 0，等 Phase 4 接通後改為實際推送結果
+      if (mergedTargetType === 'order') {
+        if (mergedTargetOrderId) {
+          const orderSnap = await db.collection('orders').doc(mergedTargetOrderId).get();
+          if (orderSnap.exists) {
+            const ownerLineUid = orderSnap.data()?.userId as string | undefined;
+            if (ownerLineUid) targets.push({ lineUserId: ownerLineUid, client: 'passenger' });
+          }
+        }
+      } else {
+        let q = db.collection('users') as FirebaseFirestore.Query;
+        if (mergedTargetType !== 'all') {
+          q = q.where('roles', 'array-contains', mergedTargetType);
+        }
+        const usersSnap = await q.get();
+        usersSnap.docs.forEach((doc) => {
+          const data = doc.data();
+          const lineUserId = data.lineUserId as string | undefined;
+          if (!lineUserId) return;
+          const roles: string[] = Array.isArray(data.roles) ? data.roles : [];
+          let client: LineClient;
+          if (mergedTargetType === 'driver') client = 'driver';
+          else if (mergedTargetType === 'passenger') client = 'passenger';
+          else client = roles.includes('driver') ? 'driver' : 'passenger'; // 'all'
+          targets.push({ lineUserId, client });
+        });
+      }
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      if (mergedChannels.line && targets.length > 0) {
+        // 有 coverImageUrl 或 ctaButton → Flex；否則 text fallback
+        const hasRichContent = !!mergedCover || !!mergedCta;
+        const flexMsg: LineMessage = hasRichContent
+          ? buildAnnouncementFlex({
+            title: mergedTitle,
+            body: mergedBody,
+            coverImageUrl: mergedCover,
+            ctaButton: mergedCta,
+          })
+          : {
+            type: 'text',
+            text: [`📢 ${mergedTitle}`, '', mergedBody.replace(/<[^>]+>/g, '').slice(0, 1000)].join('\n'),
+          };
+
+        const passengerIds = targets.filter((t) => t.client === 'passenger').map((t) => t.lineUserId);
+        const driverIds    = targets.filter((t) => t.client === 'driver').map((t) => t.lineUserId);
+
+        const [pRes, dRes] = await Promise.all([
+          passengerIds.length > 0 ? sendLineMulticast('passenger', passengerIds, [flexMsg]) : Promise.resolve({ sent: 0, failed: 0 }),
+          driverIds.length > 0    ? sendLineMulticast('driver',    driverIds,    [flexMsg]) : Promise.resolve({ sent: 0, failed: 0 }),
+        ]);
+        sentCount = pRes.sent + dRes.sent;
+        failedCount = pRes.failed + dRes.failed;
+      }
+
       update.pushStats = {
         targetCount: targets.length,
-        sentCount: mergedChannels.line ? 0 : 0, // Phase 4 wire
-        failedCount: 0,
+        sentCount,
+        failedCount,
       };
     }
 

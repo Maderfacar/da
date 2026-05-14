@@ -96,11 +96,11 @@ export default defineEventHandler(async (event) => {
     // P29：依 target 推到對應 OA（passenger / driver 各自的 channel）
     await sendLinePush(body.target, targetLineUserId, [{ type: 'text', text: body.message }]);
 
-    // P25-2 audit log
+    // P37 Phase 4：依 target 區分 audit action（取代 legacy broadcast.notify_one）
     await writeAuditLog({
       event,
       auth,
-      action: 'broadcast.notify_one',
+      action: body.target === 'passenger' ? 'admin.notify_passenger' : 'admin.notify_driver',
       targetType: 'order',
       targetId: orderId,
       payload: { target: body.target, messagePreview: body.message.slice(0, 200) },

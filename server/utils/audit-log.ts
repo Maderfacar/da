@@ -57,7 +57,9 @@ export type AuditAction =
   | 'order.edit'
   // broadcast / notify
   | 'broadcast.send'
-  | 'broadcast.notify_one'
+  | 'broadcast.notify_one'        // legacy（P37 前；passenger / driver 共用）
+  | 'admin.notify_passenger'      // P37 Phase 4：點對點通知乘客
+  | 'admin.notify_driver'         // P37 Phase 4：點對點通知司機
   // P37 announcement（取代 broadcast.* 的後續發展）
   | 'announcement.create'      // 建草稿
   | 'announcement.update'      // 編輯內容（不變動 status）

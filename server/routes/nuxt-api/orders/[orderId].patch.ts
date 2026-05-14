@@ -5,6 +5,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 import { sendLinePush } from '@@/utils/line-push';
+import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 
 interface GooglePlaceLite {
   address: string;
@@ -370,6 +371,33 @@ export default defineEventHandler(async (event) => {
           type: 'text',
           text: `✅ 訂單已完成\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已完成。\n收入 NT$ ${fare.toLocaleString()} 已計入今日統計。\n辛苦了！`,
         }]);
+      }
+    }
+
+    // ── P37 Phase 4：訂單事件推播給乘客（4 個觸發點 + design.md §8.7 移除 arrived_pickup）──
+    // fire-and-forget；錯誤吞掉。passenger OA 推播。
+    if (body.orderStatus && body.orderStatus !== prevStatus) {
+      const PUSH_MAP: Partial<Record<OrderStatus, OrderMessageKey>> = {
+        confirmed: 'order.confirmed',
+        en_route:  'order.en_route',
+        completed: 'order.completed',
+        cancelled: 'order.cancelled',
+        // arrived_pickup / in_transit / pending 不推（spec 拍板）
+      };
+      const messageKey = PUSH_MAP[body.orderStatus as OrderStatus];
+      const passengerLineUid = (orderData.lineUserId as string | undefined) || orderUserId;
+      if (messageKey && passengerLineUid) {
+        void (async () => {
+          try {
+            const lang = await getUserLang(db, passengerLineUid);
+            const text = getOrderMessage(messageKey, lang, {
+              cancelReason: body.cancelReason || undefined,
+            });
+            await sendLinePush('passenger', passengerLineUid, [{ type: 'text', text }]);
+          } catch (err) {
+            console.error(`[orders/patch] passenger push (${body.orderStatus}) failed:`, err);
+          }
+        })();
       }
     }
 

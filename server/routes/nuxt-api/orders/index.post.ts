@@ -6,6 +6,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { calcRouteDistance } from '@@/utils/calc-route-distance';
+import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
 
 interface GooglePlace {
   address: string;
@@ -188,22 +189,32 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: '訂單寫入失敗，請稍後重試', en: 'Failed to save order, please retry', ja: '注文の保存に失敗しました' });
   }
 
-  // ── LINE 訂單確認推播（fire-and-forget，失敗不影響訂單成立）──
+  // ── LINE 訂單建立推播（fire-and-forget，失敗不影響訂單成立）──
   // P29：訂單建立者 = 乘客，用 passenger OA 推播
+  // P37 Phase 4：改走 i18n-message helper（依 users/{lineUid}.lang 選語系）
   if (lineUserId) {
     const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
     const fareStr = estimatedFare.toLocaleString();
     // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
     const vehicleLabel = vehicle.label.zh || body.vehicleType;
-    const msg = [
-      '✅ 訂單確認',
-      `📅 接送時間：${dateStr}`,
-      `📍 上車地點：${body.pickupLocation.address}`,
-      `🚗 車型：${vehicleLabel}`,
-      `💰 預估費用：NT$ ${fareStr}`,
-      `🔖 訂單編號：${orderId.slice(0, 8).toUpperCase()}`,
-    ].join('\n');
-    sendLinePush('passenger', lineUserId, [{ type: 'text', text: msg }]);
+    const orderIdShort = orderId.slice(0, 8).toUpperCase();
+
+    // fire-and-forget：撈語系 + 推播都不 await，避免阻塞回應
+    void (async () => {
+      try {
+        const lang = await getUserLang(db, lineUserId);
+        const text = getOrderMessage('order.pending', lang, {
+          date: dateStr,
+          pickup: body.pickupLocation.address,
+          vehicle: vehicleLabel,
+          fare: fareStr,
+          orderId: orderIdShort,
+        });
+        await sendLinePush('passenger', lineUserId, [{ type: 'text', text }]);
+      } catch (err) {
+        console.error('[orders/post] pending push failed:', err);
+      }
+    })();
   }
 
   return successResponse({
