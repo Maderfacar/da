@@ -92,26 +92,28 @@
 
 ### 3.1 公告整合（Q3=3b）
 
-- [ ] [server/utils/announcement-flex.ts](server/utils/announcement-flex.ts) 內部改 call template-registry `buildTemplateFlex`
-- [ ] 對外簽名 + 外部 caller（announcement publish 流程）行為完全不變
-- [ ] 公告 admin UI 不動
+- [x] [server/utils/announcement-flex.ts](server/utils/announcement-flex.ts) 內部改 call template-registry `buildTemplateFlex`（excerpt 非空時走共用 builder；空時保留 P37 單 title bubble fallback）
+- [x] 對外簽名 + 外部 caller（announcement publish 流程）行為完全不變
+- [x] 公告 admin UI 不動
 
 ### 3.2 Diagnostics MVP（Q4=4b）
 
-- [ ] 新增 `GET /nuxt-api/admin/line-richmenus/sync-overview?channel=...`
-- [ ] `app/protocol/fetch-api/api/admin/line-richmenu/` 加 `GetRichmenuSyncOverview` method
-- [ ] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `diagnostics` tab：
-  - passenger / driver 兩 panel
-  - 顯示本地 active vs LINE default 一致性 + 孤兒 richmenu list
-  - 「重試 sync」+「清理孤兒」按鈕（後者需新增 endpoint 或復用 DELETE）
-- [ ] MAIN_TABS 'diagnostics' ready=true
+- [x] 新增 `GET /nuxt-api/admin/line-richmenus/sync-overview?channel=...`（本地 line_richmenus + LINE listRichmenus / getDefaultRichmenuId 比對 + orphan / stale 偵測）
+- [x] 新增 `POST /nuxt-api/admin/line-richmenus/cleanup-orphan`（安全檢查本地無 doc 後才 DELETE LINE 端，含 audit log）
+- [x] `app/protocol/fetch-api/api/admin/line-richmenu/` 加 `GetRichmenuSyncOverview` + `CleanupOrphanRichmenu` method + types
+- [x] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `diagnostics` tab：
+  - passenger / driver 兩 card（卡片並列 / 手機單欄）
+  - match 一致性 banner（綠 / 紅）+ inconsistencies list
+  - LINE 端 listRichmenus 表（含 DEFAULT / ORPHAN badge + 清理按鈕）
+  - 本地 active doc + stale list（informational）
+  - 重新檢查按鈕
+- [x] MAIN_TABS 'diagnostics' ready=true
 
 ### 3.3 Stage Gate
 
-- [ ] G3.1 lint + build pass
-- [ ] G3.2 真機驗證：故意製造一個 LINE 端孤兒 richmenu（手動透過 LINE Console 建）→ Diagnostics tab 偵測到並顯示
-- [ ] G3.3 e2e 公告發佈 → 推播 Flex 結構與 P38 一致
-- [ ] G3.4 commit + push origin HEAD:main
+- [x] G3.1 lint + build pass（`sync-overview.get.mjs` + `cleanup-orphan.post.mjs` 已 bundle）
+- [ ] G3.2 真機驗證（彙整 Phase 4 e2e checklist）
+- [ ] G3.3 commit + push origin HEAD:main
 
 ---
 

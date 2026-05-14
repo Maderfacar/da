@@ -99,3 +99,40 @@ export interface SyncStatusRes {
   match: boolean;
   queryError: string | null;
 }
+
+// ── P40 Phase 3：Diagnostics MVP ─────────────────────────
+export interface SyncOverviewLocalDoc {
+  id: string;
+  name: string;
+  status: RichmenuStatus;
+  lineRichMenuId: string | null;
+}
+
+export interface SyncOverviewLineMenu {
+  richMenuId: string;
+  name: string;
+  size: { width: number; height: number };
+  hasLocalDoc: boolean;
+  isDefault: boolean;
+}
+
+export interface SyncOverviewRes {
+  local: {
+    activeDoc: SyncOverviewLocalDoc | null;
+    docs: SyncOverviewLocalDoc[];
+  };
+  line: {
+    defaultRichMenuId: string | null;
+    allMenus: SyncOverviewLineMenu[];
+  };
+  match: boolean;
+  inconsistencies: string[];
+  orphans: Array<{ richMenuId: string; name: string }>;
+  stale: Array<{ docId: string; lineRichMenuId: string; name: string }>;
+  queryError: string | null;
+}
+
+export interface CleanupOrphanBody {
+  channel: LineClient;
+  lineRichMenuId: string;
+}

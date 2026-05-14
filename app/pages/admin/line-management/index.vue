@@ -12,6 +12,7 @@ import type {
   LineClient,
   LineRichmenuDto,
   RichmenuStatus,
+  SyncOverviewRes,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
 import type { NotificationTemplateItem } from '@/protocol/fetch-api/api/admin/notification-template';
 import type { BotReplyItem, BotReplyKey } from '@/protocol/fetch-api/api/admin/bot-reply';
@@ -24,7 +25,7 @@ const MAIN_TABS: Array<{ key: MainTab; label: string; ready: boolean }> = [
   { key: 'richmenu', label: '圖文選單', ready: true },
   { key: 'templates', label: 'Flex 模板', ready: true },
   { key: 'bot-replies', label: '自動回覆', ready: true },
-  { key: 'diagnostics', label: '診斷', ready: false },
+  { key: 'diagnostics', label: '診斷', ready: true },
 ];
 
 const BOT_REPLY_TYPE_LABEL: Record<'follow' | 'text', string> = {
@@ -320,12 +321,60 @@ const ClickSaveBotReply = async (item: BotReplyItem) => {
   }
 };
 
+// ── Diagnostics tab（P40 Phase 3） ────────────────────────
+const diagnostics = reactive<{
+  passenger: SyncOverviewRes | null;
+  driver: SyncOverviewRes | null;
+}>({ passenger: null, driver: null });
+const diagnosticsLoading = reactive<Record<LineClient, boolean>>({ passenger: false, driver: false });
+const cleaningOrphanId = ref<string>('');
+
+const ApiLoadDiagnostics = async (channel: LineClient) => {
+  diagnosticsLoading[channel] = true;
+  try {
+    const res = await $api.GetRichmenuSyncOverview(channel);
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({ message: res.status.message?.zh_tw || '載入診斷失敗', type: 'error' });
+      diagnostics[channel] = null;
+      return;
+    }
+    diagnostics[channel] = res.data ?? null;
+  } finally {
+    diagnosticsLoading[channel] = false;
+  }
+};
+
+const ClickCleanupOrphan = async (channel: LineClient, orphan: { richMenuId: string; name: string }) => {
+  const ok = await UseAsk(`確定要刪除 LINE 端孤兒選單「${orphan.name || orphan.richMenuId.slice(0, 16)}」？\n此動作無法復原（直接 call LINE DELETE /v2/bot/richmenu/{id}）。`);
+  if (!ok) return;
+  cleaningOrphanId.value = orphan.richMenuId;
+  try {
+    const res = await $api.CleanupOrphanRichmenu({ channel, lineRichMenuId: orphan.richMenuId });
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({
+        message: res.status.message?.zh_tw || '清理失敗',
+        type: 'error',
+        duration: 6000,
+      });
+      return;
+    }
+    ElMessage({ message: '已清理', type: 'success' });
+    await ApiLoadDiagnostics(channel);
+  } finally {
+    cleaningOrphanId.value = '';
+  }
+};
+
 watch(activeMainTab, (tab) => {
   if (tab === 'templates' && templates.value.length === 0) {
     void ApiLoadTemplates();
   }
   if (tab === 'bot-replies' && botReplies.value.length === 0) {
     void ApiLoadBotReplies();
+  }
+  if (tab === 'diagnostics') {
+    if (diagnostics.passenger === null) void ApiLoadDiagnostics('passenger');
+    if (diagnostics.driver === null) void ApiLoadDiagnostics('driver');
   }
 }, { immediate: false });
 const FormatBytes = (bytes: number | null): string => {
@@ -343,6 +392,10 @@ onMounted(() => {
   }
   if (activeMainTab.value === 'bot-replies') {
     void ApiLoadBotReplies();
+  }
+  if (activeMainTab.value === 'diagnostics') {
+    void ApiLoadDiagnostics('passenger');
+    void ApiLoadDiagnostics('driver');
   }
 });
 </script>
@@ -543,11 +596,77 @@ onMounted(() => {
                 @click="ClickSaveBotReply(item)"
               ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
 
-  //- ── Diagnostics Tab 占位（Phase 3）───────────────────
+  //- ── Diagnostics Tab（P40 Phase 3 MVP）─────────────────
+  .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'diagnostics'")
+    .PageAdminLineManagement__diag-intro
+      | 對比本地 line_richmenus collection 與 LINE 端 listRichmenus / default 設定。發現孤兒選單可一鍵清理。
+    .PageAdminLineManagement__diag-grid
+      template(v-for="ch in (['passenger', 'driver'] as LineClient[])" :key="ch")
+        section.PageAdminLineManagement__diag-card(:class="`is-${ch}`")
+          header.PageAdminLineManagement__diag-head
+            span.PageAdminLineManagement__diag-channel(:class="`is-${ch}`")
+              | {{ ch === 'passenger' ? '乘客 OA' : '司機 OA' }}
+            span.PageAdminLineManagement__diag-flex
+            button.PageAdminLineManagement__btn.is-toggle(
+              :disabled="diagnosticsLoading[ch]"
+              @click="ApiLoadDiagnostics(ch)"
+            ) {{ diagnosticsLoading[ch] ? '查詢中...' : '重新檢查' }}
+
+          .PageAdminLineManagement__diag-loading(v-if="diagnosticsLoading[ch] && !diagnostics[ch]") 載入中...
+          .PageAdminLineManagement__diag-empty(v-else-if="!diagnostics[ch]") 尚未查詢
+
+          template(v-else-if="diagnostics[ch]")
+            //- 一致性 banner
+            .PageAdminLineManagement__diag-banner(v-if="diagnostics[ch]!.match")
+              span.PageAdminLineManagement__diag-banner-icon ✓
+              | LINE 端與本地一致
+            .PageAdminLineManagement__diag-banner.is-warning(v-else)
+              span.PageAdminLineManagement__diag-banner-icon ⚠
+              | 偵測到不一致
+            ul.PageAdminLineManagement__diag-inc(v-if="diagnostics[ch]!.inconsistencies.length > 0")
+              li(v-for="msg in diagnostics[ch]!.inconsistencies" :key="msg") {{ msg }}
+
+            //- LINE 端 listRichmenus
+            .PageAdminLineManagement__diag-section
+              .PageAdminLineManagement__diag-section-label LINE 端選單（{{ diagnostics[ch]!.line.allMenus.length }} 個）
+              .PageAdminLineManagement__diag-meta-row
+                span.k Default ID
+                span.v.mono {{ diagnostics[ch]!.line.defaultRichMenuId ?? '無' }}
+              ul.PageAdminLineManagement__diag-menus(v-if="diagnostics[ch]!.line.allMenus.length > 0")
+                li.PageAdminLineManagement__diag-menu-item(
+                  v-for="m in diagnostics[ch]!.line.allMenus"
+                  :key="m.richMenuId"
+                  :class="{ 'is-default': m.isDefault, 'is-orphan': !m.hasLocalDoc }"
+                )
+                  span.PageAdminLineManagement__diag-menu-name {{ m.name || '(no name)' }}
+                  span.PageAdminLineManagement__diag-menu-id {{ m.richMenuId.slice(0, 18) }}…
+                  span.PageAdminLineManagement__diag-menu-badge.is-default(v-if="m.isDefault") DEFAULT
+                  span.PageAdminLineManagement__diag-menu-badge.is-orphan(v-if="!m.hasLocalDoc") ORPHAN
+                  span.PageAdminLineManagement__diag-menu-flex
+                  button.PageAdminLineManagement__btn.is-reject(
+                    v-if="!m.hasLocalDoc"
+                    :disabled="cleaningOrphanId === m.richMenuId"
+                    @click="ClickCleanupOrphan(ch, { richMenuId: m.richMenuId, name: m.name })"
+                  ) {{ cleaningOrphanId === m.richMenuId ? '清理中...' : '清理' }}
+              .PageAdminLineManagement__diag-empty(v-else) 無
+
+            //- 本地 docs
+            .PageAdminLineManagement__diag-section
+              .PageAdminLineManagement__diag-section-label 本地 line_richmenus（{{ diagnostics[ch]!.local.docs.length }} 筆）
+              .PageAdminLineManagement__diag-meta-row(v-if="diagnostics[ch]!.local.activeDoc")
+                span.k Active doc
+                span.v {{ diagnostics[ch]!.local.activeDoc!.name }} / {{ diagnostics[ch]!.local.activeDoc!.lineRichMenuId ?? '無' }}
+              .PageAdminLineManagement__diag-meta-row(v-else)
+                span.k Active doc
+                span.v.muted 無
+              ul.PageAdminLineManagement__diag-stale(v-if="diagnostics[ch]!.stale.length > 0")
+                li(v-for="s in diagnostics[ch]!.stale" :key="s.docId")
+                  | 🔗 doc 「{{ s.name }}」記錄 lineRichMenuId {{ s.lineRichMenuId.slice(0, 18) }}… 但 LINE 端不存在 → 重新發佈或請開發者清理
+
+  //- ── Other fallback（不會走到）────────────────────────
   .PageAdminLineManagement__panel(v-else)
     .PageAdminLineManagement__placeholder
-      span.PageAdminLineManagement__placeholder-icon 🛠
-      span.PageAdminLineManagement__placeholder-text P40 Phase 3 準備中
+      span.PageAdminLineManagement__placeholder-text 未知 tab
 </template>
 
 <style lang="scss" scoped>
@@ -1128,6 +1247,213 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__bot-actions {
   display: flex;
   gap: 6px;
+}
+
+// ── Diagnostics Tab（P40 Phase 3）─────────────────────────
+.PageAdminLineManagement__diag-intro {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  padding: 14px 18px;
+  border-bottom: 1px solid $border;
+  letter-spacing: 0.05em;
+}
+
+.PageAdminLineManagement__diag-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.PageAdminLineManagement__diag-card {
+  padding: 18px;
+  border-right: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  &:last-child { border-right: none; }
+
+  @media (max-width: 900px) {
+    border-right: none;
+    border-bottom: 1px solid $border;
+  }
+}
+
+.PageAdminLineManagement__diag-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.PageAdminLineManagement__diag-channel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  border-radius: 100px;
+  padding: 4px 12px;
+
+  &.is-passenger {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+  }
+  &.is-driver {
+    background: rgba(5, 150, 105, 0.12);
+    color: #059669;
+  }
+}
+
+.PageAdminLineManagement__diag-flex { flex: 1; }
+
+.PageAdminLineManagement__diag-loading,
+.PageAdminLineManagement__diag-empty {
+  padding: 24px;
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+}
+
+.PageAdminLineManagement__diag-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(5, 150, 105, 0.08);
+  color: #059669;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+
+  &.is-warning {
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+  }
+}
+
+.PageAdminLineManagement__diag-banner-icon {
+  font-size: 16px;
+}
+
+.PageAdminLineManagement__diag-inc {
+  margin: 0;
+  padding: 8px 14px 8px 28px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: rgba(239, 68, 68, 0.9);
+  line-height: 1.6;
+  list-style: disc;
+}
+
+.PageAdminLineManagement__diag-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.PageAdminLineManagement__diag-section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: $amber;
+}
+
+.PageAdminLineManagement__diag-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+
+  .k {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: $muted;
+    min-width: 90px;
+  }
+  .v {
+    flex: 1;
+    min-width: 0;
+    word-break: break-all;
+    &.mono { font-family: monospace; font-size: 11px; }
+    &.muted { color: $muted; }
+  }
+}
+
+.PageAdminLineManagement__diag-menus {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.PageAdminLineManagement__diag-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+
+  &.is-default { background: rgba(5, 150, 105, 0.08); }
+  &.is-orphan { background: rgba(239, 68, 68, 0.08); }
+}
+
+.PageAdminLineManagement__diag-menu-name {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PageAdminLineManagement__diag-menu-id {
+  font-family: monospace;
+  font-size: 11px;
+  color: $muted;
+}
+
+.PageAdminLineManagement__diag-menu-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  border-radius: 100px;
+  padding: 2px 8px;
+
+  &.is-default {
+    color: #059669;
+    background: rgba(5, 150, 105, 0.16);
+  }
+  &.is-orphan {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.14);
+  }
+}
+
+.PageAdminLineManagement__diag-menu-flex { flex: 1; }
+
+.PageAdminLineManagement__diag-stale {
+  margin: 6px 0 0;
+  padding: 0 0 0 18px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: #d4860a;
+  list-style: disc;
+  line-height: 1.6;
 }
 
 // ── 其他 tab placeholder ────────────────────────────────────

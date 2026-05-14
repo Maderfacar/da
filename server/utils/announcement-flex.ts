@@ -1,14 +1,18 @@
 /**
- * 公告 LINE Flex Message builder（P37 Phase 4）
+ * 公告 LINE Flex Message builder（P37 Phase 4 → P40 Phase 3：Q3=3b 混合策略）
  *
  * 對應 design.md §3 規格（L1 rich content）：
  *   - bubble（hero image optional / body title + text excerpt / footer button optional）
  *   - altText = title（最多 400 字）
  *   - body excerpt：strip HTML tag + 限 200 字
  *
+ * P40 Phase 3 改：對 buildTemplateFlex 共用，避免兩處各自維護 bubble layout。
+ * 外部行為（caller signature / multicast 流程 / Flex 結構）完全不變。
+ *
  * coverImageUrl 限制：必須 HTTPS、LINE 可訪問（Firebase Storage signed URL ok）。
  */
 import type { LineMessage } from '@@/utils/line-push';
+import { buildTemplateFlex, type TemplateContent } from '@@/utils/template-registry';
 
 interface AnnouncementForFlex {
   title: string;
@@ -33,26 +37,35 @@ export function buildAnnouncementFlex(ann: AnnouncementForFlex): LineMessage {
   const altText = ann.title.slice(0, MAX_ALT_TEXT);
   const excerpt = _stripTags(ann.body).slice(0, BODY_EXCERPT_MAX);
 
-  const bodyContents: object[] = [
-    { type: 'text', text: ann.title, weight: 'bold', size: 'lg', wrap: true, color: '#222222' },
-  ];
+  // P40 Phase 3：excerpt 非空時走共用 builder；確保 Flex 結構與通用 template 一致
   if (excerpt) {
-    bodyContents.push({
-      type: 'text',
-      text: excerpt,
-      wrap: true,
-      size: 'sm',
-      color: '#666666',
-      margin: 'md',
-    });
+    const ctaButton = ann.ctaButton
+      && typeof ann.ctaButton.label === 'string'
+      && ann.ctaButton.label.length > 0
+      && typeof ann.ctaButton.url === 'string'
+      && ann.ctaButton.url.startsWith('https://')
+      ? { label: ann.ctaButton.label, action: { type: 'uri' as const, url: ann.ctaButton.url } }
+      : null;
+
+    const content: TemplateContent = {
+      title: ann.title,
+      body: excerpt,
+      coverImageUrl: ann.coverImageUrl,
+      ctaButton,
+    };
+    const flex = buildTemplateFlex(content, {});
+    if (flex) return flex;
   }
 
+  // Fallback：excerpt 為空（公告 body 純 HTML tag、無實質內容）→ 保留 P37 單 title bubble 行為
   const bubble: Record<string, unknown> = {
     type: 'bubble',
     body: {
       type: 'box',
       layout: 'vertical',
-      contents: bodyContents,
+      contents: [
+        { type: 'text', text: ann.title, weight: 'bold', size: 'lg', wrap: true, color: '#222222' },
+      ],
     },
   };
 

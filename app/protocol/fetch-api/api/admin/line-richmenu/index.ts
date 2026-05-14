@@ -1,6 +1,7 @@
 // P38 Phase 2：admin LINE richmenu API methods
 import methods from '@/protocol/fetch-api/methods';
 import type {
+  CleanupOrphanBody,
   LineClient,
   LineRichmenuDto,
   CreateRichmenuBody,
@@ -8,11 +9,13 @@ import type {
   PublishRichmenuRes,
   RichmenuListRes,
   RichmenuStatus,
+  SyncOverviewRes,
   SyncStatusRes,
   UploadRichmenuImageRes,
 } from './type.d';
 
 export type {
+  CleanupOrphanBody,
   CreateRichmenuBody,
   LineClient,
   LineRichmenuDto,
@@ -24,6 +27,9 @@ export type {
   RichmenuListRes,
   RichmenuSize,
   RichmenuStatus,
+  SyncOverviewLineMenu,
+  SyncOverviewLocalDoc,
+  SyncOverviewRes,
   SyncStatus,
   SyncStatusRes,
   UploadRichmenuImageRes,
@@ -97,4 +103,20 @@ export const TestBindLineRichmenu = (id: string, lineUid: string) =>
   methods.post<{ id: string; lineRichMenuId: string; boundTo: string }>(
     `/nuxt-api/admin/line-richmenus/${id}/test-bind`,
     { lineUid },
+  );
+
+// ── P40 Phase 3：Diagnostics MVP ─────────────────────────
+
+/** Diagnostics 總覽：本地 line_richmenus + LINE listRichmenus / default 一致性比對 */
+export const GetRichmenuSyncOverview = (channel: LineClient) =>
+  methods.get<SyncOverviewRes>(
+    '/nuxt-api/admin/line-richmenus/sync-overview',
+    { channel },
+  );
+
+/** 清理 LINE 端孤兒 richmenu（本地無對應 doc） */
+export const CleanupOrphanRichmenu = (body: CleanupOrphanBody) =>
+  methods.post<{ channel: LineClient; lineRichMenuId: string; deleted: boolean }>(
+    '/nuxt-api/admin/line-richmenus/cleanup-orphan',
+    body as unknown as Record<string, unknown>,
   );
