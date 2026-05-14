@@ -267,12 +267,54 @@ Limit 50 (Q8=8a，超過請至 Firestore Console)
 | **8a 推 spec 預設**：固定 last 50（無 paging；要查舊紀錄請至 Firestore Console） |
 | 8b 載入更多 / 無限滾動（用 startAfter cursor） |
 
-## 7. 決策紀錄（保留結構）
+## 7. 決策紀錄
 
-> Brain AI 拍板後填入。
+**2026-05-15 Brain AI 拍板：Q1-Q8 全部採推 spec 預設。**
 
-### 7.1 Q1 拍板（待填）
+| Q | 拍板 | 摘要 | 連動影響 |
+|---|---|---|---|
+| Q1 | **1a** | Event log 簡單 schema：channel/eventType/lineUid/postbackData/messageText/handlerResult/createdAt（不存 rawPayload） | doc size 小、Firestore 成本 < US$0.5/月；不夠時 P50+ 再擴 1b |
+| Q2 | **2a** | Error log 基本 schema：channel/api/method/statusCode/errorMessage/errorDetails(trim 500)/context.{targetUid,richMenuId}（不存 requestBody） | accessToken 不會誤入 log；偵錯時若需 requestBody snapshot 再擴 2b |
+| Q3 | **3c** | 第一版不設 TTL；跑 1-2 週看 data 量；若 > 5000 doc/月再補 3a Firestore TTL policy | 不寫 expiresAt field（避免後續若改方案要 migration）；admin 視情況手動清或加 cron |
+| Q4 | **4a** | Webhook event log 寫入用 fire-and-forget（不阻擋 LINE 200 回應） | Vercel serverless 偶爾砍 promise 可能掉 log；可接受（log 系統本身為 best-effort） |
+| Q5 | **5a** | Diagnostics tab 內加 sub-tab（Sync Overview / Event Log / Error Log），不開獨立 /logs 子頁 | 單頁體驗 + lazy load；切 sub-tab 才打對應 API |
+| Q6 | **6a** | 第一版不做 chart（raw list only） | raw list 涵蓋 95% 運維場景；time series chart 延後 P50+ |
+| Q7 | **7c** | userId 不 mask（admin 已高權限，與 audit-log 同策略） | UI 完整顯示 lineUid；row expand 可複製 |
+| Q8 | **8a** | Pagination 固定 last 50（無 paging；要查舊紀錄請至 Firestore Console） | 不寫 startAfter cursor 邏輯；超過 50 admin 自行去 Console |
 
-### 7.2 Q2 拍板（待填）
+### 7.1 Q1=1a 細節
 
-…（Q3-Q8 同）
+writeLineEventLog 寫入欄位嚴格依 design.md §1.1 schema；非 postback 事件 postbackData=null；非 text message 事件 messageText=null（trim 100 字）。`handlerResult` 列舉值：`replied` / `ignored` / `handler_failed` / `no_handler`。
+
+### 7.2 Q2=2a 細節
+
+errorDetails 取 `JSON.stringify(err.details).slice(0, 500)`；超出 trim 不留 truncated marker（admin 可由 Vercel log 看完整 details，本表純為集中索引）。context 三欄位皆 optional，由 caller 提供。
+
+### 7.3 Q3=3c 細節
+
+不寫 expiresAt field；Firebase Console TTL 不配置。Phase 4 收尾 audit 確認 line_event_logs / line_api_errors collection 實際寫入量；本 Wave archive 後 1-2 週由 Brain AI 觀察是否補 P43-FU（follow-up）做 TTL。
+
+### 7.4 Q4=4a 細節
+
+writeLineEventLog 函式簽名為 `(input): void`（非 async），內部 `void (async () => {...})()` 包起；caller 不需 await。寫入 try/catch swallow（log 失敗只寫 console.warn）。
+
+### 7.5 Q5=5a 細節
+
+Diagnostics tab template 加新層級：
+```
+.PageAdminLineManagement__diag-tabs（sub-tab 切換）
+.PageAdminLineManagement__diag-panel（依 activeSubTab 顯示對應 panel）
+```
+activeSubTab `ref<'overview' | 'event-log' | 'error-log'>('overview')`；切 sub-tab 時 lazy load 對應 API。
+
+### 7.6 Q6=6a 細節
+
+不加 chart.js dependency 進 admin/line-management（既有 admin/TrafficChart.client.vue 為獨立元件，不引用至本頁）；Phase 3 純做 list UI。
+
+### 7.7 Q7=7c 細節
+
+UI 直接顯示完整 lineUid（U + 32 字 hex）；row 預覽用 `slice(0, 12) + '…'`，expand 看完整。複製按鈕視情況加（非必要）。
+
+### 7.8 Q8=8a 細節
+
+GET endpoint query `limit` 預設 50 / 上限 100（避免 admin 誤打 1000 燒 Firestore read）；超出 100 cap 在 100；UI 不提供「載入更多」按鈕，僅 hint「需查更舊紀錄請至 Firestore Console」。
