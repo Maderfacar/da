@@ -18,6 +18,7 @@ import type {
   LineRichmenuDto,
   RichmenuAction,
   RichmenuArea,
+  RichmenuLang,
   RichmenuSize,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
 import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
@@ -25,8 +26,15 @@ import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
 interface DialogLineRichmenuEditParamsLocal {
   mode: 'create' | 'edit';
   channel: 'passenger' | 'driver';
+  lang?: RichmenuLang;
   id?: string;
 }
+
+const LANG_LABEL: Record<RichmenuLang, string> = {
+  zh_tw: '繁中 zh',
+  en: '英文 en',
+  ja: '日文 ja',
+};
 
 export type LineRichmenuEditResult = 'saved' | 'published' | 'cancelled';
 
@@ -56,6 +64,9 @@ const VALID_SIZES: RichmenuSize[] = [
 const draftId = ref<string>(''); // create 模式建立成功後設值
 const form = reactive({
   name: '',
+  // P42：lang 對應 doc.lang；create 模式可從 params.lang 帶入預設值（user 仍可在彈窗內改）；
+  // edit 模式由 ApiLoadDetail 從 server 既有 doc 覆蓋（readonly 顯示）
+  lang: (props.params.lang ?? 'zh_tw') as RichmenuLang,
   chatBarText: '',
   selected: true,
   imageUrl: null as string | null,
@@ -90,6 +101,7 @@ const ApiLoadDetail = async () => {
     const m = res.data;
     draftId.value = m.id;
     form.name = m.name;
+    form.lang = m.lang;
     form.chatBarText = m.chatBarText;
     form.selected = m.selected;
     form.imageUrl = m.imageUrl;
@@ -110,6 +122,7 @@ const EnsureDraft = async (): Promise<boolean> => {
   }
   const res = await $api.CreateLineRichmenu({
     channel: props.params.channel,
+    lang: form.lang,
     name: form.name.trim(),
     chatBarText: form.chatBarText.trim() || undefined,
     selected: form.selected,
@@ -350,6 +363,8 @@ onMounted(() => {
         | {{ props.params.mode === 'create' ? '新增' : '編輯' }} richmenu
         span.DialogLineRichmenuEdit__chan(:class="`is-${props.params.channel}`")
           | {{ props.params.channel === 'passenger' ? '乘客 OA' : '司機 OA' }}
+        span.DialogLineRichmenuEdit__lang(:class="`is-${form.lang}`")
+          | {{ LANG_LABEL[form.lang] }}
       button.DialogLineRichmenuEdit__close(@click="ClickCancel" aria-label="關閉") ✕
 
     //- ── Body ───────────────────────────────────────────
@@ -360,6 +375,19 @@ onMounted(() => {
       //- 基本資訊
       section.DialogLineRichmenuEdit__section
         h3.DialogLineRichmenuEdit__section-title 基本資訊
+
+        //- P42：lang select（create 必選 + 仍可改；edit 模式 readonly，由 server doc 鎖定）
+        .DialogLineRichmenuEdit__field
+          label 語系（{{ props.params.mode === 'edit' ? '建立後不可修改' : '不同語系獨立發佈；user 依 users.lang 自動綁對應版' }}）
+          select(v-model="form.lang" :disabled="props.params.mode === 'edit' || !!draftId")
+            option(value="zh_tw") 繁體中文（zh_tw）
+            option(value="en") English（en）
+            option(value="ja") 日本語（ja）
+          .DialogLineRichmenuEdit__hint(v-if="!draftId && props.params.mode === 'create'")
+            | 草稿建立後 lang 鎖定，需新建草稿才能換語系
+          .DialogLineRichmenuEdit__hint(v-else-if="draftId || props.params.mode === 'edit'")
+            | {{ LANG_LABEL[form.lang] }}（不可修改）
+
         .DialogLineRichmenuEdit__field
           label 名稱（admin 用，user 看不到）
           input(
@@ -596,6 +624,29 @@ $border: rgba(0, 0, 0, 0.1);
   &.is-driver {
     background: rgba(5, 150, 105, 0.12);
     color: #059669;
+  }
+}
+
+// P42：lang badge（與 chan badge 並列）
+.DialogLineRichmenuEdit__lang {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 100px;
+  padding: 3px 10px;
+
+  &.is-zh_tw {
+    background: rgba(220, 38, 38, 0.10);
+    color: #b91c1c;
+  }
+  &.is-en {
+    background: rgba(79, 70, 229, 0.10);
+    color: #4338ca;
+  }
+  &.is-ja {
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
   }
 }
 

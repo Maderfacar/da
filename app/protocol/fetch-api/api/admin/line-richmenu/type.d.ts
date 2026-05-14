@@ -4,6 +4,8 @@
 export type LineClient = 'passenger' | 'driver';
 export type RichmenuStatus = 'draft' | 'active' | 'archived';
 export type SyncStatus = 'not_synced' | 'syncing' | 'synced' | 'sync_failed';
+// P42：lang 維度（對齊 server/utils/i18n-message.ts `Lang`）
+export type RichmenuLang = 'zh_tw' | 'en' | 'ja';
 
 export interface RichmenuSize {
   width: 2500;
@@ -30,6 +32,8 @@ export interface RichmenuArea {
 export interface LineRichmenuDto {
   id: string;
   channel: LineClient;
+  /** P42：每 doc 一個 lang（migration 後不再為 null；fallback 'zh_tw'） */
+  lang: RichmenuLang;
   status: RichmenuStatus;
   name: string;
   lineRichMenuId: string | null;
@@ -58,6 +62,8 @@ export interface RichmenuListRes {
 
 export interface CreateRichmenuBody {
   channel: LineClient;
+  /** P42：建立草稿時必選；建立後不允許改（unique key 維度） */
+  lang: RichmenuLang;
   name: string;
   chatBarText?: string;
   selected?: boolean;

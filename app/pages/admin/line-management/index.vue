@@ -11,6 +11,7 @@
 import type {
   LineClient,
   LineRichmenuDto,
+  RichmenuLang,
   RichmenuStatus,
   SyncOverviewRes,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
@@ -60,8 +61,10 @@ watch(activeMainTab, (tab) => {
   void router.replace({ query: { ...route.query, tab } });
 });
 
-// ── Richmenu tab：channel 子 tab + 列表 ──────────────────────
+// ── Richmenu tab：channel × lang 子 tab + 列表 ──────────────
 const activeChannel = ref<LineClient>('passenger');
+// P42：lang sub-tab（'all' 跨 lang 顯示 / 'zh_tw'/'en'/'ja' 單 lang filter）
+const activeLang = ref<RichmenuLang | 'all'>('all');
 const activeStatus = ref<RichmenuStatus | 'all'>('all');
 const items = ref<LineRichmenuDto[]>([]);
 const loading = ref(false);
@@ -80,6 +83,20 @@ const STATUS_LABEL: Record<RichmenuStatus, string> = {
   archived: '已下架',
 };
 
+// P42：lang sub-tab 設定
+const LANG_TABS: Array<{ key: RichmenuLang | 'all'; label: string }> = [
+  { key: 'all', label: '全語系' },
+  { key: 'zh_tw', label: '繁中 zh' },
+  { key: 'en', label: '英文 en' },
+  { key: 'ja', label: '日文 ja' },
+];
+
+const LANG_LABEL: Record<RichmenuLang, string> = {
+  zh_tw: '繁中',
+  en: 'EN',
+  ja: 'JA',
+};
+
 const SYNC_LABEL: Record<LineRichmenuDto['syncStatus'], string> = {
   not_synced: '尚未同步',
   syncing: '同步中',
@@ -92,6 +109,7 @@ const ApiLoadList = async () => {
   try {
     const res = await $api.GetLineRichmenus({
       channel: activeChannel.value,
+      lang: activeLang.value,
       status: activeStatus.value,
       limit: 50,
     });
@@ -106,15 +124,18 @@ const ApiLoadList = async () => {
   }
 };
 
-watch([activeChannel, activeStatus], () => {
+watch([activeChannel, activeLang, activeStatus], () => {
   void ApiLoadList();
 });
 
 // ── 動作 ─────────────────────────────────────────────────────
 const ClickCreate = async () => {
+  // P42：若 activeLang 是 'all'（未鎖定單一 lang），預設帶 zh_tw 給 dialog（user 仍可在彈窗內改）
+  const defaultLang: RichmenuLang = activeLang.value === 'all' ? 'zh_tw' : activeLang.value;
   const result = await $open.DialogLineRichmenuEdit({
     mode: 'create',
     channel: activeChannel.value,
+    lang: defaultLang,
   });
   if (result !== 'cancelled') {
     await ApiLoadList();
@@ -552,6 +573,15 @@ onMounted(() => {
         span.dot
         | 司機 OA
 
+    //- P42：lang sub-tab（all / zh_tw / en / ja）
+    .PageAdminLineManagement__lang-tabs
+      button.PageAdminLineManagement__lang-tab(
+        v-for="lt in LANG_TABS"
+        :key="lt.key"
+        :class="[`is-${lt.key}`, { 'is-active': activeLang === lt.key }]"
+        @click="activeLang = lt.key"
+      ) {{ lt.label }}
+
     //- status filter
     .PageAdminLineManagement__filter
       button.PageAdminLineManagement__filter-tab(
@@ -578,6 +608,7 @@ onMounted(() => {
         )
           .PageAdminLineManagement__card-head
             .PageAdminLineManagement__card-name {{ m.name }}
+            span.PageAdminLineManagement__lang-badge(:class="`is-${m.lang}`") {{ LANG_LABEL[m.lang] }}
             span.PageAdminLineManagement__status-badge(:class="`is-${m.status}`") {{ STATUS_LABEL[m.status] }}
             span.PageAdminLineManagement__sync-badge(:class="`is-${m.syncStatus}`") {{ SYNC_LABEL[m.syncStatus] }}
 
@@ -1173,6 +1204,78 @@ $border: rgba(212, 134, 10, 0.18);
     color: #9ca3af;
     background: rgba(156, 163, 175, 0.1);
     border-color: rgba(156, 163, 175, 0.3);
+  }
+}
+
+// P42：lang badge（卡片內 lang 標示）
+.PageAdminLineManagement__lang-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 100px;
+  padding: 2px 8px;
+
+  &.is-zh_tw {
+    background: rgba(220, 38, 38, 0.10);
+    color: #b91c1c;
+  }
+  &.is-en {
+    background: rgba(79, 70, 229, 0.10);
+    color: #4338ca;
+  }
+  &.is-ja {
+    background: rgba(244, 114, 182, 0.12);
+    color: #be185d;
+  }
+}
+
+// P42：lang sub-tab（channel sub-tab 下方的小一級 tab）
+.PageAdminLineManagement__lang-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px 0;
+  flex-wrap: wrap;
+}
+
+.PageAdminLineManagement__lang-tab {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 100px;
+  padding: 4px 14px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.25);
+    color: #1f2937;
+  }
+
+  &.is-active {
+    background: #1f2937;
+    border-color: #1f2937;
+    color: #fff;
+  }
+
+  &.is-all.is-active {
+    background: #1f2937;
+  }
+  &.is-zh_tw.is-active {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+  &.is-en.is-active {
+    background: #4338ca;
+    border-color: #4338ca;
+  }
+  &.is-ja.is-active {
+    background: #be185d;
+    border-color: #be185d;
   }
 }
 

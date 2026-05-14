@@ -7,6 +7,7 @@ import type {
   CreateRichmenuBody,
   PatchRichmenuBody,
   PublishRichmenuRes,
+  RichmenuLang,
   RichmenuListRes,
   RichmenuStatus,
   SyncOverviewRes,
@@ -24,6 +25,7 @@ export type {
   RichmenuAction,
   RichmenuArea,
   RichmenuBounds,
+  RichmenuLang,
   RichmenuListRes,
   RichmenuSize,
   RichmenuStatus,
@@ -35,9 +37,10 @@ export type {
   UploadRichmenuImageRes,
 } from './type.d';
 
-/** 列表 richmenu（依 channel + status filter） */
+/** 列表 richmenu（依 channel + lang + status filter；P42 加 lang param） */
 export const GetLineRichmenus = (params: {
   channel: LineClient;
+  lang?: RichmenuLang | 'all';
   status?: RichmenuStatus | 'all';
   limit?: number;
 }) =>

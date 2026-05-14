@@ -122,39 +122,39 @@
 
 ### 3.1 Richmenu tab lang sub-tab
 
-- [ ] `app/pages/admin/line-management/index.vue`：
-  - Richmenu tab → channel sub-tab 內加 lang sub-tab（zh_tw / en / ja）
-  - lang sub-tab UI 用 ElTabs（與 channel pattern 對齊）
-  - 切 lang sub-tab 時 reload list（GET 加 lang query）
-  - 卡片內顯示 lang badge（zh / en / ja）
+- [x] `app/pages/admin/line-management/index.vue`：
+  - activeLang `RichmenuLang | 'all'` ref + LANG_TABS / LANG_LABEL 常數
+  - channel sub-tab 後加 lang sub-tab（all / zh_tw / en / ja；button pattern 對齊既有 status filter）
+  - 切 lang sub-tab 時 reload list（watch [activeChannel, activeLang, activeStatus]）
+  - GetLineRichmenus protocol 加 lang param
+  - 卡片內加 lang badge（每 lang 不同色）
 
 ### 3.2 Edit dialog 改動
 
-- [ ] `app/components/open/dialog/line-richmenu/Edit.vue`：
-  - 草稿建立 mode：加 lang select 必填（zh_tw / en / ja）
-  - 既有編輯 mode：lang field readonly + 顯示
-  - 加「從其他 lang 複製」按鈕（在草稿 mode）：彈窗選 source lang doc → 複製 areas + chatBarText + image objectPath
+- [x] `app/components/open/dialog/line-richmenu/Edit.vue`：
+  - DialogLineRichmenuEditParamsLocal 加 lang field（create 模式從 params 帶入；edit 模式由 server load 覆蓋）
+  - 草稿建立 mode：加 lang select（draft 建立前可改；ensureDraft 後 + edit 模式 readonly）
+  - CreateLineRichmenu body 帶 lang
+  - header 並列加 lang badge 視覺對齊 channel badge
+  - 基本資訊 section 加 lang select + 提示文字（建立後鎖定）
+- [ ] **「從其他 lang 複製」按鈕** — Phase 3 範圍縮減，移至 Phase 5 留尾（admin 仍可手動建 + 上傳一樣的圖；先把核心 lang 框架做完才有 source doc 可複製）
 
 ### 3.3 Diagnostics sync-overview 對齊
 
-- [ ] `app/pages/admin/line-management/index.vue` Diagnostics tab sync-overview：
-  - 顯示「passenger × zh_tw」「passenger × en」... 三維 grid（不再單 channel 一行）
-  - match / orphan / stale 各 grid cell 獨立顯示
+- [ ] **延後 Phase 4**：sync-overview / cleanup-orphan 對齊 lang 維度與 Phase 4 publish lang-aware 一起做（同一 endpoint 範圍）
 
 ### 3.4 i18n locale 三檔加新 key
 
-- [ ] `i18n/locales/zh.js` / `en.js` / `ja.js` 同步加：
-  - `admin.lineManagement.richmenu.lang.zh_tw`
-  - `admin.lineManagement.richmenu.lang.en`
-  - `admin.lineManagement.richmenu.lang.ja`
-  - `admin.lineManagement.richmenu.copyFromLang`
-  - `admin.lineManagement.richmenu.langRequired`
+- [ ] **延後 Phase 5**：admin 介面整體仍是繁中 hardcoded（既有 P38/P40/P43 pattern），admin UI 加 i18n key 屬獨立工作非阻塞；本案聚焦核心 lang 框架
 
 ### 3.5 Stage Gate
 
-- [ ] G3.1 lint + build pass
-- [ ] G3.2 手測：admin 在三 lang sub-tab 各建一 draft、publish、看 LINE 同步狀態
-- [ ] G3.3 commit + push origin HEAD:main
+- [x] G3.1 lint pass
+- [x] G3.2 build pass（40.8 MB / 11.7 MB gzip）
+- [ ] G3.3 手測：admin 在三 lang sub-tab 各建一 draft（延 Phase 5 e2e）
+- [ ] G3.4 commit + push origin HEAD:main
+
+> **Phase 3 範圍縮減記錄（2026-05-15）**：因「從其他 lang 複製」按鈕 + Diagnostics lang grid 都依賴有多 lang doc 存在才有意義（目前 prod 0 個 active doc），將其延後至 Phase 4/5 與 publish lang-aware 一併做。**i18n locale 延後**為非阻塞性 — 整個 admin 介面既有就是繁中 hardcoded，本案不單獨擴充。
 
 ---
 
