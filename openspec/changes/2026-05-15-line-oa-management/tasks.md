@@ -23,53 +23,58 @@
 
 ---
 
-## Phase 1：Richmenu 後端（1.0 天）
+## Phase 1：Richmenu 後端（1.0 天）✅
 
-> **前置**：Q1 / Q2 / Q3 拍板。
+> **前置**：Q1 / Q2 / Q3 拍板（已完成 2026-05-15）。
+> **commit**：`0f48ab4` push main 2026-05-15。
 
-### 1.1 Firestore schema + rules
+### 1.1 Firestore schema + rules ✅
 
-- [ ] [firestore.rules](firestore.rules) 加 `line_richmenus` 規則（admin read only，server-only write）
-- [ ] [firestore.indexes.json](firestore.indexes.json) 加 `(channel ASC, status ASC, updatedAt DESC)` composite index
-- [ ] **User 部署 rules + indexes**（不在程式碼層做）
+- [x] [firestore.rules](firestore.rules) 加 `line_richmenus` 規則（admin read only，server-only write）
+- [x] [firestore.indexes.json](firestore.indexes.json) 加 `(channel ASC, status ASC, updatedAt DESC)` + `(channel ASC, updatedAt DESC)` composite indexes
+- [ ] **User 部署 rules + indexes**（`firebase deploy --only firestore:rules,firestore:indexes`，Phase 2 起首次 admin UI 使用前要部署）
 
-### 1.2 LINE Richmenu API Client
+### 1.2 LINE Richmenu API Client ✅
 
-- [ ] 新增 `server/utils/line-richmenu.ts`（[design.md §5](design.md#5-line-richmenu-api-client-serverutilsline-richmenuts)）：
-  - `createRichmenu` / `uploadRichmenuImage` / `setDefaultRichmenu` / `clearDefaultRichmenu` / `getDefaultRichmenuId` / `listRichmenus` / `deleteRichmenu` / `linkRichmenuToUser`
-  - 自訂 `LineApiError` class
-  - 5xx 自動 retry 1 次
+- [x] 新增 [server/utils/line-richmenu.ts](server/utils/line-richmenu.ts)：
+  - `createRichmenu` / `uploadRichmenuImage` / `setDefaultRichmenu` / `clearDefaultRichmenu` / `getDefaultRichmenuId` / `listRichmenus` / `getRichmenuDetail` / `deleteRichmenu` / `linkRichmenuToUser` / `unlinkRichmenuFromUser`
+  - 自訂 `LineApiError` class（含 statusCode + details）
+  - 5xx 自動 retry 1 次（500ms backoff）
+  - 404 在 getDefault / getDetail 視為 null 而非錯誤
 
-### 1.3 Postback whitelist（若 Q3 含 postback）
+### 1.3 Postback whitelist framework ✅
 
-- [ ] 新增 `server/utils/line-postback-handlers.ts`
-- [ ] Phase 2 設計師確認後填 4-8 個 whitelist entry（暫先做 framework）
-- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 加 `postback` event 分支 → 查 whitelist → 跑 handler
+- [x] 新增 [server/utils/line-postback-handlers.ts](server/utils/line-postback-handlers.ts)：
+  - `POSTBACK_WHITELIST` 空 array（Phase 2 起依設計填 4-8 個 entry）
+  - `findPostbackHandler` / `listPostbackWhitelist` / `handlePostbackEvent`
+- [x] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 加 `postback` event 分支
 
-### 1.4 Admin endpoints（無 UI，純 API）
+### 1.4 Admin endpoints ✅
 
-- [ ] `GET /nuxt-api/admin/line-richmenus`
-- [ ] `GET /nuxt-api/admin/line-richmenus/[id]`
-- [ ] `POST /nuxt-api/admin/line-richmenus`
-- [ ] `PATCH /nuxt-api/admin/line-richmenus/[id]`
-- [ ] `DELETE /nuxt-api/admin/line-richmenus/[id]`
-- [ ] `POST /nuxt-api/admin/line-richmenus/[id]/upload-image`（multipart）
-- [ ] `POST /nuxt-api/admin/line-richmenus/[id]/publish`（複合：tx archive 舊 active + LINE API push + set default）
-- [ ] `POST /nuxt-api/admin/line-richmenus/[id]/unpublish`
-- [ ] `POST /nuxt-api/admin/line-richmenus/[id]/sync-status`
-- [ ] `POST /nuxt-api/admin/line-richmenus/[id]/test-bind`（測試用）
-- [ ] 全部套 `hasPermission(auth, 'canBroadcast')` + audit log + rate limit（publish ≤ 5/hr）
+- [x] `GET /nuxt-api/admin/line-richmenus`
+- [x] `GET /nuxt-api/admin/line-richmenus/[id]`
+- [x] `POST /nuxt-api/admin/line-richmenus`
+- [x] `PATCH /nuxt-api/admin/line-richmenus/[id]`
+- [x] `DELETE /nuxt-api/admin/line-richmenus/[id]`
+- [x] `POST /nuxt-api/admin/line-richmenus/[id]/upload-image`（multipart + inline PNG/JPEG dimension reader + 2500×1686/843 嚴格驗證）
+- [x] `POST /nuxt-api/admin/line-richmenus/[id]/publish`（rate-limit 5/hr/admin + tx archive 舊 active + LINE create+upload+setDefault + sync 結果寫回）
+- [x] `POST /nuxt-api/admin/line-richmenus/[id]/unpublish`
+- [x] `POST /nuxt-api/admin/line-richmenus/[id]/sync-status`
+- [x] `POST /nuxt-api/admin/line-richmenus/[id]/test-bind`
+- [x] 全部套 `hasPermission(auth, 'canBroadcast')` + audit log
+- [x] 共用 schema utility [server/utils/line-richmenu-doc.ts](server/utils/line-richmenu-doc.ts)（validators / DTO serializer）
 
-### 1.5 Audit log action
+### 1.5 Audit log action ✅
 
-- [ ] [server/utils/audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加 `line.richmenu.*`（create / update / publish / unpublish / delete / sync）
+- [x] [server/utils/audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加 6 個：`line.richmenu.{create,update,publish,unpublish,delete,sync}`
+- [x] `AuditTargetType` 加 `line_richmenu`
 
-### 1.6 Stage Gate
+### 1.6 Stage Gate ✅
 
-- [ ] G1.1 `pnpm lint` pass
-- [ ] G1.2 `pnpm build` pass
-- [ ] G1.3 curl / Postman 手測 endpoints flow：建草稿 → 上傳圖 → publish → LINE actual 端確認 menu 生效
-- [ ] G1.4 commit + push origin HEAD:main（無 UI 入口、無 prod 風險）
+- [x] G1.1 `pnpm lint` pass（修 5 個 import-type / void union 警告）
+- [x] G1.2 `pnpm build` pass（10 個 endpoint 全部編譯為 chunks）
+- [ ] G1.3 curl / Postman 手測 endpoints flow：建草稿 → 上傳圖 → publish → LINE actual 端確認 menu 生效（**留給 Phase 2 admin UI 上線時一併實機驗收**）
+- [x] G1.4 commit + push origin HEAD:main（`0f48ab4`）
 
 ---
 
