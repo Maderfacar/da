@@ -67,11 +67,11 @@ export type AuditAction =
   | 'announcement.republish'   // archived → published 重發
   | 'announcement.archive'     // 任意 → archived
   | 'announcement.delete'      // 刪除
-  // Wave 3-A1 訂單事件通知模板
-  | 'notification_template.update'  // admin 編輯 order-pending 等模板（legacy alias，P38 起新增 line.template.* 並存）
-  // P38 LINE OA 管理（template 通用）
-  | 'line.template.update'    // P38：admin 在 /admin/line-management Flex Templates tab 編輯
-  | 'line.template.reset'     // P38：admin 還原 registry default
+  // LINE OA 管理（template 通用，P38 Phase 3）
+  // 註：A1 legacy `notification_template.update` action 已在 P40 Phase 4 cleanup 移除（type union 不再 export）；
+  // 既有歷史 audit_logs doc 內仍存該字串，UI 查詢可用 targetType='notification_template' 篩
+  | 'line.template.update'    // admin 在 /admin/line-management Flex Templates tab 編輯
+  | 'line.template.reset'     // admin 還原 registry default
   // P38 LINE OA 管理（richmenu）
   | 'line.richmenu.create'
   | 'line.richmenu.update'

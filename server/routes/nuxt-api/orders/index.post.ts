@@ -7,7 +7,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { calcRouteDistance } from '@@/utils/calc-route-distance';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
-import { buildOrderPendingFlex, loadOrderPendingTemplate } from '@@/utils/order-pending-flex';
+import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 
 interface GooglePlace {
   address: string;
@@ -205,15 +205,16 @@ export default defineEventHandler(async (event) => {
     };
 
     // fire-and-forget：撈模板 + 推播都不 await，避免阻塞回應
+    // P40 Phase 4 A1 cleanup：直接走 template-registry（不再經 order-pending-flex thin wrapper）
     void (async () => {
       try {
-        const template = await loadOrderPendingTemplate(db);
-        const flex = buildOrderPendingFlex(template, params);
+        const template = await loadTemplate(db, 'order.pending');
+        const flex = buildTemplateFlex(template, params);
         if (flex) {
           await sendLinePush('passenger', lineUserId, [flex]);
           return;
         }
-        // Fallback：模板未設定 → 退回 P37 既有 i18n text（不 break 既有行為）
+        // Fallback：模板未設定 / disabled → 退回 P37 既有 i18n text（不 break 既有行為）
         const lang = await getUserLang(db, lineUserId);
         const text = getOrderMessage('order.pending', lang, params);
         await sendLinePush('passenger', lineUserId, [{ type: 'text', text }]);

@@ -1,16 +1,16 @@
 /**
  * Flex Template Registry（P38 Phase 3）
  *
- * 對應 spec design.md §3 + Brain AI 拍板 Q4=4a（server hard-coded registry）/ Q5=5b（A1 alias）/ Q6=6b（5 個 order template）。
+ * 對應 spec design.md §3 + Brain AI 拍板 Q4=4a（server hard-coded registry）/ Q6=6b（5 個 order template）。
+ * P40 Phase 4 A1 cleanup 後：loadTemplate 僅讀新 collection（A1 fallback 已移除）。
  *
  * 設計：
  *   - registry 在 server code 寫死；新增 template key 必須改本檔 + 部署
  *   - 每個 template 宣告 placeholder schema（admin UI hint 用）+ defaultContent + fallbackI18nKey
  *   - placeholder 缺值時保留 `{key}` 原字串（避免 admin 看到空白）
- *   - `loadTemplate` 先讀新 collection `notification_templates/{key}`，缺值 fallback 舊 A1
- *     collection `admin_settings_notification_templates/order-pending`（向下相容期）
- *   - `buildTemplateFlex` 取代 A1 hard-coded `buildOrderPendingFlex`；簽名通用化
- *   - ctaButton.action 三型別（uri / message / postback）與 richmenu area action 對齊（Q7=7a）
+ *   - `loadTemplate` 讀 `notification_templates/{key}`；缺值 / disabled → null，caller fallback i18n text
+ *   - `buildTemplateFlex` 通用 Flex builder；ctaButton.action 三型別（uri / message / postback）與
+ *     richmenu area action 對齊（Q7=7a）；公告也透過此 builder 共用（P40 Phase 3）
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LineMessage } from '@@/utils/line-push';
@@ -238,11 +238,9 @@ export function buildTemplateFlex(
   return { type: 'flex', altText, contents: bubble };
 }
 
-// ── Loader（雙路徑讀寫 — Q5=5b） ────────────────────────────────────
+// ── Loader（單路徑 — P40 Phase 4 cleanup 後僅讀新 collection） ────────
 
 const NEW_COLLECTION = 'notification_templates';
-const A1_OLD_COLLECTION = 'admin_settings_notification_templates';
-const A1_OLD_DOC_ID = 'order-pending';
 
 /** Doc → TemplateContent，含 ctaButton schema 正規化 */
 function _normalizeContent(data: Record<string, unknown>): TemplateContent | null {
@@ -290,7 +288,7 @@ function _normalizeContent(data: Record<string, unknown>): TemplateContent | nul
 }
 
 /**
- * 讀 template：先試新 collection，缺值對 order.pending 走 A1 舊 collection fallback。
+ * 讀 template（P40 Phase 4 cleanup 後：僅讀新 collection；A1 fallback 邏輯已移除）。
  *
  * 缺值情境（回 null，呼叫端 fallback i18n text）：
  *   - doc 不存在
@@ -303,21 +301,8 @@ export async function loadTemplate(
 ): Promise<TemplateContent | null> {
   try {
     const snap = await db.collection(NEW_COLLECTION).doc(templateKey).get();
-    if (snap.exists) {
-      const c = _normalizeContent(snap.data() ?? {});
-      if (c) return c;
-      // doc 存在但 enabled=false / 缺欄位 → 不繼續 fallback A1（admin 明確設定的）
-      return null;
-    }
-
-    // doc 不存在 → 對 order.pending 額外 fallback 舊 A1 collection（過渡期相容）
-    if (templateKey === 'order.pending') {
-      const oldSnap = await db.collection(A1_OLD_COLLECTION).doc(A1_OLD_DOC_ID).get();
-      if (oldSnap.exists) {
-        return _normalizeContent(oldSnap.data() ?? {});
-      }
-    }
-    return null;
+    if (!snap.exists) return null;
+    return _normalizeContent(snap.data() ?? {});
   } catch (err) {
     console.error(`[template-registry] loadTemplate(${templateKey}) failed:`, err);
     return null;

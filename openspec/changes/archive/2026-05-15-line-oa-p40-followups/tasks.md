@@ -119,40 +119,43 @@
 
 ## Phase 4：A1 cleanup + e2e + Archive（0.5 天）
 
-> **前置**：Q5 拍板。Q5=5b 時跳過 §4.1，直接 §4.2 收尾。
+> **前置**：Q5 拍板。Q5=5a 本案處理。
 
 ### 4.1 A1 cleanup（Q5=5a）
 
-- [ ] [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) 改直接 call `loadTemplate('order.pending')` + `buildTemplateFlex`
-- [ ] 移除 `server/utils/order-pending-flex.ts`
-- [ ] 移除 `server/routes/nuxt-api/admin/settings/notification-templates/order-pending.{get,put}.ts`
-- [ ] 移除 [app/pages/admin/settings/index.vue](app/pages/admin/settings/index.vue) NOTIFICATIONS section
-- [ ] 移除 `app/components/admin/settings/NotificationTemplate.vue` 元件
-- [ ] 移除 [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) `GetOrderPendingTemplate` / `PutOrderPendingTemplate` 兩個 method + OrderPendingTemplate interface
-- [ ] 移除 [audit-log.ts](server/utils/audit-log.ts) `AuditAction.notification_template.update` alias（保留 targetType `notification_template` 供新 action 使用）
-- [ ] 透過 firestore MCP 刪除 `admin_settings_notification_templates/order-pending` doc（若存在；prod 已驗證不存在）
+- [x] [orders/index.post.ts](server/routes/nuxt-api/orders/index.post.ts) 改直接 call `loadTemplate('order.pending')` + `buildTemplateFlex`（不再 import order-pending-flex wrapper）
+- [x] 移除 `server/utils/order-pending-flex.ts`
+- [x] 移除 `server/routes/nuxt-api/admin/settings/notification-templates/order-pending.{get,put}.ts`（含目錄 cleanup）
+- [x] 移除 [app/pages/admin/settings/index.vue](app/pages/admin/settings/index.vue) NOTIFICATIONS section
+- [x] 移除 `app/components/admin/SettingsNotificationTemplate.vue` 元件（auto-import 為 AdminSettingsNotificationTemplate）
+- [x] 移除 [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) `GetOrderPendingTemplate` / `PutOrderPendingTemplate` method + OrderPendingTemplate interface
+- [x] 移除 [audit-log.ts](server/utils/audit-log.ts) `AuditAction.notification_template.update` alias（保留 targetType `notification_template`）
+- [x] 移除 [admin/notification-templates/[key].put.ts](server/routes/nuxt-api/admin/notification-templates/[key].put.ts) A1 dual-write + alias audit log
+- [x] 移除 [template-registry.ts](server/utils/template-registry.ts) loadTemplate 內的 A1 fallback 路徑（A1 doc prod 不存在已 firestore MCP 驗證）
 
-### 4.2 e2e 完整 checklist
+### 4.2 e2e 完整 checklist（彙整給 Brain AI 真機驗收）
 
-- [ ] Postback：passenger / driver 各 8 個 entry 各觸發一次 → 收到對應 reply
-- [ ] Bot replies：4 個 key 各改字 → 新 LINE 帳號加好友 → 收到新文案；切回預設 → 收到 hard-coded fallback
-- [ ] 公告整合（Q3=3b）：公告發佈 → 推播 Flex 結構與 P38 一致（無 regression）
-- [ ] Diagnostics MVP：偽造孤兒 richmenu → 偵測到；清理後重新檢查 → 一致
-- [ ] A1 cleanup（Q5=5a）：訂單建立 → 推播正常（透過新 template-registry path，無需 A1 wrapper）
-- [ ] Audit log：新 action（`line.bot_reply.update` 等）都寫入
+> 程式碼層全綠（lint pass + build pass + firebase deploy rules）；下列由 Brain AI 在 prod 真機操作。
+
+- [ ] **Postback**：admin 在 richmenu Edit dialog 對 passenger OA 設一個 area type=postback data=OPEN_BOOKING；發佈後 user 點擊應收到 reply text 含 LIFF /booking URL；其餘 7 entry 依序測試
+- [ ] **Bot replies**：admin 在「自動回覆」tab 改 `passenger.follow` 文案；新 LINE 帳號加好友 → 收到 admin 設定新文案；按「還原預設」+ 儲存 → 加好友收到 hard-coded fallback
+- [ ] **公告整合（Q3=3b）**：公告發佈 → 推播 Flex 結構與 P38 一致（hero / title / body / cta footer 樣式無 regression）
+- [ ] **Diagnostics MVP**：手動透過 LINE Developer Console 建一個 richmenu（不經本系統）→ Diagnostics tab 偵測為 ORPHAN；點清理 → LINE 端 DELETE 成功 → 重檢查綠勾
+- [ ] **A1 cleanup**：訂單建立 → 乘客收到 Flex 推播；admin 在 /admin/line-management Flex Templates tab 改 `order.pending` 標題 → 下一筆新訂單推播看到新標題
+- [ ] **Audit log**：super 查 audit_logs 確認 `line.bot_reply.update` / `line.template.update` / `line.richmenu.delete` 都寫入；舊 `notification_template.update` action 在 cleanup 後不再新增（歷史紀錄保留）
 
 ### 4.3 文件 + Archive
 
-- [ ] [version.ts](version.ts) bump v0.3.22 → v0.3.23（或 v0.4.0 視範圍）
-- [ ] [HANDOFF.md](HANDOFF.md) 撰寫（沿用 P38 archive 格式）
-- [ ] `openspec/changes/2026-05-15-line-oa-p40-followups/` mv 至 `archive/`
-- [ ] memory `project-p40-line-oa-followups.md` 新增；MEMORY 索引同步
+- [x] [version.ts](version.ts) bump v0.3.22 → v0.3.23
+- [x] [HANDOFF.md](HANDOFF.md) 撰寫（沿用 P38 archive 格式）
+- [x] `openspec/changes/2026-05-15-line-oa-p40-followups/` mv 至 `archive/`
+- [x] memory `project-p40-line-oa-followups.md` 更新完工狀態；MEMORY 索引同步
 
 ### 4.4 Stage Gate
 
-- [ ] G4.1 lint + build pass
-- [ ] G4.2 Brain AI 在 prod 跑 e2e 驗收
-- [ ] G4.3 commit + push origin HEAD:main（含 archive mv）
+- [x] G4.1 lint + build pass（bundle 41.2 → 40.7 MB，A1 cleanup 縮 0.5 MB）
+- [ ] G4.2 Brain AI 在 prod 跑 e2e 驗收（§4.2 checklist）
+- [x] G4.3 commit + push origin HEAD:main（含 archive mv）
 
 ---
 

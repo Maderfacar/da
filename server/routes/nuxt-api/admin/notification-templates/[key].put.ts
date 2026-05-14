@@ -12,9 +12,10 @@
  *
  * 副作用：
  *   - merge 寫 notification_templates/{key}
- *   - **A1 alias 雙寫**：key='order.pending' 時同時寫舊 collection admin_settings_notification_templates/order-pending
- *     （ctaButton 轉成 A1 舊 schema {label, url}；非 uri action 不寫 cta）
- *   - audit log `line.template.update`（含 `notification_template.update` legacy alias for order.pending）
+ *   - audit log `line.template.update`
+ *
+ * 註：P40 Phase 4 A1 cleanup 移除舊 collection dual-write + legacy alias audit log；
+ * 通用 endpoint 從此只寫新 collection，A1 admin UI 已隨同 cleanup 移除。
  *
  * 權限：canBroadcast
  */
@@ -143,22 +144,6 @@ export default defineEventHandler(async (event) => {
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    // ── A1 alias 雙寫（order.pending 同時寫舊 collection 維持 P37 admin UI 可繼續編輯） ──
-    if (key === 'order.pending') {
-      // 舊 schema ctaButton = {label, url}；非 uri action 不寫 cta（A1 admin UI 無法處理）
-      const oldCta = ctaButton && ctaButton.action.type === 'uri'
-        ? { label: ctaButton.label, url: ctaButton.action.url }
-        : null;
-      await db.collection('admin_settings_notification_templates').doc('order-pending').set({
-        title,
-        body: messageBody,
-        coverImageUrl,
-        ctaButton: oldCta,
-        updatedBy: auth.lineUid,
-        updatedAt: FieldValue.serverTimestamp(),
-      }, { merge: true });
-    }
-
     await writeAuditLog({
       event,
       auth,
@@ -174,18 +159,6 @@ export default defineEventHandler(async (event) => {
         enabled,
       },
     });
-
-    // legacy alias（A1 audit action）— order.pending 同時寫舊 action key，保持 audit-log 篩選相容
-    if (key === 'order.pending') {
-      await writeAuditLog({
-        event,
-        auth,
-        action: 'notification_template.update',
-        targetType: 'notification_template',
-        targetId: 'order-pending',
-        payload: { aliasOf: 'line.template.update', via: 'new-endpoint' },
-      });
-    }
 
     return successResponse({ ok: true });
   } catch (err) {
