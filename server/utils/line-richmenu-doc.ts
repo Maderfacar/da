@@ -18,6 +18,7 @@ import type {
   RichmenuSize,
 } from '@@/utils/line-richmenu';
 import type { LineClient } from '@@/utils/line-channel';
+import type { Lang } from '@@/utils/i18n-message';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -34,6 +35,15 @@ export const VALID_SIZES: RichmenuSize[] = [
   { width: 2500, height: 843 },
 ];
 
+/**
+ * P42：richmenu 支援的 lang code 列舉（對齊 i18n-message.ts `Lang`）。
+ *
+ * - 建立 draft 時必選其一（Q1=1a 拍板：每 lang 一獨立 doc）
+ * - publish unique 約束：channel × lang × status='active' 同時 ≤ 1
+ * - migration 把既有 lang 為 null/undefined 的 doc grandfather 為 'zh_tw'（Q7=7a 拍板）
+ */
+export const RICHMENU_VALID_LANGS: readonly Lang[] = ['zh_tw', 'en', 'ja'] as const;
+
 export type RichmenuStatus = 'draft' | 'active' | 'archived';
 export type SyncStatus = 'not_synced' | 'syncing' | 'synced' | 'sync_failed';
 
@@ -41,6 +51,8 @@ export type SyncStatus = 'not_synced' | 'syncing' | 'synced' | 'sync_failed';
 
 export interface LineRichmenuDoc {
   channel: LineClient;
+  /** P42：lang 維度（每 lang 獨立 doc；既有 doc 由 migration 補為 'zh_tw'） */
+  lang: Lang;
   status: RichmenuStatus;
   name: string;
 
@@ -76,6 +88,8 @@ export interface LineRichmenuDoc {
 export interface LineRichmenuDto {
   id: string;
   channel: LineClient;
+  /** P42：對應 doc lang field（永遠是 'zh_tw' / 'en' / 'ja'，migration 後不再為 null） */
+  lang: Lang;
   status: RichmenuStatus;
   name: string;
   lineRichMenuId: string | null;
@@ -108,6 +122,10 @@ export function toRichmenuDto(id: string, data: LineRichmenuDoc): LineRichmenuDt
   return {
     id,
     channel: data.channel,
+    // P42：grandfather safety — pre-migration doc 沒寫 lang 時 fallback 'zh_tw'
+    lang: ((data.lang as Lang | undefined) && (RICHMENU_VALID_LANGS as readonly Lang[]).includes(data.lang))
+      ? data.lang
+      : 'zh_tw',
     status: data.status,
     name: data.name,
     lineRichMenuId: data.lineRichMenuId ?? null,
@@ -141,6 +159,14 @@ export function validateChannel(raw: unknown): { ok: true; value: LineClient } |
     return { ok: false, error: 'channel 必須為 passenger 或 driver' };
   }
   return { ok: true, value: raw as LineClient };
+}
+
+/** P42：驗 lang；不合法回錯訊；合法回 Lang */
+export function validateLang(raw: unknown): { ok: true; value: Lang } | { ok: false; error: string } {
+  if (typeof raw !== 'string' || !(RICHMENU_VALID_LANGS as readonly string[]).includes(raw)) {
+    return { ok: false, error: `lang 必須為 ${RICHMENU_VALID_LANGS.join(' / ')}` };
+  }
+  return { ok: true, value: raw as Lang };
 }
 
 /** 驗 size；不合法回錯訊；合法回 RichmenuSize */

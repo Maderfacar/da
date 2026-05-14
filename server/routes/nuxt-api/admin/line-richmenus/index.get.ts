@@ -1,10 +1,11 @@
 /**
  * GET /nuxt-api/admin/line-richmenus
  *
- * 列出 richmenu（依 channel + status 過濾）。
+ * 列出 richmenu（依 channel + lang + status 過濾）。
  *
  * Query：
  *   channel?: 'passenger' | 'driver'（必填）
+ *   lang?:    'zh_tw' | 'en' | 'ja' | 'all'（default='all'，P42 新增）
  *   status?:  'draft' | 'active' | 'archived' | 'all'（default='all'）
  *   limit?:   1-100（default=50）
  *
@@ -20,6 +21,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import {
   validateChannel,
+  validateLang,
   toRichmenuDto,
   type LineRichmenuDoc,
   type RichmenuStatus,
@@ -46,6 +48,16 @@ export default defineEventHandler(async (event) => {
   }
   const status = statusRaw as RichmenuStatus | 'all';
 
+  // P42：lang query filter（optional，'all' 跳過）
+  const langRaw = (query.lang as string | undefined) ?? 'all';
+  let langFilter: ReturnType<typeof validateLang> | null = null;
+  if (langRaw !== 'all') {
+    langFilter = validateLang(langRaw);
+    if (!langFilter.ok) {
+      return badRequestError({ zh_tw: langFilter.error, en: 'Invalid lang', ja: 'lang が無効' });
+    }
+  }
+
   let limit = Number(query.limit ?? 50);
   if (!Number.isFinite(limit) || limit < 1) limit = 50;
   if (limit > 100) limit = 100;
@@ -58,6 +70,9 @@ export default defineEventHandler(async (event) => {
     let q: FirebaseFirestore.Query = db
       .collection('line_richmenus')
       .where('channel', '==', channelRes.value);
+    if (langFilter && langFilter.ok) {
+      q = q.where('lang', '==', langFilter.value);
+    }
     if (status !== 'all') {
       q = q.where('status', '==', status);
     }

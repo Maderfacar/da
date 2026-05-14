@@ -5,6 +5,7 @@
  *
  * Body：
  *   channel: 'passenger' | 'driver'
+ *   lang:    'zh_tw' | 'en' | 'ja'（P42 必填）
  *   name:    string（1-100）
  *   chatBarText?: string（1-14，可後續編輯）
  *   selected?:    boolean（default true，可後續編輯）
@@ -25,6 +26,7 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import {
   validateChannel,
+  validateLang,
   validateName,
   validateChatBarText,
   CHAT_BAR_TEXT_MAX,
@@ -33,6 +35,7 @@ import {
 
 interface PostBody {
   channel?: string;
+  lang?: string;
   name?: string;
   chatBarText?: string;
   selected?: boolean;
@@ -53,6 +56,11 @@ export default defineEventHandler(async (event) => {
   const channelRes = validateChannel(body.channel);
   if (!channelRes.ok) {
     return badRequestError({ zh_tw: channelRes.error, en: 'Invalid channel', ja: 'channel が無効' });
+  }
+  // P42：lang 必填（draft 建立時必選；後續編輯不允許改）
+  const langRes = validateLang(body.lang);
+  if (!langRes.ok) {
+    return badRequestError({ zh_tw: langRes.error, en: 'Invalid lang', ja: 'lang が無効' });
   }
   const nameRes = validateName(body.name);
   if (!nameRes.ok) {
@@ -78,6 +86,7 @@ export default defineEventHandler(async (event) => {
 
     const docData: Partial<LineRichmenuDoc> = {
       channel: channelRes.value,
+      lang: langRes.value,
       status: 'draft',
       name: nameRes.value,
       lineRichMenuId: null,
@@ -108,7 +117,7 @@ export default defineEventHandler(async (event) => {
       action: 'line.richmenu.create',
       targetType: 'line_richmenu',
       targetId: ref.id,
-      payload: { channel: channelRes.value, name: nameRes.value },
+      payload: { channel: channelRes.value, lang: langRes.value, name: nameRes.value },
     });
 
     return successResponse({ id: ref.id, status: 'draft' });

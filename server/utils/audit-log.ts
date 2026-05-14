@@ -79,6 +79,8 @@ export type AuditAction =
   | 'line.richmenu.unpublish'
   | 'line.richmenu.delete'
   | 'line.richmenu.sync'
+  // P42 richmenu lang migration（一次性）
+  | 'line.richmenu.migrate.lang'
   // P40 LINE OA 管理（bot replies）
   | 'line.bot_reply.update'
   // fleet

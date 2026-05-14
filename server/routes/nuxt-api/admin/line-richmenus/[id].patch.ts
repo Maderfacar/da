@@ -35,6 +35,10 @@ interface PatchBody {
   chatBarText?: string;
   selected?: boolean;
   areas?: unknown;
+  // P42：以下三 field 是 unique key 維度（channel × lang × status），PATCH 內顯式拒絕
+  channel?: unknown;
+  lang?: unknown;
+  status?: unknown;
 }
 
 export default defineEventHandler(async (event) => {
@@ -52,6 +56,15 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<PatchBody>(event).catch(() => null);
   if (!body) {
     return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
+  }
+
+  // P42：channel / lang / status 是 unique key 維度，PATCH 不允許改（避免 mid-flight 改維度破壞 active 約束）
+  if (body.channel !== undefined || body.lang !== undefined || body.status !== undefined) {
+    return badRequestError({
+      zh_tw: '不允許在此 endpoint 修改 channel / lang / status；請走 publish / unpublish 或重建草稿',
+      en: 'channel / lang / status cannot be modified via this endpoint',
+      ja: 'channel / lang / status はこの endpoint では変更不可',
+    });
   }
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();

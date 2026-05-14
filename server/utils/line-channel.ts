@@ -20,6 +20,7 @@ import { handlePostbackEvent } from '@@/utils/line-postback-handlers';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { writeLineEventLog, type EventType, type HandlerResult } from '@@/utils/line-event-log';
 import { writeLineApiError } from '@@/utils/line-api-error-log';
+import { resolveUserLang, bindRichmenuForUser } from '@@/utils/line-richmenu-binding';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -191,6 +192,22 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
       handlerResult = 'replied';
     } else if (ev.type === 'follow') {
       handlerResult = 'no_handler';  // 無 replyToken 或 accessToken
+    }
+
+    // P42 Phase 1：follow event 內 per-user 綁 lang 對應 richmenu（fire-and-forget；不阻塞 webhook 200 回應）
+    if (ev.type === 'follow' && ev.source.userId) {
+      const targetUid = ev.source.userId;
+      void (async () => {
+        try {
+          const { firebaseServiceAccountJson } = useRuntimeConfig();
+          if (!firebaseServiceAccountJson) return;
+          const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+          const lang = await resolveUserLang(db, targetUid);
+          await bindRichmenuForUser(db, client, targetUid, lang);
+        } catch (err) {
+          console.warn('[follow-bind-richmenu] failed (silent):', (err as Error).message);
+        }
+      })();
     }
 
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {

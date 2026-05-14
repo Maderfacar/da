@@ -25,25 +25,25 @@
 
 ### 1.1 Schema 改動（line_richmenus 加 lang field）
 
-- [ ] `server/utils/line-richmenu-doc.ts`：
+- [x] `server/utils/line-richmenu-doc.ts`：
   - 加 `lang: Lang` 入 `LineRichmenuDoc` interface
   - 加 `lang: Lang` 入 `LineRichmenuDto`
-  - `toRichmenuDto` map lang field
+  - `toRichmenuDto` map lang field（含 grandfather safety fallback 'zh_tw'）
   - 加 `validateLang(raw)` validator
-- [ ] `server/utils/line-richmenu-doc.ts` 加 `RICHMENU_VALID_LANGS = ['zh_tw', 'en', 'ja']`（避免硬寫多處）
+- [x] `server/utils/line-richmenu-doc.ts` 加 `RICHMENU_VALID_LANGS = ['zh_tw', 'en', 'ja']`（避免硬寫多處）
 
 ### 1.2 Migration endpoint（既有 active → grandfather zh_tw）
 
-- [ ] 新檔 `server/routes/nuxt-api/admin/migrations/p42-richmenu-lang.post.ts`：
+- [x] 新檔 `server/routes/nuxt-api/admin/migrations/p42-richmenu-lang.post.ts`：
   - super only
-  - dry-run mode（`?dryRun=1`）
+  - dry-run mode（`?dryRun=1` 或 body.dryRun=true）
   - 冪等
-  - 對所有 lang 為 null/undefined 的 doc set `lang='zh_tw'`
+  - 對所有 lang 為 null/undefined/非合法 的 doc set `lang='zh_tw'`
   - audit log `line.richmenu.migrate.lang`
 
 ### 1.3 Binding helper（新 util）
 
-- [ ] 新檔 `server/utils/line-richmenu-binding.ts`：
+- [x] 新檔 `server/utils/line-richmenu-binding.ts`：
   - `resolveUserLang(db, lineUid, eventLang?)` — Q3=3b 直接複用 `getUserLang`
   - `loadActiveRichmenuForLang(db, channel, lang)` — Q5=5a fallback chain
   - `bindRichmenuForUser(db, client, lineUid, lang)` — link / unlink + 失敗 return 不 throw
@@ -51,36 +51,35 @@
 
 ### 1.4 Webhook follow event 整合
 
-- [ ] `server/utils/line-channel.ts` follow event 分支：
+- [x] `server/utils/line-channel.ts` follow event 分支：
   - 既有：loadBotReply + _reply（保留）
   - 新增 fire-and-forget IIFE：`resolveUserLang` → `bindRichmenuForUser`
   - 失敗只 console.warn（不破壞 webhook 200 回應）
 
 ### 1.5 既有 endpoint 加 lang query filter
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/index.get.ts`：
+- [x] `server/routes/nuxt-api/admin/line-richmenus/index.get.ts`：
   - query string 加 `lang` filter（optional；不傳 = 全部）
   - 既有 channel / status filter 不變
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/index.post.ts`：
+- [x] `server/routes/nuxt-api/admin/line-richmenus/index.post.ts`：
   - body 加 `lang` 必填 + validateLang
-  - 草稿建立時必填
+  - audit log payload 帶 lang
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/[id].patch.ts`：
-  - lang field 編輯時 readonly（避免 mid-flight 改 lang）
-  - 若 body 含 lang → return badRequestError
+- [x] `server/routes/nuxt-api/admin/line-richmenus/[id].patch.ts`：
+  - body 含 channel / lang / status → 顯式 return badRequestError（unique key 維度禁止改）
 
 ### 1.6 Firestore Rules + Indexes
 
-- [ ] `firestore.rules`：line_richmenus rule 不需改動（admin only write 維持）
-- [ ] `firestore.indexes.json`：加 composite index `channel ASC + lang ASC + status ASC + createdAt DESC`（loadActiveRichmenuForLang query 用）
-- [ ] **Claude 自跑** `npx firebase-tools deploy --only firestore:indexes`
+- [x] `firestore.rules`：line_richmenus rule 不需改動（admin only write 維持）
+- [x] `firestore.indexes.json`：加 2 個 composite index（channel + lang + status + updatedAt desc / channel + lang + updatedAt desc）
+- [x] **Claude 自跑** `npx firebase-tools deploy --only firestore:indexes` 成功（destination-anywhere-cfd50）
 
 ### 1.7 Stage Gate
 
-- [ ] G1.1 lint + build pass
-- [ ] G1.2 migration endpoint dry-run 手測（prod doc 影響範圍）
-- [ ] G1.3 migration endpoint 正式跑（prod）
+- [x] G1.1 lint + build pass（40.8 MB / 11.6 MB gzip）
+- [x] G1.2 migration prod 直跑 — firestore MCP 對 prod 唯一 doc `ns1IJvb4IAUpVkswN3Ge`（passenger draft「乘客主選單」）補 `lang='zh_tw'`（其餘狀況 spec endpoint 已備好給後續批次跑）
+- [x] G1.3 prod 端 line_richmenus 全部 doc 已 grandfather（共 1 個）
 - [ ] G1.4 commit + push origin HEAD:main
 
 ---
