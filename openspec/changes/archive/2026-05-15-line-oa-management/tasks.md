@@ -212,106 +212,103 @@
 
 ---
 
-## Phase 4：Template Admin UI 統一介面（1.0 天）
+## Phase 4：Template Admin UI 統一介面（1.0 天）✅
 
-> **前置**：Phase 3 endpoints 全綠。
+> **前置**：Phase 3 endpoints 全綠（已完成）。
+> **commit**：`0a68ccd` push main 2026-05-15。
 
-### 4.1 通用 TemplateEditor 元件
+### 4.1 通用 TemplateEditor 元件 ✅
 
-- [ ] 新增 `app/components/admin/line-management/TemplateEditor.vue`：
-  - props: `templateKey: string`
-  - 從 registry meta 動態渲染 placeholder chip
-  - 表單沿用 A1 NotificationTemplate.vue 結構（title / body / cover / CTA）
-  - **CTA action 三選**（依 Q7 拍板）：radio uri / message / postback；postback 從 whitelist 下拉
-  - 預覽：LINE Flex mockup（沿用 A1 思路）
-  - 動作：儲存 / 還原預設
+- [x] 新增 [app/components/admin/line-management/TemplateEditor.vue](app/components/admin/line-management/TemplateEditor.vue)：
+  - props: `templateKey: string`；emit `saved`
+  - 從 registry meta 動態渲染 placeholder chip（點擊插入 focused input cursor 位置；title / body 兩處皆可）
+  - 表單欄位：title / body / coverImageUrl / ctaButton + enabled toggle
+  - **CTA action 三選**（Q7=7a）：radio uri / message / postback；postback 顯示 whitelist 警示
+  - 即時 LINE Flex preview mockup（套 placeholder example 值，disabled 時顯示 fallback note）
+  - 動作：還原為預設 / 儲存
 
-### 4.2 Templates Tab UI
+### 4.2 Templates Tab UI ✅
 
-- [ ] `app/pages/admin/line-management/index.vue` Templates tab：
-  - 左 list 依 registry category 分組（訂單事件 / 公告 / Bot 自動回覆，依 Q6）
+- [x] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) Templates tab：
+  - 左 list 依 registry category 分組（訂單事件 5 個）
+  - customized 綠點 / disabled 紅點 / 預設 灰點視覺指示
   - 右 editor 動態載入選中 templateKey
+  - watch activeMainTab 切到 templates 時自動載入清單
 
-### 4.3 API 接線
+### 4.3 API 接線 ✅
 
-- [ ] `app/protocol/fetch-api/api/admin/notification-template/` 新模組
-- [ ] type 定義（`NotificationTemplate` / `TemplateContent` / `TemplateMeta`）
+- [x] [app/protocol/fetch-api/api/admin/notification-template/{index.ts,type.d.ts}](app/protocol/fetch-api/api/admin/notification-template/) 新模組
+- [x] type 定義（`NotificationTemplateItem` / `TemplateContent` / `TemplateMeta` / `TemplateAction` / `TemplateCtaButton` / `PlaceholderDef`）
+- [x] 5 個 API method（GetList / Get / Put / Reset / UploadCover）
+- [x] 註冊在 [admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) export *
 
-### 4.4 A1 NotificationTemplate.vue 處理
+### 4.4 A1 NotificationTemplate.vue 處理（Q5=5b）✅
 
-- [ ] 5b：保留 A1 元件 + `/admin/settings` section（向下相容）；加 banner link「⇢ 進入 LINE 管理頁編所有模板」
-- [ ] 5c：移除 A1 section + 元件，admin 統一走新頁
+- [x] 5b：保留 A1 元件 + `/admin/settings` NOTIFICATIONS section（向下相容 — A1 PUT endpoint 已加 dual-write，舊 UI 編輯仍會同步寫進新 collection）
+- [ ] **可選**：之後若需要可在 A1 section 加 banner link「⇢ 進入 LINE 管理頁編所有模板」（不阻塞本 Phase）
 
-### 4.5 Stage Gate
+### 4.5 Stage Gate ✅
 
-- [ ] G4.1 lint + build pass
-- [ ] G4.2 手測 5 個 templateKey 從新 UI 編輯 → 儲存 → reload 看得到
-- [ ] G4.3 e2e：乘客建單 → 收到新編輯後的 Flex（驗證 admin 改了確實生效）
-- [ ] G4.4 commit + push origin HEAD:main
-
----
-
-## Phase 5：Diagnostics（0.5 天，可延後）
-
-> **前置**：Phase 4 全綠。Q6=6b 拍板後 Bot Replies / 公告整合移除，本 Phase 純剩 Diagnostics。
-> **可延後**：若 Phase 1-4 時程吃緊，本 Phase 整個延到 P40，archive 時不阻塞。
-
-### 5.1 Event log 基建
-
-- [ ] 新增 `line_event_logs` / `line_api_errors` collection + Firestore TTL 7d
-- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 入口寫 `line_event_logs`（type / channel / userId / timestamp）
-- [ ] `server/utils/line-richmenu.ts` + `server/utils/line-push.ts` catch 內統一寫 `line_api_errors`
-
-### 5.2 Diagnostics Tab
-
-- [ ] admin UI Diagnostics tab（`/admin/line-management`）：
-  - 最近 50 筆 webhook event（channel filter）
-  - 最近 LINE API error log
-  - richmenu sync 狀態總覽：本地 active doc 對 LINE actual default ID 一致性檢查；不一致 highlight + 「重試 sync」按鈕
-
-### 5.3 Stage Gate
-
-- [ ] G5.1 lint + build pass
-- [ ] G5.2 手測：故意斷 LINE token → publish richmenu → 確認 `line_api_errors` 寫入 + Diagnostics 顯示
-- [ ] G5.3 commit + push origin HEAD:main
+- [x] G4.1 `pnpm lint` pass
+- [x] G4.2 `pnpm build` pass
+- [ ] G4.3 **真機驗證**（**Brain AI / User 行動**）：
+  - [ ] 5 個 templateKey 各從新 UI 編輯 → 儲存 → reload 看得到
+  - [ ] e2e：乘客建單 → 收到新編輯後的 Flex（驗證 admin 改了確實生效）
+- [x] G4.4 commit + push origin HEAD:main（`0a68ccd`）
 
 ---
 
-## Phase 6：e2e 手測 + Archive（0.5 天）
+## Phase 5：Diagnostics（0.5 天）— **延後至 P40**
 
-### 6.1 e2e 完整 checklist
+> **本案不做** — Q6=6b 拍板後 Bot Replies + 公告整合已移到 P40 留尾；Phase 5 純剩 Diagnostics 屬「nice-to-have」運維工具，當前不阻塞 archive。
+>
+> **延後內容**：
+> - `line_event_logs` / `line_api_errors` collection（TTL 7d）
+> - webhook handler 寫 event log
+> - LINE API client catch 內統一寫 error log
+> - Diagnostics tab UI（最近 50 筆 event + error log + richmenu sync 狀態總覽）
+>
+> **當前替代方案**：admin 真要查 LINE 同步狀態 → 走 Phase 1 已落地的「sync-status」按鈕（單筆 richmenu 主動查）。
 
-- [ ] **Richmenu**：
-  - [ ] passenger OA 設 richmenu A → 手機 LINE 看得到、area uri / message / postback 都生效
+---
+
+## Phase 6：e2e 手測 + Archive（0.5 天）✅ 程式碼層完工
+
+### 6.1 e2e 完整 checklist（**Brain AI / User 行動**）
+
+> 程式碼層全綠（Phase 1-4 lint + build pass）。以下實機 e2e 待 User 部署 rules + 跑 migration 後依清單執行。
+
+- [ ] **Richmenu**（Phase 1-2）：
+  - [ ] passenger OA 設 richmenu A → 手機 LINE 看得到、area uri / message 都生效（postback whitelist 為空，data 觸發後 console warn no handler）
   - [ ] driver OA 設 richmenu B → 同樣驗證
   - [ ] passenger 切 richmenu A → A'（新版）→ 舊 A archive，新 A' 生效，LINE 端 menu 換新
   - [ ] richmenu sync 失敗模擬（暫停 channel access token 後 publish）→ syncStatus='sync_failed' + admin UI 顯示重試按鈕
   - [ ] richmenu delete（archived 才可）→ LINE 端對應 menu 也刪
-- [ ] **Templates**：
-  - [ ] 5 個 templateKey（Q6=6b）各編輯 → 對應觸發點推 Flex 確認生效
+- [ ] **Templates**（Phase 3-4）：
+  - [ ] 5 個 templateKey 各編輯 → 對應觸發點推 Flex 確認生效
   - [ ] template `enabled=false` 或 doc 缺 → fallback i18n text（驗向下相容）
-  - [ ] CTA action 三型別（Q7）各推一次：uri 點開 / message 送訊息 / postback 觸發 handler
-- [ ] **Bot replies**（若 Q6=6c）：follow / text 自動回覆生效
-- [ ] **A1 回歸**：乘客建單 → 走通用 builder Flex 推送，與既有體驗一致
-- [ ] **Audit log**：所有 admin 動作（richmenu publish / template update / bot reply update）都寫入 audit log
+  - [ ] CTA action 三型別（Q7）各推一次：uri 點開 / message 送訊息 / postback（warning 預期，等 P40 補 whitelist 才驗）
+  - [ ] 在 /admin/line-management Templates tab 編輯 → 還原預設 → 重編輯流程
+- [ ] **A1 回歸**：乘客建單 → 走通用 builder Flex 推送，與既有 A1 體驗一致；A1 admin UI（/admin/settings NOTIFICATIONS section）編輯 order.pending 後新通用 UI 看得到同樣內容
+- [ ] **Audit log**：所有 admin 動作（richmenu publish / template update / template reset / migration）都寫入 audit log
 
-### 6.2 文件更新
+### 6.2 文件更新 ✅
 
-- [ ] [docs/api-contracts.md](docs/api-contracts.md) 加新增 endpoint 章節（如 docs 同 P37 為 local git-ignored，User 本地維護）
-- [ ] [.claude/knowledge/backend-conventions.md](.claude/knowledge/backend-conventions.md) 補 template-registry / line-richmenu utility 使用範例
-- [ ] [version.ts](version.ts) bump（依 minor 規則 → v0.3.22 或 v0.4.0）
+- [x] [version.ts](version.ts) bump v0.3.21 → **v0.3.22**
+- [ ] [docs/api-contracts.md](docs/api-contracts.md)（git-ignored，**User 本地維護**）：補 admin/line-richmenus + admin/notification-templates + admin/migrations/a1-template endpoint 章節
+- [ ] [.claude/knowledge/backend-conventions.md](.claude/knowledge/backend-conventions.md)（git-ignored）：補 template-registry / line-richmenu utility 使用範例
 
-### 6.3 OpenSpec archive
+### 6.3 OpenSpec archive ✅
 
-- [ ] [openspec/changes/2026-05-15-line-oa-management/](openspec/changes/2026-05-15-line-oa-management/) 整個 mv 至 `openspec/changes/archive/2026-05-15-line-oa-management/`
-- [ ] 新增 HANDOFF.md（沿用 P37 / A1 格式：實作摘要 + 已部署狀態 + 留尾）
+- [x] [openspec/changes/2026-05-15-line-oa-management/](openspec/changes/2026-05-15-line-oa-management/) 整個 mv 至 `openspec/changes/archive/2026-05-15-line-oa-management/`
+- [x] 新增 [HANDOFF.md](openspec/changes/archive/2026-05-15-line-oa-management/HANDOFF.md)（沿用 P37 / A1 格式：實作摘要 + 已部署狀態 + 留尾）
 
-### 6.4 Stage Gate
+### 6.4 Stage Gate ✅
 
-- [ ] G6.1 lint + build pass
-- [ ] G6.2 Brain AI 在 prod LINE 上跑 e2e 驗收 → 通過
-- [ ] G6.3 commit + push origin HEAD:main（含 archive mv）
-- [ ] G6.4 memory 寫入 `project-p38-line-oa-management.md`
+- [x] G6.1 lint + build pass（Phase 4 commit 已驗）
+- [ ] G6.2 Brain AI 在 prod LINE 上跑 e2e 驗收 → **待 User 部署 rules + 跑 migration 後實機驗收**
+- [x] G6.3 commit + push origin HEAD:main（含 archive mv）
+- [x] G6.4 memory 寫入 `project-p38-line-oa-management.md`
 
 ---
 
