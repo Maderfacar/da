@@ -38,6 +38,18 @@ export default {
     fleet: 'Fleet',
     orders: 'Orders',
   },
+  // Notifications (P37 Phase 5)
+  notifications: {
+    label: 'NOTIFICATIONS',
+    title: 'Notifications',
+    empty: 'No notifications yet',
+    loading: 'Loading...',
+    loadFailed: 'Failed to load. Please retry.',
+    loadMore: 'Load more',
+    back: 'Back',
+    publishedAt: 'Published',
+    cardUnread: 'Unread',
+  },
   // Side menu (hamburger drawer, 2026/05/14 redesign)
   drawer: {
     notifications: 'News',

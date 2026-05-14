@@ -42,6 +42,18 @@ export default {
     fleet: '車型',
     orders: '訂單',
   },
+  // ── 最新消息（P37 Phase 5）────────────────────────────────
+  notifications: {
+    label: 'NOTIFICATIONS',
+    title: '最新消息',
+    empty: '目前沒有新消息',
+    loading: '載入中...',
+    loadFailed: '載入失敗，請稍後重試',
+    loadMore: '載入更多',
+    back: '返回',
+    publishedAt: '發佈時間',
+    cardUnread: '未讀',
+  },
   // ── 側邊選單（hamburger drawer，2026/05/14 改造）─────────
   drawer: {
     notifications: '最新消息',

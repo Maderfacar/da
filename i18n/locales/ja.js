@@ -38,6 +38,18 @@ export default {
     fleet: '車種',
     orders: '注文',
   },
+  // お知らせ（P37 Phase 5）
+  notifications: {
+    label: 'NOTIFICATIONS',
+    title: 'お知らせ',
+    empty: 'お知らせはまだありません',
+    loading: '読み込み中...',
+    loadFailed: '読み込みに失敗しました。再度お試しください。',
+    loadMore: 'もっと見る',
+    back: '戻る',
+    publishedAt: '配信日時',
+    cardUnread: '未読',
+  },
   // サイドメニュー（hamburger drawer、2026/05/14 リニューアル）
   drawer: {
     notifications: 'お知らせ',

@@ -8,6 +8,7 @@ import * as airport from './api/airport';
 import * as admin from './api/admin';
 import * as config from './api/config';
 import * as passenger from './api/passenger';
+import * as announcement from './api/announcement';
 
 export default {
   ...file,
@@ -20,6 +21,7 @@ export default {
   ...admin,
   ...config,
   ...passenger,
+  ...announcement,
 };
 
 

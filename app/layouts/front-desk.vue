@@ -19,9 +19,44 @@ const drawerOpen = ref(false);
 const ClickHamburger = () => { drawerOpen.value = true; };
 const ClickLogo = () => navigateTo('/home');
 
-// 未讀公告數（Phase 5 接 /nuxt-api/passenger/announcements/unread-count）
-// Phase 1 留 placeholder ref(0)，UI 紅點 v-if=" > 0" 不會顯示
+// ── P37 Phase 5：未讀公告紅點（30s polling + visibility refresh）──
 const unreadCount = ref(0);
+let unreadTimer: ReturnType<typeof setInterval> | null = null;
+const UNREAD_POLL_INTERVAL = 30_000;
+
+const ApiLoadUnread = async () => {
+  // 未登入時跳過（避免 401 雜訊）
+  if (!isSignIn.value) {
+    unreadCount.value = 0;
+    return;
+  }
+  try {
+    const res = await $api.GetAnnouncementUnreadCount();
+    if (res.status?.code === $enum.apiStatus.success && res.data) {
+      unreadCount.value = res.data.unread ?? 0;
+    }
+  } catch {
+    // fire-and-forget；錯誤吞掉，下個輪詢再試
+  }
+};
+
+const onUnreadVisibility = () => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') ApiLoadUnread();
+};
+
+// 登入狀態改變時立即重撈一次（剛登入 / 登出皆 trigger）
+watch(isSignIn, () => { ApiLoadUnread(); });
+
+onMounted(() => {
+  ApiLoadUnread();
+  unreadTimer = setInterval(ApiLoadUnread, UNREAD_POLL_INTERVAL);
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onUnreadVisibility);
+});
+
+onUnmounted(() => {
+  if (unreadTimer) clearInterval(unreadTimer);
+  if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onUnreadVisibility);
+});
 </script>
 
 <template lang="pug">
