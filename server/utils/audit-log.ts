@@ -69,6 +69,13 @@ export type AuditAction =
   | 'announcement.delete'      // 刪除
   // Wave 3-A1 訂單事件通知模板
   | 'notification_template.update'  // admin 編輯 order-pending 等模板
+  // P38 LINE OA 管理（richmenu）
+  | 'line.richmenu.create'
+  | 'line.richmenu.update'
+  | 'line.richmenu.publish'
+  | 'line.richmenu.unpublish'
+  | 'line.richmenu.delete'
+  | 'line.richmenu.sync'
   // fleet
   | 'fleet.create'
   | 'fleet.update'
@@ -76,7 +83,7 @@ export type AuditAction =
   // migration（P27 一次性）
   | 'migration.driver_application_move';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu';
 
 interface WriteAuditLogInput {
   event: H3Event;

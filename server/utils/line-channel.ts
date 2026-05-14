@@ -16,6 +16,7 @@
  */
 import type { H3Event } from 'h3';
 import { verifyLineSignature } from '@@/utils/line-signature';
+import { handlePostbackEvent } from '@@/utils/line-postback-handlers';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -45,11 +46,17 @@ interface LineTextMessage {
   type: 'text';
   text: string;
 }
+interface LinePostbackPayload {
+  data: string;
+  params?: Record<string, string>;
+}
+
 interface LineEvent {
   type: string;
   replyToken?: string;
   source: { userId?: string; type: string };
   message?: LineTextMessage;
+  postback?: LinePostbackPayload;
 }
 interface LineWebhookBody {
   events: LineEvent[];
@@ -111,6 +118,17 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
     }
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {
       await _reply(accessToken, ev.replyToken, [{ type: 'text', text: TEXT_REPLY_MESSAGES[client] }]);
+    }
+    // P38 Phase 1：postback event 走 whitelist handler；無 handler 或 handler 不回 → 靜默
+    if (ev.type === 'postback' && ev.postback?.data && ev.source.userId && accessToken) {
+      const result = await handlePostbackEvent({
+        client,
+        lineUid: ev.source.userId,
+        data: ev.postback.data,
+      });
+      if (result?.replyMessages && ev.replyToken) {
+        await _reply(accessToken, ev.replyToken, result.replyMessages);
+      }
     }
   }
 

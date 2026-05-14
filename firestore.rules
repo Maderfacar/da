@@ -112,6 +112,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── line_richmenus 集合（P38）────────────────────────────
+    // LINE 圖文選單管理；admin client SDK 可讀（管理頁列表 / 編輯器需要）
+    // 寫入一律透過 server admin SDK（含 LINE API 同步 + audit log + rate limit）
+    match /line_richmenus/{richmenuId} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
