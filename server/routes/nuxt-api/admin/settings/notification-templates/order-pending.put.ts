@@ -108,6 +108,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    // 寫舊 collection（A1 既有）
     await db
       .collection('admin_settings_notification_templates')
       .doc('order-pending')
@@ -116,6 +117,23 @@ export default defineEventHandler(async (event) => {
         body: messageBody,
         coverImageUrl,
         ctaButton,
+        updatedBy: auth.lineUid,
+        updatedAt: FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+    // P38 Phase 3：dual-write 新 collection（ctaButton schema 自動轉換 {label,url} → {label,action:{type:'uri',url}}）
+    // 確保新 endpoint / runtime loader 看到一致內容
+    await db
+      .collection('notification_templates')
+      .doc('order.pending')
+      .set({
+        templateKey: 'order.pending',
+        category: 'order',
+        enabled: true,
+        title,
+        body: messageBody,
+        coverImageUrl,
+        ctaButton: ctaButton ? { label: ctaButton.label, action: { type: 'uri', url: ctaButton.url } } : null,
         updatedBy: auth.lineUid,
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -131,6 +149,7 @@ export default defineEventHandler(async (event) => {
         bodyLen: messageBody.length,
         hasCover: coverImageUrl !== null,
         hasCta: ctaButton !== null,
+        dualWritten: 'notification_templates/order.pending',
       },
     });
 

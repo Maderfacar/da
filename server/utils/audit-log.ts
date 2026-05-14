@@ -68,7 +68,10 @@ export type AuditAction =
   | 'announcement.archive'     // 任意 → archived
   | 'announcement.delete'      // 刪除
   // Wave 3-A1 訂單事件通知模板
-  | 'notification_template.update'  // admin 編輯 order-pending 等模板
+  | 'notification_template.update'  // admin 編輯 order-pending 等模板（legacy alias，P38 起新增 line.template.* 並存）
+  // P38 LINE OA 管理（template 通用）
+  | 'line.template.update'    // P38：admin 在 /admin/line-management Flex Templates tab 編輯
+  | 'line.template.reset'     // P38：admin 還原 registry default
   // P38 LINE OA 管理（richmenu）
   | 'line.richmenu.create'
   | 'line.richmenu.update'

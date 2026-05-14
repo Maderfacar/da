@@ -122,6 +122,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── notification_templates 集合（P38 Phase 3）─────────────
+    // 通用 Flex 模板（取代 A1 的 admin_settings_notification_templates）
+    // - admin client 可讀（管理頁列表 / 編輯器需要）
+    // - 寫入透過 server admin SDK（含 audit log）
+    // - A1 舊 collection admin_settings_notification_templates 仍存在（過渡期 dual-write，P41 cleanup 才移除）
+    match /notification_templates/{templateKey} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

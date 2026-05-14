@@ -6,6 +6,7 @@ import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
+import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 
 interface GooglePlaceLite {
   address: string;
@@ -422,15 +423,48 @@ export default defineEventHandler(async (event) => {
       const messageKey = PUSH_MAP[body.orderStatus as OrderStatus];
       const passengerLineUid = (orderData.lineUserId as string | undefined) || orderUserId;
       if (messageKey && passengerLineUid && !isAdminConfirmAssign) {
+        const newStatus = body.orderStatus as OrderStatus;
+        const cancelReason = body.cancelReason || undefined;
         void (async () => {
           try {
             const lang = await getUserLang(db, passengerLineUid);
-            const text = getOrderMessage(messageKey, lang, {
-              cancelReason: body.cancelReason || undefined,
-            });
+            // ── P38 Phase 3：先試 template-registry Flex；缺值 fallback i18n-message text ──
+            // 補 driver-related params 給 confirmed / en_route
+            const params: Record<string, string> = {
+              orderId: orderId.slice(0, 8).toUpperCase(),
+            };
+            if ((newStatus === 'confirmed' || newStatus === 'en_route') && orderAssignedDriver) {
+              try {
+                const driverLineUid = _stripLinePrefix(orderAssignedDriver);
+                const driverSnap = await db.collection('drivers').doc(driverLineUid).get();
+                if (driverSnap.exists) {
+                  const dd = driverSnap.data() ?? {};
+                  if (typeof dd.driverName === 'string') params.driverName = dd.driverName;
+                  if (typeof dd.plateNumber === 'string') params.vehiclePlate = dd.plateNumber;
+                }
+              } catch (err) {
+                console.warn('[orders/patch] driver lookup for push failed:', err);
+              }
+            }
+            if (newStatus === 'completed') {
+              const fareNum = (orderData.estimatedFare as number | undefined) ?? 0;
+              params.fare = fareNum.toLocaleString();
+            }
+            if (newStatus === 'cancelled' && cancelReason) {
+              params.cancelReason = cancelReason;
+            }
+
+            const template = await loadTemplate(db, messageKey);
+            const flex = buildTemplateFlex(template, params);
+            if (flex) {
+              await sendLinePush('passenger', passengerLineUid, [flex]);
+              return;
+            }
+            // Fallback：模板未設定 / disabled / 缺欄位 → 退回 P37 既有 i18n text
+            const text = getOrderMessage(messageKey, lang, { cancelReason });
             await sendLinePush('passenger', passengerLineUid, [{ type: 'text', text }]);
           } catch (err) {
-            console.error(`[orders/patch] passenger push (${body.orderStatus}) failed:`, err);
+            console.error(`[orders/patch] passenger push (${newStatus}) failed:`, err);
           }
         })();
       }

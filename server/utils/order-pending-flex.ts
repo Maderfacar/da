@@ -1,26 +1,26 @@
 /**
- * 訂單建立通知模板 Flex builder（Wave 3-A1）
+ * 訂單建立通知模板 Flex builder — A1 wrapper（P38 Phase 3 改寫）
  *
- * 沿用 P37 announcement-flex.ts 結構：hero / body / footer button。
+ * P38 Phase 3 起：本檔成為通用 template-registry 的 thin wrapper（向下相容）：
+ *   - 既有 caller（orders/index.post.ts + A1 admin endpoints）簽名不動
+ *   - 內部呼叫 `loadTemplate('order.pending')` + `buildTemplateFlex(...)`
+ *   - 讀寫雙路徑：新 collection `notification_templates/order.pending` 優先；
+ *     缺值 fallback 舊 A1 collection `admin_settings_notification_templates/order-pending`
+ *   - ctaButton schema 轉換：A1 `{label, url}` → 新 `{label, action: {type:'uri', url}}`（自動）
  *
- * 與 announcement 差異：
- *   - template 由 admin 在 /admin/settings 編輯 → 寫入
- *     admin_settings_notification_templates/order-pending 單一 doc
- *   - title / body / ctaButton.url 支援 5 個 placeholder：
- *     {date} / {pickup} / {vehicle} / {fare} / {orderId}
- *   - coverImageUrl 不支援 placeholder（純靜態圖）
- *   - template 缺失（doc 不存在或 title/body 為空） → builder 回 null
- *     → 呼叫端 fallback P37 i18n-message.ts 三語 text
- *
- * 三語策略：模板只存繁中（依 design.md §5 拍板），LINE 推播時不依 users.lang 切換
+ * 未來（P41 cleanup）：本檔可刪，caller 直接走 template-registry。
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LineMessage } from '@@/utils/line-push';
+import { buildTemplateFlex, loadTemplate, type TemplateContent } from '@@/utils/template-registry';
+
+// ── 對外型別維持向下相容（caller 不改） ────────────────────────────
 
 export interface OrderPendingTemplate {
   title: string;
   body: string;
   coverImageUrl: string | null;
+  /** A1 既有簽名（舊 schema）；P38 內部已轉新 schema，本介面保留只為 caller 相容 */
   ctaButton: { label: string; url: string } | null;
 }
 
@@ -32,111 +32,49 @@ export interface OrderPendingParams {
   orderId: string;
 }
 
-const MAX_ALT_TEXT = 400;
-const MAX_LABEL = 20;
-
-const _applyPlaceholders = (text: string, params: OrderPendingParams): string =>
-  text
-    .replaceAll('{date}', params.date)
-    .replaceAll('{pickup}', params.pickup)
-    .replaceAll('{vehicle}', params.vehicle)
-    .replaceAll('{fare}', params.fare)
-    .replaceAll('{orderId}', params.orderId);
-
 /**
  * 套用 placeholder 並組 LINE Flex Bubble。
  *
  * @returns null 當 template 為 null 或缺 title/body（呼叫端 fallback 既有 i18n text）
+ *
+ * **P38 Phase 3 改寫**：caller 傳的 OrderPendingTemplate（舊 schema with `ctaButton.url`）
+ * 內部轉成新 schema `{ ctaButton.action: { type: 'uri', url } }` 後丟給通用 builder。
  */
 export function buildOrderPendingFlex(
   template: OrderPendingTemplate | null,
   params: OrderPendingParams,
 ): LineMessage | null {
-  if (!template || !template.title || !template.body) return null;
-
-  const title = _applyPlaceholders(template.title, params);
-  const body = _applyPlaceholders(template.body, params);
-  const altText = title.slice(0, MAX_ALT_TEXT);
-
-  const bubble: Record<string, unknown> = {
-    type: 'bubble',
-    body: {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        { type: 'text', text: title, weight: 'bold', size: 'lg', wrap: true, color: '#222222' },
-        { type: 'text', text: body, wrap: true, size: 'sm', color: '#666666', margin: 'md' },
-      ],
-    },
+  if (!template) return null;
+  const normalized: TemplateContent = {
+    title: template.title,
+    body: template.body,
+    coverImageUrl: template.coverImageUrl,
+    ctaButton: template.ctaButton
+      ? { label: template.ctaButton.label, action: { type: 'uri', url: template.ctaButton.url } }
+      : null,
   };
-
-  if (template.coverImageUrl && template.coverImageUrl.startsWith('https://')) {
-    bubble.hero = {
-      type: 'image',
-      url: template.coverImageUrl,
-      size: 'full',
-      aspectRatio: '20:13',
-      aspectMode: 'cover',
-    };
-  }
-
-  if (template.ctaButton && template.ctaButton.label) {
-    const ctaUrl = _applyPlaceholders(template.ctaButton.url, params);
-    if (ctaUrl.startsWith('https://')) {
-      bubble.footer = {
-        type: 'box',
-        layout: 'vertical',
-        contents: [{
-          type: 'button',
-          action: {
-            type: 'uri',
-            label: template.ctaButton.label.slice(0, MAX_LABEL),
-            uri: ctaUrl,
-          },
-          style: 'primary',
-          color: '#D4860A',
-        }],
-      };
-    }
-  }
-
-  return {
-    type: 'flex',
-    altText,
-    contents: bubble,
-  };
+  return buildTemplateFlex(normalized, params as unknown as Record<string, string>);
 }
 
 /**
- * 讀 admin_settings_notification_templates/order-pending doc。
+ * 讀 order.pending template（雙路徑：新 collection → 舊 A1 collection fallback）。
  *
- * 不存在 / title / body 任一為空 / Firestore 失敗 → 回 null（呼叫端 fallback）
+ * 回傳格式維持 A1 既有 schema（caller 不需改）；內部轉換在 template-registry.loadTemplate 處理。
  */
 export async function loadOrderPendingTemplate(
   db: Firestore,
 ): Promise<OrderPendingTemplate | null> {
-  try {
-    const snap = await db
-      .collection('admin_settings_notification_templates')
-      .doc('order-pending')
-      .get();
-    if (!snap.exists) return null;
-    const data = snap.data();
-    if (!data?.title || !data?.body) return null;
-
-    const cta = data.ctaButton;
-    const ctaButton = cta && typeof cta === 'object' && typeof cta.label === 'string' && typeof cta.url === 'string'
-      ? { label: cta.label, url: cta.url }
-      : null;
-
-    return {
-      title: String(data.title),
-      body: String(data.body),
-      coverImageUrl: typeof data.coverImageUrl === 'string' ? data.coverImageUrl : null,
-      ctaButton,
-    };
-  } catch (err) {
-    console.error('[order-pending-flex] loadOrderPendingTemplate failed:', err);
-    return null;
+  const t = await loadTemplate(db, 'order.pending');
+  if (!t) return null;
+  // 新 schema → A1 舊 schema（caller 用）；非 uri action 視為無 cta（A1 caller 無法處理）
+  let ctaButton: OrderPendingTemplate['ctaButton'] = null;
+  if (t.ctaButton && t.ctaButton.action.type === 'uri') {
+    ctaButton = { label: t.ctaButton.label, url: t.ctaButton.action.url };
   }
+  return {
+    title: t.title,
+    body: t.body,
+    coverImageUrl: t.coverImageUrl,
+    ctaButton,
+  };
 }
