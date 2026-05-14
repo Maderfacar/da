@@ -31,7 +31,8 @@
       "Bash(rmdir server/routes/nuxt-api/admin/config/vehicles server/routes/nuxt-api/admin/config/luggage-types server/routes/nuxt-api/admin/config/extras && mkdir -p \"server/routes/nuxt-api/admin/config/[resource]\")",
       "Bash(grep -rn '$api\\\\.' app/protocol/fetch-api/api/order/index.ts app/protocol/fetch-api/methods.ts)",
       "Bash(git pull *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(git mv *)"
     ]
   }
 }
