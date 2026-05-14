@@ -7,6 +7,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { calcRouteDistance } from '@@/utils/calc-route-distance';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
+import { buildOrderPendingFlex, loadOrderPendingTemplate } from '@@/utils/order-pending-flex';
 
 interface GooglePlace {
   address: string;
@@ -191,25 +192,30 @@ export default defineEventHandler(async (event) => {
 
   // ── LINE 訂單建立推播（fire-and-forget，失敗不影響訂單成立）──
   // P29：訂單建立者 = 乘客，用 passenger OA 推播
-  // P37 Phase 4：改走 i18n-message helper（依 users/{lineUid}.lang 選語系）
+  // P37 Phase 4：原本走 i18n-message helper（依 users/{lineUid}.lang 選語系）
+  // Wave 3-A1：優先讀 admin 編輯的模板 → 組 Flex Bubble；模板缺失 → fallback P37 三語 text
   if (lineUserId) {
-    const dateStr = body.pickupDateTime.replace('T', ' ').slice(0, 16);
-    const fareStr = estimatedFare.toLocaleString();
-    // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
-    const vehicleLabel = vehicle.label.zh || body.vehicleType;
-    const orderIdShort = orderId.slice(0, 8).toUpperCase();
+    const params = {
+      date: body.pickupDateTime.replace('T', ' ').slice(0, 16),
+      pickup: body.pickupLocation.address,
+      // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
+      vehicle: vehicle.label.zh || body.vehicleType,
+      fare: estimatedFare.toLocaleString(),
+      orderId: orderId.slice(0, 8).toUpperCase(),
+    };
 
-    // fire-and-forget：撈語系 + 推播都不 await，避免阻塞回應
+    // fire-and-forget：撈模板 + 推播都不 await，避免阻塞回應
     void (async () => {
       try {
+        const template = await loadOrderPendingTemplate(db);
+        const flex = buildOrderPendingFlex(template, params);
+        if (flex) {
+          await sendLinePush('passenger', lineUserId, [flex]);
+          return;
+        }
+        // Fallback：模板未設定 → 退回 P37 既有 i18n text（不 break 既有行為）
         const lang = await getUserLang(db, lineUserId);
-        const text = getOrderMessage('order.pending', lang, {
-          date: dateStr,
-          pickup: body.pickupLocation.address,
-          vehicle: vehicleLabel,
-          fare: fareStr,
-          orderId: orderIdShort,
-        });
+        const text = getOrderMessage('order.pending', lang, params);
         await sendLinePush('passenger', lineUserId, [{ type: 'text', text }]);
       } catch (err) {
         console.error('[orders/post] pending push failed:', err);

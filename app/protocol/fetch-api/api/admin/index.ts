@@ -141,6 +141,28 @@ export const GetAllOrders = (params: { status?: string; from?: string; to?: stri
 export const BroadcastNotification = (body: { title: string; message: string; targetRole: 'all' | 'passenger' | 'driver' }) =>
   methods.post<{ sent: number; total: number }>('/nuxt-api/admin/broadcast', body);
 
+// ── Wave 3-A1：訂單建立通知模板 ────────────────────────────
+export interface OrderPendingTemplate {
+  title: string;
+  body: string;
+  coverImageUrl: string | null;
+  ctaButton: { label: string; url: string } | null;
+}
+
+/** 取得訂單建立通知模板（未設定回 null） */
+export const GetOrderPendingTemplate = () =>
+  methods.get<OrderPendingTemplate | null>(
+    '/nuxt-api/admin/settings/notification-templates/order-pending',
+    {},
+  );
+
+/** 寫入訂單建立通知模板（upsert） */
+export const PutOrderPendingTemplate = (body: OrderPendingTemplate) =>
+  methods.put<{ ok: boolean }>(
+    '/nuxt-api/admin/settings/notification-templates/order-pending',
+    body as unknown as Record<string, unknown>,
+  );
+
 /** 點對點訂單通知（admin 對某筆訂單的乘客或司機發 LINE 推播） */
 export const NotifyOrder = (orderId: string, body: NotifyOrderBody) =>
   methods.post<{ orderId: string; target: string; sentTo: string }>(
