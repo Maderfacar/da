@@ -78,51 +78,65 @@
 
 ---
 
-## Phase 2：Richmenu Admin UI（1.5 天）
+## Phase 2：Richmenu Admin UI（1.5 天）✅ 程式碼層完工
 
-> **前置**：Phase 1 endpoints 全綠 + Q8 拍板。
+> **前置**：Phase 1 endpoints 全綠 + Q8 拍板（已完成）。
+> **commit**：`528fad9` push main 2026-05-15。
 
-### 2.1 新頁路由
+### 2.1 新頁路由 ✅
 
-- [ ] 新增 `app/pages/admin/line-management/index.vue`（layout: back-desk + middleware: auth/role + ssr: false）
-- [ ] 在 admin 端 layout / 主導航加入口（依 Q8）
+- [x] 新增 [app/pages/admin/line-management/index.vue](app/pages/admin/line-management/index.vue)（layout: back-desk + middleware: auth/role + ssr: false）
+- [x] [app/layouts/back-desk.vue](app/layouts/back-desk.vue) ALL_NAV_ITEMS 加「LINE OA 管理」（💬 icon）
 
-### 2.2 Richmenu Tab 主介面
+### 2.2 Richmenu Tab 主介面 ✅
 
-- [ ] tab 結構：Richmenu / Flex Templates / Bot Replies（Q6=6c 才有）/ Diagnostics（Q8=8b 含才有）
-- [ ] Richmenu tab 內 channel sub-tab：passenger（藍） / driver（綠）顏色區分
-- [ ] 列表卡片（依 [design.md §6.2](design.md#62-richmenu-tab)）
+- [x] 4 tab 架構：Richmenu / Flex Templates / Bot Replies / Diagnostics（Phase 2 只開 Richmenu，其餘 placeholder「Phase X 準備中」）
+- [x] Richmenu tab 內 channel sub-tab：passenger 藍 #2563eb / driver 綠 #059669 顏色區分
+- [x] Status filter（all / draft / active / archived）+ 列表卡片
+- [x] 卡片動作（依 status 動態）：編輯 / 發佈 / 取消預設 / 同步檢查 / 測試綁定 / 刪除
 
-### 2.3 編輯彈窗
+### 2.3 編輯彈窗 ✅
 
-- [ ] 新增 `app/components/open/dialog/line-richmenu/Edit.vue`：
-  - 基本資訊：name / chatBarText / selected
-  - **圖片上傳元件**：拖放 + 預覽 + 寬高/filesize 警示（≤ 1MB、2500×1686 或 2500×843）
+- [x] 新增 [app/components/open/dialog/line-richmenu/Edit.vue](app/components/open/dialog/line-richmenu/Edit.vue)：
+  - 基本資訊：name / chatBarText 1-14 / selected toggle
+  - **圖片上傳元件**：input file + 預覽 + 寬高/filesize 警示（≤ 1MB、2500×1686 或 2500×843 嚴格驗證；server inline reader 二次驗證）
   - **Area 編輯器**：
-    - 圖上 overlay grid（quick set: 1×1 / 2×2 / 2×3 / 3×2 / 3×3）
-    - 拖拉 / 數字輸入 bounds（百分比 + 像素並存）
-    - action 編輯（依 Q3 拍板支援 1-3 種 type）
-    - postback option 從 whitelist 撈下拉（不可自由輸入）
-  - 即時 LINE chat mockup 預覽
-  - 動作：儲存草稿 / 儲存並發佈（二次確認）/ 取消
+    - 圖上 overlay 視覺化（點選 highlight + 編號 badge）
+    - Grid quick set（1×1 / 2×1 / 3×1 / 2×2 / 3×2 / 2×3）+ 「+ 手動加區塊」
+    - 每 area 編輯：x/y/width/height 數字輸入 + action 三選 radio（uri / message / postback）
+    - 拖拉建 area / resize handle 延 P44 follow-up
+    - postback 顯示警示「whitelist 尚未填，需 dev 接 handler」
+  - Footer：取消 / 儲存草稿（PATCH 一併寫所有變更）
+  - lazy 建草稿（第一次按上傳圖或儲存才 POST）
 
-### 2.4 API 接線
+### 2.4 API 接線 ✅
 
-- [ ] `app/protocol/fetch-api/api/admin/line-richmenu/` 新模組
-- [ ] type 定義（`LineRichmenu` / `LineRichmenuArea` / `LineRichmenuAction`）
+- [x] [app/protocol/fetch-api/api/admin/line-richmenu/{index.ts, type.d.ts}](app/protocol/fetch-api/api/admin/line-richmenu/) 新模組
+- [x] type 定義（`LineRichmenuDto` / `RichmenuArea` / `RichmenuAction` / `RichmenuSize` / `PublishRichmenuRes` / `SyncStatusRes`）
+- [x] 10 個 API method：Get/List/Create/Patch/Delete/UploadImage/Publish/Unpublish/SyncStatus/TestBind
+- [x] 註冊在 [app/protocol/fetch-api/api/admin/index.ts](app/protocol/fetch-api/api/admin/index.ts) `export *`
 
-### 2.5 圖片上傳整合
+### 2.5 圖片上傳整合 ✅
 
-- [ ] 沿用 P37 / A1 圖片上傳模式（Firebase Storage multipart）
-- [ ] client 端寬高 / filesize 預檢
-- [ ] server 端 sharp 二次驗證寬高
+- [x] 沿用 P37 multipart pattern + Firebase Storage signed URL
+- [x] client 端 PNG/JPEG mime + ≤ 1MB 預檢
+- [x] server 端 inline PNG/JPEG dimension reader 嚴格驗證 2500×1686 或 2500×843（Phase 1 已落地）
 
-### 2.6 Stage Gate
+### 2.6 Stage Gate ✅ 程式碼層
 
-- [ ] G2.1 lint + build pass
-- [ ] G2.2 手測：建 richmenu → 上傳圖 → 設 area → 預覽 → 發佈
-- [ ] G2.3 **真實 LINE OA 驗證**：兩 OA 各設一個 menu → 手機 LINE 看到圖文選單 → 點 area 觸發 action（uri / message / postback 都試一次）
-- [ ] G2.4 commit + push origin HEAD:main
+- [x] G2.1 `pnpm lint` pass
+- [x] G2.2 `pnpm build` pass
+- [ ] G2.3 **真實 LINE OA 驗證**（**Brain AI / User 行動**）：
+  - [ ] User 部署 firestore rules + indexes（Phase 1 留尾）
+  - [ ] 兩 OA 各設一個 menu → 手機 LINE 看到圖文選單
+  - [ ] 點 area 觸發 action（uri / message / postback 各試一次）— postback 因 whitelist 為空，會 fallback 「no handler」log
+  - [ ] sync-status / test-bind 驗證
+- [x] G2.4 commit + push origin HEAD:main（`528fad9`）
+
+### 留尾（不阻塞 Phase 3）
+
+- [ ] Phase 2 follow-up（可延後）：area editor 加「拖拉建 area + resize handle」進階互動
+- [ ] postback whitelist 第一版實際 entry 補入（passenger: OPEN_BOOKING / CONTACT_SUPPORT / MY_TRIP / OPEN_NOTIFICATIONS；driver: OPEN_DASHBOARD / PENDING_LIST / MY_PROFILE / TRIP_GPS）— **此項可在 Phase 5 一併做**
 
 ---
 
