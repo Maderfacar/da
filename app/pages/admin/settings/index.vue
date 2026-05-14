@@ -451,6 +451,13 @@ const ClickRevokeDriver = async (uid: string) => {
       AdminSettingsFleetLuggageTypes(v-if="fleetTab === 'luggage'")
       AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
 
+  //- Wave 3-A1：訂單建立通知模板 ────────────────────────
+  .PageAdminSettings__section
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label NOTIFICATIONS
+      span.PageAdminSettings__section-title 通知模板（訂單建立）
+    AdminSettingsNotificationTemplate
+
   //- 系統設定（只讀）
   .PageAdminSettings__notice
     span ⚠️
