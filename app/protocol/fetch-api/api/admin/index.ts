@@ -8,6 +8,8 @@ export * from './line-richmenu';
 export * from './notification-template';
 // P40 Phase 2：bot replies sub-module
 export * from './bot-reply';
+// P43 Phase 1：LINE event log sub-module
+export * from './line-event-log';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

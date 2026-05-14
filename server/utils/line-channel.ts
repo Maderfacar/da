@@ -18,6 +18,7 @@ import type { H3Event } from 'h3';
 import { verifyLineSignature } from '@@/utils/line-signature';
 import { handlePostbackEvent } from '@@/utils/line-postback-handlers';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { writeLineEventLog, type EventType, type HandlerResult } from '@@/utils/line-event-log';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -155,26 +156,71 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
   }
 
   for (const ev of body.events ?? []) {
+    // P43 Phase 1：每個 event 都寫 event log（fire-and-forget；簡單 schema）
+    const eventType: EventType = _normalizeEventType(ev.type);
+    let handlerResult: HandlerResult = 'ignored';
+    let postbackData: string | null = null;
+    let messageText: string | null = null;
+
     if (ev.type === 'follow' && ev.replyToken && accessToken) {
       const text = await loadBotReply(client, 'follow');
       await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
+      handlerResult = 'replied';
+    } else if (ev.type === 'follow') {
+      handlerResult = 'no_handler';  // 無 replyToken 或 accessToken
     }
+
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {
+      messageText = ev.message.text;
       const text = await loadBotReply(client, 'text');
       await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
+      handlerResult = 'replied';
+    } else if (ev.type === 'message' && ev.message?.type === 'text') {
+      messageText = ev.message.text;
+      handlerResult = 'no_handler';
     }
+
     // P38 Phase 1：postback event 走 whitelist handler；無 handler 或 handler 不回 → 靜默
     if (ev.type === 'postback' && ev.postback?.data && ev.source.userId && accessToken) {
-      const result = await handlePostbackEvent({
-        client,
-        lineUid: ev.source.userId,
-        data: ev.postback.data,
-      });
-      if (result?.replyMessages && ev.replyToken) {
-        await _reply(accessToken, ev.replyToken, result.replyMessages);
+      postbackData = ev.postback.data;
+      try {
+        const result = await handlePostbackEvent({
+          client,
+          lineUid: ev.source.userId,
+          data: ev.postback.data,
+        });
+        if (result?.replyMessages && ev.replyToken) {
+          await _reply(accessToken, ev.replyToken, result.replyMessages);
+          handlerResult = 'replied';
+        } else {
+          handlerResult = 'no_handler';
+        }
+      } catch (err) {
+        console.error('[line-webhook] postback handler failed:', err);
+        handlerResult = 'handler_failed';
       }
+    } else if (ev.type === 'postback' && ev.postback?.data) {
+      postbackData = ev.postback.data;
+      handlerResult = 'no_handler';
     }
+
+    writeLineEventLog({
+      channel: client,
+      eventType,
+      lineUid: ev.source.userId ?? null,
+      postbackData,
+      messageText,
+      handlerResult,
+    });
   }
 
   return { ok: true };
+}
+
+const KNOWN_EVENT_TYPES: ReadonlySet<EventType> = new Set([
+  'follow', 'unfollow', 'message', 'postback', 'beacon', 'memberJoined', 'memberLeft',
+]);
+
+function _normalizeEventType(type: string): EventType {
+  return KNOWN_EVENT_TYPES.has(type as EventType) ? (type as EventType) : 'unknown';
 }

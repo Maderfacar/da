@@ -25,34 +25,32 @@
 
 ### 1.1 Util + Schema
 
-- [ ] 新建 `server/utils/line-event-log.ts`
-  - `writeLineEventLog(input)` fire-and-forget（Q4=4a）或 await（4b）
-  - `EventType` / `HandlerResult` 列舉與 schema 對齊
-- [ ] 確認 schema 與 design.md §1.1 一致（Q1=1a 簡單版或 1b 含 rawPayload）
+- [x] 新建 `server/utils/line-event-log.ts` — `writeLineEventLog(input): void` fire-and-forget（Q4=4a）+ EventType / HandlerResult 列舉
+- [x] schema 與 design.md §1.1 一致（Q1=1a 簡單版：不存 rawPayload；messageText trim 100 字）
 
 ### 1.2 接 webhook entry
 
-- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 每個 ev 處理結束前呼 writeLineEventLog
-  - follow → result='replied'（成功）/ 'no_handler'（無 accessToken）
-  - message+text → 'replied' / 'no_handler'
-  - postback → 看 handlePostbackEvent 回傳：null=no_handler，replyMessages=replied，throw=handler_failed
-  - 其他 event type → 'ignored'
+- [x] [server/utils/line-channel.ts](server/utils/line-channel.ts) `handleLineWebhook` 每個 ev 處理結束前呼 writeLineEventLog
+  - follow / message+text：accessToken 有 → 'replied'；無 → 'no_handler'
+  - postback：handler 回 replyMessages → 'replied'；null → 'no_handler'；throw → 'handler_failed'
+  - 其他 event type（beacon / memberJoined 等）→ 'ignored'
+  - `_normalizeEventType` 把未知 type → 'unknown'
 
 ### 1.3 Endpoint + Rules + Index
 
-- [ ] `GET /nuxt-api/admin/line-event-logs?channel=&eventType=&handlerResult=&limit=50`
-- [ ] `firestore.rules` 加 `line_event_logs`（admin read，server-only write）
-- [ ] `firestore.indexes.json` 加 composite index（channel/eventType/handlerResult × createdAt DESC）
-- [ ] firebase deploy rules + indexes（Claude 自跑）
+- [x] `GET /nuxt-api/admin/line-event-logs?channel=&eventType=&handlerResult=&limit=50`（channel server filter + 其餘 client-side post-filter，避免 composite index 爆炸）
+- [x] `firestore.rules` 加 `line_event_logs`（admin read，server-only write）
+- [x] `firestore.indexes.json` 加 composite index（channel ASC + createdAt DESC）
+- [x] firebase deploy rules + indexes 成功（Claude 自跑：`npx firebase-tools deploy --only firestore:rules,firestore:indexes`）
 
 ### 1.4 Protocol
 
-- [ ] `app/protocol/fetch-api/api/admin/line-event-log/`（GetLineEventLogs + types）
-- [ ] admin/index.ts wire export
+- [x] `app/protocol/fetch-api/api/admin/line-event-log/`（GetLineEventLogs + types）
+- [x] admin/index.ts wire export
 
 ### 1.5 Stage Gate
 
-- [ ] G1.1 lint + build pass
+- [x] G1.1 lint + build pass
 - [ ] G1.2 commit + push origin HEAD:main
 
 ---
