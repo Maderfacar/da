@@ -114,39 +114,39 @@ const FormatTime = (iso: string | null): string => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d1117;
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.07);
-$amber: #d4860a;
+// Wave 3-P1：cream theme 對齊 booking 家族
+$font-display:   'Bebas Neue', sans-serif;
+$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotifications {
   padding: 72px 16px 100px;
   min-height: 100svh;
-  background: $bg;
-  color: #fff;
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
 // ── 頁首 ───────────────────────────────────────────────────
 .PageNotifications__header { margin-bottom: 20px; }
 
 .PageNotifications__headerLabel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: $amber;
+  color: var(--da-amber);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
-  &::before { content: ''; width: 16px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 16px; height: 1.5px; background: var(--da-amber); }
 }
 
 .PageNotifications__headerTitle {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: $font-display;
   font-size: 32px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--da-dark);
   margin: 0;
 }
 
@@ -160,8 +160,8 @@ $amber: #d4860a;
 .PageNotifications__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid rgba(212, 134, 10, 0.2);
+  border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -179,7 +179,7 @@ $amber: #d4860a;
 .PageNotifications__emptyText {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
 }
 
 // ── 列表 ──────────────────────────────────────────────────
@@ -193,25 +193,32 @@ $amber: #d4860a;
   display: flex;
   gap: 12px;
   padding: 12px;
-  border-radius: 12px;
-  background: $surface;
-  border: 1px solid $border;
+  border-radius: 18px;
+  background: var(--da-glass-bg);
+  border: 1px solid var(--da-glass-border);
   text-decoration: none;
   color: inherit;
-  transition: all 0.15s;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--da-glass-shadow);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 
-  &:hover { border-color: rgba(255, 255, 255, 0.15); }
+  &:hover {
+    background: rgba(250, 248, 244, 0.92);
+    border-color: rgba(212, 134, 10, 0.32);
+    box-shadow: 0 6px 24px rgba(26, 24, 20, 0.08);
+  }
 
   &.is-unread {
-    background: rgba($amber, 0.05);
-    border-color: rgba($amber, 0.25);
+    background: var(--da-amber-pale);
+    border-color: rgba(212, 134, 10, 0.35);
   }
 }
 
 .PageNotifications__cover {
   width: 80px;
   height: 60px;
-  border-radius: 8px;
+  border-radius: 10px;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -219,8 +226,8 @@ $amber: #d4860a;
 .PageNotifications__coverPlaceholder {
   width: 80px;
   height: 60px;
-  border-radius: 8px;
-  background: rgba($amber, 0.08);
+  border-radius: 10px;
+  background: var(--da-amber-pale);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +255,7 @@ $amber: #d4860a;
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--da-dark);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -261,16 +268,16 @@ $amber: #d4860a;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ee5151;
+  background: #dc2626;
   flex-shrink: 0;
   margin-top: 6px;
 }
 
 .PageNotifications__cardTime {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray-light);
 }
 
 // ── 載入更多 ──────────────────────────────────────────────
@@ -278,17 +285,22 @@ $amber: #d4860a;
   margin: 18px auto 0;
   padding: 10px 22px;
   border-radius: 100px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  font-family: 'Barlow Condensed', sans-serif;
+  border: 1px solid var(--da-gray-pale);
+  background: rgba(250, 248, 244, 0.6);
+  color: var(--da-gray);
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
   cursor: pointer;
   align-self: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 
-  &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  &:hover:not(:disabled) {
+    background: rgba(250, 248, 244, 0.95);
+    color: var(--da-amber);
+    border-color: rgba(212, 134, 10, 0.32);
+  }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 </style>

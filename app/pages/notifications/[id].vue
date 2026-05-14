@@ -105,19 +105,19 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d1117;
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.07);
-$amber: #d4860a;
+// Wave 3-P1：cream theme 對齊 booking 家族
+$font-display:   'Bebas Neue', sans-serif;
+$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotificationDetail {
   min-height: 100svh;
   padding: 56px 0 100px;
-  background: $bg;
-  color: #fff;
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
-// ── 返回按鈕 ───────────────────────────────────────────────
+// ── 返回按鈕（cream 版 glass pill）────────────────────────
 .PageNotificationDetail__back {
   position: sticky;
   top: 56px;
@@ -125,11 +125,12 @@ $amber: #d4860a;
   margin: 12px 16px 0;
   padding: 8px 14px 8px 10px;
   border-radius: 100px;
-  border: 1px solid $border;
-  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid var(--da-glass-border);
+  background: rgba(250, 248, 244, 0.85);
   backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.85);
-  font-family: 'Barlow Condensed', sans-serif;
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--da-dark);
+  font-family: $font-condensed;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -137,8 +138,13 @@ $amber: #d4860a;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 
-  &:hover { color: #fff; border-color: rgba(255, 255, 255, 0.18); }
+  &:hover {
+    color: var(--da-amber);
+    border-color: rgba(212, 134, 10, 0.45);
+    background: rgba(250, 248, 244, 0.95);
+  }
 
   span { font-size: 16px; line-height: 1; }
 }
@@ -153,8 +159,8 @@ $amber: #d4860a;
 .PageNotificationDetail__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid rgba(212, 134, 10, 0.2);
+  border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -172,7 +178,7 @@ $amber: #d4860a;
 .PageNotificationDetail__emptyText {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray);
 }
 
 // ── 文章本體 ──────────────────────────────────────────────
@@ -196,7 +202,7 @@ $amber: #d4860a;
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: var(--da-dark);
   line-height: 1.4;
   margin: 0 0 10px;
   word-break: break-word;
@@ -204,40 +210,42 @@ $amber: #d4860a;
 
 .PageNotificationDetail__time {
   display: block;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--da-gray-light);
   margin-bottom: 24px;
 }
 
 .PageNotificationDetail__body {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--da-dark);
   line-height: 1.75;
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
-  :deep(a) { color: $amber; text-decoration: underline; }
-  :deep(strong) { font-weight: 700; color: #fff; }
+  :deep(a) { color: var(--da-amber); text-decoration: underline; }
+  :deep(strong) { font-weight: 700; color: var(--da-dark); }
   :deep(em) { font-style: italic; }
   :deep(ul), :deep(ol) { margin: 8px 0 12px 22px; }
   :deep(li) { margin: 4px 0; }
   :deep(h1), :deep(h2), :deep(h3) {
-    color: #fff;
+    color: var(--da-dark);
     margin: 18px 0 10px;
     line-height: 1.4;
   }
   :deep(h1) { font-size: 20px; }
   :deep(h2) { font-size: 17px; }
   :deep(h3) { font-size: 15px; }
-  :deep(img) { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+  :deep(img) { max-width: 100%; border-radius: 12px; margin: 10px 0; }
   :deep(blockquote) {
-    border-left: 3px solid rgba($amber, 0.5);
+    border-left: 3px solid rgba(212, 134, 10, 0.5);
     padding: 4px 14px;
     margin: 12px 0;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--da-gray);
+    background: rgba(212, 134, 10, 0.05);
+    border-radius: 0 8px 8px 0;
   }
 }
 
@@ -246,15 +254,15 @@ $amber: #d4860a;
   margin-top: 24px;
   padding: 12px 28px;
   border-radius: 100px;
-  background: $amber;
+  background: var(--da-amber);
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: $font-condensed;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-decoration: none;
   transition: background 0.15s;
 
-  &:hover { background: darken(#d4860a, 8%); }
+  &:hover { background: var(--da-amber-light); }
 }
 </style>
