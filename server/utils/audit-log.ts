@@ -79,6 +79,8 @@ export type AuditAction =
   | 'line.richmenu.unpublish'
   | 'line.richmenu.delete'
   | 'line.richmenu.sync'
+  // P40 LINE OA 管理（bot replies）
+  | 'line.bot_reply.update'
   // fleet
   | 'fleet.create'
   | 'fleet.update'
@@ -86,7 +88,7 @@ export type AuditAction =
   // migration（P27 一次性）
   | 'migration.driver_application_move';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply';
 
 interface WriteAuditLogInput {
   event: H3Event;

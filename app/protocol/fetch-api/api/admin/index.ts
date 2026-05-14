@@ -6,6 +6,8 @@ export * from './announcement';
 export * from './line-richmenu';
 // P38 Phase 4：通用 notification template sub-module
 export * from './notification-template';
+// P40 Phase 2：bot replies sub-module
+export * from './bot-reply';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

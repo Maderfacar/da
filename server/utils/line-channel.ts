@@ -17,6 +17,7 @@
 import type { H3Event } from 'h3';
 import { verifyLineSignature } from '@@/utils/line-signature';
 import { handlePostbackEvent } from '@@/utils/line-postback-handlers';
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -75,6 +76,13 @@ async function _reply(accessToken: string, replyToken: string, messages: object[
   }).catch((err) => console.error('[line-webhook] reply failed:', err));
 }
 
+/**
+ * Bot 自動回覆 fallback 文案（P40 Phase 2：抽進 bot_replies collection 後仍保留作 fallback）
+ *
+ * 載入順序：
+ *   1. Firestore bot_replies/{client}.{type} doc 存在且 enabled=true → 用 doc.text
+ *   2. 否則用本 const 內字串（admin 還沒設、Firestore 不可用、或刻意停用模板）
+ */
 const FOLLOW_MESSAGES: Record<LineClient, string> = {
   passenger: '感謝您加入 DestinationAnywhere！\n\n✈ 專業機場接送服務，隨時為您出發。\n\n請透過 LINE LIFF 完成訂車預約，我們將盡快為您安排。',
   driver: '感謝加入 DestinationAnywhere 司機端！\n\n✅ 之後新派單與訂單更新都會推播到此 LINE 帳號。\n\n請至 LIFF 完成上線並開始接單。',
@@ -84,6 +92,40 @@ const TEXT_REPLY_MESSAGES: Record<LineClient, string> = {
   passenger: '您好！感謝您的訊息。\n\n如需訂車或查詢行程，請點選下方選單或透過 LIFF 操作，我們的客服將盡快與您聯繫。',
   driver: '司機您好。\n\n本帳號用於派單通知；如需操作（接單 / 任務 / 個人資料），請至 LIFF 司機端。',
 };
+
+export type BotReplyType = 'follow' | 'text';
+
+/**
+ * 取得 Bot 自動回覆文案（P40 Phase 2）
+ *
+ * - 先嘗試讀 Firestore `bot_replies/{client}.{type}` doc
+ * - doc 不存在 / disabled / text 為空 / 讀取失敗 → fallback hard-coded const
+ *
+ * **export** 給 admin/bot-replies/index.get.ts 預覽 fallback default 用。
+ */
+export async function loadBotReply(client: LineClient, type: BotReplyType): Promise<string> {
+  const fallback = type === 'follow' ? FOLLOW_MESSAGES[client] : TEXT_REPLY_MESSAGES[client];
+  try {
+    const { firebaseServiceAccountJson } = useRuntimeConfig();
+    if (!firebaseServiceAccountJson) return fallback;
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    const snap = await db.collection('bot_replies').doc(`${client}.${type}`).get();
+    if (!snap.exists) return fallback;
+    const d = snap.data();
+    if (!d) return fallback;
+    if (d.enabled === false) return fallback;
+    if (typeof d.text !== 'string' || d.text.length === 0) return fallback;
+    return d.text;
+  } catch (err) {
+    console.warn(`[bot-reply] load ${client}.${type} failed:`, err);
+    return fallback;
+  }
+}
+
+/** Default fallback text（供 admin endpoint 預覽，無需打 Firestore） */
+export function getBotReplyDefault(client: LineClient, type: BotReplyType): string {
+  return type === 'follow' ? FOLLOW_MESSAGES[client] : TEXT_REPLY_MESSAGES[client];
+}
 
 /**
  * 處理 LINE webhook 事件（passenger / driver endpoint 共用此 handler，只差 client）
@@ -114,10 +156,12 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
 
   for (const ev of body.events ?? []) {
     if (ev.type === 'follow' && ev.replyToken && accessToken) {
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text: FOLLOW_MESSAGES[client] }]);
+      const text = await loadBotReply(client, 'follow');
+      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
     }
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text: TEXT_REPLY_MESSAGES[client] }]);
+      const text = await loadBotReply(client, 'text');
+      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }]);
     }
     // P38 Phase 1：postback event 走 whitelist handler；無 handler 或 handler 不回 → 靜默
     if (ev.type === 'postback' && ev.postback?.data && ev.source.userId && accessToken) {

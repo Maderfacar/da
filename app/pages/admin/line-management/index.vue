@@ -14,6 +14,7 @@ import type {
   RichmenuStatus,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
 import type { NotificationTemplateItem } from '@/protocol/fetch-api/api/admin/notification-template';
+import type { BotReplyItem, BotReplyKey } from '@/protocol/fetch-api/api/admin/bot-reply';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -22,9 +23,21 @@ type MainTab = 'richmenu' | 'templates' | 'bot-replies' | 'diagnostics';
 const MAIN_TABS: Array<{ key: MainTab; label: string; ready: boolean }> = [
   { key: 'richmenu', label: '圖文選單', ready: true },
   { key: 'templates', label: 'Flex 模板', ready: true },
-  { key: 'bot-replies', label: '自動回覆', ready: false },
+  { key: 'bot-replies', label: '自動回覆', ready: true },
   { key: 'diagnostics', label: '診斷', ready: false },
 ];
+
+const BOT_REPLY_TYPE_LABEL: Record<'follow' | 'text', string> = {
+  follow: 'Follow 事件',
+  text: 'Text 自動回覆',
+};
+
+const BOT_REPLY_TYPE_DESC: Record<'follow' | 'text', string> = {
+  follow: 'user 新加 OA 為好友時 LINE 推送的歡迎訊息',
+  text: 'user 在 OA 內傳純文字訊息時 LINE 推送的自動回覆',
+};
+
+const TEXT_MAX = 500;
 
 const route = useRoute();
 const router = useRouter();
@@ -260,9 +273,59 @@ const OnTemplateSaved = () => {
   void ApiLoadTemplates();
 };
 
+// ── Bot Replies tab（P40 Phase 2） ─────────────────────────
+const botReplies = ref<BotReplyItem[]>([]);
+const botRepliesLoading = ref(false);
+const savingBotReplyKey = ref<BotReplyKey | ''>('');
+
+const ApiLoadBotReplies = async () => {
+  botRepliesLoading.value = true;
+  try {
+    const res = await $api.GetBotReplies();
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({ message: res.status.message?.zh_tw || '載入自動回覆失敗', type: 'error' });
+      botReplies.value = [];
+      return;
+    }
+    botReplies.value = res.data?.items ?? [];
+  } finally {
+    botRepliesLoading.value = false;
+  }
+};
+
+const ClickResetBotReply = (item: BotReplyItem) => {
+  item.text = item.defaultText;
+};
+
+const ClickSaveBotReply = async (item: BotReplyItem) => {
+  const text = item.text.trim();
+  if (text.length === 0 || text.length > TEXT_MAX) {
+    ElMessage({ message: `文案必須為 1-${TEXT_MAX} 字`, type: 'warning' });
+    return;
+  }
+  savingBotReplyKey.value = item.replyKey;
+  try {
+    const res = await $api.PutBotReply(item.replyKey, {
+      text,
+      enabled: item.enabled,
+    });
+    if (res.status.code !== $enum.apiStatus.success) {
+      ElMessage({ message: res.status.message?.zh_tw || '儲存失敗', type: 'error' });
+      return;
+    }
+    ElMessage({ message: '已儲存', type: 'success' });
+    await ApiLoadBotReplies();
+  } finally {
+    savingBotReplyKey.value = '';
+  }
+};
+
 watch(activeMainTab, (tab) => {
   if (tab === 'templates' && templates.value.length === 0) {
     void ApiLoadTemplates();
+  }
+  if (tab === 'bot-replies' && botReplies.value.length === 0) {
+    void ApiLoadBotReplies();
   }
 }, { immediate: false });
 const FormatBytes = (bytes: number | null): string => {
@@ -277,6 +340,9 @@ onMounted(() => {
   void ApiLoadList();
   if (activeMainTab.value === 'templates') {
     void ApiLoadTemplates();
+  }
+  if (activeMainTab.value === 'bot-replies') {
+    void ApiLoadBotReplies();
   }
 });
 </script>
@@ -434,11 +500,54 @@ onMounted(() => {
           .PageAdminLineManagement__placeholder(v-else)
             span.PageAdminLineManagement__placeholder-text 選擇左側模板開始編輯
 
-  //- ── 其他 Tab 占位 ─────────────────────────────────────
+  //- ── Bot Replies Tab（P40 Phase 2） ───────────────────
+  .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'bot-replies'")
+    .PageAdminLineManagement__loading(v-if="botRepliesLoading") 載入中...
+    template(v-else)
+      .PageAdminLineManagement__bot-intro
+        | 編輯後 LINE 端會優先用 admin 設定的文案；停用或留空則 fallback 系統預設。
+      .PageAdminLineManagement__bot-rows
+        .PageAdminLineManagement__bot-row(
+          v-for="item in botReplies"
+          :key="item.replyKey"
+          :class="`is-${item.client}`"
+        )
+          .PageAdminLineManagement__bot-head
+            span.PageAdminLineManagement__bot-channel(:class="`is-${item.client}`")
+              | {{ item.client === 'passenger' ? '乘客 OA' : '司機 OA' }}
+            span.PageAdminLineManagement__bot-type-label {{ BOT_REPLY_TYPE_LABEL[item.type] }}
+            span.PageAdminLineManagement__bot-customized(v-if="item.isCustomized") 已自訂
+            span.PageAdminLineManagement__bot-flex
+            label.PageAdminLineManagement__bot-enabled
+              input(type="checkbox" v-model="item.enabled")
+              | &nbsp;啟用
+          .PageAdminLineManagement__bot-desc {{ BOT_REPLY_TYPE_DESC[item.type] }}
+          textarea.PageAdminLineManagement__bot-text(
+            v-model="item.text"
+            rows="4"
+            :maxlength="TEXT_MAX"
+            placeholder="輸入要推送的文案（純文字，可含換行 / emoji）"
+          )
+          .PageAdminLineManagement__bot-foot
+            span.PageAdminLineManagement__bot-meta
+              | {{ item.text.length }} / {{ TEXT_MAX }}
+              template(v-if="item.updatedAt")
+                | &nbsp; · &nbsp;最後編輯 {{ $dayjs(item.updatedAt).format('YYYY/MM/DD HH:mm') }}
+            span.PageAdminLineManagement__bot-actions
+              button.PageAdminLineManagement__btn.is-toggle(
+                :disabled="savingBotReplyKey === item.replyKey"
+                @click="ClickResetBotReply(item)"
+              ) 還原預設
+              button.PageAdminLineManagement__btn.is-approve(
+                :disabled="savingBotReplyKey === item.replyKey"
+                @click="ClickSaveBotReply(item)"
+              ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
+
+  //- ── Diagnostics Tab 占位（Phase 3）───────────────────
   .PageAdminLineManagement__panel(v-else)
     .PageAdminLineManagement__placeholder
       span.PageAdminLineManagement__placeholder-icon 🛠
-      span.PageAdminLineManagement__placeholder-text Phase 5（P40 留尾）準備中
+      span.PageAdminLineManagement__placeholder-text P40 Phase 3 準備中
 </template>
 
 <style lang="scss" scoped>
@@ -894,6 +1003,131 @@ $border: rgba(212, 134, 10, 0.18);
 
 .PageAdminLineManagement__template-editor {
   background: rgba(255, 255, 255, 0.5);
+}
+
+// ── Bot Replies Tab（P40 Phase 2）─────────────────────────
+.PageAdminLineManagement__bot-intro {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  padding: 14px 18px;
+  border-bottom: 1px solid $border;
+  letter-spacing: 0.05em;
+}
+
+.PageAdminLineManagement__bot-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.PageAdminLineManagement__bot-row {
+  padding: 18px;
+  border-bottom: 1px solid $border;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &:last-child { border-bottom: none; }
+  &.is-passenger { border-left: 3px solid rgba(37, 99, 235, 0.4); }
+  &.is-driver { border-left: 3px solid rgba(5, 150, 105, 0.4); }
+}
+
+.PageAdminLineManagement__bot-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.PageAdminLineManagement__bot-channel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  border-radius: 100px;
+  padding: 3px 10px;
+
+  &.is-passenger {
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+  }
+  &.is-driver {
+    background: rgba(5, 150, 105, 0.12);
+    color: #059669;
+  }
+}
+
+.PageAdminLineManagement__bot-type-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.PageAdminLineManagement__bot-customized {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: $amber;
+  background: rgba(212, 134, 10, 0.1);
+  border-radius: 100px;
+  padding: 2px 8px;
+}
+
+.PageAdminLineManagement__bot-flex { flex: 1; }
+
+.PageAdminLineManagement__bot-enabled {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.PageAdminLineManagement__bot-desc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  letter-spacing: 0.05em;
+}
+
+.PageAdminLineManagement__bot-text {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  font-family: 'Noto Sans TC', 'Barlow', sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  background: white;
+  resize: vertical;
+  min-height: 96px;
+
+  &:focus {
+    outline: none;
+    border-color: $amber;
+  }
+}
+
+.PageAdminLineManagement__bot-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.PageAdminLineManagement__bot-meta {
+  flex: 1;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  letter-spacing: 0.05em;
+}
+
+.PageAdminLineManagement__bot-actions {
+  display: flex;
+  gap: 6px;
 }
 
 // ── 其他 tab placeholder ────────────────────────────────────

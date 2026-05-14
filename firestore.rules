@@ -134,6 +134,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── bot_replies 集合（P40 Phase 2）─────────────────────────
+    // LINE OA Bot 自動回覆文案（follow event / text auto-reply）
+    // - admin client 可讀（管理頁列表 / 編輯器需要）
+    // - 寫入透過 server admin SDK（含 audit log）
+    // - doc 不存在或 enabled=false 時 webhook 走 line-channel.ts 內 hard-coded fallback
+    // - 4 個 replyKey：{passenger,driver}.{follow,text}
+    match /bot_replies/{replyKey} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

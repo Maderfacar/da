@@ -58,30 +58,30 @@
 
 ### 2.1 Firestore schema + rules
 
-- [ ] [firestore.rules](firestore.rules) 加 `bot_replies` 規則（admin read，server-only write）
-- [ ] firebase deploy rules（Claude 自跑）
+- [x] [firestore.rules](firestore.rules) 加 `bot_replies` 規則（admin read，server-only write）
+- [x] firebase deploy rules（Claude 自跑：`npx firebase-tools deploy --only firestore:rules` 成功 release）
 
 ### 2.2 Server util
 
-- [ ] [server/utils/line-channel.ts](server/utils/line-channel.ts) 加 `_loadBotReply(db, client, type)` helper
-- [ ] `handleLineWebhook` follow / message branch 改 call `_loadBotReply`（fallback hard-coded）
+- [x] [server/utils/line-channel.ts](server/utils/line-channel.ts) 加 `loadBotReply(client, type)` + `getBotReplyDefault(client, type)` helper（export 給 admin endpoint 用）
+- [x] `handleLineWebhook` follow / message branch 改 call `loadBotReply`（fallback hard-coded 不變動既有行為）
 
 ### 2.3 Admin endpoints
 
-- [ ] `GET /nuxt-api/admin/bot-replies`（列 4 個 replyKey，doc 不存在回 hard-coded default 預覽）
-- [ ] `PUT /nuxt-api/admin/bot-replies/[key]`（upsert + audit log `line.bot_reply.update`）
+- [x] `GET /nuxt-api/admin/bot-replies`（列 4 個 replyKey，doc 不存在回 hard-coded default 預覽）
+- [x] `PUT /nuxt-api/admin/bot-replies/[key]`（upsert + audit log `line.bot_reply.update`；text 1-500 字驗證）
 
 ### 2.4 Audit + Protocol + UI
 
-- [ ] [audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加 `line.bot_reply.update` + `bot_reply` targetType
-- [ ] `app/protocol/fetch-api/api/admin/bot-reply/` 模組（GetBotReplies / PutBotReply）
-- [ ] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `bot-replies` tab：4 row × { type 標籤 + enabled toggle + textarea + 字數計 + 儲存按鈕 }
-- [ ] MAIN_TABS 'bot-replies' ready=true
+- [x] [audit-log.ts](server/utils/audit-log.ts) `AuditAction` 加 `line.bot_reply.update` + `bot_reply` targetType
+- [x] `app/protocol/fetch-api/api/admin/bot-reply/` 模組（GetBotReplies / PutBotReply + types）
+- [x] [/admin/line-management/index.vue](app/pages/admin/line-management/index.vue) `bot-replies` tab：4 row × { channel/type 標籤 + 已自訂 chip + enabled toggle + textarea + 字數計 + 還原預設 + 儲存 }
+- [x] MAIN_TABS 'bot-replies' ready=true；diagnostics placeholder 改顯示「P40 Phase 3 準備中」
 
 ### 2.5 Stage Gate
 
-- [ ] G2.1 lint + build pass
-- [ ] G2.2 真機驗證：admin 改 passenger.follow 文案 → 新 user 加 OA → 收到新文案
+- [x] G2.1 lint + build pass（`admin/bot-replies/_key_.put.mjs` + `admin/index.get4.mjs` 已 bundle）
+- [ ] G2.2 真機驗證（彙整 Phase 4 e2e checklist）
 - [ ] G2.3 commit + push origin HEAD:main
 
 ---
