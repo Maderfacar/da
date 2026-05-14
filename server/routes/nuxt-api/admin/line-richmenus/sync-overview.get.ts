@@ -38,8 +38,10 @@ import {
 } from '@@/utils/line-richmenu';
 import {
   validateChannel,
+  RICHMENU_VALID_LANGS,
   type LineRichmenuDoc,
 } from '@@/utils/line-richmenu-doc';
+import type { Lang } from '@@/utils/i18n-message';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -77,17 +79,41 @@ export default defineEventHandler(async (event) => {
       name: string;
       status: LineRichmenuDoc['status'];
       lineRichMenuId: string | null;
+      /** P42：每 doc 一個 lang；grandfather 後永遠是 zh_tw / en / ja */
+      lang: Lang;
     }
     const docs: LocalDoc[] = snap.docs.map((d) => {
       const data = d.data() as LineRichmenuDoc;
+      // grandfather safety: 萬一還有 doc 沒跑過 migration → fallback zh_tw
+      const rawLang = data.lang as Lang | undefined;
+      const safeLang: Lang = rawLang && (RICHMENU_VALID_LANGS as readonly string[]).includes(rawLang)
+        ? rawLang
+        : 'zh_tw';
       return {
         id: d.id,
         name: data.name ?? '',
         status: data.status,
         lineRichMenuId: data.lineRichMenuId ?? null,
+        lang: safeLang,
       };
     });
-    const activeDoc = docs.find((d) => d.status === 'active') ?? null;
+    // P42 既有 active 邏輯：以 zh_tw active 為 channel-level「LINE default 對齊基準」
+    // （非 zh_tw lang 的 active 由 per-user binding 處理；不參與 LINE default 對齊）
+    const activeDoc =
+      docs.find((d) => d.status === 'active' && d.lang === 'zh_tw') ?? null;
+
+    // P42：byLang dimension（各 lang 獨立統計，前端 grid 顯示用）
+    const byLang: Record<Lang, { activeDoc: LocalDoc | null; docs: LocalDoc[] }> = {
+      zh_tw: { activeDoc: null, docs: [] },
+      en: { activeDoc: null, docs: [] },
+      ja: { activeDoc: null, docs: [] },
+    };
+    docs.forEach((d) => {
+      byLang[d.lang].docs.push(d);
+      if (d.status === 'active' && !byLang[d.lang].activeDoc) {
+        byLang[d.lang].activeDoc = d;
+      }
+    });
     const localLineIds = new Set(
       docs.filter((d) => d.lineRichMenuId).map((d) => d.lineRichMenuId as string),
     );
@@ -165,6 +191,7 @@ export default defineEventHandler(async (event) => {
     return successResponse({
       local: { activeDoc, docs },
       line: { defaultRichMenuId, allMenus },
+      byLang,
       match,
       inconsistencies,
       orphans,

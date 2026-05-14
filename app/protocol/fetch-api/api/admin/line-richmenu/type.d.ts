@@ -112,6 +112,14 @@ export interface SyncOverviewLocalDoc {
   name: string;
   status: RichmenuStatus;
   lineRichMenuId: string | null;
+  /** P42：每 doc 一個 lang */
+  lang: RichmenuLang;
+}
+
+/** P42：sync-overview 內各 lang 獨立統計（admin UI grid 顯示用） */
+export interface SyncOverviewByLangEntry {
+  activeDoc: SyncOverviewLocalDoc | null;
+  docs: SyncOverviewLocalDoc[];
 }
 
 export interface SyncOverviewLineMenu {
@@ -124,6 +132,7 @@ export interface SyncOverviewLineMenu {
 
 export interface SyncOverviewRes {
   local: {
+    /** P42：以 zh_tw active 為基準（其他 lang 不對 LINE default） */
     activeDoc: SyncOverviewLocalDoc | null;
     docs: SyncOverviewLocalDoc[];
   };
@@ -131,6 +140,8 @@ export interface SyncOverviewRes {
     defaultRichMenuId: string | null;
     allMenus: SyncOverviewLineMenu[];
   };
+  /** P42：lang 維度獨立統計（admin UI grid 顯示用） */
+  byLang: Record<RichmenuLang, SyncOverviewByLangEntry>;
   match: boolean;
   inconsistencies: string[];
   orphans: Array<{ richMenuId: string; name: string }>;

@@ -1,20 +1,21 @@
 /**
  * POST /nuxt-api/admin/line-richmenus/[id]/publish
  *
- * Publish richmenu 為 channel default（複合動作）：
+ * Publish richmenu（複合動作；P42 改為 lang-aware）：
  *
  * 流程：
  *   1. 驗 isPublishReady（image / chatBarText / areas 都齊）
  *   2. rate-limit：publish 每 admin 每小時 ≤ 5 次（沿用 P31 rate-limit pattern）
- *   3. Firestore tx：
- *      - 把同 channel 既有 active → archived（保留 lineRichMenuId 供 rollback 用）
+ *   3. Firestore tx（P42 改）：
+ *      - 把同 channel × 同 lang 既有 active → archived（保留 lineRichMenuId 供 rollback 用）
  *      - 把本 menu status='active'、publishedAt=now、syncStatus='syncing'
  *   4. LINE API 呼叫：
  *      - 若 lineRichMenuId 為 null → POST /richmenu（建立框架）+ POST /content（上傳圖）
- *      - POST /user/all/richmenu/{id}（設預設）
- *   5. 成功：syncStatus='synced' + lineRichMenuId 寫回；失敗：syncStatus='sync_failed' + syncError
+ *      - **lang='zh_tw' 才** POST /user/all/richmenu/{id}（設預設給未綁定 / 未知 lang user 看）
+ *   5. P42：對既有 user batch re-bind（users where lang == publishedLang limit 100；超量 throw）
+ *   6. 成功：syncStatus='synced' + lineRichMenuId 寫回；失敗：syncStatus='sync_failed' + syncError
  *
- * 副作用：audit log `line.richmenu.publish`
+ * 副作用：audit log `line.richmenu.publish`（含 lang + rebindStats）
  *
  * 權限：canBroadcast
  */
@@ -29,8 +30,15 @@ import {
   createRichmenu,
   uploadRichmenuImage,
   setDefaultRichmenu,
+  linkRichmenuToUser,
   LineApiError,
 } from '@@/utils/line-richmenu';
+
+/** P42：publish 後對既有 user batch re-bind 的硬上限（超過 → throw 並警示需 cron job，P50+ 範圍） */
+const REBIND_USER_LIMIT = 100;
+/** 每次 linkRichmenuToUser 後 sleep 毫秒（避免 LINE rate limit；100ms × 100 user = 10s 總時長） */
+const REBIND_THROTTLE_MS = 100;
+const _sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -89,13 +97,14 @@ export default defineEventHandler(async (event) => {
       // rate-limit fail-open
     }
 
-    // ── 3. Firestore tx：archive 舊 active + mark 本 menu 'syncing' ────
+    // ── 3. Firestore tx：archive 同 channel × 同 lang 既有 active + mark 本 menu 'syncing' ────
     let prevActiveId: string | null = null;
     let prevActiveLineId: string | null = null;
     await db.runTransaction(async (tx) => {
       const prevQuery = await tx.get(
         db.collection('line_richmenus')
           .where('channel', '==', existing.channel)
+          .where('lang', '==', existing.lang)
           .where('status', '==', 'active'),
       );
       prevQuery.docs.forEach((d) => {
@@ -147,8 +156,10 @@ export default defineEventHandler(async (event) => {
           existing.imageMime!,
         );
       }
-      // 設為 default
-      await setDefaultRichmenu(existing.channel, lineRichMenuId);
+      // P42：只在 lang='zh_tw' 才設為全 user default（其他 lang user 透過 PATCH /api/self/lang 或 follow event 個別綁定）
+      if (existing.lang === 'zh_tw') {
+        await setDefaultRichmenu(existing.channel, lineRichMenuId);
+      }
     } catch (err) {
       syncStatus = 'sync_failed';
       if (err instanceof LineApiError) {
@@ -159,7 +170,54 @@ export default defineEventHandler(async (event) => {
       console.error('[admin/line-richmenus/[id]/publish] LINE sync failed:', err);
     }
 
-    // ── 5. 寫回最終狀態 ────────────────────────────────────
+    // ── 5. P42：對既有 user batch re-bind（撈 users where lang == publishedLang）──
+    // 只在 syncStatus='synced' 時跑（同步失敗時 lineRichMenuId 可能無效，重綁無意義）
+    const rebindStats: {
+      total: number;
+      success: number;
+      failed: number;
+      limitExceeded: boolean;
+      errors: Array<{ lineUid: string; error: string }>;
+    } = { total: 0, success: 0, failed: 0, limitExceeded: false, errors: [] };
+
+    if (syncStatus === 'synced' && lineRichMenuId) {
+      try {
+        // limit + 1 用來偵測「超出上限」場景（撈 101 個 → 知道 ≥ 101）
+        const usersSnap = await db.collection('users')
+          .where('lang', '==', existing.lang)
+          .limit(REBIND_USER_LIMIT + 1)
+          .get();
+
+        if (usersSnap.size > REBIND_USER_LIMIT) {
+          rebindStats.total = REBIND_USER_LIMIT;
+          rebindStats.limitExceeded = true;
+          console.warn(`[publish] re-bind skipped: user count for lang=${existing.lang} > ${REBIND_USER_LIMIT}; needs cron job (P50+)`);
+        } else {
+          rebindStats.total = usersSnap.size;
+          for (const userDoc of usersSnap.docs) {
+            const lineUid = userDoc.id;
+            try {
+              await linkRichmenuToUser(existing.channel, lineUid, lineRichMenuId);
+              rebindStats.success += 1;
+            } catch (err) {
+              rebindStats.failed += 1;
+              const msg = err instanceof LineApiError
+                ? `[${err.statusCode}] ${err.message}`
+                : ((err as Error).message ?? 'Unknown');
+              // 只記前 10 個 error（避免 audit log payload 過大）
+              if (rebindStats.errors.length < 10) {
+                rebindStats.errors.push({ lineUid, error: msg });
+              }
+            }
+            await _sleep(REBIND_THROTTLE_MS);
+          }
+        }
+      } catch (err) {
+        console.error('[publish] re-bind batch failed:', err);
+      }
+    }
+
+    // ── 6. 寫回最終狀態 ────────────────────────────────────
     await ref.update({
       lineRichMenuId,
       syncStatus,
@@ -177,13 +235,29 @@ export default defineEventHandler(async (event) => {
       targetId: id,
       payload: {
         channel: existing.channel,
+        lang: existing.lang,
         prevActiveId,
         prevActiveLineId,
         newLineRichMenuId: lineRichMenuId,
         syncStatus,
         syncError,
+        rebindStats,
       },
     });
+
+    if (rebindStats.limitExceeded) {
+      return {
+        data: { id, syncStatus, lineRichMenuId, prevActiveId, rebindStats },
+        status: {
+          code: 502,
+          message: {
+            zh_tw: `已發佈成功；但對應 lang user 數超過 ${REBIND_USER_LIMIT}，未自動 re-bind（需 cron job 批次，P50+ 範圍）`,
+            en: `Published OK, but user count for this lang exceeded ${REBIND_USER_LIMIT}; batch re-bind requires cron job (P50+)`,
+            ja: `発佈成功、しかし該当 lang user 数が ${REBIND_USER_LIMIT} を超えたため自動 re-bind なし（cron job が必要）`,
+          },
+        },
+      };
+    }
 
     if (syncStatus === 'sync_failed') {
       return {
@@ -204,6 +278,7 @@ export default defineEventHandler(async (event) => {
       syncStatus,
       lineRichMenuId,
       prevActiveId,
+      rebindStats,
     });
   } catch (err) {
     console.error('[admin/line-richmenus/[id]/publish] failed:', err);

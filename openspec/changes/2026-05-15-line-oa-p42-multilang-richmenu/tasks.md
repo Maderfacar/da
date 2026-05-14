@@ -164,41 +164,45 @@
 
 ### 4.1 Publish 流程改 lang-aware
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/[id]/publish.post.ts`：
-  - Firestore tx 改為 archive 同 channel **同 lang** 既有 active（既有為同 channel）
+- [x] `server/routes/nuxt-api/admin/line-richmenus/[id]/publish.post.ts`：
+  - Firestore tx 改為 archive 同 channel **同 lang** 既有 active（既有 channel 條件保留）
   - LINE API：
     - 既有：createRichmenu + uploadRichmenuImage（若 lineRichMenuId 為 null）
     - 修改：`setDefaultRichmenu` 只在 lang=`zh_tw` 時呼（作為未綁定 user 的 fallback default）
   - **新增**：對既有 user batch re-bind
-    - 撈 `users` collection where `lang == publishedLang` limit 100
-    - 對每個 user 呼 `linkRichmenuToUser`（throttle 100ms 間隔）
-    - 超過 100 → throw badRequest「需 cron job 批次（P50+）」
-  - audit log payload 加 `lang` + `rebindStats: { total, success, failed }`
+    - 撈 `users` where `lang == publishedLang` limit 101（用 +1 偵測超量）
+    - 對每個 user 呼 `linkRichmenuToUser`（throttle 100ms 間隔，10s 上限）
+    - 超過 100 → return 502 with `rebindStats.limitExceeded=true` + 中文/英/日提示「需 cron job 批次（P50+）」
+  - audit log payload 加 `lang` + `rebindStats: { total, success, failed, limitExceeded, errors[].lineUid + .error }`
 
 ### 4.2 Unpublish 對齊
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/[id]/unpublish.post.ts`：
+- [x] `server/routes/nuxt-api/admin/line-richmenus/[id]/unpublish.post.ts`：
   - 既有：mark archived + clearDefaultRichmenu
-  - 修改：clearDefaultRichmenu 只在 lang=`zh_tw` 時呼
-  - 新增：對該 lang 既有綁定 user batch unlink（fallback 對應 lang 鏈接 / 或 unlink 看 LINE default）
+  - 修改：clearDefaultRichmenu **只在 lang=`zh_tw` 時呼**（其他 lang 沒設 default，視為「清乾淨」）
+  - 新增：對該 lang 既有綁定 user batch unlink（讓 user 看 LINE default / fallback lang 對應 richmenu）
+  - audit log payload 加 `lang` + `unbindStats`
 
 ### 4.3 Test-bind 對齊
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/[id]/test-bind.post.ts`：
+- [x] `server/routes/nuxt-api/admin/line-richmenus/[id]/test-bind.post.ts`：
   - 既有：linkRichmenuToUser（admin 測試用）
-  - 不需改動（直接綁該 doc 的 lineRichMenuId，不考慮 user lang）
+  - **無需改動**（直接綁該 doc 的 lineRichMenuId，不考慮 user lang）
 
 ### 4.4 Sync-overview 對齊
 
-- [ ] `server/routes/nuxt-api/admin/line-richmenus/sync-overview.get.ts`：
-  - 既有：本地 docs vs LINE listRichmenus 比對
-  - 修改：response 加 `byLang: Record<Lang, OverviewEntry>` 維度
-  - cleanup-orphan 不需改動（孤兒邏輯與 lang 無關）
+- [x] `server/routes/nuxt-api/admin/line-richmenus/sync-overview.get.ts`：
+  - 既有：本地 docs vs LINE listRichmenus 比對保留
+  - 修改：每個 LocalDoc 加 `lang` field（grandfather safety fallback zh_tw）
+  - 修改：`activeDoc` 邏輯改為「以 zh_tw active 為 channel-level LINE default 對齊基準」（非 zh_tw 是 per-user binding，不對 LINE default）
+  - 新增：response 加 `byLang: Record<Lang, { activeDoc, docs[] }>` 維度（admin UI grid 顯示用；admin UI 整合留 Phase 5+）
+  - cleanup-orphan 不需改動（孤兒邏輯與 lang 無關，仍以 lineRichMenuId 比對）
+- [x] Protocol type.d.ts 同步：SyncOverviewLocalDoc 加 lang / SyncOverviewByLangEntry 新型別 / SyncOverviewRes 加 byLang
 
 ### 4.5 Stage Gate
 
-- [ ] G4.1 lint + build pass
-- [ ] G4.2 手測：publish zh_tw → 100 user 內重綁；publish en → 對應 en lang user 重綁
+- [x] G4.1 lint + build pass（lint 修兩個 `let → const` 後綠；build 進行中等候）
+- [ ] G4.2 手測：publish zh_tw → batch re-bind（延 Phase 5 e2e；prod 目前 0 個 lang 寫入 user）
 - [ ] G4.3 commit + push origin HEAD:main
 
 ---

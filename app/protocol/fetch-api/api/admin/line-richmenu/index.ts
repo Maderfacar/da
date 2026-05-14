@@ -29,6 +29,7 @@ export type {
   RichmenuListRes,
   RichmenuSize,
   RichmenuStatus,
+  SyncOverviewByLangEntry,
   SyncOverviewLineMenu,
   SyncOverviewLocalDoc,
   SyncOverviewRes,
