@@ -363,6 +363,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const GetFreshIdToken = async (): Promise<string> => {
     if (typeof window === 'undefined') return idToken.value;
     try {
+      // InitAuthFlow 尚未跑完（或 firebaseApiKey 未設）時 default app 不存在，
+      // 直接呼叫 getAuth() 會 throw `app/no-app`。先檢查 getApps() 避免噪音 log。
+      const { getApps } = await import('firebase/app');
+      if (getApps().length === 0) return idToken.value;
       const { getAuth } = await import('firebase/auth');
       const u = getAuth().currentUser;
       if (!u) return '';

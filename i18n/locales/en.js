@@ -265,6 +265,7 @@ export default {
       stopoverLabel: 'Stop {n} / STOPOVER',
       stopoverPlaceholder: 'Enter stopover {n} address',
       addStop: 'Add Stopover',
+      dragReorder: 'Drag to reorder',
       dropoffLabel: 'Drop-off / DROPOFF',
       dropoffPlaceholder: 'Enter drop-off address',
       calculating: 'Calculating route…',

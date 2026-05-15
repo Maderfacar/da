@@ -25,6 +25,22 @@ const selectedType = ref<OrderType | undefined>(props.orderType);
 const dateTime = ref(props.pickupDateTime ?? '');
 const flightNoInput = ref(props.flightNo ?? '');
 
+// ── 日期 / 時間 拆兩個下拉（時間以 10 分鐘為單位）─────────────────────────────
+// dateTime 為單一事實來源（ISO YYYY-MM-DDTHH:mm:ss）；pickupDate / pickupTime 為 picker 雙向綁定值
+const pickupDate = ref(dateTime.value ? $dayjs(dateTime.value).format('YYYY-MM-DD') : '');
+const pickupTime = ref(dateTime.value ? $dayjs(dateTime.value).format('HH:mm') : '');
+
+// 任一變動 → 兩者都有值才組合回 ISO；缺一邊 dateTime 清空（讓 canNext 守住下一步）
+const _SyncDateTime = () => {
+  if (pickupDate.value && pickupTime.value) {
+    dateTime.value = `${pickupDate.value}T${pickupTime.value}:00`;
+  } else {
+    dateTime.value = '';
+  }
+};
+watch(pickupDate, _SyncDateTime);
+watch(pickupTime, _SyncDateTime);
+
 // 是否需要航班資訊
 const needsFlight = computed(() =>
   selectedType.value === 'airport-pickup' || selectedType.value === 'airport-dropoff',
@@ -318,7 +334,33 @@ const ClickNext = () => {
 
 <template lang="pug">
 .PassengerBookingStepType
-  .PassengerBookingStepType__section-label ORDER TYPE
+  //- 用車日期與時間（拆兩個下拉，時間以 10 分鐘為單位）
+  .PassengerBookingStepType__section-label DATE &amp; TIME
+  h2.PassengerBookingStepType__title {{ $t('booking.type.dateTimeTitle') }}
+
+  .PassengerBookingStepType__datetime
+    ElDatePicker.PassengerBookingStepType__picker(
+      v-model="pickupDate"
+      type="date"
+      :placeholder="$t('booking.type.dateTimePlaceholder')"
+      format="YYYY/MM/DD"
+      value-format="YYYY-MM-DD"
+      :disabled-date="disabledDate"
+      :clearable="false"
+      style="flex: 1; min-width: 0"
+    )
+    ElTimeSelect.PassengerBookingStepType__picker(
+      v-model="pickupTime"
+      :placeholder="$t('booking.type.manual.timePlaceholder')"
+      start="00:00"
+      end="23:50"
+      step="00:10"
+      :clearable="false"
+      style="flex: 1; min-width: 0"
+    )
+  p.PassengerBookingStepType__time-error(v-if="isPastDateTime") {{ $t('booking.type.dateTimeError') }}
+
+  .PassengerBookingStepType__section-label.mt ORDER TYPE
   h2.PassengerBookingStepType__title {{ $t('booking.type.title') }}
 
   .PassengerBookingStepType__grid
@@ -431,21 +473,6 @@ const ClickNext = () => {
               span.PassengerBookingStepType__flight-label {{ timeLabel }}
               span.PassengerBookingStepType__flight-val {{ formatTime(localFlightInfo.estimatedTime) }}
 
-  .PassengerBookingStepType__section-label.mt DATE &amp; TIME
-  h2.PassengerBookingStepType__title {{ $t('booking.type.dateTimeTitle') }}
-
-  ElDatePicker.PassengerBookingStepType__picker(
-    v-model="dateTime"
-    type="datetime"
-    :placeholder="$t('booking.type.dateTimePlaceholder')"
-    format="YYYY/MM/DD HH:mm"
-    value-format="YYYY-MM-DDTHH:mm:ss"
-    :disabled-date="disabledDate"
-    :minute-step="15"
-    style="width: 100%"
-  )
-  p.PassengerBookingStepType__time-error(v-if="isPastDateTime") {{ $t('booking.type.dateTimeError') }}
-
   UiButton(
     type="primary"
     :disabled="!canNext"
@@ -488,6 +515,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+  }
+
+  &__datetime {
+    display: flex;
+    gap: 10px;
+    width: 100%;
   }
 
   &__card {

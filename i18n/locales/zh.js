@@ -279,6 +279,7 @@ export default {
       stopoverLabel: '停靠站 {n} / STOPOVER',
       stopoverPlaceholder: '請輸入第 {n} 個停靠站',
       addStop: '新增中途停靠站',
+      dragReorder: '拖移調整順序',
       dropoffLabel: '下車地點 / DROPOFF',
       dropoffPlaceholder: '請輸入下車地址',
       calculating: '計算路線中…',

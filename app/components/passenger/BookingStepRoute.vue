@@ -101,6 +101,56 @@ const ClickRemoveStopover = (idx: number) => {
   emit('update:stopovers', stopovers.value);
 };
 
+// ── 拖移改變順序（HTML5 drag & drop；桌面 + Android Chrome 支援良好）────────────
+const dragIndex = ref<number | null>(null);
+const dragOverIndex = ref<number | null>(null);
+
+const HandleDragStart = (idx: number, e: DragEvent) => {
+  // 只允許從 drag handle 拖；點 input/刪除鈕等不該觸發整列拖移
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest?.('.PassengerBookingStepRoute__drag-handle')) {
+    e.preventDefault();
+    return;
+  }
+  dragIndex.value = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+};
+
+const HandleDragOver = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  if (dragOverIndex.value !== idx) dragOverIndex.value = idx;
+};
+
+const HandleDragLeave = (idx: number) => {
+  if (dragOverIndex.value === idx) dragOverIndex.value = null;
+};
+
+const HandleDrop = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  const from = dragIndex.value;
+  dragIndex.value = null;
+  dragOverIndex.value = null;
+  if (from === null || from === idx) return;
+  const arr = [...stopovers.value];
+  const [moved] = arr.splice(from, 1);
+  arr.splice(idx, 0, moved);
+  stopovers.value = arr;
+  const refs = [...waypointInputRefs.value];
+  const [movedRef] = refs.splice(from, 1);
+  refs.splice(idx, 0, movedRef);
+  waypointInputRefs.value = refs;
+  emit('update:stopovers', stopovers.value);
+};
+
+const HandleDragEnd = () => {
+  dragIndex.value = null;
+  dragOverIndex.value = null;
+};
+
 // Drop Pin 回填
 const OnPinPlaced = (field: string, place: GooglePlace) => {
   if (field === 'origin') {
@@ -151,8 +201,20 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
     .PassengerBookingStepRoute__stopover(
       v-for="(_, idx) in stopovers"
       :key="idx"
+      :class="{ 'is-dragging': dragIndex === idx, 'is-drop-target': dragOverIndex === idx && dragIndex !== idx }"
+      draggable="true"
+      @dragstart="HandleDragStart(idx, $event)"
+      @dragover="HandleDragOver(idx, $event)"
+      @dragleave="HandleDragLeave(idx)"
+      @drop="HandleDrop(idx, $event)"
+      @dragend="HandleDragEnd"
     )
-      UiGooglePlaceInput(
+      button.PassengerBookingStepRoute__drag-handle(
+        type="button"
+        :aria-label="$t('booking.route.dragReorder')"
+      )
+        NuxtIcon(name="mdi:drag-vertical")
+      UiGooglePlaceInput.PassengerBookingStepRoute__stopover-input(
         :ref="(el) => { waypointInputRefs[idx] = el }"
         :model-value="stopovers[idx] && stopovers[idx].lat !== 0 ? stopovers[idx] : null"
         :label="stopoverLabel(idx + 1)"
@@ -235,6 +297,39 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  transition: opacity 0.15s, transform 0.15s;
+
+  &.is-dragging {
+    opacity: 0.45;
+  }
+
+  &.is-drop-target {
+    transform: translateY(2px);
+    box-shadow: 0 -2px 0 var(--da-amber);
+    border-radius: 2px;
+  }
+}
+
+.PassengerBookingStepRoute__stopover-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.PassengerBookingStepRoute__drag-handle {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--da-gray);
+  font-size: 20px;
+  cursor: grab;
+  padding: 6px 2px;
+  margin-bottom: 2px;
+  touch-action: none;
+  user-select: none;
+  transition: color 0.15s;
+
+  &:hover { color: var(--da-amber); }
+  &:active { cursor: grabbing; }
 }
 
 .PassengerBookingStepRoute__remove-btn {

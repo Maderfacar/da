@@ -265,6 +265,7 @@ export default {
       stopoverLabel: '途中停車 {n} / STOPOVER',
       stopoverPlaceholder: '途中停車地点 {n} の住所を入力',
       addStop: '途中停車を追加',
+      dragReorder: 'ドラッグして並び替え',
       dropoffLabel: '降車地点 / DROPOFF',
       dropoffPlaceholder: '降車地点の住所を入力',
       calculating: 'ルート計算中…',
