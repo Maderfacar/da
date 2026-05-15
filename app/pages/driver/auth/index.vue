@@ -12,12 +12,15 @@ const liffLoading = ref(false);
 //   2. roles 含 driver 但未核准    → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
 //   3. roles 含 admin（無 driver） → /admin/orders
 //   4. 純 passenger / 新使用者     → /driver/register（顯示申請表單）
+//   5. 已登入但 roles 為空（line-exchange 失敗 / Firestore rules 阻擋）→ /driver/register 兜底
+//      （避免 user 卡死在登入畫面循環）
 //
 // 同時 watch authStore.roles，確保 _LoadRolesFromFirestore 完成設值時也會觸發
 watch(
   () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
   () => {
-    if (!authStore.authResolved || !authStore.isSignIn || authStore.roles.length === 0) return;
+    // 等 authResolved；未 sign-in → 留在本頁等使用者點 LINE 登入按鈕
+    if (!authStore.authResolved || !authStore.isSignIn) return;
 
     const hasDriver = authStore.roles.includes('driver');
     const hasAdmin  = authStore.roles.includes('admin');
@@ -37,6 +40,7 @@ watch(
       return;
     }
 
+    // 純 passenger / 新使用者 / roles=[] 兜底 — 都帶去 register 申請司機
     navigateTo('/driver/register');
   },
   { immediate: true },
