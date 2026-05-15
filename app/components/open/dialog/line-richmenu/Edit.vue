@@ -187,6 +187,14 @@ const EnsureDraft = async (): Promise<boolean> => {
   return true;
 };
 
+// ── 切換到合成器 tab ────────────────────────────────────────
+// P44b-FU3：composer 需要 draftId 才能 render（v-if），create 模式必須先建草稿。
+// 沒填 name 時按鈕 disabled，不會走到這。
+const ClickComposeMode = async () => {
+  imageMode.value = 'compose';
+  if (!draftId.value) await EnsureDraft();
+};
+
 // ── 圖片上傳 ─────────────────────────────────────────────────
 const ClickPickImage = async () => {
   if (!await EnsureDraft()) return;
@@ -471,7 +479,7 @@ onMounted(() => {
           ) 直接上傳成品圖
           button.DialogLineRichmenuEdit__btn.is-toggle.is-mini(
             :class="{ 'is-active': imageMode === 'compose' }"
-            @click="imageMode = 'compose'"
+            @click="ClickComposeMode"
             :disabled="!draftId && !form.name.trim()"
           ) 🎨 圖層合成器
           span.DialogLineRichmenuEdit__hint(v-if="!draftId && !form.name.trim()")

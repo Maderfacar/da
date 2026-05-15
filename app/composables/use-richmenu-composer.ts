@@ -42,17 +42,42 @@ function nid(prefix: string): string {
 const imageCache = new Map<string, HTMLImageElement>();
 
 /**
+ * 直連 Firebase Storage URL → 同源 proxy URL（P44b-FU3）
+ *
+ * 舊資料（P44b-FU2 之前）layer.imageUrl 是 firebasestorage.googleapis.com download URL，
+ * 載入到 canvas 會 tainted 導致 toBlob 失敗。
+ * 偵測到此 pattern 時改走同源 `/nuxt-api/admin/storage-proxy/{path}`，舊資料免重新上傳。
+ *
+ * 白名單前綴必須與 server/routes/nuxt-api/admin/storage-proxy/[...path].get.ts 對齊。
+ */
+const REWRITE_PREFIXES = ['line-richmenus/', 'notification-templates/'];
+
+function rewriteToProxyUrl(url: string): string {
+  if (typeof url !== 'string' || url.length === 0) return url;
+  if (url.startsWith('/nuxt-api/admin/storage-proxy/')) return url;
+  const match = url.match(/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/([^?]+)/);
+  if (!match || !match[1]) return url;
+  try {
+    const objectPath = decodeURIComponent(match[1]);
+    if (REWRITE_PREFIXES.some((p) => objectPath.startsWith(p))) {
+      return `/nuxt-api/admin/storage-proxy/${objectPath}`;
+    }
+  } catch {
+    // decode 失敗 → 維持原 URL
+  }
+  return url;
+}
+
+/**
  * 載入圖片（兩階段 fallback）：
  *
- * 1. 先試 `crossOrigin='anonymous'` — Firebase Storage Hosting URL 預設支援 CORS，
- *    成功時 canvas 不會 tainted，後續 toBlob 合成 PNG 可正常匯出。
- * 2. CORS 失敗時 fallback 不帶 crossOrigin 重試 — preview 至少看得到，但 canvas tainted
- *    後 toBlob 會 throw SecurityError，admin 合成時需提示換圖或設定 Storage CORS。
- *
- * 舊資料（V4 signed URL 上傳的圖）會走 fallback；新資料（Hosting download URL）走 1。
+ * 0. 先把直連 firebasestorage URL rewrite 成同源 proxy URL（舊資料自動 migrate）
+ * 1. 試 `crossOrigin='anonymous'` — 同源 proxy / 有 CORS 設定的 URL 走這條，canvas 不 tainted
+ * 2. CORS 失敗時 fallback 不帶 crossOrigin — preview 可顯示，但 canvas tainted（toBlob 會 fail）
  */
 function loadImage(url: string): Promise<HTMLImageElement> {
-  const cached = imageCache.get(url);
+  const finalUrl = rewriteToProxyUrl(url);
+  const cached = imageCache.get(finalUrl);
   if (cached && cached.complete && cached.naturalWidth > 0) {
     return Promise.resolve(cached);
   }
@@ -61,7 +86,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
       const img = new Image();
       if (withCors) img.crossOrigin = 'anonymous';
       img.onload = () => {
-        imageCache.set(url, img);
+        imageCache.set(finalUrl, img);
         resolve(img);
       };
       img.onerror = () => {
@@ -69,10 +94,10 @@ function loadImage(url: string): Promise<HTMLImageElement> {
           // CORS 失敗 → fallback 不帶 crossOrigin（preview 可顯示，但 canvas 會 tainted）
           tryLoad(false);
         } else {
-          reject(new Error(`failed to load image: ${url}`));
+          reject(new Error(`failed to load image: ${finalUrl}`));
         }
       };
-      img.src = url;
+      img.src = finalUrl;
     };
     tryLoad(true);
   });
@@ -186,7 +211,8 @@ export function useRichmenuComposer(params: UseRichmenuComposerParams) {
       }
 
       if (layer.type === 'image' && layer.imageUrl) {
-        const cached = imageCache.get(layer.imageUrl);
+        // cache key 必須走 rewriteToProxyUrl 才會和 loadImage 寫入時的 key 一致
+        const cached = imageCache.get(rewriteToProxyUrl(layer.imageUrl));
         if (cached && cached.complete && cached.naturalWidth > 0) {
           drawImageWithFit(ctx, cached, x, y, w, h, layer.imageFit ?? 'cover');
         }
