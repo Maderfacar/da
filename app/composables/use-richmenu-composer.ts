@@ -41,20 +41,40 @@ function nid(prefix: string): string {
 // 圖片 cache（同 url 重複用同一 HTMLImageElement）
 const imageCache = new Map<string, HTMLImageElement>();
 
+/**
+ * 載入圖片（兩階段 fallback）：
+ *
+ * 1. 先試 `crossOrigin='anonymous'` — Firebase Storage Hosting URL 預設支援 CORS，
+ *    成功時 canvas 不會 tainted，後續 toBlob 合成 PNG 可正常匯出。
+ * 2. CORS 失敗時 fallback 不帶 crossOrigin 重試 — preview 至少看得到，但 canvas tainted
+ *    後 toBlob 會 throw SecurityError，admin 合成時需提示換圖或設定 Storage CORS。
+ *
+ * 舊資料（V4 signed URL 上傳的圖）會走 fallback；新資料（Hosting download URL）走 1。
+ */
 function loadImage(url: string): Promise<HTMLImageElement> {
   const cached = imageCache.get(url);
   if (cached && cached.complete && cached.naturalWidth > 0) {
     return Promise.resolve(cached);
   }
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      imageCache.set(url, img);
-      resolve(img);
+    const tryLoad = (withCors: boolean) => {
+      const img = new Image();
+      if (withCors) img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        imageCache.set(url, img);
+        resolve(img);
+      };
+      img.onerror = () => {
+        if (withCors) {
+          // CORS 失敗 → fallback 不帶 crossOrigin（preview 可顯示，但 canvas 會 tainted）
+          tryLoad(false);
+        } else {
+          reject(new Error(`failed to load image: ${url}`));
+        }
+      };
+      img.src = url;
     };
-    img.onerror = (err) => reject(err);
-    img.src = url;
+    tryLoad(true);
   });
 }
 

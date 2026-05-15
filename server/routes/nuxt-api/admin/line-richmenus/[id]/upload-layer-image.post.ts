@@ -15,6 +15,7 @@
  * 權限：canBroadcast
  * 副作用：audit log `line.richmenu.update` with payload.fields=['layer-image']
  */
+import { randomUUID } from 'node:crypto';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
@@ -22,7 +23,6 @@ import { writeAuditLog } from '@@/utils/audit-log';
 import type { LineRichmenuDoc } from '@@/utils/line-richmenu-doc';
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 const EXT_MAP: Record<string, string> = {
   'image/png': 'png',
@@ -94,19 +94,26 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // 上傳到 Storage
+    // 上傳到 Storage（用 Firebase Storage Hosting URL 而非 V4 signed URL
+    //  — 因 client canvas 合成需 CORS 支援，hosting URL 預設允許 cross-origin GET）
     const ext = EXT_MAP[mime] ?? 'bin';
     const timestamp = Date.now();
     const objectPath = `line-richmenus/${existing.channel}/${id}/layers/${timestamp}.${ext}`;
-    const blob = storage.bucket().file(objectPath);
+    const downloadToken = randomUUID();
+    const bucket = storage.bucket();
+    const blob = bucket.file(objectPath);
     await blob.save(file.data, {
       contentType: mime,
-      metadata: { contentType: mime, cacheControl: 'public, max-age=31536000' },
+      metadata: {
+        contentType: mime,
+        cacheControl: 'public, max-age=31536000',
+        // Firebase Storage Hosting download URL 需要的 token；無此 token 無法用 hosting URL 讀
+        metadata: { firebaseStorageDownloadTokens: downloadToken },
+      },
     });
-    const [signedUrl] = await blob.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + ONE_YEAR_MS,
-    });
+
+    // 構造 Firebase Storage Hosting download URL（host: firebasestorage.googleapis.com，預設 CORS 友善）
+    const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${downloadToken}`;
 
     await writeAuditLog({
       event,
@@ -118,7 +125,7 @@ export default defineEventHandler(async (event) => {
     });
 
     return successResponse<UploadLayerImageRes>({
-      url: signedUrl,
+      url: downloadUrl,
       objectPath,
       sizeBytes: file.data.length,
       mime: mime as 'image/png' | 'image/jpeg' | 'image/webp',
