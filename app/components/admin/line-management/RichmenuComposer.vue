@@ -56,6 +56,79 @@ const exportMime = ref<'image/png' | 'image/jpeg'>('image/png');
 const lastError = ref<string>('');
 const lastSize = ref<number>(0);
 
+// P44b-FU：圖層自訂圖片上傳
+const uploadingLayerImage = ref(false);
+const addImageInputRef = ref<HTMLInputElement | null>(null);     // sidebar 「+ 圖片」按鈕觸發
+const replaceImageInputRef = ref<HTMLInputElement | null>(null); // inspector 「📁 替換」按鈕觸發
+
+async function _uploadLayerImageFile(file: File): Promise<string | null> {
+  if (!props.draftId) {
+    ElMessage({ message: '請先建立 richmenu 草稿（填名稱觸發建立）', type: 'warning' });
+    return null;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage({ message: '檔案不可超過 2 MB', type: 'error' });
+    return null;
+  }
+  const allowed = new Set(['image/png', 'image/jpeg', 'image/webp']);
+  if (!allowed.has(file.type)) {
+    ElMessage({ message: '僅支援 PNG / JPEG / WebP', type: 'error' });
+    return null;
+  }
+  uploadingLayerImage.value = true;
+  try {
+    const res = await $api.UploadLineRichmenuLayerImage(props.draftId, file);
+    if (res.status?.code !== $enum.apiStatus.success || !res.data) {
+      ElMessage({ message: res.status?.message?.zh_tw || '上傳失敗', type: 'error' });
+      return null;
+    }
+    return res.data.url;
+  } finally {
+    uploadingLayerImage.value = false;
+  }
+}
+
+function ClickAddImage() {
+  if (!props.draftId) {
+    ElMessage({ message: '請先建立 richmenu 草稿（填名稱觸發建立）', type: 'warning' });
+    return;
+  }
+  if (!imageSizeRef.value) {
+    ElMessage({ message: '請先選範本以決定底圖尺寸', type: 'warning' });
+    return;
+  }
+  addImageInputRef.value?.click();
+}
+
+async function OnAddImageChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  target.value = '';
+  if (!file) return;
+  const url = await _uploadLayerImageFile(file);
+  if (!url) return;
+  composer.addLayer({ type: 'image', imageUrl: url, imageFit: 'cover' });
+  ElMessage({ message: '已加入圖片圖層', type: 'success' });
+}
+
+function ClickReplaceImage() {
+  if (!composer.primaryLayer.value || composer.primaryLayer.value.type !== 'image') return;
+  replaceImageInputRef.value?.click();
+}
+
+async function OnReplaceImageChange(e: Event) {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  target.value = '';
+  if (!file) return;
+  const layer = composer.primaryLayer.value;
+  if (!layer || layer.type !== 'image') return;
+  const url = await _uploadLayerImageFile(file);
+  if (!url) return;
+  composer.patchLayer(layer.id, { imageUrl: url });
+  ElMessage({ message: '圖片已替換', type: 'success' });
+}
+
 // ── 套範本 ───────────────────────────────────────────────
 async function ClickApplyTemplate() {
   if (!selectedTemplate.value) return;
@@ -207,6 +280,18 @@ function ClickSwitchSize(size: RichmenuSize) {
       .RichmenuComposer__add-btns
         button.RichmenuComposer__btn.is-toggle.is-mini(@click="ClickAddRectangle") + 色塊
         button.RichmenuComposer__btn.is-toggle.is-mini(@click="ClickAddText") + 文字
+        //- P44b-FU：自訂圖片上傳
+        button.RichmenuComposer__btn.is-toggle.is-mini(
+          :disabled="uploadingLayerImage"
+          @click="ClickAddImage"
+        ) {{ uploadingLayerImage ? '上傳中…' : '+ 圖片' }}
+        input(
+          ref="addImageInputRef"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          style="display: none"
+          @change="OnAddImageChange"
+        )
 
     //- 中：canvas preview
     .RichmenuComposer__stage
@@ -310,7 +395,21 @@ function ClickSwitchSize(size: RichmenuSize) {
       //- 圖片屬性
       template(v-if="composer.primaryLayer.value.type === 'image'")
         .RichmenuComposer__field
-          label 圖片 URL
+          label 圖片來源
+          .RichmenuComposer__image-source
+            button.RichmenuComposer__btn.is-toggle.is-mini(
+              :disabled="uploadingLayerImage"
+              @click="ClickReplaceImage"
+            ) {{ uploadingLayerImage ? '上傳中…' : '📁 上傳替換' }}
+            input(
+              ref="replaceImageInputRef"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style="display: none"
+              @change="OnReplaceImageChange"
+            )
+        .RichmenuComposer__field
+          label 圖片 URL（可手動貼外部連結覆蓋）
           input(type="text" :value="composer.primaryLayer.value.imageUrl ?? ''" maxlength="2048" @input="(e: any) => composer.patchLayer(composer.primaryLayer.value!.id, { imageUrl: e.target.value })")
         .RichmenuComposer__field
           label 填法
@@ -464,6 +563,13 @@ $muted: rgba(0, 0, 0, 0.5);
   display: flex;
   gap: 6px;
   margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.RichmenuComposer__image-source {
+  display: flex;
+  gap: 6px;
+  align-items: center;
   flex-wrap: wrap;
 }
 

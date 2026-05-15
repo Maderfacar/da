@@ -81,6 +81,22 @@ export const UploadLineRichmenuImage = (id: string, file: File) =>
     { file },
   );
 
+/**
+ * P44b-FU：上傳圖層合成器用的自訂圖片（image layer 用，不驗尺寸；PNG / JPEG / WebP ≤ 2 MB）
+ * 與成品 menu 圖（UploadLineRichmenuImage）區隔；layer 圖會被 canvas 縮放，不限寬高。
+ */
+export interface UploadLineRichmenuLayerImageRes {
+  url: string;
+  objectPath: string;
+  sizeBytes: number;
+  mime: 'image/png' | 'image/jpeg' | 'image/webp';
+}
+export const UploadLineRichmenuLayerImage = (id: string, file: File) =>
+  methods.formData<UploadLineRichmenuLayerImageRes>(
+    `/nuxt-api/admin/line-richmenus/${id}/upload-layer-image`,
+    { file },
+  );
+
 /** Publish 為 channel default（複合：archive 舊 active + LINE create+upload+setDefault） */
 export const PublishLineRichmenu = (id: string) =>
   methods.post<PublishRichmenuRes>(
