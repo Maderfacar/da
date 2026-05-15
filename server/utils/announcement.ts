@@ -216,3 +216,19 @@ export function isAnnouncementVisibleToUser(
       return false;
   }
 }
+
+/**
+ * 判斷單篇 announcement 在「司機端公告欄」是否可見。
+ *
+ * 司機端只關心 driver / all 兩種 target；passenger / order 一律隱藏，
+ * 即使該 user 同時擁有 passenger role 也不顯示（避免 driver workspace 雜訊）。
+ */
+export function isAnnouncementVisibleToDriver(
+  ann: { status: string; targetType: string },
+  user: { roles: string[] },
+): boolean {
+  if (ann.status !== 'published') return false;
+  if (ann.targetType === 'all') return true;
+  if (ann.targetType === 'driver') return user.roles.includes('driver');
+  return false;
+}

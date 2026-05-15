@@ -19,11 +19,12 @@ onMounted(() => {
 });
 
 const navItems = [
-  { id: 'cost',    icon: '💰', label: '營運成本', path: '/driver/cost'    },
-  { id: 'pending', icon: '📋', label: '拉單',     path: '/driver/pending' },
-  { id: 'trip',    icon: '✅', label: '任務',     path: '/driver/trip'    },
-  { id: 'traffic', icon: '✈️', label: '機場人流', path: '/driver/traffic' },
-  { id: 'profile', icon: '👤', label: '個人資料', path: '/driver/profile' },
+  { id: 'cost',          icon: '💰', label: '營運成本', path: '/driver/cost'          },
+  { id: 'pending',       icon: '📋', label: '拉單',     path: '/driver/pending'       },
+  { id: 'trip',          icon: '✅', label: '任務',     path: '/driver/trip'          },
+  { id: 'traffic',       icon: '✈️', label: '機場人流', path: '/driver/traffic'       },
+  { id: 'announcements', icon: '📣', label: '公告欄',   path: '/driver/announcements' },
+  { id: 'profile',       icon: '👤', label: '個人資料', path: '/driver/profile'       },
 ];
 
 const activeNav = computed(() => {
@@ -88,8 +89,47 @@ onMounted(() => {
   }
 });
 
+// ── 公告欄未讀紅點（30s polling + visibility refresh） ─────
+const announcementUnread = ref(0);
+let announcementPollTimer: ReturnType<typeof setInterval> | null = null;
+const ANNOUNCEMENT_POLL_INTERVAL = 30_000;
+
+const ApiLoadAnnouncementUnread = async () => {
+  try {
+    const res = await $api.GetDriverAnnouncementUnreadCount();
+    if (res.status?.code === $enum.apiStatus.success && res.data) {
+      announcementUnread.value = res.data.unread ?? 0;
+    }
+  } catch {
+    // fire-and-forget；下個輪詢再試
+  }
+};
+
+const onAnnouncementVisibility = () => {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    ApiLoadAnnouncementUnread();
+  }
+};
+
+onMounted(() => {
+  ApiLoadAnnouncementUnread();
+  announcementPollTimer = setInterval(ApiLoadAnnouncementUnread, ANNOUNCEMENT_POLL_INTERVAL);
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onAnnouncementVisibility);
+  }
+});
+
+// 進入公告欄 / 公告詳情後，回頭立即刷新紅點（不必等下個 polling tick）
+watch(() => route.path, (p) => {
+  if (p.startsWith('/driver/announcements')) ApiLoadAnnouncementUnread();
+});
+
 onUnmounted(() => {
   driverGeo.StopWatch();
+  if (announcementPollTimer) clearInterval(announcementPollTimer);
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', onAnnouncementVisibility);
+  }
 });
 </script>
 
@@ -160,6 +200,10 @@ onUnmounted(() => {
       )
         span.LayoutDriver__nav-icon {{ item.icon }}
         span.LayoutDriver__nav-label {{ item.label }}
+        //- 公告欄未讀紅點 badge
+        span.LayoutDriver__nav-badge(
+          v-if="item.id === 'announcements' && announcementUnread > 0"
+        ) {{ announcementUnread > 99 ? '99+' : announcementUnread }}
     .LayoutDriver__drawer-footer
       button.LayoutDriver__signout(@click="StoreAuth().SignOut()") 登出
 
@@ -473,6 +517,24 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutDriver__nav-item.is-active .LayoutDriver__nav-label {
   color: var(--da-cream);
+}
+
+.LayoutDriver__nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #f87171;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .LayoutDriver__drawer-footer {
