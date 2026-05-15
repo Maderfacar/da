@@ -12,6 +12,8 @@ export * from './bot-reply';
 export * from './line-event-log';
 // P43 Phase 2：LINE API error log sub-module
 export * from './line-api-error';
+// 會員條款 / 隱私政策 sub-module（admin）
+export * from './legal-page';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

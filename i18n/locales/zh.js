@@ -67,6 +67,21 @@ export default {
     guestName: '訪客',
     ariaOpen: '開啟選單',
     ariaDialog: '主選單',
+    legal: {
+      terms: '會員服務條款',
+      privacy: '隱私權政策',
+    },
+  },
+  // ── 法律文件（會員條款 / 隱私政策）──────────────────────
+  legal: {
+    loading: '載入中…',
+    loadFailed: '載入失敗，請稍後再試',
+    notPublished: '此頁面尚未發布，請聯絡客服',
+    lastUpdated: '最後更新',
+    title: {
+      terms: '會員服務條款',
+      privacy: '隱私權政策',
+    },
   },
   // ── 訂單狀態（跨頁共用）─────────────────────────────────
   status: {

@@ -44,6 +44,9 @@ const items = computed(() => [
   { id: 'orders',        path: '/orders',        label: t('drawer.orders'),        badge: 0 },
   { id: 'fleet',         path: '/fleet',         label: t('drawer.fleet'),         badge: 0 },
   { id: 'profile',       path: '/profile',       label: t('drawer.profile'),       badge: 0 },
+  // 法律文件（會員條款 / 隱私政策）— admin 在 /admin/settings LEGAL DOCUMENTS 編輯內容
+  { id: 'legal-terms',   path: '/legal/terms',   label: t('drawer.legal.terms'),   badge: 0 },
+  { id: 'legal-privacy', path: '/legal/privacy', label: t('drawer.legal.privacy'), badge: 0 },
 ]);
 
 const Close = () => emit('update:modelValue', false);

@@ -122,6 +122,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── legal_pages 集合（會員條款 / 隱私政策）──────────────
+    // 公開內容（terms / privacy）；
+    // - read 完全公開（乘客 + 訪客均可讀）— 也支援前端不登入讀條款
+    // - 寫入一律走 server admin SDK（含 audit log + canBroadcast 權限檢）
+    match /legal_pages/{key} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // ── notification_templates 集合（P38 Phase 3）─────────────
     // 通用 Flex 模板（取代 A1 的 admin_settings_notification_templates）
     // - admin client 可讀（管理頁列表 / 編輯器需要）

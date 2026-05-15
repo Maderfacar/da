@@ -34,7 +34,13 @@
       "Bash(git rm *)",
       "Bash(git mv *)",
       "Bash(pnpm exec *)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(head -40 app/middleware/auth.global.ts)",
+      "Bash(find app/middleware -type f)",
+      "Bash(xargs grep -l \"legal_pages\\\\|GetAdminLegalPages\\\\|/admin/legal-pages\")",
+      "Bash(firebase deploy *)",
+      "mcp__firebase__firebase_deploy",
+      "mcp__firebase__firebase_deploy_status"
     ]
   }
 }

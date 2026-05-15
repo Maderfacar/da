@@ -10,6 +10,7 @@ import * as config from './api/config';
 import * as passenger from './api/passenger';
 import * as announcement from './api/announcement';
 import * as self from './api/self';
+import * as legalPage from './api/legal-page';
 
 export default {
   ...file,
@@ -24,6 +25,7 @@ export default {
   ...passenger,
   ...announcement,
   ...self,
+  ...legalPage,
 };
 
 

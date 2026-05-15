@@ -94,12 +94,14 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
     .PageOrders__header-label MY TRIPS
     h1.PageOrders__header-title {{ $t('orders.title') }}
 
-  //- Wave 1 P3：日期過濾
+  //- Wave 1 P3：日期過濾（cream theme 對齊 booking 家族）
   .PageOrders__toolbar
     UiDateRangeFilter(
       v-model="dateRange"
       mode="single"
       granularity="day"
+      theme="cream"
+      size="md"
       @change="ApiLoadOrders"
     )
 

@@ -451,6 +451,13 @@ const ClickRevokeDriver = async (uid: string) => {
       AdminSettingsFleetLuggageTypes(v-if="fleetTab === 'luggage'")
       AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
 
+  //- 法律文件管理（會員條款 / 隱私政策）
+  .PageAdminSettings__section
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label LEGAL DOCUMENTS
+      span.PageAdminSettings__section-title 文件管理（會員條款 / 隱私政策）
+    AdminSettingsLegalDocuments
+
   //- 系統設定（只讀）
   .PageAdminSettings__notice
     span ⚠️

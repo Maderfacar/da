@@ -90,9 +90,11 @@ export type AuditAction =
   // P42 user 自助設定
   | 'user.lang.update'
   // migration（P27 一次性）
-  | 'migration.driver_application_move';
+  | 'migration.driver_application_move'
+  // Legal pages（會員條款 / 隱私政策 admin 編輯）
+  | 'legal_page.update';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page';
 
 interface WriteAuditLogInput {
   event: H3Event;

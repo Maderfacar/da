@@ -63,6 +63,20 @@ export default {
     guestName: 'ゲスト',
     ariaOpen: 'メニューを開く',
     ariaDialog: 'メインメニュー',
+    legal: {
+      terms: '会員サービス規約',
+      privacy: 'プライバシーポリシー',
+    },
+  },
+  legal: {
+    loading: '読み込み中…',
+    loadFailed: '読み込みに失敗しました。しばらくしてからお試しください。',
+    notPublished: 'このページはまだ公開されていません。サポートまでご連絡ください。',
+    lastUpdated: '最終更新',
+    title: {
+      terms: '会員サービス規約',
+      privacy: 'プライバシーポリシー',
+    },
   },
   status: {
     confirmed: '確認済み',

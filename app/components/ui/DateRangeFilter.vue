@@ -30,6 +30,11 @@ interface Props {
   /** 單一模式下允許切換 granularity；range 模式忽略 */
   allowGranularitySwitch?: boolean;
   size?: 'sm' | 'md';
+  /**
+   * 'dark'（預設）：admin / driver 暗底
+   * 'cream'：乘客端 cream theme（/orders 頁面用），覆蓋色系為深底文字
+   */
+  theme?: 'dark' | 'cream';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +43,7 @@ const props = withDefaults(defineProps<Props>(), {
   granularity: 'day',
   allowGranularitySwitch: true,
   size: 'sm',
+  theme: 'dark',
 });
 
 const emit = defineEmits<{
@@ -144,7 +150,7 @@ const _SingleInputType = computed(() => {
 </script>
 
 <template lang="pug">
-.UiDateRangeFilter(:class="`size-${size}`")
+.UiDateRangeFilter(:class="[`size-${size}`, `theme-${theme}`]")
   //- 單一模式：granularity 切換 + 對應 input
   template(v-if="mode === 'single'")
     .UiDateRangeFilter__granularity(v-if="allowGranularitySwitch")
@@ -280,10 +286,54 @@ const _SingleInputType = computed(() => {
   &:hover { background: rgba(255, 80, 80, 0.12); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
 }
 
-// ── 淺色版（front-desk 上用，覆蓋邊框 / 文字色為深底）─────
+// ── 尺寸：size-md（front-desk 用，字級略大）─────────────────
 .UiDateRangeFilter.size-md {
   .UiDateRangeFilter__input { font-size: 13px; padding: 7px 12px; width: 145px; }
   .UiDateRangeFilter__gran-btn { font-size: 12px; padding: 6px 12px; }
   .UiDateRangeFilter__clear { font-size: 12px; padding: 6px 12px; }
+}
+
+// ── theme-cream（乘客 /orders 頁面 cream 底色用）────────────
+// 既有 .UiDateRangeFilter__* 規則為 dark theme；此處覆蓋色系為深底文字
+.UiDateRangeFilter.theme-cream {
+  .UiDateRangeFilter__granularity {
+    border-color: rgba(26, 24, 20, 0.18);
+  }
+  .UiDateRangeFilter__gran-btn {
+    background: rgba(26, 24, 20, 0.04);
+    color: var(--da-gray, #6b6560);
+    border-right-color: rgba(26, 24, 20, 0.10);
+    &:hover {
+      background: rgba(26, 24, 20, 0.08);
+      color: var(--da-dark, #1a1814);
+    }
+    &.is-active {
+      background: rgba(212, 134, 10, 0.18);
+      color: #b8730a;
+    }
+  }
+  .UiDateRangeFilter__input {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(26, 24, 20, 0.18);
+    color: var(--da-dark, #1a1814);
+    color-scheme: light;
+
+    &::placeholder { color: rgba(26, 24, 20, 0.4); }
+    &:focus { border-color: rgba(212, 134, 10, 0.55); }
+  }
+  .UiDateRangeFilter__sep {
+    color: rgba(26, 24, 20, 0.4);
+  }
+  .UiDateRangeFilter__clear {
+    background: rgba(26, 24, 20, 0.04);
+    border-color: rgba(26, 24, 20, 0.18);
+    color: var(--da-gray, #6b6560);
+
+    &:hover {
+      background: rgba(220, 38, 38, 0.10);
+      color: #dc2626;
+      border-color: rgba(220, 38, 38, 0.30);
+    }
+  }
 }
 </style>

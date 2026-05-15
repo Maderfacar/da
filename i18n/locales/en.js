@@ -63,6 +63,20 @@ export default {
     guestName: 'Guest',
     ariaOpen: 'Open menu',
     ariaDialog: 'Main menu',
+    legal: {
+      terms: 'Terms of Service',
+      privacy: 'Privacy Policy',
+    },
+  },
+  legal: {
+    loading: 'Loading…',
+    loadFailed: 'Failed to load. Please try again later.',
+    notPublished: 'This page is not published yet. Please contact support.',
+    lastUpdated: 'Last updated',
+    title: {
+      terms: 'Terms of Service',
+      privacy: 'Privacy Policy',
+    },
   },
   status: {
     confirmed: 'Confirmed',
