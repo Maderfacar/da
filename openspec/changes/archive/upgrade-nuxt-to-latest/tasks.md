@@ -35,7 +35,7 @@
 - [x] 2.3 執行 `npm run lint`，紀錄結果；有 error → 修復後重跑
 - [x] 2.4 執行 `npm run build`，紀錄結果；有 error → 對照官方 migration guide 修復
 - [x] 2.5 啟動 `npm run dev`，用瀏覽器開啟首頁，確認無 SSR/hydration error 與 console error
-- [ ] 2.6 通過 → `git commit -m "chore: 升級 Nuxt 核心與 Vue 生態至最新穩定版"` *(暫緩，所有階段完成後一次請示)*
+- [x] 2.6 通過 → `git commit -m "chore: 升級 Nuxt 核心與 Vue 生態至最新穩定版"` *(已合併進 7.6 一次性 commit f00d0f8)*
 
 > **Phase 2 結果摘要**
 > - npm install：成功；`unplugin-vue-router@0.16.2` 顯示 deprecated（已合併到 vue-router v5，預期）
@@ -51,7 +51,7 @@
 - [x] 3.3 執行 `npm run lint`，特別注意 `@nuxt/eslint` 新版可能新增的規則；若有新規則大量報錯，記錄並逐條評估是否該修或該關
 - [x] 3.4 執行 `npm run build`，特別注意 `@nuxt/icon` 的 client bundle scan 報告與 `@nuxt/fonts` 的字體探測 log
 - [x] 3.5 啟動 dev server 並驗證 i18n 三語系切換、ColorMode class 切換、Icon 正確渲染（含 `my-icon:*` 自訂集合） *(dev server 啟動煙霧測試通過；UI 操作測試延後到 Phase 5)*
-- [ ] 3.6 通過 → `git commit -m "chore: 升級 Nuxt 官方模組至最新穩定版"` *(暫緩，所有階段完成後一次請示)*
+- [x] 3.6 通過 → `git commit -m "chore: 升級 Nuxt 官方模組至最新穩定版"` *(已合併進 7.6 一次性 commit f00d0f8)*
 
 > **Phase 3 結果摘要**
 > - 第一次 npm install 失敗：`@nuxt/eslint@1.15.2` 帶入 `eslint-webpack-plugin@4.2.0` peerOptional → 與 eslint v10 衝突
@@ -67,7 +67,7 @@
 - [x] 4.2 執行 `npm install`
 - [x] 4.3 執行 `npm run lint` + `npm run build`
 - [x] 4.4 啟動 dev server，驗證 Element Plus 元件 SCSS 主題注入正確、Pinia store 初始化順序正確（`StoreEnv → StoreTool → StoreTheme → StoreSelf → StoreOpen`）、Motion 動畫不報錯 *(dev server 啟動煙霧測試通過；UI 操作測試延後到 Phase 5)*
-- [ ] 4.5 通過 → `git commit -m "chore: 升級 Element Plus、Pinia、VueUse Motion 至最新穩定版"` *(暫緩，所有階段完成後一次請示)*
+- [x] 4.5 通過 → `git commit -m "chore: 升級 Element Plus、Pinia、VueUse Motion 至最新穩定版"` *(已合併進 7.6 一次性 commit f00d0f8)*
 
 > **Phase 4 結果摘要**
 > - 升級項目：`element-plus` ^2.13.6、`@pinia/nuxt` ^0.11.3、`pinia` ^3.0.4
