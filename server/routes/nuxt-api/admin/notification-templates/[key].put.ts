@@ -30,6 +30,12 @@ const TITLE_MAX = 60;
 const BODY_MAX = 1000;
 const LABEL_MAX = 20;
 const URL_MAX = 500;
+/**
+ * 封面圖 URL 上限放寬到 2048：Firebase Storage V4 signed URL 含 X-Goog-Signature
+ * 等 query params 通常 600-800 chars，原本 URL_MAX=500 不夠。瀏覽器一般 URL 安全上限
+ * 約 2048-8192，2048 是 RFC 7230 推薦上限。
+ */
+const COVER_URL_MAX = 2048;
 const TEXT_MAX = 300;
 const DATA_MAX = 300;
 
@@ -106,8 +112,18 @@ export default defineEventHandler(async (event) => {
 
   let coverImageUrl: string | null = null;
   if (body.coverImageUrl !== undefined && body.coverImageUrl !== null) {
-    if (typeof body.coverImageUrl !== 'string' || !body.coverImageUrl.startsWith('https://') || body.coverImageUrl.length > URL_MAX) {
+    if (typeof body.coverImageUrl !== 'string') {
+      return badRequestError({ zh_tw: '封面圖網址必須為字串', en: 'coverImageUrl must be a string', ja: 'カバー画像 URL は文字列' });
+    }
+    if (!body.coverImageUrl.startsWith('https://')) {
       return badRequestError({ zh_tw: '封面圖網址必須為 HTTPS', en: 'coverImageUrl must be HTTPS', ja: 'カバー画像 URL は HTTPS 必須' });
+    }
+    if (body.coverImageUrl.length > COVER_URL_MAX) {
+      return badRequestError({
+        zh_tw: `封面圖網址過長（最多 ${COVER_URL_MAX} 字元，實際 ${body.coverImageUrl.length}）`,
+        en: `coverImageUrl too long (max ${COVER_URL_MAX} chars, got ${body.coverImageUrl.length})`,
+        ja: `カバー画像 URL が長すぎる（最大 ${COVER_URL_MAX} 文字、実際 ${body.coverImageUrl.length}）`,
+      });
     }
     coverImageUrl = body.coverImageUrl;
   }

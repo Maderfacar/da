@@ -16,6 +16,7 @@
  *
  * 權限：canBroadcast
  */
+import { randomUUID } from 'node:crypto';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
@@ -23,7 +24,6 @@ import { TEMPLATE_REGISTRY } from '@@/utils/template-registry';
 
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
 const MAX_BYTES = 10 * 1024 * 1024;
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 const EXT_MAP: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -71,19 +71,26 @@ export default defineEventHandler(async (event) => {
     const timestamp = Date.now();
     const objectPath = `notification-templates/${key}/cover-${timestamp}.${ext}`;
 
+    // 改用 Firebase Storage Hosting download URL（與 P44b-FU layer image 一致）：
+    //   - URL 較短（~200-300 chars，原 V4 signed URL ~600-800 chars，避免超 LINE Flex 限制）
+    //   - 不會 1 年後失效（LINE Flex push 比較不會掉圖）
+    //   - 預設支援 CORS（未來如需 client 端 canvas 處理也 OK）
     const { storage } = useFirebaseAdmin(firebaseServiceAccountJson);
-    const blob = storage.bucket().file(objectPath);
+    const bucket = storage.bucket();
+    const blob = bucket.file(objectPath);
+    const downloadToken = randomUUID();
     await blob.save(file.data, {
       contentType: mime,
-      metadata: { contentType: mime, cacheControl: 'public, max-age=31536000' },
+      metadata: {
+        contentType: mime,
+        cacheControl: 'public, max-age=31536000',
+        metadata: { firebaseStorageDownloadTokens: downloadToken },
+      },
     });
-    const [signedUrl] = await blob.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + ONE_YEAR_MS,
-    });
+    const downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${downloadToken}`;
 
     return successResponse({
-      url: signedUrl,
+      url: downloadUrl,
       objectPath,
       sizeBytes: file.data.length,
       mime,
