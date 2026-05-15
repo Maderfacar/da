@@ -25,6 +25,7 @@ import type {
   RichmenuAction,
   RichmenuArea,
   RichmenuLang,
+  RichmenuLayer,
   RichmenuSize,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
 import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
@@ -80,7 +81,13 @@ const form = reactive({
   imageSize: null as RichmenuSize | null,
   imageBytes: 0,
   areas: [] as RichmenuArea[],
+  // P44b：圖層合成器 metadata
+  layers: [] as RichmenuLayer[],
+  layersTemplate: null as string | null,
 });
+
+// P44b：圖片來源 tab toggle（'upload' = 直接上傳成品圖；'compose' = 圖層合成器）
+const imageMode = ref<'upload' | 'compose'>('upload');
 
 const loading = ref(false);   // 載入 detail
 const submitting = ref(false); // 儲存中
@@ -149,6 +156,10 @@ const ApiLoadDetail = async () => {
     form.imageSize = m.imageSize;
     form.imageBytes = m.imageBytes ?? 0;
     form.areas = JSON.parse(JSON.stringify(m.areas)) as RichmenuArea[];
+    // P44b：載入 layers / layersTemplate（既有 doc 可能無此 field）
+    form.layers = Array.isArray(m.layers) ? JSON.parse(JSON.stringify(m.layers)) : [];
+    form.layersTemplate = m.layersTemplate ?? null;
+    if (form.layers.length > 0) imageMode.value = 'compose';
   } finally {
     loading.value = false;
   }
@@ -355,6 +366,9 @@ const ClickSave = async () => {
       chatBarText: form.chatBarText.trim(),
       selected: form.selected,
       areas: form.areas,
+      // P44b：寫 layers / layersTemplate（純 admin metadata，不影響 LINE 推送）
+      layers: form.layers.length > 0 ? form.layers : undefined,
+      layersTemplate: form.layersTemplate ?? undefined,
     });
     if (res.status.code !== 200) {
       ElMessage({ message: res.status.message?.zh_tw || '儲存失敗', type: 'error' });
@@ -449,8 +463,23 @@ onMounted(() => {
       //- 圖片
       section.DialogLineRichmenuEdit__section
         h3.DialogLineRichmenuEdit__section-title 圖片
-        .DialogLineRichmenuEdit__hint
+        //- P44b：來源切換 tab
+        .DialogLineRichmenuEdit__image-tabs
+          button.DialogLineRichmenuEdit__btn.is-toggle.is-mini(
+            :class="{ 'is-active': imageMode === 'upload' }"
+            @click="imageMode = 'upload'"
+          ) 直接上傳成品圖
+          button.DialogLineRichmenuEdit__btn.is-toggle.is-mini(
+            :class="{ 'is-active': imageMode === 'compose' }"
+            @click="imageMode = 'compose'"
+            :disabled="!draftId && !form.name.trim()"
+          ) 🎨 圖層合成器
+          span.DialogLineRichmenuEdit__hint(v-if="!draftId && !form.name.trim()")
+            | 先填名稱才能用合成器
+        .DialogLineRichmenuEdit__hint(v-if="imageMode === 'upload'")
           | 規格嚴格：PNG 或 JPEG，2500×1686 或 2500×843，≤ 1MB
+        .DialogLineRichmenuEdit__hint(v-else)
+          | P44b：用範本 / 圖層組 menu 圖，合成後自動上傳（PNG，≤ 1MB）
         .DialogLineRichmenuEdit__image-wrap
           .DialogLineRichmenuEdit__image-preview(
             v-if="form.imageUrl"
@@ -502,11 +531,26 @@ onMounted(() => {
             )
 
           .DialogLineRichmenuEdit__image-empty(v-else)
-            span 尚未上傳圖片
+            span {{ imageMode === 'compose' ? '請於下方圖層合成器選範本並合成' : '尚未上傳圖片' }}
 
         .DialogLineRichmenuEdit__hint(v-if="form.imageUrl")
           | 操作：空白處 drag 建 area · area 內 drag 位移 · 8 把手縮放 · Shift+click 多選 · Ctrl+drag 框選 · Delete 刪 · 方向鍵 微調（Shift +10px）
-        .DialogLineRichmenuEdit__upload-actions
+
+        //- P44b：圖層合成器（imageMode === 'compose'）
+        AdminLineManagementRichmenuComposer(
+          v-if="imageMode === 'compose' && draftId"
+          :draftId="draftId"
+          :layers="form.layers"
+          :areas="form.areas"
+          :imageSize="form.imageSize"
+          @update:layers="form.layers = $event"
+          @update:areas="form.areas = $event"
+          @update:imageSize="form.imageSize = $event"
+          @template-applied="(p) => form.layersTemplate = p.key"
+          @image-uploaded="(p) => { form.imageUrl = p.url; form.imageSize = { width: 2500, height: p.height as 1686 | 843 }; form.imageBytes = p.sizeBytes; }"
+        )
+
+        .DialogLineRichmenuEdit__upload-actions(v-if="imageMode === 'upload'")
           input(
             ref="imageInputRef"
             type="file"
@@ -818,6 +862,14 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 // ── 圖片 ─────────────────────────────────────────────────────
+.DialogLineRichmenuEdit__image-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 .DialogLineRichmenuEdit__image-wrap {
   position: relative;
 }
@@ -1135,6 +1187,11 @@ $border: rgba(0, 0, 0, 0.1);
     border-color: $border;
     color: rgba(0, 0, 0, 0.7);
     &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
+    &.is-active {
+      background: $amber;
+      border-color: $amber;
+      color: white;
+    }
   }
   &.is-approve {
     background: $amber;

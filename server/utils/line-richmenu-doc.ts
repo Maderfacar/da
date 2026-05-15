@@ -30,6 +30,11 @@ export const MESSAGE_TEXT_MAX = 300;
 export const POSTBACK_DATA_MAX = 300;
 export const ACTION_LABEL_MAX = 20;
 
+// P44b：layers 上限（avoid 過大 doc 與合成爆炸）
+export const LAYERS_MAX = 50;
+export const LAYER_TEXT_MAX = 200;
+export const LAYER_TEMPLATE_KEY_MAX = 60;
+
 export const VALID_SIZES: RichmenuSize[] = [
   { width: 2500, height: 1686 },
   { width: 2500, height: 843 },
@@ -46,6 +51,48 @@ export const RICHMENU_VALID_LANGS: readonly Lang[] = ['zh_tw', 'en', 'ja'] as co
 
 export type RichmenuStatus = 'draft' | 'active' | 'archived';
 export type SyncStatus = 'not_synced' | 'syncing' | 'synced' | 'sync_failed';
+
+// ── P44b：圖層合成器 ─────────────────────────────────────────
+export type RichmenuLayerType = 'image' | 'text' | 'rectangle';
+
+/**
+ * P44b：richmenu 合成圖層 schema（doc 內可選 field）
+ *
+ * - 既有 doc 沒 layers field 完全不影響（admin 用「上傳成品圖」流程）
+ * - admin 用「圖層合成器」flow 後 layers 寫入 doc，下次 admin 重編可直接從 layers 繼續修
+ * - layers 不影響 LINE 端 — 只是 admin 端的「設計藍圖」；render 出 PNG 後走既有 upload-image 流程
+ */
+export interface RichmenuLayer {
+  /** client uuid（非 Firestore id），用於 list key */
+  id: string;
+  type: RichmenuLayerType;
+  /** 底圖 px 整數座標 */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** 0-1，預設 1 */
+  opacity?: number;
+
+  // image
+  imageUrl?: string;
+  imageFit?: 'contain' | 'cover' | 'fill';
+
+  // text
+  text?: string;
+  fontSize?: number;
+  fontWeight?: 400 | 600 | 700;
+  fontFamily?: string;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  vAlign?: 'top' | 'middle' | 'bottom';
+
+  // rectangle
+  fillColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  radius?: number;
+}
 
 // ── Firestore Doc ──────────────────────────────────────────────────
 
@@ -81,6 +128,10 @@ export interface LineRichmenuDoc {
   updatedAt: Timestamp;
   publishedAt: Timestamp | null;
   archivedAt: Timestamp | null;
+
+  // P44b：圖層合成器 metadata（opt-in，既有 doc 無此欄位仍 work）
+  layers?: RichmenuLayer[];
+  layersTemplate?: string;
 }
 
 // ── DTO（API 回傳格式：Timestamp → ISO string） ─────────────────────
@@ -110,6 +161,9 @@ export interface LineRichmenuDto {
   updatedAt: string | null;
   publishedAt: string | null;
   archivedAt: string | null;
+  // P44b：layers metadata
+  layers?: RichmenuLayer[];
+  layersTemplate?: string | null;
 }
 
 const _ts = (v: unknown): string | null => {
@@ -146,6 +200,8 @@ export function toRichmenuDto(id: string, data: LineRichmenuDoc): LineRichmenuDt
     updatedAt: _ts(data.updatedAt),
     publishedAt: _ts(data.publishedAt),
     archivedAt: _ts(data.archivedAt),
+    layers: Array.isArray(data.layers) ? data.layers : undefined,
+    layersTemplate: data.layersTemplate ?? null,
   };
 }
 
@@ -299,6 +355,187 @@ export function validateName(raw: unknown): { ok: true; value: string } | { ok: 
     return { ok: false, error: `name 必須為 1-${RICHMENU_NAME_MAX} 字` };
   }
   return { ok: true, value: trimmed };
+}
+
+// ── P44b：layers / layersTemplate validators ───────────────────────
+
+const VALID_LAYER_TYPES = new Set<RichmenuLayerType>(['image', 'text', 'rectangle']);
+const VALID_IMAGE_FITS = new Set(['contain', 'cover', 'fill']);
+const VALID_ALIGNS = new Set(['left', 'center', 'right']);
+const VALID_V_ALIGNS = new Set(['top', 'middle', 'bottom']);
+const VALID_FONT_WEIGHTS = new Set([400, 600, 700]);
+
+/** 驗單一 layer。回完整清洗過的 RichmenuLayer（去掉 undefined / 越界值） */
+function validateLayer(raw: unknown, size: RichmenuSize, idx: number): { ok: true; value: RichmenuLayer } | { ok: false; error: string } {
+  if (!raw || typeof raw !== 'object') {
+    return { ok: false, error: `layer[${idx}] 必須為物件` };
+  }
+  const l = raw as Record<string, unknown>;
+
+  // type
+  const type = l.type;
+  if (typeof type !== 'string' || !VALID_LAYER_TYPES.has(type as RichmenuLayerType)) {
+    return { ok: false, error: `layer[${idx}].type 必須為 image / text / rectangle` };
+  }
+
+  // id
+  const id = typeof l.id === 'string' && l.id.length > 0 && l.id.length <= 80 ? l.id : null;
+  if (!id) {
+    return { ok: false, error: `layer[${idx}].id 缺失或過長` };
+  }
+
+  // bounds (整數 + 在 size 內)
+  const { x, y, width, height } = l;
+  if (!Number.isInteger(x) || !Number.isInteger(y) || !Number.isInteger(width) || !Number.isInteger(height)) {
+    return { ok: false, error: `layer[${idx}] 的 x/y/width/height 必須為整數` };
+  }
+  if ((x as number) < 0 || (y as number) < 0 || (width as number) <= 0 || (height as number) <= 0) {
+    return { ok: false, error: `layer[${idx}] 的 x/y/width/height 數值不合法` };
+  }
+  // 允許 layer 超出底圖部分裁切（不強制限制），但完全在底圖外則拒
+  if ((x as number) >= size.width || (y as number) >= size.height) {
+    return { ok: false, error: `layer[${idx}] 完全在底圖外` };
+  }
+
+  const out: RichmenuLayer = {
+    id,
+    type: type as RichmenuLayerType,
+    x: x as number,
+    y: y as number,
+    width: width as number,
+    height: height as number,
+  };
+
+  // opacity
+  if (l.opacity !== undefined) {
+    const op = Number(l.opacity);
+    if (!Number.isFinite(op) || op < 0 || op > 1) {
+      return { ok: false, error: `layer[${idx}].opacity 必須為 0-1` };
+    }
+    out.opacity = op;
+  }
+
+  // image
+  if (type === 'image') {
+    if (l.imageUrl !== undefined) {
+      if (typeof l.imageUrl !== 'string' || l.imageUrl.length === 0 || l.imageUrl.length > 4096) {
+        return { ok: false, error: `layer[${idx}].imageUrl 無效` };
+      }
+      out.imageUrl = l.imageUrl;
+    }
+    if (l.imageFit !== undefined) {
+      if (typeof l.imageFit !== 'string' || !VALID_IMAGE_FITS.has(l.imageFit)) {
+        return { ok: false, error: `layer[${idx}].imageFit 必須為 contain / cover / fill` };
+      }
+      out.imageFit = l.imageFit as RichmenuLayer['imageFit'];
+    }
+  }
+
+  // text
+  if (type === 'text') {
+    if (l.text !== undefined) {
+      if (typeof l.text !== 'string' || l.text.length > LAYER_TEXT_MAX) {
+        return { ok: false, error: `layer[${idx}].text 必須為 string 且 ≤ ${LAYER_TEXT_MAX} 字` };
+      }
+      out.text = l.text;
+    }
+    if (l.fontSize !== undefined) {
+      const fs = Number(l.fontSize);
+      if (!Number.isFinite(fs) || fs < 6 || fs > 800) {
+        return { ok: false, error: `layer[${idx}].fontSize 必須為 6-800` };
+      }
+      out.fontSize = Math.round(fs);
+    }
+    if (l.fontWeight !== undefined) {
+      const fw = Number(l.fontWeight);
+      if (!VALID_FONT_WEIGHTS.has(fw)) {
+        return { ok: false, error: `layer[${idx}].fontWeight 必須為 400 / 600 / 700` };
+      }
+      out.fontWeight = fw as 400 | 600 | 700;
+    }
+    if (l.fontFamily !== undefined) {
+      if (typeof l.fontFamily !== 'string' || l.fontFamily.length > 200) {
+        return { ok: false, error: `layer[${idx}].fontFamily 無效` };
+      }
+      out.fontFamily = l.fontFamily;
+    }
+    if (l.color !== undefined) {
+      if (typeof l.color !== 'string' || l.color.length > 64) {
+        return { ok: false, error: `layer[${idx}].color 無效` };
+      }
+      out.color = l.color;
+    }
+    if (l.align !== undefined) {
+      if (typeof l.align !== 'string' || !VALID_ALIGNS.has(l.align)) {
+        return { ok: false, error: `layer[${idx}].align 必須為 left / center / right` };
+      }
+      out.align = l.align as RichmenuLayer['align'];
+    }
+    if (l.vAlign !== undefined) {
+      if (typeof l.vAlign !== 'string' || !VALID_V_ALIGNS.has(l.vAlign)) {
+        return { ok: false, error: `layer[${idx}].vAlign 必須為 top / middle / bottom` };
+      }
+      out.vAlign = l.vAlign as RichmenuLayer['vAlign'];
+    }
+  }
+
+  // rectangle
+  if (type === 'rectangle') {
+    if (l.fillColor !== undefined) {
+      if (typeof l.fillColor !== 'string' || l.fillColor.length > 64) {
+        return { ok: false, error: `layer[${idx}].fillColor 無效` };
+      }
+      out.fillColor = l.fillColor;
+    }
+    if (l.borderColor !== undefined) {
+      if (typeof l.borderColor !== 'string' || l.borderColor.length > 64) {
+        return { ok: false, error: `layer[${idx}].borderColor 無效` };
+      }
+      out.borderColor = l.borderColor;
+    }
+    if (l.borderWidth !== undefined) {
+      const bw = Number(l.borderWidth);
+      if (!Number.isFinite(bw) || bw < 0 || bw > 200) {
+        return { ok: false, error: `layer[${idx}].borderWidth 必須為 0-200` };
+      }
+      out.borderWidth = Math.round(bw);
+    }
+    if (l.radius !== undefined) {
+      const r = Number(l.radius);
+      if (!Number.isFinite(r) || r < 0 || r > 1000) {
+        return { ok: false, error: `layer[${idx}].radius 必須為 0-1000` };
+      }
+      out.radius = Math.round(r);
+    }
+  }
+
+  return { ok: true, value: out };
+}
+
+/** 驗 layers array（≤ LAYERS_MAX；每 layer 合法） */
+export function validateLayers(raw: unknown, size: RichmenuSize): { ok: true; value: RichmenuLayer[] } | { ok: false; error: string } {
+  if (!Array.isArray(raw)) {
+    return { ok: false, error: 'layers 必須為陣列' };
+  }
+  if (raw.length > LAYERS_MAX) {
+    return { ok: false, error: `layers 不可超過 ${LAYERS_MAX} 個` };
+  }
+  const result: RichmenuLayer[] = [];
+  for (let i = 0; i < raw.length; i += 1) {
+    const r = validateLayer(raw[i], size, i);
+    if (!r.ok) return r;
+    result.push(r.value);
+  }
+  return { ok: true, value: result };
+}
+
+/** 驗 layersTemplate key（≤ 60 字字串 / null 清除） */
+export function validateLayersTemplate(raw: unknown): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw === null) return { ok: true, value: null };
+  if (typeof raw !== 'string' || raw.length === 0 || raw.length > LAYER_TEMPLATE_KEY_MAX) {
+    return { ok: false, error: `layersTemplate 必須為 1-${LAYER_TEMPLATE_KEY_MAX} 字 string（或 null 清除）` };
+  }
+  return { ok: true, value: raw };
 }
 
 /** 判斷 richmenu 是否「準備好可以 publish」（image / chatBarText / areas 都已就緒） */

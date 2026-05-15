@@ -26,6 +26,8 @@ import {
   validateName,
   validateChatBarText,
   validateAreas,
+  validateLayers,
+  validateLayersTemplate,
   CHAT_BAR_TEXT_MAX,
   type LineRichmenuDoc,
 } from '@@/utils/line-richmenu-doc';
@@ -39,6 +41,9 @@ interface PatchBody {
   channel?: unknown;
   lang?: unknown;
   status?: unknown;
+  // P44b：layers + layersTemplate
+  layers?: unknown;
+  layersTemplate?: unknown;
 }
 
 export default defineEventHandler(async (event) => {
@@ -128,6 +133,22 @@ export default defineEventHandler(async (event) => {
       patchedFields.push('areas');
     }
 
+    // P44b：layers / layersTemplate（純 admin metadata，不影響 LINE 端；active 也可改）
+    if (body.layers !== undefined) {
+      // 需要 imageSize 作為 layer bounds 驗證上限；若還沒上傳圖則用「容許最大」size（2500×1686）
+      const sizeForLayer = existing.imageSize ?? { width: 2500, height: 1686 } as const;
+      const r = validateLayers(body.layers, sizeForLayer);
+      if (!r.ok) return badRequestError({ zh_tw: r.error, en: r.error, ja: r.error });
+      update.layers = r.value;
+      patchedFields.push('layers');
+    }
+    if (body.layersTemplate !== undefined) {
+      const r = validateLayersTemplate(body.layersTemplate);
+      if (!r.ok) return badRequestError({ zh_tw: r.error, en: r.error, ja: r.error });
+      update.layersTemplate = r.value;
+      patchedFields.push('layersTemplate');
+    }
+
     if (patchedFields.length === 0) {
       return badRequestError({ zh_tw: '沒有可更新的欄位', en: 'No fields to update', ja: '更新するフィールドがありません' });
     }
@@ -143,7 +164,11 @@ export default defineEventHandler(async (event) => {
       action: 'line.richmenu.update',
       targetType: 'line_richmenu',
       targetId: id,
-      payload: { fields: patchedFields, areasCount: body.areas ? (update.areas as unknown[]).length : undefined },
+      payload: {
+        fields: patchedFields,
+        areasCount: body.areas ? (update.areas as unknown[]).length : undefined,
+        layersCount: body.layers ? (update.layers as unknown[]).length : undefined,
+      },
     });
 
     return successResponse({ id, updated: true, fields: patchedFields });

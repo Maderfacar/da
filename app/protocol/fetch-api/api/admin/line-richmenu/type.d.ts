@@ -29,6 +29,41 @@ export interface RichmenuArea {
   action: RichmenuAction;
 }
 
+// P44b：圖層合成器 schema（admin client side 設計藍圖；render 後出 PNG 走既有 upload-image flow）
+export type RichmenuLayerType = 'image' | 'text' | 'rectangle';
+
+export interface RichmenuLayer {
+  /** client uuid（非 Firestore id），用於 list key */
+  id: string;
+  type: RichmenuLayerType;
+  /** 底圖 px 整數 */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** 0-1，預設 1 */
+  opacity?: number;
+
+  // image
+  imageUrl?: string;
+  imageFit?: 'contain' | 'cover' | 'fill';
+
+  // text
+  text?: string;
+  fontSize?: number;
+  fontWeight?: 400 | 600 | 700;
+  fontFamily?: string;
+  color?: string;
+  align?: 'left' | 'center' | 'right';
+  vAlign?: 'top' | 'middle' | 'bottom';
+
+  // rectangle
+  fillColor?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  radius?: number;
+}
+
 export interface LineRichmenuDto {
   id: string;
   channel: LineClient;
@@ -54,6 +89,9 @@ export interface LineRichmenuDto {
   updatedAt: string | null;
   publishedAt: string | null;
   archivedAt: string | null;
+  // P44b：圖層合成器 metadata（opt-in）
+  layers?: RichmenuLayer[];
+  layersTemplate?: string | null;
 }
 
 export interface RichmenuListRes {
@@ -74,6 +112,9 @@ export interface PatchRichmenuBody {
   chatBarText?: string;
   selected?: boolean;
   areas?: RichmenuArea[];
+  // P44b：layers / layersTemplate
+  layers?: RichmenuLayer[];
+  layersTemplate?: string | null;
 }
 
 export interface UploadRichmenuImageRes {
