@@ -91,6 +91,26 @@ const _OnVisibilityChange = () => {
 };
 watch(isSignIn, () => { ApiLoadNextTrip(); });
 
+// ── Scroll reveal observer（提升至 setup 範圍，動態加入的 .reveal 也可補 observe） ──
+// 修 bug：onMounted 跑 querySelectorAll('.reveal') 時 trip-card 還在 v-if="nextTripDisplay"
+// 後面尚未 render，observer 沒抓到它 → 永遠維持 opacity: 0 → 「卡片可點但空白」
+let revealObserver: IntersectionObserver | null = null;
+const _observedReveals = typeof WeakSet !== 'undefined' ? new WeakSet<Element>() : null;
+const _observeNewReveals = () => {
+  if (!revealObserver || typeof document === 'undefined') return;
+  document.querySelectorAll('.reveal').forEach((el) => {
+    if (_observedReveals && _observedReveals.has(el)) return;
+    revealObserver!.observe(el);
+    _observedReveals?.add(el);
+  });
+};
+
+// 任何 nextTrip 狀態變化 → DOM 更新後補 observe（新出現的 trip-card / empty-cta）
+watch([nextTripLoaded, nextTripDisplay], async () => {
+  await nextTick();
+  _observeNewReveals();
+});
+
 // ── 生命週期 ──────────────────────────────────────────────
 onMounted(() => {
   // 載入下一趟
@@ -99,12 +119,12 @@ onMounted(() => {
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', _OnVisibilityChange);
 
   // Scroll reveal
-  const revealObserver = new IntersectionObserver((entries) => {
+  revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (e.isIntersecting) e.target.classList.add('visible');
     });
   }, { threshold: 0.1 });
-  document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+  _observeNewReveals();
 
   // Stats flip board
   const flipObserver = new IntersectionObserver((entries) => {
