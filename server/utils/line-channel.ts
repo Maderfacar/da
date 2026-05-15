@@ -103,8 +103,10 @@ async function _reply(
  * Bot 自動回覆 fallback 文案（P40 Phase 2：抽進 bot_replies collection 後仍保留作 fallback）
  *
  * 載入順序：
- *   1. Firestore bot_replies/{client}.{type} doc 存在且 enabled=true → 用 doc.text
- *   2. 否則用本 const 內字串（admin 還沒設、Firestore 不可用、或刻意停用模板）
+ *   1. doc 不存在 / 讀取失敗 → fallback hard-coded const（admin 還沒設過）
+ *   2. doc.enabled === false → **null**（admin 主動停用 → 不回覆）
+ *   3. doc.text 空 → fallback（admin 編過但沒填）
+ *   4. 其他 → 用 doc.text
  */
 const FOLLOW_MESSAGES: Record<LineClient, string> = {
   passenger: '感謝您加入 DestinationAnywhere！\n\n✈ 專業機場接送服務，隨時為您出發。\n\n請透過 LINE LIFF 完成訂車預約，我們將盡快為您安排。',
@@ -119,14 +121,17 @@ const TEXT_REPLY_MESSAGES: Record<LineClient, string> = {
 export type BotReplyType = 'follow' | 'text';
 
 /**
- * 取得 Bot 自動回覆文案（P40 Phase 2）
+ * 取得 Bot 自動回覆文案（P40 Phase 2 + P40-FU bugfix）
  *
- * - 先嘗試讀 Firestore `bot_replies/{client}.{type}` doc
- * - doc 不存在 / disabled / text 為空 / 讀取失敗 → fallback hard-coded const
+ * - doc 不存在 / 讀取失敗 → 回 fallback hard-coded（admin 還沒設過）
+ * - **doc.enabled === false → 回 null（admin 主動停用 — webhook 端應跳過 reply）**
+ * - doc.text 空 → 回 fallback（admin 編過但沒填 text，視同未設）
+ * - 其他 → 回 doc.text
  *
- * **export** 給 admin/bot-replies/index.get.ts 預覽 fallback default 用。
+ * 行為差異（修 bug）：原版 enabled=false 仍回 fallback 字串，導致 admin 關閉啟用後 OA
+ * 仍會回覆（fallback 也是字串，handler 拿到非空字串就 reply）。修正後 null = 不回覆。
  */
-export async function loadBotReply(client: LineClient, type: BotReplyType): Promise<string> {
+export async function loadBotReply(client: LineClient, type: BotReplyType): Promise<string | null> {
   const fallback = type === 'follow' ? FOLLOW_MESSAGES[client] : TEXT_REPLY_MESSAGES[client];
   try {
     const { firebaseServiceAccountJson } = useRuntimeConfig();
@@ -136,7 +141,8 @@ export async function loadBotReply(client: LineClient, type: BotReplyType): Prom
     if (!snap.exists) return fallback;
     const d = snap.data();
     if (!d) return fallback;
-    if (d.enabled === false) return fallback;
+    // admin 在 UI 明確設「停用」→ 完全不回覆（webhook 端會跳過 reply）
+    if (d.enabled === false) return null;
     if (typeof d.text !== 'string' || d.text.length === 0) return fallback;
     return d.text;
   } catch (err) {
@@ -188,8 +194,13 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
 
     if (ev.type === 'follow' && ev.replyToken && accessToken) {
       const text = await loadBotReply(client, 'follow');
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
-      handlerResult = 'replied';
+      if (text === null) {
+        // admin 在 bot_replies 設 enabled=false → 主動停用，不回覆
+        handlerResult = 'ignored';
+      } else {
+        await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
+        handlerResult = 'replied';
+      }
     } else if (ev.type === 'follow') {
       handlerResult = 'no_handler';  // 無 replyToken 或 accessToken
     }
@@ -213,8 +224,13 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
     if (ev.type === 'message' && ev.message?.type === 'text' && ev.replyToken && accessToken) {
       messageText = ev.message.text;
       const text = await loadBotReply(client, 'text');
-      await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
-      handlerResult = 'replied';
+      if (text === null) {
+        // admin 在 bot_replies 設 enabled=false → 主動停用，不回覆
+        handlerResult = 'ignored';
+      } else {
+        await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
+        handlerResult = 'replied';
+      }
     } else if (ev.type === 'message' && ev.message?.type === 'text') {
       messageText = ev.message.text;
       handlerResult = 'no_handler';
