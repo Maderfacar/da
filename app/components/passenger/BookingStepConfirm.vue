@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ORDER_TYPES } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
+import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 
 interface Props {
   draft: Partial<CreateOrderParams>;
   distanceKm: number;
   durationMinutes: number;
-  estimatedFare: number;
+  /** Fare V2：step 3 估價結果（含明細）；尚未估出則為 null */
+  fareResult: MapsRouteRes | null;
   isLoading: boolean;
   flightInfo?: FlightInfo | null;
   contactPhone: string;
@@ -204,11 +206,14 @@ const ClickSubmit = () => {
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.durationLabel') }}
       span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.durationVal', { min: durationMinutes }) }}
 
-  .PassengerBookingStepConfirm__fare-box
-    .PassengerBookingStepConfirm__fare-label
-      span {{ $t('booking.confirm.fareLabel') }}
-      span.PassengerBookingStepConfirm__fare-note {{ $t('booking.confirm.cashNote') }}
-    .PassengerBookingStepConfirm__fare-amount NT$ {{ estimatedFare.toLocaleString() }}
+  PassengerFareBreakdownCard(
+    :breakdown="fareResult ? fareResult.fareBreakdown : null"
+    :metrics="fareResult ? fareResult.routeMetrics : null"
+    :fare-version="fareResult ? fareResult.fareVersion : null"
+    :fare-total="fareResult ? fareResult.fareTotal : null"
+    :default-expanded="true"
+  )
+  .PassengerBookingStepConfirm__cash-note {{ $t('booking.confirm.cashNote') }}
 
   .PassengerBookingStepConfirm__notice
     NuxtIcon(name="mdi:information-outline")
@@ -350,37 +355,13 @@ const ClickSubmit = () => {
     background: var(--da-gray-pale);
   }
 
-  &__fare-box {
-    background: var(--da-dark);
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  &__fare-label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--da-gray-light);
-  }
-
-  &__fare-note {
-    font-size: 11px;
+  &__cash-note {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
     color: var(--da-gray);
-    letter-spacing: 0.05em;
-  }
-
-  &__fare-amount {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    color: var(--da-amber-light);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
+    margin-top: -8px;
+    padding-left: 4px;
   }
 
   &__notice {

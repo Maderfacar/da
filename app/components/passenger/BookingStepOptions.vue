@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { calculateFare } from '~shared/pricing';
 import type { VehicleType, FleetVehicle } from '~shared/pricing';
+import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 
 export interface LuggageItem { typeId: string; count: number }
 
@@ -9,7 +9,11 @@ interface Props {
   luggageItems: LuggageItem[];
   vehicleType: VehicleType;
   extraServices: string[];
-  distanceKm: number;
+  // Fare V2：明細由 server 計算，需路線 + 上車時間
+  pickupLocation: GooglePlace | null;
+  dropoffLocation: GooglePlace | null;
+  stopovers: GooglePlace[];
+  pickupDateTime: string;
 }
 
 const props = defineProps<Props>();
@@ -19,6 +23,7 @@ const emit = defineEmits<{
   (e: 'update:luggageItems', val: LuggageItem[]): void;
   (e: 'update:vehicleType', val: VehicleType): void;
   (e: 'update:extraServices', val: string[]): void;
+  (e: 'fareResult', val: MapsRouteRes): void;
   (e: 'next' | 'back'): void;
 }>();
 
@@ -87,22 +92,45 @@ const vehicles = computed(() =>
 
 const luggageTypes = computed(() => storeConfig.luggageTypes);
 
-// ── 車資試算 ────────────────────────────────────────────────────────────────
-const fare = computed(() => {
-  const v = storeConfig.GetVehicle(vehicle.value);
-  if (!v) return 0;
-  const selectedExtras = extras.value
-    .map((id) => storeConfig.GetExtra(id))
-    .filter((e): e is NonNullable<typeof e> => Boolean(e));
-  return calculateFare(v, props.distanceKm || 25, selectedExtras);
-});
+// ── 車資試算（Fare V2：明細由 server 計算）──────────────────────────────────
+const fareResult = ref<MapsRouteRes | null>(null);
+const fareLoading = ref(false);
+let _fareTimer: ReturnType<typeof setTimeout> | null = null;
+
+const ApiFetchFare = async () => {
+  if (!props.pickupLocation || !props.dropoffLocation || !vehicle.value) return;
+  fareLoading.value = true;
+  const validWps = props.stopovers.filter((s) => s.lat !== 0);
+  const res = await $api.GetMapsRoute({
+    origin: `${props.pickupLocation.lat},${props.pickupLocation.lng}`,
+    destination: `${props.dropoffLocation.lat},${props.dropoffLocation.lng}`,
+    ...(validWps.length ? { waypoints: validWps.map((s) => `${s.lat},${s.lng}`).join('|') } : {}),
+    vehicleType: vehicle.value,
+    pickupTime: props.pickupDateTime
+      ? $dayjs(props.pickupDateTime).toISOString()
+      : new Date().toISOString(),
+    ...(extras.value.length ? { extras: extras.value.join(',') } : {}),
+  });
+  fareLoading.value = false;
+  if (res.status.code !== 200 || !res.data) return;
+  fareResult.value = res.data;
+  emit('fareCalc', res.data.fareTotal ?? 0);
+  emit('fareResult', res.data);
+};
+
+// vehicle / extras 變動 → debounce 重新估價
+const FareFetchFlow = () => {
+  if (_fareTimer) clearTimeout(_fareTimer);
+  _fareTimer = setTimeout(ApiFetchFare, 400);
+};
 
 // ── Sync ────────────────────────────────────────────────────────────────────
-watch(fare, (val) => emit('fareCalc', val), { immediate: true });
 watch(passengers, (val) => emit('update:passengerCount', val));
 watch(luggage, (val) => emit('update:luggageItems', val), { deep: true });
-watch(vehicle, (val) => emit('update:vehicleType', val));
-watch(extras, (val) => emit('update:extraServices', val), { deep: true });
+watch(vehicle, (val) => { emit('update:vehicleType', val); FareFetchFlow(); });
+watch(extras, (val) => { emit('update:extraServices', val); FareFetchFlow(); }, { deep: true });
+
+onMounted(ApiFetchFare);
 
 const ClickVehicle = (v: FleetVehicle) => {
   const status = _GetVehicleStatus(v);
@@ -208,9 +236,13 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
       span {{ Loc(svc.label) }}
       span.PassengerBookingStepOptions__extra-price +NT${{ svc.price }}
 
-  .PassengerBookingStepOptions__fare-preview
-    span.PassengerBookingStepOptions__fare-label {{ $t('booking.options.fareLabel') }}
-    span.PassengerBookingStepOptions__fare-value NT$ {{ fare.toLocaleString() }}
+  PassengerFareBreakdownCard(
+    :breakdown="fareResult ? fareResult.fareBreakdown : null"
+    :metrics="fareResult ? fareResult.routeMetrics : null"
+    :fare-version="fareResult ? fareResult.fareVersion : null"
+    :fare-total="fareResult ? fareResult.fareTotal : null"
+    :loading="fareLoading"
+  )
 
   .PassengerBookingStepOptions__actions
     UiButton(type="secondary" @click="$emit('back')") {{ $t('booking.nav.back') }}
@@ -532,31 +564,6 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
     font-size: 11px;
     color: var(--da-amber);
     font-family: 'Barlow', sans-serif;
-  }
-
-  &__fare-preview {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--da-dark);
-    border-radius: 14px;
-    padding: 16px 20px;
-    margin-top: 4px;
-  }
-
-  &__fare-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--da-gray-light);
-  }
-
-  &__fare-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    color: var(--da-amber-light);
-    letter-spacing: 0.05em;
   }
 
   &__actions {

@@ -2,6 +2,7 @@
 import type { VehicleType, OrderType } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 import type { LuggageItem } from '@/components/passenger/BookingStepOptions.vue';
+import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
@@ -69,6 +70,8 @@ watch(flightInfo, (info) => {
 const distanceKm = ref(storeOrder.routeInfo?.distanceKm ?? 0);
 const durationMinutes = ref(storeOrder.routeInfo?.durationMinutes ?? 0);
 const estimatedFare = ref(storeOrder.estimatedFare ?? 0);
+// Fare V2：step 3 估出的完整明細（含 fareBreakdown / routeMetrics），傳給 step 4 確認頁
+const fareResult = ref<MapsRouteRes | null>(null);
 
 const isSubmitting = ref(false);
 const isSuccess = ref(false);
@@ -109,6 +112,10 @@ const OnRouteCalc = (info: { distanceKm: number; durationMinutes: number }) => {
 const OnFareCalc = (fare: number) => {
   estimatedFare.value = fare;
   storeOrder.SetEstimatedFare(fare);
+};
+
+const OnFareResult = (res: MapsRouteRes) => {
+  fareResult.value = res;
 };
 
 // ── 送出訂單 ──────────────────────────────────────────────────────────────────
@@ -166,6 +173,7 @@ const ClickNewOrder = () => {
   distanceKm.value = 0;
   durationMinutes.value = 0;
   estimatedFare.value = 0;
+  fareResult.value = null;
 };
 </script>
 
@@ -246,8 +254,12 @@ const ClickNewOrder = () => {
           v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
           v-model:extra-services="extraServices"
-          :distance-km="distanceKm"
+          :pickup-location="pickupLocation"
+          :dropoff-location="dropoffLocation"
+          :stopovers="stopovers"
+          :pickup-date-time="pickupDateTime"
           @fare-calc="OnFareCalc"
+          @fare-result="OnFareResult"
           @next="GoNext"
           @back="GoBack"
         )
@@ -259,7 +271,7 @@ const ClickNewOrder = () => {
           :draft="storeOrder.draft"
           :distance-km="distanceKm"
           :duration-minutes="durationMinutes"
-          :estimated-fare="estimatedFare"
+          :fare-result="fareResult"
           :is-loading="isSubmitting"
           :flight-info="flightInfo"
           v-model:contact-phone="contactPhone"

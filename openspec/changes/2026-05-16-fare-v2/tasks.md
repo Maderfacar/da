@@ -2,125 +2,127 @@
 
 ## 開工前 prerequisite（必須先完成）
 
-- [ ] **Brain AI 拍板：design.md 結尾 4 個決策**
-  - 資料 host 方式（A/B/C）
-  - OSM 索引更新頻率
-  - 17 個預設參數值是否採用
-  - OSM 過濾範圍（A/B）
+- [x] **Brain AI 拍板：design.md 結尾 4 個決策**（拍板表見 design.md 結尾）
+  - 資料 host 方式：C（精簡 < 5MB 進 repo）
+  - OSM 索引更新頻率：A（一次性）
+  - 17 個預設參數值：照單全收
+  - OSM 過濾範圍：A（motorway + trunk）
 - [ ] 確認 Vercel 環境 `NUXT_GOOGLE_MAPS_API_KEY` 已啟用：Routes API、Maps Elevation API
-- [ ] **不**需要：Roads API（公式不用速限）
+      ⚠ 需 Brain AI 於 GCP Console 確認，Phase 2 升 Routes API v2 前必須完成
+- [x] **不**需要：Roads API（公式不用速限）
 
-## Phase 1：資料準備（1-2 hr）
+## Phase 1：資料準備（1-2 hr）— ✅ 完工 2026-05-16
 
 ### 1.1 縣市 GeoJSON
-- [ ] 1.1.1 從 g0v/twgeojson 抓 Taiwan 22 縣市邊界
-- [ ] 1.1.2 用 mapshaper 簡化（保留 ~3000 個座標點 → 檔案 < 1MB）
-- [ ] 1.1.3 加自定 `code` property（TPE / NTPE / TYN / ...）
-- [ ] 1.1.4 寫入 `shared/geo/taiwan-counties.geojson`
-- [ ] 1.1.5 寫 `shared/geo/county-codes.ts` enum + 中英日名稱對照
+- [x] 1.1.1 從 g0v/twgeojson 抓 Taiwan 22 縣市邊界
+- [x] 1.1.2 簡化（內建 Douglas-Peucker，免 mapshaper 依賴；208046→30409 點，622KB < 1MB）
+- [x] 1.1.3 加自定 `code` property（TPE / NTPE / TYN / ...）
+- [x] 1.1.4 寫入 `shared/geo/taiwan-counties.json`（副檔名改 .json 以便 server 原生靜態 import）
+- [x] 1.1.5 寫 `shared/geo/county-codes.ts` enum + 中英日名稱對照
+      建置腳本：`scripts/build-county-geojson.mjs`
 
 ### 1.2 OSM 道路索引
-- [ ] 1.2.1 寫 `scripts/build-osm-roads-index.mjs`
-- [ ] 1.2.2 從 Geofabrik 抓 `taiwan-latest.osm.pbf`
-- [ ] 1.2.3 用 `osm-pbf-parser` 純 JS 解析（避免裝 osmium native tool）
-- [ ] 1.2.4 過濾 `highway in {motorway, trunk}`（依拍板決定）
-- [ ] 1.2.5 簡化線形到 ~5m tolerance
-- [ ] 1.2.6 輸出 `shared/geo/osm-roads-index.json`（壓縮版本 < 5MB 為目標）
-- [ ] 1.2.7 跑一次驗證：輸出檔大小、include 國道 1/3/5、include 台 64/74 等快速道路
+- [x] 1.2.1 寫 `scripts/build-osm-roads-index.mjs`
+- [x] 1.2.2~1.2.3 改用 Overpass API `out geom`（免下載 200MB pbf、免 osmium native tool、免解析 node ref）
+- [x] 1.2.4 過濾 `highway in {motorway, trunk}`
+- [x] 1.2.5 簡化線形（Douglas-Peucker ~6m tolerance；39429→18371 點）
+- [x] 1.2.6 輸出 `shared/geo/osm-roads-index.json`（0.88MB ≪ 5MB）
+- [x] 1.2.7 驗證：5359 way（motorway 3198 / trunk 2161）；ref 含國道 1/3/5、台 61/64/74/76/78/86/88
 
 ### 1.3 R-tree 索引載入器
-- [ ] 1.3.1 `pnpm add rbush`
-- [ ] 1.3.2 寫 `server/utils/osm-roads-index.ts`
-  - boot 時讀 JSON → 建 R-tree
-  - export `nearestRoadClass(point, toleranceM)` 函式
-- [ ] 1.3.3 寫單元測試（給定 polyline 點 → 預期回 motorway / trunk / other）
+- [x] 1.3.1 `pnpm add rbush`（4.0.1）+ `@types/rbush`（4.0.0）
+- [x] 1.3.2 寫 `server/utils/osm-roads-index.ts`
+  - 首次查詢時讀 JSON → 建 R-tree（lazy singleton，常駐重用）
+  - export `nearestRoadClass(point, toleranceM)` + `getOsmIndexMeta()`
+- [x] 1.3.3 寫單元測試 `server/utils/osm-roads-index.spec.ts`（5 tests，motorway/trunk/other + 容差）
+      附帶：建立 `vitest.config.ts` + `pnpm test` / `test:watch` / `test:e2e` script
 
 ### 1.4 縣市判定 helper
-- [ ] 1.4.1 寫 `server/utils/county-detect.ts`
-  - load 縣市 GeoJSON 一次
-  - export `detectCounties(polyline) → string[]`
-  - 用 `@turf/boolean-point-in-polygon` 或自寫 ray-casting
+- [x] 1.4.1 寫 `server/utils/county-detect.ts`
+  - load 縣市 GeoJSON 一次（lazy singleton + 各縣市 bbox 預先計算）
+  - export `detectCounties(points) → CountyCode[]`、`pointInCounty(point)`、`getCountyIndexMeta()`
+  - 自寫 ray-casting point-in-polygon（免 turf 依賴；支援 MultiPolygon + holes）
+  - 單元測試 `server/utils/county-detect.spec.ts`（6 tests）
 
-## Phase 2：Server 層（2-3 hr）
+## Phase 2：Server 層（2-3 hr）— ✅ 完工 2026-05-16
+
+> 整體：純計算（4 computers + calculateFareV2）置於 `shared/pricing.ts` 以便單元測試；
+> `fare-calculator-v2.ts` 僅做 server I/O 編排（與 tasks 原規劃略異，理由見各項）。
+> 全部 fare-v2 檔案 `vue-tsc` 型別乾淨；44 單元測試通過；lint 乾淨。
 
 ### 2.1 升級 Routes API
-- [ ] 2.1.1 改 `server/api/maps/route.get.ts` POST 到 Routes API v2
-- [ ] 2.1.2 FieldMask 精簡到必要欄位（節省成本）
-- [ ] 2.1.3 加 in-memory LRU cache（`lru-cache` package）
-- [ ] 2.1.4 向後相容：舊欄位 `polyline / distance_km / duration_minutes` 仍存在
-- [ ] 2.1.5 新增 `static_duration_minutes` / `pure_jam_minutes`
+- [x] 2.1.1 `route.get.ts` 車資模式 POST Routes API v2（純幾何模式保留 legacy Directions，零風險）
+- [x] 2.1.2 FieldMask 精簡：`routes.distanceMeters,duration,staticDuration,polyline.encodedPolyline`
+- [x] 2.1.3 in-memory LRU cache（`lru-cache` 11.3.6；key 含 15min 桶 + fareRulesEpoch；5min TTL）
+- [x] 2.1.4 向後相容：`polyline / bounds / distance_km / duration_minutes` 仍存在
+- [x] 2.1.5 新增 `static_duration_minutes` / `pure_jam_minutes`
 
 ### 2.2 RouteMetrics 計算
-- [ ] 2.2.1 寫 `server/utils/route-metrics.ts`
-- [ ] 2.2.2 整合 4 個 sub-計算：
-  - Elevation API 1km 取樣
-  - 曲折度 (`haversine(o, d)`)
-  - 道路層級 (OSM)
-  - 縣市穿越 (GeoJSON)
-- [ ] 2.2.3 每個 sub-計算用 `Promise.allSettled` 平行跑
-- [ ] 2.2.4 失敗回報到 `apiSourcesOk` flags
-- [ ] 2.2.5 timeout 3s per sub-計算
+- [x] 2.2.1 寫 `server/utils/route-metrics.ts`
+- [x] 2.2.2 整合 4 sub-計算：Elevation 1km 取樣 / 曲折度 / OSM 道路層級 / 縣市穿越
+- [x] 2.2.3 Elevation 為唯一網路 sub-計算（與 Routes 並行）；OSM/縣市為 in-memory 同步，各自 try/catch
+- [x] 2.2.4 失敗回報 `apiSourcesOk` flags（Routes 整個失敗則 throw → 編排層降 v1）
+- [x] 2.2.5 timeout：Routes 8s / Elevation 5s（放寬 design 的 3s，避免非必要降級；已註記）
+- [x] 附帶 `polyline.ts`（decodePolyline / haversine / 取樣 / boundsFromPolyline）+ `getSimpleRoute`（v1 降級）
 
 ### 2.3 Fare Calculator V2
-- [ ] 2.3.1 寫 `server/utils/fare-calculator-v2.ts`
-- [ ] 2.3.2 實作 4 個 sub-computers：
-  - `computeMountainMul`
-  - `computeJamFee`
-  - `computeCrossCountyFee`
-  - `computeFreewayToll`
-- [ ] 2.3.3 主入口 `calculateFareV2(...)` 組合 6 項 → `FareBreakdownV2`
-- [ ] 2.3.4 寫單元測試 `shared/pricing.spec.ts`：
-  - 純市區短程：無山區、無國道、無跨縣市 → v1 等價
-  - 跨縣市國道：v1 + 跨縣市 + 國道費
-  - 山區路線：mountainMul 觸發
-  - 顛峰時段：jamFee 觸發
-  - 失敗降級：apiSourcesOk 任一 false → 對應訊號歸 0
+- [x] 2.3.1 寫 `server/utils/fare-calculator-v2.ts`（`getRouteWithFare` 編排 + v1 降級 + 失敗寫 line_api_errors）
+- [x] 2.3.2 4 sub-computers 實作於 `shared/pricing.ts`（純函式，便於測試）
+- [x] 2.3.3 `calculateFareV2(...)` 組合 6 項 → `FareBreakdownV2`（亦於 pricing.ts）
+- [x] 2.3.4 單元測試 `shared/pricing.spec.ts`（26 tests，含全部 5 代表情境）
 
 ### 2.4 Firestore `fare_rules`
-- [ ] 2.4.1 建 `fare_rules/v1` doc（預設值見 design.md schema）
-- [ ] 2.4.2 firestore.rules：admin only read/write
-- [ ] 2.4.3 寫 `server/utils/fare-rules-cache.ts`
-  - boot 載入 + 5min refresh
-  - admin 改完手動 invalidate
+- [x] 2.4.1 不手動建 doc：`getFareRules()` doc 不存在自動 fallback `DEFAULT_FARE_RULES`；admin 首次 PATCH 才建 doc
+- [x] 2.4.2 firestore.rules：`fare_rules/{rulesId}` client 全禁（read/write false），僅 server SDK 透過
+- [x] 2.4.3 寫 `server/utils/fare-rules-cache.ts`（5min TTL + `validateFareRules` 手寫驗證器 + `invalidateFareRulesCache`）
 
 ### 2.5 Admin API
-- [ ] 2.5.1 `server/routes/nuxt-api/admin/fare-rules/index.get.ts`
-- [ ] 2.5.2 `server/routes/nuxt-api/admin/fare-rules/index.patch.ts`
-  - require super admin
-  - validate schema with Zod
-  - 寫 audit_logs
-  - invalidate cache
-- [ ] 2.5.3 加到 `app/protocol/fetch-api/api/admin/` 索引
+- [x] 2.5.1 `server/routes/nuxt-api/admin/fare-rules/index.get.ts`（super only）
+- [x] 2.5.2 `server/routes/nuxt-api/admin/fare-rules/index.patch.ts`
+  - super admin only（`auth.level === 'super'`）
+  - 手寫 `validateFareRules`（專案無 zod，與 fleet-config/legal-pages 慣例一致）
+  - 寫 audit_logs（`fare_rules.update`，含 before/after）+ invalidate cache
+- [x] 2.5.3 加到 `app/protocol/fetch-api/api/admin/index.ts`（`fare-rules` sub-module）
 
 ### 2.6 升級 /api/maps/route 回傳
-- [ ] 2.6.1 query 加 `vehicleType` + `pickupTime` + `extras` params
-- [ ] 2.6.2 回傳含 `routeMetrics` + `fareBreakdown`
-- [ ] 2.6.3 失敗降級：v1 fallback + `version: 'v1' | 'v2'` flag
+- [x] 2.6.1 query 加 `vehicleType` + `pickupTime` + `extras`
+- [x] 2.6.2 回傳含 `routeMetrics` + `fareBreakdown` + `fareVersion` + `fareTotal`
+- [x] 2.6.3 失敗降級：v1 fallback + `fareVersion: 'v1' | 'v2'` flag
 
-## Phase 3：Client 層（1-2 hr）
+> ⚠ **留待 Brain AI 確認的 scope 缺口**：tasks/proposal 未涵蓋 `server/routes/nuxt-api/orders/index.post.ts`。
+> 目前訂單建立仍用 v1 公式（`calc-route-distance.ts` + `calculateFare`），
+> 與 booking step 3/4 顯示的 v2 明細**不一致**。需 Brain AI 拍板是否納入。
+
+## Phase 3：Client 層 — ✅ 完工 2026-05-16
+
+> `pnpm build` 整包編譯通過；新增 i18n 三語對齊；ESLint 乾淨；44 單元測試通過。
+> 另：訂單建立 `orders/index.post.ts` 已改用 `getRouteWithFare`（Brain AI 拍板納入），
+> 與 booking 顯示一致；舊 `calc-route-distance.ts` 已成死碼並刪除。
 
 ### 3.1 BookingStepOptions 明細卡
-- [ ] 3.1.1 改 `app/components/passenger/BookingStepOptions.vue`
-  - 預估車資區塊重做：頂部標題 + [▾ 看明細] 切換
-  - 接 server 回傳的 `fareBreakdown` 物件
-  - 變動隱藏（mountainMul=1 / jamFee=0 / ... 那行隱藏）
-- [ ] 3.1.2 寫 i18n 鍵 `booking.fareBreakdown.*` 三語
-- [ ] 3.1.3 v1 fallback 時顯示「（簡化計費）」標籤
+- [x] 3.1.1 改 `app/components/passenger/BookingStepOptions.vue`
+  - 改呼叫 `/api/maps/route` 車資模式取 server 計算的 `fareBreakdown`（不再 client 端 calculateFare）
+  - 新增共用元件 `FareBreakdownCard.vue`（step 3 收合 + [▾] 展開）；變動隱藏邏輯內建
+- [x] 3.1.2 i18n 鍵 `booking.fareBreakdown.*` 三語（zh/en/ja 對齊）
+- [x] 3.1.3 v1 fallback 顯示「（簡化計費）」標籤
 
 ### 3.2 BookingStepConfirm 明細
-- [ ] 3.2.1 改 `app/components/passenger/BookingStepConfirm.vue`
-  - 明細**預設展開**
-  - 同 step3 的隱藏邏輯
-  - server `fareBreakdown` 為 source of truth
+- [x] 3.2.1 改 `app/components/passenger/BookingStepConfirm.vue`
+  - 重用 `FareBreakdownCard.vue`，`default-expanded` 預設展開
+  - server `fareResult` 為 source of truth（由 step 3 估出、經 booking 頁傳入）
 
 ### 3.3 Admin Settings — 車資進階規則
-- [ ] 3.3.1 改 `app/pages/admin/settings/index.vue`
-  - 新增 section（super only）
-  - 4 大區塊：基本 / 山區 / 跨縣市 / 顛峰 / 國道
-  - 每區塊 enabled toggle + 各欄位 input
-- [ ] 3.3.2 寫 「試算機」子組件 `AdminFareCalculatorPreview.vue`
-  - 7 個 input + 顯示完整 breakdown
-- [ ] 3.3.3 儲存：show toast、刷新 StoreConfig
+- [x] 3.3.1 改 `app/pages/admin/settings/index.vue`：新增「車資進階規則 v1」section（super only）
+  - 基本 / 山區 / 跨縣市 / 顛峰 / 國道 五區塊，enabled toggle + 各欄位 input；階梯/時段可增刪
+- [x] 3.3.2 寫試算機子組件 `app/components/admin/AdminFareCalculatorPreview.vue`
+  - 7 input + 車型/extras 選擇 → 合成 RouteMetrics → `calculateFareV2` → 完整明細
+- [x] 3.3.3 儲存：`ElMessage` toast；super 權限守衛
+
+### 3.0 訂單建立改 v2（Brain AI 拍板新增）
+- [x] `server/routes/nuxt-api/orders/index.post.ts` 改用 `getRouteWithFare`
+  - 訂單 doc 新增 `fareVersion` + `fareBreakdown` 快照
+  - 連 v1 Directions 也失敗 → 最終 fallback 25km
+  - 刪除已成死碼的 `server/utils/calc-route-distance.ts`
 
 ## Phase 4：驗證 + 部署（30 min）
 

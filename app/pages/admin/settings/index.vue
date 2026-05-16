@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
+import { DEFAULT_FARE_RULES } from '~shared/pricing';
+import type { FareRules, PeakWindow, MountainTier, Weekday } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -267,6 +269,135 @@ const ClickRevokeDriver = async (uid: string) => {
   await $api.PatchAdminUser(uid, { approved: false });
   await ApiLoadDrivers();
 };
+
+// ── 車資進階規則 v1（Fare V2，僅 super 可見 / 編輯）─────────────
+const WEEKDAY_OPTIONS: { value: Weekday; label: string }[] = [
+  { value: 'MON', label: '一' },
+  { value: 'TUE', label: '二' },
+  { value: 'WED', label: '三' },
+  { value: 'THU', label: '四' },
+  { value: 'FRI', label: '五' },
+  { value: 'SAT', label: '六' },
+  { value: 'SUN', label: '日' },
+];
+
+const WEEKEND_MODE_OPTIONS: { value: FareRules['trafficJam']['weekendMode']; label: string }[] = [
+  { value: 'OFF', label: 'OFF（週末不收）' },
+  { value: 'ALL_DAY', label: '全天' },
+  { value: 'EVENING_ONLY', label: '僅 17-21 時' },
+];
+
+// 深拷貝預設值作為初始草稿（避免改到 DEFAULT_FARE_RULES 常數）
+const _cloneRules = (r: FareRules): FareRules => JSON.parse(JSON.stringify(r));
+
+const fareRules = ref<FareRules>(_cloneRules(DEFAULT_FARE_RULES));
+const fareRulesLoading = ref(false);
+const fareRulesSaving = ref(false);
+const fareRulesError = ref('');
+const fareRulesIsDefault = ref(true);
+const fareRulesUpdatedBy = ref<string | null>(null);
+const fareRulesUpdatedAt = ref<string | null>(null);
+
+const ApiLoadFareRules = async () => {
+  if (!authStore.isSuper) return;
+  fareRulesLoading.value = true;
+  fareRulesError.value = '';
+  try {
+    const res = await $api.GetAdminFareRules();
+    if (res.status?.code !== 200) {
+      fareRulesError.value = res.status?.message?.zh_tw ?? '載入車資規則失敗';
+      return;
+    }
+    fareRules.value = _cloneRules(res.data.rules);
+    fareRulesIsDefault.value = res.data.isDefault;
+    fareRulesUpdatedBy.value = res.data.updatedBy;
+    fareRulesUpdatedAt.value = res.data.updatedAt;
+  } finally {
+    fareRulesLoading.value = false;
+  }
+};
+
+onMounted(() => {
+  void ApiLoadFareRules();
+});
+
+// 階梯 / 時段陣列操作
+const ClickAddMountainTier = () => {
+  fareRules.value.mountain.tiers.push({ minScore: 1, multiplier: 1.1 } as MountainTier);
+};
+const ClickRemoveMountainTier = (index: number) => {
+  fareRules.value.mountain.tiers.splice(index, 1);
+};
+
+const ClickAddPeakWindow = () => {
+  fareRules.value.trafficJam.peakWindows.push({
+    days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+    start: '07:00',
+    end: '09:30',
+  } as PeakWindow);
+};
+const ClickRemovePeakWindow = (index: number) => {
+  fareRules.value.trafficJam.peakWindows.splice(index, 1);
+};
+
+const TogglePeakWindowDay = (windowIndex: number, day: Weekday) => {
+  const w = fareRules.value.trafficJam.peakWindows[windowIndex];
+  if (!w) return;
+  w.days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
+};
+
+// 儲存前基本前端檢查（嚴格驗證交給伺服器 validateFareRules）
+const _validateFareRules = (): string => {
+  const r = fareRules.value;
+  const nums: number[] = [
+    r.rounding,
+    r.mountain.thresholdElevationDiffM,
+    r.mountain.thresholdSinuosity,
+    r.mountain.thresholdFreeFlowKmh,
+    ...r.mountain.tiers.flatMap((t) => [t.minScore, t.multiplier]),
+    ...r.crossCounty.tieredNtd,
+    r.trafficJam.defaultNtdPerMinute,
+    r.freeway.freeKm,
+    r.freeway.ntdPerKm,
+    r.freeway.dailyCapKm,
+    r.freeway.dailyCapDiscountPct,
+  ];
+  if (nums.some((n) => typeof n !== 'number' || Number.isNaN(n))) {
+    return '所有數字欄位皆必填且需為有效數字';
+  }
+  if (r.rounding <= 0) return '進位基數必須大於 0';
+  if (r.crossCounty.tieredNtd.length !== 3) return '跨縣市需設定三級費率';
+  for (const w of r.trafficJam.peakWindows) {
+    if (!w.start || !w.end) return '顛峰時段的起訖時間皆必填';
+    if (w.days.length === 0) return '每個顛峰時段至少需選一天';
+  }
+  return '';
+};
+
+const ClickSaveFareRules = async () => {
+  const err = _validateFareRules();
+  if (err) {
+    fareRulesError.value = err;
+    return;
+  }
+  fareRulesError.value = '';
+  fareRulesSaving.value = true;
+  try {
+    const res = await $api.PatchAdminFareRules(fareRules.value);
+    if (res.status?.code !== 200) {
+      fareRulesError.value = res.status?.message?.zh_tw ?? '儲存車資規則失敗';
+      ElMessage({ message: fareRulesError.value, type: 'error' });
+      return;
+    }
+    fareRules.value = _cloneRules(res.data.rules);
+    fareRulesIsDefault.value = res.data.isDefault;
+    fareRulesUpdatedBy.value = res.data.updatedBy;
+    fareRulesUpdatedAt.value = res.data.updatedAt;
+    ElMessage({ message: '車資進階規則已儲存', type: 'success' });
+  } finally {
+    fareRulesSaving.value = false;
+  }
+};
 </script>
 
 <template lang="pug">
@@ -450,6 +581,226 @@ const ClickRevokeDriver = async (uid: string) => {
       AdminSettingsFleetVehicles(v-if="fleetTab === 'vehicles'")
       AdminSettingsFleetLuggageTypes(v-if="fleetTab === 'luggage'")
       AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
+
+  //- 車資進階規則 v1（Fare V2，僅 super 可見）
+  .PageAdminSettings__section(v-if="authStore.isSuper")
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label FARE RULES
+      span.PageAdminSettings__section-title 車資進階規則 v1
+      span.PageAdminSettings__fare-flex
+      button.PageAdminSettings__btn.is-approve.PageAdminSettings__fare-save(
+        :disabled="fareRulesLoading || fareRulesSaving"
+        @click="ClickSaveFareRules"
+      ) {{ fareRulesSaving ? '儲存中...' : '💾 儲存' }}
+
+    .PageAdminSettings__loading(v-if="fareRulesLoading") 載入中...
+
+    template(v-else)
+      .PageAdminSettings__fare-meta
+        span(v-if="fareRulesIsDefault") 目前顯示為系統預設值（尚未儲存過）
+        span(v-else) 最後更新：{{ fareRulesUpdatedBy || '未知' }}
+          template(v-if="fareRulesUpdatedAt")  · {{ fareRulesUpdatedAt }}
+
+      //- 基本
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 基本
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 進位至（元）
+            ElInput(
+              v-model.number="fareRules.rounding"
+              type="number"
+              inputmode="numeric"
+            )
+
+      //- 山區加成
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 山區加成
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.mountain.enabled")
+            span 啟用
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 海拔起伏門檻 (m)
+            ElInput(
+              v-model.number="fareRules.mountain.thresholdElevationDiffM"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 曲折度門檻
+            ElInput(
+              v-model.number="fareRules.mountain.thresholdSinuosity"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 無塞車時速門檻 (km/h)
+            ElInput(
+              v-model.number="fareRules.mountain.thresholdFreeFlowKmh"
+              type="number"
+              inputmode="numeric"
+            )
+        .PageAdminSettings__fare-subhead 加成階梯（達分數即套用係數）
+        .PageAdminSettings__fare-tier(
+          v-for="(tier, i) in fareRules.mountain.tiers"
+          :key="i"
+        )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 達分數
+            ElInput(
+              v-model.number="tier.minScore"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 係數
+            ElInput(
+              v-model.number="tier.multiplier"
+              type="number"
+              inputmode="numeric"
+            )
+          button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+            @click="ClickRemoveMountainTier(i)"
+          ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddMountainTier"
+        ) + 新增階梯
+
+      //- 跨縣市補貼
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 跨縣市補貼
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.crossCounty.enabled")
+            span 啟用
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 第 1 跨（元）
+            ElInput(
+              v-model.number="fareRules.crossCounty.tieredNtd[0]"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 第 2 跨（元）
+            ElInput(
+              v-model.number="fareRules.crossCounty.tieredNtd[1]"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 第 3+ 跨（元）
+            ElInput(
+              v-model.number="fareRules.crossCounty.tieredNtd[2]"
+              type="number"
+              inputmode="numeric"
+            )
+        label.PageAdminSettings__fare-switch-label.PageAdminSettings__fare-inline-check
+          input(type="checkbox" v-model="fareRules.crossCounty.excludeTpeNtpeTyn")
+          span 北北桃跨界不收
+
+      //- 顛峰塞車費
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 顛峰塞車費
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.trafficJam.enabled")
+            span 啟用
+        .PageAdminSettings__fare-subhead 顛峰時段
+        .PageAdminSettings__fare-window(
+          v-for="(win, i) in fareRules.trafficJam.peakWindows"
+          :key="i"
+        )
+          .PageAdminSettings__fare-window-days
+            button.PageAdminSettings__fare-day(
+              v-for="d in WEEKDAY_OPTIONS"
+              :key="d.value"
+              type="button"
+              :class="{ 'is-on': win.days.includes(d.value) }"
+              @click="TogglePeakWindowDay(i, d.value)"
+            ) {{ d.label }}
+          .PageAdminSettings__fare-window-times
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 起
+              ElInput(v-model="win.start" type="time")
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 訖
+              ElInput(v-model="win.end" type="time")
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 費率 (元/min，留空用 default)
+              ElInput(
+                v-model.number="win.ntdPerMinute"
+                type="number"
+                inputmode="numeric"
+              )
+            button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+              @click="ClickRemovePeakWindow(i)"
+            ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddPeakWindow"
+        ) + 新增時段
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 週末模式
+            ElSelect(v-model="fareRules.trafficJam.weekendMode")
+              ElOption(
+                v-for="m in WEEKEND_MODE_OPTIONS"
+                :key="m.value"
+                :label="m.label"
+                :value="m.value"
+              )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label default 費率 (元/min)
+            ElInput(
+              v-model.number="fareRules.trafficJam.defaultNtdPerMinute"
+              type="number"
+              inputmode="numeric"
+            )
+
+      //- 國道通行費
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 國道通行費
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.freeway.enabled")
+            span 啟用
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 首段免費里程 (km)
+            ElInput(
+              v-model.number="fareRules.freeway.freeKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 每公里費率 (元/km)
+            ElInput(
+              v-model.number="fareRules.freeway.ntdPerKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 日上限里程 (km)
+            ElInput(
+              v-model.number="fareRules.freeway.dailyCapKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 上限後折扣 (%)
+            ElInput(
+              v-model.number="fareRules.freeway.dailyCapDiscountPct"
+              type="number"
+              inputmode="numeric"
+            )
+
+      .PageAdminSettings__fare-error(v-if="fareRulesError") ⚠️ {{ fareRulesError }}
+
+      //- 試算機
+      AdminFareCalculatorPreview(:rules="fareRules")
 
   //- 法律文件管理（會員條款 / 隱私政策）
   .PageAdminSettings__section
@@ -991,5 +1342,179 @@ $muted: rgba(255, 255, 255, 0.35);
     white-space: nowrap;
     text-align: right;
   }
+}
+
+// ── 車資進階規則 v1（Fare V2）────────────────────────────────────
+.PageAdminSettings__fare-flex {
+  flex: 1;
+}
+
+.PageAdminSettings__fare-save {
+  flex-shrink: 0;
+}
+
+.PageAdminSettings__fare-meta {
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  padding: 10px 16px 0;
+}
+
+.PageAdminSettings__fare-block {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 14px 16px;
+
+  &:last-of-type { border-bottom: none; }
+}
+
+.PageAdminSettings__fare-block-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.PageAdminSettings__fare-block-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: $amber;
+}
+
+.PageAdminSettings__fare-switch-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  user-select: none;
+  margin-left: auto;
+
+  input[type="checkbox"] {
+    accent-color: $amber;
+    cursor: pointer;
+  }
+}
+
+.PageAdminSettings__fare-inline-check {
+  margin-left: 0;
+  margin-top: 10px;
+}
+
+.PageAdminSettings__fare-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 767.98px) {
+  .PageAdminSettings__fare-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 479.98px) {
+  .PageAdminSettings__fare-grid { grid-template-columns: 1fr; }
+}
+
+.PageAdminSettings__fare-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.PageAdminSettings__fare-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $muted;
+}
+
+.PageAdminSettings__fare-subhead {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 14px 0 8px;
+}
+
+.PageAdminSettings__fare-tier {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 8px;
+
+  .PageAdminSettings__fare-field { flex: 1; }
+}
+
+.PageAdminSettings__fare-row-del {
+  flex-shrink: 0;
+}
+
+.PageAdminSettings__fare-add {
+  margin-top: 4px;
+}
+
+.PageAdminSettings__fare-window {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.PageAdminSettings__fare-window-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.PageAdminSettings__fare-day {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.is-on {
+    background: rgba($amber, 0.18);
+    border-color: rgba($amber, 0.6);
+    color: $amber;
+  }
+}
+
+.PageAdminSettings__fare-window-times {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .PageAdminSettings__fare-field {
+    flex: 1;
+    min-width: 110px;
+  }
+}
+
+.PageAdminSettings__fare-error {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 200, 0, 0.85);
+  background: rgba(255, 200, 0, 0.08);
+  border: 1px solid rgba(255, 200, 0, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 0 16px 4px;
 }
 </style>

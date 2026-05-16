@@ -1,13 +1,22 @@
 import { calculateFare } from '~shared/pricing';
-import type { OrderType } from '~shared/pricing';
+import type { OrderType, FareBreakdownV2 } from '~shared/pricing';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
-import { calcRouteDistance } from '@@/utils/calc-route-distance';
+import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
+
+// 將 booking 端的上車時間字串視為台灣時間（無時區資訊時補 +08:00），
+// 供 Fare V2 顛峰塞車費判定。
+function parseTaiwanTime(raw: string): Date {
+  const hasZone = /z$/i.test(raw) || /[+-]\d{2}:?\d{2}$/.test(raw);
+  const iso = raw.includes('T') ? raw : raw.replace(' ', 'T');
+  const d = new Date(hasZone ? iso : `${iso}+08:00`);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
 
 interface GooglePlace {
   address: string;
@@ -112,17 +121,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // 距離計算改用 Directions API 並帶入 stopovers（與前端 /api/maps/route 同一份來源），
-  // 避免前端確認頁顯示金額與下單金額不一致（Distance Matrix 不繞中途停靠站，距離較短）。
   const validStopovers = (body.stopovers ?? []).filter((s) => s && s.lat !== 0);
-  const routeResult = await calcRouteDistance(
-    googleMapsApiKey,
-    { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
-    { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
-    validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
-  );
-  // 失敗時 fallback 25km（前端理論上不會到這步，因為前端要走完 BookingStepRoute 才有 distance）
-  const distanceKm = routeResult?.distanceKm ?? 25;
 
   // P23：從 Firestore fleet config 撈 vehicle / extras 算費用（不再用 hardcoded VEHICLE_CONFIGS）
   // db 已在 P25 訂單上限檢查時取得
@@ -139,8 +138,45 @@ export default defineEventHandler(async (event) => {
   const selectedExtras = extraServiceIds
     .map((id) => fleet.extras.find((e) => e.id === id))
     .filter((e): e is NonNullable<typeof e> => Boolean(e));
-  const estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras);
-  const estimatedTime = Math.round(distanceKm * 1.8);
+
+  const orderId = crypto.randomUUID();
+
+  // Fare V2：與 booking step 3/4 顯示一致的車資來源。
+  // getRouteWithFare 內部：Routes API 失敗自動降級 v1；連 v1 Directions 也失敗才 throw。
+  let estimatedFare: number;
+  let distanceKm: number;
+  let estimatedTime: number;
+  let fareBreakdown: FareBreakdownV2 | null = null;
+  let fareVersion: 'v1' | 'v2' = 'v1';
+  try {
+    const fareResult = await getRouteWithFare({
+      origin: { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
+      destination: { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
+      waypoints: validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
+      vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
+      extras: selectedExtras.map((e) => ({ price: e.price })),
+      pickupTime: parseTaiwanTime(body.pickupDateTime),
+      apiKey: googleMapsApiKey,
+      orderId,
+    });
+    if (fareResult.version === 'v2') {
+      estimatedFare = fareResult.breakdown.final;
+      distanceKm = fareResult.metrics.distanceKm;
+      estimatedTime = Math.round(fareResult.metrics.durationSec / 60);
+      fareBreakdown = fareResult.breakdown;
+      fareVersion = 'v2';
+    } else {
+      estimatedFare = fareResult.final;
+      distanceKm = fareResult.route.distanceKm;
+      estimatedTime = fareResult.route.durationMinutes;
+    }
+  } catch (err) {
+    // 連 v1 Directions 都失敗 → 最終 fallback：距離 25km + v1 公式
+    console.error('[orders/post] fare calculation failed, using 25km fallback:', err);
+    distanceKm = 25;
+    estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras);
+    estimatedTime = Math.round(distanceKm * 1.8);
+  }
 
   // P23：行李 SU 校驗（伺服器端最後一道把關，前端 UI 應已 disable 超 1.5 倍車型）
   const luggageItems = Array.isArray(body.luggageItems) ? body.luggageItems : [];
@@ -155,8 +191,6 @@ export default defineEventHandler(async (event) => {
       ja: `荷物が車種容量を超過（${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU）`,
     });
   }
-
-  const orderId = crypto.randomUUID();
 
   try {
     await db.collection('orders').doc(orderId).set({
@@ -176,6 +210,9 @@ export default defineEventHandler(async (event) => {
       estimatedFare,
       estimatedTime,
       distanceKm,
+      // Fare V2：訂單成立時的車資版本與明細快照（v1 降級時 fareBreakdown 為 null）
+      fareVersion,
+      fareBreakdown,
       // P20：driver/admin 端顯示用欄位（contactPhone 必填；其他舊訂單留 null fallback）
       contactPhone: body.contactPhone,
       flightNumber: body.flightNumber ?? null,

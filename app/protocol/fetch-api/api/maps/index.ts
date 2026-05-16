@@ -1,4 +1,5 @@
 import type { AutocompleteRes, GooglePlace, PlaceSuggestion } from './type';
+import type { FareBreakdownV2, RouteMetrics } from '~shared/pricing';
 import methods from '../../methods';
 
 /** 地址自動完成建議（輸入 2 字以上才呼叫） */
@@ -20,13 +21,34 @@ export const GetMapsDistance = (params: { origin: string; destination: string })
     params
   );
 
-/** 取得路線 encoded polyline（供地圖繪製使用，Server Key 呼叫 Directions API） */
-export const GetMapsRoute = (params: { origin: string; destination: string; waypoints?: string }) =>
-  methods.get<{
-    polyline: string;
-    bounds: { northeast: { lat: number; lng: number }; southwest: { lat: number; lng: number } };
-    distance_km: number;
-    duration_minutes: number;
-  }>('/api/maps/route', params);
+export interface MapsRouteRes {
+  // 幾何（地圖繪製）
+  polyline: string;
+  bounds: { northeast: { lat: number; lng: number }; southwest: { lat: number; lng: number } } | null;
+  distance_km: number;
+  duration_minutes: number;
+  // 車資（純幾何模式為 null；帶 vehicleType + pickupTime 才有）
+  fareVersion: 'v1' | 'v2' | null;
+  fareTotal: number | null;
+  fareBreakdown: FareBreakdownV2 | null;
+  routeMetrics: RouteMetrics | null;
+  static_duration_minutes: number | null;
+  pure_jam_minutes: number | null;
+}
+
+/**
+ * 取得路線。
+ * - 純幾何模式（只傳 origin/destination/waypoints）：回 polyline / 距離 / 車程
+ * - 車資模式（另傳 vehicleType + pickupTime）：另回 Fare V2 明細 fareBreakdown / routeMetrics
+ */
+export const GetMapsRoute = (params: {
+  origin: string;
+  destination: string;
+  waypoints?: string;
+  vehicleType?: string;
+  pickupTime?: string;
+  extras?: string;
+}) => methods.get<MapsRouteRes>('/api/maps/route', params);
 
 export type { AutocompleteRes, GooglePlace, PlaceSuggestion };
+export type { FareBreakdownV2, RouteMetrics } from '~shared/pricing';
