@@ -50,6 +50,9 @@ const flightInfo = ref<FlightInfo | null>(null);
 const contactPhone = ref(storeOrder.draft.contactPhone ?? '');
 const notes = ref(storeOrder.draft.notes ?? '');
 
+// 折扣碼（陽春版）— 僅 step 4 確認頁輸入，不需跨步驟持久化
+const discountCode = ref('');
+
 // 桃園機場航廈對應地點
 const TERMINAL_PLACE: Record<'1' | '2', GooglePlace> = {
   '1': { address: '桃園市大園區航站南路9號', lat: 25.0797, lng: 121.2322, displayName: '桃園國際機場 第一航廈（T1）' },
@@ -144,6 +147,7 @@ const ClickSubmit = async () => {
     flightNumber: flightInfo.value?.flightNo ?? null,
     terminal: flightInfo.value?.terminal ?? null,
     notes: notes.value || null,
+    discountCode: discountCode.value || null,
   });
   isSubmitting.value = false;
 
@@ -170,6 +174,7 @@ const ClickNewOrder = () => {
   flightInfo.value = null;
   contactPhone.value = '';
   notes.value = '';
+  discountCode.value = '';
   distanceKm.value = 0;
   durationMinutes.value = 0;
   estimatedFare.value = 0;
@@ -272,10 +277,12 @@ const ClickNewOrder = () => {
           :distance-km="distanceKm"
           :duration-minutes="durationMinutes"
           :fare-result="fareResult"
+          :fare-total="estimatedFare"
           :is-loading="isSubmitting"
           :flight-info="flightInfo"
           v-model:contact-phone="contactPhone"
           v-model:notes="notes"
+          @update:discount-code="discountCode = $event"
           @submit="ClickSubmit"
           @back="GoBack"
         )

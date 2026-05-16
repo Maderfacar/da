@@ -13,6 +13,8 @@ interface Props {
   flightInfo?: FlightInfo | null;
   contactPhone: string;
   notes: string;
+  /** step 3 估出的折扣前車資（折扣預覽用）；尚未估出為 0 */
+  fareTotal: number;
 }
 
 const props = defineProps<Props>();
@@ -20,7 +22,7 @@ const props = defineProps<Props>();
 const { t, locale } = useI18n();
 const emit = defineEmits<{
   (e: 'submit' | 'back'): void;
-  (e: 'update:contactPhone' | 'update:notes', val: string): void;
+  (e: 'update:contactPhone' | 'update:notes' | 'update:discountCode', val: string): void;
 }>();
 
 const storeConfig = StoreConfig();
@@ -111,6 +113,60 @@ const OnNotesInput = (val: string) => {
 
 const canSubmit = computed(() => phoneValid.value && !props.isLoading);
 
+// ── 折扣碼 ───────────────────────────────────────────────────────────────────
+const LANG_KEY: Record<string, 'zh_tw' | 'en' | 'ja'> = { zh: 'zh_tw', en: 'en', ja: 'ja' };
+
+const discountInput = ref('');
+const discountApplying = ref(false);
+const appliedDiscount = ref<{ code: string; amount: number } | null>(null);
+const discountError = ref('');
+
+const fareAfterDiscount = computed(() =>
+  Math.max(0, props.fareTotal - (appliedDiscount.value?.amount ?? 0)),
+);
+
+const ApiApplyDiscount = async () => {
+  const code = discountInput.value.trim();
+  if (!code) {
+    discountError.value = t('booking.discount.emptyCode');
+    return;
+  }
+  if (!props.fareTotal || props.fareTotal <= 0) {
+    discountError.value = t('booking.discount.noFare');
+    return;
+  }
+  if (!props.draft.orderType) return;
+  discountApplying.value = true;
+  discountError.value = '';
+  try {
+    const res = await $api.ValidateDiscountCode({
+      code,
+      fare: props.fareTotal,
+      orderType: props.draft.orderType,
+    });
+    if (res.status?.code !== $enum.apiStatus.success || !res.data) {
+      discountError.value = res.status?.message?.zh_tw ?? t('booking.discount.applyFail');
+      return;
+    }
+    if (!res.data.valid) {
+      const langKey = LANG_KEY[locale.value] ?? 'zh_tw';
+      discountError.value = res.data.reason?.[langKey] ?? t('booking.discount.applyFail');
+      return;
+    }
+    appliedDiscount.value = { code: code.toUpperCase(), amount: res.data.discountAmount };
+    emit('update:discountCode', code.toUpperCase());
+  } finally {
+    discountApplying.value = false;
+  }
+};
+
+const ClickClearDiscount = () => {
+  appliedDiscount.value = null;
+  discountInput.value = '';
+  discountError.value = '';
+  emit('update:discountCode', '');
+};
+
 const ClickSubmit = () => {
   phoneTouched.value = true;
   if (!phoneValid.value) return;
@@ -156,6 +212,28 @@ const ClickSubmit = () => {
         show-word-limit
         @update:model-value="OnNotesInput"
       )
+
+  //- 折扣碼
+  .PassengerBookingStepConfirm__contact
+    .PassengerBookingStepConfirm__contact-label {{ $t('booking.discount.section') }}
+    template(v-if="!appliedDiscount")
+      .PassengerBookingStepConfirm__discount-row
+        ElInput(
+          v-model="discountInput"
+          maxlength="32"
+          :placeholder="$t('booking.discount.placeholder')"
+        )
+        UiButton(
+          type="secondary"
+          :loading="discountApplying"
+          @click="ApiApplyDiscount"
+        ) {{ $t('booking.discount.apply') }}
+      .PassengerBookingStepConfirm__field-error(v-if="discountError") {{ discountError }}
+    .PassengerBookingStepConfirm__discount-applied(v-else)
+      span.PassengerBookingStepConfirm__discount-ok
+        | {{ $t('booking.discount.applied', { code: appliedDiscount.code }) }} −NT${{ appliedDiscount.amount }}
+      button.PassengerBookingStepConfirm__discount-clear(@click="ClickClearDiscount")
+        | {{ $t('booking.discount.clear') }}
 
   .PassengerBookingStepConfirm__card
     .PassengerBookingStepConfirm__row
@@ -205,6 +283,14 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.durationLabel') }}
       span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.durationVal', { min: durationMinutes }) }}
+    template(v-if="appliedDiscount")
+      .PassengerBookingStepConfirm__divider
+      .PassengerBookingStepConfirm__row
+        span.PassengerBookingStepConfirm__row-label {{ $t('booking.discount.discountRow') }}
+        span.PassengerBookingStepConfirm__row-value −NT${{ appliedDiscount.amount }}
+      .PassengerBookingStepConfirm__row
+        span.PassengerBookingStepConfirm__row-label {{ $t('booking.discount.finalTotal') }}
+        span.PassengerBookingStepConfirm__row-value NT${{ fareAfterDiscount }}
 
   PassengerFareBreakdownCard(
     :breakdown="fareResult ? fareResult.fareBreakdown : null"
@@ -308,6 +394,37 @@ const ClickSubmit = () => {
     font-size: 12px;
     color: #ef4444;
     margin-top: 2px;
+  }
+
+  &__discount-row {
+    display: flex;
+    gap: 8px;
+
+    .el-input { flex: 1; }
+  }
+
+  &__discount-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  &__discount-ok {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  &__discount-clear {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: var(--da-gray);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
   }
 
   :deep(.el-input.is-error .el-input__wrapper) {
