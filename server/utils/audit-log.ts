@@ -95,9 +95,12 @@ export type AuditAction =
   // Legal pages（會員條款 / 隱私政策 admin 編輯）
   | 'legal_page.update'
   // Fare V2 車資進階規則（super admin 編輯）
-  | 'fare_rules.update';
+  | 'fare_rules.update'
+  // 折扣碼（陽春版）
+  | 'discount_code.create'
+  | 'discount_code.update';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page' | 'fare_rules';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page' | 'fare_rules' | 'discount_code';
 
 interface WriteAuditLogInput {
   event: H3Event;

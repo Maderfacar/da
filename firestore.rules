@@ -187,6 +187,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── discount_codes 集合（折扣碼陽春版）─────────────────────
+    // 折扣碼為機密資料；client 全面禁止讀寫，僅 server admin SDK
+    // 透過 /nuxt-api/admin/discount-codes（CRUD）與 /nuxt-api/discount-codes/validate 存取。
+    match /discount_codes/{code} {
+      allow read, write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
