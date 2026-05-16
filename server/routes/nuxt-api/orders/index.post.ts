@@ -8,6 +8,7 @@ import { getFleetConfig } from '@@/utils/fleet-config';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
+import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 
 // 將 booking 端的上車時間字串視為台灣時間（無時區資訊時補 +08:00），
 // 供 Fare V2 顛峰塞車費判定。
@@ -49,6 +50,8 @@ interface CreateOrderBody {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  // 折扣碼（陽春版）；無折扣則不帶
+  discountCode?: string | null;
 }
 
 const PHONE_REGEX = /^09\d{8}$/;
@@ -192,6 +195,36 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // ── 折扣碼處理 ────────────────────────────────────────────────────
+  // estimatedFare 此時為「折扣前車資」；套折扣後 estimatedFare 重算為折後最終車資。
+  const fareBeforeDiscount = estimatedFare;
+  let discountCode: string | null = null;
+  let discountAmount = 0;
+
+  const rawDiscountCode = typeof body.discountCode === 'string' ? body.discountCode.trim() : '';
+  if (rawDiscountCode) {
+    // (a) 先驗證（傳折扣前車資當 fare）
+    const validation = await validateDiscountCode(db, {
+      code: rawDiscountCode,
+      fare: fareBeforeDiscount,
+      orderType: body.orderType,
+      userId: auth.lineUid,
+    });
+    if (!validation.ok) {
+      // 前端已預覽過，正常不會走到；防呆回 400
+      return badRequestError(validation.reason);
+    }
+    // (b) transaction 計次（再次檢查 enabled / 時間 / maxRedemptions）
+    const redeem = await redeemDiscountCode(db, rawDiscountCode);
+    if (!redeem.ok) {
+      return badRequestError(redeem.reason);
+    }
+    // (c) 套用折扣
+    discountCode = rawDiscountCode.toUpperCase();
+    discountAmount = validation.discountAmount;
+    estimatedFare = fareBeforeDiscount - discountAmount;
+  }
+
   try {
     await db.collection('orders').doc(orderId).set({
       orderId,
@@ -218,6 +251,10 @@ export default defineEventHandler(async (event) => {
       flightNumber: body.flightNumber ?? null,
       terminal: body.terminal ?? null,
       notes: body.notes ?? null,
+      // 折扣碼（陽春版）；estimatedFare 已為折後最終車資
+      discountCode,
+      discountAmount,
+      fareBeforeDiscount,
       orderStatus: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });
