@@ -1,4 +1,4 @@
-interface I18nMsg { zh_tw: string; en: string; ja: string }
+export interface I18nMsg { zh_tw: string; en: string; ja: string }
 
 interface UnifiedResponse<T> {
   data: T

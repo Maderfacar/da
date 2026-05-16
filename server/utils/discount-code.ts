@@ -13,12 +13,9 @@
  */
 import type { Timestamp } from 'firebase-admin/firestore';
 import { ORDER_TYPES } from '~shared/pricing';
+import type { I18nMsg } from '@@/utils/response';
 
-export interface I18nMsg {
-  zh_tw: string;
-  en: string;
-  ja: string;
-}
+export type { I18nMsg };
 
 /** 折扣碼格式：3-32 碼大寫英數（doc id 用） */
 export const DISCOUNT_CODE_REGEX = /^[A-Z0-9]{3,32}$/;
@@ -162,11 +159,15 @@ export function validateDiscountCodeBody(raw: Record<string, unknown>): Validate
     if (!Array.isArray(raw.allowedOrderTypes)) {
       return { ok: false, error: 'allowedOrderTypes 必須為陣列' };
     }
-    const arr = raw.allowedOrderTypes.filter((v): v is string => typeof v === 'string');
-    for (const v of arr) {
-      if (!ORDER_TYPE_VALUES.has(v)) return { ok: false, error: `allowedOrderTypes 含非法值：${v}` };
+    for (const v of raw.allowedOrderTypes) {
+      if (typeof v !== 'string') {
+        return { ok: false, error: 'allowedOrderTypes 每個元素必須為字串' };
+      }
+      if (!ORDER_TYPE_VALUES.has(v)) {
+        return { ok: false, error: `allowedOrderTypes 含非法值：${v}` };
+      }
     }
-    allowedOrderTypes = arr.length > 0 ? arr : null;
+    allowedOrderTypes = raw.allowedOrderTypes.length > 0 ? (raw.allowedOrderTypes as string[]) : null;
   }
 
   return {
