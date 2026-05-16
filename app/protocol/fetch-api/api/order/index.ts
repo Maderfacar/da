@@ -12,6 +12,10 @@ export const CreateOrder = (params: CreateOrderParams) => {
   return methods.post<CreateOrderRes>('/nuxt-api/orders', params);
 };
 
+/** 驗證折扣碼並預覽折抵金額（乘客 booking 確認頁用） */
+export const ValidateDiscountCode = (params: ValidateDiscountParams) =>
+  methods.post<ValidateDiscountRes>('/nuxt-api/discount-codes/validate', params as unknown as Record<string, unknown>);
+
 /** 取得訂單列表 */
 export const GetOrderList = (params: GetOrderListParams) => {
   if (IsMock()) return mock.GetOrderList();

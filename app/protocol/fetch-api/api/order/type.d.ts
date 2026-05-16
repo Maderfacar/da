@@ -32,6 +32,8 @@ interface CreateOrderParams {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  /** 折扣碼（陽春版）；無折扣則不帶 */
+  discountCode?: string | null;
 }
 
 interface CreateOrderRes {
@@ -253,4 +255,24 @@ interface DistanceRes {
   duration_minutes: number;
   origin: string;
   destination: string;
+}
+
+// ===== 折扣碼驗證（乘客 booking 預覽）=====
+interface ValidateDiscountParams {
+  code: string;
+  fare: number;
+  orderType: string;
+}
+
+interface DiscountI18nMsg {
+  zh_tw: string;
+  en: string;
+  ja: string;
+}
+
+interface ValidateDiscountRes {
+  valid: boolean;
+  discountAmount: number;
+  failCode: string | null;
+  reason: DiscountI18nMsg | null;
 }
