@@ -11,7 +11,7 @@
  * collection `discount_codes/{code}`，doc id = 大寫折扣碼字串。
  * client 全禁讀寫（firestore.rules）；一律經 server admin SDK。
  */
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Timestamp, Firestore } from 'firebase-admin/firestore';
 import { ORDER_TYPES } from '~shared/pricing';
 import type { I18nMsg } from '@@/utils/response';
 
@@ -280,4 +280,118 @@ export function evaluateDiscountCode(input: EvaluateDiscountInput): DiscountVali
   }
 
   return { ok: true, discountAmount: Math.min(code.discountAmount, fare) };
+}
+
+// ── Firestore 包裝層 ──────────────────────────────────────────────
+
+function tsToMs(v: unknown): number | null {
+  const d = (v as { toDate?: () => Date } | null)?.toDate?.();
+  return d ? d.getTime() : null;
+}
+
+/** 把 Firestore doc data 轉成 evaluateDiscountCode 消費的純資料 */
+function toEvalData(d: Partial<DiscountCodeDoc>): DiscountCodeEvalData {
+  return {
+    discountAmount: typeof d.discountAmount === 'number' ? d.discountAmount : 0,
+    validFromMs: tsToMs(d.validFrom),
+    validUntilMs: tsToMs(d.validUntil) ?? 0,
+    maxRedemptions: typeof d.maxRedemptions === 'number' ? d.maxRedemptions : null,
+    perUserLimit: typeof d.perUserLimit === 'number' ? d.perUserLimit : null,
+    minFare: typeof d.minFare === 'number' ? d.minFare : null,
+    allowedOrderTypes: Array.isArray(d.allowedOrderTypes) ? d.allowedOrderTypes : null,
+    enabled: d.enabled === true,
+    redemptionCount: typeof d.redemptionCount === 'number' ? d.redemptionCount : 0,
+  };
+}
+
+/**
+ * 驗證折扣碼是否可用（讀 Firestore + 評估）。
+ *
+ * 每人已用次數：query `orders` where userId == uid，client filter discountCode === code
+ * 計數（避免建 composite index，與 orders/index.post.ts ACTIVE_ORDER_LIMIT 同作法）。
+ * 已取消的訂單仍計入（取消不釋放）。
+ */
+export async function validateDiscountCode(
+  db: Firestore,
+  params: { code: string; fare: number; orderType: string; userId: string },
+): Promise<DiscountValidationResult> {
+  const norm = normalizeDiscountCode(params.code);
+  if (!norm.ok) return failResult('NOT_FOUND');
+  const codeId = norm.value;
+
+  const snap = await db.collection('discount_codes').doc(codeId).get();
+  if (!snap.exists) return failResult('NOT_FOUND');
+
+  const data = snap.data() as Partial<DiscountCodeDoc>;
+
+  // 僅在有 perUserLimit 時才查訂單計數（省一次 query）
+  let userRedemptionCount = 0;
+  if (typeof data.perUserLimit === 'number') {
+    const ordersSnap = await db.collection('orders')
+      .where('userId', '==', params.userId)
+      .get();
+    userRedemptionCount = ordersSnap.docs.filter(
+      (o) => o.data().discountCode === codeId,
+    ).length;
+  }
+
+  return evaluateDiscountCode({
+    code: toEvalData(data),
+    fare: params.fare,
+    orderType: params.orderType,
+    userRedemptionCount,
+    nowMs: Date.now(),
+  });
+}
+
+/** redeemDiscountCode transaction 內用的標記錯誤 */
+class DiscountRedeemError extends Error {
+  constructor(public failCode: DiscountFailCode) {
+    super(failCode);
+    this.name = 'DiscountRedeemError';
+  }
+}
+
+/**
+ * 以 transaction 在折扣碼 doc 上計次（redemptionCount +1）。
+ * 訂單建立流程在 validateDiscountCode 通過後呼叫，於 transaction 內
+ * 再次檢查 enabled / 時間區間 / maxRedemptions（防併發超賣）。
+ *
+ * 注意：計次與訂單寫入「非」單一交易（陽春版可接受）。
+ */
+export async function redeemDiscountCode(
+  db: Firestore,
+  code: string,
+): Promise<{ ok: true } | { ok: false; reason: I18nMsg }> {
+  const norm = normalizeDiscountCode(code);
+  if (!norm.ok) return { ok: false, reason: DISCOUNT_FAIL_MESSAGES.NOT_FOUND };
+  const ref = db.collection('discount_codes').doc(norm.value);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new DiscountRedeemError('NOT_FOUND');
+      const d = snap.data() as Partial<DiscountCodeDoc>;
+      const nowMs = Date.now();
+
+      if (d.enabled !== true) throw new DiscountRedeemError('DISABLED');
+      const validFromMs = tsToMs(d.validFrom);
+      if (validFromMs !== null && nowMs < validFromMs) throw new DiscountRedeemError('NOT_STARTED');
+      const validUntilMs = tsToMs(d.validUntil) ?? 0;
+      if (nowMs > validUntilMs) throw new DiscountRedeemError('EXPIRED');
+
+      const redemptionCount = typeof d.redemptionCount === 'number' ? d.redemptionCount : 0;
+      if (typeof d.maxRedemptions === 'number' && redemptionCount >= d.maxRedemptions) {
+        throw new DiscountRedeemError('GLOBAL_LIMIT_REACHED');
+      }
+
+      tx.update(ref, { redemptionCount: redemptionCount + 1 });
+    });
+    return { ok: true };
+  } catch (err) {
+    if (err instanceof DiscountRedeemError) {
+      return { ok: false, reason: DISCOUNT_FAIL_MESSAGES[err.failCode] };
+    }
+    throw err;
+  }
 }
