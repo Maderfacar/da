@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { validateDiscountCodeBody, normalizeDiscountCode, toDiscountCodeDto } from './discount-code';
+import {
+  validateDiscountCodeBody,
+  normalizeDiscountCode,
+  toDiscountCodeDto,
+  evaluateDiscountCode,
+  type DiscountCodeEvalData,
+} from './discount-code';
 
 describe('normalizeDiscountCode', () => {
   it('轉大寫並去空白', () => {
@@ -97,5 +103,95 @@ describe('toDiscountCodeDto', () => {
     expect(dto.enabled).toBe(false);
     expect(dto.redemptionCount).toBe(0);
     expect(dto.createdBy).toBe('');
+  });
+});
+
+describe('evaluateDiscountCode', () => {
+  const NOW = Date.UTC(2026, 4, 16, 0, 0, 0); // 2026-05-16
+  const DAY = 86_400_000;
+
+  const baseCode = (over: Partial<DiscountCodeEvalData> = {}): DiscountCodeEvalData => ({
+    discountAmount: 100,
+    validFromMs: null,
+    validUntilMs: NOW + 30 * DAY,
+    maxRedemptions: null,
+    perUserLimit: null,
+    minFare: null,
+    allowedOrderTypes: null,
+    enabled: true,
+    redemptionCount: 0,
+    ...over,
+  });
+
+  const ctx = { fare: 1000, orderType: 'charter', userRedemptionCount: 0, nowMs: NOW };
+
+  it('碼不存在回 NOT_FOUND', () => {
+    const r = evaluateDiscountCode({ code: null, ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'NOT_FOUND' });
+  });
+
+  it('停用回 DISABLED', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ enabled: false }), ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'DISABLED' });
+  });
+
+  it('未到生效日回 NOT_STARTED', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ validFromMs: NOW + DAY }), ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'NOT_STARTED' });
+  });
+
+  it('已過期回 EXPIRED', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ validUntilMs: NOW - DAY }), ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'EXPIRED' });
+  });
+
+  it('行程類型不符回 ORDER_TYPE_NOT_ALLOWED', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ allowedOrderTypes: ['transfer'] }), ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'ORDER_TYPE_NOT_ALLOWED' });
+  });
+
+  it('車資低於門檻回 BELOW_MIN_FARE', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ minFare: 2000 }), ...ctx });
+    expect(r).toMatchObject({ ok: false, code: 'BELOW_MIN_FARE' });
+  });
+
+  it('全域上限已滿回 GLOBAL_LIMIT_REACHED', () => {
+    const r = evaluateDiscountCode({
+      code: baseCode({ maxRedemptions: 5, redemptionCount: 5 }),
+      ...ctx,
+    });
+    expect(r).toMatchObject({ ok: false, code: 'GLOBAL_LIMIT_REACHED' });
+  });
+
+  it('個人上限已滿回 PER_USER_LIMIT_REACHED', () => {
+    const r = evaluateDiscountCode({
+      code: baseCode({ perUserLimit: 1 }),
+      fare: 1000,
+      orderType: 'charter',
+      userRedemptionCount: 1,
+      nowMs: NOW,
+    });
+    expect(r).toMatchObject({ ok: false, code: 'PER_USER_LIMIT_REACHED' });
+  });
+
+  it('通過：回 discountAmount', () => {
+    const r = evaluateDiscountCode({ code: baseCode(), ...ctx });
+    expect(r).toEqual({ ok: true, discountAmount: 100 });
+  });
+
+  it('折抵不超過車資（折後最低歸 0）', () => {
+    const r = evaluateDiscountCode({
+      code: baseCode({ discountAmount: 5000 }),
+      fare: 800,
+      orderType: 'charter',
+      userRedemptionCount: 0,
+      nowMs: NOW,
+    });
+    expect(r).toEqual({ ok: true, discountAmount: 800 });
+  });
+
+  it('allowedOrderTypes 為空時不限行程類型', () => {
+    const r = evaluateDiscountCode({ code: baseCode({ allowedOrderTypes: [] }), ...ctx });
+    expect(r).toMatchObject({ ok: true });
   });
 });

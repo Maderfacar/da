@@ -194,3 +194,90 @@ export function normalizeDiscountCode(raw: unknown): ValidateResult<string> {
   }
   return { ok: true, value: code };
 }
+
+// ── 驗證結果型別 ──────────────────────────────────────────────────
+
+export type DiscountFailCode =
+  | 'NOT_FOUND'
+  | 'DISABLED'
+  | 'NOT_STARTED'
+  | 'EXPIRED'
+  | 'ORDER_TYPE_NOT_ALLOWED'
+  | 'BELOW_MIN_FARE'
+  | 'GLOBAL_LIMIT_REACHED'
+  | 'PER_USER_LIMIT_REACHED';
+
+export type DiscountValidationResult =
+  | { ok: true; discountAmount: number }
+  | { ok: false; code: DiscountFailCode; reason: I18nMsg };
+
+/** 各失敗代碼對應的三語訊息 */
+export const DISCOUNT_FAIL_MESSAGES: Record<DiscountFailCode, I18nMsg> = {
+  NOT_FOUND: { zh_tw: '折扣碼不存在', en: 'Discount code not found', ja: '割引コードが見つかりません' },
+  DISABLED: { zh_tw: '折扣碼已停用', en: 'Discount code is disabled', ja: '割引コードは無効です' },
+  NOT_STARTED: { zh_tw: '折扣碼尚未生效', en: 'Discount code is not yet active', ja: '割引コードはまだ有効ではありません' },
+  EXPIRED: { zh_tw: '折扣碼已過期', en: 'Discount code has expired', ja: '割引コードの有効期限が切れています' },
+  ORDER_TYPE_NOT_ALLOWED: { zh_tw: '此折扣碼不適用於目前的行程類型', en: 'This code does not apply to the selected trip type', ja: 'このコードは選択された行程タイプには適用されません' },
+  BELOW_MIN_FARE: { zh_tw: '車資未達折扣碼使用門檻', en: 'Fare is below the minimum required for this code', ja: '料金が割引コードの利用条件に達していません' },
+  GLOBAL_LIMIT_REACHED: { zh_tw: '折扣碼已達總使用次數上限', en: 'Discount code has reached its usage limit', ja: '割引コードは利用上限に達しています' },
+  PER_USER_LIMIT_REACHED: { zh_tw: '您已達此折扣碼的使用次數上限', en: 'You have reached your usage limit for this code', ja: 'この割引コードの利用上限に達しています' },
+};
+
+// ── 純評估函式（無 Firestore 依賴，可單元測試）────────────────────
+
+/** evaluateDiscountCode 消費的純資料（Timestamp 已轉 epoch ms） */
+export interface DiscountCodeEvalData {
+  discountAmount: number;
+  validFromMs: number | null;
+  validUntilMs: number;
+  maxRedemptions: number | null;
+  perUserLimit: number | null;
+  minFare: number | null;
+  allowedOrderTypes: string[] | null;
+  enabled: boolean;
+  redemptionCount: number;
+}
+
+export interface EvaluateDiscountInput {
+  /** null = 折扣碼不存在 */
+  code: DiscountCodeEvalData | null;
+  /** 折扣前車資 */
+  fare: number;
+  orderType: string;
+  /** 該使用者已用此碼次數 */
+  userRedemptionCount: number;
+  nowMs: number;
+}
+
+function failResult(code: DiscountFailCode): DiscountValidationResult {
+  return { ok: false, code, reason: DISCOUNT_FAIL_MESSAGES[code] };
+}
+
+/**
+ * 純評估折扣碼是否可用。逐項檢查，任一失敗即回對應代碼；
+ * 通過後 discountAmount = min(code.discountAmount, fare)（折後車資不為負）。
+ */
+export function evaluateDiscountCode(input: EvaluateDiscountInput): DiscountValidationResult {
+  const { code, fare, orderType, userRedemptionCount, nowMs } = input;
+
+  if (!code) return failResult('NOT_FOUND');
+  if (!code.enabled) return failResult('DISABLED');
+  if (code.validFromMs !== null && nowMs < code.validFromMs) return failResult('NOT_STARTED');
+  if (nowMs > code.validUntilMs) return failResult('EXPIRED');
+  if (
+    code.allowedOrderTypes
+    && code.allowedOrderTypes.length > 0
+    && !code.allowedOrderTypes.includes(orderType)
+  ) {
+    return failResult('ORDER_TYPE_NOT_ALLOWED');
+  }
+  if (code.minFare !== null && fare < code.minFare) return failResult('BELOW_MIN_FARE');
+  if (code.maxRedemptions !== null && code.redemptionCount >= code.maxRedemptions) {
+    return failResult('GLOBAL_LIMIT_REACHED');
+  }
+  if (code.perUserLimit !== null && userRedemptionCount >= code.perUserLimit) {
+    return failResult('PER_USER_LIMIT_REACHED');
+  }
+
+  return { ok: true, discountAmount: Math.min(code.discountAmount, fare) };
+}
