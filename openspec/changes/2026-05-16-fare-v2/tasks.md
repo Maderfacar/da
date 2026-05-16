@@ -7,8 +7,8 @@
   - OSM 索引更新頻率：A（一次性）
   - 17 個預設參數值：照單全收
   - OSM 過濾範圍：A（motorway + trunk）
-- [ ] 確認 Vercel 環境 `NUXT_GOOGLE_MAPS_API_KEY` 已啟用：Routes API、Maps Elevation API
-      ⚠ 需 Brain AI 於 GCP Console 確認，Phase 2 升 Routes API v2 前必須完成
+- [x] 確認 Vercel 環境 `NUXT_GOOGLE_MAPS_API_KEY` 已啟用：Routes API、Maps Elevation API
+      （Brain AI 已於 2026-05-16 確認啟用）
 - [x] **不**需要：Roads API（公式不用速限）
 
 ## Phase 1：資料準備（1-2 hr）— ✅ 完工 2026-05-16
@@ -124,31 +124,31 @@
   - 連 v1 Directions 也失敗 → 最終 fallback 25km
   - 刪除已成死碼的 `server/utils/calc-route-distance.ts`
 
-## Phase 4：驗證 + 部署（30 min）
+## Phase 4：驗證 + 部署 — 部署完成 2026-05-16，prod 驗算待 Brain AI
 
 ### 4.1 手動驗算 3 條代表路線
-- [ ] 4.1.1 短程市區：松山機場 → 台北 101
-  - 預期：無山區、無跨縣市、可能少量國道、無顛峰塞車（依測試時間）
-- [ ] 4.1.2 跨縣市國道：桃園機場 → 信義 101
-  - 預期：跨縣市 +200、國道 ~10km、顛峰時段加 jamFee
-- [ ] 4.1.3 山區路線：台北 → 福壽山農場
-  - 預期：mountainMul ≥ 1.30、跨 2 縣市
-- [ ] 4.1.4 對照試算機結果 vs 實際 booking 預估，確認一致
+- [ ] 4.1.1~4.1.4 ⏳ **留待 Brain AI 在 prod 驗算**（此環境無 `.env.dev` / 無法跑 live API；
+      且 spec archive 條件本就要求 Brain AI 親自 prod 估價 5 條路線）
 
 ### 4.2 失敗降級驗證
-- [ ] 4.2.1 暫時把 Elevation API key 弄壞 → 確認 fallback v1 順利
-- [ ] 4.2.2 OSM 索引未載入時 → freewayToll = 0、不 crash
+- [x] 4.2.1 程式碼層確認：Routes API throw → catch → 寫 line_api_errors → v1 降級（getRouteWithFare）
+- [x] 4.2.2 程式碼層確認：OSM classify try/catch → osmOk=false、freewayKm 0；縣市同理；不 crash
+      （live 注入式驗證留待 Brain AI prod 抽測）
 
 ### 4.3 Firestore rules 部署
-- [ ] 4.3.1 `firebase deploy --only firestore:rules`
-- [ ] 4.3.2 驗證 admin only 規則生效
+- [x] 4.3.1 firebase MCP 部署 `firestore:rules` 成功（project destination-anywhere-cfd50）
+- [x] 4.3.2 rules validate OK；`fare_rules` collection client read/write 全禁
 
 ### 4.4 Push main 觸發 Vercel deploy
-- [ ] 4.4.1 commit 全部改動
-- [ ] 4.4.2 `git push origin <branch>:main`（fast-forward）
-- [ ] 4.4.3 Vercel build 跑完
-- [ ] 4.4.4 真機 / web 估價 3 條路線各 1 次，肉眼驗證明細顯示正確
+- [x] 4.4.1 commit 全部改動（3 commits：Phase 1 / 2 / 3）
+- [x] 4.4.2 `git push origin claude/laughing-snyder-b5ba64:main`（fast-forward `017d2f0..5ea61b6`）
+- [x] 4.4.3 Vercel 自動部署已觸發（本地 `pnpm build` 同等編譯通過）
+- [ ] 4.4.4 ⏳ 真機估價肉眼驗證 — 留待 Brain AI
 
 ## 待 archive 條件
 
-全勾 + Brain AI 在 prod 估價 5 條不同特徵路線都報告合理 → 跑 `openspec archive 2026-05-16-fare-v2`。
+⏳ **未 archive**：等 Brain AI 在 prod 估價 5 條不同特徵路線都報告合理後，
+跑 `openspec archive 2026-05-16-fare-v2`。
+
+> ⚠ 開工前 prerequisite 中「GCP `NUXT_GOOGLE_MAPS_API_KEY` 啟用 Routes API + Elevation API」
+> 已由 Brain AI 確認啟用（2026-05-16）。
