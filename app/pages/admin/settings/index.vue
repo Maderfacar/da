@@ -8,11 +8,12 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 const authStore = StoreAuth();
 
 // ── 頂層分頁 ───────────────────────────────────────────────────
-type MainTab = 'access' | 'fleet' | 'fare' | 'legal' | 'integrations' | 'system';
+type MainTab = 'access' | 'fleet' | 'fare' | 'promotions' | 'legal' | 'integrations' | 'system';
 const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean }> = [
   { key: 'access',       label: '存取控制' },
   { key: 'fleet',        label: '車型 / 行李 / 加值服務' },
   { key: 'fare',         label: '車資進階規則', superOnly: true },
+  { key: 'promotions',   label: '折扣碼' },
   { key: 'legal',        label: '文件管理' },
   { key: 'integrations', label: 'LINE Bot / 地圖' },
   { key: 'system',       label: '系統' },
@@ -829,6 +830,14 @@ const ClickSaveFareRules = async () => {
       //- 試算機
       AdminFareCalculatorPreview(:rules="fareRules")
 
+  //- 折扣碼管理
+  .PageAdminSettings__section(v-show="mainTab === 'promotions'")
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label PROMOTIONS
+      span.PageAdminSettings__section-title 折扣碼
+    .PageAdminSettings__promotions
+      AdminSettingsDiscountCodes
+
   //- 法律文件管理（會員條款 / 隱私政策）
   .PageAdminSettings__section(v-show="mainTab === 'legal'")
     .PageAdminSettings__section-head
@@ -1589,5 +1598,9 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 8px;
   padding: 8px 12px;
   margin: 0 16px 4px;
+}
+
+.PageAdminSettings__promotions {
+  padding: 14px 16px;
 }
 </style>
