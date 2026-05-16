@@ -15,8 +15,6 @@ import type { Timestamp, Firestore } from 'firebase-admin/firestore';
 import { ORDER_TYPES } from '~shared/pricing';
 import type { I18nMsg } from '@@/utils/response';
 
-export type { I18nMsg };
-
 /** 折扣碼格式：3-32 碼大寫英數（doc id 用） */
 export const DISCOUNT_CODE_REGEX = /^[A-Z0-9]{3,32}$/;
 
