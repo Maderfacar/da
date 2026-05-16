@@ -50,3 +50,6 @@ test-results/
 
 # Git worktrees（由 Claude Code 管理，不 commit）
 .claude/worktrees/
+
+# Fare V2 geo build intermediates（OSM pbf / 原始 GeoJSON 快取，不 commit）
+scripts/.geo-build/
