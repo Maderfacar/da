@@ -333,6 +333,18 @@ export default {
       notesOptional: 'optional',
       notesPlaceholder: 'e.g. child seat, extra luggage, special pickup instructions…',
     },
+    discount: {
+      section: 'Discount Code',
+      placeholder: 'Enter discount code',
+      apply: 'Apply',
+      clear: 'Clear',
+      applied: 'Applied {code}',
+      discountRow: 'Discount',
+      finalTotal: 'Total after discount',
+      emptyCode: 'Please enter a discount code',
+      noFare: 'Please complete fare estimation first',
+      applyFail: 'Failed to apply discount code',
+    },
   },
   map: {
     pinOrigin: 'Pickup',

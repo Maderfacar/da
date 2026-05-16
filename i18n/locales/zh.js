@@ -347,6 +347,18 @@ export default {
       notesOptional: '選填',
       notesPlaceholder: '例：小孩需安全座椅、行李較多、特殊接駁需求…',
     },
+    discount: {
+      section: '折扣碼',
+      placeholder: '輸入折扣碼',
+      apply: '套用',
+      clear: '清除',
+      applied: '已套用 {code}',
+      discountRow: '折扣',
+      finalTotal: '折後總額',
+      emptyCode: '請輸入折扣碼',
+      noFare: '請先完成車資估算',
+      applyFail: '折扣碼套用失敗',
+    },
   },
   // ── 地圖 ──────────────────────────────────────────────────
   map: {

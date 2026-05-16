@@ -333,6 +333,18 @@ export default {
       notesOptional: '任意',
       notesPlaceholder: '例：チャイルドシート、荷物多め、特別な迎車要望…',
     },
+    discount: {
+      section: '割引コード',
+      placeholder: '割引コードを入力',
+      apply: '適用',
+      clear: 'クリア',
+      applied: '{code} を適用しました',
+      discountRow: '割引',
+      finalTotal: '割引後合計',
+      emptyCode: '割引コードを入力してください',
+      noFare: '先に料金見積もりを完了してください',
+      applyFail: '割引コードの適用に失敗しました',
+    },
   },
   map: {
     pinOrigin: '乗車地点',
