@@ -180,6 +180,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── fare_rules 集合（Fare V2）──────────────────────────────
+    // 車資進階規則（單一 doc fare_rules/v1）；client 全禁讀寫。
+    // admin 經 /nuxt-api/admin/fare-rules（super only）讀寫；估價經 server admin SDK 讀取。
+    match /fare_rules/{rulesId} {
+      allow read, write: if false;
+    }
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;

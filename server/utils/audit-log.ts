@@ -92,9 +92,11 @@ export type AuditAction =
   // migration（P27 一次性）
   | 'migration.driver_application_move'
   // Legal pages（會員條款 / 隱私政策 admin 編輯）
-  | 'legal_page.update';
+  | 'legal_page.update'
+  // Fare V2 車資進階規則（super admin 編輯）
+  | 'fare_rules.update';
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page' | 'fare_rules';
 
 interface WriteAuditLogInput {
   event: H3Event;

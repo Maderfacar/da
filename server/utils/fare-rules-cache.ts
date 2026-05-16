@@ -1,0 +1,219 @@
+// Fare V2 可調規則 — Firestore fare_rules/v1 讀取、驗證與 in-memory 快取。
+//
+//   - getFareRules()：回傳目前生效規則；5 分鐘 TTL 快取；doc 不存在/格式錯 → DEFAULT_FARE_RULES
+//   - validateFareRules()：嚴格驗證一份規則物件（admin PATCH 與讀取共用）
+//   - invalidateFareRulesCache()：admin 改完規則後手動清快取
+//
+// 驗證採手寫（與 fleet-config.ts / legal-pages.ts 等既有 endpoint 一致，專案未引入 zod）。
+//
+// Fare V2 — Phase 2.4。
+
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import {
+  DEFAULT_FARE_RULES,
+  type FareRules,
+  type MountainTier,
+  type PeakWindow,
+  type Weekday,
+  type WeekendJamMode,
+} from '~shared/pricing';
+
+export const FARE_RULES_COLLECTION = 'fare_rules';
+export const FARE_RULES_DOC_ID = 'v1';
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+const VALID_WEEKDAYS: ReadonlySet<string> = new Set(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']);
+const VALID_WEEKEND_MODES: ReadonlySet<string> = new Set(['OFF', 'ALL_DAY', 'EVENING_ONLY']);
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export type ValidateResult =
+  | { ok: true; value: FareRules }
+  | { ok: false; error: string };
+
+// ── 驗證 primitives ──────────────────────────────────────────────────────────
+
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v);
+const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isNonNegNum = (v: unknown): v is number => isNum(v) && v >= 0;
+const isPosNum = (v: unknown): v is number => isNum(v) && v > 0;
+
+function validateMountainTiers(raw: unknown): MountainTier[] | string {
+  if (!Array.isArray(raw) || raw.length === 0) return 'mountain.tiers 必須是非空陣列';
+  const tiers: MountainTier[] = [];
+  for (const t of raw) {
+    if (!isObj(t)) return 'mountain.tiers 元素必須是物件';
+    if (!Number.isInteger(t.minScore) || (t.minScore as number) < 0) return 'tier.minScore 必須是非負整數';
+    if (!isPosNum(t.multiplier)) return 'tier.multiplier 必須是正數';
+    tiers.push({ minScore: t.minScore as number, multiplier: t.multiplier });
+  }
+  return tiers;
+}
+
+function validatePeakWindows(raw: unknown): PeakWindow[] | string {
+  if (!Array.isArray(raw)) return 'trafficJam.peakWindows 必須是陣列';
+  const windows: PeakWindow[] = [];
+  for (const w of raw) {
+    if (!isObj(w)) return 'peakWindow 必須是物件';
+    if (!Array.isArray(w.days) || w.days.length === 0) return 'peakWindow.days 必須是非空陣列';
+    if (!w.days.every((d) => isStr(d) && VALID_WEEKDAYS.has(d))) return 'peakWindow.days 含無效星期代碼';
+    if (!isStr(w.start) || !HHMM_RE.test(w.start)) return 'peakWindow.start 必須是 HH:MM';
+    if (!isStr(w.end) || !HHMM_RE.test(w.end)) return 'peakWindow.end 必須是 HH:MM';
+    if (w.start >= w.end) return 'peakWindow.start 必須早於 end';
+    if (w.ntdPerMinute !== undefined && !isNonNegNum(w.ntdPerMinute)) {
+      return 'peakWindow.ntdPerMinute 必須 ≥ 0';
+    }
+    const pw: PeakWindow = {
+      days: w.days as Weekday[],
+      start: w.start,
+      end: w.end,
+    };
+    if (w.ntdPerMinute !== undefined) pw.ntdPerMinute = w.ntdPerMinute as number;
+    windows.push(pw);
+  }
+  return windows;
+}
+
+/** 嚴格驗證一份 fare rules 物件；成功回標準化 FareRules（剔除 Firestore meta 欄位）。 */
+export function validateFareRules(raw: unknown): ValidateResult {
+  if (!isObj(raw)) return { ok: false, error: '規則必須是物件' };
+
+  if (!Number.isInteger(raw.version) || (raw.version as number) < 1) {
+    return { ok: false, error: 'version 必須是正整數' };
+  }
+  if (!isStr(raw.currency) || raw.currency.length === 0) {
+    return { ok: false, error: 'currency 必須是非空字串' };
+  }
+  if (!isPosNum(raw.rounding)) return { ok: false, error: 'rounding 必須是正數' };
+
+  // mountain
+  const m = raw.mountain;
+  if (!isObj(m)) return { ok: false, error: 'mountain 缺失' };
+  if (!isBool(m.enabled)) return { ok: false, error: 'mountain.enabled 必須是 boolean' };
+  if (!isPosNum(m.thresholdElevationDiffM)) return { ok: false, error: 'mountain.thresholdElevationDiffM 必須是正數' };
+  if (!isPosNum(m.thresholdSinuosity)) return { ok: false, error: 'mountain.thresholdSinuosity 必須是正數' };
+  if (!isPosNum(m.thresholdFreeFlowKmh)) return { ok: false, error: 'mountain.thresholdFreeFlowKmh 必須是正數' };
+  const tiers = validateMountainTiers(m.tiers);
+  if (typeof tiers === 'string') return { ok: false, error: tiers };
+
+  // crossCounty
+  const c = raw.crossCounty;
+  if (!isObj(c)) return { ok: false, error: 'crossCounty 缺失' };
+  if (!isBool(c.enabled)) return { ok: false, error: 'crossCounty.enabled 必須是 boolean' };
+  if (!Array.isArray(c.tieredNtd) || c.tieredNtd.length === 0 || !c.tieredNtd.every(isNonNegNum)) {
+    return { ok: false, error: 'crossCounty.tieredNtd 必須是非空的非負數陣列' };
+  }
+  if (!isBool(c.excludeTpeNtpeTyn)) return { ok: false, error: 'crossCounty.excludeTpeNtpeTyn 必須是 boolean' };
+
+  // trafficJam
+  const j = raw.trafficJam;
+  if (!isObj(j)) return { ok: false, error: 'trafficJam 缺失' };
+  if (!isBool(j.enabled)) return { ok: false, error: 'trafficJam.enabled 必須是 boolean' };
+  if (!isStr(j.weekendMode) || !VALID_WEEKEND_MODES.has(j.weekendMode)) {
+    return { ok: false, error: 'trafficJam.weekendMode 必須是 OFF / ALL_DAY / EVENING_ONLY' };
+  }
+  if (!isNonNegNum(j.defaultNtdPerMinute)) return { ok: false, error: 'trafficJam.defaultNtdPerMinute 必須 ≥ 0' };
+  const windows = validatePeakWindows(j.peakWindows);
+  if (typeof windows === 'string') return { ok: false, error: windows };
+
+  // freeway
+  const f = raw.freeway;
+  if (!isObj(f)) return { ok: false, error: 'freeway 缺失' };
+  if (!isBool(f.enabled)) return { ok: false, error: 'freeway.enabled 必須是 boolean' };
+  if (!isNonNegNum(f.freeKm)) return { ok: false, error: 'freeway.freeKm 必須 ≥ 0' };
+  if (!isNonNegNum(f.ntdPerKm)) return { ok: false, error: 'freeway.ntdPerKm 必須 ≥ 0' };
+  if (!isPosNum(f.dailyCapKm)) return { ok: false, error: 'freeway.dailyCapKm 必須是正數' };
+  if (!isNum(f.dailyCapDiscountPct) || f.dailyCapDiscountPct < 0 || f.dailyCapDiscountPct > 100) {
+    return { ok: false, error: 'freeway.dailyCapDiscountPct 必須是 0-100' };
+  }
+
+  return {
+    ok: true,
+    value: {
+      version: raw.version as number,
+      currency: raw.currency,
+      rounding: raw.rounding,
+      mountain: {
+        enabled: m.enabled,
+        thresholdElevationDiffM: m.thresholdElevationDiffM,
+        thresholdSinuosity: m.thresholdSinuosity,
+        thresholdFreeFlowKmh: m.thresholdFreeFlowKmh,
+        tiers,
+      },
+      crossCounty: {
+        enabled: c.enabled,
+        tieredNtd: c.tieredNtd as number[],
+        excludeTpeNtpeTyn: c.excludeTpeNtpeTyn,
+      },
+      trafficJam: {
+        enabled: j.enabled,
+        peakWindows: windows,
+        weekendMode: j.weekendMode as WeekendJamMode,
+        defaultNtdPerMinute: j.defaultNtdPerMinute,
+      },
+      freeway: {
+        enabled: f.enabled,
+        freeKm: f.freeKm,
+        ntdPerKm: f.ntdPerKm,
+        dailyCapKm: f.dailyCapKm,
+        dailyCapDiscountPct: f.dailyCapDiscountPct,
+      },
+    },
+  };
+}
+
+// ── In-memory 快取 ───────────────────────────────────────────────────────────
+
+let cached: FareRules | null = null;
+let cachedAt = 0;
+
+/**
+ * 取得目前生效的 fare rules。5 分鐘 TTL；doc 不存在 / 格式錯 / 讀取失敗一律 fallback
+ * DEFAULT_FARE_RULES（並快取避免每次估價重打 Firestore）。
+ */
+export async function getFareRules(): Promise<FareRules> {
+  const now = Date.now();
+  if (cached && now - cachedAt < CACHE_TTL_MS) return cached;
+
+  try {
+    const { firebaseServiceAccountJson } = useRuntimeConfig();
+    if (firebaseServiceAccountJson) {
+      const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+      const snap = await db.collection(FARE_RULES_COLLECTION).doc(FARE_RULES_DOC_ID).get();
+      if (snap.exists) {
+        const parsed = validateFareRules(snap.data());
+        if (parsed.ok) {
+          cached = parsed.value;
+          cachedAt = now;
+          return cached;
+        }
+        console.error('[fare-rules] fare_rules/v1 格式錯誤，改用預設：', parsed.error);
+      }
+    }
+  } catch (err) {
+    console.error('[fare-rules] 載入失敗，改用預設：', err);
+  }
+
+  cached = DEFAULT_FARE_RULES;
+  cachedAt = now;
+  return cached;
+}
+
+// epoch：每次規則失效 +1，供下游（如 /api/maps/route 的 LRU 快取）作為 key 一部分，
+// 規則一改即讓所有舊估價快取自然失效。
+let rulesEpoch = 0;
+
+/** admin 改完 fare_rules 後呼叫，下次 getFareRules 立即重讀。 */
+export function invalidateFareRulesCache(): void {
+  cached = null;
+  cachedAt = 0;
+  rulesEpoch++;
+}
+
+/** 規則 epoch — 規則每次變更即遞增。 */
+export function getFareRulesEpoch(): number {
+  return rulesEpoch;
+}

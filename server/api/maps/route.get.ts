@@ -1,13 +1,69 @@
-// GET /api/maps/route — 路線規劃 BFF（使用 Server Key，回傳 encoded polyline）
-// 前端不直接呼叫 Directions API，避免 Browser Key 需開放 Directions API 授權
+// GET /api/maps/route — 路線規劃 BFF（使用 Server Key）
+//
+// 兩種模式：
+//   純幾何（未帶 vehicleType / pickupTime）：legacy Directions API，回 polyline / 距離 / 車程。
+//     — booking step 2 路線規劃用，行為與 Fare V1 完全相同，零風險。
+//   車資模式（帶 vehicleType + pickupTime）：Routes API v2 + 5 訊號 → Fare V2 明細。
+//     — booking step 3 預估車資用。Routes API 失敗自動降級 v1（fareVersion='v1'）。
+//
+// in-memory LRU 快取：key 含 15 分鐘時間桶 + fare rules epoch，5 分鐘 TTL。
+//
+// Fare V2 — Phase 2.1 + 2.6。
+
+import { LRUCache } from 'lru-cache';
+import { boundsFromPolyline, type LatLng, type LatLngBounds } from '@@/utils/polyline';
+import { getSimpleRoute } from '@@/utils/route-metrics';
+import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
+import { getFareRulesEpoch } from '@@/utils/fare-rules-cache';
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { getFleetConfig } from '@@/utils/fleet-config';
+import type { FareBreakdownV2, RouteMetrics } from '~shared/pricing';
+
+interface RouteRes {
+  // 幾何（地圖繪製；向後相容舊欄位）
+  polyline: string;
+  bounds: LatLngBounds | null;
+  distance_km: number;
+  duration_minutes: number;
+  // 車資（純幾何模式為 null）
+  fareVersion: 'v1' | 'v2' | null;
+  fareTotal: number | null;
+  fareBreakdown: FareBreakdownV2 | null;
+  routeMetrics: RouteMetrics | null;
+  // 塞車（車資模式 v2）
+  static_duration_minutes: number | null;
+  pure_jam_minutes: number | null;
+}
+
+const routeCache = new LRUCache<string, RouteRes>({
+  max: 500,
+  ttl: 5 * 60 * 1000,
+});
+
+function parseLatLng(raw: string | undefined): LatLng | null {
+  if (!raw) return null;
+  const parts = raw.split(',');
+  if (parts.length !== 2) return null;
+  const lat = Number(parts[0]);
+  const lng = Number(parts[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+function parseWaypoints(raw: string | undefined): LatLng[] {
+  if (!raw) return [];
+  return raw
+    .split('|')
+    .map((w) => parseLatLng(w))
+    .filter((p): p is LatLng => p !== null);
+}
+
+const round1 = (n: number): number => Math.round(n * 10) / 10;
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-  const { origin, destination, waypoints } = query as {
-    origin?: string;
-    destination?: string;
-    waypoints?: string; // pipe-separated "lat,lng|lat,lng"
-  };
+  const query = getQuery(event) as Record<string, string | undefined>;
+  const origin = parseLatLng(query.origin);
+  const destination = parseLatLng(query.destination);
 
   if (!origin || !destination) {
     return {
@@ -16,48 +72,124 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  const { googleMapsApiKey } = useRuntimeConfig();
+  const waypoints = parseWaypoints(query.waypoints);
+  const { googleMapsApiKey, firebaseServiceAccountJson } = useRuntimeConfig();
 
-  const params = new URLSearchParams({
-    origin,
-    destination,
-    key: googleMapsApiKey,
-    region: 'TW',
-    language: 'zh-TW',
-  });
+  // 車資模式判定：需同時帶 vehicleType + 有效 pickupTime
+  const vehicleType = query.vehicleType?.trim() || '';
+  const pickupTimeRaw = query.pickupTime?.trim() || '';
+  const pickupTime = pickupTimeRaw ? new Date(pickupTimeRaw) : null;
+  const fareMode = Boolean(vehicleType) && pickupTime !== null && !Number.isNaN(pickupTime.getTime());
+  const extraIds = (query.extras?.trim() || '').split(',').map((s) => s.trim()).filter(Boolean);
 
-  if (waypoints) {
-    // pipe-separated → Google format: "via:lat,lng|via:lat,lng"
-    const wps = waypoints.split('|').map((w) => `via:${w}`).join('|');
-    params.append('waypoints', wps);
+  // LRU 快取 key
+  const minuteBucket = pickupTime ? Math.floor(pickupTime.getTime() / (15 * 60 * 1000)) : 0;
+  const cacheKey = [
+    fareMode ? 'fare' : 'geo',
+    query.origin,
+    query.destination,
+    query.waypoints ?? '',
+    vehicleType,
+    extraIds.join(','),
+    minuteBucket,
+    getFareRulesEpoch(),
+  ].join('|');
+
+  const cached = routeCache.get(cacheKey);
+  if (cached) return { data: cached, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+
+  // ── 純幾何模式 ─────────────────────────────────────────────────────────────
+  if (!fareMode) {
+    try {
+      const route = await getSimpleRoute({ origin, destination, waypoints, apiKey: googleMapsApiKey });
+      const data: RouteRes = {
+        polyline: route.polylineEncoded,
+        bounds: route.bounds,
+        distance_km: route.distanceKm,
+        duration_minutes: route.durationMinutes,
+        fareVersion: null,
+        fareTotal: null,
+        fareBreakdown: null,
+        routeMetrics: null,
+        static_duration_minutes: null,
+        pure_jam_minutes: null,
+      };
+      routeCache.set(cacheKey, data);
+      return { data, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+    } catch (err) {
+      console.error('[maps/route] geometry mode failed:', err);
+      return {
+        data: null,
+        status: { code: 422, message: { zh_tw: '路線計算失敗', en: 'Route calculation failed', ja: 'ルート計算に失敗しました' } },
+      };
+    }
   }
 
-  const res = await $fetch<any>(
-    `https://maps.googleapis.com/maps/api/directions/json?${params}`,
-  ).catch(() => null);
+  // ── 車資模式 ───────────────────────────────────────────────────────────────
+  if (!firebaseServiceAccountJson) {
+    return { data: null, status: { code: 500, message: { zh_tw: '伺服器設定不完整', en: 'Server configuration incomplete', ja: 'サーバー設定が不完全です' } } };
+  }
 
-  if (!res || res.status !== 'OK' || !res.routes?.[0]) {
+  try {
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    const fleet = await getFleetConfig(db);
+    const vehicle = fleet.vehicles.find((v) => v.id === vehicleType);
+    if (!vehicle) {
+      return { data: null, status: { code: 400, message: { zh_tw: '車型不存在', en: 'Unknown vehicle type', ja: '車種が存在しません' } } };
+    }
+    const extras = extraIds
+      .map((id) => fleet.extras.find((e) => e.id === id))
+      .filter((e): e is NonNullable<typeof e> => Boolean(e))
+      .map((e) => ({ price: e.price }));
+
+    const result = await getRouteWithFare({
+      origin,
+      destination,
+      waypoints,
+      vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
+      extras,
+      pickupTime: pickupTime as Date,
+      apiKey: googleMapsApiKey,
+    });
+
+    let data: RouteRes;
+    if (result.version === 'v2') {
+      const m = result.metrics;
+      data = {
+        polyline: m.polylineEncoded,
+        bounds: boundsFromPolyline(m.polylineEncoded),
+        distance_km: round1(m.distanceKm),
+        duration_minutes: Math.round(m.durationSec / 60),
+        fareVersion: 'v2',
+        fareTotal: result.breakdown.final,
+        fareBreakdown: result.breakdown,
+        routeMetrics: m,
+        static_duration_minutes: Math.round(m.staticDurationSec / 60),
+        pure_jam_minutes: Math.round(m.pureJamMinutes),
+      };
+    } else {
+      // v1 降級：只有基本路線 + 簡化車資
+      data = {
+        polyline: result.route.polylineEncoded,
+        bounds: result.route.bounds,
+        distance_km: result.route.distanceKm,
+        duration_minutes: result.route.durationMinutes,
+        fareVersion: 'v1',
+        fareTotal: result.final,
+        fareBreakdown: null,
+        routeMetrics: null,
+        static_duration_minutes: null,
+        pure_jam_minutes: null,
+      };
+    }
+
+    routeCache.set(cacheKey, data);
+    return { data, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+  } catch (err) {
+    console.error('[maps/route] fare mode failed:', err);
     return {
       data: null,
       status: { code: 422, message: { zh_tw: '路線計算失敗', en: 'Route calculation failed', ja: 'ルート計算に失敗しました' } },
     };
   }
-
-  const route = res.routes[0];
-  let totalDistanceM = 0;
-  let totalDurationS = 0;
-  for (const leg of route.legs) {
-    totalDistanceM += leg.distance.value;
-    totalDurationS += leg.duration.value;
-  }
-
-  return {
-    data: {
-      polyline: route.overview_polyline.points as string,
-      bounds: route.bounds as { northeast: { lat: number; lng: number }; southwest: { lat: number; lng: number } },
-      distance_km: Math.round(totalDistanceM / 100) / 10,
-      duration_minutes: Math.round(totalDurationS / 60),
-    },
-    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
-  };
 });

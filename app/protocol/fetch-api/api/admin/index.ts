@@ -14,6 +14,8 @@ export * from './line-event-log';
 export * from './line-api-error';
 // 會員條款 / 隱私政策 sub-module（admin）
 export * from './legal-page';
+// Fare V2：車資進階規則 sub-module（admin）
+export * from './fare-rules';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
