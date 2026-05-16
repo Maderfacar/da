@@ -16,6 +16,8 @@ export * from './line-api-error';
 export * from './legal-page';
 // Fare V2：車資進階規則 sub-module（admin）
 export * from './fare-rules';
+// 折扣碼（陽春版）sub-module（admin）
+export * from './discount-code';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
