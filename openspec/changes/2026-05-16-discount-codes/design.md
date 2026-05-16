@@ -1,8 +1,9 @@
 # 折扣碼（陽春版）設計文件
 
 > 日期：2026-05-16
-> 狀態：設計定案，待實作
-> 交接：本文件為跨視窗交接物。新視窗請直接讀本文件 → 跑 writing-plans → 實作。
+> 狀態：程式碼層已實作（branch `claude/keen-greider-d44135`），待部署 + firestore rules 部署 + prod 驗算
+> 交接：實作計畫見 `docs/superpowers/plans/2026-05-16-discount-codes.md`。
+> 已知限制：perUserLimit 於 transaction 內無法跨 collection 復查（陽春版可接受，見 `redeemDiscountCode` 註解）。
 
 ## 1. 目標與範圍
 
