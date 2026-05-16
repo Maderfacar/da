@@ -356,6 +356,13 @@ class DiscountRedeemError extends Error {
  * 再次檢查 enabled / 時間區間 / maxRedemptions（防併發超賣）。
  *
  * 注意：計次與訂單寫入「非」單一交易（陽春版可接受）。
+ *
+ * 已知限制（陽春版可接受）：transaction 內無法跨 collection 查 orders，
+ * 故 perUserLimit 僅在 validateDiscountCode 階段檢查，未在此 transaction 內復查。
+ * 同一使用者於毫秒內並發送出兩筆訂單時，理論上可繞過 perUserLimit；
+ * 實務上 booking 送出鈕有 isSubmitting 鎖，單一 client 無法並發。
+ * 如未來 perUserLimit 用於高價值促銷需嚴格防護，須改用 redemption-records
+ * 子集合 + composite index 做原子計次。
  */
 export async function redeemDiscountCode(
   db: Firestore,

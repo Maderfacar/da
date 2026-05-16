@@ -87,6 +87,9 @@ const GoNext = () => {
 
 const GoBack = () => {
   if (currentStep.value > 1) currentStep.value--;
+  // 離開確認頁時清掉已套用的折扣碼（子元件會重建，parent ref 需同步清空，
+  // 避免使用者改車型後 UI 顯示無折扣卻仍帶舊碼送出）
+  discountCode.value = '';
 };
 
 // ── 同步至 store ─────────────────────────────────────────────────────────────

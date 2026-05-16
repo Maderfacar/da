@@ -203,10 +203,10 @@ onMounted(() => { void ApiLoad(); });
         ElInput(v-model.number="form.discountAmount" type="number" inputmode="numeric" maxlength="9")
       .SettingsDiscountCodes__field
         label.SettingsDiscountCodes__label 生效日（留空＝立即生效）
-        ElInput(v-model="form.validFrom" type="date")
+        ElInput(v-model="form.validFrom" type="date" maxlength="10")
       .SettingsDiscountCodes__field
         label.SettingsDiscountCodes__label 到期日
-        ElInput(v-model="form.validUntil" type="date")
+        ElInput(v-model="form.validUntil" type="date" maxlength="10")
       .SettingsDiscountCodes__field
         label.SettingsDiscountCodes__label 全域總量上限（留空＝不限）
         ElInput(v-model.number="form.maxRedemptions" type="number" inputmode="numeric" maxlength="9")
