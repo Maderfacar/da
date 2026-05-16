@@ -7,8 +7,24 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 
 const authStore = StoreAuth();
 
+// ── 頂層分頁 ───────────────────────────────────────────────────
+type MainTab = 'access' | 'fleet' | 'fare' | 'legal' | 'integrations' | 'system';
+const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean }> = [
+  { key: 'access',       label: '存取控制' },
+  { key: 'fleet',        label: '車型 / 行李 / 加值服務' },
+  { key: 'fare',         label: '車資進階規則', superOnly: true },
+  { key: 'legal',        label: '文件管理' },
+  { key: 'integrations', label: 'LINE Bot / 地圖' },
+  { key: 'system',       label: '系統' },
+];
+const mainTab = ref<MainTab>('access');
+const visibleMainTabs = computed(() =>
+  MAIN_TABS.filter((t) => !t.superOnly || authStore.isSuper),
+);
+
 // ── 系統設定（只讀展示）────────────────────────────────────────
-const groups = [
+// integrationGroups：LINE Bot / 地圖（整合服務分頁）；systemGroups：系統分頁
+const integrationGroups = [
   {
     title: 'LINE Bot 設定',
     label: 'LINE BOT',
@@ -27,6 +43,8 @@ const groups = [
       { key: 'gmap_server_key',  label: 'Server Key',  value: 'AIza••••••••', hint: '後端 Routes API 呼叫' },
     ],
   },
+];
+const systemGroups = [
   {
     title: '系統',
     label: 'SYSTEM',
@@ -406,8 +424,17 @@ const ClickSaveFareRules = async () => {
     .PageAdminSettings__header-label SYSTEM SETTINGS
     h1.PageAdminSettings__header-title 系統設定
 
+  //- 頂層分頁
+  .PageAdminSettings__main-tabs
+    button.PageAdminSettings__main-tab(
+      v-for="t in visibleMainTabs"
+      :key="t.key"
+      :class="{ 'is-active': mainTab === t.key }"
+      @click="mainTab = t.key"
+    ) {{ t.label }}
+
   //- 存取控制
-  .PageAdminSettings__section
+  .PageAdminSettings__section(v-show="mainTab === 'access'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label ACCESS
       span.PageAdminSettings__section-title 存取控制
@@ -555,7 +582,7 @@ const ClickSaveFareRules = async () => {
           span 目前無管理員資料（請至 Firebase Console 設定首位管理員）
 
   //- Fleet 設定（P23 Stage 5）
-  .PageAdminSettings__section
+  .PageAdminSettings__section(v-show="mainTab === 'fleet'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label FLEET
       span.PageAdminSettings__section-title 車型 / 行李 / 加值服務
@@ -583,7 +610,7 @@ const ClickSaveFareRules = async () => {
       AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
 
   //- 車資進階規則 v1（Fare V2，僅 super 可見）
-  .PageAdminSettings__section(v-if="authStore.isSuper")
+  .PageAdminSettings__section(v-show="authStore.isSuper && mainTab === 'fare'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label FARE RULES
       span.PageAdminSettings__section-title 車資進階規則 v1
@@ -803,29 +830,45 @@ const ClickSaveFareRules = async () => {
       AdminFareCalculatorPreview(:rules="fareRules")
 
   //- 法律文件管理（會員條款 / 隱私政策）
-  .PageAdminSettings__section
+  .PageAdminSettings__section(v-show="mainTab === 'legal'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label LEGAL DOCUMENTS
       span.PageAdminSettings__section-title 文件管理（會員條款 / 隱私政策）
     AdminSettingsLegalDocuments
 
+  //- 整合服務（LINE Bot / 地圖，只讀）
+  template(v-if="mainTab === 'integrations'")
+    .PageAdminSettings__groups
+      .PageAdminSettings__group(v-for="g in integrationGroups" :key="g.title")
+        .PageAdminSettings__group-head
+          span.PageAdminSettings__group-label {{ g.label }}
+          span.PageAdminSettings__group-title {{ g.title }}
+
+        .PageAdminSettings__rows
+          .PageAdminSettings__row(v-for="r in g.rows" :key="r.key")
+            .PageAdminSettings__row-info
+              .PageAdminSettings__row-key {{ r.label }}
+              .PageAdminSettings__row-hint {{ r.hint }}
+            .PageAdminSettings__row-val {{ r.value }}
+
   //- 系統設定（只讀）
-  .PageAdminSettings__notice
-    span ⚠️
-    span 敏感設定（Token、Key）僅顯示遮罩，如需修改請透過 Vercel 環境變數管理。
+  template(v-if="mainTab === 'system'")
+    .PageAdminSettings__notice
+      span ⚠️
+      span 敏感設定（Token、Key）僅顯示遮罩，如需修改請透過 Vercel 環境變數管理。
 
-  .PageAdminSettings__groups
-    .PageAdminSettings__group(v-for="g in groups" :key="g.title")
-      .PageAdminSettings__group-head
-        span.PageAdminSettings__group-label {{ g.label }}
-        span.PageAdminSettings__group-title {{ g.title }}
+    .PageAdminSettings__groups
+      .PageAdminSettings__group(v-for="g in systemGroups" :key="g.title")
+        .PageAdminSettings__group-head
+          span.PageAdminSettings__group-label {{ g.label }}
+          span.PageAdminSettings__group-title {{ g.title }}
 
-      .PageAdminSettings__rows
-        .PageAdminSettings__row(v-for="r in g.rows" :key="r.key")
-          .PageAdminSettings__row-info
-            .PageAdminSettings__row-key {{ r.label }}
-            .PageAdminSettings__row-hint {{ r.hint }}
-          .PageAdminSettings__row-val {{ r.value }}
+        .PageAdminSettings__rows
+          .PageAdminSettings__row(v-for="r in g.rows" :key="r.key")
+            .PageAdminSettings__row-info
+              .PageAdminSettings__row-key {{ r.label }}
+              .PageAdminSettings__row-hint {{ r.hint }}
+            .PageAdminSettings__row-val {{ r.value }}
 </template>
 
 <style lang="scss" scoped>
@@ -863,6 +906,36 @@ $muted: rgba(255, 255, 255, 0.35);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
+  }
+}
+
+// ── 頂層分頁 ────────────────────────────────────────────────────
+.PageAdminSettings__main-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.PageAdminSettings__main-tab {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid $border;
+  background: $surface;
+  color: $muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { color: rgba(255, 255, 255, 0.7); }
+
+  &.is-active {
+    border-color: rgba($amber, 0.5);
+    background: rgba($amber, 0.12);
+    color: $amber;
   }
 }
 

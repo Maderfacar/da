@@ -61,6 +61,7 @@ const isEditing = ref(false);
 const saving = ref(false);
 
 interface EditForm {
+  orderType: string;
   pickupDateTime: string; // for datetime-local input (YYYY-MM-DDTHH:mm)
   pickupLocation: GooglePlace | null;
   dropoffLocation: GooglePlace | null;
@@ -70,11 +71,14 @@ interface EditForm {
   luggageItems: AdminOrderLuggageItem[];
   estimatedFare: number;
   extraServices: string[];
+  passengerName: string;
+  contactPhone: string;
   flightNumber: string;
   terminal: string;
   notes: string;
 }
 const editForm = reactive<EditForm>({
+  orderType: '',
   pickupDateTime: '',
   pickupLocation: null,
   dropoffLocation: null,
@@ -84,10 +88,15 @@ const editForm = reactive<EditForm>({
   luggageItems: [],
   estimatedFare: 0,
   extraServices: [],
+  passengerName: '',
+  contactPhone: '',
   flightNumber: '',
   terminal: '',
   notes: '',
 });
+
+// 新增訂單彈窗
+const showCreate = ref(false);
 
 const filteredOrders = computed(() =>
   filterStatus.value ? orders.value.filter((o) => o.orderStatus === filterStatus.value) : orders.value,
@@ -146,6 +155,9 @@ const ClickCloseDetail = () => {
 const ClickEditMode = () => {
   if (!selectedOrder.value) return;
   const o = selectedOrder.value;
+  editForm.orderType = o.orderType;
+  editForm.passengerName = o.passengerName ?? '';
+  editForm.contactPhone = o.passengerPhone ?? '';
   // 把 ISO 轉成 datetime-local 可吃的格式（YYYY-MM-DDTHH:mm）
   editForm.pickupDateTime = $dayjs(o.pickupDateTime).format('YYYY-MM-DDTHH:mm');
   editForm.pickupLocation = { ...o.pickupLocation } as GooglePlace;
@@ -216,10 +228,19 @@ const ApiSaveEdit = async () => {
   if (editForm.estimatedFare < 0) {
     ElMessage({ message: '費用不可為負', type: 'warning' }); return;
   }
+  if (!editForm.passengerName.trim()) {
+    ElMessage({ message: '請填寫乘客姓名', type: 'warning' }); return;
+  }
+  if (!/^09\d{8}$/.test(editForm.contactPhone)) {
+    ElMessage({ message: '聯絡電話格式錯誤（09 開頭 10 碼）', type: 'warning' }); return;
+  }
 
   saving.value = true;
   try {
     const res = await $api.PatchOrder(selectedOrder.value.orderId, {
+      orderType: editForm.orderType,
+      passengerName: editForm.passengerName.trim(),
+      contactPhone: editForm.contactPhone,
       pickupDateTime: $dayjs(editForm.pickupDateTime).toISOString(),
       pickupLocation: editForm.pickupLocation,
       dropoffLocation: editForm.dropoffLocation,
@@ -483,6 +504,7 @@ onMounted(() => {
       @change="ApiLoadOrders"
     )
     .PageAdminOrders__count {{ filteredOrders.length }} 筆
+    button.PageAdminOrders__create-btn(@click="showCreate = true") + 新增訂單
 
   //- Loading
   .PageAdminOrders__loading(v-if="loading")
@@ -553,6 +575,9 @@ onMounted(() => {
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 姓名
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerName || '—' }}
+              .PageAdminOrders__section-row
+                span.PageAdminOrders__section-key 聯絡電話
+                span.PageAdminOrders__section-val {{ selectedOrder.passengerPhone || '—' }}
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 人數
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerCount }} 人
@@ -630,6 +655,25 @@ onMounted(() => {
 
           //- ============= 編輯模式 =============
           template(v-else)
+            //- 行程類型
+            .PageAdminOrders__edit-field
+              label.PageAdminOrders__edit-label 行程類型
+              select.PageAdminOrders__edit-input(v-model="editForm.orderType")
+                option(v-for="t in ORDER_TYPES" :key="t.value" :value="t.value") {{ t.label }}
+
+            //- 乘客姓名 / 聯絡電話
+            .PageAdminOrders__edit-grid
+              .PageAdminOrders__edit-field
+                label.PageAdminOrders__edit-label 乘客姓名
+                input.PageAdminOrders__edit-input(
+                  v-model="editForm.passengerName" maxlength="40" placeholder="乘客姓名"
+                )
+              .PageAdminOrders__edit-field
+                label.PageAdminOrders__edit-label 聯絡電話
+                input.PageAdminOrders__edit-input(
+                  v-model="editForm.contactPhone" maxlength="10" inputmode="numeric" placeholder="09xxxxxxxx"
+                )
+
             //- 用車時間
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 用車日期 / 時間
@@ -808,6 +852,9 @@ onMounted(() => {
           :disabled="cancelDialog.cancelling"
           @click="ApiCancelOrder"
         ) {{ cancelDialog.cancelling ? '處理中...' : '確認取消訂單' }}
+
+  //- 新增訂單彈窗
+  AdminOrdersCreateModal(v-model="showCreate" @created="ApiLoadOrders")
 </template>
 
 <style lang="scss" scoped>
@@ -890,6 +937,23 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 11px;
   color: $muted;
+}
+
+.PageAdminOrders__create-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba($amber, 0.5);
+  background: rgba($amber, 0.12);
+  color: $amber;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all 0.15s;
+
+  &:hover { background: rgba($amber, 0.2); }
 }
 
 .PageAdminOrders__loading {

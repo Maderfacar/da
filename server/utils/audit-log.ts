@@ -55,6 +55,7 @@ export type AuditAction =
   | 'order.status_change'
   | 'order.cancel_by_admin'
   | 'order.edit'
+  | 'order.create'                 // admin 在 /admin/orders 手動建立訂單（guest 乘客）
   // broadcast / notify
   | 'broadcast.send'
   | 'broadcast.notify_one'        // legacy（P37 前；passenger / driver 共用）

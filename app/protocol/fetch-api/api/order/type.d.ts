@@ -197,6 +197,7 @@ interface PatchOrderParams {
   assignedDriverId?: string;
   cancelReason?: string;
   // admin-only
+  orderType?: string;
   pickupDateTime?: string;
   pickupLocation?: GooglePlace;
   dropoffLocation?: GooglePlace;
@@ -209,6 +210,8 @@ interface PatchOrderParams {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  passengerName?: string;
+  contactPhone?: string;
   /** Wave 1 D2：driver 推進 4 個狀態 (en_route/arrived_pickup/in_transit/completed) 時，
    *  附上當下 GPS 座標。server 寫入 orders.statusHistoryLocations.{state}。
    *  其他角色 / 其他狀態提供本欄位會被 server 忽略。*/

@@ -22,6 +22,7 @@ interface PatchOrderBody {
   assignedDriverId?: string;
   cancelReason?: string;
   // admin-only 編輯欄位
+  orderType?: string;
   pickupDateTime?: string;
   pickupLocation?: GooglePlaceLite;
   dropoffLocation?: GooglePlaceLite;
@@ -34,13 +35,18 @@ interface PatchOrderBody {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  passengerName?: string;
+  contactPhone?: string;
   // Wave 1 D2：driver 推進 4 階段時附上當下 GPS（lat, lng）
   driverLocation?: { lat: number; lng: number };
 }
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
 // admin 可任意新增；body 驗證放寬至「字串/字串陣列」，存在性由 GET fleet 端確認
-const ADMIN_ONLY_FIELDS = ['pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes'] as const;
+const ADMIN_ONLY_FIELDS = ['orderType', 'pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes', 'passengerName', 'contactPhone'] as const;
+
+const VALID_ORDER_TYPES = new Set(['airport-pickup', 'airport-dropoff', 'charter', 'transfer']);
+const PHONE_REGEX = /^09\d{8}$/;
 
 const _isValidGooglePlace = (v: unknown): v is GooglePlaceLite => {
   if (!v || typeof v !== 'object') return false;
@@ -180,6 +186,18 @@ export default defineEventHandler(async (event) => {
     // P22：admin-only 欄位驗證（admin 才走到這裡，前面已擋）
     // P23：vehicleType / extraServices 改為字串驗證（不再 hardcoded enum）
     if (isAdmin) {
+      if (body.orderType !== undefined && !VALID_ORDER_TYPES.has(body.orderType)) {
+        return badRequestError({ zh_tw: '無效的行程類型', en: 'Invalid orderType', ja: '無効な行程タイプ' });
+      }
+      if (body.passengerName !== undefined) {
+        const name = typeof body.passengerName === 'string' ? body.passengerName.trim() : '';
+        if (!name || name.length > 40) {
+          return badRequestError({ zh_tw: '乘客姓名必填且 40 字內', en: 'passengerName required (≤40 chars)', ja: '乗客名は必須（40文字以内）' });
+        }
+      }
+      if (body.contactPhone !== undefined && !PHONE_REGEX.test(body.contactPhone)) {
+        return badRequestError({ zh_tw: '聯絡電話格式錯誤（09 開頭 10 碼）', en: 'Invalid contact phone', ja: '連絡先電話番号の形式が不正です' });
+      }
       if (body.vehicleType !== undefined && (typeof body.vehicleType !== 'string' || body.vehicleType.length === 0)) {
         return badRequestError({ zh_tw: '車型必須是字串', en: 'vehicleType must be string', ja: '車種は文字列' });
       }
@@ -268,6 +286,9 @@ export default defineEventHandler(async (event) => {
     }
     // admin-only 欄位寫入
     if (isAdmin) {
+      if (body.orderType !== undefined) updates.orderType = body.orderType;
+      if (body.passengerName !== undefined) updates.passengerName = body.passengerName.trim();
+      if (body.contactPhone !== undefined) updates.contactPhone = body.contactPhone;
       if (body.pickupDateTime !== undefined) updates.pickupDateTime = body.pickupDateTime;
       if (body.pickupLocation !== undefined) updates.pickupLocation = body.pickupLocation;
       if (body.dropoffLocation !== undefined) updates.dropoffLocation = body.dropoffLocation;

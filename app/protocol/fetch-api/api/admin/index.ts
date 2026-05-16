@@ -110,6 +110,7 @@ export interface PatchAdminOrderBody {
   orderStatus?: string
   assignedDriverId?: string
   cancelReason?: string
+  orderType?: string
   pickupDateTime?: string
   pickupLocation?: GooglePlaceLite
   dropoffLocation?: GooglePlaceLite
@@ -119,6 +120,27 @@ export interface PatchAdminOrderBody {
   luggageItems?: AdminOrderLuggageItem[]
   estimatedFare?: number
   extraServices?: string[]
+  flightNumber?: string | null
+  terminal?: string | null
+  notes?: string | null
+  passengerName?: string
+  contactPhone?: string
+}
+
+/** Admin 手動建立訂單的 body（乘客為 server 自動產生的 guest id） */
+export interface CreateAdminOrderBody {
+  orderType: string
+  pickupDateTime: string
+  pickupLocation: GooglePlaceLite
+  dropoffLocation: GooglePlaceLite
+  stopovers?: GooglePlaceLite[]
+  passengerCount: number
+  luggageItems?: AdminOrderLuggageItem[]
+  vehicleType: string
+  extraServices?: string[]
+  estimatedFare: number
+  passengerName: string
+  contactPhone: string
   flightNumber?: string | null
   terminal?: string | null
   notes?: string | null
@@ -150,6 +172,13 @@ export const PatchAdminUser = (uid: string, body: PatchAdminUserBody) =>
 /** 查詢所有訂單（Admin 用）— Wave 1 A3：支援 from/to ISO 範圍過濾 pickupDateTime */
 export const GetAllOrders = (params: { status?: string; from?: string; to?: string } = {}) =>
   methods.get<AdminOrder[]>('/nuxt-api/admin/orders', params as Record<string, unknown>);
+
+/** Admin 手動建立訂單（乘客為 server 自動產生的 guest id；車資手動輸入，不自動試算） */
+export const CreateAdminOrder = (body: CreateAdminOrderBody) =>
+  methods.post<{ orderId: string; orderStatus: string }>(
+    '/nuxt-api/admin/orders',
+    body as unknown as Record<string, unknown>,
+  );
 
 /** 廣播 LINE 推播通知 */
 export const BroadcastNotification = (body: { title: string; message: string; targetRole: 'all' | 'passenger' | 'driver' }) =>

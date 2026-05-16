@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
         stopovers: ((d.stopovers as GooglePlaceLite[] | undefined) ?? []),
         vehicleType: d.vehicleType as string,
         passengerCount: (d.passengerCount as number) ?? 1,
-        luggageCount: (d.luggageCount as number) ?? 0,
+        luggageItems: ((d.luggageItems as Array<{ typeId: string; count: number }> | undefined) ?? []),
         estimatedFare: (d.estimatedFare as number) ?? 0,
         estimatedTime: (d.estimatedTime as number) ?? 0,
         distanceKm: (d.distanceKm as number) ?? 0,
@@ -63,6 +63,9 @@ export default defineEventHandler(async (event) => {
         assignedDriverId: (d.assignedDriverId as string) ?? '',
         cancelReason: (d.cancelReason as string | undefined) ?? null,
         createdAt: d.createdAt?.toMillis?.() ?? 0,
+        // 訂單 doc 自帶的乘客欄位（admin 手動建立的 guest 訂單會有；乘客自助下單無）
+        storedPassengerName: (d.passengerName as string | undefined) ?? '',
+        contactPhone: (d.contactPhone as string | undefined) ?? null,
       };
     });
 
@@ -94,11 +97,16 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const orders = baseOrders.map((o) => ({
-      ...o,
-      passengerName: userMap.get(o.userId)?.displayName ?? '',
-      passengerPhone: null as string | null,
-    }));
+    // 乘客名：訂單 doc 自帶（手動訂單）優先，否則回退 users/{userId}.displayName
+    // 乘客電話：訂單 doc 的 contactPhone（乘客下單 / 手動訂單皆會寫入）
+    const orders = baseOrders.map((o) => {
+      const { storedPassengerName, contactPhone, ...rest } = o;
+      return {
+        ...rest,
+        passengerName: storedPassengerName || (userMap.get(o.userId)?.displayName ?? ''),
+        passengerPhone: contactPhone,
+      };
+    });
 
     return successResponse(orders);
   } catch (err) {
