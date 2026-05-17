@@ -387,7 +387,27 @@ export default {
     minutesAgo: '{n} 分鐘前',
     passengerHint: '乘客以最近登入時間判定（非即時在線）',
     windowHint: '顯示 5 分鐘內活躍',
+    orders: {
+      title: '訂單狀態',
+      pendingConfirm: '待確認',
+      inProgress: '進行中',
+    },
+    airport: {
+      title: '今日機場人流',
+      arrival: '總入境',
+      departure: '總出境',
+      total: '合計',
+      mock: '預估資料',
+    },
+    discount: {
+      title: '啟用中折扣碼',
+      empty: '目前無啟用中的折扣碼',
+      amount: '折抵 NT${n}',
+      used: '已用 {used} / {max}',
+      usedUnlimited: '已用 {used}（無上限）',
+    },
     online: {
+      title: '線上名單',
       passengers: '線上乘客',
       drivers: '線上司機',
     },

@@ -370,7 +370,27 @@ export default {
     minutesAgo: '{n} 分前',
     passengerHint: '乗客は最終ログイン時刻で判定（リアルタイムではありません）',
     windowHint: '5分以内にアクティブ',
+    orders: {
+      title: '注文ステータス',
+      pendingConfirm: '確認待ち',
+      inProgress: '進行中',
+    },
+    airport: {
+      title: '本日の空港人流',
+      arrival: '総入境',
+      departure: '総出境',
+      total: '合計',
+      mock: '予測データ',
+    },
+    discount: {
+      title: '有効な割引コード',
+      empty: '有効な割引コードはありません',
+      amount: 'NT${n} 割引',
+      used: '利用 {used} / {max}',
+      usedUnlimited: '利用 {used}（無制限）',
+    },
     online: {
+      title: 'オンライン中',
       passengers: 'オンライン乗客',
       drivers: 'オンラインドライバー',
     },

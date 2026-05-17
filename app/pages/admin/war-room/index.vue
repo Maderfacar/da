@@ -130,9 +130,8 @@ function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
     // 道路（ON）
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
-    // 高速公路高亮：灰薄荷 #8fb59e（低飽和、跟 TrafficLayer 鮮綠車流線一眼可辨）
-    { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#8fb59e' }] },
-    { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#6b8b7a' }] },
+    // 高速公路：與一般道路同色（移除原灰薄荷高亮，避免與即時車流綠線混淆）
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     // 水域（地理基礎，保留）
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
     // 行政邊界（province / locality ON，其他子類關）
@@ -160,9 +159,8 @@ function _mapStylesFull(): google.maps.MapTypeStyle[] {
     { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
-    // 高速公路高亮：灰薄荷 #8fb59e（低飽和、跟 TrafficLayer 鮮綠車流線一眼可辨）
-    { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#8fb59e' }] },
-    { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#6b8b7a' }] },
+    // 高速公路：與一般道路同色（移除原灰薄荷高亮，避免與即時車流綠線混淆）
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
     { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
     // POI labels 顯示但壓暗色，icon 仍隱藏避免太雜
@@ -203,8 +201,9 @@ const ClickToggleLandmarks = () => {
 const _IconForDriver = (d: DriverWithDerived): google.maps.Symbol => {
   // P19：heading=null 時改畫圓點（避免靜止司機箭頭固定指北）
   // offline 司機半透明
+  // online 用藍色（非綠）— 避免與 TrafficLayer 即時車流綠線色塊相近難辨
   const colorMap: Record<DerivedStatus, string> = {
-    online:  '#22c55e',
+    online:  '#3b82f6',
     busy:    '#d4860a',
     offline: '#6b7280',
   };
@@ -635,7 +634,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-shrink: 0;
   margin-top: 6px;
 
-  &.is-online  { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+  &.is-online  { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.5); }
   &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px rgba(212, 134, 10, 0.5); }
   &.is-offline { background: #6b7280; }
 }

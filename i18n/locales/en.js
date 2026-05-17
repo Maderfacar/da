@@ -370,7 +370,27 @@ export default {
     minutesAgo: '{n} min ago',
     passengerHint: 'Based on last login time (not real-time presence)',
     windowHint: 'Active within the last 5 minutes',
+    orders: {
+      title: 'Order Status',
+      pendingConfirm: 'Awaiting',
+      inProgress: 'In Progress',
+    },
+    airport: {
+      title: 'Airport Traffic Today',
+      arrival: 'Arrivals',
+      departure: 'Departures',
+      total: 'Total',
+      mock: 'Estimated',
+    },
+    discount: {
+      title: 'Active Discount Codes',
+      empty: 'No active discount codes',
+      amount: 'NT${n} off',
+      used: 'Used {used} / {max}',
+      usedUnlimited: 'Used {used} (unlimited)',
+    },
     online: {
+      title: 'Online Now',
       passengers: 'Online passengers',
       drivers: 'Online drivers',
     },
