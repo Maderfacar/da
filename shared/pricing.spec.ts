@@ -6,7 +6,11 @@ import {
   computeJamFee,
   computeCrossCountyFee,
   computeFreewayToll,
+  computePromoDiscount,
+  findActivePromoDiscount,
   DEFAULT_FARE_RULES,
+  type FareRules,
+  type PromoRule,
   type RouteMetrics,
 } from './pricing';
 
@@ -137,6 +141,58 @@ describe('computeFreewayToll', () => {
   });
 });
 
+describe('computePromoDiscount / findActivePromoDiscount', () => {
+  const promoRule: PromoRule = {
+    enabled: true,
+    windows: [
+      { days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00' },
+      { days: ['MON'], start: '14:00', end: '15:00', discountNtd: 250 },
+    ],
+    weekendMode: 'OFF',
+    defaultDiscountNtd: 100,
+  };
+
+  const PROMO_MON_1330 = new Date('2026-05-18T05:30:00Z'); // 週一 13:30 台北（只落第一段）
+  const PROMO_MON_1400 = new Date('2026-05-18T06:00:00Z'); // 週一 14:00 台北（兩段同時命中）
+  const OFFPROMO_MON_1000 = new Date('2026-05-18T02:00:00Z'); // 週一 10:00 台北（未命中）
+
+  it('時段命中（未設 discountNtd）→ 用 defaultDiscountNtd', () => {
+    expect(computePromoDiscount(PROMO_MON_1330, promoRule)).toBe(100);
+  });
+
+  it('多時段同時命中 → 取最大折扣', () => {
+    expect(computePromoDiscount(PROMO_MON_1400, promoRule)).toBe(250);
+  });
+
+  it('未命中任何時段 → 0', () => {
+    expect(computePromoDiscount(OFFPROMO_MON_1000, promoRule)).toBe(0);
+  });
+
+  it('rule.enabled=false → 0（即使時段命中）', () => {
+    expect(computePromoDiscount(PROMO_MON_1400, { ...promoRule, enabled: false })).toBe(0);
+  });
+
+  it('per-window discountNtd 優先於 defaultDiscountNtd', () => {
+    expect(findActivePromoDiscount(PROMO_MON_1330, promoRule)).toBe(100);
+    expect(findActivePromoDiscount(PROMO_MON_1400, promoRule)).toBe(250);
+  });
+
+  it('邊界時間：start / end 為閉區間皆命中', () => {
+    const atStart = new Date('2026-05-18T05:00:00Z'); // 週一 13:00 台北
+    const atEnd = new Date('2026-05-18T08:00:00Z'); // 週一 16:00 台北
+    expect(computePromoDiscount(atStart, promoRule)).toBe(100);
+    expect(computePromoDiscount(atEnd, promoRule)).toBe(100);
+  });
+
+  it('週末 weekendMode=OFF → 0', () => {
+    expect(computePromoDiscount(WEEKEND_SUN_1200, promoRule)).toBe(0);
+  });
+
+  it('週末 weekendMode=ALL_DAY → defaultDiscountNtd', () => {
+    expect(computePromoDiscount(WEEKEND_SUN_1200, { ...promoRule, weekendMode: 'ALL_DAY' })).toBe(100);
+  });
+});
+
 describe('calculateFareV2 — 代表情境', () => {
   it('純市區短程：無山區/國道/跨縣市 → 與 v1 公式等價', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), OFFPEAK_MON_1200, [], RULES);
@@ -192,6 +248,40 @@ describe('calculateFareV2 — 代表情境', () => {
     // 300 + 2625 + 0 + 0 + 400 = 3325 → 進位 → 3350
     expect(b.raw).toBe(3325);
     expect(b.final).toBe(3350);
+  });
+
+  it('優惠時段：promoDiscount 平面折抵，不被山區係數連乘', () => {
+    const rulesWithPromo: FareRules = {
+      ...RULES,
+      promo: {
+        enabled: true,
+        windows: [{ days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00', discountNtd: 200 }],
+        weekendMode: 'OFF',
+        defaultDiscountNtd: 100,
+      },
+    };
+    const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
+    const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithPromo);
+    expect(b.promoDiscount).toBe(200);
+    // 300 + (70×25)×1.5 − 200 = 2725 → 進位 → 2750
+    expect(b.variableScaled).toBe(2625);
+    expect(b.raw).toBe(2725);
+    expect(b.final).toBe(2750);
+  });
+
+  it('折抵大於車資 → final 鎖 0（不為負）', () => {
+    const rulesWithBigPromo: FareRules = {
+      ...RULES,
+      promo: {
+        enabled: true,
+        windows: [{ days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00', discountNtd: 99999 }],
+        weekendMode: 'OFF',
+        defaultDiscountNtd: 100,
+      },
+    };
+    const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), new Date('2026-05-18T06:00:00Z'), [], rulesWithBigPromo);
+    expect(b.raw).toBeLessThan(0);
+    expect(b.final).toBe(0);
   });
 
   it('失敗降級：apiSourcesOk.routes=false → freeFlow 訊號歸 0（3 達標降 2 → 1.3）', () => {

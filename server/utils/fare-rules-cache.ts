@@ -14,6 +14,7 @@ import {
   type FareRules,
   type MountainTier,
   type PeakWindow,
+  type PromoWindow,
   type Weekday,
   type WeekendJamMode,
 } from '~shared/pricing';
@@ -77,6 +78,30 @@ function validatePeakWindows(raw: unknown): PeakWindow[] | string {
   return windows;
 }
 
+function validatePromoWindows(raw: unknown): PromoWindow[] | string {
+  if (!Array.isArray(raw)) return 'promo.windows 必須是陣列';
+  const windows: PromoWindow[] = [];
+  for (const w of raw) {
+    if (!isObj(w)) return 'promoWindow 必須是物件';
+    if (!Array.isArray(w.days) || w.days.length === 0) return 'promoWindow.days 必須是非空陣列';
+    if (!w.days.every((d) => isStr(d) && VALID_WEEKDAYS.has(d))) return 'promoWindow.days 含無效星期代碼';
+    if (!isStr(w.start) || !HHMM_RE.test(w.start)) return 'promoWindow.start 必須是 HH:MM';
+    if (!isStr(w.end) || !HHMM_RE.test(w.end)) return 'promoWindow.end 必須是 HH:MM';
+    if (w.start >= w.end) return 'promoWindow.start 必須早於 end';
+    if (w.discountNtd !== undefined && !isNonNegNum(w.discountNtd)) {
+      return 'promoWindow.discountNtd 必須 ≥ 0';
+    }
+    const pw: PromoWindow = {
+      days: w.days as Weekday[],
+      start: w.start,
+      end: w.end,
+    };
+    if (w.discountNtd !== undefined) pw.discountNtd = w.discountNtd as number;
+    windows.push(pw);
+  }
+  return windows;
+}
+
 /** 嚴格驗證一份 fare rules 物件；成功回標準化 FareRules（剔除 Firestore meta 欄位）。 */
 export function validateFareRules(raw: unknown): ValidateResult {
   if (!isObj(raw)) return { ok: false, error: '規則必須是物件' };
@@ -130,6 +155,26 @@ export function validateFareRules(raw: unknown): ValidateResult {
     return { ok: false, error: 'freeway.dailyCapDiscountPct 必須是 0-100' };
   }
 
+  // promo（向後相容：舊 fare_rules/v1 doc 無此欄位 → 套預設，不視為格式錯誤）
+  let promo = DEFAULT_FARE_RULES.promo;
+  if (raw.promo !== undefined) {
+    const p = raw.promo;
+    if (!isObj(p)) return { ok: false, error: 'promo 缺失' };
+    if (!isBool(p.enabled)) return { ok: false, error: 'promo.enabled 必須是 boolean' };
+    if (!isStr(p.weekendMode) || !VALID_WEEKEND_MODES.has(p.weekendMode)) {
+      return { ok: false, error: 'promo.weekendMode 必須是 OFF / ALL_DAY / EVENING_ONLY' };
+    }
+    if (!isNonNegNum(p.defaultDiscountNtd)) return { ok: false, error: 'promo.defaultDiscountNtd 必須 ≥ 0' };
+    const promoWindows = validatePromoWindows(p.windows);
+    if (typeof promoWindows === 'string') return { ok: false, error: promoWindows };
+    promo = {
+      enabled: p.enabled,
+      windows: promoWindows,
+      weekendMode: p.weekendMode as WeekendJamMode,
+      defaultDiscountNtd: p.defaultDiscountNtd,
+    };
+  }
+
   return {
     ok: true,
     value: {
@@ -161,6 +206,7 @@ export function validateFareRules(raw: unknown): ValidateResult {
         dailyCapKm: f.dailyCapKm,
         dailyCapDiscountPct: f.dailyCapDiscountPct,
       },
+      promo,
     },
   };
 }

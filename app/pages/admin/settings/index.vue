@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
 import { DEFAULT_FARE_RULES } from '~shared/pricing';
-import type { FareRules, PeakWindow, MountainTier, Weekday } from '~shared/pricing';
+import type { FareRules, PeakWindow, PromoWindow, MountainTier, Weekday } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -365,6 +365,23 @@ const TogglePeakWindowDay = (windowIndex: number, day: Weekday) => {
   w.days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
 };
 
+const ClickAddPromoWindow = () => {
+  fareRules.value.promo.windows.push({
+    days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+    start: '13:00',
+    end: '16:00',
+  } as PromoWindow);
+};
+const ClickRemovePromoWindow = (index: number) => {
+  fareRules.value.promo.windows.splice(index, 1);
+};
+
+const TogglePromoWindowDay = (windowIndex: number, day: Weekday) => {
+  const w = fareRules.value.promo.windows[windowIndex];
+  if (!w) return;
+  w.days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
+};
+
 // 儲存前基本前端檢查（嚴格驗證交給伺服器 validateFareRules）
 const _validateFareRules = (): string => {
   const r = fareRules.value;
@@ -380,6 +397,7 @@ const _validateFareRules = (): string => {
     r.freeway.ntdPerKm,
     r.freeway.dailyCapKm,
     r.freeway.dailyCapDiscountPct,
+    r.promo.defaultDiscountNtd,
   ];
   if (nums.some((n) => typeof n !== 'number' || Number.isNaN(n))) {
     return '所有數字欄位皆必填且需為有效數字';
@@ -389,6 +407,10 @@ const _validateFareRules = (): string => {
   for (const w of r.trafficJam.peakWindows) {
     if (!w.start || !w.end) return '顛峰時段的起訖時間皆必填';
     if (w.days.length === 0) return '每個顛峰時段至少需選一天';
+  }
+  for (const w of r.promo.windows) {
+    if (!w.start || !w.end) return '優惠時段的起訖時間皆必填';
+    if (w.days.length === 0) return '每個優惠時段至少需選一天';
   }
   return '';
 };
@@ -821,6 +843,64 @@ const ClickSaveFareRules = async () => {
             label.PageAdminSettings__fare-label 上限後折扣 (%)
             ElInput(
               v-model.number="fareRules.freeway.dailyCapDiscountPct"
+              type="number"
+              inputmode="numeric"
+            )
+
+      //- 優惠時段
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 優惠時段
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.promo.enabled")
+            span 啟用
+        .PageAdminSettings__fare-subhead 優惠時段
+        .PageAdminSettings__fare-window(
+          v-for="(win, i) in fareRules.promo.windows"
+          :key="i"
+        )
+          .PageAdminSettings__fare-window-days
+            button.PageAdminSettings__fare-day(
+              v-for="d in WEEKDAY_OPTIONS"
+              :key="d.value"
+              type="button"
+              :class="{ 'is-on': win.days.includes(d.value) }"
+              @click="TogglePromoWindowDay(i, d.value)"
+            ) {{ d.label }}
+          .PageAdminSettings__fare-window-times
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 起
+              ElInput(v-model="win.start" type="time")
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 訖
+              ElInput(v-model="win.end" type="time")
+            .PageAdminSettings__fare-field
+              label.PageAdminSettings__fare-label 折扣 (元，留空用 default)
+              ElInput(
+                v-model.number="win.discountNtd"
+                type="number"
+                inputmode="numeric"
+              )
+            button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+              @click="ClickRemovePromoWindow(i)"
+            ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddPromoWindow"
+        ) + 新增時段
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 週末模式
+            ElSelect(v-model="fareRules.promo.weekendMode")
+              ElOption(
+                v-for="m in WEEKEND_MODE_OPTIONS"
+                :key="m.value"
+                :label="m.label"
+                :value="m.value"
+              )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label default 折扣 (元)
+            ElInput(
+              v-model.number="fareRules.promo.defaultDiscountNtd"
               type="number"
               inputmode="numeric"
             )

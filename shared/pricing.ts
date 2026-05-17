@@ -135,6 +135,22 @@ export interface TrafficJamRule {
   defaultNtdPerMinute: number;
 }
 
+export interface PromoWindow {
+  days: Weekday[];
+  /** 'HH:MM' 24 小時制（台北時區） */
+  start: string;
+  end: string;
+  /** 該時段專屬折扣金額（NTD 固定額）；未設則用 defaultDiscountNtd */
+  discountNtd?: number;
+}
+
+export interface PromoRule {
+  enabled: boolean;
+  windows: PromoWindow[];
+  weekendMode: WeekendJamMode;
+  defaultDiscountNtd: number;
+}
+
 export interface FreewayRule {
   enabled: boolean;
   /** 首段免費里程（km） */
@@ -155,6 +171,7 @@ export interface FareRules {
   crossCounty: CrossCountyRule;
   trafficJam: TrafficJamRule;
   freeway: FreewayRule;
+  promo: PromoRule;
 }
 
 // ── 路線訊號（route-metrics 產出，calculateFareV2 消費）──────────────────────
@@ -197,6 +214,8 @@ export interface FareBreakdownV2 {
   crossCountyFee: number;
   freewayToll: number;
   extrasSum: number;
+  /** 優惠時段折抵金額（平面折抵，不被山區係數連乘） */
+  promoDiscount: number;
   /** 進位前合計 */
   raw: number;
   /** 進位後最終車資 */
@@ -242,6 +261,12 @@ export const DEFAULT_FARE_RULES: FareRules = {
     ntdPerKm: 1.2,
     dailyCapKm: 200,
     dailyCapDiscountPct: 25,
+  },
+  promo: {
+    enabled: true,
+    windows: [],
+    weekendMode: 'OFF',
+    defaultDiscountNtd: 100,
   },
 };
 
@@ -304,6 +329,32 @@ export function computeJamFee(
   return pureJamMinutes * rate;
 }
 
+/**
+ * 找出 pickupTime 落在哪個優惠時段，回傳適用折扣金額（NTD 固定額）；無匹配回 0。
+ * 多個時段同時命中時取「最大折扣」。週末沿用 weekendMode（OFF / ALL_DAY / EVENING_ONLY）。
+ */
+export function findActivePromoDiscount(t: Date, rule: PromoRule): number {
+  const { dayKey, hhmm } = taipeiParts(t);
+  const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
+  if (isWeekend) {
+    if (rule.weekendMode === 'OFF') return 0;
+    if (rule.weekendMode === 'ALL_DAY') return rule.defaultDiscountNtd;
+    // EVENING_ONLY：僅 17:00-21:00
+    return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultDiscountNtd : 0;
+  }
+  const matched = rule.windows.filter(
+    (w) => w.days.includes(dayKey) && hhmm >= w.start && hhmm <= w.end,
+  );
+  if (matched.length === 0) return 0;
+  return Math.max(...matched.map((w) => w.discountNtd ?? rule.defaultDiscountNtd));
+}
+
+/** 優惠時段折抵：命中優惠時段時折抵固定金額（平面折抵）。保證回傳 >= 0。 */
+export function computePromoDiscount(pickupTime: Date, rule: PromoRule): number {
+  if (!rule.enabled) return 0;
+  return Math.max(0, findActivePromoDiscount(pickupTime, rule));
+}
+
 /** 跨縣市補貼：crossingCount = 訪問縣市數 − 1，依階梯費率累加。 */
 export function computeCrossCountyFee(visited: ReadonlyArray<string>, rule: CrossCountyRule): number {
   if (!rule.enabled || visited.length <= 1) return 0;
@@ -361,13 +412,17 @@ export function calculateFareV2(
   // 4. 加值服務
   const extrasSum = extras.reduce((sum, e) => sum + e.price, 0);
 
-  // 5. 公式骨架
+  // 5. 優惠時段折抵（平面折抵，不被山區係數連乘）
+  const promoDiscount = computePromoDiscount(pickupTime, rules.promo);
+
+  // 6. 公式骨架
   const variableSubtotal = distanceFee + jamFee;
   const variableScaled = variableSubtotal * mountainMul;
-  const raw = vehicle.baseFare + variableScaled + crossCountyFee + freewayToll + extrasSum;
+  const raw =
+    vehicle.baseFare + variableScaled + crossCountyFee + freewayToll + extrasSum - promoDiscount;
 
-  // 6. 最後進位（只執行一次）
-  const final = Math.ceil(raw / rules.rounding) * rules.rounding;
+  // 7. 最後進位（只執行一次）；折抵後可能小於 0，鎖最低 0 元
+  const final = Math.max(0, Math.ceil(raw / rules.rounding) * rules.rounding);
 
   return {
     baseFare: vehicle.baseFare,
@@ -379,6 +434,7 @@ export function calculateFareV2(
     crossCountyFee,
     freewayToll,
     extrasSum,
+    promoDiscount,
     raw,
     final,
     rounding: rules.rounding,
