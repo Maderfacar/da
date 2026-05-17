@@ -293,11 +293,7 @@ const ClickSubmit = () => {
         span.PassengerBookingStepConfirm__row-value NT${{ fareAfterDiscount }}
 
   PassengerFareBreakdownCard(
-    :breakdown="fareResult ? fareResult.fareBreakdown : null"
-    :metrics="fareResult ? fareResult.routeMetrics : null"
-    :fare-version="fareResult ? fareResult.fareVersion : null"
-    :fare-total="fareResult ? fareResult.fareTotal : null"
-    :default-expanded="true"
+    :fare-total="fareResult ? fareAfterDiscount : null"
   )
   .PassengerBookingStepConfirm__cash-note {{ $t('booking.confirm.cashNote') }}
 

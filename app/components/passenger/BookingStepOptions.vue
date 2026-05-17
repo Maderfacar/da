@@ -237,9 +237,6 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
       span.PassengerBookingStepOptions__extra-price +NT${{ svc.price }}
 
   PassengerFareBreakdownCard(
-    :breakdown="fareResult ? fareResult.fareBreakdown : null"
-    :metrics="fareResult ? fareResult.routeMetrics : null"
-    :fare-version="fareResult ? fareResult.fareVersion : null"
     :fare-total="fareResult ? fareResult.fareTotal : null"
     :loading="fareLoading"
   )

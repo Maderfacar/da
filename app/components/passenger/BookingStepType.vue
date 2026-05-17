@@ -27,8 +27,15 @@ const flightNoInput = ref(props.flightNo ?? '');
 
 // ── 日期 / 時間 拆兩個下拉（時間以 10 分鐘為單位）─────────────────────────────
 // dateTime 為單一事實來源（ISO YYYY-MM-DDTHH:mm:ss）；pickupDate / pickupTime 為 picker 雙向綁定值
+// 無既有用車時間時，時間欄預設帶入「目前時間往後最近的 10 分鐘時段」，
+// 讓 ElTimeSelect 下拉開啟時自動捲到該位置，不從 00:00 起始。
+const _nextTenMinSlot = (): string => {
+  const now = $dayjs().second(0).millisecond(0);
+  return now.minute(Math.ceil(now.minute() / 10) * 10).format('HH:mm');
+};
+
 const pickupDate = ref(dateTime.value ? $dayjs(dateTime.value).format('YYYY-MM-DD') : '');
-const pickupTime = ref(dateTime.value ? $dayjs(dateTime.value).format('HH:mm') : '');
+const pickupTime = ref(dateTime.value ? $dayjs(dateTime.value).format('HH:mm') : _nextTenMinSlot());
 
 // 任一變動 → 兩者都有值才組合回 ISO；缺一邊 dateTime 清空（讓 canNext 守住下一步）
 const _SyncDateTime = () => {
