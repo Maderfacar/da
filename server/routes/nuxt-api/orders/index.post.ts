@@ -204,26 +204,36 @@ export default defineEventHandler(async (event) => {
 
   const rawDiscountCode = typeof body.discountCode === 'string' ? body.discountCode.trim() : '';
   if (rawDiscountCode) {
-    // (a) 先驗證（傳折扣前車資當 fare）
-    const validation = await validateDiscountCode(db, {
-      code: rawDiscountCode,
-      fare: fareBeforeDiscount,
-      orderType: body.orderType,
-      userId: auth.lineUid,
-    });
-    if (!validation.ok) {
-      // 前端已預覽過，正常不會走到；防呆回 400
-      return badRequestError(validation.reason);
+    try {
+      // (a) 先驗證（傳折扣前車資當 fare）
+      const validation = await validateDiscountCode(db, {
+        code: rawDiscountCode,
+        fare: fareBeforeDiscount,
+        orderType: body.orderType,
+        userId: auth.lineUid,
+      });
+      if (!validation.ok) {
+        // 前端已預覽過，正常不會走到；防呆回 400
+        return badRequestError(validation.reason);
+      }
+      // (b) transaction 計次（再次檢查 enabled / 時間 / maxRedemptions）
+      const redeem = await redeemDiscountCode(db, rawDiscountCode);
+      if (!redeem.ok) {
+        return badRequestError(redeem.reason);
+      }
+      // (c) 套用折扣
+      discountCode = rawDiscountCode.toUpperCase();
+      discountAmount = validation.discountAmount;
+      estimatedFare = fareBeforeDiscount - discountAmount;
+    } catch (err) {
+      // validateDiscountCode / redeemDiscountCode 內部 Firestore 例外不可變成未處理的 500
+      console.error('[orders/post] discount code processing failed:', err);
+      return serverError({
+        zh_tw: '折扣碼處理失敗，請稍後重試',
+        en: 'Failed to process discount code, please retry',
+        ja: '割引コードの処理に失敗しました。後ほど再試行してください',
+      });
     }
-    // (b) transaction 計次（再次檢查 enabled / 時間 / maxRedemptions）
-    const redeem = await redeemDiscountCode(db, rawDiscountCode);
-    if (!redeem.ok) {
-      return badRequestError(redeem.reason);
-    }
-    // (c) 套用折扣
-    discountCode = rawDiscountCode.toUpperCase();
-    discountAmount = validation.discountAmount;
-    estimatedFare = fareBeforeDiscount - discountAmount;
   }
 
   try {

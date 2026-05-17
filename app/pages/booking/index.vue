@@ -6,7 +6,8 @@ import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { showToast } = useToast();
 
 const storeOrder = StoreOrder();
 const route = useRoute();
@@ -155,7 +156,12 @@ const ClickSubmit = async () => {
   isSubmitting.value = false;
 
   const isOk = (code: number) => code === $enum.apiStatus.success || code === 0;
-  if (!isOk(res.status.code)) return;
+  if (!isOk(res.status.code)) {
+    // 不可靜默吞掉：把伺服器錯誤原因（訂單上限 / 折扣碼失效 / 車資門檻等）顯示給使用者
+    const langKey = ({ zh: 'zh_tw', en: 'en', ja: 'ja' } as const)[locale.value as 'zh' | 'en' | 'ja'] ?? 'zh_tw';
+    showToast(res.status?.message?.[langKey] || t('booking.confirm.submitFailed'));
+    return;
+  }
   storeOrder.SetCurrentOrder(res.data as CreateOrderRes);
   storeOrder.ResetDraft();
   isSuccess.value = true;

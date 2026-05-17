@@ -334,6 +334,7 @@ export default {
       cashNote: '現金支付',
       notice: '實際車資可能依行程調整，以現場為準。',
       submit: '確認送出訂單',
+      submitFailed: '訂單送出失敗，請稍後再試',
       back: '← 返回修改',
       extrasSep: '、',
     },

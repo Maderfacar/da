@@ -320,6 +320,7 @@ export default {
       cashNote: 'Cash payment',
       notice: 'Actual fare may vary. Final amount confirmed on-site.',
       submit: 'Submit Booking',
+      submitFailed: 'Failed to submit order. Please try again later.',
       back: '← Edit',
       extrasSep: ', ',
     },

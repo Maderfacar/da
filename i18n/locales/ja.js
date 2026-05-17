@@ -320,6 +320,7 @@ export default {
       cashNote: '現金払い',
       notice: '実際の料金はルートにより変動します。最終金額は現地でご確認ください。',
       submit: '予約を確定する',
+      submitFailed: '注文の送信に失敗しました。後ほど再度お試しください。',
       back: '← 修正する',
       extrasSep: '、',
     },
