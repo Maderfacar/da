@@ -358,6 +358,31 @@ export default {
     googlePlace: { placeholder: 'Search address or place name…' },
     bookingLocation: { placeholder: 'Enter address or place' },
   },
+  adminDashboard: {
+    title: 'Dashboard',
+    subtitle: 'Dashboard',
+    dataTime: 'Data time',
+    refresh: 'Refresh',
+    loading: 'Loading…',
+    loadError: 'Failed to load',
+    justNow: 'Just now',
+    minutesAgo: '{n} min ago',
+    passengerHint: 'Based on last login time (not real-time presence)',
+    windowHint: 'Active within the last 5 minutes',
+    online: {
+      passengers: 'Online passengers',
+      drivers: 'Online drivers',
+    },
+    empty: {
+      passengers: 'No passengers online',
+      drivers: 'No drivers online',
+    },
+    driverStatus: {
+      online: 'Online',
+      busy: 'Busy',
+      offline: 'Offline',
+    },
+  },
   common: {
     goHome: 'Back Home',
     bookNow: 'Book Now',

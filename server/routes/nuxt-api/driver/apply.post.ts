@@ -19,6 +19,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { readDriverApplication } from '@@/utils/driver-application';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 import { sendLinePush } from '@@/utils/line-push';
+import { notifyAdmins } from '@@/utils/notify-admins';
 
 interface ApplyBody {
   lineUserId: string;
@@ -206,6 +207,18 @@ export default defineEventHandler(async (event) => {
       type: 'text',
       text: '✅ 司機申請已送出\n您的申請已成功送出，我們將盡快審核您的證件資料。\n審核期間請耐心等候，結果將透過 LINE 通知您。',
     }]);
+
+    // ── admin 自動通知：司機申請待審（fire-and-forget）──
+    void (async () => {
+      try {
+        await notifyAdmins(db, 'adminNotify.driverApplied', {
+          driverName: body.driverName,
+          vehicleType: body.vehicleType,
+        });
+      } catch (err) {
+        console.error('[driver/apply] admin notify failed:', err);
+      }
+    })();
 
     return successResponse({
       applied: true,

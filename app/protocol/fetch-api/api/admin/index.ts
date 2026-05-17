@@ -18,6 +18,8 @@ export * from './legal-page';
 export * from './fare-rules';
 // 折扣碼（陽春版）sub-module（admin）
 export * from './discount-code';
+// Admin Dashboard 線上名單 sub-module
+export * from './dashboard';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

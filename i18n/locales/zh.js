@@ -374,6 +374,32 @@ export default {
     googlePlace: { placeholder: '搜尋地址或地點名稱…' },
     bookingLocation: { placeholder: '請輸入地址或地點' },
   },
+  // ── Admin Dashboard ───────────────────────────────────────
+  adminDashboard: {
+    title: '儀表板',
+    subtitle: 'Dashboard',
+    dataTime: '資料時間',
+    refresh: '重新整理',
+    loading: '載入中…',
+    loadError: '載入失敗',
+    justNow: '剛剛',
+    minutesAgo: '{n} 分鐘前',
+    passengerHint: '乘客以最近登入時間判定（非即時在線）',
+    windowHint: '顯示 5 分鐘內活躍',
+    online: {
+      passengers: '線上乘客',
+      drivers: '線上司機',
+    },
+    empty: {
+      passengers: '目前無線上乘客',
+      drivers: '目前無線上司機',
+    },
+    driverStatus: {
+      online: '上線',
+      busy: '忙碌',
+      offline: '離線',
+    },
+  },
   // ── 共用 ──────────────────────────────────────────────────
   common: {
     goHome: '回到首頁',

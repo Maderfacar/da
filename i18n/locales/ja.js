@@ -358,6 +358,31 @@ export default {
     googlePlace: { placeholder: '住所または地名で検索…' },
     bookingLocation: { placeholder: '住所または地名を入力' },
   },
+  adminDashboard: {
+    title: 'ダッシュボード',
+    subtitle: 'Dashboard',
+    dataTime: 'データ時刻',
+    refresh: '更新',
+    loading: '読み込み中…',
+    loadError: '読み込みに失敗しました',
+    justNow: 'たった今',
+    minutesAgo: '{n} 分前',
+    passengerHint: '乗客は最終ログイン時刻で判定（リアルタイムではありません）',
+    windowHint: '5分以内にアクティブ',
+    online: {
+      passengers: 'オンライン乗客',
+      drivers: 'オンラインドライバー',
+    },
+    empty: {
+      passengers: 'オンラインの乗客はいません',
+      drivers: 'オンラインのドライバーはいません',
+    },
+    driverStatus: {
+      online: 'オンライン',
+      busy: '対応中',
+      offline: 'オフライン',
+    },
+  },
   common: {
     goHome: 'ホームに戻る',
     bookNow: '今すぐ予約',

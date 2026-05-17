@@ -19,6 +19,7 @@ interface NavItem {
 }
 
 const ALL_NAV_ITEMS: NavItem[] = [
+  { id: 'dashboard',       icon: '📊', label: '儀表板',    path: '/admin/dashboard'       },
   { id: 'orders',          icon: '📋', label: '訂單管理',  path: '/admin/orders'          },
   { id: 'war-room',        icon: '🎯', label: '即時戰情',  path: '/admin/war-room'        },
   { id: 'traffic',         icon: '✈️', label: '機場人流',  path: '/admin/traffic'         },

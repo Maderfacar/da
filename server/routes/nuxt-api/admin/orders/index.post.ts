@@ -17,6 +17,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { writeAuditLog } from '@@/utils/audit-log';
+import { notifyAdmins } from '@@/utils/notify-admins';
 
 interface GooglePlace {
   address: string;
@@ -174,6 +175,19 @@ export default defineEventHandler(async (event) => {
     targetId: orderId,
     payload: { passengerName, orderType: body.orderType, estimatedFare: body.estimatedFare },
   });
+
+  // ── admin 自動通知（D1：手動建單也推；fire-and-forget）──
+  void (async () => {
+    try {
+      await notifyAdmins(db, 'adminNotify.orderCreated', {
+        orderId: orderId.slice(0, 8).toUpperCase(),
+        date: body.pickupDateTime.replace('T', ' ').slice(0, 16),
+        pickup: body.pickupLocation.address,
+      });
+    } catch (err) {
+      console.error('[admin/orders/post] admin notify failed:', err);
+    }
+  })();
 
   return successResponse({ orderId, orderStatus: 'pending' });
 });

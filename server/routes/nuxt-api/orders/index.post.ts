@@ -9,6 +9,7 @@ import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
+import { notifyAdmins } from '@@/utils/notify-admins';
 
 // 將 booking 端的上車時間字串視為台灣時間（無時區資訊時補 +08:00），
 // 供 Fare V2 顛峰塞車費判定。
@@ -297,6 +298,19 @@ export default defineEventHandler(async (event) => {
       }
     })();
   }
+
+  // ── admin 自動通知（fire-and-forget，失敗不影響訂單成立）──
+  void (async () => {
+    try {
+      await notifyAdmins(db, 'adminNotify.orderCreated', {
+        orderId: orderId.slice(0, 8).toUpperCase(),
+        date: body.pickupDateTime.replace('T', ' ').slice(0, 16),
+        pickup: body.pickupLocation.address,
+      });
+    } catch (err) {
+      console.error('[orders/post] admin notify failed:', err);
+    }
+  })();
 
   return successResponse({
     orderId,

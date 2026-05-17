@@ -7,6 +7,7 @@ import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc
 import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
+import { notifyAdmins } from '@@/utils/notify-admins';
 
 interface GooglePlaceLite {
   address: string;
@@ -489,6 +490,23 @@ export default defineEventHandler(async (event) => {
           }
         })();
       }
+    }
+
+    // ── admin 自動通知：全部狀態變更都推（含操作者本人；fire-and-forget）──
+    if (body.orderStatus && body.orderStatus !== prevStatus) {
+      const fromStatus = prevStatus;
+      const toStatus = body.orderStatus;
+      void (async () => {
+        try {
+          await notifyAdmins(db, 'adminNotify.orderStatusChanged', {
+            orderId: orderId.slice(0, 8).toUpperCase(),
+            fromStatus,
+            toStatus,
+          });
+        } catch (err) {
+          console.error('[orders/patch] admin notify failed:', err);
+        }
+      })();
     }
 
     // P25-2 audit log：僅 admin 操作 log；driver / passenger 動作不入 audit_logs
