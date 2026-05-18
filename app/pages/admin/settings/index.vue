@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
 import { DEFAULT_FARE_RULES } from '~shared/pricing';
-import type { FareRules, PeakWindow, PromoWindow, SurchargeWindow, MountainTier, Weekday } from '~shared/pricing';
+import type { FareRules, PeakWindow, PromoWindow, SurchargeWindow, MountainTier, Weekday, OrderType } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -306,6 +306,13 @@ const WEEKEND_MODE_OPTIONS: { value: FareRules['trafficJam']['weekendMode']; lab
   { value: 'EVENING_ONLY', label: '僅 17-21 時' },
 ];
 
+const ORDER_TYPE_OPTIONS: { value: OrderType; label: string }[] = [
+  { value: 'airport-pickup', label: '接機' },
+  { value: 'airport-dropoff', label: '送機' },
+  { value: 'charter', label: '包車' },
+  { value: 'transfer', label: '交通接送' },
+];
+
 // 深拷貝預設值作為初始草稿（避免改到 DEFAULT_FARE_RULES 常數）
 const _cloneRules = (r: FareRules): FareRules => JSON.parse(JSON.stringify(r));
 
@@ -398,6 +405,22 @@ const ToggleSurchargeWindowDay = (windowIndex: number, day: Weekday) => {
   if (!w) return;
   w.days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
 };
+
+// 時段的行程過濾切換（三個規則共用；不選任何行程 = 套用全部行程）
+const _toggleWindowOrderType = (
+  w: PeakWindow | PromoWindow | SurchargeWindow | undefined,
+  ot: OrderType,
+) => {
+  if (!w) return;
+  const cur = w.orderTypes ?? [];
+  w.orderTypes = cur.includes(ot) ? cur.filter((o) => o !== ot) : [...cur, ot];
+};
+const TogglePeakWindowOrderType = (i: number, ot: OrderType) =>
+  _toggleWindowOrderType(fareRules.value.trafficJam.peakWindows[i], ot);
+const TogglePromoWindowOrderType = (i: number, ot: OrderType) =>
+  _toggleWindowOrderType(fareRules.value.promo.windows[i], ot);
+const ToggleSurchargeWindowOrderType = (i: number, ot: OrderType) =>
+  _toggleWindowOrderType(fareRules.value.surcharge.windows[i], ot);
 
 // 儲存前基本前端檢查（嚴格驗證交給伺服器 validateFareRules）
 const _validateFareRules = (): string => {
@@ -795,6 +818,15 @@ const ClickSaveFareRules = async () => {
               :class="{ 'is-on': win.days.includes(d.value) }"
               @click="ToggleSurchargeWindowDay(i, d.value)"
             ) {{ d.label }}
+          .PageAdminSettings__fare-window-hint 行程過濾（不選＝套用全部行程）
+          .PageAdminSettings__fare-window-orders
+            button.PageAdminSettings__fare-order(
+              v-for="ot in ORDER_TYPE_OPTIONS"
+              :key="ot.value"
+              type="button"
+              :class="{ 'is-on': (win.orderTypes ?? []).includes(ot.value) }"
+              @click="ToggleSurchargeWindowOrderType(i, ot.value)"
+            ) {{ ot.label }}
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
@@ -853,6 +885,15 @@ const ClickSaveFareRules = async () => {
               :class="{ 'is-on': win.days.includes(d.value) }"
               @click="TogglePromoWindowDay(i, d.value)"
             ) {{ d.label }}
+          .PageAdminSettings__fare-window-hint 行程過濾（不選＝套用全部行程）
+          .PageAdminSettings__fare-window-orders
+            button.PageAdminSettings__fare-order(
+              v-for="ot in ORDER_TYPE_OPTIONS"
+              :key="ot.value"
+              type="button"
+              :class="{ 'is-on': (win.orderTypes ?? []).includes(ot.value) }"
+              @click="TogglePromoWindowOrderType(i, ot.value)"
+            ) {{ ot.label }}
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
@@ -911,6 +952,15 @@ const ClickSaveFareRules = async () => {
               :class="{ 'is-on': win.days.includes(d.value) }"
               @click="TogglePeakWindowDay(i, d.value)"
             ) {{ d.label }}
+          .PageAdminSettings__fare-window-hint 行程過濾（不選＝套用全部行程）
+          .PageAdminSettings__fare-window-orders
+            button.PageAdminSettings__fare-order(
+              v-for="ot in ORDER_TYPE_OPTIONS"
+              :key="ot.value"
+              type="button"
+              :class="{ 'is-on': (win.orderTypes ?? []).includes(ot.value) }"
+              @click="TogglePeakWindowOrderType(i, ot.value)"
+            ) {{ ot.label }}
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
@@ -1727,6 +1777,40 @@ $muted: rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.6);
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.is-on {
+    background: rgba($amber, 0.18);
+    border-color: rgba($amber, 0.6);
+    color: $amber;
+  }
+}
+
+.PageAdminSettings__fare-window-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 5px;
+}
+
+.PageAdminSettings__fare-window-orders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.PageAdminSettings__fare-order {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;

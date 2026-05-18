@@ -13,6 +13,7 @@ import {
   DEFAULT_FARE_RULES,
   type FareRules,
   type MountainTier,
+  type OrderType,
   type PeakWindow,
   type PromoWindow,
   type SurchargeWindow,
@@ -27,6 +28,12 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const VALID_WEEKDAYS: ReadonlySet<string> = new Set(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']);
 const VALID_WEEKEND_MODES: ReadonlySet<string> = new Set(['OFF', 'ALL_DAY', 'EVENING_ONLY']);
+const VALID_ORDER_TYPES: ReadonlySet<string> = new Set([
+  'airport-pickup',
+  'airport-dropoff',
+  'charter',
+  'transfer',
+]);
 const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export type ValidateResult =
@@ -34,6 +41,18 @@ export type ValidateResult =
   | { ok: false; error: string };
 
 // ── 驗證 primitives ──────────────────────────────────────────────────────────
+
+/**
+ * 驗證 window 的 orderTypes 欄位（行程過濾）。
+ * undefined → 回 undefined（合法，= 套用全部行程）；陣列含無效值 → 回錯誤字串。
+ */
+function parseOrderTypes(raw: unknown): OrderType[] | string | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw) || !raw.every((o) => typeof o === 'string' && VALID_ORDER_TYPES.has(o))) {
+    return 'window.orderTypes 含無效行程類型';
+  }
+  return raw as OrderType[];
+}
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -68,12 +87,15 @@ function validatePeakWindows(raw: unknown): PeakWindow[] | string {
     if (w.ntdPerMinute !== undefined && !isNonNegNum(w.ntdPerMinute)) {
       return 'peakWindow.ntdPerMinute 必須 ≥ 0';
     }
+    const peakOrderTypes = parseOrderTypes(w.orderTypes);
+    if (typeof peakOrderTypes === 'string') return peakOrderTypes;
     const pw: PeakWindow = {
       days: w.days as Weekday[],
       start: w.start,
       end: w.end,
     };
     if (w.ntdPerMinute !== undefined) pw.ntdPerMinute = w.ntdPerMinute as number;
+    if (peakOrderTypes !== undefined) pw.orderTypes = peakOrderTypes;
     windows.push(pw);
   }
   return windows;
@@ -92,12 +114,15 @@ function validatePromoWindows(raw: unknown): PromoWindow[] | string {
     if (w.discountNtd !== undefined && !isNonNegNum(w.discountNtd)) {
       return 'promoWindow.discountNtd 必須 ≥ 0';
     }
+    const promoOrderTypes = parseOrderTypes(w.orderTypes);
+    if (typeof promoOrderTypes === 'string') return promoOrderTypes;
     const pw: PromoWindow = {
       days: w.days as Weekday[],
       start: w.start,
       end: w.end,
     };
     if (w.discountNtd !== undefined) pw.discountNtd = w.discountNtd as number;
+    if (promoOrderTypes !== undefined) pw.orderTypes = promoOrderTypes;
     windows.push(pw);
   }
   return windows;
@@ -116,12 +141,15 @@ function validateSurchargeWindows(raw: unknown): SurchargeWindow[] | string {
     if (w.surchargeNtd !== undefined && !isNonNegNum(w.surchargeNtd)) {
       return 'surchargeWindow.surchargeNtd 必須 ≥ 0';
     }
+    const surchargeOrderTypes = parseOrderTypes(w.orderTypes);
+    if (typeof surchargeOrderTypes === 'string') return surchargeOrderTypes;
     const sw: SurchargeWindow = {
       days: w.days as Weekday[],
       start: w.start,
       end: w.end,
     };
     if (w.surchargeNtd !== undefined) sw.surchargeNtd = w.surchargeNtd as number;
+    if (surchargeOrderTypes !== undefined) sw.orderTypes = surchargeOrderTypes;
     windows.push(sw);
   }
   return windows;

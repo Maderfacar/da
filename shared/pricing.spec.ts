@@ -14,6 +14,7 @@ import {
   type FareRules,
   type PromoRule,
   type SurchargeRule,
+  type TrafficJamRule,
   type RouteMetrics,
 } from './pricing';
 
@@ -238,6 +239,94 @@ describe('computeSurcharge / findActiveSurcharge', () => {
 
   it('週末 weekendMode=ALL_DAY → defaultSurchargeNtd', () => {
     expect(computeSurcharge(WEEKEND_SUN_1200, { ...surchargeRule, weekendMode: 'ALL_DAY' })).toBe(100);
+  });
+});
+
+describe('orderType 行程過濾', () => {
+  const MON_1400 = new Date('2026-05-18T06:00:00Z'); // 週一 14:00 台北
+
+  it('window 未設 orderTypes → 套用全部行程（含 orderType 為 null）', () => {
+    const rule: SurchargeRule = {
+      enabled: true,
+      windows: [{ days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 100 }],
+      weekendMode: 'OFF',
+      defaultSurchargeNtd: 100,
+    };
+    expect(computeSurcharge(MON_1400, rule, 'charter')).toBe(100);
+    expect(computeSurcharge(MON_1400, rule, 'airport-pickup')).toBe(100);
+    expect(computeSurcharge(MON_1400, rule, null)).toBe(100);
+  });
+
+  it('window 設 orderTypes → 僅清單內行程命中', () => {
+    const rule: SurchargeRule = {
+      enabled: true,
+      windows: [
+        { days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 100, orderTypes: ['airport-pickup'] },
+      ],
+      weekendMode: 'OFF',
+      defaultSurchargeNtd: 100,
+    };
+    expect(computeSurcharge(MON_1400, rule, 'airport-pickup')).toBe(100);
+    expect(computeSurcharge(MON_1400, rule, 'charter')).toBe(0);
+    // 有行程過濾但 orderType 為 null → 視為不符
+    expect(computeSurcharge(MON_1400, rule, null)).toBe(0);
+  });
+
+  it('優惠時段與顛峰塞車費同樣套用行程過濾', () => {
+    const promo: PromoRule = {
+      enabled: true,
+      windows: [{ days: ['MON'], start: '13:00', end: '16:00', discountNtd: 50, orderTypes: ['charter'] }],
+      weekendMode: 'OFF',
+      defaultDiscountNtd: 50,
+    };
+    expect(computePromoDiscount(MON_1400, promo, 'charter')).toBe(50);
+    expect(computePromoDiscount(MON_1400, promo, 'transfer')).toBe(0);
+
+    const jam: TrafficJamRule = {
+      enabled: true,
+      peakWindows: [{ days: ['MON'], start: '13:00', end: '16:00', ntdPerMinute: 10, orderTypes: ['charter'] }],
+      weekendMode: 'OFF',
+      defaultNtdPerMinute: 10,
+    };
+    expect(computeJamFee(5, MON_1400, jam, 'charter')).toBe(50);
+    expect(computeJamFee(5, MON_1400, jam, 'transfer')).toBe(0);
+  });
+
+  it('多 window 命中、行程過濾後 → 取符合行程者的最大值', () => {
+    const rule: SurchargeRule = {
+      enabled: true,
+      windows: [
+        { days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 100, orderTypes: ['airport-pickup'] },
+        { days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 300, orderTypes: ['charter'] },
+      ],
+      weekendMode: 'OFF',
+      defaultSurchargeNtd: 100,
+    };
+    expect(computeSurcharge(MON_1400, rule, 'airport-pickup')).toBe(100);
+    expect(computeSurcharge(MON_1400, rule, 'charter')).toBe(300);
+  });
+
+  it('calculateFareV2 帶 orderType → 行程過濾生效', () => {
+    const rules: FareRules = {
+      ...RULES,
+      surcharge: {
+        enabled: true,
+        windows: [
+          {
+            days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+            start: '13:00',
+            end: '16:00',
+            surchargeNtd: 200,
+            orderTypes: ['airport-pickup'],
+          },
+        ],
+        weekendMode: 'OFF',
+        defaultSurchargeNtd: 100,
+      },
+    };
+    const m = metrics({ distanceKm: 10 });
+    expect(calculateFareV2(SEDAN, m, MON_1400, [], rules, 'airport-pickup').surcharge).toBe(200);
+    expect(calculateFareV2(SEDAN, m, MON_1400, [], rules, 'charter').surcharge).toBe(0);
   });
 });
 

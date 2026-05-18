@@ -4,8 +4,8 @@
 // 用手動輸入的路線訊號組一個合成的 RouteMetrics，呼叫 calculateFareV2 預覽完整明細。
 // 規則由父層（settings 頁）以 prop 傳入，與編輯表單同步（即時試算未存的草稿）。
 
-import { calculateFareV2 } from '~shared/pricing';
-import type { FareRules, FareBreakdownV2, RouteMetrics } from '~shared/pricing';
+import { calculateFareV2, ORDER_TYPES } from '~shared/pricing';
+import type { FareRules, FareBreakdownV2, RouteMetrics, OrderType } from '~shared/pricing';
 
 interface Props {
   /** 父層車資規則草稿（編輯表單同步傳入） */
@@ -25,6 +25,7 @@ interface CalcInput {
   crossCountyCount: number;
   freewayKm: number;
   pickupTime: string;
+  orderType: OrderType;
   vehicleId: string;
   extraIds: string[];
 }
@@ -39,6 +40,7 @@ function _defaultInput(): CalcInput {
     crossCountyCount: 1,
     freewayKm: 10,
     pickupTime: '2026-05-17T08:30',
+    orderType: 'airport-pickup',
     vehicleId: storeConfig.EnabledVehicles[0]?.id ?? '',
     extraIds: [],
   };
@@ -138,6 +140,7 @@ const ClickCalculate = () => {
     new Date(input.pickupTime),
     extras,
     props.rules,
+    input.orderType,
   );
 };
 
@@ -218,6 +221,15 @@ const fmt = (n: number): string => {
         v-model="input.pickupTime"
         type="datetime-local"
       )
+    .AdminFareCalculatorPreview__field
+      label.AdminFareCalculatorPreview__label 行程類型
+      ElSelect(v-model="input.orderType")
+        ElOption(
+          v-for="o in ORDER_TYPES"
+          :key="o.value"
+          :label="o.label"
+          :value="o.value"
+        )
     .AdminFareCalculatorPreview__field
       label.AdminFareCalculatorPreview__label 車型
       ElSelect(

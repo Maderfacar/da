@@ -16,6 +16,7 @@ import {
   type FareBreakdownV2,
   type FleetExtra,
   type FleetVehicle,
+  type OrderType,
   type RouteMetrics,
 } from '~shared/pricing';
 import { getRouteMetricsV2, getSimpleRoute, type SimpleRoute } from '@@/utils/route-metrics';
@@ -31,6 +32,8 @@ export interface GetRouteWithFareInput {
   extras: ReadonlyArray<Pick<FleetExtra, 'price'>>;
   /** 預約上車時間 — 用於 Routes API departureTime 與顛峰塞車費判定 */
   pickupTime: Date;
+  /** 行程類型 — 用於時段規則的行程過濾；未帶則時段的行程過濾視為不符 */
+  orderType?: OrderType | null;
   apiKey: string;
   /** 可選；寫入失敗 log 的 context */
   orderId?: string;
@@ -78,7 +81,14 @@ export async function getRouteWithFare(input: GetRouteWithFareInput): Promise<Fa
       apiKey: input.apiKey,
     });
     const rules = await getFareRules();
-    const breakdown = calculateFareV2(input.vehicle, metrics, input.pickupTime, input.extras, rules);
+    const breakdown = calculateFareV2(
+      input.vehicle,
+      metrics,
+      input.pickupTime,
+      input.extras,
+      rules,
+      input.orderType ?? null,
+    );
     return { version: 'v2', metrics, breakdown };
   } catch (err) {
     // Routes API 失敗 → 記錄並降級 v1

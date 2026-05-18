@@ -160,6 +160,7 @@ export default defineEventHandler(async (event) => {
       vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
       extras: selectedExtras.map((e) => ({ price: e.price })),
       pickupTime: parseTaiwanTime(body.pickupDateTime),
+      orderType: body.orderType,
       apiKey: googleMapsApiKey,
       orderId,
     });

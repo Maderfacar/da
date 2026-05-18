@@ -272,6 +272,7 @@ const ClickNewOrder = () => {
           :dropoff-location="dropoffLocation"
           :stopovers="stopovers"
           :pickup-date-time="pickupDateTime"
+          :order-type="orderType"
           @fare-calc="OnFareCalc"
           @fare-result="OnFareResult"
           @next="GoNext"

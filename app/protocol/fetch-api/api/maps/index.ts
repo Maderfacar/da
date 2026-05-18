@@ -48,6 +48,8 @@ export const GetMapsRoute = (params: {
   vehicleType?: string;
   pickupTime?: string;
   extras?: string;
+  /** 行程類型 — 車資模式下供時段規則的行程過濾 */
+  orderType?: string;
 }) => methods.get<MapsRouteRes>('/api/maps/route', params);
 
 export type { AutocompleteRes, GooglePlace, PlaceSuggestion };

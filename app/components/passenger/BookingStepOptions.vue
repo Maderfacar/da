@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VehicleType, FleetVehicle } from '~shared/pricing';
+import type { VehicleType, FleetVehicle, OrderType } from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 
 export interface LuggageItem { typeId: string; count: number }
@@ -14,6 +14,8 @@ interface Props {
   dropoffLocation: GooglePlace | null;
   stopovers: GooglePlace[];
   pickupDateTime: string;
+  /** 行程類型 — 供 Fare V2 時段規則的行程過濾 */
+  orderType: OrderType | undefined;
 }
 
 const props = defineProps<Props>();
@@ -110,6 +112,7 @@ const ApiFetchFare = async () => {
       ? $dayjs(props.pickupDateTime).toISOString()
       : new Date().toISOString(),
     ...(extras.value.length ? { extras: extras.value.join(',') } : {}),
+    ...(props.orderType ? { orderType: props.orderType } : {}),
   });
   fareLoading.value = false;
   if (res.status.code !== 200 || !res.data) return;

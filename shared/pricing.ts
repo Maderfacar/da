@@ -126,6 +126,8 @@ export interface PeakWindow {
   end: string;
   /** 該時段專屬費率；未設則用 defaultNtdPerMinute */
   ntdPerMinute?: number;
+  /** 行程類型過濾；未設或空陣列 = 套用全部行程 */
+  orderTypes?: OrderType[];
 }
 
 export interface TrafficJamRule {
@@ -142,6 +144,8 @@ export interface PromoWindow {
   end: string;
   /** 該時段專屬折扣金額（NTD 固定額）；未設則用 defaultDiscountNtd */
   discountNtd?: number;
+  /** 行程類型過濾；未設或空陣列 = 套用全部行程 */
+  orderTypes?: OrderType[];
 }
 
 export interface PromoRule {
@@ -158,6 +162,8 @@ export interface SurchargeWindow {
   end: string;
   /** 該時段專屬加價金額（NTD 固定額）；未設則用 defaultSurchargeNtd */
   surchargeNtd?: number;
+  /** 行程類型過濾；未設或空陣列 = 套用全部行程 */
+  orderTypes?: OrderType[];
 }
 
 export interface SurchargeRule {
@@ -325,8 +331,24 @@ export function computeMountainMul(m: RouteMetrics, rule: MountainRule): number 
   return 1;
 }
 
+/**
+ * 時段的行程類型過濾：window.orderTypes 未設或空陣列 → 套用全部行程；
+ * 否則需 orderType 在清單內（orderType 為 null 時視為不符）。
+ */
+function orderTypeMatches(
+  windowOrderTypes: OrderType[] | undefined,
+  orderType: OrderType | null,
+): boolean {
+  if (!windowOrderTypes || windowOrderTypes.length === 0) return true;
+  return orderType !== null && windowOrderTypes.includes(orderType);
+}
+
 /** 找出 pickupTime 落在哪個顛峰時段，回傳適用費率（NTD/min）；非顛峰回 null。 */
-function findActivePeakRate(t: Date, rule: TrafficJamRule): number | null {
+function findActivePeakRate(
+  t: Date,
+  rule: TrafficJamRule,
+  orderType: OrderType | null,
+): number | null {
   const { dayKey, hhmm } = taipeiParts(t);
   const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
   if (isWeekend) {
@@ -336,7 +358,11 @@ function findActivePeakRate(t: Date, rule: TrafficJamRule): number | null {
     return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultNtdPerMinute : null;
   }
   const w = rule.peakWindows.find(
-    (pw) => pw.days.includes(dayKey) && hhmm >= pw.start && hhmm <= pw.end,
+    (pw) =>
+      pw.days.includes(dayKey) &&
+      hhmm >= pw.start &&
+      hhmm <= pw.end &&
+      orderTypeMatches(pw.orderTypes, orderType),
   );
   if (!w) return null;
   return w.ntdPerMinute ?? rule.defaultNtdPerMinute;
@@ -347,9 +373,10 @@ export function computeJamFee(
   pureJamMinutes: number,
   pickupTime: Date,
   rule: TrafficJamRule,
+  orderType: OrderType | null = null,
 ): number {
   if (!rule.enabled || pureJamMinutes <= 0) return 0;
-  const rate = findActivePeakRate(pickupTime, rule);
+  const rate = findActivePeakRate(pickupTime, rule, orderType);
   if (rate === null) return 0;
   return pureJamMinutes * rate;
 }
@@ -358,7 +385,11 @@ export function computeJamFee(
  * 找出 pickupTime 落在哪個優惠時段，回傳適用折扣金額（NTD 固定額）；無匹配回 0。
  * 多個時段同時命中時取「最大折扣」。週末沿用 weekendMode（OFF / ALL_DAY / EVENING_ONLY）。
  */
-export function findActivePromoDiscount(t: Date, rule: PromoRule): number {
+export function findActivePromoDiscount(
+  t: Date,
+  rule: PromoRule,
+  orderType: OrderType | null = null,
+): number {
   const { dayKey, hhmm } = taipeiParts(t);
   const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
   if (isWeekend) {
@@ -368,23 +399,35 @@ export function findActivePromoDiscount(t: Date, rule: PromoRule): number {
     return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultDiscountNtd : 0;
   }
   const matched = rule.windows.filter(
-    (w) => w.days.includes(dayKey) && hhmm >= w.start && hhmm <= w.end,
+    (w) =>
+      w.days.includes(dayKey) &&
+      hhmm >= w.start &&
+      hhmm <= w.end &&
+      orderTypeMatches(w.orderTypes, orderType),
   );
   if (matched.length === 0) return 0;
   return Math.max(...matched.map((w) => w.discountNtd ?? rule.defaultDiscountNtd));
 }
 
 /** 優惠時段折抵：命中優惠時段時折抵固定金額（平面折抵）。保證回傳 >= 0。 */
-export function computePromoDiscount(pickupTime: Date, rule: PromoRule): number {
+export function computePromoDiscount(
+  pickupTime: Date,
+  rule: PromoRule,
+  orderType: OrderType | null = null,
+): number {
   if (!rule.enabled) return 0;
-  return Math.max(0, findActivePromoDiscount(pickupTime, rule));
+  return Math.max(0, findActivePromoDiscount(pickupTime, rule, orderType));
 }
 
 /**
  * 找出 pickupTime 落在哪個加價時段，回傳適用加價金額（NTD 固定額）；無匹配回 0。
  * 多個時段同時命中時取「最大加價」。週末沿用 weekendMode（OFF / ALL_DAY / EVENING_ONLY）。
  */
-export function findActiveSurcharge(t: Date, rule: SurchargeRule): number {
+export function findActiveSurcharge(
+  t: Date,
+  rule: SurchargeRule,
+  orderType: OrderType | null = null,
+): number {
   const { dayKey, hhmm } = taipeiParts(t);
   const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
   if (isWeekend) {
@@ -394,16 +437,24 @@ export function findActiveSurcharge(t: Date, rule: SurchargeRule): number {
     return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultSurchargeNtd : 0;
   }
   const matched = rule.windows.filter(
-    (w) => w.days.includes(dayKey) && hhmm >= w.start && hhmm <= w.end,
+    (w) =>
+      w.days.includes(dayKey) &&
+      hhmm >= w.start &&
+      hhmm <= w.end &&
+      orderTypeMatches(w.orderTypes, orderType),
   );
   if (matched.length === 0) return 0;
   return Math.max(...matched.map((w) => w.surchargeNtd ?? rule.defaultSurchargeNtd));
 }
 
 /** 時段固定加價：命中加價時段時加收固定金額（平面加成）。保證回傳 >= 0。 */
-export function computeSurcharge(pickupTime: Date, rule: SurchargeRule): number {
+export function computeSurcharge(
+  pickupTime: Date,
+  rule: SurchargeRule,
+  orderType: OrderType | null = null,
+): number {
   if (!rule.enabled) return 0;
-  return Math.max(0, findActiveSurcharge(pickupTime, rule));
+  return Math.max(0, findActiveSurcharge(pickupTime, rule, orderType));
 }
 
 /** 跨縣市補貼：crossingCount = 訪問縣市數 − 1，依階梯費率累加。 */
@@ -448,10 +499,11 @@ export function calculateFareV2(
   pickupTime: Date,
   extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
   rules: FareRules,
+  orderType: OrderType | null = null,
 ): FareBreakdownV2 {
   // 1. 基本里程費 + 塞車費
   const distanceFee = metrics.distanceKm * vehicle.perKmRate;
-  const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam);
+  const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam, orderType);
 
   // 2. 山區係數
   const mountainMul = computeMountainMul(metrics, rules.mountain);
@@ -464,8 +516,8 @@ export function calculateFareV2(
   const extrasSum = extras.reduce((sum, e) => sum + e.price, 0);
 
   // 5. 時段固定加價 + 優惠時段折抵（皆平面計算，不被山區係數連乘）
-  const surcharge = computeSurcharge(pickupTime, rules.surcharge);
-  const promoDiscount = computePromoDiscount(pickupTime, rules.promo);
+  const surcharge = computeSurcharge(pickupTime, rules.surcharge, orderType);
+  const promoDiscount = computePromoDiscount(pickupTime, rules.promo, orderType);
 
   // 6. 公式骨架
   const variableSubtotal = distanceFee + jamFee;

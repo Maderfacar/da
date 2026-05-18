@@ -17,7 +17,14 @@ import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getFareRulesEpoch } from '@@/utils/fare-rules-cache';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getFleetConfig } from '@@/utils/fleet-config';
-import type { FareBreakdownV2, RouteMetrics } from '~shared/pricing';
+import type { FareBreakdownV2, OrderType, RouteMetrics } from '~shared/pricing';
+
+const VALID_ORDER_TYPES: ReadonlySet<string> = new Set([
+  'airport-pickup',
+  'airport-dropoff',
+  'charter',
+  'transfer',
+]);
 
 interface RouteRes {
   // 幾何（地圖繪製；向後相容舊欄位）
@@ -81,6 +88,11 @@ export default defineEventHandler(async (event) => {
   const pickupTime = pickupTimeRaw ? new Date(pickupTimeRaw) : null;
   const fareMode = Boolean(vehicleType) && pickupTime !== null && !Number.isNaN(pickupTime.getTime());
   const extraIds = (query.extras?.trim() || '').split(',').map((s) => s.trim()).filter(Boolean);
+  // 行程類型 — 用於時段規則的行程過濾；無效 / 未帶 → null
+  const orderTypeRaw = query.orderType?.trim() || '';
+  const orderType: OrderType | null = VALID_ORDER_TYPES.has(orderTypeRaw)
+    ? (orderTypeRaw as OrderType)
+    : null;
 
   // LRU 快取 key
   const minuteBucket = pickupTime ? Math.floor(pickupTime.getTime() / (15 * 60 * 1000)) : 0;
@@ -91,6 +103,7 @@ export default defineEventHandler(async (event) => {
     query.waypoints ?? '',
     vehicleType,
     extraIds.join(','),
+    orderType ?? '',
     minuteBucket,
     getFareRulesEpoch(),
   ].join('|');
@@ -149,6 +162,7 @@ export default defineEventHandler(async (event) => {
       vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
       extras,
       pickupTime: pickupTime as Date,
+      orderType,
       apiKey: googleMapsApiKey,
     });
 
