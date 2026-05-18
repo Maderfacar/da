@@ -26,7 +26,7 @@ export const POPULAR_ROUTES: ReadonlyArray<PopularRoute> = [
   { id: 'tpe-xinyi',    fromCode: 'TPE', toCode: 'XYI',  fromKey: 'tpeAirport',  toKey: 'xinyi',       km: 45, flightNo: 'DA208' },
   { id: 'tsa-taipei',   fromCode: 'TSA', toCode: 'TPC',  fromKey: 'tsaAirport',  toKey: 'taipeiCity',  km: 8,  flightNo: 'DA312' },
   { id: 'rmq-taichung', fromCode: 'RMQ', toCode: 'TXG',  fromKey: 'rmqAirport',  toKey: 'taichung',    km: 15, flightNo: 'DA416' },
-  { id: 'khh-kaohsiung',fromCode: 'KHH', toCode: 'KAO',  fromKey: 'khhAirport',  toKey: 'kaohsiung',   km: 12, flightNo: 'DA523' },
+  { id: 'khh-kaohsiung', fromCode: 'KHH', toCode: 'KAO',  fromKey: 'khhAirport',  toKey: 'kaohsiung',   km: 12, flightNo: 'DA523' },
 ];
 
 export interface ServiceAirport {
