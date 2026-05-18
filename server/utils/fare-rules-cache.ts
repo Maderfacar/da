@@ -15,6 +15,7 @@ import {
   type MountainTier,
   type PeakWindow,
   type PromoWindow,
+  type SurchargeWindow,
   type Weekday,
   type WeekendJamMode,
 } from '~shared/pricing';
@@ -102,6 +103,30 @@ function validatePromoWindows(raw: unknown): PromoWindow[] | string {
   return windows;
 }
 
+function validateSurchargeWindows(raw: unknown): SurchargeWindow[] | string {
+  if (!Array.isArray(raw)) return 'surcharge.windows 必須是陣列';
+  const windows: SurchargeWindow[] = [];
+  for (const w of raw) {
+    if (!isObj(w)) return 'surchargeWindow 必須是物件';
+    if (!Array.isArray(w.days) || w.days.length === 0) return 'surchargeWindow.days 必須是非空陣列';
+    if (!w.days.every((d) => isStr(d) && VALID_WEEKDAYS.has(d))) return 'surchargeWindow.days 含無效星期代碼';
+    if (!isStr(w.start) || !HHMM_RE.test(w.start)) return 'surchargeWindow.start 必須是 HH:MM';
+    if (!isStr(w.end) || !HHMM_RE.test(w.end)) return 'surchargeWindow.end 必須是 HH:MM';
+    if (w.start >= w.end) return 'surchargeWindow.start 必須早於 end';
+    if (w.surchargeNtd !== undefined && !isNonNegNum(w.surchargeNtd)) {
+      return 'surchargeWindow.surchargeNtd 必須 ≥ 0';
+    }
+    const sw: SurchargeWindow = {
+      days: w.days as Weekday[],
+      start: w.start,
+      end: w.end,
+    };
+    if (w.surchargeNtd !== undefined) sw.surchargeNtd = w.surchargeNtd as number;
+    windows.push(sw);
+  }
+  return windows;
+}
+
 /** 嚴格驗證一份 fare rules 物件；成功回標準化 FareRules（剔除 Firestore meta 欄位）。 */
 export function validateFareRules(raw: unknown): ValidateResult {
   if (!isObj(raw)) return { ok: false, error: '規則必須是物件' };
@@ -175,6 +200,26 @@ export function validateFareRules(raw: unknown): ValidateResult {
     };
   }
 
+  // surcharge（向後相容：舊 fare_rules/v1 doc 無此欄位 → 套預設，不視為格式錯誤）
+  let surcharge = DEFAULT_FARE_RULES.surcharge;
+  if (raw.surcharge !== undefined) {
+    const s = raw.surcharge;
+    if (!isObj(s)) return { ok: false, error: 'surcharge 缺失' };
+    if (!isBool(s.enabled)) return { ok: false, error: 'surcharge.enabled 必須是 boolean' };
+    if (!isStr(s.weekendMode) || !VALID_WEEKEND_MODES.has(s.weekendMode)) {
+      return { ok: false, error: 'surcharge.weekendMode 必須是 OFF / ALL_DAY / EVENING_ONLY' };
+    }
+    if (!isNonNegNum(s.defaultSurchargeNtd)) return { ok: false, error: 'surcharge.defaultSurchargeNtd 必須 ≥ 0' };
+    const surchargeWindows = validateSurchargeWindows(s.windows);
+    if (typeof surchargeWindows === 'string') return { ok: false, error: surchargeWindows };
+    surcharge = {
+      enabled: s.enabled,
+      windows: surchargeWindows,
+      weekendMode: s.weekendMode as WeekendJamMode,
+      defaultSurchargeNtd: s.defaultSurchargeNtd,
+    };
+  }
+
   return {
     ok: true,
     value: {
@@ -207,6 +252,7 @@ export function validateFareRules(raw: unknown): ValidateResult {
         dailyCapDiscountPct: f.dailyCapDiscountPct,
       },
       promo,
+      surcharge,
     },
   };
 }

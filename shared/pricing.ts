@@ -151,6 +151,22 @@ export interface PromoRule {
   defaultDiscountNtd: number;
 }
 
+export interface SurchargeWindow {
+  days: Weekday[];
+  /** 'HH:MM' 24 小時制（台北時區） */
+  start: string;
+  end: string;
+  /** 該時段專屬加價金額（NTD 固定額）；未設則用 defaultSurchargeNtd */
+  surchargeNtd?: number;
+}
+
+export interface SurchargeRule {
+  enabled: boolean;
+  windows: SurchargeWindow[];
+  weekendMode: WeekendJamMode;
+  defaultSurchargeNtd: number;
+}
+
 export interface FreewayRule {
   enabled: boolean;
   /** 首段免費里程（km） */
@@ -172,6 +188,7 @@ export interface FareRules {
   trafficJam: TrafficJamRule;
   freeway: FreewayRule;
   promo: PromoRule;
+  surcharge: SurchargeRule;
 }
 
 // ── 路線訊號（route-metrics 產出，calculateFareV2 消費）──────────────────────
@@ -214,6 +231,8 @@ export interface FareBreakdownV2 {
   crossCountyFee: number;
   freewayToll: number;
   extrasSum: number;
+  /** 時段固定加價金額（平面加成，不被山區係數連乘） */
+  surcharge: number;
   /** 優惠時段折抵金額（平面折抵，不被山區係數連乘） */
   promoDiscount: number;
   /** 進位前合計 */
@@ -267,6 +286,12 @@ export const DEFAULT_FARE_RULES: FareRules = {
     windows: [],
     weekendMode: 'OFF',
     defaultDiscountNtd: 100,
+  },
+  surcharge: {
+    enabled: true,
+    windows: [],
+    weekendMode: 'OFF',
+    defaultSurchargeNtd: 100,
   },
 };
 
@@ -355,6 +380,32 @@ export function computePromoDiscount(pickupTime: Date, rule: PromoRule): number 
   return Math.max(0, findActivePromoDiscount(pickupTime, rule));
 }
 
+/**
+ * 找出 pickupTime 落在哪個加價時段，回傳適用加價金額（NTD 固定額）；無匹配回 0。
+ * 多個時段同時命中時取「最大加價」。週末沿用 weekendMode（OFF / ALL_DAY / EVENING_ONLY）。
+ */
+export function findActiveSurcharge(t: Date, rule: SurchargeRule): number {
+  const { dayKey, hhmm } = taipeiParts(t);
+  const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
+  if (isWeekend) {
+    if (rule.weekendMode === 'OFF') return 0;
+    if (rule.weekendMode === 'ALL_DAY') return rule.defaultSurchargeNtd;
+    // EVENING_ONLY：僅 17:00-21:00
+    return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultSurchargeNtd : 0;
+  }
+  const matched = rule.windows.filter(
+    (w) => w.days.includes(dayKey) && hhmm >= w.start && hhmm <= w.end,
+  );
+  if (matched.length === 0) return 0;
+  return Math.max(...matched.map((w) => w.surchargeNtd ?? rule.defaultSurchargeNtd));
+}
+
+/** 時段固定加價：命中加價時段時加收固定金額（平面加成）。保證回傳 >= 0。 */
+export function computeSurcharge(pickupTime: Date, rule: SurchargeRule): number {
+  if (!rule.enabled) return 0;
+  return Math.max(0, findActiveSurcharge(pickupTime, rule));
+}
+
 /** 跨縣市補貼：crossingCount = 訪問縣市數 − 1，依階梯費率累加。 */
 export function computeCrossCountyFee(visited: ReadonlyArray<string>, rule: CrossCountyRule): number {
   if (!rule.enabled || visited.length <= 1) return 0;
@@ -412,14 +463,21 @@ export function calculateFareV2(
   // 4. 加值服務
   const extrasSum = extras.reduce((sum, e) => sum + e.price, 0);
 
-  // 5. 優惠時段折抵（平面折抵，不被山區係數連乘）
+  // 5. 時段固定加價 + 優惠時段折抵（皆平面計算，不被山區係數連乘）
+  const surcharge = computeSurcharge(pickupTime, rules.surcharge);
   const promoDiscount = computePromoDiscount(pickupTime, rules.promo);
 
   // 6. 公式骨架
   const variableSubtotal = distanceFee + jamFee;
   const variableScaled = variableSubtotal * mountainMul;
   const raw =
-    vehicle.baseFare + variableScaled + crossCountyFee + freewayToll + extrasSum - promoDiscount;
+    vehicle.baseFare +
+    variableScaled +
+    crossCountyFee +
+    freewayToll +
+    extrasSum +
+    surcharge -
+    promoDiscount;
 
   // 7. 最後進位（只執行一次）；折抵後可能小於 0，鎖最低 0 元
   const final = Math.max(0, Math.ceil(raw / rules.rounding) * rules.rounding);
@@ -434,6 +492,7 @@ export function calculateFareV2(
     crossCountyFee,
     freewayToll,
     extrasSum,
+    surcharge,
     promoDiscount,
     raw,
     final,

@@ -274,6 +274,9 @@ const fmt = (n: number): string => {
       span.AdminFareCalculatorPreview__line-key 加值服務
       span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.extrasSum) }}
     .AdminFareCalculatorPreview__line
+      span.AdminFareCalculatorPreview__line-key 時段加價
+      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.surcharge) }}
+    .AdminFareCalculatorPreview__line
       span.AdminFareCalculatorPreview__line-key 優惠折抵
       span.AdminFareCalculatorPreview__line-val −NT$ {{ fmt(result.promoDiscount) }}
     .AdminFareCalculatorPreview__line.is-raw

@@ -8,9 +8,12 @@ import {
   computeFreewayToll,
   computePromoDiscount,
   findActivePromoDiscount,
+  computeSurcharge,
+  findActiveSurcharge,
   DEFAULT_FARE_RULES,
   type FareRules,
   type PromoRule,
+  type SurchargeRule,
   type RouteMetrics,
 } from './pricing';
 
@@ -193,6 +196,51 @@ describe('computePromoDiscount / findActivePromoDiscount', () => {
   });
 });
 
+describe('computeSurcharge / findActiveSurcharge', () => {
+  const surchargeRule: SurchargeRule = {
+    enabled: true,
+    windows: [
+      { days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '23:00', end: '23:59' },
+      { days: ['MON'], start: '23:00', end: '23:30', surchargeNtd: 300 },
+    ],
+    weekendMode: 'OFF',
+    defaultSurchargeNtd: 100,
+  };
+
+  const NIGHT_MON_2315 = new Date('2026-05-18T15:15:00Z'); // 週一 23:15 台北（兩段同時命中）
+  const NIGHT_MON_2345 = new Date('2026-05-18T15:45:00Z'); // 週一 23:45 台北（只落第一段）
+  const DAY_MON_1000 = new Date('2026-05-18T02:00:00Z'); // 週一 10:00 台北（未命中）
+
+  it('時段命中（未設 surchargeNtd）→ 用 defaultSurchargeNtd', () => {
+    expect(computeSurcharge(NIGHT_MON_2345, surchargeRule)).toBe(100);
+  });
+
+  it('多時段同時命中 → 取最大加價', () => {
+    expect(computeSurcharge(NIGHT_MON_2315, surchargeRule)).toBe(300);
+  });
+
+  it('未命中任何時段 → 0', () => {
+    expect(computeSurcharge(DAY_MON_1000, surchargeRule)).toBe(0);
+  });
+
+  it('rule.enabled=false → 0（即使時段命中）', () => {
+    expect(computeSurcharge(NIGHT_MON_2315, { ...surchargeRule, enabled: false })).toBe(0);
+  });
+
+  it('per-window surchargeNtd 優先於 defaultSurchargeNtd', () => {
+    expect(findActiveSurcharge(NIGHT_MON_2345, surchargeRule)).toBe(100);
+    expect(findActiveSurcharge(NIGHT_MON_2315, surchargeRule)).toBe(300);
+  });
+
+  it('週末 weekendMode=OFF → 0', () => {
+    expect(computeSurcharge(WEEKEND_SUN_1200, surchargeRule)).toBe(0);
+  });
+
+  it('週末 weekendMode=ALL_DAY → defaultSurchargeNtd', () => {
+    expect(computeSurcharge(WEEKEND_SUN_1200, { ...surchargeRule, weekendMode: 'ALL_DAY' })).toBe(100);
+  });
+});
+
 describe('calculateFareV2 — 代表情境', () => {
   it('純市區短程：無山區/國道/跨縣市 → 與 v1 公式等價', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), OFFPEAK_MON_1200, [], RULES);
@@ -282,6 +330,49 @@ describe('calculateFareV2 — 代表情境', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), new Date('2026-05-18T06:00:00Z'), [], rulesWithBigPromo);
     expect(b.raw).toBeLessThan(0);
     expect(b.final).toBe(0);
+  });
+
+  it('時段加價：surcharge 平面加成，不被山區係數連乘', () => {
+    const rulesWithSurcharge: FareRules = {
+      ...RULES,
+      surcharge: {
+        enabled: true,
+        windows: [{ days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00', surchargeNtd: 200 }],
+        weekendMode: 'OFF',
+        defaultSurchargeNtd: 100,
+      },
+    };
+    const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
+    const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithSurcharge);
+    expect(b.surcharge).toBe(200);
+    // 300 + (70×25)×1.5 + 200 = 300 + 2625 + 200 = 3125 → 進位 → 3150
+    expect(b.variableScaled).toBe(2625);
+    expect(b.raw).toBe(3125);
+    expect(b.final).toBe(3150);
+  });
+
+  it('時段加價與優惠折抵同時生效：先加價後折抵', () => {
+    const rules: FareRules = {
+      ...RULES,
+      surcharge: {
+        enabled: true,
+        windows: [{ days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00', surchargeNtd: 200 }],
+        weekendMode: 'OFF',
+        defaultSurchargeNtd: 100,
+      },
+      promo: {
+        enabled: true,
+        windows: [{ days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '13:00', end: '16:00', discountNtd: 80 }],
+        weekendMode: 'OFF',
+        defaultDiscountNtd: 100,
+      },
+    };
+    const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), new Date('2026-05-18T06:00:00Z'), [], rules);
+    expect(b.surcharge).toBe(200);
+    expect(b.promoDiscount).toBe(80);
+    // 300 + (10×25)×1 + 200 − 80 = 670 → 進位 → 700
+    expect(b.raw).toBe(670);
+    expect(b.final).toBe(700);
   });
 
   it('失敗降級：apiSourcesOk.routes=false → freeFlow 訊號歸 0（3 達標降 2 → 1.3）', () => {
