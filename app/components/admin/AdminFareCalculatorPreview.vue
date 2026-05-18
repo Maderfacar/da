@@ -252,27 +252,18 @@ const fmt = (n: number): string => {
 
   .AdminFareCalculatorPreview__error(v-if="error") ⚠️ {{ error }}
 
-  //- 結果明細
+  //- 結果明細：逐項金額相加 − 優惠折抵 = 小計（進位前）
   .AdminFareCalculatorPreview__result(v-if="result")
     .AdminFareCalculatorPreview__result-title 計算結果（規則版本 v{{ result.rulesVersion }}）
     .AdminFareCalculatorPreview__line
       span.AdminFareCalculatorPreview__line-key 起跳費
       span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.baseFare) }}
     .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 里程費
-      span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.distanceFee) }}
+      span.AdminFareCalculatorPreview__line-key 里程費{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
+      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.distanceFee * result.mountainMul) }}
     .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 顛峰塞車
-      span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.jamFee) }}
-    .AdminFareCalculatorPreview__line.is-subtotal
-      span.AdminFareCalculatorPreview__line-key 小計（套係數前）
-      span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.variableSubtotal) }}
-    .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 山區係數
-      span.AdminFareCalculatorPreview__line-val ×{{ result.mountainMul }}
-    .AdminFareCalculatorPreview__line.is-subtotal
-      span.AdminFareCalculatorPreview__line-key 山區小計
-      span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.variableScaled) }}
+      span.AdminFareCalculatorPreview__line-key 顛峰塞車{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
+      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.jamFee * result.mountainMul) }}
     .AdminFareCalculatorPreview__line
       span.AdminFareCalculatorPreview__line-key 跨縣市補貼
       span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.crossCountyFee) }}
@@ -286,10 +277,10 @@ const fmt = (n: number): string => {
       span.AdminFareCalculatorPreview__line-key 優惠折抵
       span.AdminFareCalculatorPreview__line-val −NT$ {{ fmt(result.promoDiscount) }}
     .AdminFareCalculatorPreview__line.is-raw
-      span.AdminFareCalculatorPreview__line-key raw（進位前）
+      span.AdminFareCalculatorPreview__line-key 小計（進位前）
       span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.raw) }}
     .AdminFareCalculatorPreview__line.is-final
-      span.AdminFareCalculatorPreview__line-key 最終（進位 {{ props.rules.rounding }} 元）
+      span.AdminFareCalculatorPreview__line-key 最終車資（進位 {{ props.rules.rounding }} 元）
       span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.final) }}
 </template>
 
@@ -441,8 +432,6 @@ $border: rgba(255, 255, 255, 0.08);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 
   &:last-child { border-bottom: none; }
-
-  &.is-subtotal { background: rgba(255, 255, 255, 0.02); }
 
   &.is-raw {
     background: rgba(255, 255, 255, 0.03);
