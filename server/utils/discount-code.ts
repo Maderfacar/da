@@ -11,12 +11,22 @@
  * collection `discount_codes/{code}`，doc id = 大寫折扣碼字串。
  * client 全禁讀寫（firestore.rules）；一律經 server admin SDK。
  */
-import type { Timestamp, Firestore } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import type { Firestore } from 'firebase-admin/firestore';
+import { randomInt } from 'node:crypto';
 import { ORDER_TYPES } from '~shared/pricing';
 import type { I18nMsg } from '@@/utils/response';
 
 /** 折扣碼格式：3-32 碼大寫英數（doc id 用） */
 export const DISCOUNT_CODE_REGEX = /^[A-Z0-9]{3,32}$/;
+
+/**
+ * 折扣碼來源：
+ *   - `admin`：admin 後台手動建立（既有碼，預設）
+ *   - `referral-welcome`：推薦機制鑄造的歡迎碼
+ *   - `referral-reward`：推薦機制鑄造的推薦獎勵碼
+ */
+export type DiscountCodeSource = 'admin' | 'referral-welcome' | 'referral-reward';
 
 /** 合法的行程類型值集合（取自 ORDER_TYPES） */
 const ORDER_TYPE_VALUES = new Set<string>(ORDER_TYPES.map((t) => t.value));
@@ -38,6 +48,10 @@ export interface DiscountCodeDoc {
   createdAt: Timestamp;
   updatedBy: string;
   updatedAt: Timestamp;
+  /** 折扣碼來源；既有 admin 碼無此欄位，讀取時視為 'admin' */
+  source?: DiscountCodeSource;
+  /** 鑄碼歸屬的使用者 lineUid；referral 碼有值，admin 碼為 null */
+  ownerUid?: string | null;
 }
 
 // ── DTO（API 回傳：Timestamp → ISO string）────────────────────────
@@ -57,6 +71,8 @@ export interface DiscountCodeDto {
   createdAt: string | null;
   updatedBy: string;
   updatedAt: string | null;
+  source: DiscountCodeSource;
+  ownerUid: string | null;
 }
 
 function tsToIso(v: unknown): string | null {
@@ -80,6 +96,8 @@ export function toDiscountCodeDto(data: Partial<DiscountCodeDoc> & { code: strin
     createdAt: tsToIso(data.createdAt),
     updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
     updatedAt: tsToIso(data.updatedAt),
+    source: data.source === 'referral-welcome' || data.source === 'referral-reward' ? data.source : 'admin',
+    ownerUid: typeof data.ownerUid === 'string' ? data.ownerUid : null,
   };
 }
 
@@ -412,4 +430,94 @@ export async function redeemDiscountCode(
     }
     throw err;
   }
+}
+
+// ── 動態鑄碼（推薦機制用）─────────────────────────────────────────
+
+/**
+ * 鑄碼隨機字元集：大寫英數，剔除易混淆字元（0/O、1/I/L）。
+ * 鑄出的碼會經 LINE 訊息發送、由使用者於 booking 輸入，故採可讀字元集。
+ */
+const MINT_CODE_CHARSET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+/** 鑄碼隨機段長度（前綴後接 8 碼）。 */
+const MINT_CODE_RANDOM_LENGTH = 8;
+
+/** 鑄碼碰撞重試上限。 */
+const MINT_CODE_MAX_ATTEMPTS = 5;
+
+/** 各來源對應的鑄碼前綴。 */
+const MINT_CODE_PREFIX: Record<'referral-welcome' | 'referral-reward', string> = {
+  'referral-welcome': 'WLC',
+  'referral-reward': 'RWD',
+};
+
+export interface MintDiscountCodeOptions {
+  /** 鑄碼來源（決定前綴）。 */
+  source: 'referral-welcome' | 'referral-reward';
+  /** 鑄碼歸屬的使用者 lineUid。 */
+  ownerUid: string;
+  /** 折扣金額（NT$）。 */
+  discountAmount: number;
+  /** 效期截止時間（epoch ms）。 */
+  validUntilMs: number;
+  /** 使用門檻車資（NT$）；null = 不設門檻。 */
+  minFare: number | null;
+  /** 建立者標記；預設 'system'。 */
+  createdBy?: string;
+}
+
+/** 產生一段「前綴 + 8 碼隨機」的折扣碼字串（純函式）。 */
+function generateMintCode(prefix: string): string {
+  let random = '';
+  for (let i = 0; i < MINT_CODE_RANDOM_LENGTH; i++) {
+    random += MINT_CODE_CHARSET[randomInt(MINT_CODE_CHARSET.length)];
+  }
+  return prefix + random;
+}
+
+/**
+ * 動態鑄造一組單次折扣碼（推薦歡迎碼 / 推薦獎勵碼）。
+ *
+ * 以 `ref.create()` 偵測 doc id 碰撞（已存在即 throw），最多重試 5 次。
+ * 鑄出的碼 `maxRedemptions:1`、`perUserLimit:null`、`enabled:true`、
+ * `validFrom:null`、不限行程類型，並帶 `source` / `ownerUid`。
+ */
+export async function mintDiscountCode(
+  db: Firestore,
+  opts: MintDiscountCodeOptions,
+): Promise<{ code: string }> {
+  const prefix = MINT_CODE_PREFIX[opts.source];
+  const createdBy = opts.createdBy ?? 'system';
+
+  for (let attempt = 0; attempt < MINT_CODE_MAX_ATTEMPTS; attempt++) {
+    const code = generateMintCode(prefix);
+    const ref = db.collection('discount_codes').doc(code);
+    try {
+      await ref.create({
+        code,
+        discountAmount: opts.discountAmount,
+        validFrom: null,
+        validUntil: Timestamp.fromMillis(opts.validUntilMs),
+        maxRedemptions: 1,
+        perUserLimit: null,
+        minFare: opts.minFare,
+        allowedOrderTypes: null,
+        enabled: true,
+        redemptionCount: 0,
+        source: opts.source,
+        ownerUid: opts.ownerUid,
+        createdBy,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedBy: createdBy,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return { code };
+    } catch (err) {
+      // doc id 碰撞 → 重新產生；最後一次仍失敗則拋出
+      if (attempt === MINT_CODE_MAX_ATTEMPTS - 1) throw err;
+    }
+  }
+  // 不可達（迴圈內必 return 或 throw），滿足型別檢查
+  throw new Error('mintDiscountCode: 連續碰撞，無法鑄造折扣碼');
 }

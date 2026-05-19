@@ -9,6 +9,7 @@
 //   3. handler 整體 wrap try-catch，避免 unhandled exception 讓 Nitro 回 HTTP 500
 import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
+import { DEFAULT_REFERRAL_USER_FIELDS, generateUniqueReferralCode } from '@@/utils/referral';
 
 interface LineUserInfo {
   sub: string
@@ -102,6 +103,14 @@ export default defineEventHandler(async (event) => {
         // P27：driverApplication 已搬至 drivers/{uid}.application，users doc 不再含此欄位
         const docRef = db.collection('users').doc(lineProfile.sub);
         const existingSnap = await docRef.get();
+        // 推薦機制：建立 user doc 時產生唯一 referralCode。
+        // 產生失敗不可阻擋登入（§4 lazy backfill 會於下次登入補寫）。
+        let referralCode: string | null = null;
+        try {
+          referralCode = await generateUniqueReferralCode(db);
+        } catch (err) {
+          console.warn('[line-exchange] referralCode 產生失敗（非致命，將於下次登入補寫）:', err);
+        }
         if (existingSnap.exists) {
           await docRef.set({
             lineUserId: lineProfile.sub,
@@ -109,6 +118,8 @@ export default defineEventHandler(async (event) => {
             pictureUrl: lineProfile.picture,
             // Wave 1 P5：每次 LINE 登入交換時刷新 lastSeenAt（serverTimestamp 由 Firestore 寫入）
             lastSeenAt: FieldValue.serverTimestamp(),
+            // referralCode 僅在既有 doc 尚未有時補寫，避免覆寫
+            ...(referralCode && !existingSnap.data()?.referralCode ? { referralCode } : {}),
           }, { merge: true });
         } else {
           await docRef.set({
@@ -120,6 +131,10 @@ export default defineEventHandler(async (event) => {
             createdAt: new Date(),
             // Wave 1 P5：新使用者建立時亦寫入 lastSeenAt（與 createdAt 同時）
             lastSeenAt: FieldValue.serverTimestamp(),
+            // 推薦機制欄位（referredBy / welcomeRewardClaimed 寫入點在 Phase 2，此處僅落預設）
+            referredBy: DEFAULT_REFERRAL_USER_FIELDS.referredBy,
+            welcomeRewardClaimed: DEFAULT_REFERRAL_USER_FIELDS.welcomeRewardClaimed,
+            ...(referralCode ? { referralCode } : {}),
           });
         }
       } catch (err) {
@@ -167,6 +182,16 @@ export default defineEventHandler(async (event) => {
           if (legacy.length > 0) roles = legacy;
         }
         approved = (data?.approved as boolean) ?? true;
+
+        // 推薦機制：既有使用者缺 referralCode 時 lazy backfill（非致命）
+        if (!data?.referralCode) {
+          try {
+            const code = await generateUniqueReferralCode(db);
+            await db.collection('users').doc(lineProfile.sub).set({ referralCode: code }, { merge: true });
+          } catch (err) {
+            console.warn('[line-exchange] referralCode lazy backfill 失敗（非致命）:', err);
+          }
+        }
       }
     } catch (err) {
       console.error('[line-exchange] Firestore read failed (non-fatal):', err);

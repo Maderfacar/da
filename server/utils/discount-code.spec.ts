@@ -105,6 +105,27 @@ describe('toDiscountCodeDto', () => {
     expect(dto.redemptionCount).toBe(0);
     expect(dto.createdBy).toBe('');
   });
+
+  it('缺 source/ownerUid 時回 admin / null', () => {
+    const dto = toDiscountCodeDto({ code: 'LEGACY' });
+    expect(dto.source).toBe('admin');
+    expect(dto.ownerUid).toBeNull();
+  });
+
+  it('保留 referral 來源與 ownerUid', () => {
+    const dto = toDiscountCodeDto({
+      code: 'WLCABCDEFGH',
+      source: 'referral-welcome',
+      ownerUid: 'Uxxxx',
+    });
+    expect(dto.source).toBe('referral-welcome');
+    expect(dto.ownerUid).toBe('Uxxxx');
+  });
+
+  it('非法 source 值回退為 admin', () => {
+    const dto = toDiscountCodeDto({ code: 'BOGUS', source: 'hacker' as never });
+    expect(dto.source).toBe('admin');
+  });
 });
 
 describe('evaluateDiscountCode', () => {

@@ -194,6 +194,26 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── referrals 集合（推薦獎勵帳本）─────────────────────────
+    // doc id = 被推薦人 lineUid；推薦歸因帳本（referrerUid / status / 鑄碼關聯）。
+    // client 全面禁止讀寫，一律經 server admin SDK
+    // （/nuxt-api/referral/* 與 /nuxt-api/admin/referral-records）。
+    match /referrals/{refereeUid} {
+      allow read, write: if false;
+    }
+
+    // ── referral_campaign 集合（推薦活動設定）──────────────────
+    // 單一 doc referral_campaign/config：kill-switch + 獎勵參數 + 分享卡。
+    // client 全面禁止讀寫，僅 server admin SDK 透過
+    // /nuxt-api/admin/referral-campaign 與鑄碼流程存取。
+    match /referral_campaign/{configId} {
+      allow read, write: if false;
+    }
+
+    // 註：users 新增的 referralCode / referredBy / welcomeRewardClaimed
+    // 由上方 users match 既有 `allow write: if false` 保護（client 不可寫任何欄位）；
+    // referralCode 經既有「使用者讀自己 doc」規則即可由 client 讀取。
+
     // ── 其他集合預設拒絕 ──────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
