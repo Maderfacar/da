@@ -20,6 +20,8 @@ export * from './fare-rules';
 export * from './discount-code';
 // Admin Dashboard 線上名單 sub-module
 export * from './dashboard';
+// 推薦獎勵機制 Phase 4：admin 推薦活動 sub-module
+export * from './referral';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 

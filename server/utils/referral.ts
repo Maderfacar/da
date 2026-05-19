@@ -199,6 +199,112 @@ export async function getReferralCampaign(db: Firestore): Promise<ReferralCampai
   return { ...DEFAULT_REFERRAL_CAMPAIGN };
 }
 
+// ── Phase 4：活動設定 PUT 驗證（design.md §6）─────────────────────
+
+/** shareCard 各欄位字數上限（admin PUT 驗證用）。 */
+const SHARE_CARD_FIELD_MAX = {
+  title: 100,
+  imageUrl: 2000,
+  body: 1000,
+  ctaLabel: 40,
+} as const;
+
+/**
+ * 活動設定數值欄位規格：min / max（整數，含端點）。
+ * 設上限避免 admin 誤填極端值（例：效期填 999999 天）。
+ */
+const REFERRAL_CAMPAIGN_NUMERIC_FIELDS: Array<{
+  key: 'welcomeAmount' | 'rewardAmount' | 'welcomeValidityDays' | 'rewardValidityDays' | 'minFare' | 'pendingTtlDays' | 'anomalyThreshold';
+  label: I18nMsg;
+  min: number;
+  max: number;
+}> = [
+  { key: 'welcomeAmount', label: { zh_tw: '歡迎碼金額', en: 'Welcome code amount', ja: 'ウェルカムコード金額' }, min: 1, max: 100_000 },
+  { key: 'rewardAmount', label: { zh_tw: '推薦獎勵碼金額', en: 'Reward code amount', ja: '紹介報酬コード金額' }, min: 1, max: 100_000 },
+  { key: 'welcomeValidityDays', label: { zh_tw: '歡迎碼效期（天）', en: 'Welcome code validity (days)', ja: 'ウェルカムコード有効期間（日）' }, min: 1, max: 3650 },
+  { key: 'rewardValidityDays', label: { zh_tw: '推薦獎勵碼效期（天）', en: 'Reward code validity (days)', ja: '紹介報酬コード有効期間（日）' }, min: 1, max: 3650 },
+  { key: 'minFare', label: { zh_tw: '最低車資門檻', en: 'Minimum fare', ja: '最低料金' }, min: 0, max: 1_000_000 },
+  { key: 'pendingTtlDays', label: { zh_tw: 'pending 過期天數', en: 'Pending TTL (days)', ja: 'pending 期限（日）' }, min: 1, max: 3650 },
+  { key: 'anomalyThreshold', label: { zh_tw: '異常偵測門檻', en: 'Anomaly threshold', ja: '異常検知しきい値' }, min: 1, max: 100_000 },
+];
+
+export type ValidateReferralCampaignResult =
+  | { ok: true; value: ReferralCampaignConfig }
+  | { ok: false; error: I18nMsg };
+
+/** 把 raw 值解析為整數（接受 number 或數字字串）；非整數回 null。 */
+function parseIntStrict(raw: unknown): number | null {
+  if (typeof raw === 'number') return Number.isInteger(raw) ? raw : null;
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    const n = Number(raw);
+    return Number.isInteger(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * 驗證 admin PUT 的活動設定 body（design.md §6）。
+ * 數值欄位須為各自範圍內的整數；shareCard 四欄須為字串且不超長。
+ * 任一欄位不合法即回三語錯誤訊息；通過則回正規化後的完整 ReferralCampaignConfig。
+ */
+export function validateReferralCampaignBody(raw: Record<string, unknown>): ValidateReferralCampaignResult {
+  if (typeof raw.enabled !== 'boolean') {
+    return { ok: false, error: { zh_tw: 'enabled 必須為布林值', en: 'enabled must be a boolean', ja: 'enabled はブール値' } };
+  }
+
+  const nums = {} as Record<(typeof REFERRAL_CAMPAIGN_NUMERIC_FIELDS)[number]['key'], number>;
+  for (const field of REFERRAL_CAMPAIGN_NUMERIC_FIELDS) {
+    const n = parseIntStrict(raw[field.key]);
+    if (n === null || n < field.min || n > field.max) {
+      return {
+        ok: false,
+        error: {
+          zh_tw: `${field.label.zh_tw} 必須為 ${field.min}–${field.max} 之間的整數`,
+          en: `${field.label.en} must be an integer between ${field.min} and ${field.max}`,
+          ja: `${field.label.ja} は ${field.min}〜${field.max} の整数`,
+        },
+      };
+    }
+    nums[field.key] = n;
+  }
+
+  const rawCard = (raw.shareCard ?? {}) as Record<string, unknown>;
+  const card = {} as ReferralShareCard;
+  for (const [key, max] of Object.entries(SHARE_CARD_FIELD_MAX) as Array<[keyof ReferralShareCard, number]>) {
+    const v = rawCard[key];
+    if (v !== undefined && v !== null && typeof v !== 'string') {
+      return { ok: false, error: { zh_tw: `分享卡 ${key} 必須為字串`, en: `shareCard.${key} must be a string`, ja: `シェアカード ${key} は文字列` } };
+    }
+    const s = typeof v === 'string' ? v.trim() : '';
+    if (s.length > max) {
+      return {
+        ok: false,
+        error: {
+          zh_tw: `分享卡 ${key} 不可超過 ${max} 字`,
+          en: `shareCard.${key} must not exceed ${max} characters`,
+          ja: `シェアカード ${key} は ${max} 文字以内`,
+        },
+      };
+    }
+    card[key] = s;
+  }
+
+  return {
+    ok: true,
+    value: {
+      enabled: raw.enabled,
+      welcomeAmount: nums.welcomeAmount,
+      rewardAmount: nums.rewardAmount,
+      welcomeValidityDays: nums.welcomeValidityDays,
+      rewardValidityDays: nums.rewardValidityDays,
+      minFare: nums.minFare,
+      pendingTtlDays: nums.pendingTtlDays,
+      anomalyThreshold: nums.anomalyThreshold,
+      shareCard: card,
+    },
+  };
+}
+
 // ── Phase 2：共用常數 ─────────────────────────────────────────────
 
 /** 一天的毫秒數（效期 / pending TTL 換算用）。 */
