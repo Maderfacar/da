@@ -280,6 +280,19 @@ export function evaluateDiscountCode(input: EvaluateDiscountInput): DiscountVali
   return { ok: true, discountAmount: Math.min(code.discountAmount, fare) };
 }
 
+/**
+ * 判斷折扣碼是否「對乘客公開展示」（首頁優惠專區用）。
+ * 規則：enabled && 在 validFrom~validUntil 區間內 && 未達 maxRedemptions。
+ * perUserLimit / minFare / allowedOrderTypes 不影響「是否展示」，僅影響套用，故不檢查。
+ */
+export function isDiscountCodeActive(d: DiscountCodeEvalData, nowMs: number): boolean {
+  if (!d.enabled) return false;
+  if (d.validFromMs !== null && nowMs < d.validFromMs) return false;
+  if (nowMs > d.validUntilMs) return false;
+  if (d.maxRedemptions !== null && d.redemptionCount >= d.maxRedemptions) return false;
+  return true;
+}
+
 // ── Firestore 包裝層 ──────────────────────────────────────────────
 
 function tsToMs(v: unknown): number | null {

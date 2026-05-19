@@ -4,6 +4,7 @@ import {
   normalizeDiscountCode,
   toDiscountCodeDto,
   evaluateDiscountCode,
+  isDiscountCodeActive,
   type DiscountCodeEvalData,
 } from './discount-code';
 
@@ -193,5 +194,43 @@ describe('evaluateDiscountCode', () => {
   it('allowedOrderTypes 為空時不限行程類型', () => {
     const r = evaluateDiscountCode({ code: baseCode({ allowedOrderTypes: [] }), ...ctx });
     expect(r).toMatchObject({ ok: true });
+  });
+});
+
+describe('isDiscountCodeActive', () => {
+  const base: DiscountCodeEvalData = {
+    discountAmount: 100,
+    validFromMs: null,
+    validUntilMs: 2_000,
+    maxRedemptions: null,
+    perUserLimit: null,
+    minFare: null,
+    allowedOrderTypes: null,
+    enabled: true,
+    redemptionCount: 0,
+  };
+
+  it('enabled 且在有效期內回 true', () => {
+    expect(isDiscountCodeActive(base, 1_000)).toBe(true);
+  });
+
+  it('enabled=false 回 false', () => {
+    expect(isDiscountCodeActive({ ...base, enabled: false }, 1_000)).toBe(false);
+  });
+
+  it('尚未到 validFrom 回 false', () => {
+    expect(isDiscountCodeActive({ ...base, validFromMs: 1_500 }, 1_000)).toBe(false);
+  });
+
+  it('已過 validUntil 回 false', () => {
+    expect(isDiscountCodeActive(base, 3_000)).toBe(false);
+  });
+
+  it('已達 maxRedemptions 回 false', () => {
+    expect(isDiscountCodeActive({ ...base, maxRedemptions: 5, redemptionCount: 5 }, 1_000)).toBe(false);
+  });
+
+  it('未達 maxRedemptions 回 true', () => {
+    expect(isDiscountCodeActive({ ...base, maxRedemptions: 5, redemptionCount: 4 }, 1_000)).toBe(true);
   });
 });
