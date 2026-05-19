@@ -3,32 +3,6 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
 
-// ── 統計告示牌 ────────────────────────────────────────
-interface StatItem {
-  id: string
-  num: string
-  label: string
-  sub: string
-}
-
-const stats = computed<StatItem[]>(() => [
-  { id: 'ontime',   num: '98%',     label: t('home.stats.ontime'),   sub: 'ON-TIME'  },
-  { id: 'journeys', num: '42,000+', label: t('home.stats.journeys'), sub: 'JOURNEYS' },
-  { id: 'rating',   num: '4.9★',   label: t('home.stats.rating'),   sub: 'RATING'   },
-  { id: 'service',  num: '24/7',    label: t('home.stats.service'),  sub: 'SERVICE'  },
-]);
-
-// 初始值：與目標等長的空白，讓每個 SplitFlapChar 都有 prop 變化觸發動畫
-const displayNums = reactive<Record<string, string>>({
-  ontime:   '   ',
-  journeys: '       ',
-  rating:   '    ',
-  service:  '   ',
-});
-
-const statsBarRef = ref<HTMLElement | null>(null);
-let statsTriggered = false;
-
 // ── Wave 2 P4：「下一趟」單張卡片（取代原 upcoming 三筆列表，/upcoming 整頁刪除）──
 const { isSignIn } = storeToRefs(StoreAuth());
 const storeConfig = StoreConfig();
@@ -125,20 +99,6 @@ onMounted(() => {
     });
   }, { threshold: 0.1 });
   _observeNewReveals();
-
-  // Stats flip board
-  const flipObserver = new IntersectionObserver((entries) => {
-    entries.forEach((e) => {
-      if (e.isIntersecting && !statsTriggered) {
-        statsTriggered = true;
-        stats.value.forEach((item, idx) => {
-          setTimeout(() => { displayNums[item.id] = item.num; }, idx * 350);
-        });
-      }
-    });
-  }, { threshold: 0.4 });
-
-  if (statsBarRef.value) flipObserver.observe(statsBarRef.value);
 });
 
 onUnmounted(() => {
@@ -171,18 +131,6 @@ onUnmounted(() => {
         .PageHome__hero-cta
           button.PageHome__cta-primary(@click="navigateTo('/booking')") {{ $t('home.hero.cta.book') }}
           button.PageHome__cta-secondary(@click="navigateTo('/fare')") {{ $t('home.hero.cta.fare') }}
-
-  //- ── STRIPE ──────────────────────────────────────────────────
-  .PageHome__stripe
-
-  //- ── STATS FLIP BOARD ────────────────────────────────────────
-  .PageHome__stats(ref="statsBarRef")
-    .PageHome__stats-grid
-      .PageHome__stats-item(v-for="item in stats" :key="item.id")
-        SplitFlapBoard(:value="displayNums[item.id]" :char-delay="55" :cycles="8")
-        .PageHome__stats-label
-          span {{ item.label }}
-          span.PageHome__stats-sub {{ item.sub }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
@@ -233,18 +181,35 @@ onUnmounted(() => {
       span.PageHome__next-trip-empty-icon ＋
       span.PageHome__next-trip-empty-text {{ $t('home.nextTrip.emptyCta') }}
 
-  //- ── STRIPE ──────────────────────────────────────────────────
-  .PageHome__stripe
+  //- ── 航班看板＝熱門路線 ──────────────────────────────────────
+  PassengerHomeRouteBoard
 
-  //- ── QUICK BOOK CTA ──────────────────────────────────────────
-  section#book.PageHome__section.is-off-white
-    .PageHome__section-label BOOK YOUR JOURNEY
-    h2.PageHome__section-title {{ $t('home.book.title') }}
-    p.PageHome__section-desc {{ $t('home.book.desc') }}
-    button.PageHome__book-cta-btn.reveal(@click="navigateTo('/booking')")
-      svg(width="20" height="20" viewBox="0 0 24 24" fill="none")
-        path(d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round")
-      | {{ $t('home.book.btn') }}
+  //- ── 服務特色 ────────────────────────────────────────────────
+  PassengerHomeFeatures
+
+  //- ── How-it-works ───────────────────────────────────────────
+  PassengerHomeSteps
+
+  //- ── 優惠專區（無生效折扣碼時自身 v-if 隱藏整區）──────────────
+  PassengerHomePromo
+
+  //- ── 服務範圍 ────────────────────────────────────────────────
+  PassengerHomeCoverage
+
+  //- ── 精選 FAQ ────────────────────────────────────────────────
+  section.PageHome__section.is-cream
+    .PageHome__section-label {{ $t('homeFaq.label') }}
+    h2.PageHome__section-title {{ $t('homeFaq.title') }}
+    p.PageHome__section-desc {{ $t('homeFaq.desc') }}
+    PassengerFaqList(:item-keys="FAQ_HOME_PICKS")
+    button.PageHome__faq-more(type="button" @click="navigateTo('/faq')")
+      | {{ $t('homeFaq.more') }}
+
+  //- ── 結尾雙動作 CTA ──────────────────────────────────────────
+  PassengerHomeClosing
+
+  //- ── Footer ─────────────────────────────────────────────────
+  CommonFooter
 
 </template>
 
@@ -460,50 +425,6 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   opacity: 0.85;
 }
 
-// ── STATS FLIP BOARD ──────────────────────────────────────────────────────────
-.PageHome__stats {
-  background: var(--da-dark);
-  padding: 32px 20px;
-}
-
-.PageHome__stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px;
-}
-
-.PageHome__stats-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.PageHome__stats-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-
-  span {
-    font-family: $font-condensed;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.5);
-    line-height: 1.3;
-    text-align: center;
-  }
-}
-
-.PageHome__stats-sub {
-  color: rgba(255, 255, 255, 0.25) !important;
-  font-size: 10px !important;
-}
-
 // ── SECTION ───────────────────────────────────────────────────────────────────
 .PageHome__section {
   padding: 72px 24px;
@@ -706,23 +627,21 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   font-family: $font-body;
 }
 
-// ── BOOK CTA ──────────────────────────────────────────────────────────────────
-.PageHome__book-cta-btn {
+// ── FAQ MORE ──────────────────────────────────────────────────────────────────
+.PageHome__faq-more {
   width: 100%;
-  padding: 18px;
-  background: var(--da-dark);
-  color: var(--da-cream);
-  font-family: $font-display;
-  font-size: 22px;
-  letter-spacing: 0.12em;
-  border: none;
-  border-radius: 14px;
+  margin-top: 16px;
+  padding: 14px;
+  background: transparent;
+  color: var(--da-dark);
+  font-family: $font-condensed;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--da-dark);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
 
   &:active { transform: scale(0.98); }
 }
