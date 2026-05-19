@@ -16,6 +16,10 @@ export const CreateOrder = (params: CreateOrderParams) => {
 export const ValidateDiscountCode = (params: ValidateDiscountParams) =>
   methods.post<ValidateDiscountRes>('/nuxt-api/discount-codes/validate', params as unknown as Record<string, unknown>);
 
+/** 取得生效中折扣碼（首頁優惠專區用） */
+export const GetActiveDiscountCodes = () =>
+  methods.get<ActiveDiscountCodesRes>('/nuxt-api/discount-codes/active', {});
+
 /** 取得訂單列表 */
 export const GetOrderList = (params: GetOrderListParams) => {
   if (IsMock()) return mock.GetOrderList();

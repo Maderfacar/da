@@ -276,3 +276,16 @@ interface ValidateDiscountRes {
   failCode: string | null;
   reason: DiscountI18nMsg | null;
 }
+
+// ===== 生效中折扣碼（首頁優惠專區）=====
+interface PublicDiscountCode {
+  code: string;
+  discountAmount: number;
+  validUntil: string | null;
+  minFare: number | null;
+  allowedOrderTypes: string[] | null;
+}
+
+interface ActiveDiscountCodesRes {
+  items: PublicDiscountCode[];
+}
