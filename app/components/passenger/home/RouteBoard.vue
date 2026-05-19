@@ -34,6 +34,8 @@ const rows = computed<BoardRow[]>(() => {
 const boardRef = ref<HTMLElement | null>(null);
 const displayCodes = reactive<Record<string, { from: string; to: string }>>({});
 let boardTriggered = false;
+let obs: IntersectionObserver | null = null;
+const staggerTimers: ReturnType<typeof setTimeout>[] = [];
 
 POPULAR_ROUTES.forEach((r) => {
   displayCodes[r.id] = { from: ' '.repeat(r.fromCode.length), to: ' '.repeat(r.toCode.length) };
@@ -43,19 +45,25 @@ const ClickRow = () => navigateTo('/fare');
 
 onMounted(() => {
   if (typeof IntersectionObserver === 'undefined' || !boardRef.value) return;
-  const obs = new IntersectionObserver((entries) => {
+  obs = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (e.isIntersecting && !boardTriggered) {
         boardTriggered = true;
         POPULAR_ROUTES.forEach((r, idx) => {
-          setTimeout(() => {
+          staggerTimers.push(setTimeout(() => {
             displayCodes[r.id] = { from: r.fromCode, to: r.toCode };
-          }, idx * 180);
+          }, idx * 180));
         });
       }
     });
   }, { threshold: 0.25 });
   obs.observe(boardRef.value);
+});
+
+onUnmounted(() => {
+  obs?.disconnect();
+  obs = null;
+  staggerTimers.forEach(clearTimeout);
 });
 </script>
 
@@ -84,7 +92,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
         span.PassengerHomeRouteBoard__route-arrow ✈
         SplitFlapBoard(:value="displayCodes[row.id].to" :char-delay="50" :cycles="6")
       span.PassengerHomeRouteBoard__fare
-        span.PassengerHomeRouteBoard__fare-val NT${{ row.fare.toLocaleString() }}
+        span.PassengerHomeRouteBoard__fare-val {{ storeConfig.isLoaded ? `NT$${row.fare.toLocaleString()}` : '—' }}
         span.PassengerHomeRouteBoard__status {{ $t('routeBoard.statusOnTime') }}
 </template>
 
