@@ -43,6 +43,9 @@ const items = computed(() => [
   // Wave 2 P4：移除「我的行程」（/upcoming 已刪，首頁「下一趟」卡取代）
   { id: 'orders',        path: '/orders',        label: t('drawer.orders'),        badge: 0 },
   { id: 'fleet',         path: '/fleet',         label: t('drawer.fleet'),         badge: 0 },
+  { id: 'service',       path: '/service',       label: t('drawer.service'),       badge: 0 },
+  { id: 'fare',          path: '/fare',          label: t('drawer.fare'),          badge: 0 },
+  { id: 'faq',           path: '/faq',           label: t('drawer.faq'),           badge: 0 },
   { id: 'profile',       path: '/profile',       label: t('drawer.profile'),       badge: 0 },
   // 法律文件（會員條款 / 隱私政策）— admin 在 /admin/settings LEGAL DOCUMENTS 編輯內容
   { id: 'legal-terms',   path: '/legal/terms',   label: t('drawer.legal.terms'),   badge: 0 },
