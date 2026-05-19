@@ -588,6 +588,20 @@ export default {
     desc: '最多人問的問題，先在這裡解答。',
     more: '查看全部常見問題',
   },
+  // ── 航班看板 / 熱門路線（routes 為地點名，批次 2 擴充其餘鍵）──
+  routeBoard: {
+    routes: {
+      tpeAirport: '桃園機場',
+      taipeiMain: '台北車站',
+      xinyi: '信義區',
+      tsaAirport: '松山機場',
+      taipeiCity: '台北市區',
+      rmqAirport: '台中機場',
+      taichung: '台中市區',
+      khhAirport: '高雄機場',
+      kaohsiung: '高雄市區',
+    },
+  },
   // ── 共用 ──────────────────────────────────────────────────
   common: {
     goHome: '回到首頁',

@@ -571,6 +571,19 @@ export default {
     desc: '最も多くお問い合わせいただく質問を、まずここでお答えします。',
     more: 'すべてのよくある質問を見る',
   },
+  routeBoard: {
+    routes: {
+      tpeAirport: '桃園空港',
+      taipeiMain: '台北駅',
+      xinyi: '信義区',
+      tsaAirport: '松山空港',
+      taipeiCity: '台北市内',
+      rmqAirport: '台中空港',
+      taichung: '台中市内',
+      khhAirport: '高雄空港',
+      kaohsiung: '高雄市内',
+    },
+  },
   common: {
     goHome: 'ホームに戻る',
     bookNow: '今すぐ予約',

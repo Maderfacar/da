@@ -571,6 +571,19 @@ export default {
     desc: 'The most-asked questions, answered right here.',
     more: 'View All FAQs',
   },
+  routeBoard: {
+    routes: {
+      tpeAirport: 'Taoyuan Airport',
+      taipeiMain: 'Taipei Main Station',
+      xinyi: 'Xinyi District',
+      tsaAirport: 'Songshan Airport',
+      taipeiCity: 'Taipei City',
+      rmqAirport: 'Taichung Airport',
+      taichung: 'Taichung City',
+      khhAirport: 'Kaohsiung Airport',
+      kaohsiung: 'Kaohsiung City',
+    },
+  },
   common: {
     goHome: 'Back Home',
     bookNow: 'Book Now',
