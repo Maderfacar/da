@@ -152,6 +152,46 @@ export default {
       fare: '預估車資',
     },
   },
+  // ── 推薦獎勵機制（Phase 3 乘客端）────────────────────────
+  referral: {
+    loadFailed: '載入推薦資訊失敗',
+    source: {
+      'referral-welcome': '新人禮',
+      'referral-reward': '推薦獎勵',
+      admin: '優惠',
+    },
+    panel: {
+      title: '我的推薦',
+      myCode: '我的推薦碼',
+      shareBtn: '分享',
+      pending: '邀請中',
+      rewarded: '已成行',
+      myCoupons: '未使用折扣碼',
+      noCoupons: '目前沒有可用的折扣碼',
+      validUntil: '{date} 前有效',
+    },
+    prompt: {
+      title: '行程完成，揪好友同行！',
+      body: '把專屬連結分享給好友，好友首單享 NT$ {welcome}，好友完成行程後您再得 NT$ {reward}。',
+      btn: '分享',
+    },
+    share: {
+      back: '返回訂單',
+      title: '推薦好友',
+      myCode: '我的推薦碼',
+      codeHint: '好友透過您的連結加入並完成首趟行程，雙方都能拿到折扣碼。',
+      disabled: '推薦活動目前未開放，敬請期待。',
+      defaultTitle: '送你一張乘車折扣碼',
+      defaultBody: '透過這個連結加入，立即獲得新人專屬折扣，第一趟就能省。',
+      defaultCta: '立即領取',
+      shareBtn: '透過 LINE 分享',
+      sharing: '分享中...',
+      sent: '已送出分享',
+      copyBtn: '複製分享連結',
+      copied: '已複製分享連結',
+      copyFailed: '複製失敗，請手動複製',
+    },
+  },
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
     hero: {

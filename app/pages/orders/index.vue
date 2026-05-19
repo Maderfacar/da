@@ -169,7 +169,10 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
           @click="ClickCancel($event, o.orderId, o.orderStatus)"
         ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
 
-  //- Section 4：客服資訊
+  //- Section 4：我的折扣碼／推薦進度（推薦獎勵機制 Phase 3）
+  PassengerReferralPanel
+
+  //- Section 5：客服資訊
   PassengerHistorySupport
 
   CommonFooter

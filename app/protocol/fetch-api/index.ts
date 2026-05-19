@@ -11,6 +11,7 @@ import * as passenger from './api/passenger';
 import * as announcement from './api/announcement';
 import * as self from './api/self';
 import * as legalPage from './api/legal-page';
+import * as referral from './api/referral';
 
 export default {
   ...file,
@@ -26,6 +27,7 @@ export default {
   ...announcement,
   ...self,
   ...legalPage,
+  ...referral,
 };
 
 

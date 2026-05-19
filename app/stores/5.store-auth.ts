@@ -23,6 +23,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const lineProfile = ref<{ displayName: string; pictureUrl: string } | null>(null);
   const idToken = ref('');
   const isFriend = ref<boolean | null>(null); // null = 尚未查詢
+  // 推薦獎勵機制 Phase 3：自己的推薦碼（從 users doc 載入；讀失敗則為空，由 /referral/me 補上）
+  const referralCode = ref('');
 
   // 司機申請狀態（P8）：null = 未申請；rejectedAt 有值 = 已被拒絕等待 admin 解除
   const driverApplication = ref<{
@@ -79,6 +81,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     liffReady.value = false;
     isFriend.value = null;
     driverApplication.value = null;
+    referralCode.value = '';
   };
 
   const _normalizeRoles = (raw: unknown): Role[] => {
@@ -186,6 +189,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       if (displayName && pictureUrl) {
         lineProfile.value = { displayName, pictureUrl };
       }
+      // 推薦獎勵機制 Phase 3：載入自己的 referralCode
+      referralCode.value = typeof data.referralCode === 'string' ? data.referralCode : '';
       // 補回司機申請狀態（P8）：讀 drivers/{uid}.application（P27 migration 後唯一來源）
       let appData: Record<string, unknown> | undefined;
       if (roles.value.includes('driver')) {
@@ -401,7 +406,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // -------------------------------------------------------------------------------------------------
   return {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
-    driverApplication,
+    driverApplication, referralCode,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, WaitForAuthResolved,
   };

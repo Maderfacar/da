@@ -135,6 +135,9 @@ onUnmounted(() => {
         h1.PageOrderDetail__header-id {{ '#' + ShortOrderId }}
         .PageOrderDetail__status(:style="{ color: StatusColor(order.orderStatus) }") {{ StatusText(order.orderStatus) }}
 
+    //- 分享提示卡（推薦獎勵機制 Phase 3）：訂單完成後顯示
+    PassengerReferralSharePrompt(v-if="order.orderStatus === 'completed'")
+
     //- 路徑卡
     section.PageOrderDetail__section
       .PageOrderDetail__section-label ROUTE
