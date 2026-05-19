@@ -572,6 +572,13 @@ export default {
     more: 'View All FAQs',
   },
   routeBoard: {
+    label: 'Popular Routes',
+    title: 'Departure Board',
+    desc: 'Common transfer routes — click any to see fare reference.',
+    flightCol: 'Flight',
+    routeCol: 'Route',
+    fareCol: 'Fare Ref.',
+    statusOnTime: 'Available',
     routes: {
       tpeAirport: 'Taoyuan Airport',
       taipeiMain: 'Taipei Main Station',
@@ -583,6 +590,68 @@ export default {
       khhAirport: 'Kaohsiung Airport',
       kaohsiung: 'Kaohsiung City',
     },
+  },
+  // Home page service features
+  homeFeatures: {
+    label: 'Why Choose Us',
+    title: 'Why Ride With Us',
+    desc: 'We take airport transfers seriously — so you don\'t have to.',
+    items: {
+      flightTitle: 'Live Flight Tracking',
+      flightBody: 'Your pickup syncs automatically to your flight — land and go, no waiting.',
+      transparentTitle: 'Transparent Pricing',
+      transparentBody: 'Base fare and mileage clearly listed, no hidden charges.',
+      serviceTitle: '24-Hour Service',
+      serviceBody: 'Round-the-clock transfers, including late-night red-eye flights.',
+      driverTitle: 'Vetted Drivers',
+      driverBody: 'Professional licence, background check, and platform screening — all verified.',
+    },
+  },
+  // Home page how-it-works
+  homeSteps: {
+    label: 'How It Works',
+    title: 'Book in Three Steps',
+    desc: 'Follow the steps like boarding a flight — straightforward every time.',
+    items: {
+      bookTitle: 'Book Online',
+      bookBody: 'Choose trip type, set your route and needs, and see an instant fare estimate.',
+      confirmTitle: 'Driver Confirmed',
+      confirmBody: 'We assign the right vehicle and driver, and notify you with full trip details.',
+      departTitle: 'Depart On Time',
+      departBody: 'Your driver arrives on schedule for a comfortable, direct ride to your destination.',
+    },
+  },
+  // Home page promo section
+  homePromo: {
+    label: 'Active Promotions',
+    title: 'Current Offers',
+    desc: 'Enter a discount code at checkout to redeem.',
+    codeLabel: 'Code',
+    amount: 'NT${n} off',
+    minFare: 'Min. fare NT${n}',
+    validUntil: 'Until {date}',
+    orderTypeAll: 'All trip types',
+  },
+  // Home page coverage section
+  homeCoverage: {
+    label: 'Service Area',
+    title: 'Four Major Airports',
+    desc: 'Serving all of Taiwan, covering four international airports.',
+    airports: {
+      taoyuan: 'Taoyuan International Airport',
+      songshan: 'Taipei Songshan Airport',
+      taichung: 'Taichung International Airport',
+      kaohsiung: 'Kaohsiung International Airport',
+    },
+    nationwide: 'Island-wide transfers available',
+  },
+  // Home page closing CTA
+  homeClosing: {
+    label: 'Ready to Go',
+    title: 'Book Your Transfer',
+    desc: 'Enter your departure details and your driver will be ready on time.',
+    book: 'Book Now',
+    support: 'LINE Support',
   },
   common: {
     goHome: 'Back Home',

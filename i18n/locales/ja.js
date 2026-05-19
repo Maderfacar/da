@@ -572,6 +572,13 @@ export default {
     more: 'すべてのよくある質問を見る',
   },
   routeBoard: {
+    label: '人気ルート',
+    title: '出発ボード',
+    desc: '主な送迎ルートです。クリックして料金の目安をご確認ください。',
+    flightCol: 'フライト',
+    routeCol: 'ルート',
+    fareCol: '料金目安',
+    statusOnTime: '予約可能',
     routes: {
       tpeAirport: '桃園空港',
       taipeiMain: '台北駅',
@@ -583,6 +590,68 @@ export default {
       khhAirport: '高雄空港',
       kaohsiung: '高雄市内',
     },
+  },
+  // ホームページ サービスの特長
+  homeFeatures: {
+    label: '選ばれる理由',
+    title: '安心送迎のポイント',
+    desc: '送迎サービスを丁寧に、それが私たちの使命です。',
+    items: {
+      flightTitle: 'フライトリアル追跡',
+      flightBody: '到着フライトに自動同期。着陸後すぐにお迎えします。',
+      transparentTitle: '明朗会計',
+      transparentBody: '基本料金と距離料金を明確に表示。隠れた費用はありません。',
+      serviceTitle: '24時間対応',
+      serviceBody: '深夜のフライトも安心。いつでも送迎いたします。',
+      driverTitle: '厳選ドライバー',
+      driverBody: 'プロ免許・身元確認・プラットフォーム審査の三重チェック。',
+    },
+  },
+  // ホームページ ご利用の流れ
+  homeSteps: {
+    label: 'ご利用の流れ',
+    title: '3ステップで予約完了',
+    desc: '搭乗手続きのように、流れに沿うだけです。',
+    items: {
+      bookTitle: 'オンライン予約',
+      bookBody: '旅程タイプ・ルート・ご要望を選択し、料金の目安をその場で確認。',
+      confirmTitle: 'ドライバー確定',
+      confirmBody: '最適な車種とドライバーを手配し、旅程詳細をお知らせします。',
+      departTitle: '時間通りに出発',
+      departBody: 'ドライバーが定刻に待機。快適に空港または目的地までお送りします。',
+    },
+  },
+  // ホームページ キャンペーン
+  homePromo: {
+    label: '実施中のキャンペーン',
+    title: '現在のお得情報',
+    desc: '予約時に割引コードを入力してご利用ください。',
+    codeLabel: 'クーポンコード',
+    amount: 'NT${n} 割引',
+    minFare: '最低運賃 NT${n}',
+    validUntil: '{date} まで',
+    orderTypeAll: '全旅程対象',
+  },
+  // ホームページ サービスエリア
+  homeCoverage: {
+    label: 'サービスエリア',
+    title: '4大空港対応',
+    desc: '台湾全土をカバーし、4つの国際空港に対応。',
+    airports: {
+      taoyuan: '桃園国際空港',
+      songshan: '台北松山空港',
+      taichung: '台中国際空港',
+      kaohsiung: '高雄国際空港',
+    },
+    nationwide: '台湾全土で送迎予約可能',
+  },
+  // ホームページ 締めCTA
+  homeClosing: {
+    label: '出発の準備',
+    title: 'ご旅程を予約する',
+    desc: '出発情報を入力いただくと、ドライバーが定刻に待機します。',
+    book: '予約する',
+    support: 'LINEサポート',
   },
   common: {
     goHome: 'ホームに戻る',

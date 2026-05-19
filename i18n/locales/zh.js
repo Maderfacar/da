@@ -590,6 +590,13 @@ export default {
   },
   // ── 航班看板 / 熱門路線（routes 為地點名，批次 2 擴充其餘鍵）──
   routeBoard: {
+    label: '熱門路線',
+    title: '出發看板',
+    desc: '常見的接送路線，點擊查看參考車資。',
+    flightCol: '航班',
+    routeCol: '航線',
+    fareCol: '參考價',
+    statusOnTime: '可預約',
     routes: {
       tpeAirport: '桃園機場',
       taipeiMain: '台北車站',
@@ -601,6 +608,68 @@ export default {
       khhAirport: '高雄機場',
       kaohsiung: '高雄市區',
     },
+  },
+  // ── 首頁服務特色 ────────────────────────────────────────────
+  homeFeatures: {
+    label: '為什麼選擇我們',
+    title: '安心接送的理由',
+    desc: '把接送這件事做到位，是我們的本分。',
+    items: {
+      flightTitle: '真實航班追蹤',
+      flightBody: '接機行程自動對時您的航班，落地即接，不必苦等。',
+      transparentTitle: '透明計價',
+      transparentBody: '起跳費與里程費清楚列明，無隱藏費用。',
+      serviceTitle: '24 小時服務',
+      serviceBody: '全天候接送，深夜紅眼航班也安心。',
+      driverTitle: '嚴選司機',
+      driverBody: '職業駕照、良民證、平台二次審查層層把關。',
+    },
+  },
+  // ── 首頁 How-it-works ───────────────────────────────────────
+  homeSteps: {
+    label: '預約流程',
+    title: '三步完成預約',
+    desc: '像登機一樣，照著流程走就好。',
+    items: {
+      bookTitle: '線上預約',
+      bookBody: '選擇行程類型、設定路線與乘車需求，即時看到車資估算。',
+      confirmTitle: '專屬司機確認',
+      confirmBody: '我們指派合適的車型與司機，行程資訊同步通知。',
+      departTitle: '準時出發',
+      departBody: '司機準時候駕，舒適直達機場或目的地。',
+    },
+  },
+  // ── 首頁優惠專區 ────────────────────────────────────────────
+  homePromo: {
+    label: '進行中優惠',
+    title: '現正優惠',
+    desc: '訂車時輸入折扣碼即可折抵。',
+    codeLabel: '折扣碼',
+    amount: '折抵 NT${n}',
+    minFare: '低消 NT${n}',
+    validUntil: '至 {date}',
+    orderTypeAll: '全行程適用',
+  },
+  // ── 首頁服務範圍 ────────────────────────────────────────────
+  homeCoverage: {
+    label: '服務範圍',
+    title: '四大機場接送',
+    desc: '服務遍及全台，涵蓋四大國際機場。',
+    airports: {
+      taoyuan: '桃園國際機場',
+      songshan: '台北松山機場',
+      taichung: '台中國際機場',
+      kaohsiung: '高雄國際機場',
+    },
+    nationwide: '全台預約接送',
+  },
+  // ── 首頁結尾 CTA ────────────────────────────────────────────
+  homeClosing: {
+    label: '準備出發',
+    title: '預約您的行程',
+    desc: '填寫出發資訊，專屬司機將準時候駕。',
+    book: '前往訂車',
+    support: 'LINE 客服',
   },
   // ── 共用 ──────────────────────────────────────────────────
   common: {
