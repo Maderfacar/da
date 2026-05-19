@@ -3,16 +3,19 @@
  *
  * 設計：openspec/changes/2026-05-20-referral-share-reward/design.md
  *
- * 本檔涵蓋（Phase 1 — 資料模型基礎）：
- *   - referralCode 產生與全 users 唯一性檢查
- *   - users 推薦相關欄位型別 / 預設
- *   - referrals 帳本 doc 型別
- *   - referral_campaign/config 活動設定型別 / 預設 / 讀取
- *
- * 歸因綁定、資格判定、防刷檢查於 Phase 2 加入。
+ * 本檔涵蓋：
+ *   - referralCode 產生與全 users 唯一性檢查（Phase 1）
+ *   - users 推薦相關欄位型別 / 預設（Phase 1）
+ *   - referrals 帳本 doc 型別（Phase 1）
+ *   - referral_campaign/config 活動設定型別 / 預設 / 讀取（Phase 1）
+ *   - 歸因綁定防刷檢查、bindReferral 交易（Phase 2）
+ *   - pending lazy 過期、資格判定、processReferralQualification（Phase 2）
  */
-import type { Timestamp, Firestore } from 'firebase-admin/firestore';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import type { Firestore } from 'firebase-admin/firestore';
 import { randomInt } from 'node:crypto';
+import type { I18nMsg } from '@@/utils/response';
+import { mintDiscountCode } from '@@/utils/discount-code';
 
 // ── referralCode 產生 ─────────────────────────────────────────────
 
@@ -194,4 +197,289 @@ export async function getReferralCampaign(db: Firestore): Promise<ReferralCampai
     console.warn('[referral] referral_campaign/config 初始化失敗（非致命）：', err);
   }
   return { ...DEFAULT_REFERRAL_CAMPAIGN };
+}
+
+// ── Phase 2：共用常數 ─────────────────────────────────────────────
+
+/** 一天的毫秒數（效期 / pending TTL 換算用）。 */
+const MS_PER_DAY = 86_400_000;
+
+// ── Phase 2：歸因綁定防刷檢查（design.md §5）─────────────────────
+
+/**
+ * /referral/bind 防刷失敗代碼：
+ *   - CAMPAIGN_DISABLED：活動 kill-switch 關閉（§5.1）
+ *   - INVALID_REF：ref 對應的 referralCode 查無使用者（§5.2）
+ *   - SELF_REFERRAL：推薦人 = 被推薦人（§5.3）
+ *   - ALREADY_BOUND：被推薦人已綁定 referredBy（§5.4，write-once）
+ *   - NOT_NEW_USER：被推薦人非全新帳號，已有訂單（§5.5）
+ */
+export type ReferralBindFailCode =
+  | 'CAMPAIGN_DISABLED'
+  | 'INVALID_REF'
+  | 'SELF_REFERRAL'
+  | 'ALREADY_BOUND'
+  | 'NOT_NEW_USER';
+
+/** checkReferralBindEligibility 消費的純資料（Firestore 查詢結果正規化後）。 */
+export interface ReferralBindCheckInput {
+  /** 活動 enabled（kill-switch）。 */
+  campaignEnabled: boolean;
+  /** ref 對應的推薦人 lineUid；null = referralCode 查無。 */
+  referrerUid: string | null;
+  /** 被推薦人 lineUid。 */
+  refereeUid: string;
+  /** 被推薦人現有的 referredBy（null = 尚未綁定）。 */
+  existingReferredBy: string | null;
+  /** 被推薦人是否已有任何訂單。 */
+  refereeHasOrders: boolean;
+}
+
+export type ReferralBindCheckResult =
+  | { ok: true; referrerUid: string }
+  | { ok: false; code: ReferralBindFailCode };
+
+/**
+ * 推薦綁定防刷檢查（純函式，design.md §5 六項中可純判定的五項）。
+ * 逐項檢查，任一失敗即回對應代碼；§5.6 的 transaction 競態保護由 bindReferral 負責。
+ */
+export function checkReferralBindEligibility(input: ReferralBindCheckInput): ReferralBindCheckResult {
+  if (!input.campaignEnabled) return { ok: false, code: 'CAMPAIGN_DISABLED' };
+  if (!input.referrerUid) return { ok: false, code: 'INVALID_REF' };
+  if (input.referrerUid === input.refereeUid) return { ok: false, code: 'SELF_REFERRAL' };
+  if (input.existingReferredBy !== null) return { ok: false, code: 'ALREADY_BOUND' };
+  if (input.refereeHasOrders) return { ok: false, code: 'NOT_NEW_USER' };
+  return { ok: true, referrerUid: input.referrerUid };
+}
+
+/** 各防刷失敗代碼對應的三語訊息（API 回傳用）。 */
+export const REFERRAL_BIND_FAIL_MESSAGES: Record<ReferralBindFailCode, I18nMsg> = {
+  CAMPAIGN_DISABLED: { zh_tw: '推薦活動目前未開放', en: 'The referral campaign is not currently active', ja: '紹介キャンペーンは現在実施されていません' },
+  INVALID_REF: { zh_tw: '推薦碼無效', en: 'Invalid referral code', ja: '紹介コードが無効です' },
+  SELF_REFERRAL: { zh_tw: '無法使用自己的推薦碼', en: 'You cannot use your own referral code', ja: '自分の紹介コードは使用できません' },
+  ALREADY_BOUND: { zh_tw: '此帳號已完成推薦綁定', en: 'This account has already been referred', ja: 'このアカウントは既に紹介済みです' },
+  NOT_NEW_USER: { zh_tw: '此優惠僅限新加入的好友', en: 'This offer is only for newly joined friends', ja: 'この特典は新規のお友達限定です' },
+};
+
+// ── Phase 2：pending lazy 過期（design.md §8）────────────────────
+
+/**
+ * referrals 狀態的有效值（lazy 過期）：
+ * `pending` 且 `nowMs > expiresAtMs` → 視為 `expired`；其餘狀態原樣回傳。
+ * 不做排程，由讀取端（資格判定 / /referral/me / admin 紀錄頁）即時換算。
+ */
+export function effectiveReferralStatus(
+  status: ReferralStatus,
+  expiresAtMs: number,
+  nowMs: number,
+): ReferralStatus {
+  if (status === 'pending' && nowMs > expiresAtMs) return 'expired';
+  return status;
+}
+
+// ── Phase 2：推薦資格判定（design.md §4 ④）──────────────────────
+
+export interface ReferralQualifyInput {
+  /** referrals/{refereeUid} 的有效狀態（已套 lazy 過期）；null = 無推薦紀錄。 */
+  referralStatus: ReferralStatus | null;
+  /** 此筆完成訂單是否為被推薦人首筆 completed 訂單。 */
+  isFirstCompletedOrder: boolean;
+}
+
+/**
+ * 被推薦人完成首筆行程 → 推薦人取得獎勵的資格判定（純函式）。
+ * 條件：referrals 為 `pending` 且此為被推薦人首筆 completed 訂單。
+ */
+export function shouldQualifyReferral(input: ReferralQualifyInput): boolean {
+  return input.referralStatus === 'pending' && input.isFirstCompletedOrder;
+}
+
+// ── Phase 2：bindReferral 交易（design.md §4 ③ / §5）─────────────
+
+/** bindReferral transaction 內用的中止標記（競態 → 回對應失敗代碼）。 */
+class ReferralBindAbort extends Error {
+  constructor(public failCode: ReferralBindFailCode) {
+    super(failCode);
+    this.name = 'ReferralBindAbort';
+  }
+}
+
+export type BindReferralResult =
+  | { ok: true; welcomeCode: string; referrerUid: string }
+  | { ok: false; failCode: ReferralBindFailCode };
+
+/**
+ * 推薦歸因綁定（design.md §4 ③）：
+ *   1. 讀活動設定 + ref→referrerUid + 被推薦人現況 + 是否已有訂單。
+ *   2. checkReferralBindEligibility 防刷五項檢查。
+ *   3. 鑄歡迎碼（mintDiscountCode 自帶碰撞重試）。
+ *   4. transaction 寫入：referredBy（write-once）+ welcomeRewardClaimed + 建 referrals doc。
+ *
+ * transaction 內 re-check referrals doc 與 referredBy，競態落敗時 best-effort
+ * 刪除剛鑄的孤兒歡迎碼後回 ALREADY_BOUND。
+ */
+export async function bindReferral(
+  db: Firestore,
+  params: { ref: string; refereeUid: string },
+): Promise<BindReferralResult> {
+  const { ref, refereeUid } = params;
+
+  const campaign = await getReferralCampaign(db);
+
+  // ref → 推薦人 lineUid（referralCode 全 users 唯一，doc id 即 lineUid）
+  const refSnap = await db.collection('users').where('referralCode', '==', ref).limit(1).get();
+  const referrerUid = refSnap.empty ? null : refSnap.docs[0].id;
+
+  // 被推薦人現況（referredBy）
+  const refereeRef = db.collection('users').doc(refereeUid);
+  const refereeSnap = await refereeRef.get();
+  const existingReferredBy = (refereeSnap.data()?.referredBy as string | null | undefined) ?? null;
+
+  // 被推薦人是否已有任何訂單（全新帳號判定）
+  const ordersSnap = await db.collection('orders').where('userId', '==', refereeUid).limit(1).get();
+
+  const check = checkReferralBindEligibility({
+    campaignEnabled: campaign.enabled,
+    referrerUid,
+    refereeUid,
+    existingReferredBy,
+    refereeHasOrders: !ordersSnap.empty,
+  });
+  if (!check.ok) return { ok: false, failCode: check.code };
+
+  // 先鑄歡迎碼（mintDiscountCode 自帶碰撞重試）；transaction 競態失敗時再 best-effort 刪除
+  const now = Date.now();
+  const { code: welcomeCode } = await mintDiscountCode(db, {
+    source: 'referral-welcome',
+    ownerUid: refereeUid,
+    discountAmount: campaign.welcomeAmount,
+    validUntilMs: now + campaign.welcomeValidityDays * MS_PER_DAY,
+    minFare: campaign.minFare,
+    createdBy: 'referral-system',
+  });
+
+  const referralRef = db.collection('referrals').doc(refereeUid);
+  const expiresAt = Timestamp.fromMillis(now + campaign.pendingTtlDays * MS_PER_DAY);
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const [rSnap, uSnap] = await Promise.all([tx.get(referralRef), tx.get(refereeRef)]);
+      // referrals doc 已存在 / referredBy 已被寫入 → 競態落敗
+      if (rSnap.exists) throw new ReferralBindAbort('ALREADY_BOUND');
+      if (((uSnap.data()?.referredBy as string | null | undefined) ?? null) !== null) {
+        throw new ReferralBindAbort('ALREADY_BOUND');
+      }
+      tx.set(refereeRef, { referredBy: check.referrerUid, welcomeRewardClaimed: true }, { merge: true });
+      tx.create(referralRef, {
+        referrerUid: check.referrerUid,
+        refereeUid,
+        referrerCode: ref,
+        status: 'pending',
+        welcomeCodeId: welcomeCode,
+        rewardCodeId: null,
+        createdAt: FieldValue.serverTimestamp(),
+        qualifiedAt: null,
+        expiresAt,
+      });
+    });
+  } catch (err) {
+    // 競態落敗 → best-effort 刪除剛鑄的孤兒歡迎碼（清理失敗非致命）
+    await db.collection('discount_codes').doc(welcomeCode).delete().catch(() => { /* 忽略 */ });
+    if (err instanceof ReferralBindAbort) return { ok: false, failCode: err.failCode };
+    throw err;
+  }
+
+  return { ok: true, welcomeCode, referrerUid: check.referrerUid };
+}
+
+// ── Phase 2：processReferralQualification（design.md §4 ④）───────
+
+/** processReferralQualification transaction 內用的中止標記（競態 → 略過）。 */
+class ReferralQualifyAbort extends Error {
+  constructor() {
+    super('ReferralQualifyAbort');
+    this.name = 'ReferralQualifyAbort';
+  }
+}
+
+export type QualifyReferralResult =
+  | { ok: true; rewardCode: string; referrerUid: string }
+  | { ok: false };
+
+/**
+ * 被推薦人完成首筆行程後的推薦資格判定（design.md §4 ④）。
+ * 由 orders/[orderId].patch.ts 在 status→completed 後以 fire-and-forget 呼叫。
+ *
+ * 流程：
+ *   1. 讀 referrals/{refereeUid}；不存在 → 略過。
+ *   2. lazy 過期：pending 已過 expiresAt → 寫回 expired 並略過。
+ *   3. 非 pending → 略過（已 rewarded / expired）。
+ *   4. 確認此為被推薦人首筆 completed 訂單。
+ *   5. 鑄推薦獎勵碼（ownerUid = 推薦人）。
+ *   6. transaction re-check status=pending → 轉 rewarded、寫 rewardCodeId / qualifiedAt。
+ *      競態落敗時 best-effort 刪除孤兒獎勵碼。
+ */
+export async function processReferralQualification(
+  db: Firestore,
+  refereeUid: string,
+  completedOrderId: string,
+): Promise<QualifyReferralResult> {
+  const referralRef = db.collection('referrals').doc(refereeUid);
+  const snap = await referralRef.get();
+  if (!snap.exists) return { ok: false };
+
+  const data = snap.data() as Partial<ReferralDoc>;
+  const status = (data.status as ReferralStatus | undefined) ?? 'pending';
+  const expiresAtMs = (data.expiresAt as Timestamp | undefined)?.toMillis?.() ?? 0;
+  const effective = effectiveReferralStatus(status, expiresAtMs, Date.now());
+
+  // lazy 過期：pending 已過期 → 寫回 expired（清理失敗非致命）
+  if (status === 'pending' && effective === 'expired') {
+    await referralRef.update({ status: 'expired' }).catch(() => { /* 忽略 */ });
+    return { ok: false };
+  }
+  if (effective !== 'pending') return { ok: false };
+
+  const referrerUid = typeof data.referrerUid === 'string' ? data.referrerUid : '';
+  if (!referrerUid) return { ok: false };
+
+  // 首筆 completed 判定：current 訂單已被 patch 寫成 completed，故排除自身後若無其他 completed → 首筆
+  const ordersSnap = await db.collection('orders').where('userId', '==', refereeUid).get();
+  const hasOtherCompleted = ordersSnap.docs.some(
+    (d) => d.id !== completedOrderId && d.data().orderStatus === 'completed',
+  );
+  if (!shouldQualifyReferral({ referralStatus: 'pending', isFirstCompletedOrder: !hasOtherCompleted })) {
+    return { ok: false };
+  }
+
+  // 鑄推薦獎勵碼（ownerUid = 推薦人，design.md §4 ④）
+  const campaign = await getReferralCampaign(db);
+  const { code: rewardCode } = await mintDiscountCode(db, {
+    source: 'referral-reward',
+    ownerUid: referrerUid,
+    discountAmount: campaign.rewardAmount,
+    validUntilMs: Date.now() + campaign.rewardValidityDays * MS_PER_DAY,
+    minFare: campaign.minFare,
+    createdBy: 'referral-system',
+  });
+
+  try {
+    await db.runTransaction(async (tx) => {
+      const fresh = await tx.get(referralRef);
+      const freshStatus = (fresh.data()?.status as ReferralStatus | undefined) ?? 'pending';
+      if (freshStatus !== 'pending') throw new ReferralQualifyAbort();
+      tx.update(referralRef, {
+        status: 'rewarded',
+        rewardCodeId: rewardCode,
+        qualifiedAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (err) {
+    // 競態落敗 → best-effort 刪除剛鑄的孤兒獎勵碼（清理失敗非致命）
+    await db.collection('discount_codes').doc(rewardCode).delete().catch(() => { /* 忽略 */ });
+    if (err instanceof ReferralQualifyAbort) return { ok: false };
+    throw err;
+  }
+
+  return { ok: true, rewardCode, referrerUid };
 }

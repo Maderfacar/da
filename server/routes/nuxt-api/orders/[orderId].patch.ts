@@ -8,6 +8,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
+import { processReferralQualification } from '@@/utils/referral';
 
 interface GooglePlaceLite {
   address: string;
@@ -425,6 +426,25 @@ export default defineEventHandler(async (event) => {
           text: `✅ 訂單已完成\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已完成。\n收入 NT$ ${fare.toLocaleString()} 已計入今日統計。\n辛苦了！`,
         }]);
       }
+    }
+
+    // ── 推薦獎勵機制 Phase 2：被推薦人完成首單 → 推薦人取得獎勵 ──
+    // status 剛切 completed 時觸發資格判定；fire-and-forget，錯誤吞掉不影響訂單回應。
+    if (body.orderStatus === 'completed' && !wasCompleted && orderUserId) {
+      void (async () => {
+        try {
+          const result = await processReferralQualification(db, orderUserId, orderId);
+          if (result.ok) {
+            // 推播推薦人：朋友完成首趟、附推薦獎勵碼（passenger OA）
+            await sendLinePush('passenger', result.referrerUid, [{
+              type: 'text',
+              text: `🎉 您推薦的好友已完成首趟行程！\n推薦獎勵碼：${result.rewardCode}\n下次訂車輸入即可折抵，感謝您的推薦。`,
+            }]);
+          }
+        } catch (err) {
+          console.error('[orders/patch] referral qualification failed:', err);
+        }
+      })();
     }
 
     // ── P37 Phase 4：訂單事件推播給乘客（4 個觸發點 + design.md §8.7 移除 arrived_pickup）──

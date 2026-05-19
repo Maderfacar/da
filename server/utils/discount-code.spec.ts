@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import type { Firestore } from 'firebase-admin/firestore';
 import {
   validateDiscountCodeBody,
   normalizeDiscountCode,
   toDiscountCodeDto,
   evaluateDiscountCode,
   isDiscountCodeActive,
+  mintDiscountCode,
   type DiscountCodeEvalData,
 } from './discount-code';
 
@@ -261,5 +263,65 @@ describe('isDiscountCodeActive', () => {
 
   it('validFromMs 為 null 時不限生效起始日', () => {
     expect(isDiscountCodeActive({ ...base, validFromMs: null }, 1)).toBe(true);
+  });
+});
+
+describe('mintDiscountCode 碰撞重試', () => {
+  // 假 Firestore：collection().doc().create() 前 failTimes 次拋出（模擬 doc id 碰撞）
+  function makeFakeDb(failTimes: number): { db: Firestore; getCalls: () => number } {
+    let calls = 0;
+    const db = {
+      collection: () => ({
+        doc: () => ({
+          create: async () => {
+            calls += 1;
+            if (calls <= failTimes) throw new Error('ALREADY_EXISTS');
+            return undefined;
+          },
+        }),
+      }),
+    } as unknown as Firestore;
+    return { db, getCalls: () => calls };
+  }
+
+  const baseOpts = {
+    source: 'referral-welcome' as const,
+    ownerUid: 'Uxxxx',
+    discountAmount: 150,
+    validUntilMs: Date.now() + 86_400_000,
+    minFare: 500,
+  };
+
+  it('無碰撞時第一次即成功', async () => {
+    const { db, getCalls } = makeFakeDb(0);
+    const r = await mintDiscountCode(db, baseOpts);
+    expect(r.code).toMatch(/^WLC[A-Z0-9]{8}$/);
+    expect(getCalls()).toBe(1);
+  });
+
+  it('碰撞 2 次後第 3 次成功', async () => {
+    const { db, getCalls } = makeFakeDb(2);
+    const r = await mintDiscountCode(db, baseOpts);
+    expect(r.code).toMatch(/^WLC[A-Z0-9]{8}$/);
+    expect(getCalls()).toBe(3);
+  });
+
+  it('連續 5 次碰撞 → throw', async () => {
+    const { db } = makeFakeDb(5);
+    await expect(mintDiscountCode(db, baseOpts)).rejects.toThrow();
+  });
+
+  it('referral-reward 來源用 RWD 前綴', async () => {
+    const { db } = makeFakeDb(0);
+    const r = await mintDiscountCode(db, { ...baseOpts, source: 'referral-reward' });
+    expect(r.code).toMatch(/^RWD[A-Z0-9]{8}$/);
+  });
+
+  it('鑄出的碼不含易混淆字元（0/O/1/I/L）', async () => {
+    for (let i = 0; i < 50; i++) {
+      const { db } = makeFakeDb(0);
+      const r = await mintDiscountCode(db, baseOpts);
+      expect(r.code.slice(3)).not.toMatch(/[01OIL]/);
+    }
   });
 });

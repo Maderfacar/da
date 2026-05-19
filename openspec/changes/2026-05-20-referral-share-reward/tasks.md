@@ -17,13 +17,13 @@
 
 ## Phase 2 — 歸因與資格判定（核心，最需小心）
 
-- [ ] `POST /nuxt-api/referral/bind` 🆕：body `{ ref }`，執行 design.md §5 防刷六項檢查 → transaction 寫 `referredBy` + 建 `referrals/{referee}` + `mintDiscountCode` 歡迎碼 + `welcomeRewardClaimed=true`。
-- [ ] ref 落地捕捉：乘客端進入時若 URL 帶 `?ref=`，導向／呼叫 `/referral/bind`（落地頁或 global middleware；未登入則登入後再 bind）。
-- [ ] `orders/[orderId].patch.ts`：status→`completed` 後加 hook —— 查 `referrals/{order.userId}` 為 `pending` 且此為該 user 首筆 completed → 轉 `qualified`/`rewarded`、`mintDiscountCode` 推薦獎勵碼（`ownerUid=referrerUid`）、寫 `rewardCodeId`。
-- [ ] LINE 推播 2 則（`server/utils/line-push.ts`）：被推薦人歡迎碼、推薦人獎勵碼（fire-and-forget）。
-- [ ] pending lazy 過期邏輯（共用 helper：`pending && expiresAt<now` → 視為 expired）。
-- [ ] 單元測試：防刷檢查、`mintDiscountCode` 碰撞重試、資格判定純函式。
-- [ ] 驗證：lint + build。
+- [x] `POST /nuxt-api/referral/bind` 🆕：body `{ ref }`，執行 design.md §5 防刷六項檢查 → transaction 寫 `referredBy` + 建 `referrals/{referee}` + `mintDiscountCode` 歡迎碼 + `welcomeRewardClaimed=true`。
+- [x] ref 落地捕捉：乘客端進入時若 URL 帶 `?ref=`，導向／呼叫 `/referral/bind`（落地頁或 global middleware；未登入則登入後再 bind）。
+- [x] `orders/[orderId].patch.ts`：status→`completed` 後加 hook —— 查 `referrals/{order.userId}` 為 `pending` 且此為該 user 首筆 completed → 轉 `qualified`/`rewarded`、`mintDiscountCode` 推薦獎勵碼（`ownerUid=referrerUid`）、寫 `rewardCodeId`。
+- [x] LINE 推播 2 則（`server/utils/line-push.ts`）：被推薦人歡迎碼、推薦人獎勵碼（fire-and-forget）。
+- [x] pending lazy 過期邏輯（共用 helper：`pending && expiresAt<now` → 視為 expired）。
+- [x] 單元測試：防刷檢查、`mintDiscountCode` 碰撞重試、資格判定純函式。
+- [x] 驗證：lint + build。
 
 ## Phase 3 — 乘客端 UI
 
