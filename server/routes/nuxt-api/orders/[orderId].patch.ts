@@ -8,7 +8,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
-import { processReferralQualification } from '@@/utils/referral';
+import { processReferralQualification, getReferralPushMessage } from '@@/utils/referral';
 
 interface GooglePlaceLite {
   address: string;
@@ -435,10 +435,11 @@ export default defineEventHandler(async (event) => {
         try {
           const result = await processReferralQualification(db, orderUserId, orderId);
           if (result.ok) {
-            // 推播推薦人：朋友完成首趟、附推薦獎勵碼（passenger OA）
+            // 推播推薦人：朋友完成首趟、附推薦獎勵碼（passenger OA；依推薦人語系）
+            const referrerLang = await getUserLang(db, result.referrerUid);
             await sendLinePush('passenger', result.referrerUid, [{
               type: 'text',
-              text: `🎉 您推薦的好友已完成首趟行程！\n推薦獎勵碼：${result.rewardCode}\n下次訂車輸入即可折抵，感謝您的推薦。`,
+              text: getReferralPushMessage('referral.reward', referrerLang, result.rewardCode),
             }]);
           }
         } catch (err) {

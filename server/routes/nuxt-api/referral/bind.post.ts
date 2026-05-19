@@ -10,7 +10,13 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, badRequestError, serverError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
-import { bindReferral, REFERRAL_BIND_FAIL_MESSAGES, REFERRAL_CODE_REGEX } from '@@/utils/referral';
+import {
+  bindReferral,
+  REFERRAL_BIND_FAIL_MESSAGES,
+  REFERRAL_CODE_REGEX,
+  getReferralPushMessage,
+} from '@@/utils/referral';
+import { getUserLang } from '@@/utils/i18n-message';
 import { sendLinePush } from '@@/utils/line-push';
 
 interface BindReferralBody {
@@ -46,12 +52,13 @@ export default defineEventHandler(async (event) => {
       return badRequestError(REFERRAL_BIND_FAIL_MESSAGES[result.failCode]);
     }
 
-    // 歡迎碼推播（fire-and-forget；失敗不影響綁定成立）
+    // 歡迎碼推播（fire-and-forget；失敗不影響綁定成立；依被推薦人語系）
     void (async () => {
       try {
+        const lang = await getUserLang(db, auth.lineUid);
         await sendLinePush('passenger', auth.lineUid, [{
           type: 'text',
-          text: `👋 歡迎加入！\n您的新人專屬折扣碼：${result.welcomeCode}\n首次訂車輸入即可折抵，期待為您服務。`,
+          text: getReferralPushMessage('referral.welcome', lang, result.welcomeCode),
         }]);
       } catch (err) {
         console.error('[referral/bind] welcome push failed:', err);

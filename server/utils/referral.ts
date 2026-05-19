@@ -15,6 +15,7 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 import { randomInt } from 'node:crypto';
 import type { I18nMsg } from '@@/utils/response';
+import type { Lang } from '@@/utils/i18n-message';
 import { mintDiscountCode } from '@@/utils/discount-code';
 
 // ── referralCode 產生 ─────────────────────────────────────────────
@@ -356,6 +357,43 @@ export function checkReferralBindEligibility(input: ReferralBindCheckInput): Ref
   if (input.existingReferredBy !== null) return { ok: false, code: 'ALREADY_BOUND' };
   if (input.refereeHasOrders) return { ok: false, code: 'NOT_NEW_USER' };
   return { ok: true, referrerUid: input.referrerUid };
+}
+
+// ── Phase 5：推薦 LINE 推播文案 i18n ──────────────────────────
+
+/**
+ * 推薦相關 LINE 推播訊息 key：
+ *   - referral.welcome：被推薦人綁定後推播其歡迎碼
+ *   - referral.reward：被推薦人完成首單後推播推薦人推薦獎勵碼
+ */
+export type ReferralPushKey = 'referral.welcome' | 'referral.reward';
+
+const REFERRAL_PUSH_VALID_LANGS: Lang[] = ['zh_tw', 'en', 'ja'];
+
+/** 推薦推播訊息表（三語）；{code} 為鑄出的折扣碼。 */
+const REFERRAL_PUSH_MESSAGES: Record<ReferralPushKey, Record<Lang, (code: string) => string>> = {
+  'referral.welcome': {
+    zh_tw: (code) => `👋 歡迎加入！\n您的新人專屬折扣碼：${code}\n首次訂車輸入即可折抵，期待為您服務。`,
+    en: (code) => `👋 Welcome aboard!\nYour welcome discount code: ${code}\nApply it on your first booking to enjoy the discount.`,
+    ja: (code) => `👋 ようこそ！\n新規限定割引コード：${code}\n初回のご予約でご利用いただけます。`,
+  },
+  'referral.reward': {
+    zh_tw: (code) => `🎉 您推薦的好友已完成首趟行程！\n推薦獎勵碼：${code}\n下次訂車輸入即可折抵，感謝您的推薦。`,
+    en: (code) => `🎉 Your referred friend completed their first trip!\nReferral reward code: ${code}\nApply it on your next booking. Thanks for sharing!`,
+    ja: (code) => `🎉 ご紹介のお友達が初回送迎を完了しました！\n紹介報酬コード：${code}\n次回のご予約でご利用いただけます。ご紹介ありがとうございます。`,
+  },
+};
+
+/** 取對應語系的推薦推播文案（lang 缺值 / 非法 → fallback zh_tw）。 */
+export function getReferralPushMessage(
+  key: ReferralPushKey,
+  lang: Lang | string | undefined,
+  code: string,
+): string {
+  const safeLang: Lang = (typeof lang === 'string' && (REFERRAL_PUSH_VALID_LANGS as string[]).includes(lang))
+    ? (lang as Lang)
+    : 'zh_tw';
+  return REFERRAL_PUSH_MESSAGES[key][safeLang](code);
 }
 
 /** 各防刷失敗代碼對應的三語訊息（API 回傳用）。 */

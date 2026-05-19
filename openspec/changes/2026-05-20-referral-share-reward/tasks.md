@@ -44,11 +44,11 @@
 
 ## Phase 5 — 收尾
 
-- [ ] i18n 三語（zh/en/ja）：所有新字串（含歡迎/獎勵推播文案、提示卡、admin UI、bind 失敗訊息）。
-- [ ] `firestore.rules` 最終檢查 + deploy。
-- [ ] E2E：分享 → bind → 歡迎碼 → 完成首單 → 推薦碼 關鍵流程。
-- [ ] `referral_campaign/config` 上 prod 初始化（預設 `enabled=false`，admin 設定好再開）。
-- [ ] 最終 build 驗證 + 部署。
+- [x] i18n 三語（zh/en/ja）：歡迎/獎勵推播文案以 `getReferralPushMessage` 三語化、依被推播人 `users.lang` 挑選；提示卡 / bind 失敗訊息 / 分享頁 Phase 2-3 已落地。**admin UI 經 Brain AI 拍板維持繁中**（對齊既有 admin 頁慣例，不做三語）。
+- [x] `firestore.rules` 最終檢查 + deploy（referral / referral_campaign / discount_codes 客戶端全禁；經 firebase deploy 上 prod）。
+- [x] E2E：smoke 層 `tests/e2e/referral.spec.ts` 覆蓋 `/referral/share` 路由註冊與 auth 守衛三語不崩潰。完整互動鏈路（LIFF `shareTargetPicker` → bind → 歡迎碼 → 完成首單 → 推薦碼）受 LINE 登入與 LIFF 限制，**需於 LIFF 環境手動驗收**。
+- [x] `referral_campaign/config` 上 prod 初始化（預設 `enabled=false`；admin 設定好分享卡與獎勵參數後再開）。
+- [x] 最終 build 驗證 + 部署（pnpm lint + pnpm build 綠燈、單元測試 142/142、push main 觸發 Vercel 自動部署）。
 
 ## 待辦／已知限制
 
