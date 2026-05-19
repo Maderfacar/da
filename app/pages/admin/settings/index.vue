@@ -145,7 +145,9 @@ const ClickAddAdmin = async () => {
   const uid = newAdminUid.value.trim();
   if (!uid) return;
   addingAdmin.value = true;
-  const lineUid = uid.startsWith('line:') ? uid : `line:${uid}`;
+  // Firestore users/admins/drivers 文件 key 為「不帶 line: 前綴」的純 LINE userId；
+  // 容錯使用者貼上帶 line: 前綴的字串（先前誤補前綴會寫進錯誤的幽靈文件）
+  const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
   const res = await $api.PatchAdminUser(lineUid, {
     addRole: 'admin',
     approved: true,

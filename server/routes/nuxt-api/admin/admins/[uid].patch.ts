@@ -53,10 +53,12 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
 
-  const uid = getRouterParam(event, 'uid');
-  if (!uid) {
+  const rawUid = getRouterParam(event, 'uid');
+  if (!rawUid) {
     return badRequestError({ zh_tw: 'uid 缺失', en: 'uid is required', ja: 'uidが必要です' });
   }
+  // 正規化：Firestore 文件 key 為「不帶 line: 前綴」的 LINE userId；容錯呼叫端誤帶前綴
+  const uid = rawUid.startsWith('line:') ? rawUid.slice(5) : rawUid;
 
   const body = await readBody<PatchAdminBody>(event).catch(() => null);
   if (!body || (body.level === undefined && body.permissions === undefined)) {
