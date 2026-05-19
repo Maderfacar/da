@@ -104,7 +104,8 @@ export default {
     premium: 'プレミアム',
   },
   orders: {
-    title: '注文一覧',
+    title: '利用履歴',
+    note: '直近の注文のみ表示しています。他の注文は日付で検索してください。',
     empty: { text: '注文履歴がありません', btn: '今すぐ予約' },
     loadFailed: '注文の読み込みに失敗しました',
     cancel: {
@@ -561,6 +562,9 @@ export default {
       service: 'サービス案内',
       faq: 'よくある質問',
       fleet: '車種のご紹介',
+      orders: '利用履歴',
+      terms: '利用規約',
+      privacy: 'プライバシーポリシー',
     },
     copyright: '© DEST · ANYWHERE',
   },

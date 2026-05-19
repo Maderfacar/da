@@ -4,7 +4,8 @@
 // 設計（2026/05/14 Brain AI 拍板）：
 //   - 移除底部 5-tab bar，改用 hamburger drawer
 //   - 桌機 / 手機行為一致（皆 hamburger 收合，無 sticky 側欄）
-//   - menu 順序：最新消息 / 訂車 / 訂單 / 車型介紹 / 個人設定 / 客服
+//   - menu 順序：最新消息 / 訂車 / 車型介紹 / 服務說明 / 路線參考價 / 常見問題 / 客服
+//   - 歷史訂單 / 個人設定 / 法律文件改由 CommonFooter 入口進入，不列 drawer
 //   - 不放登出（沿用乘客端無登出政策 commit 473ada0）
 //   - logo 點擊回 /home（不在 drawer 內列「首頁」）
 //
@@ -37,19 +38,14 @@ const fallbackChar = computed(() => {
   return name.charAt(0).toUpperCase() || '?';
 });
 
+// 歷史訂單 / 個人設定 / 法律文件移至 CommonFooter，drawer 僅留主要功能入口
 const items = computed(() => [
   { id: 'notifications', path: '/notifications', label: t('drawer.notifications'), badge: props.unreadCount },
   { id: 'booking',       path: '/booking',       label: t('drawer.booking'),       badge: 0 },
-  // Wave 2 P4：移除「我的行程」（/upcoming 已刪，首頁「下一趟」卡取代）
-  { id: 'orders',        path: '/orders',        label: t('drawer.orders'),        badge: 0 },
   { id: 'fleet',         path: '/fleet',         label: t('drawer.fleet'),         badge: 0 },
   { id: 'service',       path: '/service',       label: t('drawer.service'),       badge: 0 },
   { id: 'fare',          path: '/fare',          label: t('drawer.fare'),          badge: 0 },
   { id: 'faq',           path: '/faq',           label: t('drawer.faq'),           badge: 0 },
-  { id: 'profile',       path: '/profile',       label: t('drawer.profile'),       badge: 0 },
-  // 法律文件（會員條款 / 隱私政策）— admin 在 /admin/settings LEGAL DOCUMENTS 編輯內容
-  { id: 'legal-terms',   path: '/legal/terms',   label: t('drawer.legal.terms'),   badge: 0 },
-  { id: 'legal-privacy', path: '/legal/privacy', label: t('drawer.legal.privacy'), badge: 0 },
 ]);
 
 const Close = () => emit('update:modelValue', false);

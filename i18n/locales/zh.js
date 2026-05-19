@@ -113,7 +113,8 @@ export default {
   },
   // ── 我的訂單 ─────────────────────────────────────────────
   orders: {
-    title: '我的訂單',
+    title: '歷史訂單',
+    note: '僅預先列出最近一筆訂單，需查詢其他訂單請用日期篩選',
     empty: { text: '尚無訂單紀錄', btn: '立即訂車' },
     loadFailed: '載入訂單失敗',
     cancel: {
@@ -578,6 +579,9 @@ export default {
       service: '服務說明',
       faq: '常見問題',
       fleet: '車型介紹',
+      orders: '歷史訂單',
+      terms: '會員服務條款',
+      privacy: '隱私權政策',
     },
     copyright: '© DEST · ANYWHERE',
   },

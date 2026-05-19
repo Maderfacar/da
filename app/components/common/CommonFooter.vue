@@ -10,6 +10,9 @@ const links = [
   { id: 'service', path: '/service' },
   { id: 'faq',     path: '/faq' },
   { id: 'fleet',   path: '/fleet' },
+  { id: 'orders',  path: '/orders' },
+  { id: 'terms',   path: '/legal/terms' },
+  { id: 'privacy', path: '/legal/privacy' },
 ];
 
 const ClickLink = (path: string) => navigateTo(path);

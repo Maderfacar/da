@@ -104,7 +104,8 @@ export default {
     premium: 'Premium',
   },
   orders: {
-    title: 'My Orders',
+    title: 'Trip History',
+    note: 'Showing only your most recent order. Use the date filter to find others.',
     empty: { text: 'No order records yet', btn: 'Book Now' },
     loadFailed: 'Failed to load orders',
     cancel: {
@@ -561,6 +562,9 @@ export default {
       service: 'Our Services',
       faq: 'FAQ',
       fleet: 'Our Fleet',
+      orders: 'Trip History',
+      terms: 'Terms of Service',
+      privacy: 'Privacy Policy',
     },
     copyright: '© DEST · ANYWHERE',
   },

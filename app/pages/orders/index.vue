@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// 歷史訂單頁（原 /orders + /profile 合併）
+// Section 順序：使用者頭像卡 → 我的旅程 → 我的訂單（日期篩選 + 列表）→ 客服資訊
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
@@ -7,11 +9,10 @@ const loading = ref(false);
 const orders = ref<OrderItem[]>([]);
 const cancellingId = ref<string>('');
 
-// Wave 1 P3：日期過濾（共用 UiDateRangeFilter）
+// 日期過濾（共用 UiDateRangeFilter）
 const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
 
 // status 文字走 i18n（status.{key}）；色碼留在前端（不參與翻譯）
-// Wave 3-P1：cream 底色 → 調整為深色系，completed 用 muted gray、cancelled 用 #dc2626
 const STATUS_COLOR: Record<string, string> = {
   pending:    '#b45309',  // amber-700（cream 底可讀）
   confirmed:  '#1B4F8A',  // 與 dropoff dot 同色
@@ -20,12 +21,23 @@ const STATUS_COLOR: Record<string, string> = {
   cancelled:  '#dc2626',
 };
 
-// P17：可取消狀態（pending / confirmed 才允許乘客主動取消，行程中或已完成不可）
+// 可取消狀態（pending / confirmed 才允許乘客主動取消）
 const CAN_CANCEL_STATUS = new Set(['pending', 'confirmed']);
 
+// 預設僅顯示「距離現在最近的上一筆（已過）訂單」；
+// 使用者選日期後改顯示該範圍內全部訂單。
+const isDateFiltered = computed(() => Boolean(dateRange.value.from || dateRange.value.to));
+const displayOrders = computed<OrderItem[]>(() => {
+  if (isDateFiltered.value) return orders.value;
+  const now = Date.now();
+  return [...orders.value]
+    .filter((o) => $dayjs(o.pickupDateTime).valueOf() <= now)
+    .sort((a, b) => $dayjs(b.pickupDateTime).valueOf() - $dayjs(a.pickupDateTime).valueOf())
+    .slice(0, 1);
+});
+
 const ApiLoadOrders = async () => {
-  // P17：query.userId 不傳，server 強制使用 auth.lineUid（passenger 只能讀自己）
-  // Wave 1 P3：from / to 範圍過濾 pickupDateTime
+  // server 強制使用 auth.lineUid（passenger 只能讀自己）；from / to 範圍過濾 pickupDateTime
   loading.value = true;
   try {
     const params: GetOrderListParams = {};
@@ -33,7 +45,7 @@ const ApiLoadOrders = async () => {
     if (dateRange.value.to) params.to = dateRange.value.to;
     const res = await $api.GetOrderList(params);
     if (res.status?.code !== $enum.apiStatus.success) {
-      console.error('[orders] load failed:', res.status?.message?.zh_tw);
+      console.error('[history] load failed:', res.status?.message?.zh_tw);
       ElMessage({ message: res.status?.message?.zh_tw ?? t('orders.loadFailed'), type: 'error' });
       orders.value = [];
       return;
@@ -44,8 +56,8 @@ const ApiLoadOrders = async () => {
   }
 };
 
-// P17：訂單取消（pending / confirmed 才可取消）
-// P36：取消按鈕被 NuxtLink 卡片包覆，需 stop 冒泡避免一邊取消一邊跳詳情頁
+// 訂單取消（pending / confirmed 才可取消）
+// 取消按鈕被 NuxtLink 卡片包覆，需 stop 冒泡避免一邊取消一邊跳詳情頁
 const ClickCancel = async (e: Event, orderId: string, orderStatus: string) => {
   e.preventDefault();
   e.stopPropagation();
@@ -64,7 +76,7 @@ const ClickCancel = async (e: Event, orderId: string, orderStatus: string) => {
   await ApiLoadOrders();
 };
 
-// P17：30 秒輪詢一次（與 admin / driver 端一致），visibility 切回時也立即重 load
+// 30 秒輪詢一次，visibility 切回時也立即重 load
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 const POLL_INTERVAL = 30_000;
 const onVisibility = () => { if (document.visibilityState === 'visible') ApiLoadOrders(); };
@@ -91,68 +103,80 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 <template lang="pug">
 .PageOrders
   .PageOrders__header
-    .PageOrders__header-label MY TRIPS
+    .PageOrders__header-label TRIP HISTORY
     h1.PageOrders__header-title {{ $t('orders.title') }}
 
-  //- Wave 1 P3：日期過濾（cream theme 對齊 booking 家族）
-  .PageOrders__toolbar
-    UiDateRangeFilter(
-      v-model="dateRange"
-      mode="single"
-      granularity="day"
-      theme="cream"
-      size="md"
-      @change="ApiLoadOrders"
-    )
+  //- Section 1：使用者頭像卡
+  PassengerHistoryUserCard
 
-  //- 載入中
-  .PageOrders__loading(v-if="loading")
-    .PageOrders__spinner
+  //- Section 2：我的旅程
+  PassengerHistoryJourneys
 
-  //- 無訂單
-  .PageOrders__empty(v-else-if="orders.length === 0")
-    .PageOrders__empty-icon 🚗
-    p.PageOrders__empty-text {{ $t('orders.empty.text') }}
-    NuxtLink.PageOrders__empty-link(to="/booking") {{ $t('orders.empty.btn') }}
+  //- Section 3：我的訂單（日期篩選 + 列表）
+  section.PageOrders__orders
+    .PageOrders__orders-label MY ORDERS
+    h2.PageOrders__orders-title 我的訂單
+    .PageOrders__orders-bar
+      UiDateRangeFilter(
+        v-model="dateRange"
+        mode="single"
+        granularity="day"
+        theme="cream"
+        size="md"
+        @change="ApiLoadOrders"
+      )
+      p.PageOrders__orders-note {{ $t('orders.note') }}
 
-  //- 訂單列表
-  .PageOrders__list(v-else)
-    NuxtLink.PageOrders__card(
-      v-for="o in orders"
-      :key="o.orderId"
-      :to="`/orders/${o.orderId}`"
-    )
-      .PageOrders__card-top
-        .PageOrders__type-badge {{ OrderTypeLabel(o.orderType) }}
-        .PageOrders__status(:style="{ color: StatusColor(o.orderStatus) }") {{ StatusText(o.orderStatus) }}
+    //- 載入中
+    .PageOrders__loading(v-if="loading")
+      .PageOrders__spinner
 
-      .PageOrders__route
-        .PageOrders__route-row
-          span.PageOrders__route-dot.is-pickup
-          span.PageOrders__route-addr {{ o.pickupLocation?.displayName || o.pickupLocation?.address }}
-        .PageOrders__route-line
-        .PageOrders__route-row
-          span.PageOrders__route-dot.is-dropoff
-          span.PageOrders__route-addr {{ o.dropoffLocation?.displayName || o.dropoffLocation?.address }}
+    //- 無訂單
+    .PageOrders__empty(v-else-if="displayOrders.length === 0")
+      .PageOrders__empty-icon 🚗
+      p.PageOrders__empty-text {{ $t('orders.empty.text') }}
+      NuxtLink.PageOrders__empty-link(to="/booking") {{ $t('orders.empty.btn') }}
 
-      .PageOrders__card-footer
-        span.PageOrders__date {{ FormatDate(o.pickupDateTime) }}
-        span.PageOrders__vehicle {{ VehicleLabel(o.vehicleType) }}
-        span.PageOrders__fare {{ FormatFare(o.estimatedFare) }}
+    //- 訂單列表
+    .PageOrders__list(v-else)
+      NuxtLink.PageOrders__card(
+        v-for="o in displayOrders"
+        :key="o.orderId"
+        :to="`/orders/${o.orderId}`"
+      )
+        .PageOrders__card-top
+          .PageOrders__type-badge {{ OrderTypeLabel(o.orderType) }}
+          .PageOrders__status(:style="{ color: StatusColor(o.orderStatus) }") {{ StatusText(o.orderStatus) }}
 
-      //- P17：取消按鈕（pending / confirmed 才顯示）
-      //- P36：卡片改為 NuxtLink，取消按鈕需 stop 冒泡避免一邊取消一邊跳詳情頁
-      button.PageOrders__cancel(
-        v-if="CanCancel(o.orderStatus)"
-        :disabled="cancellingId === o.orderId"
-        @click="ClickCancel($event, o.orderId, o.orderStatus)"
-      ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
+        .PageOrders__route
+          .PageOrders__route-row
+            span.PageOrders__route-dot.is-pickup
+            span.PageOrders__route-addr {{ o.pickupLocation?.displayName || o.pickupLocation?.address }}
+          .PageOrders__route-line
+          .PageOrders__route-row
+            span.PageOrders__route-dot.is-dropoff
+            span.PageOrders__route-addr {{ o.dropoffLocation?.displayName || o.dropoffLocation?.address }}
+
+        .PageOrders__card-footer
+          span.PageOrders__date {{ FormatDate(o.pickupDateTime) }}
+          span.PageOrders__vehicle {{ VehicleLabel(o.vehicleType) }}
+          span.PageOrders__fare {{ FormatFare(o.estimatedFare) }}
+
+        //- 取消按鈕（pending / confirmed 才顯示）；卡片為 NuxtLink，需 stop 冒泡
+        button.PageOrders__cancel(
+          v-if="CanCancel(o.orderStatus)"
+          :disabled="cancellingId === o.orderId"
+          @click="ClickCancel($event, o.orderId, o.orderStatus)"
+        ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
+
+  //- Section 4：客服資訊
+  PassengerHistorySupport
 
   CommonFooter
 </template>
 
 <style lang="scss" scoped>
-// Wave 3-P1：cream theme 對齊 booking 家族
+// cream theme 對齊 booking 家族
 $font-display:   'Bebas Neue', sans-serif;
 $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
@@ -167,13 +191,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // 對齊 fare：頁尾 CommonFooter，負 margin 破出 24px 水平 padding 達全幅
 .CommonFooter {
   margin: 48px -24px 0;
-}
-
-// ── Wave 1 P3：日期過濾 toolbar ────────────────────────────────
-.PageOrders__toolbar {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 16px;
 }
 
 // ── 頁首（對齊 fare）──────────────────────────────────────────
@@ -198,6 +215,46 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
+// ── Section 3：我的訂單 ────────────────────────────────────────
+.PageOrders__orders {
+  margin-bottom: 16px;
+}
+
+.PageOrders__orders-label {
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--da-amber);
+  margin-bottom: 6px;
+}
+
+.PageOrders__orders-title {
+  font-family: $font-display;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: var(--da-dark);
+  margin-bottom: 12px;
+}
+
+.PageOrders__orders-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.PageOrders__orders-note {
+  flex: 1;
+  min-width: 180px;
+  font-family: $font-condensed;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: var(--da-gray);
+}
+
 // ── 載入中 ────────────────────────────────────────────────────
 .PageOrders__loading {
   display: flex;
@@ -219,7 +276,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 無訂單 ────────────────────────────────────────────────────
 .PageOrders__empty {
   text-align: center;
-  padding: 80px 20px;
+  padding: 60px 20px;
 
   &-icon { font-size: 48px; margin-bottom: 16px; }
 
@@ -274,7 +331,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &:active { transform: scale(0.998); }
 }
 
-// P17：取消按鈕（pending / confirmed 狀態才顯示）— cream 版紅色 light
+// 取消按鈕（pending / confirmed 狀態才顯示）— cream 版紅色 light
 .PageOrders__cancel {
   display: block;
   width: 100%;
