@@ -108,6 +108,8 @@ const sampleFare = computed(() => {
         NuxtIcon.PageFleet__extra-icon(:name="svc.icon")
         span.PageFleet__extra-name {{ Loc(svc.label) }}
         span.PageFleet__extra-price + NT$ {{ svc.price }}
+
+  CommonFooter
 </template>
 
 <style lang="scss" scoped>
@@ -119,8 +121,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   position: relative;
   min-height: 100vh;
   background: var(--da-cream);
-  padding: 76px 16px 120px;
+  padding: 76px 24px 0;
   overflow: hidden;
+}
+
+// 對齊 fare：頁尾 CommonFooter，負 margin 破出 24px 水平 padding 達全幅
+.CommonFooter {
+  margin: 48px -24px 0;
 }
 
 .PageFleet__watermark {
@@ -135,36 +142,27 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.04em;
 }
 
-// ── 頁首 ──────────────────────────────────────────────────
+// ── 頁首（對齊 fare）──────────────────────────────────────
 .PageFleet__header {
+  padding: 28px 0 0;
   margin-bottom: 28px;
 }
 
 .PageFleet__header-label {
   font-family: $font-condensed;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--da-amber);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-
-  &::before {
-    content: '';
-    width: 20px; height: 1.5px;
-    background: var(--da-amber);
-  }
+  margin-bottom: 10px;
 }
 
 .PageFleet__header-title {
   font-family: $font-display;
-  font-size: 48px;
+  font-size: clamp(48px, 14vw, 64px);
+  line-height: 0.92;
   color: var(--da-dark);
-  letter-spacing: 0.02em;
-  line-height: 0.9;
 }
 
 .PageFleet__header-sub {
@@ -361,7 +359,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 分隔線 ────────────────────────────────────────────────
 .PageFleet__stripe {
   height: 10px;
-  margin: 36px -16px;
+  margin: 36px -24px;
   background: repeating-linear-gradient(
     -45deg,
     var(--da-stripe-yellow) 0px, var(--da-stripe-yellow) 10px,

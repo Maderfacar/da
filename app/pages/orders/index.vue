@@ -147,6 +147,8 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
         :disabled="cancellingId === o.orderId"
         @click="ClickCancel($event, o.orderId, o.orderStatus)"
       ) {{ cancellingId === o.orderId ? $t('orders.cancel.loading') : $t('orders.cancel.btn') }}
+
+  CommonFooter
 </template>
 
 <style lang="scss" scoped>
@@ -156,10 +158,15 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrders {
-  padding: 72px 16px 100px;
+  padding: 72px 24px 0;
   min-height: 100svh;
   background: var(--da-cream);
   color: var(--da-dark);
+}
+
+// 對齊 fare：頁尾 CommonFooter，負 margin 破出 24px 水平 padding 達全幅
+.CommonFooter {
+  margin: 48px -24px 0;
 }
 
 // ── Wave 1 P3：日期過濾 toolbar ────────────────────────────────
@@ -169,27 +176,24 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-bottom: 16px;
 }
 
-// ── 頁首 ───────────────────────────────────────────────────────
+// ── 頁首（對齊 fare）──────────────────────────────────────────
 .PageOrders__header {
-  margin-bottom: 20px;
+  padding: 32px 0;
 
   &-label {
     font-family: $font-condensed;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.25em;
+    text-transform: uppercase;
     color: var(--da-amber);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-    &::before { content: ''; width: 16px; height: 1.5px; background: var(--da-amber); }
+    margin-bottom: 10px;
   }
 
   &-title {
     font-family: $font-display;
-    font-size: 32px;
-    letter-spacing: 0.04em;
+    font-size: clamp(48px, 14vw, 64px);
+    line-height: 0.92;
     color: var(--da-dark);
   }
 }
