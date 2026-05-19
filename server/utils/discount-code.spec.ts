@@ -233,4 +233,12 @@ describe('isDiscountCodeActive', () => {
   it('未達 maxRedemptions 回 true', () => {
     expect(isDiscountCodeActive({ ...base, maxRedemptions: 5, redemptionCount: 4 }, 1_000)).toBe(true);
   });
+
+  it('nowMs 恰等於 validUntilMs 仍回 true（上界含邊界）', () => {
+    expect(isDiscountCodeActive(base, 2_000)).toBe(true);
+  });
+
+  it('validFromMs 為 null 時不限生效起始日', () => {
+    expect(isDiscountCodeActive({ ...base, validFromMs: null }, 1)).toBe(true);
+  });
 });

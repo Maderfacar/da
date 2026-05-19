@@ -285,11 +285,11 @@ export function evaluateDiscountCode(input: EvaluateDiscountInput): DiscountVali
  * 規則：enabled && 在 validFrom~validUntil 區間內 && 未達 maxRedemptions。
  * perUserLimit / minFare / allowedOrderTypes 不影響「是否展示」，僅影響套用，故不檢查。
  */
-export function isDiscountCodeActive(d: DiscountCodeEvalData, nowMs: number): boolean {
-  if (!d.enabled) return false;
-  if (d.validFromMs !== null && nowMs < d.validFromMs) return false;
-  if (nowMs > d.validUntilMs) return false;
-  if (d.maxRedemptions !== null && d.redemptionCount >= d.maxRedemptions) return false;
+export function isDiscountCodeActive(code: DiscountCodeEvalData, nowMs: number): boolean {
+  if (!code.enabled) return false;
+  if (code.validFromMs !== null && nowMs < code.validFromMs) return false;
+  if (nowMs > code.validUntilMs) return false;
+  if (code.maxRedemptions !== null && code.redemptionCount >= code.maxRedemptions) return false;
   return true;
 }
 
