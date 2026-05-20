@@ -17,10 +17,6 @@ const enabled = ref(false);
 const shareCard = ref<ReferralShareCard | null>(null);
 const sharing = ref(false);
 
-// 診斷面板：點分享按鈕後自動顯示 LIFF 狀態快照（無條件顯示，方便手機 LIFF
-// 內排查 shareTargetPicker fallback；待問題定位後再移除）。
-const debugInfo = ref('');
-
 // 分享連結：優先用乘客 LIFF 連結（可在 LINE 內直接開啟），fallback 站內 /home
 const shareLink = computed(() => {
   const code = referralCode.value;
@@ -111,21 +107,8 @@ const ShareFlow = async () => {
       }
     }
 
-    // 抓 LIFF 狀態快照供 ?debug=1 診斷面板顯示
-    const diag = {
-      liffId,
-      isInClient: typeof liff.isInClient === 'function' ? liff.isInClient() : 'n/a',
-      isLoggedIn: typeof liff.isLoggedIn === 'function' ? liff.isLoggedIn() : 'n/a',
-      version: typeof liff.getVersion === 'function' ? liff.getVersion() : 'n/a',
-      os: typeof liff.getOS === 'function' ? liff.getOS() : 'n/a',
-      pickerAvailable: liff.isApiAvailable('shareTargetPicker'),
-      ua: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
-    };
-    debugInfo.value = JSON.stringify(diag, null, 2);
-
-    if (!diag.pickerAvailable) {
-      // shareTargetPicker 不可用 → 降級為複製連結；console 同步輸出 diag 方便遠端排查
-      console.warn('[referral/share] shareTargetPicker not available — fallback to copy:', diag);
+    if (!liff.isApiAvailable('shareTargetPicker')) {
+      // 非 LINE 環境（桌機 / 外部瀏覽器）：降級為複製連結
       await CopyLinkFlow();
       return;
     }
@@ -209,12 +192,6 @@ onMounted(ApiLoadMe);
         :disabled="!referralCode"
         @click="ClickCopyLink"
       ) {{ $t('referral.share.copyBtn') }}
-
-    //- 診斷面板（排查 shareTargetPicker fallback 原因）
-    //- 點分享按鈕後自動顯示，手機 LIFF 內也看得到（不需 ?debug=1）
-    section.PageReferralShare__debug(v-if="debugInfo")
-      .PageReferralShare__debug-label LIFF DEBUG
-      pre.PageReferralShare__debug-text {{ debugInfo }}
 
   CommonFooter
 </template>
@@ -466,36 +443,5 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   &:hover:not(:disabled) { background: var(--da-amber-pale); }
   &:active { transform: scale(0.99); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
-}
-
-// ?debug=1 診斷面板
-.PageReferralShare__debug {
-  margin-top: 20px;
-  padding: 12px 14px;
-  background: rgba(26, 24, 20, 0.92);
-  border: 1px solid rgba(212, 134, 10, 0.3);
-  border-radius: 10px;
-  color: #c8e6c9;
-  font-family: monospace;
-}
-
-.PageReferralShare__debug-label {
-  font-family: $font-condensed;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--da-amber);
-  margin-bottom: 6px;
-}
-
-.PageReferralShare__debug-text {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 280px;
-  overflow-y: auto;
 }
 </style>
