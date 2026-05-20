@@ -194,6 +194,24 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── tags 集合（Phase 1A：車輛 / 司機標籤）─────────────────
+    // - 所有登入者可讀（booking / driver / admin 端均需取 active 標籤）
+    // - 寫入一律走 server admin SDK（/nuxt-api/tags/*，含 audit log + canManageFleet）
+    match /tags/{tagId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── tag_audit_logs 集合（Phase 1A）────────────────────────
+    // - admin client SDK 可讀（settings drawer 顯示歷史紀錄）
+    // - 寫入一律走 server admin SDK
+    match /tag_audit_logs/{logId} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
     // ── referrals 集合（推薦獎勵帳本）─────────────────────────
     // doc id = 被推薦人 lineUid；推薦歸因帳本（referrerUid / status / 鑄碼關聯）。
     // client 全面禁止讀寫，一律經 server admin SDK

@@ -6,6 +6,7 @@ type OpenComponent =
   | 'OpenDialogImageSelect' // 圖片選擇
   | 'OpenDialogAnnouncementEdit' // P37：公告編輯
   | 'OpenDialogLineRichmenuEdit' // P38：LINE richmenu 編輯
+  | 'OpenDialogTagEdit' // Phase 1A：車輛 / 司機標籤編輯
   // | 'OpenDialogDemo2'
   // TODO 組件加完後，要設定
 
@@ -33,5 +34,14 @@ type DialogLineRichmenuEditParams = {
   lang?: 'zh_tw' | 'en' | 'ja' // P42 create 模式必填；edit 模式由 server 既有 doc 決定（忽略此值）
   id?: string // edit 模式必填
   copyFromId?: string // P42 create 模式可選：從來源 doc 複製 areas + chatBarText + image objectPath
+}
+
+/** Phase 1A：標籤編輯彈窗參數 */
+type DialogTagEditParams = {
+  mode: 'create' | 'edit'
+  /** create 模式：預設帶入的群組（scope 由群組自動推導） */
+  group?: 'power' | 'vehicleType' | 'origin' | 'interior' | 'equipment' | 'driverSkill'
+  /** edit 模式必填：標籤 id */
+  id?: string
 }
 // TODO 組件加完後，要設定

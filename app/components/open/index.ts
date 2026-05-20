@@ -63,6 +63,9 @@ export default {
     Open<'saved' | 'published' | 'archived' | 'cancelled'>('OpenDialogAnnouncementEdit', params),
   /** P38：LINE richmenu 編輯（mode=create | edit） */
   DialogLineRichmenuEdit: (params: DialogLineRichmenuEditParams) =>
-    Open<'saved' | 'published' | 'cancelled'>('OpenDialogLineRichmenuEdit', params)
+    Open<'saved' | 'published' | 'cancelled'>('OpenDialogLineRichmenuEdit', params),
+  /** Phase 1A：標籤編輯（mode=create | edit） */
+  DialogTagEdit: (params: DialogTagEditParams) =>
+    Open<'saved' | 'cancelled'>('OpenDialogTagEdit', params)
   // TODO 組件加完後，要設定
 };

@@ -12,6 +12,7 @@ import * as announcement from './api/announcement';
 import * as self from './api/self';
 import * as legalPage from './api/legal-page';
 import * as referral from './api/referral';
+import * as tag from './api/tag';
 
 export default {
   ...file,
@@ -28,6 +29,7 @@ export default {
   ...self,
   ...legalPage,
   ...referral,
+  ...tag,
 };
 
 

@@ -8,10 +8,11 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 const authStore = StoreAuth();
 
 // ── 頂層分頁 ───────────────────────────────────────────────────
-type MainTab = 'access' | 'fleet' | 'fare' | 'promotions' | 'legal' | 'integrations' | 'system';
+type MainTab = 'access' | 'fleet' | 'tags' | 'fare' | 'promotions' | 'legal' | 'integrations' | 'system';
 const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean }> = [
   { key: 'access',       label: '存取控制' },
   { key: 'fleet',        label: '車型 / 行李 / 加值服務' },
+  { key: 'tags',         label: '車輛標籤' },
   { key: 'fare',         label: '車資進階規則', superOnly: true },
   { key: 'promotions',   label: '折扣碼' },
   { key: 'legal',        label: '文件管理' },
@@ -678,6 +679,13 @@ const ClickSaveFareRules = async () => {
       AdminSettingsFleetVehicles(v-if="fleetTab === 'vehicles'")
       AdminSettingsFleetLuggageTypes(v-if="fleetTab === 'luggage'")
       AdminSettingsFleetExtras(v-if="fleetTab === 'extras'")
+
+  //- 車輛 / 司機標籤管理（Phase 1A）
+  .PageAdminSettings__section(v-show="mainTab === 'tags'")
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label TAGS
+      span.PageAdminSettings__section-title 車輛標籤
+    AdminSettingsTags
 
   //- 車資進階規則 v1（Fare V2，僅 super 可見）
   .PageAdminSettings__section(v-show="authStore.isSuper && mainTab === 'fare'")
