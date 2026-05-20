@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { DocType, PendingDocument } from '@/protocol/fetch-api/api/admin';
+import type {
+  DocType,
+  PendingDocument,
+  VehicleProfileDto,
+  VehicleProfilePendingDto,
+} from '@/protocol/fetch-api/api/admin';
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -33,11 +39,31 @@ interface DriverDetail {
     rejectedAt: string;
     rejectReason: string;
   };
+  // Phase 1B：driver doc top-level
+  tags: string[];
+  vehicleProfile: VehicleProfileDto | null;
+  vehicleProfilePending: VehicleProfilePendingDto | null;
+  verifiedAt: string | null;
+  verifiedBy: string | null;
 }
 
 const loading = ref(false);
 const driver = ref<DriverDetail | null>(null);
-const activeTab = ref<'basic' | 'documents'>('basic');
+const activeTab = ref<'basic' | 'documents' | 'vehicle'>('basic');
+
+// Phase 1B：active tags 索引（id → TagDto）給 VehicleProfileReview 顯示中文名稱用
+const tagIndex = ref<Map<string, TagDto>>(new Map());
+
+const ApiLoadTagIndex = async () => {
+  try {
+    const res = await $api.GetActiveTags();
+    if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
+      const m = new Map<string, TagDto>();
+      for (const t of res.data.tags) m.set(t.id, t);
+      tagIndex.value = m;
+    }
+  } catch { /* silent */ }
+};
 
 const DOC_FIELDS: { type: DocType; label: string }[] = [
   { type: 'licenseUrl', label: '駕照' },
@@ -129,6 +155,25 @@ const ApiLoadDriver = async () => {
       } catch { /* 保留原 url */ }
     }));
 
+    // Phase 1B：driver doc top-level
+    const vpRaw = driverData.vehicleProfile as
+      | { photos?: string[]; tags?: string[]; updatedAt?: unknown }
+      | null
+      | undefined;
+    const vppRaw = driverData.vehicleProfilePending as
+      | {
+          photos?: string[];
+          tags?: string[];
+          status?: 'draft' | 'pending_review' | 'rejected';
+          submittedAt?: unknown;
+          rejectedAt?: unknown;
+          rejectReason?: string | null;
+          reviewedBy?: string | null;
+          updatedAt?: unknown;
+        }
+      | null
+      | undefined;
+
     driver.value = {
       displayName: (userData.displayName as string) ?? '',
       pictureUrl: (userData.pictureUrl as string) ?? '',
@@ -148,6 +193,28 @@ const ApiLoadDriver = async () => {
         rejectedAt: _ts(app1.rejectedAt) ?? '',
         rejectReason: (app1.rejectReason as string) ?? '',
       },
+      tags: Array.isArray(driverData.tags) ? (driverData.tags as string[]) : [],
+      vehicleProfile: vpRaw
+        ? {
+            photos: vpRaw.photos ?? [],
+            tags: vpRaw.tags ?? [],
+            updatedAt: _ts(vpRaw.updatedAt),
+          }
+        : null,
+      vehicleProfilePending: vppRaw
+        ? {
+            photos: vppRaw.photos ?? [],
+            tags: vppRaw.tags ?? [],
+            status: vppRaw.status ?? 'draft',
+            submittedAt: _ts(vppRaw.submittedAt),
+            rejectedAt: _ts(vppRaw.rejectedAt),
+            rejectReason: vppRaw.rejectReason ?? null,
+            reviewedBy: vppRaw.reviewedBy ?? null,
+            updatedAt: _ts(vppRaw.updatedAt),
+          }
+        : null,
+      verifiedAt: _ts(driverData.verifiedAt),
+      verifiedBy: (driverData.verifiedBy as string | null) ?? null,
     };
   } catch (err) {
     console.error('[admin/drivers/[uid]] load failed:', err);
@@ -228,7 +295,10 @@ const FormatTime = (iso: string | null) => iso ? $dayjs(iso).format('YYYY/MM/DD 
 
 const ClickBack = () => router.push('/admin/drivers');
 
-onMounted(ApiLoadDriver);
+onMounted(() => {
+  void ApiLoadDriver();
+  void ApiLoadTagIndex();
+});
 </script>
 
 <template lang="pug">
@@ -299,6 +369,18 @@ onMounted(ApiLoadDriver);
             .PageAdminDriverDetail__row(v-if="driver.application.rejectedAt")
               span.PageAdminDriverDetail__row-key 上次退回原因
               span.PageAdminDriverDetail__row-val {{ driver.application.rejectReason || '—' }}
+
+      ElTabPane(:label="`車輛 Profile ${driver.vehicleProfilePending?.status === 'pending_review' ? '⚠ 待審' : ''}`" name="vehicle")
+        .PageAdminDriverDetail__pane
+          AdminVehicleProfileReview(
+            :uid="uid"
+            :current="driver.vehicleProfile"
+            :pending="driver.vehicleProfilePending"
+            :verified-at="driver.verifiedAt"
+            :verified-by="driver.verifiedBy"
+            :tag-index="tagIndex"
+            @refresh="ApiLoadDriver"
+          )
 
       ElTabPane(:label="`證件審核 ${Object.keys(driver.application.documentsPending).length ? '(' + Object.keys(driver.application.documentsPending).length + ')' : ''}`" name="documents")
         .PageAdminDriverDetail__pane

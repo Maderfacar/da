@@ -60,6 +60,25 @@ export interface DriverApplication {
   rejectReason?: string | null
 }
 
+/** Phase 1B：driver vehicleProfile 已通過審核的版本（公開檔案頁與配對讀此欄位） */
+export interface VehicleProfileDto {
+  photos: string[]
+  tags: string[]
+  updatedAt: string | null
+}
+
+/** Phase 1B：driver 編輯中或待審的車輛 profile */
+export interface VehicleProfilePendingDto {
+  photos: string[]
+  tags: string[]
+  status: 'draft' | 'pending_review' | 'rejected'
+  submittedAt: string | null
+  rejectedAt: string | null
+  rejectReason: string | null
+  reviewedBy: string | null
+  updatedAt: string | null
+}
+
 export interface AdminUser {
   uid: string
   lineUserId: string
@@ -69,6 +88,15 @@ export interface AdminUser {
   approved: boolean
   driverCategory?: string
   driverApplication?: DriverApplication
+  /** Phase 1B：driver-scope tags（driverSkill） */
+  tags?: string[]
+  /** Phase 1B：已通過審核的車輛 profile */
+  vehicleProfile?: VehicleProfileDto | null
+  /** Phase 1B：草稿 / 待審 / 退回中的車輛 profile */
+  vehicleProfilePending?: VehicleProfilePendingDto | null
+  /** Phase 1B：最近一次 admin approve vehicleProfile 的 ISO 時間 */
+  verifiedAt?: string | null
+  verifiedBy?: string | null
   createdAt: string
 }
 
@@ -249,6 +277,15 @@ export const ReviewDriverDocument = (uid: string, body: {
   reason?: string
 }) => methods.post<{ uid: string; docType: string; decision: string }>(
   `/nuxt-api/admin/drivers/${uid}/document-review`,
+  body as unknown as Record<string, unknown>,
+);
+
+/** Phase 1B：Admin 核准 / 退回司機 pending 車輛 profile — 需 canManageDrivers */
+export const PostVehicleProfileReview = (uid: string, body: {
+  decision: 'approve' | 'reject'
+  reason?: string
+}) => methods.post<{ uid: string; decision: string }>(
+  `/nuxt-api/admin/drivers/${encodeURIComponent(uid)}/vehicle-profile-review`,
   body as unknown as Record<string, unknown>,
 );
 

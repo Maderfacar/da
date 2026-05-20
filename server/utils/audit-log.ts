@@ -45,6 +45,10 @@ export type AuditAction =
   | 'driver.profile_edit'          // admin 編 driver 的 profile
   | 'driver.document_replace'      // driver 上傳新證件（pending 狀態）
   | 'driver.document_review'       // admin 核准 / 退回 pending 證件
+  // Phase 1B driver / vehicle profile + 標籤掛載
+  | 'driver.tags_update'              // driver-scope tags（driverSkill）即時更新
+  | 'driver.vehicle_profile_submit'   // pending draft → pending_review
+  | 'driver.vehicle_profile_review'   // admin approve / reject pending
   // admin
   | 'admin.add'
   | 'admin.remove'

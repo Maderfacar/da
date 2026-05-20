@@ -60,6 +60,12 @@ export default defineEventHandler(async (event) => {
         // P18：driverCategory 已搬到 drivers/{uid}；P27：application 同樣在 drivers/{uid}
         driverCategory: undefined as string | undefined,
         driverApplication: null as Record<string, unknown> | null,
+        // Phase 1B：driver doc top-level vehicleProfile / pending / tags / verifiedAt 等
+        tags: [] as string[],
+        vehicleProfile: null as Record<string, unknown> | null,
+        vehicleProfilePending: null as Record<string, unknown> | null,
+        verifiedAt: null as string | null,
+        verifiedBy: null as string | null,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
       };
     });
@@ -85,11 +91,25 @@ export default defineEventHandler(async (event) => {
           }
         });
         // P31：documents 內 signed URL 重簽 4h（避免回傳 1 年舊 URL）
+        // Phase 1B：driver doc top-level 加 4 欄位（vehicleProfile / pending / verifiedAt / verifiedBy / tags）
+        const driverRawByUid = new Map<string, Record<string, unknown>>();
+        snaps.forEach((s) => {
+          if (s.exists) driverRawByUid.set(s.id, (s.data() ?? {}) as Record<string, unknown>);
+        });
         await Promise.all(users.map(async (u) => {
           const entry = driverDataByUid.get(u.uid);
           if (!entry) return;
           u.driverCategory = entry.category;
           if (entry.app) u.driverApplication = await _serializeApplication(entry.app, storage);
+
+          const raw = driverRawByUid.get(u.uid);
+          if (raw) {
+            u.tags = Array.isArray(raw.tags) ? (raw.tags as string[]) : [];
+            u.vehicleProfile = _serializeVehicleProfile(raw.vehicleProfile);
+            u.vehicleProfilePending = _serializeVehicleProfilePending(raw.vehicleProfilePending);
+            u.verifiedAt = _toIso(raw.verifiedAt);
+            u.verifiedBy = (raw.verifiedBy as string | null) ?? null;
+          }
         }));
       } catch (err) {
         console.error('[admin/users.get] drivers batch read failed:', err);
@@ -138,5 +158,38 @@ async function _serializeApplication(app: Record<string, unknown>, storage: Stor
     reviewedBy: (app.reviewedBy as string | null) ?? null,
     rejectedAt: toIso(app.rejectedAt),
     rejectReason: (app.rejectReason as string | null) ?? null,
+  };
+}
+
+/** Phase 1B：Timestamp → ISO string；string 維持；其他 → null */
+function _toIso(v: unknown): string | null {
+  if (!v) return null;
+  if (typeof v === 'string') return v;
+  const ts = v as { toDate?: () => Date };
+  return ts.toDate?.()?.toISOString?.() ?? null;
+}
+
+function _serializeVehicleProfile(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  return {
+    photos: Array.isArray(r.photos) ? r.photos : [],
+    tags: Array.isArray(r.tags) ? r.tags : [],
+    updatedAt: _toIso(r.updatedAt),
+  };
+}
+
+function _serializeVehicleProfilePending(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  return {
+    photos: Array.isArray(r.photos) ? r.photos : [],
+    tags: Array.isArray(r.tags) ? r.tags : [],
+    status: (r.status as string | undefined) ?? 'draft',
+    submittedAt: _toIso(r.submittedAt),
+    rejectedAt: _toIso(r.rejectedAt),
+    rejectReason: (r.rejectReason as string | null) ?? null,
+    reviewedBy: (r.reviewedBy as string | null) ?? null,
+    updatedAt: _toIso(r.updatedAt),
   };
 }

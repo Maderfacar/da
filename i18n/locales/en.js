@@ -735,6 +735,44 @@ export default {
         restore: '還原',
       },
     },
+    // Phase 1B：driver 車輛 Profile 審核（admin UI 暫沿用繁中值 — 規格 #14）
+    driverReview: {
+      sectionTitle: '車輛 Profile 審核',
+      columnCurrent: '目前（已驗證）',
+      columnPending: '待審內容',
+      badgePendingReview: '待審',
+      approveBtn: '核准（替換 current）',
+      rejectBtn: '退回',
+      rejectReasonLabel: '退回原因（會發給司機）',
+      approveConfirm: '確定核准？此標籤組與照片將取代目前 verified 內容。',
+      rejectConfirm: '確定退回此次提交？',
+      verifiedAt: '上次驗證時間',
+    },
+  },
+  // Phase 1B：driver 端（暫沿用繁中值 — 規格 #14）
+  driver: {
+    vehicleProfile: {
+      title: '車輛資料',
+      statusUnverified: '尚未提交審核',
+      statusDraft: '草稿（未送審）',
+      statusPendingReview: '審核中',
+      statusRejected: '審核退回',
+      statusVerified: '已驗證',
+      rejectReasonLabel: '退回原因',
+      btnSubmit: '送審',
+      btnDiscard: '捨棄變更',
+      btnWithdraw: '撤回送審',
+      btnReedit: '重新編輯',
+      photoUpload: '上傳照片',
+      photoMaxHint: '最多 8 張，每張 ≤ 5 MB（jpg / png / webp）',
+      submitConfirm: '確定送出本次變更給 admin 審核？',
+      discardConfirm: '確定捨棄所有未儲存變更？',
+      withdrawConfirm: '撤回送審後 admin 將不再審核此次提交。確定撤回？',
+    },
+    driverSkill: {
+      title: '司機能力標籤',
+      desc: '勾選自己具備的能力（變更立即生效，不需審核）',
+    },
   },
   enum: {
     apiStatus: {

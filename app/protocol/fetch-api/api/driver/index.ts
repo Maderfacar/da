@@ -128,3 +128,46 @@ export const UploadDriverDocument = async (params: {
   );
   return res;
 };
+
+// ── Phase 1B：driver/vehicle profile + 標籤掛載 ─────────────────────
+
+/** driver 自編 driver-scope tags（driverSkill；立即生效） */
+export const PatchDriverTags = (body: { tags: string[] }) =>
+  methods.patch<{ ok: true }>('/nuxt-api/drivers/me/tags', body as unknown as Record<string, unknown>);
+
+/** driver 編 vehicleProfilePending（partial；自動進 draft 狀態） */
+export const PatchVehicleProfile = (body: { photos?: string[]; tags?: string[] }) =>
+  methods.patch<{ ok: true }>('/nuxt-api/drivers/me/vehicle-profile', body as unknown as Record<string, unknown>);
+
+/** driver 送審：draft / rejected → pending_review */
+export const SubmitVehicleProfile = () =>
+  methods.post<{ ok: true; status: 'pending_review' }>('/nuxt-api/drivers/me/vehicle-profile');
+
+/** driver 捨棄 pending（含 pending_review 撤回） */
+export const DiscardVehicleProfile = () =>
+  methods.delete<{ ok: true }>('/nuxt-api/drivers/me/vehicle-profile');
+
+export interface UploadVehiclePhotoResponse {
+  url: string;
+  objectPath: string;
+  sizeBytes: number;
+  mime: string;
+}
+
+/**
+ * 上傳單張車輛照片到 Storage，回 signed URL。
+ * 與 UploadDriverDocument 相同：手動 multipart + 帶 Firebase ID token。
+ */
+export const UploadVehiclePhoto = async (file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const idToken = await StoreAuth().GetFreshIdToken();
+  const headers: Record<string, string> = idToken ? { Authorization: `Bearer ${idToken}` } : {};
+
+  const res = await $fetch<{ data: UploadVehiclePhotoResponse; status: { code: number; message: { zh_tw: string; en: string; ja: string } } }>(
+    '/nuxt-api/drivers/me/vehicle-photo-upload',
+    { method: 'POST', body: fd, headers },
+  );
+  return res;
+};

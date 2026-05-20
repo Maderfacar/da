@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { DocType, PendingDocument } from '@/protocol/fetch-api/api/admin';
+import type {
+  DocType,
+  PendingDocument,
+  VehicleProfileDto,
+  VehicleProfilePendingDto,
+} from '@/protocol/fetch-api/api/admin';
 
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
@@ -25,6 +30,11 @@ interface DriverDocs {
 const phone = ref('');
 const documents = ref<DriverDocs>({});
 const documentsPending = ref<Partial<Record<DocType, PendingDocument>>>({});
+
+// Phase 1B：driver-scope tags + vehicleProfile + pending
+const driverTags = ref<string[]>([]);
+const vehicleProfile = ref<VehicleProfileDto | null>(null);
+const vehicleProfilePending = ref<VehicleProfilePendingDto | null>(null);
 
 const DOC_FIELDS: { type: DocType; label: string }[] = [
   { type: 'licenseUrl', label: '駕照' },
@@ -54,7 +64,8 @@ const ApiLoadDriverData = async () => {
     // P26：phone + documents + documentsPending 從 drivers doc 拿
     const driverSnap = await getDoc(doc(db, 'drivers', lineUid.value));
     if (driverSnap.exists()) {
-      const application = driverSnap.data()?.application as {
+      const driverData = driverSnap.data() ?? {};
+      const application = driverData.application as {
         phone?: string;
         documents?: DriverDocs;
         documentsPending?: Record<string, {
@@ -67,6 +78,53 @@ const ApiLoadDriverData = async () => {
       } | undefined;
 
       phone.value = application?.phone ?? '';
+
+      // Phase 1B：driver-scope tags + vehicleProfile + pending
+      const _toIso = (v: unknown): string | null => {
+        if (!v) return null;
+        if (typeof v === 'string') return v;
+        const t = v as { toDate?: () => Date };
+        return t.toDate?.()?.toISOString?.() ?? null;
+      };
+      driverTags.value = Array.isArray(driverData.tags) ? (driverData.tags as string[]) : [];
+
+      const vp = driverData.vehicleProfile as
+        | { photos?: string[]; tags?: string[]; updatedAt?: unknown }
+        | null
+        | undefined;
+      vehicleProfile.value = vp
+        ? {
+            photos: vp.photos ?? [],
+            tags: vp.tags ?? [],
+            updatedAt: _toIso(vp.updatedAt),
+          }
+        : null;
+
+      const vpp = driverData.vehicleProfilePending as
+        | {
+            photos?: string[];
+            tags?: string[];
+            status?: 'draft' | 'pending_review' | 'rejected';
+            submittedAt?: unknown;
+            rejectedAt?: unknown;
+            rejectReason?: string | null;
+            reviewedBy?: string | null;
+            updatedAt?: unknown;
+          }
+        | null
+        | undefined;
+      vehicleProfilePending.value = vpp
+        ? {
+            photos: vpp.photos ?? [],
+            tags: vpp.tags ?? [],
+            status: vpp.status ?? 'draft',
+            submittedAt: _toIso(vpp.submittedAt),
+            rejectedAt: _toIso(vpp.rejectedAt),
+            rejectReason: vpp.rejectReason ?? null,
+            reviewedBy: vpp.reviewedBy ?? null,
+            updatedAt: _toIso(vpp.updatedAt),
+          }
+        : null;
 
       // P31：documents URL 透過 sign endpoint 重簽 4h（fallback 原 URL 不阻擋顯示）
       const rawDocs = application?.documents ?? {};
@@ -332,6 +390,17 @@ onMounted(() => {
           accept="image/jpeg,image/png,image/jpg,application/pdf"
           @change="ChangeFile(field.type, $event)"
         )
+
+  //- Phase 1B：車輛資料 + 司機能力標籤
+  .PageDriverProfile__section
+    .PageDriverProfile__section-label VEHICLE & SKILLS
+    .PageDriverProfile__vehicle-wrap
+      DriverVehicleProfileEditor(
+        :driver-tags="driverTags"
+        :vehicle-profile="vehicleProfile"
+        :pending="vehicleProfilePending"
+        @refresh="ApiLoadDriverData"
+      )
 
   //- 帳號資訊
   .PageDriverProfile__section
@@ -701,6 +770,10 @@ $danger: #f87171;
 
 .PageDriverProfile__doc-input {
   display: none;
+}
+
+.PageDriverProfile__vehicle-wrap {
+  padding: 12px;
 }
 
 .PageDriverProfile__signout {

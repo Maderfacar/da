@@ -188,6 +188,11 @@ const DOC_LABEL: Record<string, string> = {
             template(v-if="d.approved") 已核准
             template(v-else-if="isCoolingDown(d)") 冷卻 {{ CooldownText(d) }}
             template(v-else) 待審核
+          //- Phase 1B：vehicleProfilePending 待審徽章（與證件審核獨立）
+          span.PageAdminDrivers__vehicle-badge(
+            v-if="d.vehicleProfilePending?.status === 'pending_review'"
+            title="車輛 Profile 待審"
+          ) ⚠ 車輛待審
           //- P26：每張卡片右上加詳情頁連結（不刪 expand 行為，admin 仍可快速展開檢視）
           NuxtLink.PageAdminDrivers__detail-link(
             :to="`/admin/drivers/${d.uid}`"
@@ -487,6 +492,20 @@ $muted: rgba(255, 255, 255, 0.35);
   &.is-approved { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
   &.is-pending  { background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
   &.is-rejected { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: #f87171; }
+}
+
+.PageAdminDrivers__vehicle-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 100px;
+  background: rgba(255, 200, 0, 0.12);
+  border: 1px solid rgba(255, 200, 0, 0.35);
+  color: #f5c518;
+  flex-shrink: 0;
+  margin-left: 6px;
 }
 
 .PageAdminDrivers__detail-link {
