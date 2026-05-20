@@ -8,7 +8,12 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
-import { processReferralQualification, getReferralPushMessage } from '@@/utils/referral';
+import {
+  processReferralQualification,
+  getReferralPushMessage,
+  getReferralCampaign,
+  buildReferralShareFlex,
+} from '@@/utils/referral';
 
 interface GooglePlaceLite {
   address: string;
@@ -444,6 +449,44 @@ export default defineEventHandler(async (event) => {
           }
         } catch (err) {
           console.error('[orders/patch] referral qualification failed:', err);
+        }
+      })();
+    }
+
+    // ── 推薦獎勵機制 Phase 5+ FU：完成「首筆」訂單 → 推送活動分享卡（fire-and-forget）──
+    // 條件：kill-switch enabled=true + 該乘客首筆 completed 訂單（避免推播疲勞）+
+    //       乘客已有自己的 referralCode（CTA 帶入），缺 liffId / referralCode 時略過。
+    if (body.orderStatus === 'completed' && !wasCompleted && orderUserId) {
+      void (async () => {
+        try {
+          const campaign = await getReferralCampaign(db);
+          if (!campaign.enabled) return;
+
+          // 首筆判定：current 訂單已被 patch 為 completed，排除自身後若無其他 completed → 首筆
+          const ordersSnap = await db.collection('orders').where('userId', '==', orderUserId).get();
+          const hasOtherCompleted = ordersSnap.docs.some(
+            (d) => d.id !== orderId && d.data().orderStatus === 'completed',
+          );
+          if (hasOtherCompleted) return;
+
+          // 讀乘客自己的 referralCode（line-exchange lazy backfill；理論上必有）
+          const userSnap = await db.collection('users').doc(orderUserId).get();
+          const referralCode = (userSnap.data()?.referralCode as string | undefined) ?? '';
+          if (!referralCode) return;
+
+          const passengerLineUid = (orderData.lineUserId as string | undefined) || orderUserId;
+          const lang = await getUserLang(db, passengerLineUid);
+          const liffId = (useRuntimeConfig().public as { lineLiffIdPassenger?: string }).lineLiffIdPassenger ?? '';
+          const flex = buildReferralShareFlex({
+            shareCard: campaign.shareCard,
+            referralCode,
+            lang,
+            liffId,
+          });
+          if (!flex) return;
+          await sendLinePush('passenger', passengerLineUid, [flex]);
+        } catch (err) {
+          console.error('[orders/patch] referral share push failed:', err);
         }
       })();
     }

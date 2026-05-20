@@ -16,6 +16,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { randomInt } from 'node:crypto';
 import type { I18nMsg } from '@@/utils/response';
 import type { Lang } from '@@/utils/i18n-message';
+import type { LineMessage } from '@@/utils/line-push';
 import { mintDiscountCode } from '@@/utils/discount-code';
 
 // ── referralCode 產生 ─────────────────────────────────────────────
@@ -394,6 +395,99 @@ export function getReferralPushMessage(
     ? (lang as Lang)
     : 'zh_tw';
   return REFERRAL_PUSH_MESSAGES[key][safeLang](code);
+}
+
+// ── Phase 5+ FU：完成首單推活動卡 server 端 Flex builder ────────
+
+/**
+ * shareCard 欄位空值時的三語 fallback 文案。
+ * 對齊 i18n locale `referral.share.default*`（client 端 share.vue 使用）。
+ */
+const REFERRAL_SHARE_DEFAULTS: Record<Lang, { title: string; body: string; cta: string }> = {
+  zh_tw: {
+    title: '送你一張乘車折扣碼',
+    body: '透過這個連結加入，立即獲得新人專屬折扣，第一趟就能省。',
+    cta: '立即領取',
+  },
+  en: {
+    title: 'A ride discount, just for you',
+    body: 'Join via this link and get a welcome discount — save on your very first ride.',
+    cta: 'Claim now',
+  },
+  ja: {
+    title: '送迎割引コードをプレゼント',
+    body: 'このリンクから登録すると新規割引を獲得。初回の送迎からおトクに。',
+    cta: '今すぐ受け取る',
+  },
+};
+
+export interface BuildReferralShareFlexInput {
+  shareCard: ReferralShareCard;
+  referralCode: string;
+  lang: Lang | string | undefined;
+  /** 乘客 LIFF App ID（runtimeConfig.public.lineLiffIdPassenger）。 */
+  liffId: string;
+}
+
+/**
+ * 組推薦活動分享卡 Flex Message（server 端版本，結構對齊 share.vue BuildFlexMessage）。
+ *
+ *   - hero：imageUrl 為 `https://` 才掛（避免空字串或非 https URL 觸發 LINE schema error）
+ *   - body：title（粗體 xl）+ body（sm gray）
+ *   - footer：CTA 按鈕（uri 帶 `?ref={referralCode}`，amber 主色）
+ *   - 空 shareCard 欄位套 REFERRAL_SHARE_DEFAULTS 三語 fallback
+ *
+ * liffId 或 referralCode 為空 → 回 null（無法組合有效 URI；caller 應 skip push）。
+ */
+export function buildReferralShareFlex(input: BuildReferralShareFlexInput): LineMessage | null {
+  if (!input.liffId || !input.referralCode) return null;
+
+  const safeLang: Lang = (typeof input.lang === 'string' && (REFERRAL_PUSH_VALID_LANGS as string[]).includes(input.lang))
+    ? (input.lang as Lang)
+    : 'zh_tw';
+  const def = REFERRAL_SHARE_DEFAULTS[safeLang];
+
+  const title = input.shareCard.title.trim() || def.title;
+  const body = input.shareCard.body.trim() || def.body;
+  const cta = (input.shareCard.ctaLabel.trim() || def.cta).slice(0, 20);
+  const imageUrl = input.shareCard.imageUrl.trim();
+  const uri = `https://liff.line.me/${input.liffId}?ref=${input.referralCode}`;
+
+  const bubble: Record<string, unknown> = {
+    type: 'bubble',
+    body: {
+      type: 'box',
+      layout: 'vertical',
+      spacing: 'md',
+      contents: [
+        { type: 'text', text: title, weight: 'bold', size: 'xl', wrap: true },
+        { type: 'text', text: body, size: 'sm', color: '#6B6560', wrap: true },
+      ],
+    },
+    footer: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        {
+          type: 'button',
+          style: 'primary',
+          color: '#D4860A',
+          action: { type: 'uri', label: cta, uri },
+        },
+      ],
+    },
+  };
+  if (imageUrl.startsWith('https://')) {
+    bubble.hero = {
+      type: 'image',
+      url: imageUrl,
+      size: 'full',
+      aspectRatio: '20:13',
+      aspectMode: 'cover',
+    };
+  }
+
+  return { type: 'flex', altText: title, contents: bubble };
 }
 
 /** 各防刷失敗代碼對應的三語訊息（API 回傳用）。 */
