@@ -10,7 +10,6 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
 const config = useRuntimeConfig().public;
-const route = useRoute();
 
 const loading = ref(true);
 const referralCode = ref('');
@@ -18,9 +17,8 @@ const enabled = ref(false);
 const shareCard = ref<ReferralShareCard | null>(null);
 const sharing = ref(false);
 
-// 診斷面板：?debug=1 時顯示。記錄上次點分享時抓到的 LIFF 狀態快照，
-// 用來釐清 shareTargetPicker 為何 fallback 到 copy link。
-const showDebug = computed(() => route.query.debug === '1');
+// 診斷面板：點分享按鈕後自動顯示 LIFF 狀態快照（無條件顯示，方便手機 LIFF
+// 內排查 shareTargetPicker fallback；待問題定位後再移除）。
 const debugInfo = ref('');
 
 // 分享連結：優先用乘客 LIFF 連結（可在 LINE 內直接開啟），fallback 站內 /home
@@ -212,8 +210,9 @@ onMounted(ApiLoadMe);
         @click="ClickCopyLink"
       ) {{ $t('referral.share.copyBtn') }}
 
-    //- ?debug=1 診斷面板（排查 shareTargetPicker fallback 原因）
-    section.PageReferralShare__debug(v-if="showDebug && debugInfo")
+    //- 診斷面板（排查 shareTargetPicker fallback 原因）
+    //- 點分享按鈕後自動顯示，手機 LIFF 內也看得到（不需 ?debug=1）
+    section.PageReferralShare__debug(v-if="debugInfo")
       .PageReferralShare__debug-label LIFF DEBUG
       pre.PageReferralShare__debug-text {{ debugInfo }}
 
