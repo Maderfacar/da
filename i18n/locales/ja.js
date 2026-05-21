@@ -102,6 +102,21 @@ export default {
     suv: 'SUV',
     van: 'バン',
     premium: 'プレミアム',
+    // Phase 1C: 車両公開プロフィールページ
+    public: {
+      title: '車両情報',
+      verified: '認証済',
+      verifiedAt: '{date} 認証',
+      completedOrders: '{count} 回完了',
+      driverSkills: 'ドライバー',
+      vehicleFeatures: '車両特徴',
+      photoCount: '{count} 枚の写真',
+      bookCta: 'この車両を予約',
+      bookCtaHint: '近日公開（Phase 1D）',
+      notFound: '車両が見つかりません',
+      notFoundDesc: 'この車両は認証されていないか、存在しません。',
+      backHome: 'ホームに戻る',
+    },
   },
   orders: {
     title: '利用履歴',

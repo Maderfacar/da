@@ -13,6 +13,7 @@ import * as self from './api/self';
 import * as legalPage from './api/legal-page';
 import * as referral from './api/referral';
 import * as tag from './api/tag';
+import * as vehicle from './api/vehicle';
 
 export default {
   ...file,
@@ -30,6 +31,7 @@ export default {
   ...legalPage,
   ...referral,
   ...tag,
+  ...vehicle,
 };
 
 

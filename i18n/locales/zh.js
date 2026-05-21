@@ -110,6 +110,21 @@ export default {
     suv: '休旅車',
     van: '廂型車',
     premium: '豪華轎車',
+    // Phase 1C：車輛公開檔案頁
+    public: {
+      title: '車輛資訊',
+      verified: '已驗證',
+      verifiedAt: '認證於 {date}',
+      completedOrders: '已完成 {count} 趟',
+      driverSkills: '司機能力',
+      vehicleFeatures: '車輛特色',
+      photoCount: '{count} 張照片',
+      bookCta: '預約此車',
+      bookCtaHint: '即將開放（將於 Phase 1D 上線）',
+      notFound: '找不到車輛資訊',
+      notFoundDesc: '此車輛尚未通過驗證或不存在。',
+      backHome: '回到首頁',
+    },
   },
   // ── 我的訂單 ─────────────────────────────────────────────
   orders: {

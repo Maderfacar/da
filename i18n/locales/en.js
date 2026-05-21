@@ -102,6 +102,21 @@ export default {
     suv: 'SUV',
     van: 'Van',
     premium: 'Premium',
+    // Phase 1C: vehicle public profile page
+    public: {
+      title: 'Vehicle Profile',
+      verified: 'Verified',
+      verifiedAt: 'Verified on {date}',
+      completedOrders: '{count} trips completed',
+      driverSkills: 'Driver Skills',
+      vehicleFeatures: 'Vehicle Features',
+      photoCount: '{count} photos',
+      bookCta: 'Book this vehicle',
+      bookCtaHint: 'Coming soon (Phase 1D)',
+      notFound: 'Vehicle not found',
+      notFoundDesc: 'This vehicle has not been verified or does not exist.',
+      backHome: 'Back Home',
+    },
   },
   orders: {
     title: 'Trip History',
