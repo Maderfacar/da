@@ -76,6 +76,24 @@ export default defineEventHandler(async (event) => {
         bids: serializeBids(d.bids),
         assignedAt: d.assignedAt?.toDate?.()?.toISOString?.() ?? null,
         assignedBy: (d.assignedBy as string | undefined) ?? null,
+        // Phase 1F：Soft Match / 重新配對欄位 echo
+        passengerConfirmationStatus: (d.passengerConfirmationStatus as string | undefined) ?? null,
+        reMatchRound: typeof d.reMatchRound === 'number' ? d.reMatchRound : 0,
+        bidHistory: Array.isArray(d.bidHistory)
+          ? (d.bidHistory as Array<{ round?: number; bids?: unknown; endReason?: string; endedAt?: unknown; endedBy?: string }>).map((h) => {
+            const e = h.endedAt as { toDate?: () => Date } | Date | null | undefined;
+            const endedAtIso = e instanceof Date
+              ? e.toISOString()
+              : (e as { toDate?: () => Date } | null | undefined)?.toDate?.()?.toISOString?.() ?? null;
+            return {
+              round: typeof h.round === 'number' ? h.round : 0,
+              bids: serializeBids(h.bids),
+              endReason: (h.endReason as string | undefined) ?? '',
+              endedAt: endedAtIso,
+              endedBy: (h.endedBy as string | undefined) ?? null,
+            };
+          })
+          : [],
       };
     });
 

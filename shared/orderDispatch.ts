@@ -90,6 +90,25 @@ export function computeDriverMatch(
 }
 
 /**
+ * Phase 1F：判定某個 driverMatchResult 是否屬於「Soft Match」。
+ *
+ * Soft Match 定義（拍版 #2 / #4）：乘客有勾偏好（preferenceCount > 0），但 driver
+ * 命中的 tag 數量 < preferenceCount（含 0 命中也算 soft）。
+ *
+ * - preferenceCount = 0 → 乘客沒勾偏好 → 不可能 soft（拍版 #4）
+ * - matchCount === preferenceCount → 完全命中
+ * - matchCount < preferenceCount → soft
+ */
+export function isSoftMatch(
+  preferenceTagIds: ReadonlyArray<string>,
+  match: Pick<DriverMatchResult, 'matchCount'>,
+): boolean {
+  const pref = Array.isArray(preferenceTagIds) ? preferenceTagIds.length : 0;
+  if (pref === 0) return false;
+  return (match?.matchCount ?? 0) < pref;
+}
+
+/**
  * 從 active tags collection DTO 陣列建 DispatchTagIndexEntry map。
  *
  * 注意：本 helper 對「scope」不做過濾，因為 1E 配對允許 driver-scope 命中

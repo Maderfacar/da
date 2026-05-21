@@ -147,6 +147,19 @@ export interface AdminOrderBidSnapshot {
   withdrawnAt: string | null
 }
 
+/** Phase 1F：admin 看訂單列表時的歷次配對輪 snapshot */
+export type AdminOrderBidHistoryEndReason = 'assigned' | 'rematched_by_passenger' | 'rematched_by_admin' | ''
+export interface AdminOrderBidHistoryEntry {
+  round: number
+  bids: AdminOrderBidSnapshot[]
+  endReason: AdminOrderBidHistoryEndReason
+  endedAt: string | null
+  endedBy: string | null
+}
+
+/** Phase 1F：乘客確認狀態 */
+export type PassengerConfirmationStatus = 'auto' | 'pending' | 'accepted' | 'declined'
+
 export interface AdminOrder {
   orderId: string
   userId: string
@@ -182,6 +195,12 @@ export interface AdminOrder {
   /** Phase 1E：admin 指派時間（null = 尚未指派） */
   assignedAt?: string | null
   assignedBy?: string | null
+  /** Phase 1F：乘客對 Soft Match 結果的確認狀態（null = 從未指派 / pre-1F 訂單） */
+  passengerConfirmationStatus?: PassengerConfirmationStatus | null
+  /** Phase 1F：本訂單已重新配對的次數（含 admin force rematch + passenger 選 wait） */
+  reMatchRound?: number
+  /** Phase 1F：歷次配對輪 snapshot（最後一輪不一定在這；當前的 bids 仍在 order.bids） */
+  bidHistory?: AdminOrderBidHistoryEntry[]
 }
 
 export interface PatchAdminOrderBody {

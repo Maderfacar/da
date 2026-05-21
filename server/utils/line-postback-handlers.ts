@@ -15,7 +15,19 @@
  *   - getLiffUrl 直接基於 LIFF ID 組 https://liff.line.me/{liffId}{path}，不新增冗餘 env var
  *   - LIFF SDK 把 path 帶到 endpoint URL；endpoint 既有路由可解析
  */
+import { FieldValue } from 'firebase-admin/firestore';
 import type { LineClient } from '@@/utils/line-channel';
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { acceptSoftMatch, declineSoftMatch, rematchOrder } from '@@/utils/order-soft-match';
+import { DispatchGuardError, loadActiveDrivers } from '@@/utils/order-dispatch';
+import {
+  pushOrderDispatchToDrivers,
+  getDispatchPushEnv,
+} from '@@/utils/line-dispatch-push';
+import { pushDriverDeselected, pushPassengerRematch } from '@@/utils/line-soft-match-push';
+import { buildTagIndex } from '@@/utils/vehicle-profile';
+import { getUserLang } from '@@/utils/i18n-message';
+import type { AuditAction } from '@@/utils/audit-log';
 
 export interface PostbackContext {
   client: LineClient;
@@ -38,6 +50,23 @@ export interface PostbackEntry {
   /** 適用 channel；'both' = 雙 OA 都可用 */
   channel: LineClient | 'both';
   /** 處理函式 */
+  handler: PostbackHandler;
+}
+
+/**
+ * Phase 1F：動態 postback 處理器（prefix-based）— 與 whitelist exact-match 並存。
+ *
+ * 用於 LINE Flex 帶 query 的 postback data（如 `passenger.softMatch.accept?orderId=XXX`）。
+ * findPostbackHandler 先比 exact whitelist，再試 PREFIX_HANDLERS；都沒有才回 null。
+ *
+ * 與 whitelist 區別：
+ *   - whitelist 是 admin 在 UI 下拉可選的 button data（受控、可被 audit）
+ *   - PREFIX_HANDLERS 是 server 內部 push 出去的 Flex 自帶 postback（admin 不能編）
+ */
+interface PrefixHandlerEntry {
+  /** 必須命中的前綴；data 可以是 `prefix?key=val` 形式 */
+  prefix: string;
+  channel: LineClient | 'both';
   handler: PostbackHandler;
 }
 
@@ -172,11 +201,177 @@ export const POSTBACK_WHITELIST: PostbackEntry[] = [
   },
 ];
 
+/**
+ * Phase 1F：parse Soft Match postback data
+ *
+ * Data 格式：`passenger.softMatch.<decision>?orderId=<orderId>`
+ * 回傳 `{ decision, orderId }` 或 null（格式不對）。
+ */
+function _parseSoftMatchData(data: string): { decision: 'accept' | 'wait' | 'cancel'; orderId: string } | null {
+  const m = data.match(/^passenger\.softMatch\.(accept|wait|cancel)\?orderId=([^&]+)$/);
+  if (!m) return null;
+  return { decision: m[1] as 'accept' | 'wait' | 'cancel', orderId: m[2] };
+}
+
+/**
+ * Phase 1F：postback 內部直接呼叫 utility（不走 HTTP self-call，
+ * 因 server self-call 無法帶 cookie / auth header；改用 db handle 直接讀寫 + transaction 守則）。
+ *
+ * Handler 內 owner check：source.userId 對齊 orders/{orderId}.userId 或 .lineUserId。
+ */
+const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
+  {
+    prefix: 'passenger.softMatch.',
+    channel: 'passenger',
+    handler: async (ctx) => {
+      const parsed = _parseSoftMatchData(ctx.data);
+      if (!parsed) {
+        console.warn('[postback] passenger.softMatch invalid data:', ctx.data);
+        return { replyMessages: [{ type: 'text', text: '⚠️ 操作失敗，連結格式錯誤' }] };
+      }
+      const { decision, orderId } = parsed;
+      const { firebaseServiceAccountJson } = useRuntimeConfig();
+      if (!firebaseServiceAccountJson) {
+        return { replyMessages: [{ type: 'text', text: '⚠️ 系統未設定 Firebase' }] };
+      }
+      const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+
+      // 守 owner：order.lineUserId / userId 必須對齊 source.userId
+      const orderRef = db.collection('orders').doc(orderId);
+      const orderSnap = await orderRef.get();
+      if (!orderSnap.exists) {
+        return { replyMessages: [{ type: 'text', text: '⚠️ 找不到對應訂單' }] };
+      }
+      const orderData = orderSnap.data() ?? {};
+      const orderUserId = (orderData.userId as string | undefined) ?? '';
+      const orderLineUserId = (orderData.lineUserId as string | undefined) ?? '';
+      if (orderUserId !== ctx.lineUid && orderLineUserId !== ctx.lineUid) {
+        return { replyMessages: [{ type: 'text', text: '⚠️ 無權操作此訂單' }] };
+      }
+      // 守 confirmationStatus='pending'
+      if (orderData.passengerConfirmationStatus !== 'pending') {
+        return { replyMessages: [{ type: 'text', text: '⚠️ 本次選擇已逾時或已處理' }] };
+      }
+
+      const env = getDispatchPushEnv();
+      const pickupDateTime = (orderData.pickupDateTime as string) ?? '';
+      const pickupAddress = (orderData.pickupLocation?.displayName as string) || (orderData.pickupLocation?.address as string) || '';
+      const dropoffAddress = (orderData.dropoffLocation?.displayName as string) || (orderData.dropoffLocation?.address as string) || '';
+      const passengerCount = (orderData.passengerCount as number) ?? 1;
+      const estimatedFare = (orderData.estimatedFare as number) ?? 0;
+      const passengerLineUid = orderLineUserId || orderUserId;
+
+      try {
+        if (decision === 'accept') {
+          await acceptSoftMatch(db, orderId);
+          await _writeSoftMatchAudit(db, orderId, 'accept', ctx.lineUid, null);
+          return { replyMessages: [{ type: 'text', text: '✅ 已接受配對，行程即將開始' }] };
+        }
+
+        if (decision === 'wait') {
+          const { prevDriverLineUid, reMatchRound } = await rematchOrder(db, orderId, 'rematched_by_passenger');
+          // 撈原 driver / 偏好 chip
+          const [prevDriverSnap, tagIdx] = await Promise.all([
+            db.collection('users').doc(prevDriverLineUid).get(),
+            buildTagIndex(db),
+          ]);
+          const prevDriverLineUserId = (prevDriverSnap.exists ? (prevDriverSnap.data()?.lineUserId as string | undefined) : undefined) ?? prevDriverLineUid;
+          const preferences = orderData.preferences as { tagIds?: unknown } | undefined;
+          const preferenceTagIds: string[] = Array.isArray(preferences?.tagIds) ? (preferences!.tagIds as string[]) : [];
+          const preferenceChips = preferenceTagIds
+            .map((id) => tagIdx.get(id)?.nameZh ?? '')
+            .filter((s) => s.length > 0);
+
+          void (async () => {
+            try { await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime }); } catch (err) { console.error('[postback wait] deselect push:', err); }
+          })();
+          void (async () => {
+            try {
+              const drivers = await loadActiveDrivers(db);
+              await pushOrderDispatchToDrivers({
+                orderId, pickupDateTime, pickupAddress, dropoffAddress, passengerCount, estimatedFare, preferenceChips,
+              }, env, drivers.map((d) => d.lineUserId));
+            } catch (err) { console.error('[postback wait] dispatch push:', err); }
+          })();
+          void (async () => {
+            try {
+              const lang = await getUserLang(db, passengerLineUid);
+              await pushPassengerRematch(passengerLineUid, { orderId, pickupDateTime }, lang);
+            } catch (err) { console.error('[postback wait] passenger push:', err); }
+          })();
+          await _writeSoftMatchAudit(db, orderId, 'wait', ctx.lineUid, { reMatchRound, prevDriverId: prevDriverLineUid });
+          return { replyMessages: [{ type: 'text', text: '🔄 已重新進入配對佇列，將盡快為您找新車輛' }] };
+        }
+
+        // decision === 'cancel'
+        const { prevDriverLineUid } = await declineSoftMatch(db, orderId, 'passenger_soft_match_declined');
+        void (async () => {
+          try {
+            if (!prevDriverLineUid) return;
+            const prevDriverSnap = await db.collection('users').doc(prevDriverLineUid).get();
+            const prevDriverLineUserId = (prevDriverSnap.exists ? (prevDriverSnap.data()?.lineUserId as string | undefined) : undefined) ?? prevDriverLineUid;
+            await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime });
+          } catch (err) { console.error('[postback cancel] deselect push:', err); }
+        })();
+        await _writeSoftMatchAudit(db, orderId, 'cancel', ctx.lineUid, { prevDriverId: prevDriverLineUid });
+        return { replyMessages: [{ type: 'text', text: '🚫 訂單已取消' }] };
+      } catch (err) {
+        if (err instanceof DispatchGuardError) {
+          if (err.code === 'invalid_status') {
+            return { replyMessages: [{ type: 'text', text: '⚠️ 訂單狀態已變動，無法執行此操作' }] };
+          }
+          if (err.code === 'order_not_found') {
+            return { replyMessages: [{ type: 'text', text: '⚠️ 找不到對應訂單' }] };
+          }
+        }
+        console.error('[postback soft-match] failed:', err);
+        return { replyMessages: [{ type: 'text', text: '⚠️ 系統錯誤，請聯絡客服' }] };
+      }
+    },
+  },
+];
+
+/** Phase 1F：postback handler 內寫 audit log（actor 直接用 lineUid，無 auth.level） */
+async function _writeSoftMatchAudit(
+  _db: FirebaseFirestore.Firestore,
+  orderId: string,
+  decision: 'accept' | 'wait' | 'cancel',
+  lineUid: string,
+  extra: Record<string, unknown> | null,
+): Promise<void> {
+  try {
+    // 不走 writeAuditLog（需 H3Event + AuthOk）；直接寫 audit_logs collection
+    await _db.collection('audit_logs').add({
+      actorUid: lineUid,
+      actorDisplayName: lineUid,
+      actorLevel: 'passenger',
+      action: 'order.soft_match_response' satisfies AuditAction,
+      targetType: 'order',
+      targetId: orderId,
+      payload: { decision, source: 'line_postback', ...(extra ?? {}) },
+      ip: '',
+      userAgent: 'line-webhook',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('[postback] write audit failed (silent):', err);
+  }
+}
+
 /** 從 whitelist 找對應 entry；data 不在 whitelist 或 channel 不符 → null */
 export function findPostbackHandler(client: LineClient, data: string): PostbackEntry | null {
-  return POSTBACK_WHITELIST.find(
+  const exact = POSTBACK_WHITELIST.find(
     (e) => e.data === data && (e.channel === 'both' || e.channel === client),
-  ) ?? null;
+  );
+  if (exact) return exact;
+  // Phase 1F：prefix-based handler（如 soft-match）
+  const prefix = PREFIX_HANDLERS.find(
+    (p) => data.startsWith(p.prefix) && (p.channel === 'both' || p.channel === client),
+  );
+  if (prefix) {
+    return { data, label: prefix.prefix, channel: prefix.channel, handler: prefix.handler };
+  }
+  return null;
 }
 
 /** 列 admin UI 用的 whitelist（依 channel 過濾） */

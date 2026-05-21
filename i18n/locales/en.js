@@ -825,6 +825,30 @@ export default {
     cancelled: {
       bidder: 'The order was cancelled. Your bid has been automatically withdrawn.',
     },
+    // Phase 1F：Soft Match 3 選 1 + 重新配對
+    softMatch: {
+      title: '⚠️ Partial match',
+      subtitle: 'Matched {matched} of your {total} preferences',
+      driver: 'Driver',
+      pickupLabel: 'Pickup',
+      completedLabel: '{n} trips completed',
+      matched: '✓ Matched',
+      unmatched: '✗ Not matched',
+      none: 'None',
+      viewVehicle: 'View vehicle',
+      btnAccept: 'Accept this car',
+      btnWait: 'Wait for next match',
+      btnCancel: 'Cancel order',
+      ackAccepted: 'Match accepted; your trip will begin soon.',
+      ackWait: 'Re-entered matching queue; finding another driver.',
+      ackCancel: 'Order cancelled.',
+    },
+    rematch: {
+      passengerTitle: '🔄 Re-matching your order',
+      passengerBody: 'The previous vehicle was withdrawn. Searching for another driver.',
+      driverDeselectedTitle: '🔁 Order re-dispatched',
+      driverDeselectedBody: 'Order {orderId} has been re-queued and will not be served by you this time.',
+    },
   },
   enum: {
     apiStatus: {

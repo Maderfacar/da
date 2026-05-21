@@ -65,6 +65,9 @@ export type AuditAction =
   | 'order.bid'                    // driver 喊單
   | 'order.bid_withdraw'           // driver 撤回喊單
   | 'order.cancel_dispatched'      // 取消已派發訂單（通知 bidders）
+  // Phase 1F Soft Match / 重新配對
+  | 'order.rematch'                // admin 強制重新配對 OR passenger soft match 選「等下一輪」
+  | 'order.soft_match_response'    // passenger 收 soft-match Flex 後 3 選 1（accept/wait/cancel）
   // broadcast / notify
   | 'broadcast.send'
   | 'broadcast.notify_one'        // legacy（P37 前；passenger / driver 共用）

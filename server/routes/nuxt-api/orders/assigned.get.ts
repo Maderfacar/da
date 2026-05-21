@@ -75,6 +75,8 @@ export default defineEventHandler(async (event) => {
         contactPhone: (d.contactPhone as string | undefined) ?? null,
         orderStatus: d.orderStatus as string,
         createdAt: d.createdAt?.toMillis?.() ?? 0,
+        // Phase 1F：乘客 Soft Match 確認狀態（driver UI 用，顯示「等待乘客確認」橫幅）
+        passengerConfirmationStatus: (d.passengerConfirmationStatus as string | undefined) ?? null,
       };
     });
 

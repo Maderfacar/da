@@ -845,6 +845,30 @@ export default {
     cancelled: {
       bidder: '訂單已取消，您的喊單已自動撤回',
     },
+    // Phase 1F：Soft Match 3 選 1 + 重新配對
+    softMatch: {
+      title: '⚠️ 配對部分符合',
+      subtitle: '您勾選的 {total} 項偏好中，{matched} 項符合',
+      driver: '司機',
+      pickupLabel: '上車時間',
+      completedLabel: '完成 {n} 趟',
+      matched: '✓ 符合偏好',
+      unmatched: '✗ 未符合',
+      none: '無',
+      viewVehicle: '查看車輛',
+      btnAccept: '接受此車',
+      btnWait: '等下一輪配對',
+      btnCancel: '取消訂單',
+      ackAccepted: '已接受配對，行程即將開始',
+      ackWait: '已重新進入配對佇列，將盡快為您找新車輛',
+      ackCancel: '訂單已取消',
+    },
+    rematch: {
+      passengerTitle: '🔄 正在重新為您配對',
+      passengerBody: '原車輛已撤回，正在尋找其他符合的司機',
+      driverDeselectedTitle: '🔁 訂單已重新分派',
+      driverDeselectedBody: '訂單 {orderId} 已重新進入配對，本次未由您接單',
+    },
   },
   // ── API 狀態（原有）──────────────────────────────────────
   enum: {

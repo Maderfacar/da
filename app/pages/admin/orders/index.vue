@@ -560,6 +560,73 @@ const ClickAssignFromBid = async (driverId: string) => {
   }
 };
 
+// ── Phase 1F：Soft Match 確認 / 強制重新配對 ─────────────────────────
+const CONFIRMATION_LABEL: Record<string, string> = {
+  auto:     '自動接受',
+  pending:  '等待乘客確認',
+  accepted: '已接受',
+  declined: '已拒絕',
+};
+const CONFIRMATION_TAG_CLASS: Record<string, string> = {
+  auto:     'is-confirmed',
+  pending:  'is-pending',
+  accepted: 'is-confirmed',
+  declined: 'is-cancel',
+};
+const ConfirmationLabel = (s: string | null | undefined): string => {
+  if (!s) return '';
+  return CONFIRMATION_LABEL[s] ?? s;
+};
+const ConfirmationCls = (s: string | null | undefined): string => {
+  if (!s) return '';
+  return CONFIRMATION_TAG_CLASS[s] ?? '';
+};
+
+const showRematchDialog = ref(false);
+const rematchReason = ref('');
+const rematching = ref(false);
+
+const CanForceRematch = (order: AdminOrder | null): boolean => {
+  if (!order) return false;
+  if (order.orderStatus !== 'confirmed') return false;
+  if (!order.assignedDriverId) return false;
+  return true;
+};
+
+const ClickOpenRematch = () => {
+  if (!selectedOrder.value || !CanForceRematch(selectedOrder.value)) return;
+  rematchReason.value = '';
+  showRematchDialog.value = true;
+};
+
+const ClickCloseRematch = () => {
+  if (rematching.value) return;
+  showRematchDialog.value = false;
+  rematchReason.value = '';
+};
+
+const SubmitForceRematch = async () => {
+  if (!selectedOrder.value) return;
+  rematching.value = true;
+  try {
+    const res = await $api.ForceRematchOrder(selectedOrder.value.orderId, { reason: rematchReason.value });
+    if (res.status.code === 200) {
+      ElMessage({ message: '訂單已重新進入配對佇列，已通知司機與乘客', type: 'success' });
+      showRematchDialog.value = false;
+      rematchReason.value = '';
+      await ApiLoadOrders();
+      // 重新打開 modal — 若 status 改成 pending 需要重新載入 bids
+      const refresh = orders.value.find((o) => o.orderId === selectedOrder.value?.orderId);
+      if (refresh) selectedOrder.value = refresh;
+      await ApiLoadOrderBids();
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '重新配對失敗', type: 'error' });
+    }
+  } finally {
+    rematching.value = false;
+  }
+};
+
 // modal 開啟時自動載 bids（若已派發）；切換 selectedOrder 時重 fetch
 watch(() => selectedOrder.value?.orderId, async (id) => {
   if (id) {
@@ -641,6 +708,10 @@ onMounted(() => {
             v-if="DispatchStateLabel(o)"
             :class="DispatchStateLabel(o)?.cls"
           ) {{ DispatchStateLabel(o)?.text }}
+          //- Phase 1F：重派次數徽章（>=1 才顯示）
+          span.PageAdminOrders__dispatch-badge.is-rematch(
+            v-if="(o.reMatchRound ?? 0) > 0"
+          ) 重派 {{ o.reMatchRound }} 次
         .PageAdminOrders__cell.is-action
           span.PageAdminOrders__row-chevron ›
 
@@ -718,6 +789,40 @@ onMounted(() => {
                   v-if="canCancel"
                   @click="ClickOpenAssign"
                 ) {{ selectedOrder.assignedDriverId ? '更換司機' : '指派司機' }}
+
+            //- Phase 1F：乘客確認狀態 + 強制重新配對（confirmed 訂單才顯示）
+            .PageAdminOrders__section(v-if="selectedOrder.orderStatus === 'confirmed' && selectedOrder.assignedDriverId")
+              .PageAdminOrders__section-title 配對確認狀態
+              .PageAdminOrders__section-row(v-if="selectedOrder.passengerConfirmationStatus")
+                span.PageAdminOrders__section-key 乘客確認
+                span.PageAdminOrders__status(:class="ConfirmationCls(selectedOrder.passengerConfirmationStatus)") {{ ConfirmationLabel(selectedOrder.passengerConfirmationStatus) }}
+              .PageAdminOrders__section-row(v-else)
+                span.PageAdminOrders__section-key 乘客確認
+                span.PageAdminOrders__section-val.is-muted 無紀錄（pre-1F 訂單）
+              .PageAdminOrders__rematch-actions
+                button.PageAdminOrders__action.is-warn(
+                  :disabled="!CanForceRematch(selectedOrder)"
+                  @click="ClickOpenRematch"
+                ) 🔄 強制重新配對
+                .PageAdminOrders__rematch-hint
+                  | 移除目前中選司機，重新派發給全部司機並通知乘客。
+
+            //- Phase 1F：歷次配對輪 snapshot
+            .PageAdminOrders__section(v-if="(selectedOrder.bidHistory?.length ?? 0) > 0")
+              .PageAdminOrders__section-title 配對歷史（重派 {{ selectedOrder.reMatchRound ?? 0 }} 次）
+              .PageAdminOrders__bid-history
+                .PageAdminOrders__history-row(v-for="h in selectedOrder.bidHistory" :key="h.round")
+                  .PageAdminOrders__history-head
+                    span.PageAdminOrders__history-round Round {{ h.round }}
+                    span.PageAdminOrders__history-reason {{ h.endReason }}
+                    span.PageAdminOrders__history-time(v-if="h.endedAt") {{ $dayjs(h.endedAt).format('MM/DD HH:mm') }}
+                  .PageAdminOrders__history-bids(v-if="h.bids.length")
+                    span.PageAdminOrders__history-bid(
+                      v-for="b in h.bids"
+                      :key="b.driverId"
+                      :class="{ 'is-withdrawn': !!b.withdrawnAt }"
+                    ) {{ b.driverDisplayName || b.driverId }}
+                  .PageAdminOrders__history-empty(v-else) 該輪無喊單
 
             //- 路線
             .PageAdminOrders__section
@@ -986,6 +1091,29 @@ onMounted(() => {
           :disabled="cancelDialog.cancelling"
           @click="ApiCancelOrder"
         ) {{ cancelDialog.cancelling ? '處理中...' : '確認取消訂單' }}
+
+  //- Phase 1F：強制重新配對 sub-modal
+  .PageAdminOrders__sub-mask(v-if="showRematchDialog" @click.self="ClickCloseRematch")
+    .PageAdminOrders__sub-modal
+      .PageAdminOrders__sub-title 強制重新配對
+      .PageAdminOrders__sub-body
+        label.PageAdminOrders__edit-label 原因（選填）
+        textarea.PageAdminOrders__edit-textarea(
+          v-model="rematchReason"
+          rows="3"
+          maxlength="200"
+          placeholder="例：車輛故障 / 司機反悔..."
+        )
+        p.PageAdminOrders__sub-hint.is-warn ⚠️ 觸發後將移除目前中選司機、清空當前喊單清單、重新派發給全部已認證司機，並通知乘客「正在重新配對中」。訂單狀態會回到「待派發」。
+      .PageAdminOrders__sub-actions
+        button.PageAdminOrders__action.is-secondary(
+          @click="ClickCloseRematch"
+          :disabled="rematching"
+        ) 返回
+        button.PageAdminOrders__action.is-warn(
+          :disabled="rematching"
+          @click="SubmitForceRematch"
+        ) {{ rematching ? '處理中...' : '確認重新配對' }}
 
   //- 新增訂單彈窗
   AdminOrdersCreateModal(v-model="showCreate" @created="ApiLoadOrders")
@@ -1291,6 +1419,87 @@ $muted: rgba(255, 255, 255, 0.35);
 
   &.is-pending  { background: rgba(255, 80, 80, 0.1);  border: 1px solid rgba(255, 80, 80, 0.25);  color: rgba(255, 120, 120, 0.85); }
   &.is-progress { background: rgba($amber, 0.12);       border: 1px solid rgba($amber, 0.3);         color: $amber; }
+  // Phase 1F：重派次數徽章
+  &.is-rematch  { background: rgba(140, 110, 220, 0.12); border: 1px solid rgba(140, 110, 220, 0.3); color: rgba(180, 150, 240, 0.95); margin-left: 4px; }
+}
+
+// Phase 1F：強制重新配對 + bidHistory
+.PageAdminOrders__rematch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.PageAdminOrders__rematch-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  line-height: 1.5;
+}
+
+.PageAdminOrders__bid-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.PageAdminOrders__history-row {
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: $surface;
+}
+
+.PageAdminOrders__history-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.PageAdminOrders__history-round {
+  color: $amber;
+  font-weight: 700;
+}
+
+.PageAdminOrders__history-reason {
+  color: $muted;
+}
+
+.PageAdminOrders__history-time {
+  color: $muted;
+  margin-left: auto;
+}
+
+.PageAdminOrders__history-bids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.PageAdminOrders__history-bid {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid $border;
+  color: $text;
+
+  &.is-withdrawn {
+    text-decoration: line-through;
+    opacity: 0.5;
+  }
+}
+
+.PageAdminOrders__history-empty {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $muted;
 }
 
 .PageAdminOrders__dispatch-empty {
@@ -1712,6 +1921,14 @@ $muted: rgba(255, 255, 255, 0.35);
     color: rgba(255, 100, 100, 0.95);
     border-color: rgba(255, 80, 80, 0.35);
     &:hover:not(:disabled) { background: rgba(255, 80, 80, 0.18); }
+  }
+
+  // Phase 1F：warn 變體（強制重新配對等需謹慎但非破壞性的動作）
+  &.is-warn {
+    background: rgba(255, 165, 0, 0.1);
+    color: rgba(255, 200, 100, 0.95);
+    border-color: rgba(255, 165, 0, 0.35);
+    &:hover:not(:disabled) { background: rgba(255, 165, 0, 0.2); }
   }
 
   &.is-block { display: block; width: 100%; }

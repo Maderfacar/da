@@ -1,12 +1,15 @@
 /**
- * POST /nuxt-api/admin/orders/:orderId/assign — Phase 1E
+ * POST /nuxt-api/admin/orders/:orderId/assign — Phase 1E + Phase 1F
  *
  * Admin 從某筆 dispatched 訂單的 bids 中挑一個 driver 指派：
  *   - body: { driverId: string }（lineUid 去前綴）
  *   - transaction 守 status='pending' && !assignedDriverId && driverId ∈ active bids
  *   - 寫入 assignedDriverId='line:Uxxx' / orderStatus='confirmed' / assignedAt / assignedBy
- *   - 推 2 個 LINE：乘客（passenger OA + 連 /vehicles/{driverId}）/ 司機（driver OA）
- *   - audit log: action='order.assign'（含 driverId snapshot）
+ *   - Phase 1F：依乘客偏好命中數判 Soft Match
+ *       - 完全命中（或 0 偏好）→ passengerConfirmationStatus='auto'，正常通知配對成功
+ *       - 部分 / 0 命中     → passengerConfirmationStatus='pending'，推 3 選 1 Flex
+ *   - 推 LINE：driver（中選通知）；passenger（auto: 配對成功 / pending: Soft Match Flex）
+ *   - audit log: action='order.assign'（含 driverId snapshot + confirmationStatus）
  *
  * 認證：admin + canManageOrders
  */
@@ -16,12 +19,16 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
 import { assignDriver, DispatchGuardError } from '@@/utils/order-dispatch';
+import { decideConfirmationStatus } from '@@/utils/order-soft-match';
+import { buildTagIndex } from '@@/utils/vehicle-profile';
+import { buildDispatchTagIndex, computeDriverMatch } from '~shared/orderDispatch';
 import { getUserLang } from '@@/utils/i18n-message';
 import {
   pushOrderAssignedToPassenger,
   pushOrderAssignedToDriver,
   getDispatchPushEnv,
 } from '@@/utils/line-dispatch-push';
+import { pushSoftMatchToPassenger } from '@@/utils/line-soft-match-push';
 
 interface PostBody {
   driverId?: string;
@@ -77,15 +84,17 @@ export default defineEventHandler(async (event) => {
       throw err;
     }
 
-    // 撈最新 order + driver 資料給推播 / audit 用
-    const [orderSnap, driverSnap] = await Promise.all([
+    // 撈最新 order + driver 資料給推播 / audit / Soft Match 判定用
+    const [orderSnap, driverUserSnap, driverProfileSnap] = await Promise.all([
       db.collection('orders').doc(orderId).get(),
       db.collection('users').doc(driverLineUid).get(),
+      db.collection('drivers').doc(driverLineUid).get(),
     ]);
     const orderData = orderSnap.data() ?? {};
-    const driverData = driverSnap.exists ? (driverSnap.data() ?? {}) : {};
-    const driverDisplayName = (driverData.displayName as string | undefined) ?? '';
-    const driverLineUserId = (driverData.lineUserId as string | undefined) ?? driverLineUid;
+    const driverUserData = driverUserSnap.exists ? (driverUserSnap.data() ?? {}) : {};
+    const driverProfileData = driverProfileSnap.exists ? (driverProfileSnap.data() ?? {}) : {};
+    const driverDisplayName = (driverUserData.displayName as string | undefined) ?? '';
+    const driverLineUserId = (driverUserData.lineUserId as string | undefined) ?? driverLineUid;
 
     const env = getDispatchPushEnv();
     const passengerLineUid = (orderData.lineUserId as string | undefined) || (orderData.userId as string | undefined) || '';
@@ -94,22 +103,55 @@ export default defineEventHandler(async (event) => {
     const dropoffAddress = (orderData.dropoffLocation?.displayName as string) || (orderData.dropoffLocation?.address as string) || '';
     const passengerCount = (orderData.passengerCount as number) ?? 1;
 
-    // fire-and-forget 雙推播
-    void (async () => {
-      try {
-        if (passengerLineUid) {
-          const lang = await getUserLang(db, passengerLineUid);
-          await pushOrderAssignedToPassenger(passengerLineUid, {
-            orderId,
-            pickupDateTime,
-            driverDisplayName,
-            driverId: driverLineUid,
-          }, env, lang);
-        }
-      } catch (err) {
-        console.error('[admin/orders/assign] passenger push failed:', err);
-      }
-    })();
+    // Phase 1F：計算 Soft Match
+    const preferences = orderData.preferences as { tagIds?: unknown } | undefined;
+    const preferenceTagIds: string[] = Array.isArray(preferences?.tagIds) ? (preferences!.tagIds as string[]) : [];
+    const vehicleProfileTags: string[] = Array.isArray((driverProfileData.vehicleProfile as { tags?: unknown } | undefined)?.tags)
+      ? ((driverProfileData.vehicleProfile as { tags: string[] }).tags)
+      : [];
+    const driverScopeTags: string[] = Array.isArray(driverProfileData.tags) ? (driverProfileData.tags as string[]) : [];
+    const completedOrders = typeof driverProfileData.totalTrips === 'number' ? driverProfileData.totalTrips : 0;
+
+    const tagIdx = await buildTagIndex(db);
+    const dispatchIndex = buildDispatchTagIndex(
+      Array.from(tagIdx.values()).map((t) => ({
+        id: t.id,
+        name: { zh_tw: t.nameZh },
+        group: t.group,
+      })),
+    );
+
+    // 拿 passenger 語系（給 Soft Match Flex / 配對成功 Flex 用）
+    const passengerLang = passengerLineUid ? await getUserLang(db, passengerLineUid) : 'zh_tw';
+    const matchResult = computeDriverMatch(
+      preferenceTagIds,
+      { driverId: driverLineUid, vehicleProfileTags, driverScopeTags },
+      dispatchIndex,
+      passengerLang,
+    );
+
+    const { isSoft, confirmationStatus } = decideConfirmationStatus(preferenceTagIds, matchResult);
+
+    // 寫 passengerConfirmationStatus（transaction 外，但 assign 已落定，這裡單純 patch field）
+    try {
+      await db.collection('orders').doc(orderId).update({ passengerConfirmationStatus: confirmationStatus });
+    } catch (err) {
+      console.error('[admin/orders/assign] write confirmationStatus failed:', err);
+    }
+
+    // 算 unmatched tag names（Soft Match Flex 用；matched 已在 matchResult.matched）
+    let unmatchedTagNames: string[] = [];
+    if (isSoft) {
+      const matchedSet = new Set(matchResult.matched.map((m) => m.id));
+      unmatchedTagNames = preferenceTagIds
+        .filter((id) => !matchedSet.has(id))
+        .map((id) => {
+          const entry = dispatchIndex.get(id);
+          return entry ? (entry.name.zh_tw || id) : id;
+        });
+    }
+
+    // fire-and-forget：driver push（不論 soft）
     void (async () => {
       try {
         await pushOrderAssignedToDriver(driverLineUserId, {
@@ -124,6 +166,35 @@ export default defineEventHandler(async (event) => {
       }
     })();
 
+    // fire-and-forget：passenger push（依 isSoft 分流）
+    void (async () => {
+      try {
+        if (!passengerLineUid) return;
+        if (isSoft) {
+          await pushSoftMatchToPassenger(passengerLineUid, {
+            orderId,
+            pickupDateTime,
+            driverDisplayName,
+            driverId: driverLineUid,
+            completedOrders,
+            matchedTagNames: matchResult.matched.map((m) => m.name),
+            unmatchedTagNames,
+            preferenceCount: matchResult.preferenceCount,
+            matchCount: matchResult.matchCount,
+          }, env, passengerLang);
+        } else {
+          await pushOrderAssignedToPassenger(passengerLineUid, {
+            orderId,
+            pickupDateTime,
+            driverDisplayName,
+            driverId: driverLineUid,
+          }, env, passengerLang);
+        }
+      } catch (err) {
+        console.error('[admin/orders/assign] passenger push failed:', err);
+      }
+    })();
+
     await writeAuditLog({
       event,
       auth,
@@ -134,10 +205,20 @@ export default defineEventHandler(async (event) => {
         driverId: driverLineUid,
         driverDisplayName,
         via: 'dispatch_bid',
+        confirmationStatus,
+        matchCount: matchResult.matchCount,
+        preferenceCount: matchResult.preferenceCount,
       },
     });
 
-    return successResponse({ orderId, driverId: driverLineUid, assigned: true });
+    return successResponse({
+      orderId,
+      driverId: driverLineUid,
+      assigned: true,
+      passengerConfirmationStatus: confirmationStatus,
+      matchCount: matchResult.matchCount,
+      preferenceCount: matchResult.preferenceCount,
+    });
   } catch (err) {
     console.error('[admin/orders/assign] failed:', err);
     return serverError();

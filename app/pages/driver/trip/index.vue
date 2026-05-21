@@ -274,6 +274,10 @@ onUnmounted(() => {
               span.PageDriverTrip__route-to {{ order.dropoffLocation?.displayName?.split(',')[0] || order.dropoffLocation?.address }}
             .PageDriverTrip__card-foot
               span.PageDriverTrip__status-badge(:class="`is-${order.orderStatus}`") {{ STATUS_LABEL[order.orderStatus] }}
+              //- Phase 1F：confirmation pending → 顯示等待乘客確認 chip
+              span.PageDriverTrip__pending-chip(
+                v-if="order.passengerConfirmationStatus === 'pending'"
+              ) ⏳ 等待乘客確認
               span.PageDriverTrip__card-fare NT$ {{ order.estimatedFare.toLocaleString() }}
 
   //- 已完成 tab
@@ -318,6 +322,15 @@ onUnmounted(() => {
         .PageDriverTrip__modal-id \#{{ selectedOrder.orderId.toUpperCase() }}
         .PageDriverTrip__modal-status(:class="`is-${selectedOrder.orderStatus}`")
           | {{ STATUS_LABEL[selectedOrder.orderStatus] }}
+
+        //- Phase 1F：confirmation pending banner（乘客尚未確認 Soft Match）
+        .PageDriverTrip__pending-banner(
+          v-if="selectedOrder.passengerConfirmationStatus === 'pending'"
+        )
+          .PageDriverTrip__pending-banner-icon ⏳
+          .PageDriverTrip__pending-banner-body
+            .PageDriverTrip__pending-banner-title 等待乘客確認
+            .PageDriverTrip__pending-banner-desc 您與此訂單的偏好部分相符，乘客正在確認是否接受。如選擇「等下一輪」或「取消」，將另外通知您。
 
         //- Body：完整資訊
         .PageDriverTrip__modal-body
@@ -650,6 +663,57 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 700;
   color: $amber;
   letter-spacing: 0.04em;
+}
+
+// Phase 1F：confirmation pending chip + banner
+.PageDriverTrip__pending-chip {
+  display: inline-block;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(255, 200, 100, 0.12);
+  border: 1px solid rgba(255, 200, 100, 0.35);
+  color: rgba(255, 220, 150, 0.95);
+  margin-left: 6px;
+}
+
+.PageDriverTrip__pending-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 200, 100, 0.08);
+  border: 1px solid rgba(255, 200, 100, 0.3);
+}
+
+.PageDriverTrip__pending-banner-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.PageDriverTrip__pending-banner-body {
+  flex: 1;
+}
+
+.PageDriverTrip__pending-banner-title {
+  font-family: $font-condensed;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 220, 150, 0.95);
+  letter-spacing: 0.04em;
+}
+
+.PageDriverTrip__pending-banner-desc {
+  font-family: $font-body;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.55;
+  margin-top: 4px;
 }
 
 // ── Modal ────────────────────────────────────────────

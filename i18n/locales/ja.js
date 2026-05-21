@@ -825,6 +825,30 @@ export default {
     cancelled: {
       bidder: '注文がキャンセルされました。入札は自動的に取り下げられました。',
     },
+    // Phase 1F：Soft Match 3 選 1 + 重新配對
+    softMatch: {
+      title: '⚠️ 部分一致のマッチ',
+      subtitle: 'お選びの {total} 項目のうち {matched} 項目が一致',
+      driver: 'ドライバー',
+      pickupLabel: '乗車時刻',
+      completedLabel: '完了 {n} 件',
+      matched: '✓ 一致',
+      unmatched: '✗ 不一致',
+      none: 'なし',
+      viewVehicle: '車両を確認',
+      btnAccept: 'この車両を承認',
+      btnWait: '次の配車を待つ',
+      btnCancel: '注文をキャンセル',
+      ackAccepted: 'マッチングを承認しました。まもなく行程が開始します。',
+      ackWait: '再マッチング待ち列に戻りました。別のドライバーをお探しします。',
+      ackCancel: '注文をキャンセルしました。',
+    },
+    rematch: {
+      passengerTitle: '🔄 再マッチング中',
+      passengerBody: '以前の車両は取り下げられました。新しいドライバーを探しています。',
+      driverDeselectedTitle: '🔁 注文が再分配されました',
+      driverDeselectedBody: '注文 {orderId} は再マッチング待ち列に戻り、本件は他のドライバーに割り当てられます。',
+    },
   },
   enum: {
     apiStatus: {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeDriverMatch,
   buildDispatchTagIndex,
+  isSoftMatch,
   type DriverTagSnapshot,
 } from './orderDispatch';
 import type { TagGroup } from './tagTaxonomy';
@@ -129,6 +130,28 @@ describe('computeDriverMatch', () => {
       'zh_tw',
     );
     expect(r.matchCount).toBe(1);
+  });
+});
+
+describe('isSoftMatch (Phase 1F)', () => {
+  it('preferenceCount=0 → 不可能 soft（拍版 #4）', () => {
+    expect(isSoftMatch([], { matchCount: 0 })).toBe(false);
+  });
+
+  it('preferenceCount=3、matchCount=3 → 完全命中 → 非 soft', () => {
+    expect(isSoftMatch(['a', 'b', 'c'], { matchCount: 3 })).toBe(false);
+  });
+
+  it('preferenceCount=3、matchCount=2 → 部分命中 → soft', () => {
+    expect(isSoftMatch(['a', 'b', 'c'], { matchCount: 2 })).toBe(true);
+  });
+
+  it('preferenceCount=3、matchCount=0 → 0 命中也算 soft（拍版 #3）', () => {
+    expect(isSoftMatch(['a', 'b', 'c'], { matchCount: 0 })).toBe(true);
+  });
+
+  it('matchCount > preferenceCount（理論上不會發生）→ 視為非 soft', () => {
+    expect(isSoftMatch(['a'], { matchCount: 5 })).toBe(false);
   });
 });
 

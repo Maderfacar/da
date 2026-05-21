@@ -139,6 +139,8 @@ interface AssignedOrder {
   createdAt: number;
   passengerName: string;
   passengerPhone: string | null;
+  /** Phase 1F：乘客 Soft Match 確認狀態（null = 無紀錄；'pending' 表 driver 應顯示「等待乘客確認」） */
+  passengerConfirmationStatus?: 'auto' | 'pending' | 'accepted' | 'declined' | null;
 }
 
 // ===== Wave 1 D1：司機歷史訂單（completed / cancelled）=====
