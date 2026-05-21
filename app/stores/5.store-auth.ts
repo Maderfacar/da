@@ -331,6 +331,21 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
         }
       }
+
+      // P19-fix（Phase 1G hotfix）：LIFF URL 帶 `?next=/path` 時 navigate 過去。
+      // 動機：LIFF SDK 把 `liff.line.me/{liffId}/foo` 的 path append 到 endpoint URL
+      //   （司機=/driver/dashboard、乘客=/home），導致 /driver/dashboard/driver/dispatched/[id] 404。
+      // 修法：server 端 LINE Flex 推播改用 `?next=` 帶完整 subPath，這裡解析後 router.replace。
+      // 守則：next 必須以 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
+      try {
+        const next = new URLSearchParams(window.location.search).get('next');
+        if (next && next.startsWith('/') && !next.includes('//') && !next.includes(':')) {
+          const router = useRouter();
+          await router.replace(next);
+        }
+      } catch (navErr) {
+        console.warn('[StoreAuth] LIFF next-query navigate failed:', navErr);
+      }
     } catch (err) {
       console.error('[StoreAuth] _InitLiffFlow failed:', err);
       liffReady.value = true;

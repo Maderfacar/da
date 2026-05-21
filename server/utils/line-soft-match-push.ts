@@ -52,10 +52,14 @@ const _formatDateTime = (iso: string): string => {
   return `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
 };
 
+/**
+ * P19-fix（Phase 1G hotfix）：見 server/utils/line-dispatch-push.ts 同名 helper 註解。
+ * LIFF subPath 走 `?next=` query，避免被 LIFF SDK append 到 endpoint URL。
+ */
 const _buildLiffUrl = (liffId: string, subPath: string, fallback: string): string => {
   const normalized = subPath.startsWith('/') ? subPath : `/${subPath}`;
   if (!liffId) return fallback;
-  return `https://liff.line.me/${liffId}${normalized}`;
+  return `https://liff.line.me/${liffId}?next=${encodeURIComponent(normalized)}`;
 };
 
 // ── 三語文案表 ─────────────────────────────────────────────────────────

@@ -59,10 +59,18 @@ const _formatDateTime = (iso: string): string => {
   return `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
 };
 
+/**
+ * P19-fix（Phase 1G hotfix）：LIFF SDK 把 `/foo/bar` 從 `liff.line.me/{liffId}/foo/bar`
+ * 解析後 **append** 到 LINE Console 設的 endpoint URL。司機 endpoint=`/driver/dashboard`、
+ * 乘客 endpoint=`/home`，path append 變成 `/driver/dashboard/foo/bar` 404。
+ *
+ * 改成用 `?next=<encoded path>` query 傳遞 subPath，再由 `_InitLiffFlow` 在 LIFF 載入後
+ * 統一 `router.replace(next)` 過去。query 不會被 LIFF SDK 剝離 → 安全 forward 到 endpoint。
+ */
 const _buildLiffUrl = (liffId: string, subPath: string, fallback: string): string => {
   const normalized = subPath.startsWith('/') ? subPath : `/${subPath}`;
   if (!liffId) return fallback;
-  return `https://liff.line.me/${liffId}${normalized}`;
+  return `https://liff.line.me/${liffId}?next=${encodeURIComponent(normalized)}`;
 };
 
 // ── 1. 需求單推播（給所有 active driver）──────────────────────────────────
