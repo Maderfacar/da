@@ -420,6 +420,21 @@ export default {
       noFare: '請先完成車資估算',
       applyFail: '折扣碼套用失敗',
     },
+    // Phase 1D：偏好標籤（乘客 booking + 訂單詳情）
+    preferences: {
+      title: '期望特徵（選填）',
+      hint: '勾選想要的車輛特色，配對時會優先考慮；多選只收最高加價，其餘附贈。',
+      expand: '+ 加入期望特徵',
+      collapse: '− 收合期望特徵',
+      selectedCount: '已選 {count} 項',
+      singleHint: '單選',
+      multiHint: '可複選',
+      surchargeRow: '喜好標籤加價',
+      surchargeDetail: '此價格為您勾選標籤中加價最高的一項；其餘附贈。',
+      yourPreferences: '您的偏好',
+      noPreferences: '無偏好設定',
+      noTagsAvailable: '目前無可用標籤',
+    },
   },
   // ── 地圖 ──────────────────────────────────────────────────
   map: {

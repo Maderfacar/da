@@ -2,6 +2,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
+import { serializeOrderPreferences } from '@@/utils/order-preferences';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
 
@@ -66,6 +67,8 @@ export default defineEventHandler(async (event) => {
         // 訂單 doc 自帶的乘客欄位（admin 手動建立的 guest 訂單會有；乘客自助下單無）
         storedPassengerName: (d.passengerName as string | undefined) ?? '',
         contactPhone: (d.contactPhone as string | undefined) ?? null,
+        // Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選或為舊單）
+        preferences: serializeOrderPreferences(d.preferences),
       };
     });
 

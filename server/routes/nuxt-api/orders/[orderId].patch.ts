@@ -118,6 +118,13 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<PatchOrderBody>(event);
 
+  // Phase 1D：忽略 body.preferences（snapshot 一旦寫入即固化，不支援 patch；
+  // 改價需求請走 cancel + 重新下單）
+  if ((body as { preferences?: unknown }).preferences !== undefined) {
+    console.warn('[orders.patch] preferences in patch body is ignored (snapshot is immutable)');
+    delete (body as { preferences?: unknown }).preferences;
+  }
+
   // P19：status 必須是合法值
   if (body.orderStatus !== undefined && !VALID_STATUSES.includes(body.orderStatus as OrderStatus)) {
     return badRequestError({

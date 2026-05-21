@@ -113,6 +113,30 @@ export interface AdminOrderLuggageItem {
   count: number
 }
 
+/** Phase 1D：admin 端訂單偏好標籤 snapshot */
+export type AdminOrderPrefTagGroup =
+  | 'power'
+  | 'vehicleType'
+  | 'origin'
+  | 'interior'
+  | 'equipment'
+  | 'driverSkill';
+
+export interface AdminOrderPrefTagSnapshot {
+  id: string
+  name: { zh_tw: string; en?: string; ja?: string }
+  group: AdminOrderPrefTagGroup
+  surchargeAmount: number
+  sortOrder: number
+}
+
+export interface AdminOrderPreferences {
+  tagIds: string[]
+  tagSnapshot: AdminOrderPrefTagSnapshot[]
+  tagSurcharge: number
+  snapshotAt: string
+}
+
 export interface AdminOrder {
   orderId: string
   userId: string
@@ -138,6 +162,8 @@ export interface AdminOrder {
   createdAt: number
   passengerName: string
   passengerPhone: string | null
+  /** Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選） */
+  preferences?: AdminOrderPreferences | null
 }
 
 export interface PatchAdminOrderBody {

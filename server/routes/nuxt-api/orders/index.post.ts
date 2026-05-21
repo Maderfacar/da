@@ -10,6 +10,10 @@ import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 import { notifyAdmins } from '@@/utils/notify-admins';
+import {
+  validateAndSnapshotPreferences,
+  snapshotForFirestore,
+} from '@@/utils/order-preferences';
 
 // 將 booking 端的上車時間字串視為台灣時間（無時區資訊時補 +08:00），
 // 供 Fare V2 顛峰塞車費判定。
@@ -53,6 +57,10 @@ interface CreateOrderBody {
   notes?: string | null;
   // 折扣碼（陽春版）；無折扣則不帶
   discountCode?: string | null;
+  // Phase 1D：偏好標籤（vehicle-scope tag ids；無 → 跳過）
+  preferences?: {
+    tagIds?: string[];
+  } | null;
 }
 
 const PHONE_REGEX = /^09\d{8}$/;
@@ -237,6 +245,46 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // ── Phase 1D：偏好標籤 snapshot + 加價 ─────────────────────────────
+  // 規則：preferences 加在 baseFare 與 discount 之間
+  //   折扣前車資 = baseFare（fare V2 計算）+ tagSurcharge
+  //   final = (baseFare + tagSurcharge) - discountAmount
+  // discount 的 minFare 仍用「baseFare」（不含 tagSurcharge），避免靠標籤拉高過 minFare
+  let preferencesSnapshot: ReturnType<typeof snapshotForFirestore> | null = null;
+  let tagSurcharge = 0;
+  const prefInput = body.preferences && typeof body.preferences === 'object'
+    ? { tagIds: Array.isArray(body.preferences.tagIds) ? body.preferences.tagIds : [] }
+    : { tagIds: [] };
+  if (prefInput.tagIds.length > 0) {
+    try {
+      const { errors, snapshot } = await validateAndSnapshotPreferences(db, prefInput);
+      if (errors.length > 0) {
+        const summary = errors.map((e) => `${e.field}:${e.code}`).join(', ');
+        return badRequestError({
+          zh_tw: `偏好標籤驗證失敗：${summary}`,
+          en: `Preferences validation failed: ${summary}`,
+          ja: `好み設定のバリデーション失敗：${summary}`,
+        });
+      }
+      if (snapshot) {
+        preferencesSnapshot = snapshotForFirestore(snapshot);
+        tagSurcharge = snapshot.tagSurcharge;
+      }
+    } catch (err) {
+      console.error('[orders/post] preferences snapshot failed:', err);
+      return serverError({
+        zh_tw: '偏好標籤處理失敗，請稍後重試',
+        en: 'Failed to process preferences, please retry',
+        ja: '好み設定の処理に失敗しました。後ほど再試行してください',
+      });
+    }
+  }
+  // 把 tagSurcharge 加進 estimatedFare（已扣折扣）；
+  // 折扣 minFare 已用 fareBeforeDiscount 判定過，tagSurcharge 加在最後，不影響折扣資格
+  if (tagSurcharge > 0) {
+    estimatedFare = Math.max(0, estimatedFare + tagSurcharge);
+  }
+
   try {
     await db.collection('orders').doc(orderId).set({
       orderId,
@@ -263,10 +311,12 @@ export default defineEventHandler(async (event) => {
       flightNumber: body.flightNumber ?? null,
       terminal: body.terminal ?? null,
       notes: body.notes ?? null,
-      // 折扣碼（陽春版）；estimatedFare 已為折後最終車資
+      // 折扣碼（陽春版）；estimatedFare 已為折後最終車資 + tagSurcharge
       discountCode,
       discountAmount,
       fareBeforeDiscount,
+      // Phase 1D：偏好標籤 snapshot（null 表示乘客未勾選）；tagSurcharge 已併入 estimatedFare
+      preferences: preferencesSnapshot,
       orderStatus: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });

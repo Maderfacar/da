@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { ORDER_TYPES } from '~shared/pricing';
+import {
+  ORDER_TYPES,
+  buildTagSurchargeIndex,
+  calcTagSurcharge,
+  type TagSurchargeIndexEntry,
+} from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 
 interface Props {
   draft: Partial<CreateOrderParams>;
@@ -15,14 +21,23 @@ interface Props {
   notes: string;
   /** step 3 估出的折扣前車資（折扣預覽用）；尚未估出為 0 */
   fareTotal: number;
+  /** Phase 1D：active vehicle tags（呼叫端載入） */
+  availableTags?: TagDto[];
+  /** Phase 1D：當前勾選的偏好 tag id 陣列 */
+  selectedTagIds?: string[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  flightInfo: null,
+  availableTags: () => [] as TagDto[],
+  selectedTagIds: () => [] as string[],
+});
 
 const { t, locale } = useI18n();
 const emit = defineEmits<{
   (e: 'submit' | 'back'): void;
   (e: 'update:contactPhone' | 'update:notes' | 'update:discountCode', val: string): void;
+  (e: 'update:selectedTagIds', val: string[]): void;
 }>();
 
 const storeConfig = StoreConfig();
@@ -121,8 +136,36 @@ const discountApplying = ref(false);
 const appliedDiscount = ref<{ code: string; amount: number } | null>(null);
 const discountError = ref('');
 
+// Phase 1D：偏好標籤 — 摺疊狀態 + tagSurcharge 計算
+const preferencesOpen = ref(false);
+
+const tagSurchargeIndex = computed(() =>
+  buildTagSurchargeIndex(
+    (props.availableTags ?? []).map((t): TagSurchargeIndexEntry => ({
+      id: t.id,
+      group: t.group,
+      scope: t.scope,
+      surchargeAmount: t.surchargeAmount,
+      status: t.status,
+    })),
+  ),
+);
+
+const tagSurcharge = computed(() =>
+  calcTagSurcharge(props.selectedTagIds ?? [], tagSurchargeIndex.value).surcharge,
+);
+
+const HandleUpdateTags = (next: string[]) => {
+  emit('update:selectedTagIds', next);
+};
+
+const ClickTogglePreferences = () => {
+  preferencesOpen.value = !preferencesOpen.value;
+};
+
+// 最終價：fareTotal + tagSurcharge - discount（保證 >= 0）
 const fareAfterDiscount = computed(() =>
-  Math.max(0, props.fareTotal - (appliedDiscount.value?.amount ?? 0)),
+  Math.max(0, props.fareTotal + tagSurcharge.value - (appliedDiscount.value?.amount ?? 0)),
 );
 
 const ApiApplyDiscount = async () => {
@@ -213,6 +256,30 @@ const ClickSubmit = () => {
         @update:model-value="OnNotesInput"
       )
 
+  //- Phase 1D：偏好標籤（摺疊，可選）
+  .PassengerBookingStepConfirm__contact(v-if="availableTags.length")
+    .PassengerBookingStepConfirm__contact-label {{ $t('booking.preferences.title') }}
+    button.PassengerBookingStepConfirm__pref-toggle(
+      type="button"
+      :class="{ 'is-open': preferencesOpen }"
+      @click="ClickTogglePreferences"
+    )
+      span.PassengerBookingStepConfirm__pref-toggle-icon {{ preferencesOpen ? '−' : '+' }}
+      span.PassengerBookingStepConfirm__pref-toggle-label
+        | {{ preferencesOpen ? $t('booking.preferences.collapse') : $t('booking.preferences.expand') }}
+      span.PassengerBookingStepConfirm__pref-toggle-count(v-if="selectedTagIds.length")
+        | {{ $t('booking.preferences.selectedCount', { count: selectedTagIds.length }) }}
+    .PassengerBookingStepConfirm__pref-hint(v-if="preferencesOpen") {{ $t('booking.preferences.hint') }}
+    BookingPassengerTagPreferencePicker(
+      v-if="preferencesOpen"
+      :tags="availableTags"
+      :model-value="selectedTagIds"
+      :disabled="isLoading"
+      @update:model-value="HandleUpdateTags"
+    )
+    .PassengerBookingStepConfirm__pref-detail(v-if="preferencesOpen && tagSurcharge > 0")
+      | {{ $t('booking.preferences.surchargeDetail') }}
+
   //- 折扣碼
   .PassengerBookingStepConfirm__contact
     .PassengerBookingStepConfirm__contact-label {{ $t('booking.discount.section') }}
@@ -283,9 +350,16 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.durationLabel') }}
       span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.durationVal', { min: durationMinutes }) }}
-    template(v-if="appliedDiscount")
+    //- Phase 1D：偏好標籤加價行（只在 > 0 時顯示）
+    template(v-if="tagSurcharge > 0")
       .PassengerBookingStepConfirm__divider
       .PassengerBookingStepConfirm__row
+        span.PassengerBookingStepConfirm__row-label {{ $t('booking.preferences.surchargeRow') }}
+        span.PassengerBookingStepConfirm__row-value +NT${{ tagSurcharge }}
+
+    template(v-if="appliedDiscount || tagSurcharge > 0")
+      .PassengerBookingStepConfirm__divider
+      .PassengerBookingStepConfirm__row(v-if="appliedDiscount")
         span.PassengerBookingStepConfirm__row-label {{ $t('booking.discount.discountRow') }}
         span.PassengerBookingStepConfirm__row-value −NT${{ appliedDiscount.amount }}
       .PassengerBookingStepConfirm__row
@@ -397,6 +471,60 @@ const ClickSubmit = () => {
     gap: 8px;
 
     .el-input { flex: 1; }
+  }
+
+  // Phase 1D：偏好標籤摺疊
+  &__pref-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--da-amber);
+    background: transparent;
+    color: var(--da-amber);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    align-self: flex-start;
+
+    &:hover { background: var(--da-amber-pale); }
+    &.is-open { background: var(--da-amber-pale); }
+  }
+
+  &__pref-toggle-icon {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  &__pref-toggle-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    background: var(--da-amber);
+    color: #fff;
+    padding: 1px 8px;
+    border-radius: 100px;
+  }
+
+  &__pref-hint {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: var(--da-gray);
+    line-height: 1.6;
+  }
+
+  &__pref-detail {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: var(--da-gray);
+    background: var(--da-amber-pale);
+    border: 1px dashed var(--da-amber);
+    border-radius: 8px;
+    padding: 8px 12px;
+    line-height: 1.5;
   }
 
   &__discount-applied {

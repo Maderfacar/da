@@ -7,6 +7,7 @@ import {
   serverError,
 } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { serializeOrderPreferences as _serializeOrderPreferences } from '@@/utils/order-preferences';
 
 // P36：訂單詳情 endpoint
 // - 權限：owner（caller.lineUid === order.userId）or admin or assigned driver
@@ -146,6 +147,8 @@ export default defineEventHandler(async (event) => {
       createdAt: _serializeTimestamp(orderData.createdAt),
       statusHistory,
       driver,
+      // Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選）
+      preferences: _serializeOrderPreferences(orderData.preferences),
     });
   } catch (err) {
     console.error('[orders/get-one] Firestore read failed:', err);

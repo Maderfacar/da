@@ -16,6 +16,36 @@ interface OrderLuggageItem {
   count: number;
 }
 
+// ===== Phase 1D：偏好標籤 snapshot =====
+type OrderPreferenceTagGroup =
+  | 'power'
+  | 'vehicleType'
+  | 'origin'
+  | 'interior'
+  | 'equipment'
+  | 'driverSkill';
+
+interface OrderPreferenceTagSnapshotDto {
+  id: string;
+  /** 三語名稱完整 snapshot；en/ja 缺者前端 fallback 繁中 */
+  name: { zh_tw: string; en?: string; ja?: string };
+  group: OrderPreferenceTagGroup;
+  /** 寫單時鎖定的加價金額（後續 admin 改 surchargeAmount 不影響舊單） */
+  surchargeAmount: number;
+  sortOrder: number;
+}
+
+interface OrderPreferencesDto {
+  /** 乘客原始勾選的 tagId 陣列（含 invalid 也保留） */
+  tagIds: string[];
+  /** 解析後的標籤 snapshot（不含 invalid） */
+  tagSnapshot: OrderPreferenceTagSnapshotDto[];
+  /** max(snapshot.surchargeAmount)；無命中為 0 */
+  tagSurcharge: number;
+  /** ISO timestamp */
+  snapshotAt: string;
+}
+
 interface CreateOrderParams {
   userId?: string;
   lineUserId?: string;
@@ -34,6 +64,10 @@ interface CreateOrderParams {
   notes?: string | null;
   /** 折扣碼（陽春版）；無折扣則不帶 */
   discountCode?: string | null;
+  /** Phase 1D：偏好標籤（vehicle-scope tag ids）；無 → 跳過 */
+  preferences?: {
+    tagIds?: string[];
+  } | null;
 }
 
 interface CreateOrderRes {
@@ -189,6 +223,8 @@ interface OrderDetail {
   createdAt: string | null;
   statusHistory: OrderStatusHistory;
   driver: OrderDriverInfo | null;
+  /** Phase 1D：偏好標籤 snapshot；null = 乘客建單時未勾選（舊單也是 null） */
+  preferences?: OrderPreferencesDto | null;
 }
 
 // ===== 更新訂單 =====

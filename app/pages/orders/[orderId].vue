@@ -37,6 +37,15 @@ const FormatDistance = (km: number) => `${km.toFixed(1)} km`;
 const VehicleLabel = (v: string) => t(`vehicle.${v}`, v);
 const ExtraLabel = (id: string) => t(`fleet.extras.${id}`, id);
 
+// Phase 1D：偏好標籤名稱（snapshot 已含三語；依 locale 取對應，缺 fallback 繁中）
+const { locale } = useI18n();
+const PrefTagName = (snapshot: { name: { zh_tw: string; en?: string; ja?: string } }): string => {
+  const l = String(locale.value);
+  if (l === 'en') return snapshot.name.en?.trim() || snapshot.name.zh_tw;
+  if (l === 'ja') return snapshot.name.ja?.trim() || snapshot.name.zh_tw;
+  return snapshot.name.zh_tw;
+};
+
 const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 const ShowDriver = computed(() => {
   if (!order.value) return false;
@@ -220,6 +229,18 @@ onUnmounted(() => {
         .PageOrderDetail__info-row(v-if="order.notes")
           dt.PageOrderDetail__info-label {{ $t('orderDetail.info.notes') }}
           dd.PageOrderDetail__info-val.is-notes {{ order.notes }}
+        //- Phase 1D：偏好標籤（lazy filter；舊單無此欄位也安全）
+        .PageOrderDetail__info-row(v-if="order.preferences && order.preferences.tagSnapshot.length")
+          dt.PageOrderDetail__info-label {{ $t('booking.preferences.yourPreferences') }}
+          dd.PageOrderDetail__info-val
+            .PageOrderDetail__pref-chips
+              span.PageOrderDetail__pref-chip(
+                v-for="t in order.preferences.tagSnapshot"
+                :key="t.id"
+              ) {{ PrefTagName(t) }}
+        .PageOrderDetail__info-row(v-if="order.preferences && order.preferences.tagSurcharge > 0")
+          dt.PageOrderDetail__info-label {{ $t('booking.preferences.surchargeRow') }}
+          dd.PageOrderDetail__info-val +NT${{ order.preferences.tagSurcharge }}
         .PageOrderDetail__info-row.is-fare
           dt.PageOrderDetail__info-label {{ $t('orderDetail.info.fare') }}
           dd.PageOrderDetail__info-val.is-fare {{ FormatFare(order.estimatedFare) }}
@@ -590,6 +611,24 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     color: var(--da-amber);
     letter-spacing: 0.04em;
   }
+}
+
+// Phase 1D：偏好標籤 chip
+.PageOrderDetail__pref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.PageOrderDetail__pref-chip {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  background: var(--da-amber-pale);
+  border: 1px solid var(--da-glass-border);
+  color: var(--da-dark);
 }
 
 // ── Cancel button（cream 版紅色 light）──────────────────

@@ -633,6 +633,18 @@ onMounted(() => {
               .PageAdminOrders__extras
                 span.PageAdminOrders__extra-tag(v-for="s in selectedOrder.extraServices" :key="s") {{ EXTRA_SERVICE_LABEL(s) }}
 
+            //- Phase 1D：乘客偏好標籤（snapshot；給 1E 配對用）
+            .PageAdminOrders__section(v-if="selectedOrder.preferences && selectedOrder.preferences.tagSnapshot.length")
+              .PageAdminOrders__section-title 乘客偏好（已鎖價）
+              .PageAdminOrders__extras
+                span.PageAdminOrders__extra-tag(
+                  v-for="t in selectedOrder.preferences.tagSnapshot"
+                  :key="t.id"
+                ) {{ t.name.zh_tw }}{{ t.surchargeAmount > 0 ? ` (+${t.surchargeAmount})` : '' }}
+              .PageAdminOrders__section-row(v-if="selectedOrder.preferences.tagSurcharge > 0")
+                span.PageAdminOrders__section-key 偏好加價（max）
+                span.PageAdminOrders__section-val.is-fare +NT$ {{ selectedOrder.preferences.tagSurcharge.toLocaleString() }}
+
             //- 備註
             .PageAdminOrders__section(v-if="selectedOrder.notes")
               .PageAdminOrders__section-title 備註

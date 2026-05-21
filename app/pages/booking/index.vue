@@ -3,6 +3,7 @@ import type { VehicleType, OrderType } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 import type { LuggageItem } from '@/components/passenger/BookingStepOptions.vue';
 import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
@@ -53,6 +54,21 @@ const notes = ref(storeOrder.draft.notes ?? '');
 
 // 折扣碼（陽春版）— 僅 step 4 確認頁輸入，不需跨步驟持久化
 const discountCode = ref('');
+
+// Phase 1D：偏好標籤 — 僅 step 4 確認頁勾選
+const activeVehicleTags = ref<TagDto[]>([]);
+const selectedTagIds = ref<string[]>([]);
+
+const ApiLoadActiveVehicleTags = async () => {
+  try {
+    const res = await $api.GetActiveTags('vehicle');
+    if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
+      activeVehicleTags.value = res.data.tags;
+    }
+  } catch { /* silent */ }
+};
+
+onMounted(() => { void ApiLoadActiveVehicleTags(); });
 
 // 桃園機場航廈對應地點
 const TERMINAL_PLACE: Record<'1' | '2', GooglePlace> = {
@@ -152,6 +168,10 @@ const ClickSubmit = async () => {
     terminal: flightInfo.value?.terminal ?? null,
     notes: notes.value || null,
     discountCode: discountCode.value || null,
+    // Phase 1D：偏好標籤（空陣列也送，server 端會跳過）
+    preferences: selectedTagIds.value.length > 0
+      ? { tagIds: selectedTagIds.value }
+      : null,
   });
   isSubmitting.value = false;
 
@@ -184,6 +204,7 @@ const ClickNewOrder = () => {
   contactPhone.value = '';
   notes.value = '';
   discountCode.value = '';
+  selectedTagIds.value = [];
   distanceKm.value = 0;
   durationMinutes.value = 0;
   estimatedFare.value = 0;
@@ -290,8 +311,10 @@ const ClickNewOrder = () => {
           :fare-total="estimatedFare"
           :is-loading="isSubmitting"
           :flight-info="flightInfo"
+          :available-tags="activeVehicleTags"
           v-model:contact-phone="contactPhone"
           v-model:notes="notes"
+          v-model:selected-tag-ids="selectedTagIds"
           @update:discount-code="discountCode = $event"
           @submit="ClickSubmit"
           @back="GoBack"

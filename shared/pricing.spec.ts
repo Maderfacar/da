@@ -10,12 +10,15 @@ import {
   findActivePromoDiscount,
   computeSurcharge,
   findActiveSurcharge,
+  buildTagSurchargeIndex,
+  calcTagSurcharge,
   DEFAULT_FARE_RULES,
   type FareRules,
   type PromoRule,
   type SurchargeRule,
   type TrafficJamRule,
   type RouteMetrics,
+  type TagSurchargeIndexEntry,
 } from './pricing';
 
 const SEDAN = { baseFare: 300, perKmRate: 25 };
@@ -474,5 +477,79 @@ describe('calculateFareV2 — 代表情境', () => {
     });
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
     expect(b.mountainMul).toBe(1.3);
+  });
+});
+
+// =============================================================================
+// Phase 1D — calcTagSurcharge / buildTagSurchargeIndex（max 邏輯）
+// =============================================================================
+
+const TAG_INDEX_ENTRIES: TagSurchargeIndexEntry[] = [
+  { id: 't-power-ev',       group: 'power',       scope: 'vehicle', surchargeAmount: 100, status: 'active' },
+  { id: 't-power-hybrid',   group: 'power',       scope: 'vehicle', surchargeAmount: 50,  status: 'active' },
+  { id: 't-int-captain',    group: 'interior',    scope: 'vehicle', surchargeAmount: 300, status: 'active' },
+  { id: 't-int-leather',    group: 'interior',    scope: 'vehicle', surchargeAmount: 200, status: 'active' },
+  { id: 't-eq-childseat',   group: 'equipment',   scope: 'vehicle', surchargeAmount: 150, status: 'active' },
+  { id: 't-power-archived', group: 'power',       scope: 'vehicle', surchargeAmount: 500, status: 'archived' },
+  { id: 't-driver-en',      group: 'driverSkill', scope: 'driver',  surchargeAmount: 999, status: 'active' },
+];
+
+describe('buildTagSurchargeIndex + calcTagSurcharge', () => {
+  const INDEX = buildTagSurchargeIndex(TAG_INDEX_ENTRIES);
+
+  it('空陣列 → surcharge=0、matched=[]、invalid=[]', () => {
+    expect(calcTagSurcharge([], INDEX)).toEqual({ surcharge: 0, matchedTagIds: [], invalidTagIds: [] });
+  });
+
+  it('單一有效 → surcharge=該值', () => {
+    expect(calcTagSurcharge(['t-power-ev'], INDEX)).toEqual({
+      surcharge: 100,
+      matchedTagIds: ['t-power-ev'],
+      invalidTagIds: [],
+    });
+  });
+
+  it('多個有效 → surcharge=max（300 > 100）', () => {
+    const r = calcTagSurcharge(['t-power-ev', 't-int-captain', 't-eq-childseat'], INDEX);
+    expect(r.surcharge).toBe(300);
+    expect(r.matchedTagIds).toEqual(['t-power-ev', 't-int-captain', 't-eq-childseat']);
+    expect(r.invalidTagIds).toEqual([]);
+  });
+
+  it('含 archived → archived 入 invalid，surcharge 用剩下的', () => {
+    const r = calcTagSurcharge(['t-power-archived', 't-power-ev'], INDEX);
+    expect(r.surcharge).toBe(100);
+    expect(r.matchedTagIds).toEqual(['t-power-ev']);
+    expect(r.invalidTagIds).toEqual(['t-power-archived']);
+  });
+
+  it('含 scope=driver → driver 入 invalid（max 999 不計入）', () => {
+    const r = calcTagSurcharge(['t-driver-en', 't-int-captain'], INDEX);
+    expect(r.surcharge).toBe(300);
+    expect(r.matchedTagIds).toEqual(['t-int-captain']);
+    expect(r.invalidTagIds).toEqual(['t-driver-en']);
+  });
+
+  it('不存在 id → 入 invalid', () => {
+    const r = calcTagSurcharge(['t-unknown', 't-int-leather'], INDEX);
+    expect(r.surcharge).toBe(200);
+    expect(r.matchedTagIds).toEqual(['t-int-leather']);
+    expect(r.invalidTagIds).toEqual(['t-unknown']);
+  });
+
+  it('全部無效 → surcharge=0、matched=[]、invalid=[全部]', () => {
+    const r = calcTagSurcharge(['t-unknown-a', 't-power-archived', 't-driver-en'], INDEX);
+    expect(r.surcharge).toBe(0);
+    expect(r.matchedTagIds).toEqual([]);
+    expect(r.invalidTagIds).toEqual(['t-unknown-a', 't-power-archived', 't-driver-en']);
+  });
+
+  it('buildTagSurchargeIndex 忽略空 id', () => {
+    const m = buildTagSurchargeIndex([
+      { id: '', group: 'power', scope: 'vehicle', surchargeAmount: 1, status: 'active' },
+      { id: 't-ok', group: 'power', scope: 'vehicle', surchargeAmount: 2, status: 'active' },
+    ]);
+    expect(m.size).toBe(1);
+    expect(m.has('t-ok')).toBe(true);
   });
 });

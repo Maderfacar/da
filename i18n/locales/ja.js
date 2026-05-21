@@ -405,6 +405,21 @@ export default {
       noFare: '先に料金見積もりを完了してください',
       applyFail: '割引コードの適用に失敗しました',
     },
+    // Phase 1D：好み設定タグ（乗客予約 + 注文詳細）
+    preferences: {
+      title: '希望する特徴（任意）',
+      hint: '希望する車両特徴を選択してください。マッチング時に優先されます。複数選択時は最も高い加算のみ計上、他はサービスです。',
+      expand: '+ 希望特徴を追加',
+      collapse: '− 希望特徴を閉じる',
+      selectedCount: '{count} 項目選択中',
+      singleHint: '単一選択',
+      multiHint: '複数可',
+      surchargeRow: '希望タグ加算',
+      surchargeDetail: '選択した中で最高の加算額のみ計上、他はサービスです。',
+      yourPreferences: 'あなたの希望',
+      noPreferences: '希望設定なし',
+      noTagsAvailable: '利用可能なタグなし',
+    },
   },
   map: {
     pinOrigin: '乗車地点',

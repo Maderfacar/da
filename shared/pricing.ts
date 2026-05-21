@@ -11,6 +11,7 @@
 //   - Fare V2：型別 + 4 運算模組 + calculateFareV2 + DEFAULT_FARE_RULES
 
 import { TPE_METRO_CODES } from './geo/county-codes';
+import type { TagGroup, TagScope } from './tagTaxonomy';
 
 // VehicleType 在 P23 前是 union literal，現改為 string —— admin 可任意新增車型，
 // callers（store-order draft、CreateOrderParams、Firestore orders.vehicleType）皆持有 doc id 字串。
@@ -488,6 +489,87 @@ export function computeFreewayToll(freewayKm: number, rule: FreewayRule): number
     toll = fullRate + discounted;
   }
   return Math.round(toll);
+}
+
+// =============================================================================
+// Phase 1D — 偏好標籤加價（拍板取 max，不取 sum）
+//
+// 公式：tagSurcharge = max(乘客勾選命中標籤的 surchargeAmount)；未命中為 0。
+// 無效 id（不存在 / archived / scope!==vehicle）會被過濾入 invalidTagIds，不影響 surcharge。
+// =============================================================================
+
+export interface TagSurchargeIndexEntry {
+  id: string;
+  group: TagGroup;
+  scope: TagScope;
+  surchargeAmount: number;
+  status: 'active' | 'archived';
+}
+
+export interface CalcTagSurchargeResult {
+  /** max(命中標籤的 surchargeAmount)；未命中為 0 */
+  surcharge: number;
+  /** 真正命中的 id（active + scope=vehicle + 存在於 index） */
+  matchedTagIds: string[];
+  /** 無效的 id（server 端可用來回 400） */
+  invalidTagIds: string[];
+}
+
+/**
+ * 從 active vehicle tag DTO 陣列建 index map。
+ * 呼叫端通常會自己 filter scope=vehicle / status=active，但本 helper 也接受混雜輸入。
+ */
+export function buildTagSurchargeIndex(
+  tags: ReadonlyArray<TagSurchargeIndexEntry>,
+): Map<string, TagSurchargeIndexEntry> {
+  const map = new Map<string, TagSurchargeIndexEntry>();
+  for (const t of tags) {
+    if (t && typeof t.id === 'string' && t.id.length > 0) {
+      map.set(t.id, t);
+    }
+  }
+  return map;
+}
+
+/**
+ * 計算偏好標籤加價（取 max 而非 sum）。
+ *
+ * 規則：
+ *   - 不在 tagIndex → invalid
+ *   - status !== 'active' → invalid
+ *   - scope !== 'vehicle' → invalid
+ *   - 命中：surcharge = max(matched.surchargeAmount)；無命中為 0
+ */
+export function calcTagSurcharge(
+  selectedTagIds: ReadonlyArray<string>,
+  tagIndex: ReadonlyMap<string, TagSurchargeIndexEntry>,
+): CalcTagSurchargeResult {
+  const matched: TagSurchargeIndexEntry[] = [];
+  const invalidTagIds: string[] = [];
+  for (const id of selectedTagIds) {
+    if (typeof id !== 'string' || id.length === 0) {
+      invalidTagIds.push(String(id));
+      continue;
+    }
+    const entry = tagIndex.get(id);
+    if (!entry) {
+      invalidTagIds.push(id);
+      continue;
+    }
+    if (entry.status !== 'active' || entry.scope !== 'vehicle') {
+      invalidTagIds.push(id);
+      continue;
+    }
+    matched.push(entry);
+  }
+  const surcharge = matched.length === 0
+    ? 0
+    : Math.max(...matched.map((t) => t.surchargeAmount));
+  return {
+    surcharge,
+    matchedTagIds: matched.map((t) => t.id),
+    invalidTagIds,
+  };
 }
 
 /**

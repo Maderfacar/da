@@ -405,6 +405,21 @@ export default {
       noFare: 'Please complete fare estimation first',
       applyFail: 'Failed to apply discount code',
     },
+    // Phase 1D: preference tags (passenger booking + order detail)
+    preferences: {
+      title: 'Preferences (optional)',
+      hint: 'Choose preferred vehicle features; we prioritize during matching. Multi-select charges only the highest; others are complimentary.',
+      expand: '+ Add Preferences',
+      collapse: '− Hide Preferences',
+      selectedCount: '{count} selected',
+      singleHint: 'Single',
+      multiHint: 'Multi',
+      surchargeRow: 'Preference surcharge',
+      surchargeDetail: 'Surcharge equals the highest among your selections; others are complimentary.',
+      yourPreferences: 'Your Preferences',
+      noPreferences: 'No preferences',
+      noTagsAvailable: 'No tags available',
+    },
   },
   map: {
     pinOrigin: 'Pickup',
