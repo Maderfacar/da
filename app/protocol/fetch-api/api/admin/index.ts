@@ -22,6 +22,8 @@ export * from './discount-code';
 export * from './dashboard';
 // 推薦獎勵機制 Phase 4：admin 推薦活動 sub-module
 export * from './referral';
+// Phase 1E：訂單需求單 / 司機喊單 / 配對
+export * from './order-dispatch';
 
 export type Role = 'passenger' | 'driver' | 'admin';
 
@@ -137,6 +139,14 @@ export interface AdminOrderPreferences {
   snapshotAt: string
 }
 
+/** Phase 1E：admin 看訂單列表時的 bid snapshot（含撤回） */
+export interface AdminOrderBidSnapshot {
+  driverId: string
+  driverDisplayName: string
+  bidAt: string | null
+  withdrawnAt: string | null
+}
+
 export interface AdminOrder {
   orderId: string
   userId: string
@@ -164,6 +174,14 @@ export interface AdminOrder {
   passengerPhone: string | null
   /** Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選） */
   preferences?: AdminOrderPreferences | null
+  /** Phase 1E：admin 派發時間（null = 尚未發出需求單） */
+  dispatchAt?: string | null
+  dispatchedBy?: string | null
+  /** Phase 1E：司機喊單 list（append-only；withdrawnAt 非 null 表示撤回） */
+  bids?: AdminOrderBidSnapshot[]
+  /** Phase 1E：admin 指派時間（null = 尚未指派） */
+  assignedAt?: string | null
+  assignedBy?: string | null
 }
 
 export interface PatchAdminOrderBody {

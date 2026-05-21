@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminOrder, AdminOrderLuggageItem, AdminUser } from '@/protocol/fetch-api/api/admin';
+import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch } from '@/protocol/fetch-api/api/admin';
 import { ORDER_TYPES } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
@@ -476,6 +476,99 @@ const canCancel = computed(() => {
   return selectedOrder.value.orderStatus !== 'cancelled' && selectedOrder.value.orderStatus !== 'completed';
 });
 
+// ── Phase 1E：訂單需求單 / 司機喊單 / 配對 ──────────────────────────
+// dispatch 狀態的 UI 規則（拍版 #1 不引入 bidding status）：
+//   - status='pending' && !dispatchAt           → 未派發 → 顯示「發出需求單」
+//   - status='pending' && dispatchAt && bids 全部 withdrawn → 已派發、等待喊單
+//   - status='pending' && dispatchAt && active bids > 0     → 已派發、N 喊單中
+//   - status!='pending'                          → 不顯示 dispatch section（confirmed 後走既有指派流程）
+
+const bidsLoading = ref(false);
+const dispatching = ref(false);
+const assigningFromBid = ref<string | null>(null);
+const orderBids = ref<AdminBidWithMatch[]>([]);
+
+const ActiveBidCount = (order: AdminOrder): number =>
+  (order.bids ?? []).filter((b) => !b.withdrawnAt).length;
+
+const DispatchStateLabel = (order: AdminOrder): { text: string; cls: string } | null => {
+  if (order.orderStatus !== 'pending') return null;
+  if (!order.dispatchAt) return { text: '待派發', cls: 'is-pending' };
+  const active = ActiveBidCount(order);
+  if (active === 0) return { text: '待喊單', cls: 'is-progress' };
+  return { text: `${active} 喊單`, cls: 'is-progress' };
+};
+
+const ApiLoadOrderBids = async () => {
+  if (!selectedOrder.value) return;
+  if (!selectedOrder.value.dispatchAt) {
+    orderBids.value = [];
+    return;
+  }
+  bidsLoading.value = true;
+  try {
+    const res = await $api.GetAdminOrderBids(selectedOrder.value.orderId);
+    if (res.status?.code === 200 && res.data) {
+      orderBids.value = (res.data as { bids?: AdminBidWithMatch[] }).bids ?? [];
+    } else {
+      orderBids.value = [];
+    }
+  } finally {
+    bidsLoading.value = false;
+  }
+};
+
+const ClickDispatch = async () => {
+  if (!selectedOrder.value || dispatching.value) return;
+  if (selectedOrder.value.orderStatus !== 'pending') {
+    ElMessage({ message: '訂單狀態非待確認，無法發出需求單', type: 'warning' });
+    return;
+  }
+  if (selectedOrder.value.dispatchAt) {
+    ElMessage({ message: '訂單已派發', type: 'warning' });
+    return;
+  }
+  dispatching.value = true;
+  try {
+    const res = await $api.DispatchOrder(selectedOrder.value.orderId);
+    if (res.status.code === 200) {
+      ElMessage({ message: '需求單已發出，已通知全部司機', type: 'success' });
+      await ApiLoadOrders();
+      await ApiLoadOrderBids();
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '發出需求單失敗', type: 'error' });
+    }
+  } finally {
+    dispatching.value = false;
+  }
+};
+
+const ClickAssignFromBid = async (driverId: string) => {
+  if (!selectedOrder.value || assigningFromBid.value) return;
+  assigningFromBid.value = driverId;
+  try {
+    const res = await $api.AssignDriverFromBids(selectedOrder.value.orderId, { driverId });
+    if (res.status.code === 200) {
+      ElMessage({ message: '已指派該司機，雙向通知已發送', type: 'success' });
+      await ApiLoadOrders();
+      await ApiLoadOrderBids();
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '指派失敗', type: 'error' });
+    }
+  } finally {
+    assigningFromBid.value = null;
+  }
+};
+
+// modal 開啟時自動載 bids（若已派發）；切換 selectedOrder 時重 fetch
+watch(() => selectedOrder.value?.orderId, async (id) => {
+  if (id) {
+    await ApiLoadOrderBids();
+  } else {
+    orderBids.value = [];
+  }
+});
+
 onMounted(() => {
   ApiLoadOrders();
   ApiLoadDrivers();
@@ -543,6 +636,11 @@ onMounted(() => {
         .PageAdminOrders__cell.is-fare(data-label="費用") NT$ {{ o.estimatedFare.toLocaleString() }}
         .PageAdminOrders__cell.is-status(data-label="狀態")
           span.PageAdminOrders__status(:class="STATUS_CLASS[o.orderStatus]") {{ STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
+          //- Phase 1E：dispatch 狀態徽章（pending 訂單疊加在主狀態下方）
+          span.PageAdminOrders__dispatch-badge(
+            v-if="DispatchStateLabel(o)"
+            :class="DispatchStateLabel(o)?.cls"
+          ) {{ DispatchStateLabel(o)?.text }}
         .PageAdminOrders__cell.is-action
           span.PageAdminOrders__row-chevron ›
 
@@ -584,6 +682,30 @@ onMounted(() => {
               .PageAdminOrders__section-row(v-if="selectedOrder.luggageItems?.length")
                 span.PageAdminOrders__section-key 行李
                 span.PageAdminOrders__section-val {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
+
+            //- Phase 1E：訂單需求單 / 司機喊單 / 配對
+            //- 三狀態：未派發 / 已派發等待 / 已派發喊單中（confirmed 後不顯示）
+            .PageAdminOrders__section(v-if="selectedOrder.orderStatus === 'pending'")
+              .PageAdminOrders__section-title 訂單需求單
+              //- 未派發
+              template(v-if="!selectedOrder.dispatchAt")
+                .PageAdminOrders__dispatch-empty 尚未發出需求單。發出後系統會以 LINE 推播通知全部已認證司機；司機可於接單看板喊單，您再從喊單清單挑選。
+                button.PageAdminOrders__action.is-primary.is-block(
+                  :disabled="dispatching"
+                  @click="ClickDispatch"
+                ) {{ dispatching ? '發送中...' : '📤 發出需求單' }}
+              //- 已派發
+              template(v-else)
+                .PageAdminOrders__dispatch-meta
+                  span 已派發於 {{ $dayjs(selectedOrder.dispatchAt).format('MM/DD HH:mm') }}
+                  span.PageAdminOrders__dispatch-active {{ ActiveBidCount(selectedOrder) }} 司機喊單中（含撤回 {{ (selectedOrder.bids ?? []).length }} 筆）
+                .PageAdminOrders__bid-loading(v-if="bidsLoading") 載入喊單清單中...
+                AdminOrderBidList(
+                  v-else
+                  :bids="orderBids"
+                  :assign-disabled="!!assigningFromBid || selectedOrder.orderStatus !== 'pending'"
+                  @assign="ClickAssignFromBid"
+                )
 
             //- 司機資訊
             .PageAdminOrders__section
@@ -1156,6 +1278,52 @@ $muted: rgba(255, 255, 255, 0.35);
   &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
 }
 
+// Phase 1E：dispatch 狀態徽章（疊加在主狀態下方）
+.PageAdminOrders__dispatch-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 100px;
+
+  &.is-pending  { background: rgba(255, 80, 80, 0.1);  border: 1px solid rgba(255, 80, 80, 0.25);  color: rgba(255, 120, 120, 0.85); }
+  &.is-progress { background: rgba($amber, 0.12);       border: 1px solid rgba($amber, 0.3);         color: $amber; }
+}
+
+.PageAdminOrders__dispatch-empty {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.PageAdminOrders__dispatch-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+}
+
+.PageAdminOrders__dispatch-active {
+  color: $amber;
+  font-weight: 700;
+}
+
+.PageAdminOrders__bid-loading {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  padding: 12px 0;
+  text-align: center;
+}
+
 // ── Modal ──────────────────────────────────────────────────
 .PageAdminOrders__modal-mask {
   position: fixed;
@@ -1545,6 +1713,8 @@ $muted: rgba(255, 255, 255, 0.35);
     border-color: rgba(255, 80, 80, 0.35);
     &:hover:not(:disabled) { background: rgba(255, 80, 80, 0.18); }
   }
+
+  &.is-block { display: block; width: 100%; }
 }
 
 .PageAdminOrders__foot-spacer { flex: 1; }

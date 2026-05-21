@@ -8,6 +8,8 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
 import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
+import { activeBidderLineUids } from '@@/utils/order-dispatch';
+import { pushOrderCancelledToBidders } from '@@/utils/line-dispatch-push';
 import {
   processReferralQualification,
   getReferralPushMessage,
@@ -353,6 +355,35 @@ export default defineEventHandler(async (event) => {
         type: 'text',
         text: `⚠️ 訂單已取消\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已被取消。\n${reasonLine}如有疑問請聯絡客服。`,
       }]);
+    }
+
+    // Phase 1E：取消「已派發但尚未指派」訂單時，通知所有 active bidders（fire-and-forget）
+    if (
+      body.orderStatus === 'cancelled'
+      && prevStatus !== 'cancelled'
+      && orderData.dispatchAt
+      && !orderAssignedDriver
+    ) {
+      const bidderUids = activeBidderLineUids(orderData.bids);
+      if (bidderUids.length > 0) {
+        void (async () => {
+          try {
+            await pushOrderCancelledToBidders(bidderUids, { orderId });
+          } catch (err) {
+            console.error('[orders/patch] cancel bidders push failed:', err);
+          }
+        })();
+        if (isAdmin) {
+          await writeAuditLog({
+            event,
+            auth,
+            action: 'order.cancel_dispatched',
+            targetType: 'order',
+            targetId: orderId,
+            payload: { bidderCount: bidderUids.length },
+          });
+        }
+      }
     }
 
     // P19：訂單 status 切 en_route 時，driver doc 自動切 busy（不是 confirmed）

@@ -60,6 +60,11 @@ export type AuditAction =
   | 'order.cancel_by_admin'
   | 'order.edit'
   | 'order.create'                 // admin 在 /admin/orders 手動建立訂單（guest 乘客）
+  // Phase 1E 訂單需求單 / 司機喊單 / 配對
+  | 'order.dispatch'               // admin 發出需求單（dispatchAt 寫入）
+  | 'order.bid'                    // driver 喊單
+  | 'order.bid_withdraw'           // driver 撤回喊單
+  | 'order.cancel_dispatched'      // 取消已派發訂單（通知 bidders）
   // broadcast / notify
   | 'broadcast.send'
   | 'broadcast.notify_one'        // legacy（P37 前；passenger / driver 共用）

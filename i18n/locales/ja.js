@@ -804,6 +804,28 @@ export default {
       desc: '勾選自己具備的能力（變更立即生效，不需審核）',
     },
   },
+  // Phase 1E：訂單需求單 / 司機喊單 / 配對 — 乘客端推播文案（ja）
+  notification: {
+    dispatched: {
+      title: '新規注文の派遣',
+      body: '新しい注文の入札が開始されました',
+      cta: '詳細を確認',
+    },
+    assigned: {
+      title: 'マッチング成立',
+      body: 'ドライバーが決定しました',
+      pickupLabel: '乗車時刻',
+      viewVehicle: '車両情報を確認',
+    },
+    driverSelected: {
+      title: 'マッチング成立',
+      body: '乗車時刻までに到着してください',
+      cta: 'タスクを確認',
+    },
+    cancelled: {
+      bidder: '注文がキャンセルされました。入札は自動的に取り下げられました。',
+    },
+  },
   enum: {
     apiStatus: {
       200: '成功',

@@ -1,0 +1,88 @@
+/**
+ * GET /nuxt-api/driver/dispatched-orders — Phase 1E
+ *
+ * 司機接單看板：列所有「pending && dispatchAt != null && !assignedDriverId」訂單。
+ * 不過濾必要條件（B1 拍版：全部 driver 都能看，自己判斷）。
+ *
+ * Response 每筆含 myBidStatus = 'none' | 'bid' | 'withdrawn'（依當前 driver 在 bids 內狀態）
+ *
+ * 認證：必須 driver role + approved（與 driver/apply 相同）
+ */
+import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { successResponse, forbiddenError, serverError } from '@@/utils/response';
+import { serializeOrderPreferences } from '@@/utils/order-preferences';
+import type { OrderBidEntry } from '@@/utils/order-dispatch';
+import type { Timestamp } from 'firebase-admin/firestore';
+
+type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
+
+const _tsToIso = (ts: Timestamp | null | undefined): string | null =>
+  ts ? ts.toDate().toISOString() : null;
+
+export default defineEventHandler(async (event) => {
+  const auth = await getAuthFromEvent(event);
+  if (!auth.ok) return authFailResponse(auth);
+  if (!auth.roles.includes('driver')) {
+    return forbiddenError({ zh_tw: '需要司機身分', en: 'Driver role required', ja: 'ドライバー権限が必要です' });
+  }
+  if (!auth.approved) {
+    return forbiddenError({ zh_tw: '司機尚未通過審核', en: 'Driver not approved', ja: 'ドライバー審査未完了' });
+  }
+
+  const { firebaseServiceAccountJson } = useRuntimeConfig();
+  if (!firebaseServiceAccountJson) {
+    return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
+  }
+
+  try {
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    // Composite index 需求：orderStatus + dispatchAt + assignedDriverId
+    // 但 firestore 限制 inequality 只能對一個欄位用；
+    // 用 orderStatus=='pending' + orderBy pickupDateTime asc，再 in-memory filter dispatchAt / assignedDriverId
+    const snap = await db.collection('orders')
+      .where('orderStatus', '==', 'pending')
+      .orderBy('pickupDateTime', 'asc')
+      .limit(200)
+      .get();
+
+    const myUid = auth.lineUid;
+
+    const dispatched = snap.docs
+      .map((doc) => ({ id: doc.id, data: doc.data() }))
+      .filter(({ data }) => !!data.dispatchAt && !data.assignedDriverId)
+      .map(({ id, data }) => {
+        const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
+        const myBid = rawBids.find((b) => b.driverId === myUid);
+        let myBidStatus: 'none' | 'bid' | 'withdrawn' = 'none';
+        if (myBid) myBidStatus = myBid.withdrawnAt ? 'withdrawn' : 'bid';
+
+        const activeBidCount = rawBids.filter((b) => !b.withdrawnAt).length;
+
+        return {
+          orderId: id,
+          orderType: (data.orderType as string) ?? '',
+          pickupDateTime: (data.pickupDateTime as string) ?? '',
+          pickupLocation: data.pickupLocation as GooglePlaceLite,
+          dropoffLocation: data.dropoffLocation as GooglePlaceLite,
+          stopovers: ((data.stopovers as GooglePlaceLite[] | undefined) ?? []),
+          vehicleType: (data.vehicleType as string) ?? '',
+          passengerCount: (data.passengerCount as number) ?? 1,
+          estimatedFare: (data.estimatedFare as number) ?? 0,
+          distanceKm: (data.distanceKm as number) ?? 0,
+          notes: (data.notes as string | undefined) ?? null,
+          flightNumber: (data.flightNumber as string | undefined) ?? null,
+          terminal: (data.terminal as string | undefined) ?? null,
+          preferences: serializeOrderPreferences(data.preferences),
+          dispatchAt: _tsToIso(data.dispatchAt),
+          activeBidCount,
+          myBidStatus,
+        };
+      });
+
+    return successResponse(dispatched);
+  } catch (err) {
+    console.error('[driver/dispatched-orders] failed:', err);
+    return serverError();
+  }
+});

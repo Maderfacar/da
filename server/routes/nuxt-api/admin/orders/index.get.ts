@@ -3,6 +3,7 @@ import { successResponse, serverError, forbiddenError } from '@@/utils/response'
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
+import { serializeBids } from '@@/utils/order-dispatch';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
 
@@ -69,6 +70,12 @@ export default defineEventHandler(async (event) => {
         contactPhone: (d.contactPhone as string | undefined) ?? null,
         // Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選或為舊單）
         preferences: serializeOrderPreferences(d.preferences),
+        // Phase 1E：派發 / 喊單欄位 echo（null/[] = 未派發 / 未喊單）
+        dispatchAt: d.dispatchAt?.toDate?.()?.toISOString?.() ?? null,
+        dispatchedBy: (d.dispatchedBy as string | undefined) ?? null,
+        bids: serializeBids(d.bids),
+        assignedAt: d.assignedAt?.toDate?.()?.toISOString?.() ?? null,
+        assignedBy: (d.assignedBy as string | undefined) ?? null,
       };
     });
 

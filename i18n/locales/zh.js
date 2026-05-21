@@ -824,6 +824,28 @@ export default {
       desc: '勾選自己具備的能力（變更立即生效，不需審核）',
     },
   },
+  // Phase 1E：訂單需求單 / 司機喊單 / 配對 — 乘客端三語推播文案
+  notification: {
+    dispatched: {
+      title: '新訂單派發',
+      body: '訂單已派發，請查看詳情並評估是否接單',
+      cta: '查看詳情並接單',
+    },
+    assigned: {
+      title: '配對成功',
+      body: '您的訂單已配對司機',
+      pickupLabel: '上車時間',
+      viewVehicle: '查看車輛資訊',
+    },
+    driverSelected: {
+      title: '您已中選',
+      body: '請於上車時間前準時抵達',
+      cta: '查看任務',
+    },
+    cancelled: {
+      bidder: '訂單已取消，您的喊單已自動撤回',
+    },
+  },
   // ── API 狀態（原有）──────────────────────────────────────
   enum: {
     apiStatus: {

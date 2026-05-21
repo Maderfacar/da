@@ -804,6 +804,28 @@ export default {
       desc: '勾選自己具備的能力（變更立即生效，不需審核）',
     },
   },
+  // Phase 1E：訂單需求單 / 司機喊單 / 配對 — 乘客端推播文案（en）
+  notification: {
+    dispatched: {
+      title: 'New order dispatched',
+      body: 'A new order is now open for bids',
+      cta: 'View and bid',
+    },
+    assigned: {
+      title: 'Driver matched',
+      body: 'A driver has been matched to your order',
+      pickupLabel: 'Pickup',
+      viewVehicle: 'View vehicle profile',
+    },
+    driverSelected: {
+      title: 'You are selected',
+      body: 'Please arrive on time before the pickup',
+      cta: 'View trip',
+    },
+    cancelled: {
+      bidder: 'The order was cancelled. Your bid has been automatically withdrawn.',
+    },
+  },
   enum: {
     apiStatus: {
       200: 'Success',
