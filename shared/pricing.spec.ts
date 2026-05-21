@@ -552,4 +552,58 @@ describe('buildTagSurchargeIndex + calcTagSurcharge', () => {
     expect(m.size).toBe(1);
     expect(m.has('t-ok')).toBe(true);
   });
+
+  // ─── Phase 1G 邊界補強 ─────────────────────────────────────
+  it('Phase 1G — 所有 selected 都 archived → surcharge=0 / matched=[] / 全進 invalid', () => {
+    const allArchived = buildTagSurchargeIndex([
+      { id: 't-a1', group: 'power',    scope: 'vehicle', surchargeAmount: 100, status: 'archived' },
+      { id: 't-a2', group: 'interior', scope: 'vehicle', surchargeAmount: 999, status: 'archived' },
+    ]);
+    const r = calcTagSurcharge(['t-a1', 't-a2'], allArchived);
+    expect(r.surcharge).toBe(0);
+    expect(r.matchedTagIds).toEqual([]);
+    expect(r.invalidTagIds).toEqual(['t-a1', 't-a2']);
+  });
+
+  it('Phase 1G — surcharge 全 0 → max 取 0（無人加價但仍命中）', () => {
+    const allZero = buildTagSurchargeIndex([
+      { id: 't-z1', group: 'power',     scope: 'vehicle', surchargeAmount: 0, status: 'active' },
+      { id: 't-z2', group: 'interior',  scope: 'vehicle', surchargeAmount: 0, status: 'active' },
+    ]);
+    const r = calcTagSurcharge(['t-z1', 't-z2'], allZero);
+    expect(r.surcharge).toBe(0);
+    expect(r.matchedTagIds).toEqual(['t-z1', 't-z2']);
+    expect(r.invalidTagIds).toEqual([]);
+  });
+
+  it('Phase 1G — 重複 id 算兩次 → matched 列兩次（呼叫端責任去重），max 不變', () => {
+    const r = calcTagSurcharge(['t-power-ev', 't-power-ev'], INDEX);
+    expect(r.surcharge).toBe(100);
+    expect(r.matchedTagIds).toEqual(['t-power-ev', 't-power-ev']);
+    expect(r.invalidTagIds).toEqual([]);
+  });
+
+  it('Phase 1G — selectedTagIds 含非字串（null/number/object）→ 全進 invalid', () => {
+    // @ts-expect-error 模擬 server 端拿到 firestore array 含意外型別
+    const r = calcTagSurcharge([null, 123, { foo: 1 }, ''], INDEX);
+    expect(r.surcharge).toBe(0);
+    expect(r.matchedTagIds).toEqual([]);
+    expect(r.invalidTagIds).toEqual(['null', '123', '[object Object]', '']);
+  });
+
+  it('Phase 1G — buildTagSurchargeIndex 後者覆蓋前者（同 id 二筆）', () => {
+    const m = buildTagSurchargeIndex([
+      { id: 't-x', group: 'power', scope: 'vehicle', surchargeAmount: 50,  status: 'active' },
+      { id: 't-x', group: 'power', scope: 'vehicle', surchargeAmount: 200, status: 'active' },
+    ]);
+    expect(m.size).toBe(1);
+    expect(m.get('t-x')?.surchargeAmount).toBe(200);
+  });
+
+  it('Phase 1G — driver-scope + vehicle-scope mix → driver-scope 即使 active 也算 invalid', () => {
+    const r = calcTagSurcharge(['t-driver-en', 't-power-ev', 't-int-leather'], INDEX);
+    expect(r.surcharge).toBe(200); // max(100, 200)
+    expect(r.matchedTagIds).toEqual(['t-power-ev', 't-int-leather']);
+    expect(r.invalidTagIds).toEqual(['t-driver-en']);
+  });
 });

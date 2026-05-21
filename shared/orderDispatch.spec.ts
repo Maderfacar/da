@@ -163,4 +163,81 @@ describe('buildDispatchTagIndex', () => {
     ]);
     expect(map.size).toBe(TAG_ROWS.length);
   });
+
+  // ─── Phase 1G 邊界補強 ─────────────────────────────────────
+  it('Phase 1G — preferenceTagIds 含 null/空字串 → 忽略不算', () => {
+    const r = computeDriverMatch(
+      // @ts-expect-error 模擬 firestore array 含意外值
+      [null, '', 't-power-ev'],
+      _driver(['t-power-ev']),
+      TAG_INDEX,
+      'zh_tw',
+    );
+    expect(r.matchCount).toBe(1);
+    expect(r.matched[0]?.id).toBe('t-power-ev');
+  });
+
+  it('Phase 1G — tagIndex 為空 map → matched=[]，但 preferenceCount 仍是 input length', () => {
+    const empty = buildDispatchTagIndex([]);
+    const r = computeDriverMatch(
+      ['t-power-ev', 't-int-captain'],
+      _driver(['t-power-ev', 't-int-captain']),
+      empty,
+      'zh_tw',
+    );
+    expect(r.matchCount).toBe(0);
+    expect(r.matched).toEqual([]);
+    expect(r.preferenceCount).toBe(2);
+  });
+
+  it('Phase 1G — preferenceTagIds 非陣列 → 不崩潰、回 0 命中', () => {
+    const r = computeDriverMatch(
+      // @ts-expect-error 模擬 server bug
+      null,
+      _driver(['t-power-ev']),
+      TAG_INDEX,
+      'zh_tw',
+    );
+    expect(r.matchCount).toBe(0);
+    expect(r.preferenceCount).toBe(0);
+  });
+
+  it('Phase 1G — driver 雙陣列皆 undefined → 不崩潰、回 0 命中', () => {
+    const r = computeDriverMatch(
+      ['t-power-ev'],
+      // @ts-expect-error 模擬 driver doc 缺欄
+      { driverId: 'X', vehicleProfileTags: undefined, driverScopeTags: undefined },
+      TAG_INDEX,
+      'zh_tw',
+    );
+    expect(r.matchCount).toBe(0);
+    expect(r.preferenceCount).toBe(1);
+  });
+
+  it('Phase 1G — sort 跨 group 穩定（power→interior→equipment→driverSkill）', () => {
+    const r = computeDriverMatch(
+      ['t-equip-child', 't-int-captain', 't-power-ev', 't-driver-en'],
+      _driver(['t-equip-child', 't-int-captain', 't-power-ev'], ['t-driver-en']),
+      TAG_INDEX,
+      'zh_tw',
+    );
+    expect(r.matchCount).toBe(4);
+    const groups = r.matched.map((m) => m.group);
+    expect(groups).toEqual(['power', 'interior', 'equipment', 'driverSkill']);
+  });
+
+  it('Phase 1G — ja lang 命中（與 en fallback 對照）', () => {
+    const r = computeDriverMatch(
+      ['t-power-hybrid'],
+      _driver(['t-power-hybrid']),
+      TAG_INDEX,
+      'ja',
+    );
+    expect(r.matched[0]?.name).toBe('ハイブリッド');
+  });
+
+  it('Phase 1G — isSoftMatch：match.matchCount undefined → 視為 0 → 0 < pref → soft', () => {
+    // @ts-expect-error 容錯：呼叫端忘了帶 matchCount
+    expect(isSoftMatch(['a', 'b'], {})).toBe(true);
+  });
 });

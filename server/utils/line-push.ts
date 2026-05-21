@@ -20,6 +20,14 @@ export type LineMessage =
 const LINE_PUSH_URL = 'https://api.line.me/v2/bot/message/push';
 const LINE_MULTICAST_URL = 'https://api.line.me/v2/bot/message/multicast';
 
+/**
+ * Phase 1G：E2E / smoke test 期間將 `LINE_PUSH_DISABLED=1` 設於環境變數，
+ * 全部 push / multicast 改成只 log、不真打 LINE API。生產環境保持未設定。
+ */
+function isLinePushDisabled(): boolean {
+  return process.env.LINE_PUSH_DISABLED === '1' || process.env.LINE_PUSH_DISABLED === 'true';
+}
+
 /** 單推（1 個 user） */
 export async function sendLinePush(
   client: LineClient,
@@ -27,6 +35,10 @@ export async function sendLinePush(
   messages: LineMessage[],
 ): Promise<void> {
   if (!to) return;
+  if (isLinePushDisabled()) {
+    console.log(`[line-push:DISABLED] ${client} → ${to} (${messages.length} msg)`);
+    return;
+  }
   const { accessToken } = getLineChannel(client);
   if (!accessToken) {
     console.warn(`[line-push] ${client} accessToken 未設定，skip push to ${to}`);
@@ -72,6 +84,11 @@ export async function sendLineMulticast(
 ): Promise<{ sent: number; failed: number }> {
   const unique = Array.from(new Set(toList.filter((id) => !!id)));
   if (unique.length === 0) return { sent: 0, failed: 0 };
+
+  if (isLinePushDisabled()) {
+    console.log(`[line-multicast:DISABLED] ${client} → ${unique.length} targets (${messages.length} msg)`);
+    return { sent: unique.length, failed: 0 };
+  }
 
   const { accessToken } = getLineChannel(client);
   if (!accessToken) {

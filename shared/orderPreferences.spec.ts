@@ -103,4 +103,54 @@ describe('buildPreferencesSnapshot', () => {
     expect(s.tagSnapshot).toEqual([]);
     expect(s.tagSurcharge).toBe(0);
   });
+
+  // ─── Phase 1G 邊界補強 ─────────────────────────────────────
+  it('Phase 1G — snapshotAt 是合法 ISO timestamp（時序內 < 1s）', () => {
+    const before = Date.now();
+    const s = buildPreferencesSnapshot({ tagIds: ['t-power-ev'] }, FULL_INDEX);
+    const after = Date.now();
+    const ts = Date.parse(s.snapshotAt);
+    expect(Number.isNaN(ts)).toBe(false);
+    expect(ts).toBeGreaterThanOrEqual(before);
+    expect(ts).toBeLessThanOrEqual(after);
+  });
+
+  it('Phase 1G — multi multiplicity group（interior）同時兩個 → 不算 mutex（pass）', () => {
+    const errs = validateOrderPreferencesShape(
+      { tagIds: ['t-int-captain', 't-int-leather'] },
+      INDEX,
+    );
+    expect(errs).toEqual([]);
+    // snapshot 也應雙雙列入
+    const s = buildPreferencesSnapshot({ tagIds: ['t-int-captain', 't-int-leather'] }, FULL_INDEX);
+    expect(s.tagSnapshot.length).toBe(2);
+    expect(s.tagSurcharge).toBe(300); // max(300, 200)
+  });
+
+  it('Phase 1G — driver-scope id 帶入 snapshot input → 不入 snapshot、不影響 surcharge', () => {
+    const s = buildPreferencesSnapshot(
+      { tagIds: ['t-driver-en', 't-int-captain'] },
+      FULL_INDEX,
+    );
+    expect(s.tagSnapshot.map((t) => t.id)).toEqual(['t-int-captain']);
+    expect(s.tagSurcharge).toBe(300);
+    // 原 tagIds 保留（除錯用）
+    expect(s.tagIds).toEqual(['t-driver-en', 't-int-captain']);
+  });
+
+  it('Phase 1G — input.tagIds = undefined → 不崩潰、回 empty snapshot', () => {
+    const s = buildPreferencesSnapshot({ tagIds: undefined }, FULL_INDEX);
+    expect(s.tagIds).toEqual([]);
+    expect(s.tagSnapshot).toEqual([]);
+    expect(s.tagSurcharge).toBe(0);
+  });
+
+  it('Phase 1G — validateOrderPreferencesShape：mutex 不影響非 single multiplicity group', () => {
+    // driverSkill 也是 multi（理論上乘客不會勾，但確保資料異常時不誤判 mutex）
+    const errs = validateOrderPreferencesShape(
+      { tagIds: ['t-driver-en'] },
+      INDEX,
+    );
+    expect(errs).toEqual([]); // scope!==vehicle → 不檢 mutex
+  });
 });
