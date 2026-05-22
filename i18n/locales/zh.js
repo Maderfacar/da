@@ -357,6 +357,8 @@ export default {
       exceedCapacity: '乘客人數超過車型上限（最多 {n} 人）',
       exceedLuggage: '行李超出車型容量上限',
       warnLuggage: '行李接近車型上限，建議改選大車',
+      // Booking v2 批次 1：車型與期望特徵之間的提示
+      passengerHint: '如有特殊需求請從下方選擇',
     },
     fareBreakdown: {
       title: '預估車資',
@@ -385,12 +387,16 @@ export default {
       luggageUnit: '{n} 件',
       vehicle: '車種',
       extras: '額外服務',
+      // Booking v2 批次 1：聯絡 / 乘車人 / 總價
+      contactName: '聯絡人',
+      passengerName: '乘車人',
       contactPhone: '聯絡電話',
       notes: '備註',
       distance: '行駛距離',
       durationLabel: '預估時間',
       durationVal: '約 {min} 分鐘',
       fareLabel: '預估車資',
+      finalFare: '應付車資',
       cashNote: '現金支付',
       notice: '實際車資可能依行程調整，以現場為準。',
       submit: '確認送出訂單',
@@ -404,9 +410,16 @@ export default {
       contactPhonePlaceholder: '0912345678',
       contactPhoneRequired: '請輸入聯絡電話',
       contactPhoneError: '電話格式錯誤，須為 09 開頭的 10 碼數字',
+      // Booking v2 批次 1：聯絡人 / 乘車人 / 同聯絡人
+      contactName: '聯絡人',
+      contactNamePlaceholder: '請輸入您的姓名',
+      contactNameRequired: '請輸入聯絡人姓名',
+      passengerName: '乘車人',
+      passengerNamePlaceholder: '請輸入乘車人姓名',
+      sameAsContact: '同聯絡人',
       notes: '備註',
       notesOptional: '選填',
-      notesPlaceholder: '例：小孩需安全座椅、行李較多、特殊接駁需求…',
+      notesPlaceholder: '小孩需安全座椅、行李較多或特殊規格、多人數或特殊接駁需求',
     },
     discount: {
       section: '折扣碼',
@@ -434,6 +447,8 @@ export default {
       yourPreferences: '您的偏好',
       noPreferences: '無偏好設定',
       noTagsAvailable: '目前無可用標籤',
+      // Booking v2 批次 1：Step 4 摘要顯示「期望特徵」chip 列
+      summary: '期望特徵',
     },
   },
   // ── 地圖 ──────────────────────────────────────────────────

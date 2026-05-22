@@ -52,6 +52,9 @@ interface CreateOrderBody {
   extraServices?: string[];
   // P20：補上 driver/admin 端需要的欄位
   contactPhone: string;
+  // Booking v2 批次 1：聯絡人 / 乘車人姓名（optional；舊 client 不帶）
+  contactName?: string | null;
+  passengerName?: string | null;
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
@@ -65,6 +68,7 @@ interface CreateOrderBody {
 
 const PHONE_REGEX = /^09\d{8}$/;
 const NOTES_MAX_LENGTH = 200;
+const NAME_MAX_LENGTH = 40;
 
 export default defineEventHandler(async (event) => {
   // P17：必須登入；userId / lineUserId 強制使用 auth.lineUid（去 'line:' prefix）
@@ -102,6 +106,17 @@ export default defineEventHandler(async (event) => {
       zh_tw: '備註長度不可超過 200 字',
       en: 'Notes must be 200 characters or fewer',
       ja: '備考は200文字以内で入力してください',
+    });
+  }
+
+  // Booking v2 批次 1：聯絡人 / 乘車人姓名（optional；長度 ≤ 40）
+  const contactNameTrimmed = typeof body.contactName === 'string' ? body.contactName.trim() : '';
+  const passengerNameTrimmed = typeof body.passengerName === 'string' ? body.passengerName.trim() : '';
+  if (contactNameTrimmed.length > NAME_MAX_LENGTH || passengerNameTrimmed.length > NAME_MAX_LENGTH) {
+    return badRequestError({
+      zh_tw: `姓名長度不可超過 ${NAME_MAX_LENGTH} 字`,
+      en: `Name must be ${NAME_MAX_LENGTH} characters or fewer`,
+      ja: `氏名は${NAME_MAX_LENGTH}文字以内で入力してください`,
     });
   }
 
@@ -308,6 +323,9 @@ export default defineEventHandler(async (event) => {
       fareBreakdown,
       // P20：driver/admin 端顯示用欄位（contactPhone 必填；其他舊訂單留 null fallback）
       contactPhone: body.contactPhone,
+      // Booking v2 批次 1：聯絡人 / 乘車人；同聯絡人時 client 已同步、server 不再做 fallback
+      contactName: contactNameTrimmed || null,
+      passengerName: passengerNameTrimmed || null,
       flightNumber: body.flightNumber ?? null,
       terminal: body.terminal ?? null,
       notes: body.notes ?? null,

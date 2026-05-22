@@ -35,6 +35,8 @@ export interface FleetVehicle {
   icon: string;
   sortOrder: number;
   enabled: boolean;
+  /** Booking v2：車型卡情境文案三語（optional；向後相容） */
+  tagline?: I18nLabel;
 }
 
 export interface FleetLuggageType {

@@ -10,6 +10,10 @@ interface VehicleFormState {
   labelZh: string;
   labelEn: string;
   labelJa: string;
+  // Booking v2：tagline 三語（情境文案；三語都空 → 不送）
+  taglineZh: string;
+  taglineEn: string;
+  taglineJa: string;
   capacity: number;
   luggageSU: number;
   baseFare: number;
@@ -39,6 +43,9 @@ function _emptyForm(): VehicleFormState {
     labelZh: '',
     labelEn: '',
     labelJa: '',
+    taglineZh: '',
+    taglineEn: '',
+    taglineJa: '',
     capacity: 4,
     luggageSU: 4,
     baseFare: 300,
@@ -65,6 +72,9 @@ const ClickOpenEdit = (v: FleetVehicleDto) => {
   form.labelZh = v.label.zh;
   form.labelEn = v.label.en;
   form.labelJa = v.label.ja;
+  form.taglineZh = v.tagline?.zh ?? '';
+  form.taglineEn = v.tagline?.en ?? '';
+  form.taglineJa = v.tagline?.ja ?? '';
   form.capacity = v.capacity;
   form.luggageSU = v.luggageSU;
   form.baseFare = v.baseFare;
@@ -108,6 +118,14 @@ const ClickSave = async () => {
   dialog.error = '';
   dialog.saving = true;
   try {
+    const taglineZh = form.taglineZh.trim();
+    const taglineEn = form.taglineEn.trim();
+    const taglineJa = form.taglineJa.trim();
+    // 三語都空 → 送 null（後端 validation 視為清除）；任一有值 → 送三語物件
+    const taglinePayload: { zh: string; en: string; ja: string } | null =
+      (taglineZh || taglineEn || taglineJa)
+        ? { zh: taglineZh, en: taglineEn, ja: taglineJa }
+        : null;
     const payload: CreateVehiclePayload = {
       label: { zh: form.labelZh.trim(), en: form.labelEn.trim(), ja: form.labelJa.trim() },
       capacity: form.capacity,
@@ -117,6 +135,7 @@ const ClickSave = async () => {
       icon: form.icon.trim(),
       sortOrder: form.sortOrder,
       enabled: form.enabled,
+      tagline: taglinePayload,
     };
     const res = dialog.mode === 'create'
       ? await $api.CreateFleetVehicle({ ...payload, id: form.id.trim() })
@@ -145,6 +164,8 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
       icon: v.icon,
       sortOrder: v.sortOrder,
       enabled: !v.enabled,
+      // Booking v2：保留既有 tagline，避免被 PUT 全量覆寫清掉
+      tagline: v.tagline ?? null,
     });
     if (res.status?.code !== 200) {
       ElMessage({ message: res.status?.message?.zh_tw ?? '切換失敗', type: 'error' });
@@ -244,6 +265,18 @@ const ClickDelete = async (v: FleetVehicleDto) => {
           .SettingsFleetVehicles__field
             label.SettingsFleetVehicles__label 日文名稱
             input.SettingsFleetVehicles__input(v-model="form.labelJa" maxlength="30" placeholder="例：セダン")
+
+        //- Booking v2：tagline 三語（情境文案；選填 — 三語都空 → 後端視為清除）
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 情境文案（中）
+            input.SettingsFleetVehicles__input(v-model="form.taglineZh" maxlength="40" placeholder="例：一般通勤 / 機場接送")
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 情境文案（英）
+            input.SettingsFleetVehicles__input(v-model="form.taglineEn" maxlength="60" placeholder="例：Daily commute / Airport")
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 情境文案（日）
+            input.SettingsFleetVehicles__input(v-model="form.taglineJa" maxlength="60" placeholder="例：通勤 / 空港送迎")
 
         //- 數值欄位
         .SettingsFleetVehicles__field-grid

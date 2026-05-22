@@ -140,6 +140,9 @@ export default defineEventHandler(async (event) => {
       estimatedTime: (orderData.estimatedTime as number) ?? 0,
       distanceKm: (orderData.distanceKm as number) ?? 0,
       contactPhone: (orderData.contactPhone as string | null) ?? null,
+      // Booking v2 批次 1：舊單為 null fallback；對齊 OrderDetail type
+      contactName: (orderData.contactName as string | null) ?? null,
+      passengerName: (orderData.passengerName as string | null) ?? null,
       flightNumber: (orderData.flightNumber as string | null) ?? null,
       terminal: (orderData.terminal as string | null) ?? null,
       notes: (orderData.notes as string | null) ?? null,

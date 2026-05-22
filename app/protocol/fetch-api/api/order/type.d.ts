@@ -59,6 +59,10 @@ interface CreateOrderParams {
   vehicleType: string;
   extraServices?: string[];
   contactPhone: string;
+  /** Booking v2 批次 1：聯絡人姓名（下單者；optional 向後相容） */
+  contactName?: string;
+  /** Booking v2 批次 1：乘車人姓名（同聯絡人 checkbox 控制；optional 向後相容） */
+  passengerName?: string;
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
@@ -218,6 +222,10 @@ interface OrderDetail {
   estimatedTime: number;
   distanceKm: number;
   contactPhone: string | null;
+  /** Booking v2 批次 1：聯絡人姓名（舊單為 null） */
+  contactName: string | null;
+  /** Booking v2 批次 1：乘車人姓名（舊單為 null） */
+  passengerName: string | null;
   flightNumber: string | null;
   terminal: string | null;
   notes: string | null;

@@ -17,6 +17,8 @@ interface FleetVehicleDto {
   icon: string;
   sortOrder: number;
   enabled: boolean;
+  /** Booking v2：車型卡情境文案三語（optional） */
+  tagline?: I18nLabelDto;
 }
 
 interface FleetLuggageTypeDto {
@@ -54,6 +56,8 @@ interface CreateVehiclePayload {
   icon: string;
   sortOrder: number;
   enabled: boolean;
+  /** Booking v2：車型卡情境文案三語（optional；null 表示清除） */
+  tagline?: I18nLabelDto | null;
 }
 
 interface CreateLuggageTypePayload {

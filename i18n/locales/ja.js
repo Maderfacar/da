@@ -342,6 +342,8 @@ export default {
       exceedCapacity: '乗客数が車種定員を超過（最大 {n} 名）',
       exceedLuggage: '荷物が車種容量を超過',
       warnLuggage: '荷物が車種上限に接近、より大型を推奨',
+      // Booking v2 批次 1：車種と希望特徴の間のヒント
+      passengerHint: '特別なご要望は下から選択ください',
     },
     fareBreakdown: {
       title: '予想料金',
@@ -370,12 +372,16 @@ export default {
       luggageUnit: '{n}個',
       vehicle: '車種',
       extras: '追加サービス',
+      // Booking v2 批次 1：連絡人 / 乗車人 / 総額
+      contactName: '連絡人',
+      passengerName: '乗車人',
       contactPhone: '連絡先電話',
       notes: '備考',
       distance: '距離',
       durationLabel: '予想時間',
       durationVal: '約{min}分',
       fareLabel: '予想料金',
+      finalFare: 'お支払い料金',
       cashNote: '現金払い',
       notice: '実際の料金はルートにより変動します。最終金額は現地でご確認ください。',
       submit: '予約を確定する',
@@ -389,9 +395,16 @@ export default {
       contactPhonePlaceholder: '0912345678',
       contactPhoneRequired: '電話番号を入力してください',
       contactPhoneError: '形式が不正です（09で始まる10桁の数字）',
+      // Booking v2 批次 1：連絡人 / 乗車人 / 同連絡人
+      contactName: '連絡人',
+      contactNamePlaceholder: 'お名前を入力',
+      contactNameRequired: '連絡人のお名前を入力してください',
+      passengerName: '乗車人',
+      passengerNamePlaceholder: '乗車人のお名前を入力',
+      sameAsContact: '連絡人と同じ',
       notes: '備考',
       notesOptional: '任意',
-      notesPlaceholder: '例：チャイルドシート、荷物多め、特別な迎車要望…',
+      notesPlaceholder: 'チャイルドシート、荷物多め、特殊な仕様、団体や特別な送迎需要',
     },
     discount: {
       section: '割引コード',
@@ -419,6 +432,8 @@ export default {
       yourPreferences: 'あなたの希望',
       noPreferences: '希望設定なし',
       noTagsAvailable: '利用可能なタグなし',
+      // Booking v2 批次 1：Step 4 サマリーのチップ列ラベル
+      summary: '希望特徴',
     },
   },
   map: {

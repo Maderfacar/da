@@ -221,6 +221,8 @@ export interface PatchAdminOrderBody {
   terminal?: string | null
   notes?: string | null
   passengerName?: string
+  /** Booking v2 批次 1：admin 可改聯絡人姓名 */
+  contactName?: string
   contactPhone?: string
 }
 

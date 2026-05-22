@@ -34,6 +34,8 @@ export interface FleetVehicle {
   icon: string;
   sortOrder: number;
   enabled: boolean;
+  /** Booking v2：車型卡情境文案三語（optional） */
+  tagline?: I18nLabel;
 }
 
 export interface FleetLuggageType {
@@ -210,19 +212,25 @@ export const validateVehiclePayload = (
   if (typeof raw.icon !== 'string') return { ok: false, error: 'icon 必須字串' };
   if (!Number.isInteger(raw.sortOrder)) return { ok: false, error: 'sortOrder 必須整數' };
   if (typeof raw.enabled !== 'boolean') return { ok: false, error: 'enabled 必須 boolean' };
-  return {
-    ok: true,
-    data: {
-      label: raw.label,
-      capacity: raw.capacity as number,
-      luggageSU: raw.luggageSU as number,
-      baseFare: raw.baseFare as number,
-      perKmRate: raw.perKmRate as number,
-      icon: raw.icon,
-      sortOrder: raw.sortOrder as number,
-      enabled: raw.enabled,
-    },
+  // Booking v2：tagline optional；null / undefined / 三語空字串 → 不寫入欄位（admin 清空亦走此路徑）
+  let tagline: I18nLabel | undefined;
+  if (raw.tagline !== undefined && raw.tagline !== null) {
+    if (!isI18nLabel(raw.tagline)) return { ok: false, error: 'tagline 必須含 zh/en/ja 三語' };
+    const t = raw.tagline;
+    if (t.zh.trim() || t.en.trim() || t.ja.trim()) tagline = { zh: t.zh, en: t.en, ja: t.ja };
+  }
+  const data: Omit<FleetVehicle, 'id'> = {
+    label: raw.label,
+    capacity: raw.capacity as number,
+    luggageSU: raw.luggageSU as number,
+    baseFare: raw.baseFare as number,
+    perKmRate: raw.perKmRate as number,
+    icon: raw.icon,
+    sortOrder: raw.sortOrder as number,
+    enabled: raw.enabled,
   };
+  if (tagline) data.tagline = tagline;
+  return { ok: true, data };
 };
 
 export const validateLuggageTypePayload = (

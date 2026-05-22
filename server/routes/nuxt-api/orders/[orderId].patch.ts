@@ -45,6 +45,8 @@ interface PatchOrderBody {
   terminal?: string | null;
   notes?: string | null;
   passengerName?: string;
+  // Booking v2 批次 1：聯絡人姓名（admin-only patch）
+  contactName?: string;
   contactPhone?: string;
   // Wave 1 D2：driver 推進 4 階段時附上當下 GPS（lat, lng）
   driverLocation?: { lat: number; lng: number };
@@ -52,7 +54,7 @@ interface PatchOrderBody {
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
 // admin 可任意新增；body 驗證放寬至「字串/字串陣列」，存在性由 GET fleet 端確認
-const ADMIN_ONLY_FIELDS = ['orderType', 'pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes', 'passengerName', 'contactPhone'] as const;
+const ADMIN_ONLY_FIELDS = ['orderType', 'pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes', 'passengerName', 'contactName', 'contactPhone'] as const;
 
 const VALID_ORDER_TYPES = new Set(['airport-pickup', 'airport-dropoff', 'charter', 'transfer']);
 const PHONE_REGEX = /^09\d{8}$/;
@@ -211,6 +213,12 @@ export default defineEventHandler(async (event) => {
           return badRequestError({ zh_tw: '乘客姓名必填且 40 字內', en: 'passengerName required (≤40 chars)', ja: '乗客名は必須（40文字以内）' });
         }
       }
+      if (body.contactName !== undefined) {
+        const name = typeof body.contactName === 'string' ? body.contactName.trim() : '';
+        if (name.length > 40) {
+          return badRequestError({ zh_tw: '聯絡人姓名 40 字內', en: 'contactName ≤40 chars', ja: '連絡人氏名は40文字以内' });
+        }
+      }
       if (body.contactPhone !== undefined && !PHONE_REGEX.test(body.contactPhone)) {
         return badRequestError({ zh_tw: '聯絡電話格式錯誤（09 開頭 10 碼）', en: 'Invalid contact phone', ja: '連絡先電話番号の形式が不正です' });
       }
@@ -304,6 +312,10 @@ export default defineEventHandler(async (event) => {
     if (isAdmin) {
       if (body.orderType !== undefined) updates.orderType = body.orderType;
       if (body.passengerName !== undefined) updates.passengerName = body.passengerName.trim();
+      if (body.contactName !== undefined) {
+        const name = body.contactName.trim();
+        updates.contactName = name || null;
+      }
       if (body.contactPhone !== undefined) updates.contactPhone = body.contactPhone;
       if (body.pickupDateTime !== undefined) updates.pickupDateTime = body.pickupDateTime;
       if (body.pickupLocation !== undefined) updates.pickupLocation = body.pickupLocation;

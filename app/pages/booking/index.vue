@@ -11,6 +11,7 @@ const { t, locale } = useI18n();
 const { showToast } = useToast();
 
 const storeOrder = StoreOrder();
+const storeAuth = StoreAuth();
 const route = useRoute();
 
 // ── 步驟控制 ────────────────────────────────────────────────────────────────
@@ -52,10 +53,32 @@ const flightInfo = ref<FlightInfo | null>(null);
 const contactPhone = ref(storeOrder.draft.contactPhone ?? '');
 const notes = ref(storeOrder.draft.notes ?? '');
 
+// Booking v2 批次 1：聯絡人 / 乘車人姓名（同聯絡人 checkbox 預設打勾）
+const contactName = ref(storeOrder.draft.contactName ?? '');
+const passengerName = ref(storeOrder.draft.passengerName ?? '');
+const sameAsContact = ref(true);
+
+// LINE displayName 預填 contactName（首次掛載時、空才填、避免覆蓋既有 draft）
+onMounted(() => {
+  const lineName = storeAuth.lineProfile?.displayName ?? '';
+  if (!contactName.value && lineName) {
+    contactName.value = lineName;
+    if (sameAsContact.value) passengerName.value = lineName;
+  }
+});
+
+// 勾選狀態 / contactName 變動時、同步 passengerName（取消勾選保留現有名字）
+watch(contactName, (val) => {
+  if (sameAsContact.value) passengerName.value = val;
+});
+watch(sameAsContact, (on) => {
+  if (on) passengerName.value = contactName.value;
+});
+
 // 折扣碼（陽春版）— 僅 step 4 確認頁輸入，不需跨步驟持久化
 const discountCode = ref('');
 
-// Phase 1D：偏好標籤 — 僅 step 4 確認頁勾選
+// Phase 1D：偏好標籤 — Booking v2 批次 1 起改由 Step 3 直接顯示
 const activeVehicleTags = ref<TagDto[]>([]);
 const selectedTagIds = ref<string[]>([]);
 
@@ -63,7 +86,8 @@ const ApiLoadActiveVehicleTags = async () => {
   try {
     const res = await $api.GetActiveTags('vehicle');
     if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
-      activeVehicleTags.value = res.data.tags;
+      // Booking v2：乘客 booking 端不顯示 vehicleType group（保留給司機端標車輛 / admin 分類車隊）
+      activeVehicleTags.value = res.data.tags.filter((t) => t.group !== 'vehicleType');
     }
   } catch { /* silent */ }
 };
@@ -122,6 +146,8 @@ const SyncToStore = () => {
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
     contactPhone: contactPhone.value,
+    contactName: contactName.value,
+    passengerName: passengerName.value,
     notes: notes.value,
   });
 };
@@ -152,6 +178,11 @@ const ClickSubmit = async () => {
   // P20：contactPhone 必填驗證，避免 BookingStepConfirm 的 disabled 被繞過
   if (!/^09\d{8}$/.test(contactPhone.value)) return;
 
+  // Booking v2 批次 1：sameAsContact 勾選時、送出前強制把 passengerName 對齊 contactName
+  const finalPassengerName = sameAsContact.value
+    ? contactName.value.trim()
+    : (passengerName.value.trim() || contactName.value.trim());
+
   isSubmitting.value = true;
   const res = await $api.CreateOrder({
     orderType: orderType.value,
@@ -164,6 +195,8 @@ const ClickSubmit = async () => {
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
     contactPhone: contactPhone.value,
+    contactName: contactName.value.trim() || null,
+    passengerName: finalPassengerName || null,
     flightNumber: flightInfo.value?.flightNo ?? null,
     terminal: flightInfo.value?.terminal ?? null,
     notes: notes.value || null,
@@ -202,6 +235,9 @@ const ClickNewOrder = () => {
   flightNo.value = '';
   flightInfo.value = null;
   contactPhone.value = '';
+  contactName.value = '';
+  passengerName.value = '';
+  sameAsContact.value = true;
   notes.value = '';
   discountCode.value = '';
   selectedTagIds.value = [];
@@ -288,12 +324,13 @@ const ClickNewOrder = () => {
           v-model:passenger-count="passengerCount"
           v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
-          v-model:extra-services="extraServices"
+          v-model:selected-tag-ids="selectedTagIds"
           :pickup-location="pickupLocation"
           :dropoff-location="dropoffLocation"
           :stopovers="stopovers"
           :pickup-date-time="pickupDateTime"
           :order-type="orderType"
+          :available-tags="activeVehicleTags"
           @fare-calc="OnFareCalc"
           @fare-result="OnFareResult"
           @next="GoNext"
@@ -305,16 +342,17 @@ const ClickNewOrder = () => {
           v-else-if="currentStep === 4"
           key="step4"
           :draft="storeOrder.draft"
-          :distance-km="distanceKm"
-          :duration-minutes="durationMinutes"
           :fare-result="fareResult"
           :fare-total="estimatedFare"
           :is-loading="isSubmitting"
           :flight-info="flightInfo"
           :available-tags="activeVehicleTags"
+          :selected-tag-ids="selectedTagIds"
           v-model:contact-phone="contactPhone"
+          v-model:contact-name="contactName"
+          v-model:passenger-name="passengerName"
+          v-model:same-as-contact="sameAsContact"
           v-model:notes="notes"
-          v-model:selected-tag-ids="selectedTagIds"
           @update:discount-code="discountCode = $event"
           @submit="ClickSubmit"
           @back="GoBack"

@@ -14,6 +14,8 @@ export const StoreOrder = defineStore('StoreOrder', () => {
     vehicleType: 'sedan',
     extraServices: [],
     contactPhone: '',
+    contactName: '',
+    passengerName: '',
     notes: '',
   });
 
@@ -62,6 +64,8 @@ export const StoreOrder = defineStore('StoreOrder', () => {
       vehicleType: 'sedan',
       extraServices: [],
       contactPhone: '',
+      contactName: '',
+      passengerName: '',
       notes: '',
     };
     routeInfo.value = null;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { VehicleType, FleetVehicle, OrderType } from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 
 export interface LuggageItem { typeId: string; count: number }
 
@@ -8,7 +9,6 @@ interface Props {
   passengerCount: number;
   luggageItems: LuggageItem[];
   vehicleType: VehicleType;
-  extraServices: string[];
   // Fare V2：明細由 server 計算，需路線 + 上車時間
   pickupLocation: GooglePlace | null;
   dropoffLocation: GooglePlace | null;
@@ -16,15 +16,22 @@ interface Props {
   pickupDateTime: string;
   /** 行程類型 — 供 Fare V2 時段規則的行程過濾 */
   orderType: OrderType | undefined;
+  /** Booking v2：vehicle-scope active tags（已 filter 掉 vehicleType group） */
+  availableTags?: TagDto[];
+  /** Booking v2：當前勾選的偏好 tag id */
+  selectedTagIds?: string[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  availableTags: () => [] as TagDto[],
+  selectedTagIds: () => [] as string[],
+});
 
 const emit = defineEmits<{
   (e: 'update:passengerCount' | 'fareCalc', val: number): void;
   (e: 'update:luggageItems', val: LuggageItem[]): void;
   (e: 'update:vehicleType', val: VehicleType): void;
-  (e: 'update:extraServices', val: string[]): void;
+  (e: 'update:selectedTagIds', val: string[]): void;
   (e: 'fareResult', val: MapsRouteRes): void;
   (e: 'next' | 'back'): void;
 }>();
@@ -35,7 +42,6 @@ const storeConfig = StoreConfig();
 
 const passengers = ref(props.passengerCount);
 const vehicle = ref<VehicleType>(props.vehicleType);
-const extras = ref<string[]>([...props.extraServices]);
 
 // ── 行李 SU 邏輯 ─────────────────────────────────────────────────────────────
 const luggage = ref<LuggageItem[]>([...props.luggageItems]);
@@ -111,7 +117,6 @@ const ApiFetchFare = async () => {
     pickupTime: props.pickupDateTime
       ? $dayjs(props.pickupDateTime).toISOString()
       : new Date().toISOString(),
-    ...(extras.value.length ? { extras: extras.value.join(',') } : {}),
     ...(props.orderType ? { orderType: props.orderType } : {}),
   });
   fareLoading.value = false;
@@ -121,7 +126,7 @@ const ApiFetchFare = async () => {
   emit('fareResult', res.data);
 };
 
-// vehicle / extras 變動 → debounce 重新估價
+// vehicle 變動 → debounce 重新估價
 const FareFetchFlow = () => {
   if (_fareTimer) clearTimeout(_fareTimer);
   _fareTimer = setTimeout(ApiFetchFare, 400);
@@ -131,7 +136,6 @@ const FareFetchFlow = () => {
 watch(passengers, (val) => emit('update:passengerCount', val));
 watch(luggage, (val) => emit('update:luggageItems', val), { deep: true });
 watch(vehicle, (val) => { emit('update:vehicleType', val); FareFetchFlow(); });
-watch(extras, (val) => { emit('update:extraServices', val); FareFetchFlow(); }, { deep: true });
 
 onMounted(ApiFetchFare);
 
@@ -140,14 +144,6 @@ const ClickVehicle = (v: FleetVehicle) => {
   if (status === 'disabled') return;
   vehicle.value = v.id;
 };
-
-const ToggleExtra = (id: string) => {
-  const idx = extras.value.indexOf(id);
-  if (idx === -1) extras.value.push(id);
-  else extras.value.splice(idx, 1);
-};
-
-const isExtraSelected = (id: string) => extras.value.includes(id);
 
 // 若當前選擇的車型變 disabled（乘客數或 SU 超出），自動切到第一個 ok 車型
 watch([passengers, totalSU], () => {
@@ -162,6 +158,11 @@ watch([passengers, totalSU], () => {
 watch(() => storeConfig.EnabledVehicles, (list) => {
   if (!vehicle.value && list.length > 0) vehicle.value = list[0].id;
 }, { immediate: true });
+
+// ── Booking v2：期望特徵 chip（直接顯示、不再摺疊）──────────────────────────
+const HandleUpdateTags = (next: string[]) => {
+  emit('update:selectedTagIds', next);
+};
 </script>
 
 <template lang="pug">
@@ -199,7 +200,7 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
     span.PassengerBookingStepOptions__su-total-label {{ $t('booking.options.suTotal') }}
     span.PassengerBookingStepOptions__su-total-val {{ totalSU }} SU
 
-  //- 車型選擇
+  //- 車型選擇（批次 1：保留 vertical list；批次 2 改 slider）
   .PassengerBookingStepOptions__section-label.mt VEHICLE
   h2.PassengerBookingStepOptions__title {{ $t('booking.options.vehicleTitle') }}
 
@@ -222,22 +223,24 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
       .PassengerBookingStepOptions__vehicle-fare
         | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
         span + NT${{ cfg.perKmRate }}/km
+      //- Booking v2：車型卡情境文案（tagline 三語、optional）
+      .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
       .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
 
-  //- 加值服務
-  .PassengerBookingStepOptions__section-label.mt EXTRAS
-  h2.PassengerBookingStepOptions__title {{ $t('booking.options.extrasTitle') }}
+  //- Booking v2：車型與期望特徵之間的提示（特殊需求引導）
+  .PassengerBookingStepOptions__passenger-hint(v-if="availableTags.length")
+    NuxtIcon(name="mdi:lightbulb-on-outline")
+    span {{ $t('booking.options.passengerHint') }}
 
-  .PassengerBookingStepOptions__extras
-    .PassengerBookingStepOptions__extra-card(
-      v-for="svc in storeConfig.EnabledExtras"
-      :key="svc.id"
-      :class="{ 'is-active': isExtraSelected(svc.id) }"
-      @click="ToggleExtra(svc.id)"
+  //- Booking v2：期望特徵 chip（直接顯示、不摺疊；availableTags 已 filter vehicleType group）
+  template(v-if="availableTags.length")
+    .PassengerBookingStepOptions__section-label.mt EXPECTATIONS
+    h2.PassengerBookingStepOptions__title {{ $t('booking.preferences.title') }}
+    BookingPassengerTagPreferencePicker(
+      :tags="availableTags"
+      :model-value="selectedTagIds"
+      @update:model-value="HandleUpdateTags"
     )
-      NuxtIcon(:name="svc.icon")
-      span {{ Loc(svc.label) }}
-      span.PassengerBookingStepOptions__extra-price +NT${{ svc.price }}
 
   PassengerFareBreakdownCard(
     :fare-total="fareResult ? fareResult.fareTotal : null"
@@ -517,9 +520,19 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
     span { color: var(--da-amber); font-size: 12px; }
   }
 
-  &__vehicle-hint {
+  &__vehicle-tagline {
     grid-column: 1 / 3;
     grid-row: 4;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: var(--da-gray);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  &__vehicle-hint {
+    grid-column: 1 / 3;
+    grid-row: 5;
     font-size: 12px;
     margin-top: 4px;
     font-family: 'Noto Sans TC', sans-serif;
@@ -528,42 +541,21 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
     .is-warn & { color: #d97706; }
   }
 
-  &__extras {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  &__extra-card {
+  // ── Booking v2：特殊需求引導提示 ────────────────────────────────────────
+  &__passenger-hint {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 14px 10px;
-    background: var(--da-glass-bg);
-    border: 1.5px solid var(--da-gray-pale);
-    border-radius: 14px;
-    cursor: pointer;
-    font-size: 13px;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--da-amber-pale);
+    border: 1px dashed var(--da-amber);
     color: var(--da-dark);
-    text-align: center;
-    transition: border-color 0.2s, background 0.2s;
     font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
 
-    .nuxt-icon { font-size: 24px; color: var(--da-gray-light); }
-
-    &.is-active {
-      border-color: var(--da-amber);
-      background: var(--da-amber-pale);
-
-      .nuxt-icon { color: var(--da-amber); }
-    }
-  }
-
-  &__extra-price {
-    font-size: 11px;
-    color: var(--da-amber);
-    font-family: 'Barlow', sans-serif;
+    .nuxt-icon { color: var(--da-amber); font-size: 18px; flex-shrink: 0; }
   }
 
   &__actions {

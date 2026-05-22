@@ -8,22 +8,27 @@ import {
 import type { FlightInfo } from '@@/api/flight.get';
 import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
+import { localizedTagName } from '~shared/tagTaxonomy';
 
 interface Props {
   draft: Partial<CreateOrderParams>;
-  distanceKm: number;
-  durationMinutes: number;
   /** Fare V2：step 3 估價結果（含明細）；尚未估出則為 null */
   fareResult: MapsRouteRes | null;
   isLoading: boolean;
   flightInfo?: FlightInfo | null;
   contactPhone: string;
+  /** Booking v2 批次 1：聯絡人姓名（必填） */
+  contactName: string;
+  /** Booking v2 批次 1：乘車人姓名（同聯絡人時與 contactName 同步） */
+  passengerName: string;
+  /** Booking v2 批次 1：同聯絡人 checkbox 狀態 */
+  sameAsContact: boolean;
   notes: string;
   /** step 3 估出的折扣前車資（折扣預覽用）；尚未估出為 0 */
   fareTotal: number;
-  /** Phase 1D：active vehicle tags（呼叫端載入） */
+  /** Phase 1D：active vehicle tags（呼叫端載入；已 filter vehicleType group） */
   availableTags?: TagDto[];
-  /** Phase 1D：當前勾選的偏好 tag id 陣列 */
+  /** Phase 1D：當前勾選的偏好 tag id 陣列（Booking v2 起在 Step 3 編輯、Step 4 只讀） */
   selectedTagIds?: string[];
 }
 
@@ -36,8 +41,11 @@ const props = withDefaults(defineProps<Props>(), {
 const { t, locale } = useI18n();
 const emit = defineEmits<{
   (e: 'submit' | 'back'): void;
-  (e: 'update:contactPhone' | 'update:notes' | 'update:discountCode', val: string): void;
-  (e: 'update:selectedTagIds', val: string[]): void;
+  (
+    e: 'update:contactPhone' | 'update:contactName' | 'update:passengerName' | 'update:notes' | 'update:discountCode',
+    val: string,
+  ): void;
+  (e: 'update:sameAsContact', val: boolean): void;
 }>();
 
 const storeConfig = StoreConfig();
@@ -53,13 +61,6 @@ const vehicleLabel = computed(() => {
   if (!props.draft.vehicleType) return '';
   return Loc(storeConfig.GetVehicle(props.draft.vehicleType)?.label);
 });
-
-const extraLabels = computed(() =>
-  (props.draft.extraServices ?? [])
-    .map((id) => Loc(storeConfig.GetExtra(id)?.label))
-    .filter((s) => s)
-    .join(t('booking.confirm.extrasSep')),
-);
 
 // P23：行李改 luggageItems 明細顯示
 const luggageDetails = computed(() => {
@@ -85,12 +86,16 @@ const formattedDateTime = computed(() => {
   return $dayjs(props.draft.pickupDateTime).format('YYYY/MM/DD HH:mm');
 });
 
-// ── P20 聯絡資訊欄位 ─────────────────────────────────────────────────────────
+// ── 聯絡 / 備註 / 乘車人欄位 ────────────────────────────────────────────────
 const PHONE_REGEX = /^09\d{8}$/;
 const NOTES_MAX = 200;
+const NAME_MAX = 40;
 
 const phoneInput = ref(props.contactPhone ?? '');
 const notesInput = ref(props.notes ?? '');
+const contactNameInput = ref(props.contactName ?? '');
+const passengerNameInput = ref(props.passengerName ?? '');
+const sameAsContactInput = ref(props.sameAsContact);
 
 watch(() => props.contactPhone, (v) => {
   if (v !== phoneInput.value) phoneInput.value = v ?? '';
@@ -98,14 +103,31 @@ watch(() => props.contactPhone, (v) => {
 watch(() => props.notes, (v) => {
   if (v !== notesInput.value) notesInput.value = v ?? '';
 });
+watch(() => props.contactName, (v) => {
+  if (v !== contactNameInput.value) contactNameInput.value = v ?? '';
+});
+watch(() => props.passengerName, (v) => {
+  if (v !== passengerNameInput.value) passengerNameInput.value = v ?? '';
+});
+watch(() => props.sameAsContact, (v) => {
+  if (v !== sameAsContactInput.value) sameAsContactInput.value = v;
+});
 
 const phoneTouched = ref(false);
+const contactNameTouched = ref(false);
 
 const phoneValid = computed(() => PHONE_REGEX.test(phoneInput.value));
 const phoneErrorMsg = computed(() => {
   if (!phoneTouched.value) return '';
   if (!phoneInput.value) return t('booking.form.contactPhoneRequired');
   if (!phoneValid.value) return t('booking.form.contactPhoneError');
+  return '';
+});
+
+const contactNameValid = computed(() => contactNameInput.value.trim().length > 0);
+const contactNameErrorMsg = computed(() => {
+  if (!contactNameTouched.value) return '';
+  if (!contactNameValid.value) return t('booking.form.contactNameRequired');
   return '';
 });
 
@@ -126,7 +148,46 @@ const OnNotesInput = (val: string) => {
   emit('update:notes', trimmed);
 };
 
-const canSubmit = computed(() => phoneValid.value && !props.isLoading);
+const OnContactNameInput = (val: string) => {
+  const trimmed = val.slice(0, NAME_MAX);
+  contactNameInput.value = trimmed;
+  emit('update:contactName', trimmed);
+  // 同聯絡人勾選時、即時同步至乘車人欄位
+  if (sameAsContactInput.value) {
+    passengerNameInput.value = trimmed;
+    emit('update:passengerName', trimmed);
+  }
+};
+
+const OnContactNameBlur = () => {
+  contactNameTouched.value = true;
+};
+
+const OnPassengerNameInput = (val: string) => {
+  const trimmed = val.slice(0, NAME_MAX);
+  passengerNameInput.value = trimmed;
+  emit('update:passengerName', trimmed);
+};
+
+const OnToggleSameAsContact = () => {
+  const next = !sameAsContactInput.value;
+  sameAsContactInput.value = next;
+  emit('update:sameAsContact', next);
+  if (next) {
+    // 重新勾選：立即同步乘車人 = 聯絡人
+    passengerNameInput.value = contactNameInput.value;
+    emit('update:passengerName', contactNameInput.value);
+  }
+  // 取消勾選：保留現有 passengerName，不清空
+};
+
+// 訂單摘要顯示用：sameAsContact 勾選時、若 passengerName 為空則 fallback contactName
+const summaryPassengerName = computed(() => {
+  if (sameAsContactInput.value) return contactNameInput.value;
+  return passengerNameInput.value || contactNameInput.value;
+});
+
+const canSubmit = computed(() => phoneValid.value && contactNameValid.value && !props.isLoading);
 
 // ── 折扣碼 ───────────────────────────────────────────────────────────────────
 const LANG_KEY: Record<string, 'zh_tw' | 'en' | 'ja'> = { zh: 'zh_tw', en: 'en', ja: 'ja' };
@@ -136,9 +197,7 @@ const discountApplying = ref(false);
 const appliedDiscount = ref<{ code: string; amount: number } | null>(null);
 const discountError = ref('');
 
-// Phase 1D：偏好標籤 — 摺疊狀態 + tagSurcharge 計算
-const preferencesOpen = ref(false);
-
+// Phase 1D：偏好標籤 tagSurcharge 計算（Booking v2 起在 Step 3 編輯、Step 4 只負責摘要 + 算總價）
 const tagSurchargeIndex = computed(() =>
   buildTagSurchargeIndex(
     (props.availableTags ?? []).map((t): TagSurchargeIndexEntry => ({
@@ -155,13 +214,18 @@ const tagSurcharge = computed(() =>
   calcTagSurcharge(props.selectedTagIds ?? [], tagSurchargeIndex.value).surcharge,
 );
 
-const HandleUpdateTags = (next: string[]) => {
-  emit('update:selectedTagIds', next);
-};
+const lang = computed<'zh_tw' | 'en' | 'ja'>(() =>
+  ({ zh: 'zh_tw', en: 'en', ja: 'ja' } as const)[locale.value as 'zh' | 'en' | 'ja'] ?? 'zh_tw',
+);
 
-const ClickTogglePreferences = () => {
-  preferencesOpen.value = !preferencesOpen.value;
-};
+const selectedTagNames = computed(() => {
+  const ids = props.selectedTagIds ?? [];
+  if (ids.length === 0) return [];
+  return ids
+    .map((id) => (props.availableTags ?? []).find((t) => t.id === id))
+    .filter((t): t is TagDto => Boolean(t))
+    .map((t) => localizedTagName(t, lang.value));
+});
 
 // 最終價：fareTotal + tagSurcharge - discount（保證 >= 0）
 const fareAfterDiscount = computed(() =>
@@ -212,7 +276,8 @@ const ClickClearDiscount = () => {
 
 const ClickSubmit = () => {
   phoneTouched.value = true;
-  if (!phoneValid.value) return;
+  contactNameTouched.value = true;
+  if (!phoneValid.value || !contactNameValid.value) return;
   emit('submit');
 };
 </script>
@@ -222,9 +287,44 @@ const ClickSubmit = () => {
   .PassengerBookingStepConfirm__section-label CONFIRM ORDER
   h2.PassengerBookingStepConfirm__title {{ $t('booking.confirm.title') }}
 
-  //- P20：聯絡資訊（必填 + 備註）
+  //- Booking v2：聯絡 / 乘車資訊（聯絡人 + 乘車人 + 電話 + 備註）
   .PassengerBookingStepConfirm__contact
     .PassengerBookingStepConfirm__contact-label {{ $t('booking.form.contactSection') }}
+
+    .PassengerBookingStepConfirm__field
+      label.PassengerBookingStepConfirm__field-label
+        | {{ $t('booking.form.contactName') }}
+        span.PassengerBookingStepConfirm__field-required *
+      ElInput(
+        :model-value="contactNameInput"
+        maxlength="40"
+        :placeholder="$t('booking.form.contactNamePlaceholder')"
+        :class="{ 'is-error': contactNameErrorMsg }"
+        @update:model-value="OnContactNameInput"
+        @blur="OnContactNameBlur"
+      )
+      .PassengerBookingStepConfirm__field-error(v-if="contactNameErrorMsg") {{ contactNameErrorMsg }}
+
+    .PassengerBookingStepConfirm__field
+      label.PassengerBookingStepConfirm__field-label
+        | {{ $t('booking.form.passengerName') }}
+        span.PassengerBookingStepConfirm__field-required *
+      .PassengerBookingStepConfirm__passenger-row
+        ElInput(
+          :model-value="sameAsContactInput ? contactNameInput : passengerNameInput"
+          maxlength="40"
+          :placeholder="$t('booking.form.passengerNamePlaceholder')"
+          :disabled="sameAsContactInput"
+          @update:model-value="OnPassengerNameInput"
+        )
+        button.PassengerBookingStepConfirm__same-toggle(
+          type="button"
+          :class="{ 'is-on': sameAsContactInput }"
+          @click="OnToggleSameAsContact"
+        )
+          span.PassengerBookingStepConfirm__same-toggle-box
+            NuxtIcon(v-if="sameAsContactInput" name="mdi:check")
+          span.PassengerBookingStepConfirm__same-toggle-label {{ $t('booking.form.sameAsContact') }}
 
     .PassengerBookingStepConfirm__field
       label.PassengerBookingStepConfirm__field-label
@@ -256,30 +356,6 @@ const ClickSubmit = () => {
         @update:model-value="OnNotesInput"
       )
 
-  //- Phase 1D：偏好標籤（摺疊，可選）
-  .PassengerBookingStepConfirm__contact(v-if="availableTags.length")
-    .PassengerBookingStepConfirm__contact-label {{ $t('booking.preferences.title') }}
-    button.PassengerBookingStepConfirm__pref-toggle(
-      type="button"
-      :class="{ 'is-open': preferencesOpen }"
-      @click="ClickTogglePreferences"
-    )
-      span.PassengerBookingStepConfirm__pref-toggle-icon {{ preferencesOpen ? '−' : '+' }}
-      span.PassengerBookingStepConfirm__pref-toggle-label
-        | {{ preferencesOpen ? $t('booking.preferences.collapse') : $t('booking.preferences.expand') }}
-      span.PassengerBookingStepConfirm__pref-toggle-count(v-if="selectedTagIds.length")
-        | {{ $t('booking.preferences.selectedCount', { count: selectedTagIds.length }) }}
-    .PassengerBookingStepConfirm__pref-hint(v-if="preferencesOpen") {{ $t('booking.preferences.hint') }}
-    BookingPassengerTagPreferencePicker(
-      v-if="preferencesOpen"
-      :tags="availableTags"
-      :model-value="selectedTagIds"
-      :disabled="isLoading"
-      @update:model-value="HandleUpdateTags"
-    )
-    .PassengerBookingStepConfirm__pref-detail(v-if="preferencesOpen && tagSurcharge > 0")
-      | {{ $t('booking.preferences.surchargeDetail') }}
-
   //- 折扣碼
   .PassengerBookingStepConfirm__contact
     .PassengerBookingStepConfirm__contact-label {{ $t('booking.discount.section') }}
@@ -302,6 +378,7 @@ const ClickSubmit = () => {
       button.PassengerBookingStepConfirm__discount-clear(@click="ClickClearDiscount")
         | {{ $t('booking.discount.clear') }}
 
+  //- 訂單摘要
   .PassengerBookingStepConfirm__card
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.orderType') }}
@@ -334,41 +411,31 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.vehicle') }}
       span.PassengerBookingStepConfirm__row-value {{ vehicleLabel }}
-    .PassengerBookingStepConfirm__row(v-if="extraLabels")
-      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.extras') }}
-      span.PassengerBookingStepConfirm__row-value {{ extraLabels }}
+    //- Booking v2：期望特徵 chip 摘要（移自 Step 3）
+    .PassengerBookingStepConfirm__row(v-if="selectedTagNames.length")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.preferences.summary') }}
+      .PassengerBookingStepConfirm__tag-chips
+        span.PassengerBookingStepConfirm__tag-chip(v-for="name in selectedTagNames" :key="name") {{ name }}
+    .PassengerBookingStepConfirm__divider
+    //- Booking v2：聯絡人 / 乘車人 / 電話 / 備註摘要
+    .PassengerBookingStepConfirm__row(v-if="contactNameInput")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.contactName') }}
+      span.PassengerBookingStepConfirm__row-value {{ contactNameInput }}
+    .PassengerBookingStepConfirm__row(v-if="summaryPassengerName")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.passengerName') }}
+      span.PassengerBookingStepConfirm__row-value {{ summaryPassengerName }}
     .PassengerBookingStepConfirm__row(v-if="phoneInput")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.contactPhone') }}
       span.PassengerBookingStepConfirm__row-value {{ phoneInput }}
     .PassengerBookingStepConfirm__row(v-if="notesInput")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.notes') }}
       span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi {{ notesInput }}
-    .PassengerBookingStepConfirm__divider
-    .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.distance') }}
-      span.PassengerBookingStepConfirm__row-value {{ distanceKm }} km
-    .PassengerBookingStepConfirm__row
-      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.durationLabel') }}
-      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.durationVal', { min: durationMinutes }) }}
-    //- Phase 1D：偏好標籤加價行（只在 > 0 時顯示）
-    template(v-if="tagSurcharge > 0")
-      .PassengerBookingStepConfirm__divider
-      .PassengerBookingStepConfirm__row
-        span.PassengerBookingStepConfirm__row-label {{ $t('booking.preferences.surchargeRow') }}
-        span.PassengerBookingStepConfirm__row-value +NT${{ tagSurcharge }}
 
-    template(v-if="appliedDiscount || tagSurcharge > 0")
-      .PassengerBookingStepConfirm__divider
-      .PassengerBookingStepConfirm__row(v-if="appliedDiscount")
-        span.PassengerBookingStepConfirm__row-label {{ $t('booking.discount.discountRow') }}
-        span.PassengerBookingStepConfirm__row-value −NT${{ appliedDiscount.amount }}
-      .PassengerBookingStepConfirm__row
-        span.PassengerBookingStepConfirm__row-label {{ $t('booking.discount.finalTotal') }}
-        span.PassengerBookingStepConfirm__row-value NT${{ fareAfterDiscount }}
+  //- Booking v2：總價只顯一行「應付車資 NT$ X」（不再拆距離 / 時間 / 折扣 / tagSurcharge）
+  .PassengerBookingStepConfirm__final
+    span.PassengerBookingStepConfirm__final-label {{ $t('booking.confirm.finalFare') }}
+    span.PassengerBookingStepConfirm__final-value NT$ {{ fareAfterDiscount }}
 
-  PassengerFareBreakdownCard(
-    :fare-total="fareResult ? fareAfterDiscount : null"
-  )
   .PassengerBookingStepConfirm__cash-note {{ $t('booking.confirm.cashNote') }}
 
   .PassengerBookingStepConfirm__notice
@@ -413,7 +480,7 @@ const ClickSubmit = () => {
     margin-top: -8px;
   }
 
-  // ── P20 聯絡資訊區 ───────────────────────────────────────────────────────
+  // ── 聯絡資訊區 ───────────────────────────────────────────────────────────
   &__contact {
     background: var(--da-glass-bg);
     border: 1px solid var(--da-glass-border);
@@ -466,65 +533,60 @@ const ClickSubmit = () => {
     margin-top: 2px;
   }
 
+  // ── Booking v2：乘車人欄位 + 同聯絡人 checkbox ──────────────────────────
+  &__passenger-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    .el-input { flex: 1; min-width: 180px; }
+  }
+
+  &__same-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--da-gray-pale);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: var(--da-gray);
+    transition: all 0.15s;
+
+    &:hover { border-color: var(--da-amber); color: var(--da-amber); }
+
+    &.is-on {
+      background: var(--da-amber-pale);
+      border-color: var(--da-amber);
+      color: var(--da-amber);
+      font-weight: 700;
+    }
+  }
+
+  &__same-toggle-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid currentColor;
+    font-size: 12px;
+
+    .nuxt-icon { font-size: 12px; }
+  }
+
+  &__same-toggle-label { line-height: 1; }
+
   &__discount-row {
     display: flex;
     gap: 8px;
 
     .el-input { flex: 1; }
-  }
-
-  // Phase 1D：偏好標籤摺疊
-  &__pref-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border-radius: 100px;
-    border: 1px solid var(--da-amber);
-    background: transparent;
-    color: var(--da-amber);
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-    align-self: flex-start;
-
-    &:hover { background: var(--da-amber-pale); }
-    &.is-open { background: var(--da-amber-pale); }
-  }
-
-  &__pref-toggle-icon {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 16px;
-    line-height: 1;
-  }
-
-  &__pref-toggle-count {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px;
-    background: var(--da-amber);
-    color: #fff;
-    padding: 1px 8px;
-    border-radius: 100px;
-  }
-
-  &__pref-hint {
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 12px;
-    color: var(--da-gray);
-    line-height: 1.6;
-  }
-
-  &__pref-detail {
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 11px;
-    color: var(--da-gray);
-    background: var(--da-amber-pale);
-    border: 1px dashed var(--da-amber);
-    border-radius: 8px;
-    padding: 8px 12px;
-    line-height: 1.5;
   }
 
   &__discount-applied {
@@ -591,9 +653,52 @@ const ClickSubmit = () => {
     word-break: break-word;
   }
 
+  &__tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  &__tag-chip {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 100px;
+    background: var(--da-amber-pale);
+    border: 1px solid var(--da-amber);
+    color: var(--da-amber);
+  }
+
   &__divider {
     height: 1px;
     background: var(--da-gray-pale);
+  }
+
+  // ── Booking v2：單行總價 ────────────────────────────────────────────────
+  &__final {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    background: var(--da-dark);
+    border-radius: 16px;
+  }
+
+  &__final-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--da-gray-light);
+  }
+
+  &__final-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--da-amber-light);
+    letter-spacing: 0.04em;
   }
 
   &__cash-note {

@@ -342,6 +342,8 @@ export default {
       exceedCapacity: 'Passenger count exceeds vehicle capacity (max {n})',
       exceedLuggage: 'Luggage exceeds vehicle capacity',
       warnLuggage: 'Luggage near vehicle limit, consider a larger one',
+      // Booking v2 batch 1: hint between vehicle cards and expectation chips
+      passengerHint: 'Special requirements? Pick from below.',
     },
     fareBreakdown: {
       title: 'Estimated Fare',
@@ -370,12 +372,16 @@ export default {
       luggageUnit: '{n} pcs',
       vehicle: 'Vehicle',
       extras: 'Extras',
+      // Booking v2 batch 1: contact / passenger / final fare
+      contactName: 'Contact',
+      passengerName: 'Passenger',
       contactPhone: 'Contact Phone',
       notes: 'Notes',
       distance: 'Distance',
       durationLabel: 'Est. Time',
       durationVal: '~{min} min',
       fareLabel: 'Est. Fare',
+      finalFare: 'Total Due',
       cashNote: 'Cash payment',
       notice: 'Actual fare may vary. Final amount confirmed on-site.',
       submit: 'Submit Booking',
@@ -389,9 +395,16 @@ export default {
       contactPhonePlaceholder: '0912345678',
       contactPhoneRequired: 'Phone is required',
       contactPhoneError: 'Invalid format — must be 10 digits starting with 09',
+      // Booking v2 batch 1: contact / passenger / same-as-contact
+      contactName: 'Contact name',
+      contactNamePlaceholder: 'Your name',
+      contactNameRequired: 'Contact name is required',
+      passengerName: 'Passenger name',
+      passengerNamePlaceholder: 'Passenger name',
+      sameAsContact: 'Same as contact',
       notes: 'Notes',
       notesOptional: 'optional',
-      notesPlaceholder: 'e.g. child seat, extra luggage, special pickup instructions…',
+      notesPlaceholder: 'Child seat, extra luggage, large group, or special pickup needs',
     },
     discount: {
       section: 'Discount Code',
@@ -419,6 +432,8 @@ export default {
       yourPreferences: 'Your Preferences',
       noPreferences: 'No preferences',
       noTagsAvailable: 'No tags available',
+      // Booking v2 batch 1: summary row label in Step 4
+      summary: 'Preferences',
     },
   },
   map: {
