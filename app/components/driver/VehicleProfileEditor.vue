@@ -289,7 +289,7 @@ onMounted(ApiLoadTags);
 
 // ── 車輛載運容量（立即生效）────────────────────────────────
 const localLiters = ref<number | null>(null);
-const localSeatConfigs = ref<SeatConfig[]>([]);
+const localSeatConfigs = reactive<SeatConfig[]>([]);
 const hasSeatConfigs = ref(false);
 const savingCapacity = ref(false);
 
@@ -300,7 +300,7 @@ const previewSU = computed(() => {
 
 watch(() => props.vehicleCapacity, (cap) => {
   localLiters.value = cap?.trunkVolumeLiters ?? null;
-  localSeatConfigs.value = cap?.seatConfigs ? cap.seatConfigs.map(c => ({ ...c })) : [];
+  localSeatConfigs.splice(0, localSeatConfigs.length, ...(cap?.seatConfigs?.map(c => ({ ...c })) ?? []));
   hasSeatConfigs.value = !!cap?.seatConfigs?.length;
 }, { immediate: true });
 
@@ -312,8 +312,8 @@ const ApiSaveVehicleCapacity = async () => {
   savingCapacity.value = true;
   try {
     const body: PatchVehicleCapacityBody = { trunkVolumeLiters: localLiters.value };
-    if (hasSeatConfigs.value && localSeatConfigs.value.length) {
-      body.seatConfigs = localSeatConfigs.value;
+    if (hasSeatConfigs.value && localSeatConfigs.length) {
+      body.seatConfigs = [...localSeatConfigs];
     }
     const res = await $api.PatchVehicleCapacity(body);
     if (res.status?.code === $enum.apiStatus.success) {
@@ -328,18 +328,12 @@ const ApiSaveVehicleCapacity = async () => {
 };
 
 const AddSeatConfig = () => {
-  if (localSeatConfigs.value.length >= 3) return;
-  localSeatConfigs.value = [...localSeatConfigs.value, { label: '', passengerCapacity: 4, luggageSU: 2 }];
+  if (localSeatConfigs.length >= 3) return;
+  localSeatConfigs.push({ label: '', passengerCapacity: 4, luggageSU: 2 });
 };
 
 const RemoveSeatConfig = (idx: number) => {
-  localSeatConfigs.value = localSeatConfigs.value.filter((_, i) => i !== idx);
-};
-
-const UpdateSeatConfigField = (idx: number, field: 'label' | 'passengerCapacity' | 'luggageSU', value: string | number) => {
-  localSeatConfigs.value = localSeatConfigs.value.map((cfg, i) =>
-    i === idx ? { ...cfg, [field]: value } : cfg,
-  );
+  localSeatConfigs.splice(idx, 1);
 };
 
 defineExpose({ reloadTags: ApiLoadTags });
@@ -483,27 +477,24 @@ defineExpose({ reloadTags: ApiLoadTags });
       .VehicleProfileEditor__seat-list
         .VehicleProfileEditor__seat-item(v-for="(cfg, idx) in localSeatConfigs" :key="idx")
           el-input.VehicleProfileEditor__seat-label(
-            :model-value="cfg.label"
+            v-model="localSeatConfigs[idx].label"
             placeholder="模式名稱，例：折座模式"
             maxlength="20"
-            @update:model-value="(v: string) => UpdateSeatConfigField(idx, 'label', v)"
           )
           el-input-number.VehicleProfileEditor__seat-pax(
-            :model-value="cfg.passengerCapacity"
+            v-model="localSeatConfigs[idx].passengerCapacity"
             :min="1"
             :max="9"
             :precision="0"
             inputmode="numeric"
-            @update:model-value="(v: number) => UpdateSeatConfigField(idx, 'passengerCapacity', v)"
           )
           span.VehicleProfileEditor__seat-sep 人
           el-input-number.VehicleProfileEditor__seat-su(
-            :model-value="cfg.luggageSU"
+            v-model="localSeatConfigs[idx].luggageSU"
             :min="1"
             :max="30"
             :precision="0"
             inputmode="numeric"
-            @update:model-value="(v: number) => UpdateSeatConfigField(idx, 'luggageSU', v)"
           )
           span.VehicleProfileEditor__seat-sep SU
           button.VehicleProfileEditor__seat-remove(type="button" @click="RemoveSeatConfig(idx)") ×
