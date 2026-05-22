@@ -250,6 +250,8 @@ export interface BidWithMatchInfo {
   preferenceCount: number;
   completedOrders: number;
   verifiedAt: string | null;
+  driverLuggageSU: number | null;
+  seatConfigs: Array<{ label: string; passengerCapacity: number; luggageSU: number }> | null;
 }
 
 /**
@@ -281,7 +283,15 @@ export async function loadBidsWithDriverInfo(
 
   // 批次讀 drivers doc（每個獨立 bid 對應一個 driver；同 driver 多筆 bid 撤回後重 bid 罕見）
   const driverIds = Array.from(new Set(rawBids.map((b) => b.driverId).filter(Boolean)));
-  const driverDataMap = new Map<string, { vehicleProfileTags: string[]; driverScopeTags: string[]; completedOrders: number; verifiedAt: string | null }>();
+  type DriverEntry = {
+    vehicleProfileTags: string[];
+    driverScopeTags: string[];
+    completedOrders: number;
+    verifiedAt: string | null;
+    luggageSU: number | null;
+    seatConfigs: Array<{ label: string; passengerCapacity: number; luggageSU: number }> | null;
+  };
+  const driverDataMap = new Map<string, DriverEntry>();
 
   if (driverIds.length > 0) {
     const refs = driverIds.map((id) => db.collection('drivers').doc(id));
@@ -289,7 +299,7 @@ export async function loadBidsWithDriverInfo(
       const snaps = await db.getAll(...refs);
       snaps.forEach((s) => {
         if (!s.exists) {
-          driverDataMap.set(s.id, { vehicleProfileTags: [], driverScopeTags: [], completedOrders: 0, verifiedAt: null });
+          driverDataMap.set(s.id, { vehicleProfileTags: [], driverScopeTags: [], completedOrders: 0, verifiedAt: null, luggageSU: null, seatConfigs: null });
           return;
         }
         const data = s.data() ?? {};
@@ -298,7 +308,13 @@ export async function loadBidsWithDriverInfo(
         const driverScopeTags = Array.isArray(data.tags) ? (data.tags as string[]) : [];
         const completedOrders = typeof data.totalTrips === 'number' ? data.totalTrips : 0;
         const verifiedAt = _tsToIso(data.verifiedAt as Timestamp | null | undefined);
-        driverDataMap.set(s.id, { vehicleProfileTags, driverScopeTags, completedOrders, verifiedAt });
+        const vc = (data.vehicleCapacity as { derivedLuggageSU?: unknown; seatConfigs?: unknown } | undefined) ?? null;
+        const luggageSU = typeof vc?.derivedLuggageSU === 'number' ? vc.derivedLuggageSU : null;
+        const rawSeatConfigs = Array.isArray(vc?.seatConfigs) ? vc!.seatConfigs : null;
+        const seatConfigs = rawSeatConfigs
+          ? (rawSeatConfigs as Array<{ label: string; passengerCapacity: number; luggageSU: number }>)
+          : null;
+        driverDataMap.set(s.id, { vehicleProfileTags, driverScopeTags, completedOrders, verifiedAt, luggageSU, seatConfigs });
       });
     } catch (err) {
       console.error('[order-dispatch] batch read drivers failed:', err);
@@ -306,7 +322,7 @@ export async function loadBidsWithDriverInfo(
   }
 
   const bids: BidWithMatchInfo[] = rawBids.map((b) => {
-    const driver = driverDataMap.get(b.driverId) ?? { vehicleProfileTags: [], driverScopeTags: [], completedOrders: 0, verifiedAt: null };
+    const driver = driverDataMap.get(b.driverId) ?? { vehicleProfileTags: [], driverScopeTags: [], completedOrders: 0, verifiedAt: null, luggageSU: null, seatConfigs: null };
     const match: DriverMatchResult = computeDriverMatch(
       preferenceTagIds,
       {
@@ -327,6 +343,8 @@ export async function loadBidsWithDriverInfo(
       preferenceCount: match.preferenceCount,
       completedOrders: driver.completedOrders,
       verifiedAt: driver.verifiedAt,
+      driverLuggageSU: driver.luggageSU,
+      seatConfigs: driver.seatConfigs,
     };
   });
 
