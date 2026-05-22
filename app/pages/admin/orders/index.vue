@@ -485,6 +485,7 @@ const canCancel = computed(() => {
 
 const bidsLoading = ref(false);
 const dispatching = ref(false);
+const cloning = ref(false);
 const assigningFromBid = ref<string | null>(null);
 const orderBids = ref<AdminBidWithMatch[]>([]);
 
@@ -540,6 +541,48 @@ const ClickDispatch = async () => {
     }
   } finally {
     dispatching.value = false;
+  }
+};
+
+/**
+ * 複製目前 modal 內的訂單為新訂單 + 自動派發。
+ *
+ * UX：UseAsk 二次確認（避免誤點建出鬼訂單），成功後自動關閉本 modal 並打開新訂單。
+ * 用途：驗證 driver 端流程時，不用回前端 booking 也能快速生新需求單。
+ */
+const ClickCloneOrder = async () => {
+  if (!selectedOrder.value || cloning.value) return;
+  const sourceId = selectedOrder.value.orderId;
+  const sourceShort = sourceId.slice(0, 8).toUpperCase();
+  const ok = await UseAsk().Any(
+    `以 #${sourceShort} 為樣板建立新訂單並立即發出需求單（推播給全部已認證司機）。`,
+    '複製為新需求單',
+    '取消',
+    '確定複製並派發',
+  );
+  if (!ok) return;
+
+  cloning.value = true;
+  try {
+    const res = await $api.CloneAdminOrder(sourceId, { autoDispatch: true });
+    if (res.status.code === 200 && res.data?.orderId) {
+      const dispatched = res.data.dispatched === true;
+      ElMessage({
+        message: dispatched ? '已複製並派發新需求單' : '已複製新訂單（派發失敗，請至新訂單詳情手動發單）',
+        type: dispatched ? 'success' : 'warning',
+      });
+      await ApiLoadOrders();
+      // 把 modal 切到新訂單，方便 admin 立刻看到狀態 / 喊單
+      const next = orders.value.find((o) => o.orderId === res.data.orderId);
+      if (next) {
+        selectedOrder.value = next;
+        await ApiLoadOrderBids();
+      }
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '複製失敗', type: 'error' });
+    }
+  } finally {
+    cloning.value = false;
   }
 };
 
@@ -728,6 +771,14 @@ onMounted(() => {
           button.PageAdminOrders__modal-close(@click="ClickCloseDetail") ×
 
         .PageAdminOrders__modal-id \#{{ selectedOrder.orderId.toUpperCase() }}
+
+        //- 快速動作列（複製訂單）— 任何狀態都可用，方便 admin 驗證 driver 流程
+        .PageAdminOrders__quick-actions(v-if="!isEditing")
+          button.PageAdminOrders__quick-btn(
+            :disabled="cloning"
+            type="button"
+            @click="ClickCloneOrder"
+          ) {{ cloning ? '複製中...' : '📋 複製為新需求單' }}
 
         //- Body
         .PageAdminOrders__modal-body
@@ -1629,6 +1680,30 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: $muted;
+}
+
+.PageAdminOrders__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px 0;
+}
+
+.PageAdminOrders__quick-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 134, 10, 0.35);
+  background: rgba(212, 134, 10, 0.1);
+  color: #f7b96a;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: rgba(212, 134, 10, 0.18); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .PageAdminOrders__modal-body {

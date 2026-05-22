@@ -35,6 +35,8 @@ interface CreateForm {
   flightNumber: string;
   terminal: string;
   notes: string;
+  /** 建單後是否立即派發給全部 active driver（同等 admin 後續手動按「📤 發出需求單」） */
+  autoDispatch: boolean;
 }
 
 const _emptyForm = (): CreateForm => ({
@@ -53,6 +55,8 @@ const _emptyForm = (): CreateForm => ({
   flightNumber: '',
   terminal: '',
   notes: '',
+  // 預設勾選：絕大多數 admin 建單情境都是「建完馬上要 driver 看到」
+  autoDispatch: true,
 });
 
 const form = reactive<CreateForm>(_emptyForm());
@@ -136,10 +140,15 @@ const ApiCreate = async () => {
       flightNumber: form.flightNumber || null,
       terminal: form.terminal || null,
       notes: form.notes || null,
+      autoDispatch: form.autoDispatch,
     };
     const res = await $api.CreateAdminOrder(payload);
     if (res.status.code === 200) {
-      ElMessage({ message: '訂單已建立', type: 'success' });
+      const dispatchedNow = (res.data as { dispatched?: boolean } | undefined)?.dispatched === true;
+      ElMessage({
+        message: dispatchedNow ? '訂單已建立 + 需求單已發出' : '訂單已建立',
+        type: 'success',
+      });
       emit('created');
       emit('update:modelValue', false);
     } else {
@@ -270,10 +279,20 @@ Transition(name="fade")
             placeholder="特殊需求或備忘（200 字內）"
           )
 
+        //- 立即派發開關
+        .AdminOrdersCreateModal__field
+          label.AdminOrdersCreateModal__autodispatch
+            input(type="checkbox" v-model="form.autoDispatch")
+            span.AdminOrdersCreateModal__autodispatch-text
+              | 建立後立即發出需求單（LINE 推播給全部已認證司機）
+            span.AdminOrdersCreateModal__autodispatch-hint
+              | 若取消勾選，訂單會建為「待派發」狀態，需再到訂單詳情點「📤 發出需求單」
+
       //- Footer
       .AdminOrdersCreateModal__foot
         button.AdminOrdersCreateModal__action.is-secondary(@click="ClickClose" :disabled="saving") 取消
-        button.AdminOrdersCreateModal__action.is-primary(@click="ApiCreate" :disabled="saving") {{ saving ? '建立中...' : '建立訂單' }}
+        button.AdminOrdersCreateModal__action.is-primary(@click="ApiCreate" :disabled="saving")
+          | {{ saving ? '建立中...' : (form.autoDispatch ? '建立並發單' : '建立訂單') }}
 </template>
 
 <style lang="scss" scoped>
@@ -507,6 +526,41 @@ $muted: rgba(255, 255, 255, 0.35);
     background: rgba($amber, 0.12);
     color: $amber-light;
   }
+}
+
+.AdminOrdersCreateModal__autodispatch {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  column-gap: 8px;
+  row-gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(212, 134, 10, 0.06);
+  border: 1px solid rgba(212, 134, 10, 0.2);
+  cursor: pointer;
+  align-items: center;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: $amber;
+    cursor: pointer;
+    grid-row: span 2;
+  }
+}
+
+.AdminOrdersCreateModal__autodispatch-text {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: $amber-light;
+}
+
+.AdminOrdersCreateModal__autodispatch-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $muted;
+  line-height: 1.5;
 }
 
 .AdminOrdersCreateModal__foot {

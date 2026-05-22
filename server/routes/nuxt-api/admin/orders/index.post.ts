@@ -18,6 +18,8 @@ import { hasPermission } from '@@/utils/require-permission';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { notifyAdmins } from '@@/utils/notify-admins';
+import { dispatchOrder, loadActiveDrivers, DispatchGuardError } from '@@/utils/order-dispatch';
+import { pushOrderDispatchToDrivers, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
 
 interface GooglePlace {
   address: string;
@@ -48,6 +50,12 @@ interface CreateAdminOrderBody {
   flightNumber?: string | null;
   terminal?: string | null;
   notes?: string | null;
+  /**
+   * 若為 true，建單成功後同步呼叫 dispatchOrder + 推播 LINE Flex 給全部 active driver。
+   * 等同於 admin 建完馬上按「📤 發出需求單」，省一次點擊。
+   * dispatch 失敗不影響建單結果（fire-and-forget；錯誤寫 log）。
+   */
+  autoDispatch?: boolean;
 }
 
 const VALID_ORDER_TYPES = new Set(['airport-pickup', 'airport-dropoff', 'charter', 'transfer']);
@@ -189,5 +197,54 @@ export default defineEventHandler(async (event) => {
     }
   })();
 
-  return successResponse({ orderId, orderStatus: 'pending' });
+  // ── 可選：建單後立即派發（autoDispatch=true）─────────────────────
+  // 與 /dispatch.post.ts 流程一致：dispatchOrder（寫 dispatchAt） + LINE multicast 給 active driver + audit
+  // 失敗不影響建單；錯誤僅寫 log，response 仍回 dispatched: false
+  let dispatched = false;
+  if (body.autoDispatch === true) {
+    try {
+      await dispatchOrder(db, orderId, auth.lineUid);
+      dispatched = true;
+
+      const pickupAddress = body.pickupLocation.displayName || body.pickupLocation.address;
+      const dropoffAddress = body.dropoffLocation.displayName || body.dropoffLocation.address;
+      const payload: DispatchedOrderSummary = {
+        orderId,
+        pickupDateTime: body.pickupDateTime,
+        pickupAddress,
+        dropoffAddress,
+        passengerCount: body.passengerCount,
+        estimatedFare: body.estimatedFare,
+        preferenceChips: [],
+      };
+
+      void (async () => {
+        try {
+          const drivers = await loadActiveDrivers(db);
+          const lineUserIds = drivers.map((dv) => dv.lineUserId).filter(Boolean);
+          await pushOrderDispatchToDrivers(payload, getDispatchPushEnv(), lineUserIds);
+        } catch (err) {
+          console.error('[admin/orders/post] auto-dispatch multicast failed:', err);
+        }
+      })();
+
+      await writeAuditLog({
+        event,
+        auth,
+        action: 'order.dispatch',
+        targetType: 'order',
+        targetId: orderId,
+        payload: { dispatchAt: 'server', viaCreate: true },
+      });
+    } catch (err) {
+      // dispatch 失敗（DispatchGuardError 或 server err）不擋訂單建立完成
+      if (err instanceof DispatchGuardError) {
+        console.warn('[admin/orders/post] auto-dispatch guard failed:', err.code);
+      } else {
+        console.error('[admin/orders/post] auto-dispatch failed:', err);
+      }
+    }
+  }
+
+  return successResponse({ orderId, orderStatus: 'pending', dispatched });
 });
