@@ -53,13 +53,13 @@ const _formatDateTime = (iso: string): string => {
 };
 
 /**
- * P19-fix（Phase 1G hotfix）：見 server/utils/line-dispatch-push.ts 同名 helper 註解。
- * LIFF subPath 走 `?next=` query，避免被 LIFF SDK append 到 endpoint URL。
+ * 組 LIFF URL（path-append）— 見 server/utils/line-dispatch-push.ts 同名 helper 註解。
+ * 兩個 LIFF App 的 endpoint URL 已設成根路徑 `/`，subPath append 後直接是正確路由。
  */
 const _buildLiffUrl = (liffId: string, subPath: string, fallback: string): string => {
   const normalized = subPath.startsWith('/') ? subPath : `/${subPath}`;
   if (!liffId) return fallback;
-  return `https://liff.line.me/${liffId}?next=${encodeURIComponent(normalized)}`;
+  return `https://liff.line.me/${liffId}${normalized}`;
 };
 
 // ── 三語文案表 ─────────────────────────────────────────────────────────
