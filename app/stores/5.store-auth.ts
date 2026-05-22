@@ -332,10 +332,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         }
       }
 
-      // P19-fix（Phase 1G hotfix）：LIFF URL 帶 `?next=/path` 時 navigate 過去。
-      // 動機：LIFF SDK 把 `liff.line.me/{liffId}/foo` 的 path append 到 endpoint URL
-      //   （司機=/driver/dashboard、乘客=/home），導致 /driver/dashboard/driver/dispatched/[id] 404。
-      // 修法：server 端 LINE Flex 推播改用 `?next=` 帶完整 subPath，這裡解析後 router.replace。
+      // LIFF URL 帶 `?next=/path` 時 navigate 過去（舊版相容 fallback）。
+      // 現行 LIFF endpoint URL 已改成根路徑 `/`，新的 server LIFF URL 全部 path-append（liffId/path），
+      // 不再產生 `?next=...`；此區段僅為了相容**先前已 push 出去的 Flex/postback 訊息**（裡面 URL
+      // 仍是 `?next=...` 格式），確保 user 後續才點仍可正確 navigate。
       // 守則：next 必須以 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
       try {
         const next = new URLSearchParams(window.location.search).get('next');

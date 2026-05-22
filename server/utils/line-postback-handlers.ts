@@ -71,11 +71,11 @@ interface PrefixHandlerEntry {
 }
 
 /**
- * 組 LIFF URL（內部 helper）
+ * 組 LIFF URL（內部 helper，path-append）
  *
- * P19-fix（Phase 1G hotfix）：subPath 改走 `?next=` query 由 `_InitLiffFlow` 解析後
- * navigate。原本 path-append 寫法會把 subPath 拼到 LINE Console 設的 endpoint URL 後面
- * （司機=/driver/dashboard、乘客=/home），造成 /driver/dashboard/foo 404。
+ * 機制：LIFF SDK 把 `liff.line.me/{liffId}{subPath}` 的 subPath append 到 LINE Console 設的
+ * endpoint URL，再 redirect。本專案兩個 LIFF App 的 endpoint URL 已設成根路徑 `/`，
+ * subPath（如 `/driver/dashboard`、`/booking`）append 後直接落到正確路由。
  *
  * 缺 LIFF ID 時 fallback 給 path（保險，dev 環境用）。
  */
@@ -86,7 +86,7 @@ function _getLiffUrl(client: LineClient, subPath: string): string {
     : config.public.lineLiffIdPassenger;
   const normalized = subPath.startsWith('/') ? subPath : `/${subPath}`;
   if (!liffId) return normalized;
-  return `https://liff.line.me/${liffId}?next=${encodeURIComponent(normalized)}`;
+  return `https://liff.line.me/${liffId}${normalized}`;
 }
 
 /**

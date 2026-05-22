@@ -255,6 +255,8 @@ export interface CreateAdminOrderBody {
   flightNumber?: string | null
   terminal?: string | null
   notes?: string | null
+  /** 若為 true，建單成功後 server 直接呼叫 dispatchOrder + LINE multicast 給 active driver */
+  autoDispatch?: boolean
 }
 
 export interface NotifyOrderBody {
@@ -286,7 +288,7 @@ export const GetAllOrders = (params: { status?: string; from?: string; to?: stri
 
 /** Admin 手動建立訂單（乘客為 server 自動產生的 guest id；車資手動輸入，不自動試算） */
 export const CreateAdminOrder = (body: CreateAdminOrderBody) =>
-  methods.post<{ orderId: string; orderStatus: string }>(
+  methods.post<{ orderId: string; orderStatus: string; dispatched: boolean }>(
     '/nuxt-api/admin/orders',
     body as unknown as Record<string, unknown>,
   );

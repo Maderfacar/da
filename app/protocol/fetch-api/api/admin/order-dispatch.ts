@@ -33,6 +33,21 @@ export const DispatchOrder = (orderId: string) =>
     {},
   );
 
+/**
+ * Admin：以既有訂單為樣板複製成一張新訂單（乘客為 guest），預設立即派發。
+ * 用途：驗證 driver 端流程時，可從任何狀態的舊訂單快速生一張新需求單，不用回前端 booking。
+ */
+export const CloneAdminOrder = (orderId: string, body: { autoDispatch?: boolean } = {}) =>
+  methods.post<{
+    orderId: string;
+    orderStatus: string;
+    dispatched: boolean;
+    clonedFrom: string;
+  }>(
+    `/nuxt-api/admin/orders/${orderId}/clone`,
+    body as unknown as Record<string, unknown>,
+  );
+
 /** Admin：取某筆訂單目前所有 bids + 對應 driver match 計算 */
 export const GetAdminOrderBids = (orderId: string) =>
   methods.get<AdminOrderBidsRes>(`/nuxt-api/admin/orders/${orderId}/bids`, {});
