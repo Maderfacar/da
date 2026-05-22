@@ -161,6 +161,16 @@ export interface UploadVehiclePhotoResponse {
  * 上傳單張車輛照片到 Storage，回 signed URL。
  * 與 UploadDriverDocument 相同：手動 multipart + 帶 Firebase ID token。
  */
+// SU V2：司機自編車輛載運容量
+export type { SeatConfig, VehicleCapacityDto, PatchVehicleCapacityBody };
+
+/** 司機設定車廂體積 + 座椅配置（立即生效） */
+export const PatchVehicleCapacity = (body: PatchVehicleCapacityBody) =>
+  methods.patch<{ derivedLuggageSU: number }>(
+    '/nuxt-api/drivers/me/vehicle-capacity',
+    body as unknown as Record<string, unknown>,
+  );
+
 export const UploadVehiclePhoto = async (file: File) => {
   const fd = new FormData();
   fd.append('file', file);

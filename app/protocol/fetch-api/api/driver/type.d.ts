@@ -40,3 +40,22 @@ interface DriverStats {
   totalOnlineSeconds?: number;
   status?: 'online' | 'busy' | 'offline';
 }
+
+// SU V2：車輛載運容量（立即生效）
+interface SeatConfig {
+  label: string;
+  passengerCapacity: number;
+  luggageSU: number;
+}
+
+interface VehicleCapacityDto {
+  trunkVolumeLiters: number;
+  derivedLuggageSU: number;
+  seatConfigs: SeatConfig[] | null;
+  updatedAt: string | null;
+}
+
+interface PatchVehicleCapacityBody {
+  trunkVolumeLiters: number;
+  seatConfigs?: SeatConfig[];
+}
