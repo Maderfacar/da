@@ -5,6 +5,7 @@ import type {
   VehicleProfileDto,
   VehicleProfilePendingDto,
 } from '@/protocol/fetch-api/api/admin';
+import type { VehicleCapacityDto } from '@/protocol/fetch-api/api/driver';
 
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
@@ -35,6 +36,8 @@ const documentsPending = ref<Partial<Record<DocType, PendingDocument>>>({});
 const driverTags = ref<string[]>([]);
 const vehicleProfile = ref<VehicleProfileDto | null>(null);
 const vehicleProfilePending = ref<VehicleProfilePendingDto | null>(null);
+// SU V2：車輛載運容量
+const vehicleCapacity = ref<VehicleCapacityDto | null>(null);
 
 const DOC_FIELDS: { type: DocType; label: string }[] = [
   { type: 'licenseUrl', label: '駕照' },
@@ -123,6 +126,22 @@ const ApiLoadDriverData = async () => {
             rejectReason: vpp.rejectReason ?? null,
             reviewedBy: vpp.reviewedBy ?? null,
             updatedAt: _toIso(vpp.updatedAt),
+          }
+        : null;
+
+      // SU V2：vehicleCapacity（trunkVolumeLiters / derivedLuggageSU / seatConfigs）
+      const vc = driverData.vehicleCapacity as {
+        trunkVolumeLiters?: number;
+        derivedLuggageSU?: number;
+        seatConfigs?: Array<{ label: string; passengerCapacity: number; luggageSU: number }> | null;
+        updatedAt?: unknown;
+      } | null | undefined;
+      vehicleCapacity.value = vc
+        ? {
+            trunkVolumeLiters: vc.trunkVolumeLiters ?? 0,
+            derivedLuggageSU: vc.derivedLuggageSU ?? 0,
+            seatConfigs: Array.isArray(vc.seatConfigs) ? vc.seatConfigs : null,
+            updatedAt: _toIso(vc.updatedAt),
           }
         : null;
 
@@ -399,6 +418,7 @@ onMounted(() => {
         :driver-tags="driverTags"
         :vehicle-profile="vehicleProfile"
         :pending="vehicleProfilePending"
+        :vehicle-capacity="vehicleCapacity"
         @refresh="ApiLoadDriverData"
       )
 
