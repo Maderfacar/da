@@ -30,10 +30,6 @@ export const GetOrderList = (params: GetOrderListParams) => {
 export const GetOrder = (orderId: string) =>
   methods.get<OrderDetail>(`/nuxt-api/orders/${orderId}`, {});
 
-/** 取得可接待接訂單（司機搶單） */
-export const GetAvailableOrders = () =>
-  methods.get<AvailableOrder[]>('/nuxt-api/orders/available', {});
-
 /** P19：取得司機被指派的執行中訂單（confirmed/en_route/arrived_pickup/in_transit） */
 export const GetAssignedOrders = () =>
   methods.get<AssignedOrder[]>('/nuxt-api/orders/assigned', {});

@@ -114,23 +114,6 @@ interface OrderItem {
   createdAt?: number;
 }
 
-// ===== 可接訂單（司機搶單） =====
-interface AvailableOrder {
-  orderId: string;
-  orderType: string;
-  pickupDateTime: string;
-  pickupLocation: GooglePlace;
-  dropoffLocation: GooglePlace;
-  vehicleType: string;
-  passengerCount: number;
-  /** Booking v2 批次 2：大人數 */
-  adultCount?: number;
-  /** Booking v2 批次 2：兒童數 */
-  childCount?: number;
-  estimatedFare: number;
-  distanceKm: number;
-}
-
 // ===== P19：司機被指派的執行中訂單 =====
 type AssignedOrderStatus = 'confirmed' | 'en_route' | 'arrived_pickup' | 'in_transit';
 

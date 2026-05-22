@@ -37,12 +37,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-    // Composite index 需求：orderStatus + dispatchAt + assignedDriverId
-    // 但 firestore 限制 inequality 只能對一個欄位用；
-    // 用 orderStatus=='pending' + orderBy pickupDateTime asc，再 in-memory filter dispatchAt / assignedDriverId
+    // 用 orderStatus=='pending' + orderBy createdAt desc（沿用 admin/orders 既有 composite index），
+    // 再 in-memory filter dispatchAt 已設且未指派。新派發訂單會排在最上方。
     const snap = await db.collection('orders')
       .where('orderStatus', '==', 'pending')
-      .orderBy('pickupDateTime', 'asc')
+      .orderBy('createdAt', 'desc')
       .limit(200)
       .get();
 

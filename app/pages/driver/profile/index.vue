@@ -11,7 +11,6 @@ definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
 const { user, lineProfile } = storeToRefs(authStore);
-const { SignOut } = authStore;
 
 const displayName = computed(() => lineProfile.value?.displayName ?? '司機');
 const pictureUrl  = computed(() => lineProfile.value?.pictureUrl ?? '');
@@ -294,15 +293,6 @@ const ChangeFile = (docType: DocType, e: Event) => {
 const IsPdf = (url?: string) => !!url && url.toLowerCase().includes('.pdf');
 const FormatTime = (iso: string | null) => iso ? $dayjs(iso).format('YYYY/MM/DD HH:mm') : '';
 
-// ── 登出 ─────────────────────────────────────────────────
-const signingOut = ref(false);
-const ClickSignOut = async () => {
-  const ok = await UseAsk('確定要登出嗎？');
-  if (!ok) return;
-  signingOut.value = true;
-  await SignOut();
-};
-
 onMounted(() => {
   ApiLoadDriverData();
   ApiLoadTripCount();
@@ -432,12 +422,6 @@ onMounted(() => {
       .PageDriverProfile__row
         span.PageDriverProfile__row-key 身份
         span.PageDriverProfile__row-val 已核准司機
-
-  //- 登出
-  button.PageDriverProfile__signout(
-    :disabled="signingOut"
-    @click="ClickSignOut"
-  ) {{ signingOut ? '登出中...' : '登出' }}
 </template>
 
 <style lang="scss" scoped>
@@ -794,24 +778,5 @@ $danger: #f87171;
 
 .PageDriverProfile__vehicle-wrap {
   padding: 12px;
-}
-
-.PageDriverProfile__signout {
-  width: 100%;
-  margin-top: 8px;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 80, 80, 0.25);
-  background: rgba(255, 80, 80, 0.06);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255, 100, 100, 0.7);
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
-  &:active:not(:disabled) { transform: scale(0.98); }
 }
 </style>

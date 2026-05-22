@@ -1,17 +1,45 @@
-// 401 自動登出守衛 — 平行 request 同時 401 時，只會觸發一次 SignOut
+// 401 處理 —
+// 過去：任何 401 立即 SignOut + navigateTo('/')，導致 LIFF init race 時 token 未就緒就被踢去
+//       乘客端首頁（這是 driver 點 Flex CTA 跳首頁的真實 root cause）。
+// 現在：
+//   1. 首次 401 → 嘗試 refresh idToken（不 SignOut）；下次 request 帶新 token
+//   2. 累積 3 次 401 → 才真的 SignOut（給 LIFF init / token race 充分恢復時間）
+//   3. SignOut 後 redirect 目的地依當前路徑：/driver/* → /driver/auth，其他 → /
+//   4. 任何成功 API call 會 reset counter（在 onResponse / 200 status 處）
+let _unauthorizedHits = 0;
 let _isSigningOut = false;
-const HandleUnauthorized = () => {
+const MAX_UNAUTHORIZED_HITS = 3;
+
+const HandleUnauthorized = async () => {
   if (_isSigningOut) return;
+  _unauthorizedHits++;
+
+  // 前兩次 401：背景 refresh token，給下次 request 機會帶新 token，不踢出
+  if (_unauthorizedHits < MAX_UNAUTHORIZED_HITS) {
+    try {
+      const authStore = StoreAuth();
+      await authStore.GetFreshIdToken();
+    } catch {
+      // refresh 失敗也不踢出，等下次 retry
+    }
+    return;
+  }
+
+  // 累積到 MAX 才真 SignOut
   _isSigningOut = true;
-  // 改用 StoreAuth.SignOut（會清 Firebase session + 重置 store 狀態 + 導回 /）
-  // 過去 boilerplate 預設導 '/sign-in' 但本專案登入頁是 '/'（middleware 會依 roles 導入對應端）
   try {
     const authStore = StoreAuth();
-    void authStore.SignOut();
+    const isDriverPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
+    await authStore.SignOut(isDriverPath ? '/driver/auth' : '/');
   } catch {
-    // SSR 或 Pinia 未初始化時 fallback：直接導回根，由 middleware 接手
-    void navigateTo('/');
+    // SSR 或 Pinia 未初始化時 fallback
+    const isDriverPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
+    void navigateTo(isDriverPath ? '/driver/auth' : '/');
   }
+};
+
+const ResetUnauthorizedCounter = () => {
+  if (_unauthorizedHits > 0) _unauthorizedHits = 0;
 };
 
 // 回傳調整
@@ -62,14 +90,19 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
 
         // 響應攔截
         onResponse({ response }) {
+          // 成功（HTTP 2xx）reset 401 累積計數，避免歷史 race condition 殘留
+          if (response?.status && response.status >= 200 && response.status < 300) {
+            ResetUnauthorizedCounter();
+          }
           const _res = FilterRes(response, 9997, _showErr);
           return Promise.reject(_res);
         },
 
         // 錯誤處理
         onResponseError({ response }) {
-          // P14 require-auth：401 → 觸發全域 SignOut 流程（清 Firebase + Pinia + 導回 /）
-          if (response?.status === 401) HandleUnauthorized();
+          // 401 不立即 SignOut，前兩次只 refresh token，累積 3 次才真踢出
+          // SignOut 後 redirect 依路徑（/driver/* → /driver/auth，其他 → /）
+          if (response?.status === 401) void HandleUnauthorized();
           const _res = FilterRes(response, 9998, _showErr);
           return Promise.reject(_res);
         }

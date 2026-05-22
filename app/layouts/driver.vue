@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // LayoutDriver 司機端佈局：頂部 Bar + 左側抽屜導航（與 admin 同款）
 //
-// P19：driver 端統一定位機制
+// P19：driver 端統一定位機制（C 方案嚴格模式）
 // - onMounted 跑授權 flow（getCurrentPosition 觸發 LIFF / 瀏覽器 授權框）
-// - 拒絕：blocking modal + 重試按鈕；連續拒絕 2 次或 5 秒沒回應 → navigateTo('/home')
+// - 拒絕：blocking modal 持續顯示 + 重試按鈕；**不可關閉、不導出 driver 端**
+//   （war-room 需要實時抓所有 driver GPS，沒授權 = 司機無法使用 driver 端）
 // - 通過：watchPosition 持續監聽 + 5m/60s/accuracy 節流上傳
-// - 整 driver 端期間（dashboard/pending/trip/profile/traffic）共用同一份 watch state
+// - 整 driver 端期間（dashboard/trip/profile/traffic）共用同一份 watch state
 // - onUnmounted 時 clearWatch 防 leak
 
 const route = useRoute();
@@ -20,7 +21,6 @@ onMounted(() => {
 
 const navItems = [
   { id: 'cost',          icon: '💰', label: '營運成本', path: '/driver/cost'          },
-  { id: 'pending',       icon: '📋', label: '拉單',     path: '/driver/pending'       },
   { id: 'dispatched',    icon: '📦', label: '接單看板', path: '/driver/dispatched'    },
   { id: 'trip',          icon: '✅', label: '任務',     path: '/driver/trip'          },
   { id: 'traffic',       icon: '✈️', label: '機場人流', path: '/driver/traffic'       },
@@ -39,9 +39,10 @@ function ClickNav(path: string) {
   drawerOpen.value = false;
 }
 
-// ── 地理位置授權 flow ─────────────────────────────────────
+// ── 地理位置授權 flow（C 方案嚴格模式）────────────────────
+// 司機未授權 GPS → blocking modal 持續顯示，不可關閉、不導出 driver 端。
+// 唯一出路：開啟瀏覽器/LINE 位置權限後點「重試授權」。
 const showPermissionModal = ref(false);
-const permissionDenyCount = ref(0);
 const requestingPermission = ref(false);
 
 const _RequestGeoPermissionFlow = async () => {
@@ -56,24 +57,12 @@ const _RequestGeoPermissionFlow = async () => {
     return;
   }
 
-  // denied / timeout 都視為拒絕
-  permissionDenyCount.value++;
-  if (permissionDenyCount.value >= 2) {
-    // 連續拒絕 2 次 → 強制踢回 /home
-    showPermissionModal.value = false;
-    navigateTo('/home');
-    return;
-  }
+  // denied / timeout：blocking modal 持續顯示，不導出
   showPermissionModal.value = true;
 };
 
 const ClickRetryPermission = async () => {
   await _RequestGeoPermissionFlow();
-};
-
-const ClickGiveUpPermission = () => {
-  showPermissionModal.value = false;
-  navigateTo('/home');
 };
 
 onMounted(() => {
@@ -148,22 +137,24 @@ onUnmounted(() => {
         | DRIVER
       .LayoutDriver__loading-spinner
 
-  //- ── 地理位置授權 Modal（拒絕授權時顯示）──────────────────
+  //- ── 地理位置授權 Modal（C 方案嚴格 — 不可關閉，無「返回首頁」出路）──
   transition(name="auth-fade")
     .LayoutDriver__perm-mask(v-if="showPermissionModal")
       .LayoutDriver__perm-card
         .LayoutDriver__perm-icon 📍
         .LayoutDriver__perm-title 需要位置權限
         .LayoutDriver__perm-body
-          | 司機端需要位置權限以執行任務追蹤。
+          | 司機端必須開啟位置權限才能使用。
           br
-          | 請至 LINE / 瀏覽器設定開啟位置權限後重試。
+          | 派遣中心需要實時追蹤您的位置以執行任務。
+          br
+          br
+          | 請至 LINE / 瀏覽器設定開啟位置權限後點「重試授權」。
         .LayoutDriver__perm-actions
           button.LayoutDriver__perm-btn.is-primary(
             :disabled="requestingPermission"
             @click="ClickRetryPermission"
           ) {{ requestingPermission ? '請求中…' : '重試授權' }}
-          button.LayoutDriver__perm-btn.is-secondary(@click="ClickGiveUpPermission") 返回首頁
 
   //- ── 頂部 Bar ─────────────────────────────────────────────
   nav.LayoutDriver__top
@@ -205,8 +196,7 @@ onUnmounted(() => {
         span.LayoutDriver__nav-badge(
           v-if="item.id === 'announcements' && announcementUnread > 0"
         ) {{ announcementUnread > 99 ? '99+' : announcementUnread }}
-    .LayoutDriver__drawer-footer
-      button.LayoutDriver__signout(@click="StoreAuth().SignOut()") 登出
+    //- driver 端不提供登出入口（司機關閉頁面即可；war-room 仍掌握定位）
 
   //- ── 抽屜遮罩（僅手機）─────────────────────────────────────
   .LayoutDriver__overlay(
@@ -536,28 +526,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   align-items: center;
   justify-content: center;
   line-height: 1;
-}
-
-.LayoutDriver__drawer-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.LayoutDriver__signout {
-  width: 100%;
-  padding: 12px;
-  background: rgba(238, 81, 81, 0.1);
-  border: 1px solid rgba(238, 81, 81, 0.2);
-  border-radius: 10px;
-  font-family: $font-condensed;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--err);
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover { background: rgba(238, 81, 81, 0.18); }
 }
 
 // ── 抽屜遮罩 ───────────────────────────────────────────────

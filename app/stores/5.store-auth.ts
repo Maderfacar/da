@@ -407,7 +407,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     _markAuthResolved();
   };
 
-  const SignOut = async () => {
+  /**
+   * 登出 + 導向指定路徑。
+   *
+   * @param redirectTo 登出後導向路徑；預設 '/'（乘客端首頁）。
+   *   - methods.ts 401 handler 在 /driver/* 路徑會傳 '/driver/auth'，避免司機被踢去乘客端
+   *   - 其他主動觸發（譬如管理端登出按鈕）使用預設值
+   */
+  const SignOut = async (redirectTo: string = '/') => {
     try {
       const { getAuth } = await import('firebase/auth');
       await getAuth().signOut();
@@ -415,7 +422,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     _clearState();
     // authResolved 保持 true（auth 流程仍是「已解析，當前未登入」狀態）
     // 若設為 false 會導致 layout v-if="!authResolved" 顯示 loading，但 plugin 不會再跑而永久卡住
-    navigateTo('/');
+    navigateTo(redirectTo);
   };
 
   // -------------------------------------------------------------------------------------------------

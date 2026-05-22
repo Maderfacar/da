@@ -62,6 +62,7 @@ export type AuditAction =
   | 'order.create'                 // admin 在 /admin/orders 手動建立訂單（guest 乘客）
   // Phase 1E 訂單需求單 / 司機喊單 / 配對
   | 'order.dispatch'               // admin 發出需求單（dispatchAt 寫入）
+  | 'order.redispatch'             // admin 對已派發未指派訂單重發推播（dispatchCount++）
   | 'order.bid'                    // driver 喊單
   | 'order.bid_withdraw'           // driver 撤回喊單
   | 'order.cancel_dispatched'      // 取消已派發訂單（通知 bidders）

@@ -34,18 +34,18 @@ export const DispatchOrder = (orderId: string) =>
   );
 
 /**
- * Admin：以既有訂單為樣板複製成一張新訂單（乘客為 guest），預設立即派發。
- * 用途：驗證 driver 端流程時，可從任何狀態的舊訂單快速生一張新需求單，不用回前端 booking。
+ * Admin：對「已派發但未指派」訂單**重發需求單** — 重新 LINE multicast 給所有 active driver。
+ *
+ * 與 DispatchOrder 差異：
+ *   - DispatchOrder：首次發單；訂單必須 `!dispatchAt`
+ *   - RedispatchOrder：重發；訂單必須已 `dispatchAt` 但 `!assignedDriverId`
+ *
+ * 行為：dispatchAt 保留首發時間，新寫 lastDispatchAt + dispatchCount++；bids 陣列保留。
  */
-export const CloneAdminOrder = (orderId: string, body: { autoDispatch?: boolean } = {}) =>
-  methods.post<{
-    orderId: string;
-    orderStatus: string;
-    dispatched: boolean;
-    clonedFrom: string;
-  }>(
-    `/nuxt-api/admin/orders/${orderId}/clone`,
-    body as unknown as Record<string, unknown>,
+export const RedispatchOrder = (orderId: string) =>
+  methods.post<{ orderId: string; redispatched: boolean }>(
+    `/nuxt-api/admin/orders/${orderId}/redispatch`,
+    {},
   );
 
 /** Admin：取某筆訂單目前所有 bids + 對應 driver match 計算 */
