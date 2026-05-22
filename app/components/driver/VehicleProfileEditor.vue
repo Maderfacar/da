@@ -336,6 +336,12 @@ const RemoveSeatConfig = (idx: number) => {
   localSeatConfigs.value = localSeatConfigs.value.filter((_, i) => i !== idx);
 };
 
+const UpdateSeatConfigField = (idx: number, field: 'label' | 'passengerCapacity' | 'luggageSU', value: string | number) => {
+  localSeatConfigs.value = localSeatConfigs.value.map((cfg, i) =>
+    i === idx ? { ...cfg, [field]: value } : cfg,
+  );
+};
+
 defineExpose({ reloadTags: ApiLoadTags });
 </script>
 
@@ -477,24 +483,27 @@ defineExpose({ reloadTags: ApiLoadTags });
       .VehicleProfileEditor__seat-list
         .VehicleProfileEditor__seat-item(v-for="(cfg, idx) in localSeatConfigs" :key="idx")
           el-input.VehicleProfileEditor__seat-label(
-            v-model="localSeatConfigs[idx].label"
+            :model-value="cfg.label"
             placeholder="模式名稱，例：折座模式"
             maxlength="20"
+            @update:model-value="(v: string) => UpdateSeatConfigField(idx, 'label', v)"
           )
           el-input-number.VehicleProfileEditor__seat-pax(
-            v-model="localSeatConfigs[idx].passengerCapacity"
+            :model-value="cfg.passengerCapacity"
             :min="1"
             :max="9"
             :precision="0"
             inputmode="numeric"
+            @update:model-value="(v: number) => UpdateSeatConfigField(idx, 'passengerCapacity', v)"
           )
           span.VehicleProfileEditor__seat-sep 人
           el-input-number.VehicleProfileEditor__seat-su(
-            v-model="localSeatConfigs[idx].luggageSU"
+            :model-value="cfg.luggageSU"
             :min="1"
             :max="30"
             :precision="0"
             inputmode="numeric"
+            @update:model-value="(v: number) => UpdateSeatConfigField(idx, 'luggageSU', v)"
           )
           span.VehicleProfileEditor__seat-sep SU
           button.VehicleProfileEditor__seat-remove(type="button" @click="RemoveSeatConfig(idx)") ×
