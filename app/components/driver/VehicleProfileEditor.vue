@@ -486,6 +486,7 @@ defineExpose({ reloadTags: ApiLoadTags });
             :min="1"
             :max="9"
             :precision="0"
+            controls-position="right"
             inputmode="numeric"
           )
           span.VehicleProfileEditor__seat-sep 人
@@ -494,6 +495,7 @@ defineExpose({ reloadTags: ApiLoadTags });
             :min="1"
             :max="30"
             :precision="0"
+            controls-position="right"
             inputmode="numeric"
           )
           span.VehicleProfileEditor__seat-sep SU
@@ -852,7 +854,7 @@ $danger: #f87171;
 
 .VehicleProfileEditor__seat-pax,
 .VehicleProfileEditor__seat-su {
-  width: 80px;
+  width: 100px;
 }
 
 .VehicleProfileEditor__seat-sep {
