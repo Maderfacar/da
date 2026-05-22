@@ -10,13 +10,16 @@
 // 規格：driver 端文字維持繁中（議題 #14）。
 import { TAG_GROUPS_ORDERED, type TagGroup, localizedTagName } from '~shared/tagTaxonomy';
 import { MAX_PHOTOS } from '~shared/vehicleProfile';
+import { computeSU } from '~shared/luggageSU';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
 import type { VehicleProfileDto, VehicleProfilePendingDto } from '@/protocol/fetch-api/api/admin';
+import type { VehicleCapacityDto, PatchVehicleCapacityBody, SeatConfig } from '@/protocol/fetch-api/api/driver';
 
 interface Props {
   driverTags: string[];
   vehicleProfile: VehicleProfileDto | null;
   pending: VehicleProfilePendingDto | null;
+  vehicleCapacity: VehicleCapacityDto | null;
 }
 const props = defineProps<Props>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -284,6 +287,55 @@ const TagName = (id: string) => {
 
 onMounted(ApiLoadTags);
 
+// ── 車輛載運容量（立即生效）────────────────────────────────
+const localLiters = ref<number | null>(null);
+const localSeatConfigs = ref<SeatConfig[]>([]);
+const hasSeatConfigs = ref(false);
+const savingCapacity = ref(false);
+
+const previewSU = computed(() => {
+  if (localLiters.value === null || localLiters.value <= 0) return null;
+  return computeSU(localLiters.value);
+});
+
+watch(() => props.vehicleCapacity, (cap) => {
+  localLiters.value = cap?.trunkVolumeLiters ?? null;
+  localSeatConfigs.value = cap?.seatConfigs ? cap.seatConfigs.map(c => ({ ...c })) : [];
+  hasSeatConfigs.value = !!cap?.seatConfigs?.length;
+}, { immediate: true });
+
+const ApiSaveVehicleCapacity = async () => {
+  if (localLiters.value === null || localLiters.value <= 0) {
+    ElMessage({ message: '請輸入有效的行李廂容積（公升）', type: 'warning' });
+    return;
+  }
+  savingCapacity.value = true;
+  try {
+    const body: PatchVehicleCapacityBody = { trunkVolumeLiters: localLiters.value };
+    if (hasSeatConfigs.value && localSeatConfigs.value.length) {
+      body.seatConfigs = localSeatConfigs.value;
+    }
+    const res = await $api.PatchVehicleCapacity(body);
+    if (res.status?.code === $enum.apiStatus.success) {
+      ElMessage({ message: `已儲存，載運容量 ${res.data.derivedLuggageSU} SU`, type: 'success' });
+      emit('refresh');
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '儲存失敗', type: 'error' });
+    }
+  } finally {
+    savingCapacity.value = false;
+  }
+};
+
+const AddSeatConfig = () => {
+  if (localSeatConfigs.value.length >= 3) return;
+  localSeatConfigs.value = [...localSeatConfigs.value, { label: '', passengerCapacity: 4, luggageSU: 2 }];
+};
+
+const RemoveSeatConfig = (idx: number) => {
+  localSeatConfigs.value = localSeatConfigs.value.filter((_, i) => i !== idx);
+};
+
 defineExpose({ reloadTags: ApiLoadTags });
 </script>
 
@@ -394,6 +446,70 @@ defineExpose({ reloadTags: ApiLoadTags });
           :disabled="submitting"
           @click="ClickSubmit"
         ) {{ submitting ? '送審中…' : '送審' }}
+
+  //- 車輛載運容量（立即生效）
+  .VehicleProfileEditor__block
+    .VehicleProfileEditor__block-head
+      .VehicleProfileEditor__block-title 車輛載運容量
+      .VehicleProfileEditor__block-sub 設定後立即生效，乘客可依此安排行李
+    .VehicleProfileEditor__capacity
+      .VehicleProfileEditor__capacity-row
+        label.VehicleProfileEditor__capacity-label 行李廂容積（公升）
+        el-input-number.VehicleProfileEditor__capacity-input(
+          v-model="localLiters"
+          :min="1"
+          :max="2000"
+          :step="10"
+          :precision="0"
+          inputmode="numeric"
+          placeholder="例：250"
+        )
+        .VehicleProfileEditor__capacity-su(v-if="previewSU !== null")
+          span.VehicleProfileEditor__capacity-su-val {{ previewSU }}
+          span.VehicleProfileEditor__capacity-su-label  SU
+      .VehicleProfileEditor__capacity-hint 1 SU ≈ 48L（20" 登機箱）；系統扣除 20% 死角空間後換算
+    .VehicleProfileEditor__seat-toggle
+      el-switch(
+        v-model="hasSeatConfigs"
+        active-text="宣告彈性座椅配置"
+      )
+    template(v-if="hasSeatConfigs")
+      .VehicleProfileEditor__seat-list
+        .VehicleProfileEditor__seat-item(v-for="(cfg, idx) in localSeatConfigs" :key="idx")
+          el-input.VehicleProfileEditor__seat-label(
+            v-model="localSeatConfigs[idx].label"
+            placeholder="模式名稱，例：折座模式"
+            maxlength="20"
+          )
+          el-input-number.VehicleProfileEditor__seat-pax(
+            v-model="localSeatConfigs[idx].passengerCapacity"
+            :min="1"
+            :max="9"
+            :precision="0"
+            inputmode="numeric"
+          )
+          span.VehicleProfileEditor__seat-sep 人
+          el-input-number.VehicleProfileEditor__seat-su(
+            v-model="localSeatConfigs[idx].luggageSU"
+            :min="1"
+            :max="30"
+            :precision="0"
+            inputmode="numeric"
+          )
+          span.VehicleProfileEditor__seat-sep SU
+          button.VehicleProfileEditor__seat-remove(type="button" @click="RemoveSeatConfig(idx)") ×
+        button.VehicleProfileEditor__seat-add(
+          v-if="localSeatConfigs.length < 3"
+          type="button"
+          @click="AddSeatConfig"
+        ) + 新增模式
+    .VehicleProfileEditor__capacity-actions
+      button.VehicleProfileEditor__btn.is-primary(
+        :disabled="savingCapacity || previewSU === null"
+        @click="ApiSaveVehicleCapacity"
+      ) {{ savingCapacity ? '儲存中…' : '儲存容量設定' }}
+      .VehicleProfileEditor__capacity-current(v-if="vehicleCapacity")
+        | 目前：{{ vehicleCapacity.trunkVolumeLiters }}L → {{ vehicleCapacity.derivedLuggageSU }} SU
 </template>
 
 <style lang="scss" scoped>
@@ -654,6 +770,141 @@ $danger: #f87171;
 .VehicleProfileEditor__empty {
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 11px;
+  color: $muted;
+}
+
+.VehicleProfileEditor__capacity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.VehicleProfileEditor__capacity-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.VehicleProfileEditor__capacity-label {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  min-width: 120px;
+}
+
+.VehicleProfileEditor__capacity-input {
+  width: 130px;
+}
+
+.VehicleProfileEditor__capacity-su {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 4px 12px;
+  background: rgba(80, 200, 120, 0.1);
+  border: 1px solid rgba(80, 200, 120, 0.3);
+  border-radius: 8px;
+}
+
+.VehicleProfileEditor__capacity-su-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #50c878;
+}
+
+.VehicleProfileEditor__capacity-su-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(80, 200, 120, 0.8);
+}
+
+.VehicleProfileEditor__capacity-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  color: $muted;
+}
+
+.VehicleProfileEditor__seat-toggle {
+  padding-top: 4px;
+}
+
+.VehicleProfileEditor__seat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.VehicleProfileEditor__seat-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.VehicleProfileEditor__seat-label {
+  flex: 1;
+  min-width: 120px;
+}
+
+.VehicleProfileEditor__seat-pax,
+.VehicleProfileEditor__seat-su {
+  width: 80px;
+}
+
+.VehicleProfileEditor__seat-sep {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: $muted;
+}
+
+.VehicleProfileEditor__seat-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba($danger, 0.4);
+  background: transparent;
+  color: $danger;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover { background: rgba($danger, 0.15); }
+}
+
+.VehicleProfileEditor__seat-add {
+  align-self: flex-start;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  padding: 5px 14px;
+  border: 1.5px dashed rgba($amber, 0.4);
+  background: rgba($amber, 0.05);
+  color: $amber;
+  cursor: pointer;
+  border-radius: 8px;
+  margin-top: 2px;
+
+  &:hover { background: rgba($amber, 0.12); }
+}
+
+.VehicleProfileEditor__capacity-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed $border;
+}
+
+.VehicleProfileEditor__capacity-current {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
   color: $muted;
 }
 </style>
