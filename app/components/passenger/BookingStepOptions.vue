@@ -2,11 +2,18 @@
 import type { VehicleType, FleetVehicle, OrderType } from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import { Navigation } from 'swiper/modules';
+import type { Swiper as SwiperInstance } from 'swiper/types';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 export interface LuggageItem { typeId: string; count: number }
 
 interface Props {
-  passengerCount: number;
+  /** Booking v2 批次 2：大人 / 兒童拆分 stepper */
+  adultCount: number;
+  childCount: number;
   luggageItems: LuggageItem[];
   vehicleType: VehicleType;
   // Fare V2：明細由 server 計算，需路線 + 上車時間
@@ -28,7 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: 'update:passengerCount' | 'fareCalc', val: number): void;
+  (e: 'update:adultCount' | 'update:childCount' | 'fareCalc', val: number): void;
   (e: 'update:luggageItems', val: LuggageItem[]): void;
   (e: 'update:vehicleType', val: VehicleType): void;
   (e: 'update:selectedTagIds', val: string[]): void;
@@ -40,8 +47,11 @@ const { t, locale } = useI18n();
 
 const storeConfig = StoreConfig();
 
-const passengers = ref(props.passengerCount);
+const adults = ref(Math.max(1, props.adultCount));
+const children = ref(Math.max(0, props.childCount));
 const vehicle = ref<VehicleType>(props.vehicleType);
+
+const totalPax = computed(() => adults.value + children.value);
 
 // ── 行李 SU 邏輯 ─────────────────────────────────────────────────────────────
 const luggage = ref<LuggageItem[]>([...props.luggageItems]);
@@ -72,19 +82,17 @@ const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
   storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
 
 // ── 車型容量 vs 行李 SU 校驗 ─────────────────────────────────────────────────
+// Booking v2 批次 2：容量校驗改用 adult + child（兒童佔 1 座位）
 type VehicleStatus = 'ok' | 'warn' | 'disabled';
 const _GetVehicleStatus = (v: FleetVehicle): VehicleStatus => {
-  // 乘客數超出 → 直接 disabled
-  if (passengers.value > v.capacity) return 'disabled';
-  // SU 超出 1.5 倍 → disabled + 紅字
+  if (totalPax.value > v.capacity) return 'disabled';
   if (totalSU.value > v.luggageSU * 1.5) return 'disabled';
-  // SU 介於 1.0x ~ 1.5x → 警告
   if (totalSU.value > v.luggageSU) return 'warn';
   return 'ok';
 };
 
 const _GetVehicleHint = (v: FleetVehicle): string => {
-  if (passengers.value > v.capacity) return t('booking.options.exceedCapacity', { n: v.capacity });
+  if (totalPax.value > v.capacity) return t('booking.options.exceedCapacity', { n: v.capacity });
   if (totalSU.value > v.luggageSU * 1.5) return t('booking.options.exceedLuggage');
   if (totalSU.value > v.luggageSU) return t('booking.options.warnLuggage');
   return '';
@@ -133,7 +141,8 @@ const FareFetchFlow = () => {
 };
 
 // ── Sync ────────────────────────────────────────────────────────────────────
-watch(passengers, (val) => emit('update:passengerCount', val));
+watch(adults, (val) => emit('update:adultCount', val));
+watch(children, (val) => emit('update:childCount', val));
 watch(luggage, (val) => emit('update:luggageItems', val), { deep: true });
 watch(vehicle, (val) => { emit('update:vehicleType', val); FareFetchFlow(); });
 
@@ -145,8 +154,8 @@ const ClickVehicle = (v: FleetVehicle) => {
   vehicle.value = v.id;
 };
 
-// 若當前選擇的車型變 disabled（乘客數或 SU 超出），自動切到第一個 ok 車型
-watch([passengers, totalSU], () => {
+// 若當前選擇的車型變 disabled（人數或 SU 超出），自動切到第一個 ok 車型
+watch([adults, children, totalSU], () => {
   const current = vehicles.value.find((v) => v.id === vehicle.value);
   if (current && current.status === 'disabled') {
     const next = vehicles.value.find((v) => v.status !== 'disabled');
@@ -163,6 +172,19 @@ watch(() => storeConfig.EnabledVehicles, (list) => {
 const HandleUpdateTags = (next: string[]) => {
   emit('update:selectedTagIds', next);
 };
+
+// ── Booking v2 批次 2：車型卡 Swiper Slider ──────────────────────────────────
+const swiperRef = ref<SwiperInstance | null>(null);
+const OnSwiperReady = (sw: SwiperInstance) => { swiperRef.value = sw; };
+const ClickSwiperPrev = () => swiperRef.value?.slidePrev();
+const ClickSwiperNext = () => swiperRef.value?.slideNext();
+const swiperModules = [Navigation];
+const swiperBreakpoints = {
+  0: { slidesPerView: 1.2, spaceBetween: 10 },
+  480: { slidesPerView: 1.5, spaceBetween: 12 },
+  768: { slidesPerView: 2.2, spaceBetween: 14 },
+  1024: { slidesPerView: 2.5, spaceBetween: 16 },
+};
 </script>
 
 <template lang="pug">
@@ -170,14 +192,24 @@ const HandleUpdateTags = (next: string[]) => {
   .PassengerBookingStepOptions__section-label PASSENGERS
   h2.PassengerBookingStepOptions__title {{ $t('booking.options.title') }}
 
-  //- 乘客人數 stepper
+  //- Booking v2 批次 2：大人 / 兒童 雙 stepper
   .PassengerBookingStepOptions__counters
     .PassengerBookingStepOptions__counter
-      span.PassengerBookingStepOptions__counter-label {{ $t('booking.options.passengers') }}
+      .PassengerBookingStepOptions__counter-info
+        span.PassengerBookingStepOptions__counter-label {{ $t('booking.options.adults') }}
+        span.PassengerBookingStepOptions__counter-hint {{ $t('booking.options.adultsHint') }}
       .PassengerBookingStepOptions__counter-ctrl
-        button(@click="passengers = Math.max(1, passengers - 1)") −
-        span {{ passengers }}
-        button(@click="passengers = Math.min(8, passengers + 1)") +
+        button(:disabled="adults <= 1" @click="adults = Math.max(1, adults - 1)") −
+        span {{ adults }}
+        button(@click="adults = Math.min(20, adults + 1)") +
+    .PassengerBookingStepOptions__counter
+      .PassengerBookingStepOptions__counter-info
+        span.PassengerBookingStepOptions__counter-label {{ $t('booking.options.children') }}
+        span.PassengerBookingStepOptions__counter-hint {{ $t('booking.options.childrenHint') }}
+      .PassengerBookingStepOptions__counter-ctrl
+        button(:disabled="children <= 0" @click="children = Math.max(0, children - 1)") −
+        span {{ children }}
+        button(@click="children = Math.min(20, children + 1)") +
 
   //- 行李 SU 區塊
   .PassengerBookingStepOptions__section-label.mt LUGGAGE
@@ -200,39 +232,57 @@ const HandleUpdateTags = (next: string[]) => {
     span.PassengerBookingStepOptions__su-total-label {{ $t('booking.options.suTotal') }}
     span.PassengerBookingStepOptions__su-total-val {{ totalSU }} SU
 
-  //- 車型選擇（批次 1：保留 vertical list；批次 2 改 slider）
+  //- 車型選擇（批次 2：Swiper Slider）
   .PassengerBookingStepOptions__section-label.mt VEHICLE
   h2.PassengerBookingStepOptions__title {{ $t('booking.options.vehicleTitle') }}
 
-  .PassengerBookingStepOptions__vehicles
-    .PassengerBookingStepOptions__vehicle-card(
-      v-for="cfg in vehicles"
-      :key="cfg.id"
-      :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
-      @click="ClickVehicle(cfg)"
+  .PassengerBookingStepOptions__vehicle-slider
+    button.PassengerBookingStepOptions__slider-nav.is-prev(
+      type="button"
+      :aria-label="$t('booking.nav.back')"
+      @click="ClickSwiperPrev"
+    ) ‹
+    Swiper.PassengerBookingStepOptions__swiper(
+      :modules="swiperModules"
+      :breakpoints="swiperBreakpoints"
+      :grab-cursor="true"
+      :centered-slides="false"
+      :slides-per-view="1.5"
+      :space-between="12"
+      :watch-overflow="true"
+      @swiper="OnSwiperReady"
     )
-      .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
-      .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
-      .PassengerBookingStepOptions__vehicle-specs
-        span
-          NuxtIcon(name="mdi:account-group")
-          | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
-        span
-          NuxtIcon(name="mdi:bag-suitcase")
-          | {{ cfg.luggageSU }} SU
-      .PassengerBookingStepOptions__vehicle-fare
-        | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
-        span + NT${{ cfg.perKmRate }}/km
-      //- Booking v2：車型卡情境文案（tagline 三語、optional）
-      .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
-      .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
+      SwiperSlide(v-for="cfg in vehicles" :key="cfg.id")
+        .PassengerBookingStepOptions__vehicle-card(
+          :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
+          @click="ClickVehicle(cfg)"
+        )
+          .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
+          .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
+          .PassengerBookingStepOptions__vehicle-specs
+            span
+              NuxtIcon(name="mdi:account-group")
+              | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
+            span
+              NuxtIcon(name="mdi:bag-suitcase")
+              | {{ cfg.luggageSU }} SU
+          .PassengerBookingStepOptions__vehicle-fare
+            | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
+            span + NT${{ cfg.perKmRate }}/km
+          .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
+          .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
+    button.PassengerBookingStepOptions__slider-nav.is-next(
+      type="button"
+      :aria-label="$t('booking.nav.next')"
+      @click="ClickSwiperNext"
+    ) ›
 
-  //- Booking v2：車型與期望特徵之間的提示（特殊需求引導）
+  //- Booking v2：車型與期望特徵之間的提示
   .PassengerBookingStepOptions__passenger-hint(v-if="availableTags.length")
     NuxtIcon(name="mdi:lightbulb-on-outline")
     span {{ $t('booking.options.passengerHint') }}
 
-  //- Booking v2：期望特徵 chip（直接顯示、不摺疊；availableTags 已 filter vehicleType group）
+  //- Booking v2：期望特徵 chip（直接顯示、不摺疊）
   template(v-if="availableTags.length")
     .PassengerBookingStepOptions__section-label.mt EXPECTATIONS
     h2.PassengerBookingStepOptions__title {{ $t('booking.preferences.title') }}
@@ -290,7 +340,7 @@ const HandleUpdateTags = (next: string[]) => {
   &__counters {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
   }
 
   &__counter {
@@ -301,18 +351,36 @@ const HandleUpdateTags = (next: string[]) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+  }
+
+  &__counter-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
   }
 
   &__counter-label {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 13px;
-    color: var(--da-gray);
+    color: var(--da-dark);
+    font-weight: 500;
+  }
+
+  &__counter-hint {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--da-gray-light);
   }
 
   &__counter-ctrl {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;
 
     button {
       width: 32px;
@@ -324,12 +392,13 @@ const HandleUpdateTags = (next: string[]) => {
       font-size: 18px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, opacity 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
 
-      &:hover { background: var(--da-amber-pale); }
+      &:hover:not(:disabled) { background: var(--da-amber-pale); }
+      &:disabled { opacity: 0.35; cursor: not-allowed; }
     }
 
     span {
@@ -438,10 +507,45 @@ const HandleUpdateTags = (next: string[]) => {
     letter-spacing: 0.05em;
   }
 
-  &__vehicles {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  // ── Booking v2 批次 2：車型卡 Slider ──────────────────────────────────
+  &__vehicle-slider {
+    position: relative;
+    margin: 0 -4px;
+  }
+
+  &__swiper {
+    padding: 4px 4px 6px;
+    overflow: hidden;
+  }
+
+  &__slider-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--da-gray-pale);
+    background: var(--da-cream);
+    color: var(--da-dark);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    transition: background 0.15s, border-color 0.15s;
+    display: none;
+
+    &:hover {
+      background: var(--da-amber-pale);
+      border-color: var(--da-amber);
+      color: var(--da-amber);
+    }
+
+    &.is-prev { left: -10px; }
+    &.is-next { right: -10px; }
+
+    @media (min-width: 768px) { display: inline-flex; align-items: center; justify-content: center; }
   }
 
   &__vehicle-card {
@@ -451,20 +555,21 @@ const HandleUpdateTags = (next: string[]) => {
     padding: 14px 16px;
     display: grid;
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto auto auto auto;
     gap: 4px 12px;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
     position: relative;
+    height: 100%;
+    box-sizing: border-box;
+    min-height: 180px;
 
     &.is-active {
       border-color: var(--da-amber);
       background: var(--da-amber-pale);
     }
 
-    &.is-warn {
-      border-color: #f59e0b;
-    }
+    &.is-warn { border-color: #f59e0b; }
 
     &.is-disabled {
       opacity: 0.45;

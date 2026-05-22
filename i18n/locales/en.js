@@ -333,6 +333,11 @@ export default {
     options: {
       title: 'Trip Requirements',
       passengers: 'Passengers',
+      // Booking v2 batch 2: passenger split (adult / child)
+      adults: 'Adults',
+      adultsHint: 'Ages 13+',
+      children: 'Children',
+      childrenHint: 'Ages 0–12; takes one seat',
       luggage: 'Luggage',
       suTotal: 'Total SU',
       vehicleTitle: 'Select Vehicle',
@@ -368,6 +373,9 @@ export default {
       dropoff: 'Drop-off',
       passengers: 'Passengers',
       passengerUnit: '{n} pax',
+      // Booking v2 batch 2: summary split adult / child (child=0 falls back to passengerUnit)
+      adultUnit: '{n} adult(s)',
+      childUnit: '{n} child(ren)',
       luggage: 'Luggage',
       luggageUnit: '{n} pcs',
       vehicle: 'Vehicle',

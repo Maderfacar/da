@@ -38,6 +38,9 @@ interface PatchOrderBody {
   stopovers?: GooglePlaceLite[];
   vehicleType?: string;
   passengerCount?: number;
+  /** Booking v2 批次 2：admin 可改大人 / 兒童；server 會自動 passengerCount = adult + child */
+  adultCount?: number;
+  childCount?: number;
   luggageItems?: Array<{ typeId: string; count: number }>;
   estimatedFare?: number;
   extraServices?: string[];
@@ -54,7 +57,7 @@ interface PatchOrderBody {
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
 // admin 可任意新增；body 驗證放寬至「字串/字串陣列」，存在性由 GET fleet 端確認
-const ADMIN_ONLY_FIELDS = ['orderType', 'pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes', 'passengerName', 'contactName', 'contactPhone'] as const;
+const ADMIN_ONLY_FIELDS = ['orderType', 'pickupDateTime', 'pickupLocation', 'dropoffLocation', 'stopovers', 'vehicleType', 'passengerCount', 'adultCount', 'childCount', 'luggageItems', 'estimatedFare', 'extraServices', 'flightNumber', 'terminal', 'notes', 'passengerName', 'contactName', 'contactPhone'] as const;
 
 const VALID_ORDER_TYPES = new Set(['airport-pickup', 'airport-dropoff', 'charter', 'transfer']);
 const PHONE_REGEX = /^09\d{8}$/;
@@ -228,6 +231,13 @@ export default defineEventHandler(async (event) => {
       if (body.passengerCount !== undefined && (!Number.isInteger(body.passengerCount) || body.passengerCount < 1 || body.passengerCount > 20)) {
         return badRequestError({ zh_tw: '人數須為 1-20', en: 'passengerCount must be 1-20', ja: '人数は 1-20 の整数' });
       }
+      // Booking v2 批次 2：adult / child 範圍校驗（admin 改）
+      if (body.adultCount !== undefined && (!Number.isInteger(body.adultCount) || body.adultCount < 1 || body.adultCount > 20)) {
+        return badRequestError({ zh_tw: '大人數須為 1-20', en: 'adultCount must be 1-20', ja: '大人人数は 1-20' });
+      }
+      if (body.childCount !== undefined && (!Number.isInteger(body.childCount) || body.childCount < 0 || body.childCount > 20)) {
+        return badRequestError({ zh_tw: '兒童數須為 0-20', en: 'childCount must be 0-20', ja: '子供人数は 0-20' });
+      }
       if (body.luggageItems !== undefined) {
         if (!Array.isArray(body.luggageItems)
           || !body.luggageItems.every((i) =>
@@ -322,7 +332,23 @@ export default defineEventHandler(async (event) => {
       if (body.dropoffLocation !== undefined) updates.dropoffLocation = body.dropoffLocation;
       if (body.stopovers !== undefined) updates.stopovers = body.stopovers;
       if (body.vehicleType !== undefined) updates.vehicleType = body.vehicleType;
-      if (body.passengerCount !== undefined) updates.passengerCount = body.passengerCount;
+      // Booking v2 批次 2：admin 帶 adult / child 時、自動同步 passengerCount = adult + child
+      const adultPatched = body.adultCount !== undefined ? body.adultCount : undefined;
+      const childPatched = body.childCount !== undefined ? body.childCount : undefined;
+      if (adultPatched !== undefined) updates.adultCount = adultPatched;
+      if (childPatched !== undefined) updates.childCount = childPatched;
+      if (adultPatched !== undefined || childPatched !== undefined) {
+        // 取 patched 值（沒帶就用 doc 原值，再不行用 passengerCount 推算）
+        const prevAdult = (orderData.adultCount as number | undefined)
+          ?? (orderData.passengerCount as number | undefined)
+          ?? 1;
+        const prevChild = (orderData.childCount as number | undefined) ?? 0;
+        const nextAdult = adultPatched ?? prevAdult;
+        const nextChild = childPatched ?? prevChild;
+        updates.passengerCount = nextAdult + nextChild;
+      } else if (body.passengerCount !== undefined) {
+        updates.passengerCount = body.passengerCount;
+      }
       if (body.luggageItems !== undefined) updates.luggageItems = body.luggageItems;
       if (body.estimatedFare !== undefined) updates.estimatedFare = body.estimatedFare;
       if (body.extraServices !== undefined) updates.extraServices = body.extraServices;

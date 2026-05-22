@@ -44,6 +44,9 @@ export default defineEventHandler(async (event) => {
           dropoffLocation: d.dropoffLocation as { address: string; lat: number; lng: number; placeId?: string; displayName?: string },
           vehicleType: d.vehicleType as string,
           passengerCount: (d.passengerCount as number) ?? 1,
+          // Booking v2 批次 2：fallback 舊單無 adult/child
+          adultCount: (d.adultCount as number | undefined) ?? ((d.passengerCount as number | undefined) ?? 1),
+          childCount: (d.childCount as number | undefined) ?? 0,
           estimatedFare: (d.estimatedFare as number) ?? 0,
           orderStatus: (d.orderStatus as string) ?? 'pending',
           createdAt: d.createdAt?.toMillis?.() ?? 0,

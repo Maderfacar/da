@@ -22,6 +22,10 @@ export interface DispatchedOrderSummary {
   pickupAddress: string;
   dropoffAddress: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊單呼叫端 fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊單呼叫端 fallback = 0） */
+  childCount?: number;
   estimatedFare: number;
   /** 偏好標籤中文 chip list（admin/driver 端皆繁中顯示） */
   preferenceChips: string[];
@@ -40,6 +44,10 @@ export interface AssignedDriverPayload {
   pickupAddress: string;
   dropoffAddress: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊單呼叫端 fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊單呼叫端 fallback = 0） */
+  childCount?: number;
 }
 
 export interface DispatchPushEnv {
@@ -50,6 +58,18 @@ export interface DispatchPushEnv {
 }
 
 const _orderIdShort = (id: string): string => id.slice(0, 8).toUpperCase();
+
+/**
+ * Booking v2 批次 2：人數摘要文字（含兒童才顯示「大人 X / 兒童 Y」，否則退回「N 人」）
+ */
+const _formatPaxSummary = (payload: { passengerCount: number; adultCount?: number; childCount?: number }): string => {
+  const child = payload.childCount ?? 0;
+  if (child > 0) {
+    const adult = payload.adultCount ?? Math.max(1, payload.passengerCount - child);
+    return `大人 ${adult} / 兒童 ${child}`;
+  }
+  return `${payload.passengerCount} 人`;
+};
 
 const _formatDateTime = (iso: string): string => {
   // YYYY-MM-DDTHH:mm[:ss][Z|+08:00] → 'MM/DD HH:mm'
@@ -90,7 +110,7 @@ export function buildDispatchFlex(
     { type: 'text', text: `📅 ${dateLine}`, size: 'md', wrap: true, margin: 'sm' },
     { type: 'text', text: `📍 ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
     { type: 'text', text: `🏁 ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs', color: '#333333' },
-    { type: 'text', text: `👥 ${payload.passengerCount} 人  💰 NT$ ${payload.estimatedFare.toLocaleString()}`, size: 'sm', margin: 'md', color: '#666666' },
+    { type: 'text', text: `👥 ${_formatPaxSummary(payload)}  💰 NT$ ${payload.estimatedFare.toLocaleString()}`, size: 'sm', margin: 'md', color: '#666666' },
   ];
 
   if (payload.preferenceChips.length > 0) {
@@ -231,7 +251,7 @@ export function buildAssignedDriverFlex(
         { type: 'text', text: `📅 ${dateLine}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
         { type: 'text', text: `📍 ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm' },
         { type: 'text', text: `🏁 ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs' },
-        { type: 'text', text: `👥 ${payload.passengerCount} 人`, size: 'sm', margin: 'sm', color: '#666666' },
+        { type: 'text', text: `👥 ${_formatPaxSummary(payload)}`, size: 'sm', margin: 'sm', color: '#666666' },
         { type: 'text', text: '請於上車時間前準時抵達。', size: 'sm', wrap: true, margin: 'md', color: '#D4860A' },
       ],
     },

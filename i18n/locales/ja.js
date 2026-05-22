@@ -333,6 +333,11 @@ export default {
     options: {
       title: '乗車要件',
       passengers: '乗客数',
+      // Booking v2 批次 2：人数を大人 / 子供に分割
+      adults: '大人',
+      adultsHint: '13歳以上',
+      children: '子供',
+      childrenHint: '12歳以下；1座席使用',
       luggage: '荷物数',
       suTotal: '荷物SU合計',
       vehicleTitle: '車種を選択',
@@ -368,6 +373,9 @@ export default {
       dropoff: '降車地点',
       passengers: '乗客数',
       passengerUnit: '{n}名',
+      // Booking v2 批次 2：摘要を大人 / 子供に分割（child=0 の場合は passengerUnit に退避）
+      adultUnit: '大人 {n}名',
+      childUnit: '子供 {n}名',
       luggage: '荷物数',
       luggageUnit: '{n}個',
       vehicle: '車種',

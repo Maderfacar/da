@@ -71,7 +71,9 @@ const ClickWithdraw = (e: Event) => {
 
   .DriverDispatchedOrderCard__foot
     .DriverDispatchedOrderCard__meta
-      span 👥 {{ order.passengerCount }} 人
+      //- Booking v2 批次 2：child=0 退回「N 人」，否則拆「大人 X / 兒童 Y」
+      span(v-if="(order.childCount ?? 0) > 0") 👥 大人 {{ order.adultCount ?? 1 }} / 兒童 {{ order.childCount }}
+      span(v-else) 👥 {{ order.passengerCount }} 人
       span {{ order.distanceKm }} km
       span NT$ {{ order.estimatedFare.toLocaleString() }}
     .DriverDispatchedOrderCard__btns

@@ -70,6 +70,9 @@ export default defineEventHandler(async (event) => {
       pickupAddress: (d.pickupLocation?.displayName as string) || (d.pickupLocation?.address as string) || '',
       dropoffAddress: (d.dropoffLocation?.displayName as string) || (d.dropoffLocation?.address as string) || '',
       passengerCount: (d.passengerCount as number) ?? 1,
+      // Booking v2 批次 2：fallback 舊單無 adult/child
+      adultCount: (d.adultCount as number | undefined) ?? ((d.passengerCount as number | undefined) ?? 1),
+      childCount: (d.childCount as number | undefined) ?? 0,
       estimatedFare: (d.estimatedFare as number) ?? 0,
       preferenceChips,
     };

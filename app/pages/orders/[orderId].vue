@@ -215,9 +215,14 @@ onUnmounted(() => {
         .PageOrderDetail__info-row
           dt.PageOrderDetail__info-label {{ $t('orderDetail.info.vehicle') }}
           dd.PageOrderDetail__info-val {{ VehicleLabel(order.vehicleType) }}
+        //- Booking v2 批次 2：人數顯示「大人 X / 兒童 Y」（child=0 退回單一總人數）
         .PageOrderDetail__info-row
           dt.PageOrderDetail__info-label {{ $t('orderDetail.info.passengers') }}
-          dd.PageOrderDetail__info-val {{ $t('orderDetail.info.passengerVal', { n: order.passengerCount }) }}
+          dd.PageOrderDetail__info-val(v-if="(order.childCount ?? 0) > 0")
+            | {{ $t('booking.confirm.adultUnit', { n: order.adultCount ?? 1 }) }}
+            | ／
+            | {{ $t('booking.confirm.childUnit', { n: order.childCount ?? 0 }) }}
+          dd.PageOrderDetail__info-val(v-else) {{ $t('orderDetail.info.passengerVal', { n: order.passengerCount }) }}
         .PageOrderDetail__info-row(v-if="order.extraServices && order.extraServices.length")
           dt.PageOrderDetail__info-label {{ $t('orderDetail.info.extras') }}
           dd.PageOrderDetail__info-val {{ order.extraServices.map(ExtraLabel).join('、') }}

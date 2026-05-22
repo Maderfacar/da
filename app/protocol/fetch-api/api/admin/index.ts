@@ -171,6 +171,10 @@ export interface AdminOrder {
   stopovers: GooglePlaceLite[]
   vehicleType: string
   passengerCount: number
+  /** Booking v2 批次 2：大人數（server fallback 已對齊舊單） */
+  adultCount?: number
+  /** Booking v2 批次 2：兒童數（server fallback 已對齊舊單） */
+  childCount?: number
   luggageItems: AdminOrderLuggageItem[]
   estimatedFare: number
   estimatedTime: number
@@ -214,6 +218,10 @@ export interface PatchAdminOrderBody {
   stopovers?: GooglePlaceLite[]
   vehicleType?: string
   passengerCount?: number
+  /** Booking v2 批次 2：大人數 */
+  adultCount?: number
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number
   luggageItems?: AdminOrderLuggageItem[]
   estimatedFare?: number
   extraServices?: string[]
@@ -234,6 +242,10 @@ export interface CreateAdminOrderBody {
   dropoffLocation: GooglePlaceLite
   stopovers?: GooglePlaceLite[]
   passengerCount: number
+  /** Booking v2 批次 2：大人數（server 自動 passengerCount = adult + child） */
+  adultCount?: number
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number
   luggageItems?: AdminOrderLuggageItem[]
   vehicleType: string
   extraServices?: string[]

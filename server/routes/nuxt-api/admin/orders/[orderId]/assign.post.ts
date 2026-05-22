@@ -102,6 +102,9 @@ export default defineEventHandler(async (event) => {
     const pickupAddress = (orderData.pickupLocation?.displayName as string) || (orderData.pickupLocation?.address as string) || '';
     const dropoffAddress = (orderData.dropoffLocation?.displayName as string) || (orderData.dropoffLocation?.address as string) || '';
     const passengerCount = (orderData.passengerCount as number) ?? 1;
+    // Booking v2 批次 2：fallback 舊單無 adult/child
+    const adultCount = (orderData.adultCount as number | undefined) ?? passengerCount;
+    const childCount = (orderData.childCount as number | undefined) ?? 0;
 
     // Phase 1F：計算 Soft Match
     const preferences = orderData.preferences as { tagIds?: unknown } | undefined;
@@ -160,6 +163,8 @@ export default defineEventHandler(async (event) => {
           pickupAddress,
           dropoffAddress,
           passengerCount,
+          adultCount,
+          childCount,
         }, env);
       } catch (err) {
         console.error('[admin/orders/assign] driver push failed:', err);

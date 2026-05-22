@@ -68,6 +68,9 @@ interface EditForm {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：admin 編輯訂單時拆大人 / 兒童 */
+  adultCount: number;
+  childCount: number;
   luggageItems: AdminOrderLuggageItem[];
   estimatedFare: number;
   extraServices: string[];
@@ -85,6 +88,8 @@ const editForm = reactive<EditForm>({
   stopovers: [],
   vehicleType: '',
   passengerCount: 1,
+  adultCount: 1,
+  childCount: 0,
   luggageItems: [],
   estimatedFare: 0,
   extraServices: [],
@@ -165,6 +170,9 @@ const ClickEditMode = () => {
   editForm.stopovers = (o.stopovers ?? []).map((s) => ({ ...s } as GooglePlace));
   editForm.vehicleType = o.vehicleType;
   editForm.passengerCount = o.passengerCount ?? 1;
+  // Booking v2 批次 2：fallback 舊單無 adult/child
+  editForm.adultCount = o.adultCount ?? o.passengerCount ?? 1;
+  editForm.childCount = o.childCount ?? 0;
   editForm.luggageItems = (o.luggageItems ?? []).map((i) => ({ ...i }));
   editForm.estimatedFare = o.estimatedFare ?? 0;
   editForm.extraServices = [...(o.extraServices ?? [])];
@@ -222,9 +230,14 @@ const ApiSaveEdit = async () => {
   if (editForm.stopovers.some((s) => !s.address)) {
     ElMessage({ message: '請選擇所有停靠站地點', type: 'warning' }); return;
   }
-  if (editForm.passengerCount < 1) {
-    ElMessage({ message: '人數至少 1 人', type: 'warning' }); return;
+  if (editForm.adultCount < 1) {
+    ElMessage({ message: '大人至少 1 人', type: 'warning' }); return;
   }
+  if (editForm.childCount < 0) {
+    ElMessage({ message: '兒童不可為負', type: 'warning' }); return;
+  }
+  // Booking v2 批次 2：總人數 = adult + child（passengerCount 由 server 自動同步）
+  editForm.passengerCount = editForm.adultCount + editForm.childCount;
   if (editForm.estimatedFare < 0) {
     ElMessage({ message: '費用不可為負', type: 'warning' }); return;
   }
@@ -247,6 +260,8 @@ const ApiSaveEdit = async () => {
       stopovers: editForm.stopovers,
       vehicleType: editForm.vehicleType,
       passengerCount: editForm.passengerCount,
+      adultCount: editForm.adultCount,
+      childCount: editForm.childCount,
       luggageItems: editForm.luggageItems,
       estimatedFare: editForm.estimatedFare,
       extraServices: editForm.extraServices,
@@ -340,12 +355,16 @@ const _BuildPassengerTemplate = (o: AdminOrder): string => {
 const _BuildDriverTemplate = (o: AdminOrder): string => {
   const vehicleLabel = VEHICLE_LABEL(o.vehicleType);
   const orderTypeLabel = ORDER_TYPE_LABEL[o.orderType] ?? o.orderType;
+  // Booking v2 批次 2：人數摘要拆大人 / 兒童（child=0 退回「N 人」）
+  const paxText = (o.childCount ?? 0) > 0
+    ? `大人 ${o.adultCount ?? 1} / 兒童 ${o.childCount}`
+    : `${o.passengerCount} 人`;
   const lines = [
     '【DEST·ANYWHERE 新行程任務】',
     `訂單編號：#${o.orderId.slice(0, 8).toUpperCase()}`,
     `行程類型：${orderTypeLabel}`,
     `乘客：${o.passengerName || '（未提供）'}`,
-    `人數：${o.passengerCount} 人 / 行李：${LuggageSummary(o.luggageItems)}（${LuggageTotalSU(o.luggageItems)} SU）`,
+    `人數：${paxText} / 行李：${LuggageSummary(o.luggageItems)}（${LuggageTotalSU(o.luggageItems)} SU）`,
     '',
     `用車時間：${_formatDateTime(o.pickupDateTime)}`,
     `上車點：${o.pickupLocation.displayName ?? o.pickupLocation.address}`,
@@ -747,9 +766,12 @@ onMounted(() => {
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 聯絡電話
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerPhone || '—' }}
+              //- Booking v2 批次 2：顯示「大人 X / 兒童 Y」（child=0 退回「N 人」）
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 人數
-                span.PageAdminOrders__section-val {{ selectedOrder.passengerCount }} 人
+                span.PageAdminOrders__section-val(v-if="(selectedOrder.childCount ?? 0) > 0")
+                  | 大人 {{ selectedOrder.adultCount ?? 1 }} / 兒童 {{ selectedOrder.childCount }}
+                span.PageAdminOrders__section-val(v-else) {{ selectedOrder.passengerCount }} 人
               .PageAdminOrders__section-row(v-if="selectedOrder.luggageItems?.length")
                 span.PageAdminOrders__section-key 行李
                 span.PageAdminOrders__section-val {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
@@ -945,11 +967,18 @@ onMounted(() => {
                 select.PageAdminOrders__edit-input(v-model="editForm.vehicleType")
                   option(v-for="opt in VEHICLE_OPTIONS" :key="opt.value" :value="opt.value") {{ opt.label }}
                   option(v-if="editForm.vehicleType && !VEHICLE_OPTIONS.find(o => o.value === editForm.vehicleType)" :value="editForm.vehicleType") {{ editForm.vehicleType }}（已停用或刪除）
+              //- Booking v2 批次 2：拆大人 / 兒童
               .PageAdminOrders__edit-field
-                label.PageAdminOrders__edit-label 人數
+                label.PageAdminOrders__edit-label 大人
                 input.PageAdminOrders__edit-input(
-                  type="number" v-model.number="editForm.passengerCount"
+                  type="number" v-model.number="editForm.adultCount"
                   inputmode="numeric" min="1" max="20"
+                )
+              .PageAdminOrders__edit-field
+                label.PageAdminOrders__edit-label 兒童
+                input.PageAdminOrders__edit-input(
+                  type="number" v-model.number="editForm.childCount"
+                  inputmode="numeric" min="0" max="20"
                 )
             //- P23：行李改 SU 多類型陣列（依 store.luggageTypes 動態渲染 stepper）
             .PageAdminOrders__edit-field

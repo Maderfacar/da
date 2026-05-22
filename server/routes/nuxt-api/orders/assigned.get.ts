@@ -62,6 +62,9 @@ export default defineEventHandler(async (event) => {
         stopovers: ((d.stopovers as GooglePlaceLite[] | undefined) ?? []),
         vehicleType: d.vehicleType as string,
         passengerCount: (d.passengerCount as number) ?? 1,
+        // Booking v2 批次 2：fallback 舊單無 adult/child
+        adultCount: (d.adultCount as number | undefined) ?? ((d.passengerCount as number | undefined) ?? 1),
+        childCount: (d.childCount as number | undefined) ?? 0,
         // P23：行李改 luggageItems 陣列（typeId + count）
         luggageItems: (d.luggageItems as LuggageItemDoc[] | undefined) ?? [],
         estimatedFare: (d.estimatedFare as number) ?? 0,

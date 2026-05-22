@@ -77,6 +77,9 @@ export default defineEventHandler(async (event) => {
       stopovers: (data.stopovers as unknown[] | undefined) ?? [],
       vehicleType: (data.vehicleType as string) ?? '',
       passengerCount: (data.passengerCount as number) ?? 1,
+      // Booking v2 批次 2：fallback 舊單無 adult/child
+      adultCount: (data.adultCount as number | undefined) ?? ((data.passengerCount as number | undefined) ?? 1),
+      childCount: (data.childCount as number | undefined) ?? 0,
       luggageItems: (data.luggageItems as unknown[] | undefined) ?? [],
       extraServices: (data.extraServices as string[] | undefined) ?? [],
       estimatedFare: (data.estimatedFare as number) ?? 0,

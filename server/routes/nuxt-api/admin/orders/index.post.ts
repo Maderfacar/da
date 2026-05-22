@@ -38,7 +38,12 @@ interface CreateAdminOrderBody {
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
   stopovers?: GooglePlace[];
+  /** 向後相容；批次 2 後 server 寫入時 = adultCount + childCount */
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊 admin client 不帶時 fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊 admin client 不帶時補 0） */
+  childCount?: number;
   luggageItems?: LuggageItemBody[];
   vehicleType: string;
   extraServices?: string[];
@@ -87,8 +92,20 @@ export default defineEventHandler(async (event) => {
   if (!stopovers.every(_isValidGooglePlace)) {
     return badRequestError({ zh_tw: '停靠站格式錯誤', en: 'Invalid stopovers', ja: '経由地形式が無効' });
   }
-  if (!Number.isInteger(body.passengerCount) || body.passengerCount < 1 || body.passengerCount > 20) {
-    return badRequestError({ zh_tw: '人數須為 1-20', en: 'passengerCount must be 1-20', ja: '人数は 1-20' });
+  // Booking v2 批次 2：admin 也支援 adult/child（fallback：未帶時用 passengerCount）
+  const adminAdult = Number.isInteger(body.adultCount) ? (body.adultCount as number) : Number.NaN;
+  const adminChild = Number.isInteger(body.childCount) ? (body.childCount as number) : Number.NaN;
+  const finalAdult = Number.isFinite(adminAdult) ? adminAdult : (body.passengerCount ?? 0);
+  const finalChild = Number.isFinite(adminChild) ? adminChild : 0;
+  if (!Number.isInteger(finalAdult) || finalAdult < 1 || finalAdult > 20) {
+    return badRequestError({ zh_tw: '大人數須為 1-20', en: 'adultCount must be 1-20', ja: '大人人数は 1-20' });
+  }
+  if (!Number.isInteger(finalChild) || finalChild < 0 || finalChild > 20) {
+    return badRequestError({ zh_tw: '兒童數須為 0-20', en: 'childCount must be 0-20', ja: '子供人数は 0-20' });
+  }
+  const finalTotal = finalAdult + finalChild;
+  if (finalTotal < 1 || finalTotal > 20) {
+    return badRequestError({ zh_tw: '總人數須為 1-20', en: 'Total passengers must be 1-20', ja: '合計人数は 1-20' });
   }
   if (typeof body.estimatedFare !== 'number' || !Number.isFinite(body.estimatedFare) || body.estimatedFare < 0) {
     return badRequestError({ zh_tw: '車資須為非負數', en: 'estimatedFare must be non-negative', ja: '料金は非負数' });
@@ -142,7 +159,10 @@ export default defineEventHandler(async (event) => {
       pickupLocation: body.pickupLocation,
       dropoffLocation: body.dropoffLocation,
       stopovers,
-      passengerCount: body.passengerCount,
+      // Booking v2 批次 2：passengerCount 寫入時 = adult + child（保留向後相容）
+      passengerCount: finalTotal,
+      adultCount: finalAdult,
+      childCount: finalChild,
       luggageItems,
       vehicleType: body.vehicleType,
       extraServices,

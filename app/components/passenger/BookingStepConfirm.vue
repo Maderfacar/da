@@ -400,9 +400,15 @@ const ClickSubmit = () => {
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.dropoff') }}
       span.PassengerBookingStepConfirm__row-value {{ draft.dropoffLocation?.displayName ?? draft.dropoffLocation?.address }}
     .PassengerBookingStepConfirm__divider
+    //- Booking v2 批次 2：人數摘要拆「大人 X / 兒童 Y」（child=0 fallback 顯示總人數）
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.passengers') }}
-      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.passengerUnit', { n: draft.passengerCount }) }}
+      span.PassengerBookingStepConfirm__row-value(v-if="(draft.childCount ?? 0) > 0")
+        | {{ $t('booking.confirm.adultUnit', { n: draft.adultCount ?? 0 }) }}
+        | ／
+        | {{ $t('booking.confirm.childUnit', { n: draft.childCount ?? 0 }) }}
+      span.PassengerBookingStepConfirm__row-value(v-else)
+        | {{ $t('booking.confirm.passengerUnit', { n: draft.adultCount ?? draft.passengerCount ?? 0 }) }}
     .PassengerBookingStepConfirm__row(v-if="luggageDetails.length")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.luggage') }}
       span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi

@@ -348,6 +348,11 @@ export default {
     options: {
       title: '乘車需求',
       passengers: '乘客人數',
+      // Booking v2 批次 2：人數拆大人 / 兒童
+      adults: '大人',
+      adultsHint: '13 歲（含）以上',
+      children: '兒童',
+      childrenHint: '12 歲（含）以下；佔 1 座位',
       luggage: '行李數量',
       suTotal: '目前總計 SU',
       vehicleTitle: '選擇車種',
@@ -383,6 +388,9 @@ export default {
       dropoff: '下車地點',
       passengers: '乘客人數',
       passengerUnit: '{n} 人',
+      // Booking v2 批次 2：摘要拆大人 / 兒童（child=0 退回 passengerUnit）
+      adultUnit: '大人 {n}',
+      childUnit: '兒童 {n}',
       luggage: '行李數量',
       luggageUnit: '{n} 件',
       vehicle: '車種',

@@ -41,7 +41,10 @@ const pickupDateTime = ref(storeOrder.draft.pickupDateTime ?? '');
 const pickupLocation = ref<GooglePlace | null>(storeOrder.draft.pickupLocation ?? null);
 const dropoffLocation = ref<GooglePlace | null>(storeOrder.draft.dropoffLocation ?? null);
 const stopovers = ref<GooglePlace[]>(storeOrder.draft.stopovers ?? []);
-const passengerCount = ref(storeOrder.draft.passengerCount ?? 1);
+// Booking v2 批次 2：人數拆大人 / 兒童（passengerCount = adult + child 由 server 寫入）
+const adultCount = ref(storeOrder.draft.adultCount ?? storeOrder.draft.passengerCount ?? 1);
+const childCount = ref(storeOrder.draft.childCount ?? 0);
+const passengerCount = computed(() => adultCount.value + childCount.value);
 const luggageItems = ref<LuggageItem[]>(storeOrder.draft.luggageItems ?? []);
 const vehicleType = ref<VehicleType>(_GetInitialVehicleType());
 const extraServices = ref<string[]>(storeOrder.draft.extraServices ?? []);
@@ -142,6 +145,8 @@ const SyncToStore = () => {
     dropoffLocation: dropoffLocation.value ?? undefined,
     stopovers: stopovers.value,
     passengerCount: passengerCount.value,
+    adultCount: adultCount.value,
+    childCount: childCount.value,
     luggageItems: luggageItems.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
@@ -191,6 +196,8 @@ const ClickSubmit = async () => {
     dropoffLocation: dropoffLocation.value,
     stopovers: stopovers.value.filter((s) => s.lat !== 0),
     passengerCount: passengerCount.value,
+    adultCount: adultCount.value,
+    childCount: childCount.value,
     luggageItems: luggageItems.value,
     vehicleType: vehicleType.value,
     extraServices: extraServices.value,
@@ -228,7 +235,8 @@ const ClickNewOrder = () => {
   pickupLocation.value = null;
   dropoffLocation.value = null;
   stopovers.value = [];
-  passengerCount.value = 1;
+  adultCount.value = 1;
+  childCount.value = 0;
   luggageItems.value = [];
   vehicleType.value = 'sedan';
   extraServices.value = [];
@@ -321,7 +329,8 @@ const ClickNewOrder = () => {
         PassengerBookingStepOptions(
           v-else-if="currentStep === 3"
           key="step3"
-          v-model:passenger-count="passengerCount"
+          v-model:adult-count="adultCount"
+          v-model:child-count="childCount"
           v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
           v-model:selected-tag-ids="selectedTagIds"

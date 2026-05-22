@@ -159,9 +159,11 @@ onMounted(ApiLoadOrder);
       .PageDriverDispatchedDetail__section-row
         span.PageDriverDispatchedDetail__section-key 距離
         span.PageDriverDispatchedDetail__section-val {{ order.distanceKm }} km
+      //- Booking v2 批次 2：人數顯示「大人 X / 兒童 Y」（child=0 退回「N 人」）
       .PageDriverDispatchedDetail__section-row
         span.PageDriverDispatchedDetail__section-key 人數
-        span.PageDriverDispatchedDetail__section-val {{ order.passengerCount }} 人
+        span.PageDriverDispatchedDetail__section-val(v-if="(order.childCount ?? 0) > 0") 大人 {{ order.adultCount ?? 1 }} / 兒童 {{ order.childCount }}
+        span.PageDriverDispatchedDetail__section-val(v-else) {{ order.passengerCount }} 人
 
     .PageDriverDispatchedDetail__actions
       button.PageDriverDispatchedDetail__action.is-primary(

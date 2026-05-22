@@ -54,7 +54,12 @@ interface CreateOrderParams {
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
   stopovers?: GooglePlace[];
+  /** 總人數（向後相容；批次 2 後 server 寫入時 = adultCount + childCount） */
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（≥ 1；舊 client 不帶時 server 用 passengerCount fallback） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（≥ 0；舊 client 不帶時 server 補 0） */
+  childCount?: number;
   luggageItems: OrderLuggageItem[];
   vehicleType: string;
   extraServices?: string[];
@@ -100,6 +105,10 @@ interface OrderItem {
   dropoffLocation: GooglePlace;
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊單 server fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊單 server fallback = 0） */
+  childCount?: number;
   estimatedFare: number;
   orderStatus: string;
   createdAt?: number;
@@ -114,6 +123,10 @@ interface AvailableOrder {
   dropoffLocation: GooglePlace;
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數 */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number;
   estimatedFare: number;
   distanceKm: number;
 }
@@ -131,6 +144,10 @@ interface AssignedOrder {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數 */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number;
   luggageItems: OrderLuggageItem[];
   estimatedFare: number;
   estimatedTime: number;
@@ -156,6 +173,10 @@ interface DriverHistoryOrder {
   dropoffLocation: GooglePlace;
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數 */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number;
   estimatedFare: number;
   distanceKm: number;
   orderStatus: 'completed' | 'cancelled' | string;
@@ -172,6 +193,10 @@ interface UpcomingOrder {
   dropoffLocation: GooglePlace;
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數 */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數 */
+  childCount?: number;
   estimatedFare: number;
   orderStatus: string;
 }
@@ -216,6 +241,10 @@ interface OrderDetail {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（server 對舊單已 fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（server 對舊單已 fallback = 0） */
+  childCount?: number;
   luggageItems: OrderLuggageItem[];
   extraServices: string[];
   estimatedFare: number;
@@ -252,6 +281,10 @@ interface PatchOrderParams {
   stopovers?: GooglePlace[];
   vehicleType?: string;
   passengerCount?: number;
+  /** Booking v2 批次 2：admin 可改大人數（會自動帶 passengerCount = adult + child） */
+  adultCount?: number;
+  /** Booking v2 批次 2：admin 可改兒童數 */
+  childCount?: number;
   luggageItems?: OrderLuggageItem[];
   estimatedFare?: number;
   extraServices?: string[];

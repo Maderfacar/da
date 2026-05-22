@@ -91,6 +91,9 @@ export default defineEventHandler(async (event) => {
     const pickupAddress = (orderData.pickupLocation?.displayName as string) || (orderData.pickupLocation?.address as string) || '';
     const dropoffAddress = (orderData.dropoffLocation?.displayName as string) || (orderData.dropoffLocation?.address as string) || '';
     const passengerCount = (orderData.passengerCount as number) ?? 1;
+    // Booking v2 批次 2：fallback 舊單無 adult/child
+    const adultCount = (orderData.adultCount as number | undefined) ?? passengerCount;
+    const childCount = (orderData.childCount as number | undefined) ?? 0;
     const estimatedFare = (orderData.estimatedFare as number) ?? 0;
 
     if (decision === 'accept') {
@@ -181,6 +184,8 @@ export default defineEventHandler(async (event) => {
             pickupAddress,
             dropoffAddress,
             passengerCount,
+            adultCount,
+            childCount,
             estimatedFare,
             preferenceChips,
           }, env, drivers.map((d) => d.lineUserId));

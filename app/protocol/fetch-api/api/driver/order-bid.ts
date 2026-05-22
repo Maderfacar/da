@@ -12,6 +12,10 @@ export interface DriverDispatchedOrderItem {
   stopovers: Array<{ address: string; lat: number; lng: number; displayName?: string }>;
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊單 fallback = passengerCount） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊單 fallback = 0） */
+  childCount?: number;
   estimatedFare: number;
   distanceKm: number;
   notes: string | null;

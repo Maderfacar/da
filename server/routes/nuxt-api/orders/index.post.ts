@@ -45,7 +45,12 @@ interface CreateOrderBody {
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
   stopovers?: GooglePlace[];
+  /** 向後相容；批次 2 後 server 寫入時 = adultCount + childCount */
   passengerCount: number;
+  /** Booking v2 批次 2：大人數（舊 client 不帶時 server 用 passengerCount fallback） */
+  adultCount?: number;
+  /** Booking v2 批次 2：兒童數（舊 client 不帶時補 0） */
+  childCount?: number;
   // P23：行李改 luggageItems 陣列（每項含 typeId + count）；vehicleType / extraServices 改 string id
   luggageItems: LuggageItemBody[];
   vehicleType: string;
@@ -87,9 +92,37 @@ export default defineEventHandler(async (event) => {
   const userId = auth.lineUid;
   const lineUserId = auth.lineUid;
 
-  if (body.passengerCount < 1 || body.passengerCount > 8) {
-    return badRequestError({ zh_tw: '乘客人數必須在 1–8 之間', en: 'Passenger count must be 1–8', ja: '乗客数は 1〜8 にしてください' });
+  // Booking v2 批次 2：拆 adult/child。舊 client 只帶 passengerCount → adultCount fallback。
+  // adult ≥ 1（至少一位大人）、child ≥ 0；vehicle.capacity 校驗於 vehicle 載入後再做。
+  const rawAdult = Number.isInteger(body.adultCount) ? (body.adultCount as number) : Number.NaN;
+  const rawChild = Number.isInteger(body.childCount) ? (body.childCount as number) : Number.NaN;
+  const hasAdultChild = Number.isInteger(rawAdult) || Number.isInteger(rawChild);
+  const adultCount = Number.isFinite(rawAdult) ? rawAdult : (body.passengerCount ?? 0);
+  const childCount = Number.isFinite(rawChild) ? rawChild : 0;
+  if (!Number.isInteger(adultCount) || adultCount < 1) {
+    return badRequestError({
+      zh_tw: '大人人數需 ≥ 1',
+      en: 'Adult count must be ≥ 1',
+      ja: '大人人数は1人以上',
+    });
   }
+  if (!Number.isInteger(childCount) || childCount < 0) {
+    return badRequestError({
+      zh_tw: '兒童人數需 ≥ 0',
+      en: 'Child count must be ≥ 0',
+      ja: '子供人数は0人以上',
+    });
+  }
+  const totalPassengers = adultCount + childCount;
+  if (totalPassengers < 1 || totalPassengers > 20) {
+    return badRequestError({
+      zh_tw: '總人數需介於 1–20',
+      en: 'Total passengers must be 1–20',
+      ja: '合計人数は1〜20',
+    });
+  }
+  // 若 client 只帶 passengerCount（舊行為）但與 adult/child 不一致 → 以 adult+child 為準
+  void hasAdultChild;
 
   // P20：contactPhone 為必填，必須符合台灣手機格式 09xxxxxxxx
   if (!body.contactPhone || !PHONE_REGEX.test(body.contactPhone)) {
@@ -159,6 +192,14 @@ export default defineEventHandler(async (event) => {
       zh_tw: `無效的車型：${body.vehicleType}`,
       en: `Invalid vehicle type: ${body.vehicleType}`,
       ja: `無効な車種：${body.vehicleType}`,
+    });
+  }
+  // Booking v2 批次 2：大人 + 兒童 ≤ vehicle.capacity（兒童佔 1 座位）
+  if (totalPassengers > vehicle.capacity) {
+    return badRequestError({
+      zh_tw: `所選車型最多 ${vehicle.capacity} 人，目前大人 ${adultCount} + 兒童 ${childCount} 共 ${totalPassengers} 人`,
+      en: `Selected vehicle capacity is ${vehicle.capacity}; current total is ${totalPassengers} (${adultCount} adults + ${childCount} children)`,
+      ja: `選択車種は最大${vehicle.capacity}人。現在の合計：${totalPassengers}人（大人${adultCount} + 子供${childCount}）`,
     });
   }
   const extraServiceIds = body.extraServices ?? [];
@@ -310,7 +351,10 @@ export default defineEventHandler(async (event) => {
       pickupLocation: body.pickupLocation,
       dropoffLocation: body.dropoffLocation,
       stopovers: body.stopovers ?? [],
-      passengerCount: body.passengerCount,
+      // Booking v2 批次 2：passengerCount 寫入時 = adult + child（保留向後相容）
+      passengerCount: totalPassengers,
+      adultCount,
+      childCount,
       // P23：行李改 luggageItems 陣列（typeId + count）
       luggageItems,
       vehicleType: body.vehicleType,

@@ -27,6 +27,9 @@ interface CreateForm {
   stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
+  /** Booking v2 批次 2：admin 建單拆大人 / 兒童 */
+  adultCount: number;
+  childCount: number;
   luggageItems: AdminOrderLuggageItem[];
   estimatedFare: number;
   extraServices: string[];
@@ -45,6 +48,8 @@ const _emptyForm = (): CreateForm => ({
   stopovers: [],
   vehicleType: VEHICLE_OPTIONS.value[0]?.value ?? '',
   passengerCount: 1,
+  adultCount: 1,
+  childCount: 0,
   luggageItems: [],
   estimatedFare: 0,
   extraServices: [],
@@ -105,7 +110,10 @@ const _validate = (): string => {
   if (!form.dropoffLocation?.address) return '請選擇下車點';
   if (form.stopovers.some((s) => !s.address)) return '請選擇所有停靠站地點';
   if (!form.vehicleType) return '請選擇車型';
-  if (form.passengerCount < 1) return '人數至少 1 人';
+  if (form.adultCount < 1) return '大人至少 1 人';
+  if (form.childCount < 0) return '兒童不可為負';
+  // Booking v2 批次 2：總人數 = adult + child（送出前同步）
+  form.passengerCount = form.adultCount + form.childCount;
   if (form.estimatedFare < 0) return '車資不可為負';
   if (!form.passengerName.trim()) return '請填寫乘客姓名';
   if (!PHONE_REGEX.test(form.contactPhone)) return '聯絡電話格式錯誤（09 開頭 10 碼）';
@@ -127,6 +135,8 @@ const ApiCreate = async () => {
       dropoffLocation: form.dropoffLocation!,
       stopovers: form.stopovers,
       passengerCount: form.passengerCount,
+      adultCount: form.adultCount,
+      childCount: form.childCount,
       luggageItems: form.luggageItems,
       vehicleType: form.vehicleType,
       extraServices: form.extraServices,
@@ -201,11 +211,20 @@ Transition(name="fade")
             select.AdminOrdersCreateModal__input(v-model="form.vehicleType")
               option(v-if="!VEHICLE_OPTIONS.length" value="" disabled) 無可用車型
               option(v-for="opt in VEHICLE_OPTIONS" :key="opt.value" :value="opt.value") {{ opt.label }}
+          //- Booking v2 批次 2：拆大人 / 兒童
           .AdminOrdersCreateModal__field
-            label.AdminOrdersCreateModal__label 人數
+            label.AdminOrdersCreateModal__label 大人
             input.AdminOrdersCreateModal__input(
-              type="number" v-model.number="form.passengerCount"
+              type="number" v-model.number="form.adultCount"
               inputmode="numeric" min="1" max="20"
+            )
+
+        .AdminOrdersCreateModal__grid
+          .AdminOrdersCreateModal__field
+            label.AdminOrdersCreateModal__label 兒童
+            input.AdminOrdersCreateModal__input(
+              type="number" v-model.number="form.childCount"
+              inputmode="numeric" min="0" max="20"
             )
 
         //- 行李

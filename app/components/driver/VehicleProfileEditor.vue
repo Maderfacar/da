@@ -300,7 +300,7 @@ const previewSU = computed(() => {
 
 watch(() => props.vehicleCapacity, (cap) => {
   localLiters.value = cap?.trunkVolumeLiters ?? null;
-  localSeatConfigs.splice(0, localSeatConfigs.length, ...(cap?.seatConfigs?.map(c => ({ ...c })) ?? []));
+  localSeatConfigs.splice(0, localSeatConfigs.length, ...(cap?.seatConfigs?.map((c) => ({ ...c })) ?? []));
   hasSeatConfigs.value = !!cap?.seatConfigs?.length;
 }, { immediate: true });
 

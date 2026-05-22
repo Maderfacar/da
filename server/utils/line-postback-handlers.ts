@@ -259,6 +259,9 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
       const pickupAddress = (orderData.pickupLocation?.displayName as string) || (orderData.pickupLocation?.address as string) || '';
       const dropoffAddress = (orderData.dropoffLocation?.displayName as string) || (orderData.dropoffLocation?.address as string) || '';
       const passengerCount = (orderData.passengerCount as number) ?? 1;
+      // Booking v2 批次 2：fallback 舊單無 adult/child
+      const adultCount = (orderData.adultCount as number | undefined) ?? passengerCount;
+      const childCount = (orderData.childCount as number | undefined) ?? 0;
       const estimatedFare = (orderData.estimatedFare as number) ?? 0;
       const passengerLineUid = orderLineUserId || orderUserId;
 
@@ -290,7 +293,7 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
             try {
               const drivers = await loadActiveDrivers(db);
               await pushOrderDispatchToDrivers({
-                orderId, pickupDateTime, pickupAddress, dropoffAddress, passengerCount, estimatedFare, preferenceChips,
+                orderId, pickupDateTime, pickupAddress, dropoffAddress, passengerCount, adultCount, childCount, estimatedFare, preferenceChips,
               }, env, drivers.map((d) => d.lineUserId));
             } catch (err) { console.error('[postback wait] dispatch push:', err); }
           })();

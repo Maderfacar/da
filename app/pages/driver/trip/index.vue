@@ -349,9 +349,13 @@ onUnmounted(() => {
               span.PageDriverTrip__section-key 聯絡電話
               span.PageDriverTrip__section-val(v-if="selectedOrder.passengerPhone") {{ selectedOrder.passengerPhone }}
               span.PageDriverTrip__section-val.is-muted(v-else) 請透過 LINE 聯絡
+            //- Booking v2 批次 2：人數顯示「大人 X / 兒童 Y」（child=0 退回「N 人」）
             .PageDriverTrip__section-row
               span.PageDriverTrip__section-key 人數 / 行李
-              span.PageDriverTrip__section-val {{ selectedOrder.passengerCount }} 人 / {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
+              span.PageDriverTrip__section-val(v-if="(selectedOrder.childCount ?? 0) > 0")
+                | 大人 {{ selectedOrder.adultCount ?? 1 }} / 兒童 {{ selectedOrder.childCount }}
+                |  / {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
+              span.PageDriverTrip__section-val(v-else) {{ selectedOrder.passengerCount }} 人 / {{ LuggageSummary(selectedOrder.luggageItems) }}（{{ LuggageTotalSU(selectedOrder.luggageItems) }} SU）
 
           //- Section 3：路線（含 Google Maps 連結）
           .PageDriverTrip__section
