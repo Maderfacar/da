@@ -37,19 +37,25 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-    // 用 orderStatus=='pending' + orderBy createdAt desc（沿用 admin/orders 既有 composite index），
-    // 再 in-memory filter dispatchAt 已設且未指派。新派發訂單會排在最上方。
+    // 只用單欄位 orderBy('createdAt')（Firestore 自動建單欄位 index，零 composite index 需求），
+    // orderStatus / dispatchAt / assignedDriverId 全部改 in-memory filter。
+    //
+    // 為何不用 where('orderStatus','==','pending') + orderBy('createdAt')：
+    //   那會需要 orders 的 `orderStatus + createdAt` composite index，prod 上不一定存在
+    //   → query throw failed-precondition → 500 → 司機端列表永遠空白（本 bug 主因）。
+    // limit 拉到 300：in-memory filter 後才篩 pending，多撈一些避免被非 pending 訂單擠掉。
     const snap = await db.collection('orders')
-      .where('orderStatus', '==', 'pending')
       .orderBy('createdAt', 'desc')
-      .limit(200)
+      .limit(300)
       .get();
 
     const myUid = auth.lineUid;
 
     const dispatched = snap.docs
       .map((doc) => ({ id: doc.id, data: doc.data() }))
-      .filter(({ data }) => !!data.dispatchAt && !data.assignedDriverId)
+      .filter(({ data }) =>
+        data.orderStatus === 'pending' && !!data.dispatchAt && !data.assignedDriverId,
+      )
       .map(({ id, data }) => {
         const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
         const myBid = rawBids.find((b) => b.driverId === myUid);

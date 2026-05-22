@@ -242,14 +242,29 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
 
-    // P19：使用者已將 LINE Console 的兩個 LIFF App endpoint URL 分流：
-    //   - 乘客 LIFF endpoint = /home
-    //   - 司機 LIFF endpoint = /driver/dashboard
-    // client liff.init({ liffId }) 必須帶**對應 URL 的 LIFF ID**，否則 LIFF SDK 會 warn
-    // 「current URL is not under endpoint URL」。
-    // path 推導：當前 URL 在 /driver/* → 用 driver LIFF；其他 → 用 passenger LIFF。
-    // 從外部 URL 進入（不經 LIFF）時推導值不影響功能（liff.init 會因不在 LINE app 走 fallback）。
-    const isDriverEntry = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
+    // client liff.init({ liffId }) 必須帶**對應入口的 LIFF ID**：
+    //   - 司機從 driver LIFF 進來 → 用 driver LIFF ID
+    //   - 乘客從 passenger LIFF 進來 → 用 passenger LIFF ID
+    // 否則 liffId 與實際開啟的 LIFF browser 不匹配 → liff.init 行為異常 → 跳回 endpoint 首頁。
+    //
+    // ⚠️ 關鍵陷阱：司機點 LINE Flex 深連結（liff.line.me/{driverLiffId}/driver/dispatched/xxx）
+    // 進來時，LIFF 用 `liff.state` query 傳遞目標 path，此時 window.location.pathname 還是 `/`
+    // （目標 path 在 ?liff.state= 裡，要等 liff.init() 完成 SDK 才還原）。
+    // 因此判斷入口端必須**同時看 pathname 與 liff.state**，否則司機一律被誤判成乘客。
+    const _resolveEntryPath = (): string => {
+      if (typeof window === 'undefined') return '';
+      const rawPath = window.location.pathname;
+      if (rawPath.startsWith('/driver')) return rawPath;
+      const params = new URLSearchParams(window.location.search);
+      const stateOrNext = params.get('liff.state') || params.get('next') || '';
+      if (!stateOrNext) return rawPath;
+      try {
+        return decodeURIComponent(stateOrNext);
+      } catch {
+        return rawPath;
+      }
+    };
+    const isDriverEntry = _resolveEntryPath().startsWith('/driver');
     const liffId = isDriverEntry
       ? (config.lineLiffIdDriver || config.lineLiffIdPassenger)
       : (config.lineLiffIdPassenger || config.lineLiffIdDriver);
@@ -332,19 +347,29 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         }
       }
 
-      // LIFF URL 帶 `?next=/path` 時 navigate 過去（舊版相容 fallback）。
-      // 現行 LIFF endpoint URL 已改成根路徑 `/`，新的 server LIFF URL 全部 path-append（liffId/path），
-      // 不再產生 `?next=...`；此區段僅為了相容**先前已 push 出去的 Flex/postback 訊息**（裡面 URL
-      // 仍是 `?next=...` 格式），確保 user 後續才點仍可正確 navigate。
-      // 守則：next 必須以 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
+      // liff.init() 完成後同步目標路由 ──
+      // 司機點 LINE Flex 深連結（/driver/dispatched/xxx）時，LIFF 用 `liff.state` query
+      // 傳遞目標 path；SDK init 後 window.location 不一定已 navigate 到目標，Vue Router
+      // 也仍停在初始 route（多半 `/`）→ 司機卡在乘客端首頁、看不到訂單。
+      // 解析優先序：liff.state query → next query（舊訊息相容）→ 當前非根 pathname。
+      // 守則：目標必須 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
       try {
-        const next = new URLSearchParams(window.location.search).get('next');
-        if (next && next.startsWith('/') && !next.includes('//') && !next.includes(':')) {
+        const params = new URLSearchParams(window.location.search);
+        const rawTarget = params.get('liff.state') || params.get('next') || '';
+        let target = '';
+        if (rawTarget) {
+          try { target = decodeURIComponent(rawTarget); } catch { target = ''; }
+        } else if (window.location.pathname !== '/') {
+          target = window.location.pathname;
+        }
+        if (target && target.startsWith('/') && !target.includes('//') && !target.includes(':')) {
           const router = useRouter();
-          await router.replace(next);
+          if (target !== router.currentRoute.value.fullPath) {
+            await router.replace(target);
+          }
         }
       } catch (navErr) {
-        console.warn('[StoreAuth] LIFF next-query navigate failed:', navErr);
+        console.warn('[StoreAuth] LIFF path sync failed:', navErr);
       }
     } catch (err) {
       console.error('[StoreAuth] _InitLiffFlow failed:', err);
