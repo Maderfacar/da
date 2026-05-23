@@ -55,35 +55,35 @@
 
 ### Dispatch Flex (3 個)
 
-- [ ] `dispatch.driver-pending`：F1 訂單派發給司機（hybrid：「我要接單」按鈕鎖死、人數+車資 formatter 鎖死）
-- [ ] `dispatch.driver-selected`：F4 司機中選通知
-- [ ] `dispatch.passenger-matched`：F3 配對成功 hard match passenger
+- [x] `dispatch.driver-pending`：F1 訂單派發給司機（hybrid：「我要接單」按鈕鎖死、人數+車資 formatter 鎖死）
+- [x] `dispatch.driver-selected`：F4 司機中選通知
+- [x] `dispatch.passenger-matched`：F3 配對成功 hard match passenger
 
 ### Softmatch Flex (2 個)
 
-- [ ] `softmatch.passenger-choose`：F5 軟配（hybrid：✓/✗ list + 3 個 postback 按鈕 action 鎖死）
-- [ ] `softmatch.passenger-rematching`：F6 重新配對中
+- [x] `softmatch.passenger-choose`：F5 軟配（hybrid：✓/✗ list + 3 個 postback 按鈕 action 鎖死）
+- [x] `softmatch.passenger-rematching`：F6 重新配對中
 
 ### Driver-notify Text (7 個)
 
-- [ ] `driver.order-cancelled-assigned`：T3
-- [ ] `driver.order-cancelled-bidders`：T4
-- [ ] `driver.order-completed-earnings`：T5
-- [ ] `driver.softmatch-rejected`：T6
-- [ ] `driver.application-submitted`：T7
-- [ ] `driver.document-review`：T8（核准/駁回合 1 模板，placeholder `result`）
-- [ ] `driver.vehicle-profile-review`：T9（核准/駁回合 1 模板，placeholder `result`）
+- [x] `driver.order-cancelled-assigned`：T3
+- [x] `driver.order-cancelled-bidders`：T4
+- [x] `driver.order-completed-earnings`：T5
+- [x] `driver.softmatch-rejected`：T6
+- [x] `driver.application-submitted`：T7
+- [x] `driver.document-review`：T8（核准/駁回合 1 模板，placeholder `result`）
+- [x] `driver.vehicle-profile-review`：T9（核准/駁回合 1 模板，placeholder `result`）
 
 ### Hybrid builder
 
-- [ ] `line-soft-match-push.ts` `buildSoftMatchFlex` 加 optional `customLabels` 參數（title/subtitle/matchedHeader/unmatchedHeader/btn*Label）
-- [ ] `line-dispatch-push.ts` `buildDispatchFlex` 加 optional `customLabels` 參數（title/subtitle/欄位 label）
-- [ ] Builder 內 list 渲染 + button action 完全不動
+- [x] `line-soft-match-push.ts` `buildSoftMatchPassengerFlex` 加 optional `customLabels` 參數（title/subtitle/matchedHeader/unmatchedHeader/btn*Label）
+- [x] `line-dispatch-push.ts` `buildDispatchFlex` 加 optional `customLabels` 參數（title/subtitle/orderIdLabel/dateLabel/pickupLabel/dropoffLabel/paxLabel/fareLabel/ctaLabel）
+- [x] Builder 內 list 渲染 + button action 完全不動（人數/車資 formatter、postback data、CTA URI 均沿用既有）
 
 ### Build 驗證
 
-- [ ] `pnpm lint` + `pnpm build` 綠燈
-- [ ] commit + push（不上 prod）
+- [x] `pnpm lint` + `pnpm build` 綠燈
+- [x] commit + push（不上 prod）
 
 ---
 

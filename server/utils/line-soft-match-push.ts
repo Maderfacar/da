@@ -133,15 +133,48 @@ const REMATCH_TEXT: Record<Lang, { title: string; body: string; altText: string 
   ja:    { title: '🔄 再マッチング中', body: '以前の車両は取り下げられました。新しいドライバーを探しています。', altText: '🔄 再マッチング中' },
 };
 
+/**
+ * F5 軟配 Flex 的可編輯外殼（W3 — line-template-expansion）
+ *
+ * Builder 接收後若欄位非空字串則覆蓋對應 i18n 文字；空字串 / undefined 則維持
+ * 既有 `SOFT_MATCH_TEXT[lang]` 預設。✓/✗ list 渲染與 postback action data
+ * （passenger.softMatch.accept/wait/cancel）一律鎖死。
+ *
+ * W3 caller 不傳此參數；W4 caller 從 `loadTemplate('softmatch.passenger-choose', lang)`
+ * 取出 title 等欄位後傳入。
+ */
+export interface SoftMatchCustomLabels {
+  title?: string;
+  subtitle?: string;
+  matchedHeader?: string;
+  unmatchedHeader?: string;
+  btnAcceptLabel?: string;
+  btnWaitLabel?: string;
+  btnCancelLabel?: string;
+}
+
+const _pickLabel = (override: string | undefined, fallback: string): string => {
+  return typeof override === 'string' && override.length > 0 ? override : fallback;
+};
+
 // ── 1. Soft Match 3-button Flex（passenger）────────────────────────────────
 export function buildSoftMatchPassengerFlex(
   payload: SoftMatchPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
+  customLabels?: SoftMatchCustomLabels,
 ): LineMessage {
   const t = SOFT_MATCH_TEXT[lang] ?? SOFT_MATCH_TEXT.zh_tw;
   const orderShort = _orderIdShort(payload.orderId);
   const dateLine = _formatDateTime(payload.pickupDateTime);
+
+  const title = _pickLabel(customLabels?.title, t.title);
+  const subtitle = _pickLabel(customLabels?.subtitle, t.subtitle(payload.matchCount, payload.preferenceCount));
+  const matchedHeader = _pickLabel(customLabels?.matchedHeader, t.matchedHeader);
+  const unmatchedHeader = _pickLabel(customLabels?.unmatchedHeader, t.unmatchedHeader);
+  const btnAccept = _pickLabel(customLabels?.btnAcceptLabel, t.btnAccept);
+  const btnWait = _pickLabel(customLabels?.btnWaitLabel, t.btnWait);
+  const btnCancel = _pickLabel(customLabels?.btnCancelLabel, t.btnCancel);
 
   const matchedLine = payload.matchedTagNames.length > 0
     ? payload.matchedTagNames.join('、')
@@ -159,17 +192,17 @@ export function buildSoftMatchPassengerFlex(
       type: 'box',
       layout: 'vertical',
       contents: [
-        { type: 'text', text: t.title, weight: 'bold', size: 'lg', color: '#D4860A' },
-        { type: 'text', text: t.subtitle(payload.matchCount, payload.preferenceCount), size: 'sm', color: '#666666', wrap: true, margin: 'sm' },
+        { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#D4860A' },
+        { type: 'text', text: subtitle, size: 'sm', color: '#666666', wrap: true, margin: 'sm' },
         { type: 'separator', margin: 'md' },
         { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
         { type: 'text', text: `🚗 ${t.driverLabel}：${payload.driverDisplayName}`, size: 'md', weight: 'bold', wrap: true, margin: 'sm' },
         { type: 'text', text: `📅 ${t.pickupLabel}：${dateLine}`, size: 'sm', margin: 'xs', color: '#333333' },
         { type: 'text', text: `✓ ${t.completedLabel(payload.completedOrders)}`, size: 'xs', color: '#666666', margin: 'xs' },
         { type: 'separator', margin: 'md' },
-        { type: 'text', text: t.matchedHeader, size: 'sm', color: '#50C878', weight: 'bold', margin: 'md' },
+        { type: 'text', text: matchedHeader, size: 'sm', color: '#50C878', weight: 'bold', margin: 'md' },
         { type: 'text', text: matchedLine, size: 'xs', color: '#333333', wrap: true, margin: 'xs' },
-        { type: 'text', text: t.unmatchedHeader, size: 'sm', color: '#D14343', weight: 'bold', margin: 'md' },
+        { type: 'text', text: unmatchedHeader, size: 'sm', color: '#D14343', weight: 'bold', margin: 'md' },
         { type: 'text', text: unmatchedLine, size: 'xs', color: '#333333', wrap: true, margin: 'xs' },
       ],
     },
@@ -188,18 +221,18 @@ export function buildSoftMatchPassengerFlex(
           type: 'button',
           style: 'primary',
           color: '#50C878',
-          action: { type: 'postback', label: t.btnAccept, data: `passenger.softMatch.accept?orderId=${payload.orderId}`, displayText: t.btnAccept },
+          action: { type: 'postback', label: btnAccept, data: `passenger.softMatch.accept?orderId=${payload.orderId}`, displayText: btnAccept },
         },
         {
           type: 'button',
           style: 'primary',
           color: '#D4860A',
-          action: { type: 'postback', label: t.btnWait, data: `passenger.softMatch.wait?orderId=${payload.orderId}`, displayText: t.btnWait },
+          action: { type: 'postback', label: btnWait, data: `passenger.softMatch.wait?orderId=${payload.orderId}`, displayText: btnWait },
         },
         {
           type: 'button',
           style: 'secondary',
-          action: { type: 'postback', label: t.btnCancel, data: `passenger.softMatch.cancel?orderId=${payload.orderId}`, displayText: t.btnCancel },
+          action: { type: 'postback', label: btnCancel, data: `passenger.softMatch.cancel?orderId=${payload.orderId}`, displayText: btnCancel },
         },
       ],
     },

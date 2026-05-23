@@ -57,6 +57,28 @@ export interface DispatchPushEnv {
   liffIdPassenger: string;
 }
 
+/**
+ * F1 訂單派發 Flex 的可編輯外殼（W3 — line-template-expansion）
+ *
+ * Builder 接收後若欄位非空字串則覆蓋對應 hardcoded 文字；空字串 / undefined 則
+ * 維持既有 hardcoded（繁中）。內部 list 渲染（人數摘要 / 車資 formatter）+ 按鈕
+ * action（postback data / URI）一律鎖死。
+ *
+ * W3 caller 不傳此參數；W4 caller 從 `loadTemplate('dispatch.driver-pending')`
+ * 取出 title 等欄位後傳入。
+ */
+export interface DispatchCustomLabels {
+  title?: string;
+  subtitle?: string;
+  orderIdLabel?: string;
+  dateLabel?: string;
+  pickupLabel?: string;
+  dropoffLabel?: string;
+  paxLabel?: string;
+  fareLabel?: string;
+  ctaLabel?: string;
+}
+
 const _orderIdShort = (id: string): string => id.slice(0, 8).toUpperCase();
 
 /**
@@ -95,24 +117,44 @@ const _buildLiffUrl = (liffId: string, subPath: string, fallback: string): strin
 };
 
 // ── 1. 需求單推播（給所有 active driver）──────────────────────────────────
+const _pickLabel = (override: string | undefined, fallback: string): string => {
+  return typeof override === 'string' && override.length > 0 ? override : fallback;
+};
+
 export function buildDispatchFlex(
   payload: DispatchedOrderSummary,
   env: DispatchPushEnv,
+  customLabels?: DispatchCustomLabels,
 ): LineMessage {
   const subPath = `/driver/dispatched/${payload.orderId}`;
   const ctaUri = _buildLiffUrl(env.liffIdDriver, subPath, subPath);
   const orderShort = _orderIdShort(payload.orderId);
   const dateLine = _formatDateTime(payload.pickupDateTime);
 
+  const title = _pickLabel(customLabels?.title, '📦 新訂單派發');
+  const subtitle = _pickLabel(customLabels?.subtitle, '');
+  const orderIdLabel = _pickLabel(customLabels?.orderIdLabel, '🔖');
+  const dateLabel = _pickLabel(customLabels?.dateLabel, '📅');
+  const pickupLabel = _pickLabel(customLabels?.pickupLabel, '📍');
+  const dropoffLabel = _pickLabel(customLabels?.dropoffLabel, '🏁');
+  const paxLabel = _pickLabel(customLabels?.paxLabel, '👥');
+  const fareLabel = _pickLabel(customLabels?.fareLabel, '💰 NT$');
+  const ctaLabel = _pickLabel(customLabels?.ctaLabel, '查看詳情並接單');
+
   const bodyContents: Array<Record<string, unknown>> = [
-    { type: 'text', text: '📦 新訂單派發', weight: 'bold', size: 'lg', color: '#D4860A' },
-    { type: 'separator', margin: 'md' },
-    { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
-    { type: 'text', text: `📅 ${dateLine}`, size: 'md', wrap: true, margin: 'sm' },
-    { type: 'text', text: `📍 ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
-    { type: 'text', text: `🏁 ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs', color: '#333333' },
-    { type: 'text', text: `👥 ${_formatPaxSummary(payload)}  💰 NT$ ${payload.estimatedFare.toLocaleString()}`, size: 'sm', margin: 'md', color: '#666666' },
+    { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#D4860A' },
   ];
+  if (subtitle) {
+    bodyContents.push({ type: 'text', text: subtitle, size: 'sm', wrap: true, color: '#666666', margin: 'sm' });
+  }
+  bodyContents.push(
+    { type: 'separator', margin: 'md' },
+    { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
+    { type: 'text', text: `${dateLabel} ${dateLine}`, size: 'md', wrap: true, margin: 'sm' },
+    { type: 'text', text: `${pickupLabel} ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
+    { type: 'text', text: `${dropoffLabel} ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs', color: '#333333' },
+    { type: 'text', text: `${paxLabel} ${_formatPaxSummary(payload)}  ${fareLabel} ${payload.estimatedFare.toLocaleString()}`, size: 'sm', margin: 'md', color: '#666666' },
+  );
 
   if (payload.preferenceChips.length > 0) {
     const chips = payload.preferenceChips.slice(0, 5).join('、');
@@ -141,7 +183,7 @@ export function buildDispatchFlex(
           type: 'button',
           style: 'primary',
           color: '#D4860A',
-          action: { type: 'uri', label: '查看詳情並接單', uri: ctaUri },
+          action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],
     },
@@ -149,7 +191,7 @@ export function buildDispatchFlex(
 
   return {
     type: 'flex',
-    altText: `📦 新訂單派發 #${orderShort}`,
+    altText: `${title} #${orderShort}`,
     contents: bubble,
   };
 }
