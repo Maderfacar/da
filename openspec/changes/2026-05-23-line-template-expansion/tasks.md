@@ -1,0 +1,219 @@
+# Tasks — LINE Template Expansion
+
+> 批次 1 = Backend Schema + Registry + 觸發點（W2-W4，1 次 prod push）
+> 批次 2 = Frontend UI（W5-W7，1 次 prod push）
+> 批次 3 = 驗收 + Audit + 留尾（W8-W9，1 次 prod push）
+
+---
+
+## W2 — Backend Schema 擴充
+
+### TemplateMeta interface
+
+- [ ] `server/utils/template-registry.ts`：`TemplateCategory` enum 加 `'dispatch' | 'softmatch' | 'driver-notify'`
+- [ ] 加 `TemplateOutputType / TemplateAudience / TemplateI18nMode / TemplateTriggerType` type
+- [ ] `TemplateMeta` interface 加 `outputType / audience / i18nMode / triggerType / triggerEvent / requiresSuperLevel`
+- [ ] 拔除 `fallbackI18nKey` 欄位（registry 5 個既有 entry 同步移除）
+- [ ] `TemplateContent` 拆 `TemplateContentFlex | TemplateContentText`
+
+### buildTemplate helper
+
+- [ ] 加 `buildTemplateText(content, params): LineMessage`（純文字 + placeholder 替換）
+- [ ] 加 `buildTemplate(template, params)`：依 `outputType` 分派到 `buildTemplateFlex` 或 `buildTemplateText`
+- [ ] `loadTemplate` 簽名加 `lang?: 'zh_tw' | 'en' | 'ja' = 'zh_tw'` 參數
+- [ ] Firestore 文件結構改：`content.{zh_tw|en|ja}.{title|body|...}`（i18nMode='multi'）或 `content.zh_tw.{...}`（i18nMode='single'）
+
+### 既有 5 個 order template 升級
+
+- [ ] `order.pending`：加 audience='passenger' / i18nMode='multi' / outputType='flex' / requiresSuperLevel=false / triggerEvent
+- [ ] `order.confirmed`：同上
+- [ ] `order.en_route`：同上
+- [ ] `order.completed`：同上
+- [ ] `order.cancelled`：同上
+- [ ] 移除 5 個 entry 的 `fallbackI18nKey`
+
+### i18n-message.ts 拔除
+
+- [ ] 確認 `getOrderMessage` / `getReferralPushMessage` 的所有 caller 已遷移後再 delete
+- [ ] `server/utils/i18n-message.ts` 整檔 delete（如有獨立 yaml 同步 delete）
+- [ ] `server/utils/referral.ts` 內 `getReferralPushMessage` import / call 同步處理（T14 hardcoded 三語直寫）
+
+### Build 驗證
+
+- [ ] `pnpm lint` 綠燈
+- [ ] `pnpm build` 綠燈
+- [ ] commit + push（不上 prod；批次 1 W4 結束才推）
+
+---
+
+## W3 — Registry 加 12 個 entry + Hybrid builder
+
+### Dispatch Flex (3 個)
+
+- [ ] `dispatch.driver-pending`：F1 訂單派發給司機（hybrid：「我要接單」按鈕鎖死、人數+車資 formatter 鎖死）
+- [ ] `dispatch.driver-selected`：F4 司機中選通知
+- [ ] `dispatch.passenger-matched`：F3 配對成功 hard match passenger
+
+### Softmatch Flex (2 個)
+
+- [ ] `softmatch.passenger-choose`：F5 軟配（hybrid：✓/✗ list + 3 個 postback 按鈕 action 鎖死）
+- [ ] `softmatch.passenger-rematching`：F6 重新配對中
+
+### Driver-notify Text (7 個)
+
+- [ ] `driver.order-cancelled-assigned`：T3
+- [ ] `driver.order-cancelled-bidders`：T4
+- [ ] `driver.order-completed-earnings`：T5
+- [ ] `driver.softmatch-rejected`：T6
+- [ ] `driver.application-submitted`：T7
+- [ ] `driver.document-review`：T8（核准/駁回合 1 模板，placeholder `result`）
+- [ ] `driver.vehicle-profile-review`：T9（核准/駁回合 1 模板，placeholder `result`）
+
+### Hybrid builder
+
+- [ ] `line-soft-match-push.ts` `buildSoftMatchFlex` 加 optional `customLabels` 參數（title/subtitle/matchedHeader/unmatchedHeader/btn*Label）
+- [ ] `line-dispatch-push.ts` `buildDispatchFlex` 加 optional `customLabels` 參數（title/subtitle/欄位 label）
+- [ ] Builder 內 list 渲染 + button action 完全不動
+
+### Build 驗證
+
+- [ ] `pnpm lint` + `pnpm build` 綠燈
+- [ ] commit + push（不上 prod）
+
+---
+
+## W4 — 12 處觸發點改造 + 批次 1 上 prod
+
+### Dispatch / Match 觸發點
+
+- [ ] `line-dispatch-push.ts` `pushDispatchToDriver`：改走 `loadTemplate('dispatch.driver-pending') + buildTemplate + customLabels`
+- [ ] `line-dispatch-push.ts` `pushHardMatchToDriver`：改走 `dispatch.driver-selected`
+- [ ] `line-dispatch-push.ts` `pushHardMatchToPassenger`：改走 `dispatch.passenger-matched`（多語）
+- [ ] `line-soft-match-push.ts` `pushSoftMatchChoice`：改走 `softmatch.passenger-choose`（多語）
+- [ ] `line-soft-match-push.ts` `pushRematching`：改走 `softmatch.passenger-rematching`（多語）
+
+### Driver-notify 觸發點
+
+- [ ] `orders/[orderId].patch.ts:394`：T3 改走 `driver.order-cancelled-assigned`
+- [ ] `line-dispatch-push.ts` `pushOrderCancelledToBidders`：T4 改走 `driver.order-cancelled-bidders`
+- [ ] `orders/[orderId].patch.ts:507`：T5 改走 `driver.order-completed-earnings`
+- [ ] `line-soft-match-push.ts:265`：T6 改走 `driver.softmatch-rejected`
+- [ ] `driver/apply.post.ts:206`：T7 改走 `driver.application-submitted`
+- [ ] `admin/drivers/[uid]/document-review.post.ts:116,137`：T8 改走 `driver.document-review`
+- [ ] `admin/drivers/[uid]/vehicle-profile-review.post.ts:126,153`：T9 改走 `driver.vehicle-profile-review`
+
+### 訂單模板既有觸發點驗證（不動，但要確認 lang 參數加入）
+
+- [ ] `orders/index.post.ts:412` 確認 `loadTemplate('order.pending', lang)` 傳 lang
+- [ ] `orders/[orderId].patch.ts:622` 同上 4 個 status template
+
+### 批次 1 prod 推送
+
+- [ ] `pnpm build` 綠燈
+- [ ] commit + push main（Vercel 自動部署 prod）
+- [ ] Brain AI prod 實測：4 個關鍵場景（建單 / 派發 / 軟配 / 訂單取消）LINE 推播文案正常
+- [ ] 確認後進入批次 2
+
+---
+
+## W5 — Frontend Templates Tab Category
+
+- [ ] `app/pages/admin/line-management/index.vue`：`templates` tab 加 category sub-tab（all / order / dispatch / softmatch / driver-notify / bot-reply）
+- [ ] URL query 同步：`?tab=templates&category=dispatch`
+- [ ] 列表 filter 邏輯：按 category 過濾
+- [ ] bot-replies 整合進 templates tab（舊 `?tab=bot-replies` 做 redirect 到 `?tab=templates&category=bot-reply`）
+
+---
+
+## W6 — TemplateEditor outputType 切換 + 純文字編輯器
+
+- [ ] `app/components/admin/line-management/TemplateEditor.vue`：根據 `template.outputType` 切換編輯器
+- [ ] 純文字編輯器：body textarea + placeholder hint chips + char count
+- [ ] Flex 編輯器既有不動
+- [ ] PUT endpoint payload schema 統一處理（content 結構依 outputType）
+
+---
+
+## W7 — 多語 Tab UI + Badge + 簡易預覽 + 批次 2 上 prod
+
+### Multi-lang Tab
+
+- [ ] `i18nMode='multi'` 模板顯三語 tab（繁中 / EN / JA）
+- [ ] `i18nMode='single'` 模板不顯 tab（編輯區直接是繁中）
+- [ ] 切換 tab 時切換 content 來源（不重新 fetch）
+
+### 列表 Badge
+
+- [ ] 卡片加 4 個 badge：triggerType / outputType / i18nMode / audience
+- [ ] `requiresSuperLevel=true` 且 `!isSuper` 時：[編輯] 按鈕 disabled + tooltip「需 super 權限」
+
+### 簡易卡片預覽
+
+- [ ] Flex 預覽：title / body / cover / CTA（無 LINE Bubble 完整模擬）
+- [ ] Text 預覽：body 原樣顯示 + placeholder 範例對照
+- [ ] 切 placeholder 範例值看渲染（範例值取自 PlaceholderDef.example）
+
+### 批次 2 prod 推送
+
+- [ ] `pnpm build` 綠燈
+- [ ] commit + push main（Vercel 自動部署 prod）
+- [ ] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常
+- [ ] 確認後進入批次 3
+
+---
+
+## W8 — Audit Log + 驗收
+
+### Audit log 寫入
+
+- [ ] `server/routes/nuxt-api/admin/notification-templates/[key].put.ts`：成功後 `writeAuditLog({ action: 'notification_template.update', targetType: 'notification_template', targetId: templateKey, payload: {} })`
+- [ ] `server/routes/nuxt-api/admin/notification-templates/[key]/reset.post.ts`：同上 `action: 'notification_template.reset'`
+
+### Permission enforcement
+
+- [ ] PUT/reset endpoint：讀 `requiresSuperLevel` 後校驗 admin level=super；非 super 回 403 + 三語錯誤訊息
+- [ ] e2e：assistant 嘗試改 `dispatch.driver-pending` → 403
+
+### 12 個模板 e2e 驗證
+
+- [ ] F1 派發 → driver 收 Flex 文案正常
+- [ ] F3 配對成功 → passenger 收 Flex 三語
+- [ ] F4 中選通知 → driver 收 Flex
+- [ ] F5 軟配 → passenger 收 Flex + ✓/✗ list 正常 + 按鈕可點
+- [ ] F6 重新配對 → passenger 收 Flex
+- [ ] T3-T9 → driver/applicant 收純文字、placeholder 替換正常
+
+### Fallback 路徑
+
+- [ ] 模板 enabled=false 時：loadTemplate 回 defaultContent-based template，推播文案為 registry 預設
+- [ ] 模板 doc 不存在時：同上
+
+---
+
+## W9 — OpenSpec Archive + Memory Update + 留尾
+
+### OpenSpec
+
+- [ ] proposal.md / design.md / tasks.md 反映最終狀態（含修改紀錄）
+- [ ] `openspec validate 2026-05-23-line-template-expansion`
+- [ ] `/opsx:archive` 移到 `archive/`
+
+### Memory update
+
+- [ ] 新增 `memory/project-line-template-expansion.md`（OpenSpec 完工記錄）
+- [ ] 更新 `MEMORY.md` index
+
+### 批次 3 prod 推送
+
+- [ ] 最終一次 `pnpm build` 綠燈
+- [ ] commit + push main（如有 audit log 等小改）
+- [ ] Brain AI 最終確認
+
+### Phase 2 留尾（不做、記錄）
+
+- [ ] F8 公告整合進 line-management（need user 拍板）
+- [ ] F9 推薦分享卡整合進 line-management
+- [ ] T15-T17 adminNotify 模板化
+- [ ] R4 軟配 postback 成功訊息模板化
+- [ ] 完整 Flex Simulator
+- [ ] 條件區塊編輯器
