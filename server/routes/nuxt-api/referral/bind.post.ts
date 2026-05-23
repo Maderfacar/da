@@ -14,9 +14,8 @@ import {
   bindReferral,
   REFERRAL_BIND_FAIL_MESSAGES,
   REFERRAL_CODE_REGEX,
-  getReferralPushMessage,
 } from '@@/utils/referral';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 import { sendLinePush } from '@@/utils/line-push';
 
 interface BindReferralBody {
@@ -53,12 +52,19 @@ export default defineEventHandler(async (event) => {
     }
 
     // 歡迎碼推播（fire-and-forget；失敗不影響綁定成立；依被推薦人語系）
+    // W4：getReferralPushMessage 已隨 i18n-message 拔除，hardcoded 三語直寫
     void (async () => {
       try {
         const lang = await getUserLang(db, auth.lineUid);
+        const welcomeText =
+          lang === 'en'
+            ? `👋 Welcome aboard!\nYour welcome discount code: ${result.welcomeCode}\nApply it on your first booking to enjoy the discount.`
+            : lang === 'ja'
+              ? `👋 ようこそ！\n新規限定割引コード：${result.welcomeCode}\n初回のご予約でご利用いただけます。`
+              : `👋 歡迎加入！\n您的新人專屬折扣碼：${result.welcomeCode}\n首次訂車輸入即可折抵，期待為您服務。`;
         await sendLinePush('passenger', auth.lineUid, [{
           type: 'text',
-          text: getReferralPushMessage('referral.welcome', lang, result.welcomeCode),
+          text: welcomeText,
         }]);
       } catch (err) {
         console.error('[referral/bind] welcome push failed:', err);

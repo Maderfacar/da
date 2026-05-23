@@ -13,8 +13,10 @@
  *   3. pushOrderAssignedToDriver(env, payload)             — 中選通知（繁中）
  *   4. pushOrderCancelledToBidders(env, payload, bidders)  — 取消通知（繁中文字）
  */
+import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush, sendLineMulticast, type LineMessage } from '@@/utils/line-push';
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
+import { resolveTemplate, type TemplateContentFlex, type TemplateContentText } from '@@/utils/template-registry';
 
 export interface DispatchedOrderSummary {
   orderId: string;
@@ -76,6 +78,37 @@ export interface DispatchCustomLabels {
   dropoffLabel?: string;
   paxLabel?: string;
   fareLabel?: string;
+  ctaLabel?: string;
+}
+
+/**
+ * F4 中選通知司機 Flex 的可編輯外殼（W4 — line-template-expansion）
+ *
+ * 與 DispatchCustomLabels 相同設計：override 字串非空才覆蓋；內部任務 URI
+ * (`/driver/trip`)、人數摘要 formatter、orderShort / dateLine formatter 一律鎖死。
+ */
+export interface AssignedDriverCustomLabels {
+  title?: string;
+  orderIdLabel?: string;
+  dateLabel?: string;
+  pickupLabel?: string;
+  dropoffLabel?: string;
+  paxLabel?: string;
+  noticeText?: string;
+  ctaLabel?: string;
+}
+
+/**
+ * F3 配對成功通知乘客 Flex 的可編輯外殼（W4 — line-template-expansion）
+ *
+ * 與 SoftMatchCustomLabels 相同設計：override 字串非空才覆蓋；內部車輛資訊 +
+ * CTA URI (`/vehicles/{driverId}`) 一律鎖死。lang fallback 仍由 PASSENGER_ASSIGNED_TEXT
+ * 處理（i18n 預設）。
+ */
+export interface AssignedPassengerCustomLabels {
+  title?: string;
+  matchedHeader?: string;
+  pickupLabel?: string;
   ctaLabel?: string;
 }
 
@@ -197,17 +230,32 @@ export function buildDispatchFlex(
 }
 
 /**
+ * Template → DispatchCustomLabels：只把 title / ctaButton.label 等可由 TemplateContentFlex
+ * 直接表達的欄位傳給 builder；其他 label（orderId/date/pickup/...）目前仍由 builder 維持
+ * 既有 hardcoded（Phase 2 條件區塊編輯器才會擴出可編 sub-label）。
+ */
+const _dispatchLabelsFromTemplate = (tpl: TemplateContentFlex): DispatchCustomLabels => ({
+  title: tpl.title,
+  ctaLabel: tpl.ctaButton?.label,
+});
+
+/**
  * 推需求單給所有 active driver（multicast，自動分批）。
  * fire-and-forget；失敗紀錄在 line_api_errors。
+ *
+ * W4：caller 必須帶 db，內部 resolveTemplate('dispatch.driver-pending') 取 admin 編輯版
+ * （缺值退 registry default）後組 customLabels 餵 buildDispatchFlex。
  */
 export async function pushOrderDispatchToDrivers(
+  db: Firestore,
   payload: DispatchedOrderSummary,
   env: DispatchPushEnv,
   driverLineUserIds: string[],
 ): Promise<{ sent: number; failed: number; total: number }> {
   const targets = driverLineUserIds.filter((id) => !!id);
   if (targets.length === 0) return { sent: 0, failed: 0, total: 0 };
-  const flex = buildDispatchFlex(payload, env);
+  const tpl = (await resolveTemplate(db, 'dispatch.driver-pending')) as TemplateContentFlex;
+  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl));
   const result = await sendLineMulticast('driver', targets, [flex]);
   return { ...result, total: targets.length };
 }
@@ -223,6 +271,7 @@ export function buildAssignedPassengerFlex(
   payload: AssignedPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
+  customLabels?: AssignedPassengerCustomLabels,
 ): LineMessage {
   const t = PASSENGER_ASSIGNED_TEXT[lang] ?? PASSENGER_ASSIGNED_TEXT.zh_tw;
   const subPath = `/vehicles/${payload.driverId}`;
@@ -230,18 +279,23 @@ export function buildAssignedPassengerFlex(
   const orderShort = _orderIdShort(payload.orderId);
   const dateLine = _formatDateTime(payload.pickupDateTime);
 
+  const title = _pickLabel(customLabels?.title, t.header);
+  const matchedHeader = _pickLabel(customLabels?.matchedHeader, t.matchedHeader);
+  const pickupLabel = _pickLabel(customLabels?.pickupLabel, t.pickupLabel);
+  const ctaLabel = _pickLabel(customLabels?.ctaLabel, t.viewVehicle);
+
   const bubble: Record<string, unknown> = {
     type: 'bubble',
     body: {
       type: 'box',
       layout: 'vertical',
       contents: [
-        { type: 'text', text: t.header, weight: 'bold', size: 'lg', color: '#50C878' },
+        { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#50C878' },
         { type: 'separator', margin: 'md' },
-        { type: 'text', text: t.matchedHeader, size: 'sm', wrap: true, margin: 'md' },
+        { type: 'text', text: matchedHeader, size: 'sm', wrap: true, margin: 'md' },
         { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'sm' },
         { type: 'text', text: `🚗 ${payload.driverDisplayName}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
-        { type: 'text', text: `📅 ${t.pickupLabel}：${dateLine}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
+        { type: 'text', text: `📅 ${pickupLabel}：${dateLine}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
       ],
     },
     footer: {
@@ -252,23 +306,37 @@ export function buildAssignedPassengerFlex(
           type: 'button',
           style: 'primary',
           color: '#D4860A',
-          action: { type: 'uri', label: t.viewVehicle, uri: ctaUri },
+          action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],
     },
   };
 
-  return { type: 'flex', altText: t.altText, contents: bubble };
+  return { type: 'flex', altText: title, contents: bubble };
 }
 
+/**
+ * Template → AssignedPassengerCustomLabels：只取 title / ctaButton.label（同 F1 設計）。
+ */
+const _assignedPassengerLabelsFromTemplate = (tpl: TemplateContentFlex): AssignedPassengerCustomLabels => ({
+  title: tpl.title,
+  ctaLabel: tpl.ctaButton?.label,
+});
+
+/**
+ * W4：caller 必須帶 db + lang，內部 resolveTemplate('dispatch.passenger-matched', lang)
+ * 取多語 admin 編輯版（缺值退 registry default 繁中）後組 customLabels。
+ */
 export async function pushOrderAssignedToPassenger(
+  db: Firestore,
   passengerLineUserId: string,
   payload: AssignedPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
 ): Promise<void> {
   if (!passengerLineUserId) return;
-  const flex = buildAssignedPassengerFlex(payload, env, lang);
+  const tpl = (await resolveTemplate(db, 'dispatch.passenger-matched', lang)) as TemplateContentFlex;
+  const flex = buildAssignedPassengerFlex(payload, env, lang, _assignedPassengerLabelsFromTemplate(tpl));
   await sendLinePush('passenger', passengerLineUserId, [flex]);
 }
 
@@ -276,11 +344,21 @@ export async function pushOrderAssignedToPassenger(
 export function buildAssignedDriverFlex(
   payload: AssignedDriverPayload,
   env: DispatchPushEnv,
+  customLabels?: AssignedDriverCustomLabels,
 ): LineMessage {
   const subPath = '/driver/trip';
   const ctaUri = _buildLiffUrl(env.liffIdDriver, subPath, subPath);
   const orderShort = _orderIdShort(payload.orderId);
   const dateLine = _formatDateTime(payload.pickupDateTime);
+
+  const title = _pickLabel(customLabels?.title, '✅ 您已中選');
+  const orderIdLabel = _pickLabel(customLabels?.orderIdLabel, '🔖');
+  const dateLabel = _pickLabel(customLabels?.dateLabel, '📅');
+  const pickupLabel = _pickLabel(customLabels?.pickupLabel, '📍');
+  const dropoffLabel = _pickLabel(customLabels?.dropoffLabel, '🏁');
+  const paxLabel = _pickLabel(customLabels?.paxLabel, '👥');
+  const noticeText = _pickLabel(customLabels?.noticeText, '請於上車時間前準時抵達。');
+  const ctaLabel = _pickLabel(customLabels?.ctaLabel, '查看任務');
 
   const bubble: Record<string, unknown> = {
     type: 'bubble',
@@ -288,14 +366,14 @@ export function buildAssignedDriverFlex(
       type: 'box',
       layout: 'vertical',
       contents: [
-        { type: 'text', text: '✅ 您已中選', weight: 'bold', size: 'lg', color: '#50C878' },
+        { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#50C878' },
         { type: 'separator', margin: 'md' },
-        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
-        { type: 'text', text: `📅 ${dateLine}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
-        { type: 'text', text: `📍 ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm' },
-        { type: 'text', text: `🏁 ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs' },
-        { type: 'text', text: `👥 ${_formatPaxSummary(payload)}`, size: 'sm', margin: 'sm', color: '#666666' },
-        { type: 'text', text: '請於上車時間前準時抵達。', size: 'sm', wrap: true, margin: 'md', color: '#D4860A' },
+        { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
+        { type: 'text', text: `${dateLabel} ${dateLine}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
+        { type: 'text', text: `${pickupLabel} ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm' },
+        { type: 'text', text: `${dropoffLabel} ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs' },
+        { type: 'text', text: `${paxLabel} ${_formatPaxSummary(payload)}`, size: 'sm', margin: 'sm', color: '#666666' },
+        { type: 'text', text: noticeText, size: 'sm', wrap: true, margin: 'md', color: '#D4860A' },
       ],
     },
     footer: {
@@ -306,34 +384,54 @@ export function buildAssignedDriverFlex(
           type: 'button',
           style: 'primary',
           color: '#D4860A',
-          action: { type: 'uri', label: '查看任務', uri: ctaUri },
+          action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],
     },
   };
 
-  return { type: 'flex', altText: `✅ 您已中選 #${orderShort}`, contents: bubble };
+  return { type: 'flex', altText: `${title} #${orderShort}`, contents: bubble };
 }
 
+/**
+ * Template → AssignedDriverCustomLabels：只取 title / ctaButton.label（同 F1 設計）。
+ */
+const _assignedDriverLabelsFromTemplate = (tpl: TemplateContentFlex): AssignedDriverCustomLabels => ({
+  title: tpl.title,
+  ctaLabel: tpl.ctaButton?.label,
+});
+
+/**
+ * W4：caller 必須帶 db，內部 resolveTemplate('dispatch.driver-selected') 取 admin 編輯版
+ * （single 繁中）後組 customLabels 餵 buildAssignedDriverFlex。
+ */
 export async function pushOrderAssignedToDriver(
+  db: Firestore,
   driverLineUserId: string,
   payload: AssignedDriverPayload,
   env: DispatchPushEnv,
 ): Promise<void> {
   if (!driverLineUserId) return;
-  const flex = buildAssignedDriverFlex(payload, env);
+  const tpl = (await resolveTemplate(db, 'dispatch.driver-selected')) as TemplateContentFlex;
+  const flex = buildAssignedDriverFlex(payload, env, _assignedDriverLabelsFromTemplate(tpl));
   await sendLinePush('driver', driverLineUserId, [flex]);
 }
 
-// ── 4. 取消通知 active bidders（簡單 text；繁中）─────────────────────────
+// ── 4. 取消通知 active bidders（純文字 multicast；繁中）─────────────────────
+/**
+ * W4：caller 必須帶 db，內部 resolveTemplate('driver.order-cancelled-bidders') 取 admin 編輯版
+ * （Text 模板，placeholder {orderId}），失敗退 registry default 後 multicast。
+ */
 export async function pushOrderCancelledToBidders(
+  db: Firestore,
   bidderLineUserIds: string[],
   payload: { orderId: string },
 ): Promise<{ sent: number; failed: number; total: number }> {
   const targets = bidderLineUserIds.filter((id) => !!id);
   if (targets.length === 0) return { sent: 0, failed: 0, total: 0 };
   const orderShort = _orderIdShort(payload.orderId);
-  const text = `⚠️ 訂單已取消\n訂單 #${orderShort} 已取消，您的喊單已自動撤回。`;
+  const tpl = (await resolveTemplate(db, 'driver.order-cancelled-bidders')) as TemplateContentText;
+  const text = tpl.body.replace(/\{orderId\}/g, orderShort);
   const result = await sendLineMulticast('driver', targets, [{ type: 'text', text }]);
   return { ...result, total: targets.length };
 }

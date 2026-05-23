@@ -8,7 +8,7 @@
  *
  * D3 拍板：依各 admin 自身 lang 推對應語系文字，取不到 → zh_tw。
  */
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
 
 export type AdminNotifyKey =
   | 'adminNotify.orderCreated'

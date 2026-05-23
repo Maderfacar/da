@@ -19,6 +19,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { readDriverApplication } from '@@/utils/driver-application';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 import { sendLinePush } from '@@/utils/line-push';
+import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
 
 interface ApplyBody {
@@ -203,10 +204,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // 通知司機申請已送出（fire-and-forget；line-push 內部 catch）
-    await sendLinePush('driver', body.lineUserId, [{
-      type: 'text',
-      text: '✅ 司機申請已送出\n您的申請已成功送出，我們將盡快審核您的證件資料。\n審核期間請耐心等候，結果將透過 LINE 通知您。',
-    }]);
+    // W4：改走 driver.application-submitted 模板；applicantName 取自 body.driverName
+    const applyTpl = (await resolveTemplate(db, 'driver.application-submitted')) as TemplateContentText;
+    const applyMsg = buildTemplate(applyTpl, {
+      applicantName: body.driverName ?? '',
+    }, 'text');
+    if (applyMsg) await sendLinePush('driver', body.lineUserId, [applyMsg]);
 
     // ── admin 自動通知：司機申請待審（fire-and-forget）──
     void (async () => {

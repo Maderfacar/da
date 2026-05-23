@@ -5,14 +5,17 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 import { sendLinePush } from '@@/utils/line-push';
-import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
-import { buildTemplateFlex, loadTemplate, type TemplateContentFlex } from '@@/utils/template-registry';
+import { getUserLang } from '@@/utils/user-lang';
+import {
+  buildTemplate,
+  resolveTemplate,
+  type TemplateContentText,
+} from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import { activeBidderLineUids } from '@@/utils/order-dispatch';
 import { pushOrderCancelledToBidders } from '@@/utils/line-dispatch-push';
 import {
   processReferralQualification,
-  getReferralPushMessage,
   getReferralCampaign,
   buildReferralShareFlex,
 } from '@@/utils/referral';
@@ -386,13 +389,15 @@ export default defineEventHandler(async (event) => {
     await ref.update(updates);
 
     // 通知司機訂單已取消（pending 無指派司機則不通知；fire-and-forget）
+    // W4：改走 driver.order-cancelled-assigned 模板；cancelReason 預組「原因：...\n」或空字串
     if (body.orderStatus === 'cancelled' && prevStatus !== 'cancelled' && orderAssignedDriver) {
       const driverLineUid = _stripLinePrefix(orderAssignedDriver);
-      const reasonLine = body.cancelReason ? `原因：${body.cancelReason}\n` : '';
-      await sendLinePush('driver', driverLineUid, [{
-        type: 'text',
-        text: `⚠️ 訂單已取消\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已被取消。\n${reasonLine}如有疑問請聯絡客服。`,
-      }]);
+      const tpl = (await resolveTemplate(db, 'driver.order-cancelled-assigned')) as TemplateContentText;
+      const msg = buildTemplate(tpl, {
+        orderId: orderId.slice(0, 8).toUpperCase(),
+        cancelReason: body.cancelReason ? `原因：${body.cancelReason}\n` : '',
+      }, 'text');
+      if (msg) await sendLinePush('driver', driverLineUid, [msg]);
     }
 
     // Phase 1E：取消「已派發但尚未指派」訂單時，通知所有 active bidders（fire-and-forget）
@@ -406,7 +411,7 @@ export default defineEventHandler(async (event) => {
       if (bidderUids.length > 0) {
         void (async () => {
           try {
-            await pushOrderCancelledToBidders(bidderUids, { orderId });
+            await pushOrderCancelledToBidders(db, bidderUids, { orderId });
           } catch (err) {
             console.error('[orders/patch] cancel bidders push failed:', err);
           }
@@ -502,10 +507,13 @@ export default defineEventHandler(async (event) => {
         }
 
         // 通知司機訂單已完成 + 收入入帳（fire-and-forget）
-        await sendLinePush('driver', driverLineUid, [{
-          type: 'text',
-          text: `✅ 訂單已完成\n訂單 #${orderId.slice(0, 8).toUpperCase()} 已完成。\n收入 NT$ ${fare.toLocaleString()} 已計入今日統計。\n辛苦了！`,
-        }]);
+        // W4：改走 driver.order-completed-earnings 模板；fare 已帶千分位
+        const completedTpl = (await resolveTemplate(db, 'driver.order-completed-earnings')) as TemplateContentText;
+        const completedMsg = buildTemplate(completedTpl, {
+          orderId: orderId.slice(0, 8).toUpperCase(),
+          fare: fare.toLocaleString(),
+        }, 'text');
+        if (completedMsg) await sendLinePush('driver', driverLineUid, [completedMsg]);
       }
     }
 
@@ -517,10 +525,17 @@ export default defineEventHandler(async (event) => {
           const result = await processReferralQualification(db, orderUserId, orderId);
           if (result.ok) {
             // 推播推薦人：朋友完成首趟、附推薦獎勵碼（passenger OA；依推薦人語系）
+            // W4：getReferralPushMessage 已隨 i18n-message 拔除，hardcoded 三語直寫
             const referrerLang = await getUserLang(db, result.referrerUid);
+            const rewardText =
+              referrerLang === 'en'
+                ? `🎉 Your referred friend completed their first trip!\nReferral reward code: ${result.rewardCode}\nApply it on your next booking. Thanks for sharing!`
+                : referrerLang === 'ja'
+                  ? `🎉 ご紹介のお友達が初回送迎を完了しました！\n紹介報酬コード：${result.rewardCode}\n次回のご予約でご利用いただけます。ご紹介ありがとうございます。`
+                  : `🎉 您推薦的好友已完成首趟行程！\n推薦獎勵碼：${result.rewardCode}\n下次訂車輸入即可折抵，感謝您的推薦。`;
             await sendLinePush('passenger', result.referrerUid, [{
               type: 'text',
-              text: getReferralPushMessage('referral.reward', referrerLang, result.rewardCode),
+              text: rewardText,
             }]);
           }
         } catch (err) {
@@ -574,7 +589,7 @@ export default defineEventHandler(async (event) => {
     // 改由 admin 用「通知乘客」按鈕手動推（admin 場景常見：先指派 + 改其他欄位 + 才通知）。
     // driver 自己搶單觸發的 confirmed 仍會推（isAdmin=false / isDriver=true 路徑）。
     if (body.orderStatus && body.orderStatus !== prevStatus) {
-      const PUSH_MAP: Partial<Record<OrderStatus, OrderMessageKey>> = {
+      const PUSH_MAP: Partial<Record<OrderStatus, string>> = {
         confirmed: 'order.confirmed',
         en_route:  'order.en_route',
         completed: 'order.completed',
@@ -590,8 +605,9 @@ export default defineEventHandler(async (event) => {
         void (async () => {
           try {
             const lang = await getUserLang(db, passengerLineUid);
-            // ── P38 Phase 3：先試 template-registry Flex；缺值 fallback i18n-message text ──
-            // 補 driver-related params 給 confirmed / en_route
+            // W4：4 個 status template 全部 outputType='flex' + i18nMode='multi'；
+            // 走 resolveTemplate(lang) + buildTemplate dispatcher，缺值由 resolveTemplate
+            // 自動退 registry default（i18n-message fallback 已拔除）。
             const params: Record<string, string> = {
               orderId: orderId.slice(0, 8).toUpperCase(),
             };
@@ -616,17 +632,9 @@ export default defineEventHandler(async (event) => {
               params.cancelReason = cancelReason;
             }
 
-            // W2：4 個 status template 全部 outputType='flex'；narrow 成 Flex。
-            // W4 後改走 buildTemplate dispatcher + lang 參數。
-            const template = (await loadTemplate(db, messageKey)) as TemplateContentFlex | null;
-            const flex = buildTemplateFlex(template, params);
-            if (flex) {
-              await sendLinePush('passenger', passengerLineUid, [flex]);
-              return;
-            }
-            // Fallback：模板未設定 / disabled / 缺欄位 → 退回 P37 既有 i18n text
-            const text = getOrderMessage(messageKey, lang, { cancelReason });
-            await sendLinePush('passenger', passengerLineUid, [{ type: 'text', text }]);
+            const tpl = await resolveTemplate(db, messageKey, lang);
+            const msg = buildTemplate(tpl, params, 'flex');
+            if (msg) await sendLinePush('passenger', passengerLineUid, [msg]);
           } catch (err) {
             console.error(`[orders/patch] passenger push (${newStatus}) failed:`, err);
           }

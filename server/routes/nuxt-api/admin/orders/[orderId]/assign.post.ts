@@ -22,7 +22,7 @@ import { assignDriver, DispatchGuardError } from '@@/utils/order-dispatch';
 import { decideConfirmationStatus } from '@@/utils/order-soft-match';
 import { buildTagIndex } from '@@/utils/vehicle-profile';
 import { buildDispatchTagIndex, computeDriverMatch } from '~shared/orderDispatch';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 import {
   pushOrderAssignedToPassenger,
   pushOrderAssignedToDriver,
@@ -157,7 +157,7 @@ export default defineEventHandler(async (event) => {
     // fire-and-forget：driver push（不論 soft）
     void (async () => {
       try {
-        await pushOrderAssignedToDriver(driverLineUserId, {
+        await pushOrderAssignedToDriver(db, driverLineUserId, {
           orderId,
           pickupDateTime,
           pickupAddress,
@@ -176,7 +176,7 @@ export default defineEventHandler(async (event) => {
       try {
         if (!passengerLineUid) return;
         if (isSoft) {
-          await pushSoftMatchToPassenger(passengerLineUid, {
+          await pushSoftMatchToPassenger(db, passengerLineUid, {
             orderId,
             pickupDateTime,
             driverDisplayName,
@@ -188,7 +188,7 @@ export default defineEventHandler(async (event) => {
             matchCount: matchResult.matchCount,
           }, env, passengerLang);
         } else {
-          await pushOrderAssignedToPassenger(passengerLineUid, {
+          await pushOrderAssignedToPassenger(db, passengerLineUid, {
             orderId,
             pickupDateTime,
             driverDisplayName,

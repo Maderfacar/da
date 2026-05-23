@@ -23,6 +23,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
+import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
 
 const ALLOWED_DOC_TYPES = ['licenseUrl', 'registrationUrl', 'insuranceUrl', 'goodCitizenUrl'] as const;
 type DocType = typeof ALLOWED_DOC_TYPES[number];
@@ -96,6 +97,9 @@ export default defineEventHandler(async (event) => {
 
     const docLabel = DOC_LABEL_ZH[docType];
 
+    // W4：核准 / 駁回共用 driver.document-review 模板，approved / rejected 各組 reason
+    const docReviewTpl = (await resolveTemplate(db, 'driver.document-review')) as TemplateContentText;
+
     if (body.decision === 'approve') {
       // 覆蓋 production 欄位、刪 pending entry
       await driverRef.update({
@@ -113,10 +117,11 @@ export default defineEventHandler(async (event) => {
       });
 
       // LINE 推給司機（用 driver channel）
-      await sendLinePush('driver', uid, [{
-        type: 'text',
-        text: `✅ 證件審核通過\n您的「${docLabel}」已通過審核，新版證件已生效。`,
-      }]);
+      const approvedMsg = buildTemplate(docReviewTpl, {
+        result: '通過',
+        reason: `您的「${docLabel}」已通過審核，新版證件已生效。`,
+      }, 'text');
+      if (approvedMsg) await sendLinePush('driver', uid, [approvedMsg]);
     } else {
       // reject：標記 status + rejectedAt + rejectReason；保留 url / uploadedAt
       await driverRef.update({
@@ -134,10 +139,11 @@ export default defineEventHandler(async (event) => {
         payload: { docType, decision: 'reject', reason: body.reason!.trim() },
       });
 
-      await sendLinePush('driver', uid, [{
-        type: 'text',
-        text: `⚠️ 證件審核未通過\n您的「${docLabel}」未通過審核。\n退回原因：${body.reason!.trim()}\n請重新上傳正確版本。`,
-      }]);
+      const rejectedMsg = buildTemplate(docReviewTpl, {
+        result: '未通過',
+        reason: `您的「${docLabel}」未通過審核。\n退回原因：${body.reason!.trim()}\n請重新上傳正確版本。`,
+      }, 'text');
+      if (rejectedMsg) await sendLinePush('driver', uid, [rejectedMsg]);
     }
 
     return successResponse({ uid, docType, decision: body.decision });

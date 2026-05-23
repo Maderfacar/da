@@ -27,7 +27,7 @@ import {
 } from '@@/utils/line-dispatch-push';
 import { pushDriverDeselected, pushPassengerRematch } from '@@/utils/line-soft-match-push';
 import { buildTagIndex } from '@@/utils/vehicle-profile';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 
 interface PostBody {
   reason?: string;
@@ -112,7 +112,7 @@ export default defineEventHandler(async (event) => {
     // 1. fire-and-forget：deselect 通知原中選 driver
     void (async () => {
       try {
-        await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime });
+        await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime });
       } catch (err) {
         console.error('[admin/orders/rematch] driver deselect push failed:', err);
       }
@@ -123,7 +123,7 @@ export default defineEventHandler(async (event) => {
       try {
         const drivers = await loadActiveDrivers(db);
         const lineUserIds = drivers.map((d) => d.lineUserId);
-        await pushOrderDispatchToDrivers({
+        await pushOrderDispatchToDrivers(db, {
           orderId,
           pickupDateTime,
           pickupAddress,
@@ -144,7 +144,7 @@ export default defineEventHandler(async (event) => {
       try {
         if (!passengerLineUid) return;
         const lang = await getUserLang(db, passengerLineUid);
-        await pushPassengerRematch(passengerLineUid, { orderId, pickupDateTime }, lang);
+        await pushPassengerRematch(db, passengerLineUid, { orderId, pickupDateTime }, lang);
       } catch (err) {
         console.error('[admin/orders/rematch] passenger rematch push failed:', err);
       }

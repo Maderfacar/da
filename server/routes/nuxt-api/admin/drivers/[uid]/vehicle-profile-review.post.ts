@@ -24,6 +24,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
+import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
 import { buildTagIndex, tagIdsToNames } from '@@/utils/vehicle-profile';
 
 interface PostBody {
@@ -98,6 +99,9 @@ export default defineEventHandler(async (event) => {
       tagNames: tagIdsToNames(pending.tags ?? [], index),
     };
 
+    // W4：核准 / 駁回共用 driver.vehicle-profile-review 模板，approved / rejected 各組 reason
+    const vehicleTpl = (await resolveTemplate(db, 'driver.vehicle-profile-review')) as TemplateContentText;
+
     if (body.decision === 'approve') {
       await driverRef.update({
         vehicleProfile: {
@@ -123,10 +127,11 @@ export default defineEventHandler(async (event) => {
         },
       });
 
-      await sendLinePush('driver', uid, [{
-        type: 'text',
-        text: '✅ 車輛 Profile 審核通過\n您提交的標籤與照片已通過審核並上線。',
-      }]);
+      const approvedMsg = buildTemplate(vehicleTpl, {
+        result: '通過',
+        reason: '您提交的標籤與照片已通過審核並上線。',
+      }, 'text');
+      if (approvedMsg) await sendLinePush('driver', uid, [approvedMsg]);
     } else {
       const reason = body.reason!.trim();
       await driverRef.update({
@@ -150,10 +155,11 @@ export default defineEventHandler(async (event) => {
         },
       });
 
-      await sendLinePush('driver', uid, [{
-        type: 'text',
-        text: `⚠️ 車輛 Profile 審核未通過\n退回原因：${reason}\n您可至 /driver/profile 修改後重新送審。`,
-      }]);
+      const rejectedMsg = buildTemplate(vehicleTpl, {
+        result: '未通過',
+        reason: `退回原因：${reason}\n您可至 /driver/profile 修改後重新送審。`,
+      }, 'text');
+      if (rejectedMsg) await sendLinePush('driver', uid, [rejectedMsg]);
     }
 
     return successResponse({ uid, decision: body.decision });

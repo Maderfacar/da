@@ -18,7 +18,7 @@ import type {
   RichmenuSize,
 } from '@@/utils/line-richmenu';
 import type { LineClient } from '@@/utils/line-channel';
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ export const VALID_SIZES: RichmenuSize[] = [
 ];
 
 /**
- * P42：richmenu 支援的 lang code 列舉（對齊 i18n-message.ts `Lang`）。
+ * P42：richmenu 支援的 lang code 列舉（對齊 user-lang.ts `Lang`）。
  *
  * - 建立 draft 時必選其一（Q1=1a 拍板：每 lang 一獨立 doc）
  * - publish unique 約束：channel × lang × status='active' 同時 ≤ 1

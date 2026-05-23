@@ -15,7 +15,7 @@
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LineClient } from '@@/utils/line-channel';
-import { getUserLang, type Lang } from '@@/utils/i18n-message';
+import { getUserLang, type Lang } from '@@/utils/user-lang';
 import {
   linkRichmenuToUser,
   unlinkRichmenuFromUser,

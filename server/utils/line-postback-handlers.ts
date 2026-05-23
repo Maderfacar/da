@@ -26,7 +26,7 @@ import {
 } from '@@/utils/line-dispatch-push';
 import { pushDriverDeselected, pushPassengerRematch } from '@@/utils/line-soft-match-push';
 import { buildTagIndex } from '@@/utils/vehicle-profile';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 import type { AuditAction } from '@@/utils/audit-log';
 
 export interface PostbackContext {
@@ -287,12 +287,12 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
             .filter((s) => s.length > 0);
 
           void (async () => {
-            try { await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime }); } catch (err) { console.error('[postback wait] deselect push:', err); }
+            try { await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime }); } catch (err) { console.error('[postback wait] deselect push:', err); }
           })();
           void (async () => {
             try {
               const drivers = await loadActiveDrivers(db);
-              await pushOrderDispatchToDrivers({
+              await pushOrderDispatchToDrivers(db, {
                 orderId, pickupDateTime, pickupAddress, dropoffAddress, passengerCount, adultCount, childCount, estimatedFare, preferenceChips,
               }, env, drivers.map((d) => d.lineUserId));
             } catch (err) { console.error('[postback wait] dispatch push:', err); }
@@ -300,7 +300,7 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
           void (async () => {
             try {
               const lang = await getUserLang(db, passengerLineUid);
-              await pushPassengerRematch(passengerLineUid, { orderId, pickupDateTime }, lang);
+              await pushPassengerRematch(db, passengerLineUid, { orderId, pickupDateTime }, lang);
             } catch (err) { console.error('[postback wait] passenger push:', err); }
           })();
           await _writeSoftMatchAudit(db, orderId, 'wait', ctx.lineUid, { reMatchRound, prevDriverId: prevDriverLineUid });
@@ -314,7 +314,7 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
             if (!prevDriverLineUid) return;
             const prevDriverSnap = await db.collection('users').doc(prevDriverLineUid).get();
             const prevDriverLineUserId = (prevDriverSnap.exists ? (prevDriverSnap.data()?.lineUserId as string | undefined) : undefined) ?? prevDriverLineUid;
-            await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime });
+            await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime });
           } catch (err) { console.error('[postback cancel] deselect push:', err); }
         })();
         await _writeSoftMatchAudit(db, orderId, 'cancel', ctx.lineUid, { prevDriverId: prevDriverLineUid });

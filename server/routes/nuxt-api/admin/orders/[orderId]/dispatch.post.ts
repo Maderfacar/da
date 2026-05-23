@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
       try {
         const drivers = await loadActiveDrivers(db);
         const lineUserIds = drivers.map((dv) => dv.lineUserId).filter(Boolean);
-        await pushOrderDispatchToDrivers(payload, getDispatchPushEnv(), lineUserIds);
+        await pushOrderDispatchToDrivers(db, payload, getDispatchPushEnv(), lineUserIds);
       } catch (err) {
         console.error('[admin/orders/dispatch] multicast failed:', err);
       }

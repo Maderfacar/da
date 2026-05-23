@@ -32,7 +32,7 @@ import {
 } from '@@/utils/line-dispatch-push';
 import { pushDriverDeselected, pushPassengerRematch } from '@@/utils/line-soft-match-push';
 import { buildTagIndex } from '@@/utils/vehicle-profile';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 
 type Decision = 'accept' | 'wait' | 'cancel';
 
@@ -170,7 +170,7 @@ export default defineEventHandler(async (event) => {
       // 3 個 fire-and-forget push
       void (async () => {
         try {
-          await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime });
+          await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime });
         } catch (err) {
           console.error('[passenger/soft-match-decision/wait] deselect push failed:', err);
         }
@@ -178,7 +178,7 @@ export default defineEventHandler(async (event) => {
       void (async () => {
         try {
           const drivers = await loadActiveDrivers(db);
-          await pushOrderDispatchToDrivers({
+          await pushOrderDispatchToDrivers(db, {
             orderId,
             pickupDateTime,
             pickupAddress,
@@ -196,7 +196,7 @@ export default defineEventHandler(async (event) => {
       void (async () => {
         try {
           const lang = await getUserLang(db, passengerLineUid);
-          await pushPassengerRematch(passengerLineUid, { orderId, pickupDateTime }, lang);
+          await pushPassengerRematch(db, passengerLineUid, { orderId, pickupDateTime }, lang);
         } catch (err) {
           console.error('[passenger/soft-match-decision/wait] passenger push failed:', err);
         }
@@ -244,7 +244,7 @@ export default defineEventHandler(async (event) => {
         if (!prevDriverLineUid) return;
         const prevDriverSnap = await db.collection('users').doc(prevDriverLineUid).get();
         const prevDriverLineUserId = (prevDriverSnap.exists ? (prevDriverSnap.data()?.lineUserId as string | undefined) : undefined) ?? prevDriverLineUid;
-        await pushDriverDeselected(prevDriverLineUserId, { orderId, pickupDateTime });
+        await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime });
       } catch (err) {
         console.error('[passenger/soft-match-decision/cancel] deselect push failed:', err);
       }

@@ -757,6 +757,22 @@ export async function saveTemplate(
 }
 
 /**
+ * 一律拿到 TemplateContent — 優先 admin 編輯版（loadTemplate），缺值退回 registry.defaultContent。
+ *
+ * W4 後所有 push 觸發點走此 helper，省去各 caller 重複 `?? defaultContent` 寫法。
+ * registry 不存在 key 時 throw（呼叫端傳錯 templateKey 是 dev bug，不應 silent fail）。
+ */
+export async function resolveTemplate(
+  db: Firestore,
+  templateKey: string,
+  lang: TemplateLang = 'zh_tw',
+): Promise<TemplateContent> {
+  const meta = TEMPLATE_REGISTRY[templateKey];
+  if (!meta) throw new Error(`resolveTemplate: unknown template key ${templateKey}`);
+  return (await loadTemplate(db, templateKey, lang)) ?? meta.defaultContent;
+}
+
+/**
  * 還原 template 到 registry.defaultContent（zh_tw）。
  *
  * 多語模板的 en/ja 不在此處清除（W6 多語 editor 上線後可由 admin 個別語系 reset）。

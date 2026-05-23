@@ -7,14 +7,21 @@
  *   - 三語：passenger（zh_tw / en / ja）；driver deselect 通知繁中即可（拍版 #16 沿用）
  *   - postback data 格式：`passenger.softMatch.<decision>?orderId=<orderId>`
  *
- * 4 個 push helper：
- *   1. pushSoftMatchToPassenger(env, payload, lang)     — 配對成功但部分符合 → 3 選 1 Flex
- *   2. pushPassengerRematch(env, payload, lang)         — 訂單重新進入配對佇列
- *   3. pushDriverDeselected(env, payload)               — 原中選 driver 收 deselect 通知（繁中）
+ * 3 個 push helper（W4 後 caller 統一帶 db）：
+ *   1. pushSoftMatchToPassenger(db, lineUid, payload, env, lang)  — F5 軟配 hybrid Flex
+ *   2. pushPassengerRematch(db, lineUid, payload, lang)           — F6 重新配對通知（純 Flex via buildTemplate）
+ *   3. pushDriverDeselected(db, lineUid, payload)                 — T6 原中選 driver 文字通知
  */
+import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush, type LineMessage } from '@@/utils/line-push';
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
 import type { DispatchPushEnv } from '@@/utils/line-dispatch-push';
+import {
+  buildTemplate,
+  resolveTemplate,
+  type TemplateContentFlex,
+  type TemplateContentText,
+} from '@@/utils/template-registry';
 
 export interface SoftMatchPassengerPayload {
   orderId: string;
@@ -127,11 +134,8 @@ const SOFT_MATCH_TEXT: Record<Lang, SoftMatchTexts> = {
   },
 };
 
-const REMATCH_TEXT: Record<Lang, { title: string; body: string; altText: string }> = {
-  zh_tw: { title: '🔄 正在重新為您配對', body: '原車輛已撤回，正在尋找其他符合的司機', altText: '🔄 正在重新配對' },
-  en:    { title: '🔄 Re-matching your order', body: 'The previous vehicle was withdrawn. Searching for another driver.', altText: '🔄 Re-matching' },
-  ja:    { title: '🔄 再マッチング中', body: '以前の車両は取り下げられました。新しいドライバーを探しています。', altText: '🔄 再マッチング中' },
-};
+// REMATCH_TEXT 已隨 buildPassengerRematchFlex 拔除（W4）；多語 fallback 由
+// resolveTemplate('softmatch.passenger-rematching', lang) 內部負責。
 
 /**
  * F5 軟配 Flex 的可編輯外殼（W3 — line-template-expansion）
@@ -241,60 +245,76 @@ export function buildSoftMatchPassengerFlex(
   return { type: 'flex', altText: t.altText, contents: bubble };
 }
 
+/**
+ * Template → SoftMatchCustomLabels：F5 hybrid 模板對映。
+ *
+ * title 可由 TemplateContentFlex.title 直接表達；其他 header/btn label 目前仍由
+ * SOFT_MATCH_TEXT[lang] 維持既有 i18n（Phase 2 條件區塊編輯器才會擴出個別 label）。
+ */
+const _softMatchLabelsFromTemplate = (tpl: TemplateContentFlex): SoftMatchCustomLabels => ({
+  title: tpl.title,
+});
+
+/**
+ * W4：caller 必須帶 db + lang，內部 resolveTemplate('softmatch.passenger-choose', lang)
+ * 取多語 admin 編輯版（缺值退 registry default 繁中）後組 customLabels。
+ */
 export async function pushSoftMatchToPassenger(
+  db: Firestore,
   passengerLineUid: string,
   payload: SoftMatchPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
 ): Promise<void> {
   if (!passengerLineUid) return;
-  const flex = buildSoftMatchPassengerFlex(payload, env, lang);
+  const tpl = (await resolveTemplate(db, 'softmatch.passenger-choose', lang)) as TemplateContentFlex;
+  const flex = buildSoftMatchPassengerFlex(payload, env, lang, _softMatchLabelsFromTemplate(tpl));
   await sendLinePush('passenger', passengerLineUid, [flex]);
 }
 
 // ── 2. 重新配對通知（passenger）─────────────────────────────────────────
-export function buildPassengerRematchFlex(
-  payload: PassengerRematchPayload,
-  lang: Lang,
-): LineMessage {
-  const t = REMATCH_TEXT[lang] ?? REMATCH_TEXT.zh_tw;
-  const orderShort = _orderIdShort(payload.orderId);
-  const dateLine = _formatDateTime(payload.pickupDateTime);
-  const bubble: Record<string, unknown> = {
-    type: 'bubble',
-    body: {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        { type: 'text', text: t.title, weight: 'bold', size: 'lg', color: '#D4860A' },
-        { type: 'separator', margin: 'md' },
-        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
-        { type: 'text', text: t.body, size: 'sm', wrap: true, margin: 'sm' },
-        { type: 'text', text: `📅 ${dateLine}`, size: 'sm', color: '#333333', margin: 'sm' },
-      ],
-    },
-  };
-  return { type: 'flex', altText: t.altText, contents: bubble };
-}
-
+/**
+ * W4：buildPassengerRematchFlex 已拔除，改走 template-registry buildTemplate dispatcher。
+ *
+ * `softmatch.passenger-rematching` 為 pure Flex（無 CTA / 動態 list）；template.title +
+ * placeholder 替換 body（{orderId}、{date}）後由 buildTemplateFlex 渲染。caller 必須帶 db。
+ *
+ * REMATCH_TEXT 多語表已隨之拔除（同 i18n-message.ts 拔除策略）；多語 fallback 由
+ * resolveTemplate(..., lang) 內部負責（找不到 lang 退 zh_tw）。
+ */
 export async function pushPassengerRematch(
+  db: Firestore,
   passengerLineUid: string,
   payload: PassengerRematchPayload,
   lang: Lang,
 ): Promise<void> {
   if (!passengerLineUid) return;
-  const flex = buildPassengerRematchFlex(payload, lang);
-  await sendLinePush('passenger', passengerLineUid, [flex]);
+  const tpl = await resolveTemplate(db, 'softmatch.passenger-rematching', lang);
+  const params: Record<string, string> = {
+    orderId: _orderIdShort(payload.orderId),
+    date: _formatDateTime(payload.pickupDateTime),
+  };
+  const msg = buildTemplate(tpl, params, 'flex');
+  if (msg) await sendLinePush('passenger', passengerLineUid, [msg]);
 }
 
-// ── 3. 原中選 driver 收 deselect 通知（繁中文字；簡單明確）─────────────────
+// ── 3. 原中選 driver 收 deselect 通知（純文字模板；T6）──────────────────────
+/**
+ * W4：改走 driver.softmatch-rejected 純文字模板；caller 必須帶 db。
+ * Builder 已轉到 template-registry buildTemplateText 走 placeholder 替換。
+ */
 export async function pushDriverDeselected(
+  db: Firestore,
   driverLineUserId: string,
   payload: DriverDeselectedPayload,
 ): Promise<void> {
   if (!driverLineUserId) return;
-  const orderShort = _orderIdShort(payload.orderId);
-  const dateLine = _formatDateTime(payload.pickupDateTime);
-  const text = `🔁 訂單已重新分派\n訂單 #${orderShort}（${dateLine}）已重新進入配對佇列，本次未繼續由您接單，請查看接單看板有無其他機會。`;
-  await sendLinePush('driver', driverLineUserId, [{ type: 'text', text }]);
+  const tpl = (await resolveTemplate(db, 'driver.softmatch-rejected')) as TemplateContentText;
+  const params: Record<string, string> = {
+    orderId: _orderIdShort(payload.orderId),
+  };
+  // 模板 placeholder 不含 dateLine；保留 PassengerRematchPayload-like 介面以利 caller 不變
+  void payload.pickupDateTime;
+  const msg = buildTemplate(tpl, params, 'text');
+  if (msg) await sendLinePush('driver', driverLineUserId, [msg]);
 }

@@ -39,9 +39,9 @@
 
 > W2 階段先保留 i18n-message.ts；callers 在 W4 完成 12 個觸發點遷移後一併 delete。
 
-- [ ] 確認 `getOrderMessage` / `getReferralPushMessage` 的所有 caller 已遷移後再 delete *(W4)*
-- [ ] `server/utils/i18n-message.ts` 整檔 delete（如有獨立 yaml 同步 delete） *(W4)*
-- [ ] `server/utils/referral.ts` 內 `getReferralPushMessage` import / call 同步處理（T14 hardcoded 三語直寫） *(W4)*
+- [x] 確認 `getOrderMessage` / `getReferralPushMessage` 的所有 caller 已遷移後再 delete *(W4)*
+- [x] `server/utils/i18n-message.ts` 整檔 delete（Lang / getUserLang 拆到 `user-lang.ts`） *(W4)*
+- [x] `server/utils/referral.ts` 內 `getReferralPushMessage` import / call 同步處理（caller 改 hardcoded 三語直寫） *(W4)*
 
 ### Build 驗證
 
@@ -91,30 +91,31 @@
 
 ### Dispatch / Match 觸發點
 
-- [ ] `line-dispatch-push.ts` `pushDispatchToDriver`：改走 `loadTemplate('dispatch.driver-pending') + buildTemplate + customLabels`
-- [ ] `line-dispatch-push.ts` `pushHardMatchToDriver`：改走 `dispatch.driver-selected`
-- [ ] `line-dispatch-push.ts` `pushHardMatchToPassenger`：改走 `dispatch.passenger-matched`（多語）
-- [ ] `line-soft-match-push.ts` `pushSoftMatchChoice`：改走 `softmatch.passenger-choose`（多語）
-- [ ] `line-soft-match-push.ts` `pushRematching`：改走 `softmatch.passenger-rematching`（多語）
+- [x] F1 `pushOrderDispatchToDrivers`：改走 `resolveTemplate('dispatch.driver-pending') + buildDispatchFlex + customLabels`（caller 改帶 `db`）
+- [x] F4 `pushOrderAssignedToDriver`：擴 `buildAssignedDriverFlex` 加 `AssignedDriverCustomLabels` + 改走 `dispatch.driver-selected`
+- [x] F3 `pushOrderAssignedToPassenger`：擴 `buildAssignedPassengerFlex` 加 `AssignedPassengerCustomLabels` + 改走 `dispatch.passenger-matched`（多語）
+- [x] F5 `pushSoftMatchToPassenger`：改走 `softmatch.passenger-choose`（多語；caller 改帶 `db`）
+- [x] F6 `pushPassengerRematch`：改 `buildTemplate(...,'flex')` + `buildPassengerRematchFlex` 整個拔除 + `REMATCH_TEXT` 多語表拔除
 
 ### Driver-notify 觸發點
 
-- [ ] `orders/[orderId].patch.ts:394`：T3 改走 `driver.order-cancelled-assigned`
-- [ ] `line-dispatch-push.ts` `pushOrderCancelledToBidders`：T4 改走 `driver.order-cancelled-bidders`
-- [ ] `orders/[orderId].patch.ts:507`：T5 改走 `driver.order-completed-earnings`
-- [ ] `line-soft-match-push.ts:265`：T6 改走 `driver.softmatch-rejected`
-- [ ] `driver/apply.post.ts:206`：T7 改走 `driver.application-submitted`
-- [ ] `admin/drivers/[uid]/document-review.post.ts:116,137`：T8 改走 `driver.document-review`
-- [ ] `admin/drivers/[uid]/vehicle-profile-review.post.ts:126,153`：T9 改走 `driver.vehicle-profile-review`
+- [x] `orders/[orderId].patch.ts:394`：T3 改走 `driver.order-cancelled-assigned`（cancelReason 預組「原因：…\n」或空字串）
+- [x] `line-dispatch-push.ts` `pushOrderCancelledToBidders`：T4 改走 `driver.order-cancelled-bidders`（caller 改帶 `db`）
+- [x] `orders/[orderId].patch.ts:507`：T5 改走 `driver.order-completed-earnings`（fare 已帶千分位）
+- [x] `line-soft-match-push.ts:265`：T6 改走 `driver.softmatch-rejected`（caller 改帶 `db`）
+- [x] `driver/apply.post.ts:206`：T7 改走 `driver.application-submitted`（applicantName = body.driverName）
+- [x] `admin/drivers/[uid]/document-review.post.ts:116,137`：T8 改走 `driver.document-review`（approved / rejected 各組 reason）
+- [x] `admin/drivers/[uid]/vehicle-profile-review.post.ts:126,153`：T9 改走 `driver.vehicle-profile-review`（approved / rejected 各組 reason）
 
 ### 訂單模板既有觸發點驗證（不動，但要確認 lang 參數加入）
 
-- [ ] `orders/index.post.ts:412` 確認 `loadTemplate('order.pending', lang)` 傳 lang
-- [ ] `orders/[orderId].patch.ts:622` 同上 4 個 status template
+- [x] `orders/index.post.ts:412` 確認 `resolveTemplate('order.pending', lang)` 傳 lang
+- [x] `orders/[orderId].patch.ts:622` 同上 4 個 status template
 
 ### 批次 1 prod 推送
 
-- [ ] `pnpm build` 綠燈
+- [x] `pnpm lint` 綠燈
+- [x] `pnpm build` 綠燈
 - [ ] commit + push main（Vercel 自動部署 prod）
 - [ ] Brain AI prod 實測：4 個關鍵場景（建單 / 派發 / 軟配 / 訂單取消）LINE 推播文案正常
 - [ ] 確認後進入批次 2

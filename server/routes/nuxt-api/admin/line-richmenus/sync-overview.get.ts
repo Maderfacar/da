@@ -41,7 +41,7 @@ import {
   RICHMENU_VALID_LANGS,
   type LineRichmenuDoc,
 } from '@@/utils/line-richmenu-doc';
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);

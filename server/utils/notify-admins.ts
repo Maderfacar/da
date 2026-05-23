@@ -10,7 +10,7 @@
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
-import { getUserLang } from '@@/utils/i18n-message';
+import { getUserLang } from '@@/utils/user-lang';
 import { getAdminRecipients } from '@@/utils/admin-recipients';
 import { getAdminNotifyText, type AdminNotifyKey, type AdminNotifyParams } from '@@/utils/admin-notify-message';
 

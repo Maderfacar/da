@@ -6,8 +6,8 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
-import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
-import { buildTemplateFlex, loadTemplate, type TemplateContentFlex } from '@@/utils/template-registry';
+import { getUserLang } from '@@/utils/user-lang';
+import { buildTemplate, resolveTemplate } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import {
@@ -403,21 +403,14 @@ export default defineEventHandler(async (event) => {
     };
 
     // fire-and-forget：撈模板 + 推播都不 await，避免阻塞回應
-    // P40 Phase 4 A1 cleanup：直接走 template-registry（不再經 order-pending-flex thin wrapper）
+    // W4：走 resolveTemplate(lang) + buildTemplate dispatcher，缺值由 resolveTemplate
+    // 自動退 registry default（i18n-message fallback 已拔除）。
     void (async () => {
       try {
-        // W2：order.pending outputType='flex'；loadTemplate 回 TemplateContent union，narrow 成 Flex。
-        // W4 後改走 buildTemplate dispatcher + lang 參數。
-        const template = (await loadTemplate(db, 'order.pending')) as TemplateContentFlex | null;
-        const flex = buildTemplateFlex(template, params);
-        if (flex) {
-          await sendLinePush('passenger', lineUserId, [flex]);
-          return;
-        }
-        // Fallback：模板未設定 / disabled → 退回 P37 既有 i18n text（不 break 既有行為）
         const lang = await getUserLang(db, lineUserId);
-        const text = getOrderMessage('order.pending', lang, params);
-        await sendLinePush('passenger', lineUserId, [{ type: 'text', text }]);
+        const tpl = await resolveTemplate(db, 'order.pending', lang);
+        const msg = buildTemplate(tpl, params, 'flex');
+        if (msg) await sendLinePush('passenger', lineUserId, [msg]);
       } catch (err) {
         console.error('[orders/post] pending push failed:', err);
       }

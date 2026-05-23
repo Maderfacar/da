@@ -15,7 +15,7 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 import { randomInt } from 'node:crypto';
 import type { I18nMsg } from '@@/utils/response';
-import type { Lang } from '@@/utils/i18n-message';
+import type { Lang } from '@@/utils/user-lang';
 import type { LineMessage } from '@@/utils/line-push';
 import { mintDiscountCode } from '@@/utils/discount-code';
 
@@ -360,44 +360,15 @@ export function checkReferralBindEligibility(input: ReferralBindCheckInput): Ref
   return { ok: true, referrerUid: input.referrerUid };
 }
 
-// ── Phase 5：推薦 LINE 推播文案 i18n ──────────────────────────
+// ── Phase 5+ FU：完成首單推活動卡 server 端 Flex builder ────────
 
-/**
- * 推薦相關 LINE 推播訊息 key：
- *   - referral.welcome：被推薦人綁定後推播其歡迎碼
- *   - referral.reward：被推薦人完成首單後推播推薦人推薦獎勵碼
+/* W4：getReferralPushMessage 與 REFERRAL_PUSH_MESSAGES 已隨 i18n-message.ts 拔除。
+ * 兩個 caller（referral/bind 歡迎碼 / orders patch 完成首單推薦獎勵碼）改 hardcoded
+ * 三語直寫（推薦獎勵推播屬於 referral domain，不進 notification_templates 模板系統）。
  */
-export type ReferralPushKey = 'referral.welcome' | 'referral.reward';
 
 const REFERRAL_PUSH_VALID_LANGS: Lang[] = ['zh_tw', 'en', 'ja'];
 
-/** 推薦推播訊息表（三語）；{code} 為鑄出的折扣碼。 */
-const REFERRAL_PUSH_MESSAGES: Record<ReferralPushKey, Record<Lang, (code: string) => string>> = {
-  'referral.welcome': {
-    zh_tw: (code) => `👋 歡迎加入！\n您的新人專屬折扣碼：${code}\n首次訂車輸入即可折抵，期待為您服務。`,
-    en: (code) => `👋 Welcome aboard!\nYour welcome discount code: ${code}\nApply it on your first booking to enjoy the discount.`,
-    ja: (code) => `👋 ようこそ！\n新規限定割引コード：${code}\n初回のご予約でご利用いただけます。`,
-  },
-  'referral.reward': {
-    zh_tw: (code) => `🎉 您推薦的好友已完成首趟行程！\n推薦獎勵碼：${code}\n下次訂車輸入即可折抵，感謝您的推薦。`,
-    en: (code) => `🎉 Your referred friend completed their first trip!\nReferral reward code: ${code}\nApply it on your next booking. Thanks for sharing!`,
-    ja: (code) => `🎉 ご紹介のお友達が初回送迎を完了しました！\n紹介報酬コード：${code}\n次回のご予約でご利用いただけます。ご紹介ありがとうございます。`,
-  },
-};
-
-/** 取對應語系的推薦推播文案（lang 缺值 / 非法 → fallback zh_tw）。 */
-export function getReferralPushMessage(
-  key: ReferralPushKey,
-  lang: Lang | string | undefined,
-  code: string,
-): string {
-  const safeLang: Lang = (typeof lang === 'string' && (REFERRAL_PUSH_VALID_LANGS as string[]).includes(lang))
-    ? (lang as Lang)
-    : 'zh_tw';
-  return REFERRAL_PUSH_MESSAGES[key][safeLang](code);
-}
-
-// ── Phase 5+ FU：完成首單推活動卡 server 端 Flex builder ────────
 
 /**
  * shareCard 欄位空值時的三語 fallback 文案。
