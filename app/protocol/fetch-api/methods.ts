@@ -1,11 +1,12 @@
 // 401 處理 —
-// 過去：任何 401 立即 SignOut + navigateTo('/')，導致 LIFF init race 時 token 未就緒就被踢去
-//       乘客端首頁（這是 driver 點 Flex CTA 跳首頁的真實 root cause）。
-// 現在：
-//   1. 首次 401 → 嘗試 refresh idToken（不 SignOut）；下次 request 帶新 token
-//   2. 累積 3 次 401 → 才真的 SignOut（給 LIFF init / token race 充分恢復時間）
-//   3. SignOut 後 redirect 目的地依當前路徑：/driver/* → /driver/auth，其他 → /
-//   4. 任何成功 API call 會 reset counter（在 onResponse / 200 status 處）
+// L1 + L2 兩層保護（c2011a0 引入 OAuth 迴圈後的修復）：
+//   - L1：401 累積 3 次後 SignOut **一律 redirect 到 `/`**（不再 driver-path → /driver/auth）。
+//     先前讓 driver path 跳 /driver/auth 的設計會觸發新一輪 _InitLiffFlow → liff.login() →
+//     OAuth callback → race → 又 401 → 又 SignOut → 又 /driver/auth → 無限登入迴圈。
+//     回到 / 雖然會卡乘客端，但**不迴圈**；配合 L2 從源頭防 401，這個 fallback 幾乎不會觸發。
+//   - L2（在 onRequest 內）：所有 client API 都等 WaitForAuthResolved() 才取 token，
+//     從根本避免 LIFF init / Firebase signin race 造成的偽 401。
+//   - 前兩次 401 仍嘗試 refresh idToken；任何 2xx response 會 reset counter。
 let _unauthorizedHits = 0;
 let _isSigningOut = false;
 const MAX_UNAUTHORIZED_HITS = 3;
@@ -25,16 +26,14 @@ const HandleUnauthorized = async () => {
     return;
   }
 
-  // 累積到 MAX 才真 SignOut
+  // 累積到 MAX 才真 SignOut — L1：一律回 /（避免 driver path 自我觸發 OAuth 迴圈）
   _isSigningOut = true;
   try {
     const authStore = StoreAuth();
-    const isDriverPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
-    await authStore.SignOut(isDriverPath ? '/driver/auth' : '/');
+    await authStore.SignOut('/');
   } catch {
     // SSR 或 Pinia 未初始化時 fallback
-    const isDriverPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/driver');
-    void navigateTo(isDriverPath ? '/driver/auth' : '/');
+    void navigateTo('/');
   }
 };
 
@@ -68,12 +67,17 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
 
         // 請求攔截器
         // P14：改為帶 Firebase ID token；舊有 storeSelf.apiToken 沿用為樣板既有欄位
-        // onRequest 為 async：先取最新 ID token（過期會自動 refresh），失敗則不帶 header
-        // 公開 endpoint（如 line-exchange）即使收到 token 也不檢查；受保護 endpoint 缺 token 會回 401
+        // L2（2026-05-23）：在取 token 前等 WaitForAuthResolved 完成 — 從根本避免 LIFF init /
+        // Firebase signin race 造成的偽 401（layout / page mount 早期觸發的 API 不再帶空 token）。
+        // WaitForAuthResolved 內部有 12s timeout fallback（與 InitAuthFlow safetyTimer 對齊），
+        // 不會永遠 hang。SSR 時跳過（無 window，且 plugin 不會在 SSR 跑）。
         async onRequest({ options }) {
           options.headers = new Headers(options.headers);
           try {
             const authStore = StoreAuth();
+            if (typeof window !== 'undefined') {
+              await authStore.WaitForAuthResolved();
+            }
             const idToken = await authStore.GetFreshIdToken();
             if (idToken) {
               options.headers.set('Authorization', `Bearer ${idToken}`);
@@ -101,7 +105,7 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
         // 錯誤處理
         onResponseError({ response }) {
           // 401 不立即 SignOut，前兩次只 refresh token，累積 3 次才真踢出
-          // SignOut 後 redirect 依路徑（/driver/* → /driver/auth，其他 → /）
+          // L1：SignOut 後一律 redirect 到 / （不再分 driver-path，避免 OAuth 迴圈）
           if (response?.status === 401) void HandleUnauthorized();
           const _res = FilterRes(response, 9998, _showErr);
           return Promise.reject(_res);
