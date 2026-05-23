@@ -303,8 +303,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
 
       // 沒登入 LIFF 且 Firebase 也無 session → 強制 LINE 登入，redirect 後重新執行
+      //
+      // 必須帶 `redirectUri` 回到當前頁：LIFF endpoint URL 為 `/`（P29/P40 path-append 設計），
+      // 不帶 redirectUri 時 LIFF 預設 redirect 回 endpoint `/`（乘客首頁）。
+      // 對 /driver/* 入口而言會看起來像「跳 LINE 一下又被丟回乘客端」、無法登入司機端。
+      // 帶 redirectUri = window.location.href 保留當前路徑（含 query），讓登入完回原頁、
+      // 由原頁的 watch / middleware 接手後續身分跳轉。
       if (!liff.isLoggedIn()) {
-        liff.login();
+        liff.login({ redirectUri: window.location.href });
         return;
       }
 
