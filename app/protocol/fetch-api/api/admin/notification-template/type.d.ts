@@ -82,7 +82,10 @@ export interface NotificationTemplateListRes {
 
 export interface NotificationTemplateDetailRes {
   meta: TemplateMeta;
+  /** legacy 欄位（W2-W6 caller 用）；指向 contentByLang.zh_tw */
   content: TemplateContent | null;
+  /** W7：i18nMode='multi' 三語 tab 用；各 lang 為 null 表 admin 未編輯該語 → fallback registry default */
+  contentByLang: Record<TemplateLang, TemplateContent | null>;
   enabled: boolean;
   updatedBy: string;
   updatedAt: string | null;

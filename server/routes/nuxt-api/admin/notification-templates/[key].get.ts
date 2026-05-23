@@ -1,13 +1,18 @@
 /**
  * GET /nuxt-api/admin/notification-templates/[key]
  *
- * 取單一 template 的 registry meta + Firestore 內容（zh_tw）。
+ * 取單一 template 的 registry meta + Firestore 內容（三語各一）。
  *
  * 回傳：
- *   { meta, content, enabled, updatedBy, updatedAt }
- *   content 為 null 時表示 admin 尚未編輯（套 registry defaultContent fallback）
+ *   {
+ *     meta,
+ *     content,                        // legacy；指向 contentByLang.zh_tw（向後相容 W2-W6 caller）
+ *     contentByLang: { zh_tw, en, ja }, // W7：i18nMode='multi' 時三語 tab 用
+ *     enabled, updatedBy, updatedAt,
+ *   }
+ *   各 lang 的 content 為 null 時表示 admin 尚未編輯該語系（套 registry defaultContent fallback）
  *
- * 文件容錯：先讀新 schema content.zh_tw；找不到時退回 legacy root-level（pre-W2 doc）。
+ * 文件容錯：先讀新 schema content.{lang}；zh_tw 找不到時退回 legacy root-level（pre-W2 doc）。
  *
  * 權限：canBroadcast
  */
@@ -19,23 +24,26 @@ import {
   type TemplateContent,
   type TemplateContentFlex,
   type TemplateContentText,
+  type TemplateLang,
   type TemplateOutputType,
 } from '@@/utils/template-registry';
 
-function _extractAdminContent(
-  data: Record<string, unknown>,
+const LANGS: TemplateLang[] = ['zh_tw', 'en', 'ja'];
+
+/**
+ * 從 sub-doc（單一 lang 的 content）抽出 TemplateContent；缺欄位時回 null（fallback registry default）。
+ * @param fallbackToRoot true 時允許退回 root-level（僅 zh_tw legacy doc 用）
+ */
+function _extractContentFromSubDoc(
+  source: Record<string, unknown> | null,
   outputType: TemplateOutputType,
 ): TemplateContent | null {
-  const contentMap = data.content as Record<string, unknown> | undefined;
-  const zh = contentMap && typeof contentMap === 'object' ? contentMap.zh_tw : null;
-  const source = (zh && typeof zh === 'object' ? zh : data) as Record<string, unknown>;
-
+  if (!source) return null;
   if (outputType === 'text') {
     const body = typeof source.body === 'string' ? source.body : '';
     if (!body) return null;
     return { body } satisfies TemplateContentText;
   }
-
   const title = typeof source.title === 'string' ? source.title : '';
   const body = typeof source.body === 'string' ? source.body : '';
   if (!title || !body) return null;
@@ -45,6 +53,25 @@ function _extractAdminContent(
     coverImageUrl: typeof source.coverImageUrl === 'string' ? source.coverImageUrl : null,
     ctaButton: (source.ctaButton as TemplateContentFlex['ctaButton']) ?? null,
   } satisfies TemplateContentFlex;
+}
+
+function _buildContentByLang(
+  data: Record<string, unknown>,
+  outputType: TemplateOutputType,
+): Record<TemplateLang, TemplateContent | null> {
+  const contentMap = data.content as Record<string, unknown> | undefined;
+  const out: Record<TemplateLang, TemplateContent | null> = { zh_tw: null, en: null, ja: null };
+  for (const lang of LANGS) {
+    const sub = contentMap && typeof contentMap === 'object'
+      ? (contentMap[lang] as Record<string, unknown> | undefined)
+      : undefined;
+    out[lang] = _extractContentFromSubDoc(sub ?? null, outputType);
+  }
+  // zh_tw legacy fallback：若 content.zh_tw 不存在，退回 root-level（pre-W2 doc 形態）
+  if (out.zh_tw === null) {
+    out.zh_tw = _extractContentFromSubDoc(data, outputType);
+  }
+  return out;
 }
 
 export default defineEventHandler(async (event) => {
@@ -70,12 +97,13 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     const snap = await db.collection('notification_templates').doc(key).get();
     const data = snap.exists ? snap.data() ?? {} : {};
-    const content = _extractAdminContent(data, meta.outputType);
+    const contentByLang = _buildContentByLang(data, meta.outputType);
     const updatedAt = (data.updatedAt as { toDate?: () => Date } | undefined)?.toDate?.()?.toISOString() ?? null;
 
     return successResponse({
       meta,
-      content,
+      content: contentByLang.zh_tw,  // legacy 欄位指向 zh_tw（W2-W6 caller 用）
+      contentByLang,                  // W7：i18nMode='multi' 三語 tab 用
       enabled: data.enabled !== false,
       updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
       updatedAt,

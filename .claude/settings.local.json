@@ -40,7 +40,14 @@
       "Bash(xargs grep -l \"legal_pages\\\\|GetAdminLegalPages\\\\|/admin/legal-pages\")",
       "Bash(firebase deploy *)",
       "mcp__firebase__firebase_deploy",
-      "mcp__firebase__firebase_deploy_status"
+      "mcp__firebase__firebase_deploy_status",
+      "Bash(npx vue-tsc *)",
+      "Bash(git rebase *)",
+      "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && git *)",
+      "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && pnpm *)",
+      "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && npx *)",
+      "Bash(npx openspec *)",
+      "Bash(pnpm eslint *)"
     ]
   }
 }

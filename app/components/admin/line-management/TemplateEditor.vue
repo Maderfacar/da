@@ -12,9 +12,15 @@
 import type {
   NotificationTemplateDetailRes,
   PlaceholderDef,
+  PutNotificationTemplateBody,
   TemplateAction,
+  TemplateContent,
   TemplateContentFlex,
+  TemplateContentText,
   TemplateCtaButton,
+  TemplateLang,
+  TemplateMeta,
+  TemplateOutputType,
 } from '@/protocol/fetch-api/api/admin/notification-template';
 import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
 
@@ -41,21 +47,125 @@ const titleInputRef = ref<HTMLInputElement | null>(null);
 const bodyInputRef = ref<HTMLTextAreaElement | null>(null);
 const lastFocusedInput = ref<'title' | 'body' | null>(null);
 
-const form = reactive({
+// W7：多語編輯狀態
+// `form` 永遠對應 activeLang 的編輯值；切 lang 時將當前 form 同步到 langCache[oldLang]，
+// 再把 langCache[newLang] 載回 form。enabled 為 template-level 不分 lang。
+interface LangFormState {
+  title: string;
+  body: string;
+  coverImageUrl: string | null;
+  ctaEnabled: boolean;
+  ctaLabel: string;
+  ctaActionType: 'uri' | 'message' | 'postback';
+  ctaUri: string;
+  ctaMessage: string;
+  ctaPostback: string;
+  ctaPostbackDisplay: string;
+}
+
+const _emptyLangForm = (): LangFormState => ({
   title: '',
   body: '',
-  coverImageUrl: null as string | null,
-  enabled: true,
+  coverImageUrl: null,
   ctaEnabled: false,
   ctaLabel: '',
-  ctaActionType: 'uri' as 'uri' | 'message' | 'postback',
+  ctaActionType: 'uri',
   ctaUri: '',
   ctaMessage: '',
   ctaPostback: '',
   ctaPostbackDisplay: '',
 });
 
+const form = reactive<LangFormState>(_emptyLangForm());
+const enabled = ref(true);
+
+const langCache = reactive<Record<TemplateLang, LangFormState>>({
+  zh_tw: _emptyLangForm(),
+  en: _emptyLangForm(),
+  ja: _emptyLangForm(),
+});
+
+const activeLang = ref<TemplateLang>('zh_tw');
+
 const placeholders = computed<PlaceholderDef[]>(() => detail.value?.meta.placeholders ?? []);
+
+// W6：依 meta.outputType 切換編輯器（flex / text）
+const outputType = computed<TemplateOutputType>(() => detail.value?.meta.outputType ?? 'flex');
+const isFlexMode = computed(() => outputType.value === 'flex');
+const isTextMode = computed(() => outputType.value === 'text');
+
+// W7：i18nMode='multi' 才顯三語 tab
+const isMultiLang = computed(() => detail.value?.meta.i18nMode === 'multi');
+const hasContentInActiveLang = computed(() => {
+  const c = detail.value?.contentByLang?.[activeLang.value];
+  return c !== null && c !== undefined;
+});
+
+const LANGS: TemplateLang[] = ['zh_tw', 'en', 'ja'];
+const LANG_LABEL: Record<TemplateLang, string> = {
+  zh_tw: '繁中',
+  en: 'EN',
+  ja: 'JA',
+};
+
+const _isFlexContent = (c: TemplateContent | null, type: TemplateOutputType): c is TemplateContentFlex =>
+  type === 'flex' && c !== null;
+const _isTextContent = (c: TemplateContent | null, type: TemplateOutputType): c is TemplateContentText =>
+  type === 'text' && c !== null;
+
+const _hydrateFromContent = (
+  content: TemplateContent | null,
+  meta: TemplateMeta,
+  lang: TemplateLang,
+): LangFormState => {
+  const state = _emptyLangForm();
+
+  if (meta.outputType === 'text') {
+    if (_isTextContent(content, 'text')) {
+      state.body = content.body;
+    } else if (lang === 'zh_tw') {
+      const def = meta.defaultContent as TemplateContentText;
+      state.body = def.body;
+    }
+    return state;
+  }
+
+  // Flex
+  if (_isFlexContent(content, 'flex')) {
+    state.title = content.title;
+    state.body = content.body;
+    state.coverImageUrl = content.coverImageUrl;
+    if (content.ctaButton) {
+      state.ctaEnabled = true;
+      state.ctaLabel = content.ctaButton.label;
+      state.ctaActionType = content.ctaButton.action.type;
+      if (content.ctaButton.action.type === 'uri') state.ctaUri = content.ctaButton.action.url;
+      else if (content.ctaButton.action.type === 'message') state.ctaMessage = content.ctaButton.action.text;
+      else {
+        state.ctaPostback = content.ctaButton.action.data;
+        state.ctaPostbackDisplay = content.ctaButton.action.displayText ?? '';
+      }
+    }
+  } else if (lang === 'zh_tw') {
+    // zh_tw 沒 server content 時 fallback 到 registry default；en/ja 維持空白（推送時 server 端 fallback 繁中）
+    const def = meta.defaultContent as TemplateContentFlex;
+    state.title = def.title;
+    state.body = def.body;
+    state.coverImageUrl = def.coverImageUrl;
+    if (def.ctaButton) {
+      state.ctaEnabled = true;
+      state.ctaLabel = def.ctaButton.label;
+      state.ctaActionType = def.ctaButton.action.type;
+      if (def.ctaButton.action.type === 'uri') state.ctaUri = def.ctaButton.action.url;
+      else if (def.ctaButton.action.type === 'message') state.ctaMessage = def.ctaButton.action.text;
+      else {
+        state.ctaPostback = def.ctaButton.action.data;
+        state.ctaPostbackDisplay = def.ctaButton.action.displayText ?? '';
+      }
+    }
+  }
+  return state;
+};
 
 // ── 載入 detail ─────────────────────────────────────────────
 const ApiLoadDetail = async () => {
@@ -67,42 +177,53 @@ const ApiLoadDetail = async () => {
       return;
     }
     detail.value = res.data;
-    // W2：本元件只處理 Flex 模板（W6 才會擴文字模板編輯器）；
-    // 既有 5 個 order template 全部 outputType='flex'，narrowing 安全。
-    const c = res.data.content as TemplateContentFlex | null;
+    // W7：依 meta.i18nMode + contentByLang 建立 langCache，再把 activeLang 的 cache 載到 form
     const meta = res.data.meta;
-    const defaultFlex = meta.defaultContent as TemplateContentFlex;
-    form.title = c?.title ?? defaultFlex.title;
-    form.body = c?.body ?? defaultFlex.body;
-    form.coverImageUrl = c?.coverImageUrl ?? null;
-    form.enabled = res.data.enabled;
-    if (c?.ctaButton) {
-      form.ctaEnabled = true;
-      form.ctaLabel = c.ctaButton.label;
-      form.ctaActionType = c.ctaButton.action.type;
-      if (c.ctaButton.action.type === 'uri') form.ctaUri = c.ctaButton.action.url;
-      if (c.ctaButton.action.type === 'message') form.ctaMessage = c.ctaButton.action.text;
-      if (c.ctaButton.action.type === 'postback') {
-        form.ctaPostback = c.ctaButton.action.data;
-        form.ctaPostbackDisplay = c.ctaButton.action.displayText ?? '';
-      }
-    } else {
-      form.ctaEnabled = false;
-      form.ctaLabel = '';
-      form.ctaActionType = 'uri';
-      form.ctaUri = '';
-      form.ctaMessage = '';
-      form.ctaPostback = '';
-      form.ctaPostbackDisplay = '';
+    const cbl = res.data.contentByLang;
+    enabled.value = res.data.enabled;
+
+    for (const lang of LANGS) {
+      Object.assign(langCache[lang], _hydrateFromContent(cbl?.[lang] ?? null, meta, lang));
     }
+
+    // single 模板強制 zh_tw；multi 預設保留當前 activeLang（若是新模板從 zh_tw 起）
+    if (meta.i18nMode === 'single') {
+      activeLang.value = 'zh_tw';
+    }
+    Object.assign(form, langCache[activeLang.value]);
   } finally {
     loading.value = false;
   }
 };
 
 watch(() => props.templateKey, () => {
+  // 切 template 時重置 activeLang 為 zh_tw
+  activeLang.value = 'zh_tw';
   void ApiLoadDetail();
 }, { immediate: true });
+
+// W7：切 lang 時保存當前 form 到舊 lang 的 cache，再從新 lang 載入
+const _syncFormToCache = (lang: TemplateLang): void => {
+  Object.assign(langCache[lang], {
+    title: form.title,
+    body: form.body,
+    coverImageUrl: form.coverImageUrl,
+    ctaEnabled: form.ctaEnabled,
+    ctaLabel: form.ctaLabel,
+    ctaActionType: form.ctaActionType,
+    ctaUri: form.ctaUri,
+    ctaMessage: form.ctaMessage,
+    ctaPostback: form.ctaPostback,
+    ctaPostbackDisplay: form.ctaPostbackDisplay,
+  });
+};
+
+const ClickSwitchLang = (lang: TemplateLang): void => {
+  if (lang === activeLang.value) return;
+  _syncFormToCache(activeLang.value);
+  activeLang.value = lang;
+  Object.assign(form, langCache[lang]);
+};
 
 // ── Postback whitelist 載入（P40 Phase 1） ─────────────────
 // template 不綁 channel，fetch 全部含 'both'；admin 看 channel 標籤自行選
@@ -187,6 +308,13 @@ const ClickRemoveCover = () => {
 // ── 動作 ─────────────────────────────────────────────────────
 interface ValidationResult { ok: boolean; error?: string }
 const Validate = (): ValidationResult => {
+  // W6：text 模式只 validate body，跳過 title/cover/CTA
+  if (isTextMode.value) {
+    if (!form.body.trim() || form.body.length > BODY_MAX) {
+      return { ok: false, error: `內文需 1-${BODY_MAX} 字` };
+    }
+    return { ok: true };
+  }
   if (!form.title.trim() || form.title.length > TITLE_MAX) {
     return { ok: false, error: `標題需 1-${TITLE_MAX} 字` };
   }
@@ -244,13 +372,26 @@ const ClickSave = async () => {
   }
   submitting.value = true;
   try {
-    const res = await $api.PutNotificationTemplate(props.templateKey, {
-      title: form.title.trim(),
-      body: form.body.trim(),
-      coverImageUrl: form.coverImageUrl,
-      ctaButton: _buildCtaButton(),
-      enabled: form.enabled,
-    });
+    // W7：帶 activeLang（i18nMode='single' 時 server 強制 zh_tw）
+    // W6：text 模式只送 body + enabled；flex 模式維持既有 (含 title/cover/CTA)
+    const lang: TemplateLang = isMultiLang.value ? activeLang.value : 'zh_tw';
+    const payload: PutNotificationTemplateBody = isTextMode.value
+      ? {
+          body: form.body.trim(),
+          enabled: enabled.value,
+          lang,
+        }
+      : {
+          title: form.title.trim(),
+          body: form.body.trim(),
+          coverImageUrl: form.coverImageUrl,
+          ctaButton: _buildCtaButton(),
+          enabled: enabled.value,
+          lang,
+        };
+    // 寫前先 sync 當前 form 到 cache，避免存後 reload 時遺失剛輸入的字
+    _syncFormToCache(activeLang.value);
+    const res = await $api.PutNotificationTemplate(props.templateKey, payload);
     if (res.status.code !== 200) {
       ElMessage({ message: res.status.message?.zh_tw || '儲存失敗', type: 'error' });
       return;
@@ -264,7 +405,10 @@ const ClickSave = async () => {
 };
 
 const ClickReset = async () => {
-  const ok = await UseAsk('還原為系統預設文案？這會清掉目前的封面圖與 CTA 按鈕設定。');
+  const msg = isTextMode.value
+    ? '還原為系統預設文案？目前的自訂內文會被覆蓋。'
+    : '還原為系統預設文案？這會清掉目前的封面圖與 CTA 按鈕設定。';
+  const ok = await UseAsk(msg);
   if (!ok) return;
   submitting.value = true;
   try {
@@ -307,14 +451,30 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
         | 最後編輯：{{ $dayjs(detail.updatedAt).format('YYYY/MM/DD HH:mm') }}
         | （by {{ detail.updatedBy || '—' }}）
 
+    //- ── W7：多語 tab（i18nMode='multi' 才顯）─────────────
+    .TemplateEditor__lang-tabs(v-if="isMultiLang")
+      button.TemplateEditor__lang-tab(
+        v-for="l in LANGS"
+        :key="l"
+        :class="[`is-${l}`, { 'is-active': activeLang === l, 'has-content': detail?.contentByLang?.[l] !== null }]"
+        @click="ClickSwitchLang(l)"
+      )
+        | {{ LANG_LABEL[l] }}
+        span.TemplateEditor__lang-dot(
+          v-if="detail?.contentByLang?.[l] !== null"
+          title="此語系已自訂"
+        )
+    .TemplateEditor__lang-hint(v-if="isMultiLang && !hasContentInActiveLang && activeLang !== 'zh_tw'")
+      | 此語系尚未編輯；推送至此語系 user 時 server 會自動 fallback 為繁中文案。
+
     .TemplateEditor__body
       //- ── 編輯區（左） ──────────────────────────────────
       .TemplateEditor__form
-        //- enabled toggle
+        //- enabled toggle（template 級，不分 lang）
         .TemplateEditor__field.is-row
           label
-            input(type="checkbox" v-model="form.enabled")
-            | &nbsp;啟用模板（取消勾選時推送 fallback 三語 text）
+            input(type="checkbox" v-model="enabled")
+            | &nbsp;啟用模板（取消勾選時推送 registry 預設文案）
 
         //- placeholder chips
         .TemplateEditor__field(v-if="placeholders.length > 0")
@@ -330,8 +490,8 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
               span.label {{ p.label }}
               span.req(v-if="p.required") *
 
-        //- title
-        .TemplateEditor__field
+        //- title（W6：僅 Flex 模式）
+        .TemplateEditor__field(v-if="isFlexMode")
           label 標題（max {{ TITLE_MAX }}）
           input(
             ref="titleInputRef"
@@ -342,9 +502,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
           )
           .TemplateEditor__hint {{ form.title.length }} / {{ TITLE_MAX }}
 
-        //- body
+        //- body（Flex/Text 共用）
         .TemplateEditor__field
-          label 內文（max {{ BODY_MAX }}）
+          label {{ isTextMode ? `內文（純文字，max ${BODY_MAX}）` : `內文（max ${BODY_MAX}）` }}
           textarea(
             ref="bodyInputRef"
             v-model="form.body"
@@ -354,8 +514,8 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
           )
           .TemplateEditor__hint {{ form.body.length }} / {{ BODY_MAX }}
 
-        //- cover image
-        .TemplateEditor__field
+        //- cover image（W6：僅 Flex 模式）
+        .TemplateEditor__field(v-if="isFlexMode")
           label 封面圖（選填）
           .TemplateEditor__cover-wrap
             input(
@@ -383,13 +543,13 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
               ) {{ uploadingCover ? '上傳中...' : '+ 選擇封面圖' }}
               .TemplateEditor__hint JPG / PNG / GIF，≤ 10MB，建議 1024×667 或同比例
 
-        //- CTA button
-        .TemplateEditor__field.is-row
+        //- CTA button（W6：僅 Flex 模式）
+        .TemplateEditor__field.is-row(v-if="isFlexMode")
           label
             input(type="checkbox" v-model="form.ctaEnabled")
             | &nbsp;加 CTA 按鈕
 
-        template(v-if="form.ctaEnabled")
+        template(v-if="isFlexMode && form.ctaEnabled")
           .TemplateEditor__field
             label 按鈕標籤
             input(
@@ -474,16 +634,35 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
       //- ── 預覽區（右） ──────────────────────────────────
       .TemplateEditor__preview
-        .TemplateEditor__preview-label LINE Flex 預覽（變數已套範例值）
-        .TemplateEditor__bubble
+        .TemplateEditor__preview-label
+          | {{ isTextMode ? 'LINE 文字訊息預覽' : 'LINE Flex 預覽' }}（變數已套範例值）
+
+        //- Flex 預覽
+        .TemplateEditor__bubble(v-if="isFlexMode")
           img.TemplateEditor__bubble-hero(v-if="form.coverImageUrl" :src="form.coverImageUrl")
           .TemplateEditor__bubble-body
             .TemplateEditor__bubble-title {{ previewTitle }}
             .TemplateEditor__bubble-text {{ previewBody }}
           .TemplateEditor__bubble-footer(v-if="form.ctaEnabled && form.ctaLabel")
             button.TemplateEditor__bubble-cta {{ previewCtaLabel }}
-        .TemplateEditor__preview-note(v-if="!form.enabled")
-          | ⚠ 模板停用中：推送會 fallback 至 P37 三語 text
+
+        //- Text 預覽（純文字氣泡 + placeholder 範例對照）
+        .TemplateEditor__text-bubble(v-else)
+          .TemplateEditor__text-bubble-content {{ previewBody }}
+
+        //- placeholder 範例對照（Text 模式輔助）
+        .TemplateEditor__placeholder-examples(v-if="isTextMode && placeholders.length > 0")
+          .TemplateEditor__placeholder-examples-label PLACEHOLDER 範例值
+          .TemplateEditor__placeholder-example(
+            v-for="p in placeholders"
+            :key="p.key"
+          )
+            code &lcub;{{ p.key }}&rcub;
+            span.arrow →
+            span.example {{ p.example }}
+
+        .TemplateEditor__preview-note(v-if="!enabled")
+          | ⚠ 模板停用中：推送會 fallback 至 registry defaultContent
 </template>
 
 <style lang="scss" scoped>
@@ -544,6 +723,70 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 11px;
   color: $muted;
   margin-top: 4px;
+}
+
+// ── W7：Multi-lang Tab ─────────────────────────────────────
+.TemplateEditor__lang-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  border-bottom: 1px solid $border;
+}
+
+.TemplateEditor__lang-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 8px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: $muted;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { color: rgba(0, 0, 0, 0.75); }
+
+  &.is-active {
+    color: $amber;
+    border-bottom-color: $amber;
+  }
+  &.is-zh_tw.is-active {
+    color: #b91c1c;
+    border-bottom-color: #b91c1c;
+  }
+  &.is-en.is-active {
+    color: #4338ca;
+    border-bottom-color: #4338ca;
+  }
+  &.is-ja.is-active {
+    color: #be185d;
+    border-bottom-color: #be185d;
+  }
+}
+
+.TemplateEditor__lang-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #059669;
+  display: inline-block;
+}
+
+.TemplateEditor__lang-hint {
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(212, 134, 10, 0.06);
+  border: 1px dashed rgba(212, 134, 10, 0.3);
+  border-radius: 6px;
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: $amber;
+  line-height: 1.6;
 }
 
 // ── Body ────────────────────────────────────────────────────
@@ -833,6 +1076,67 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
+}
+
+// W6：純文字預覽（LINE 文字訊息氣泡）
+.TemplateEditor__text-bubble {
+  background: #d4e7c5;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  max-width: 100%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.TemplateEditor__text-bubble-content {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  color: #1a1814;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.TemplateEditor__placeholder-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: rgba(212, 134, 10, 0.06);
+  border: 1px dashed rgba(212, 134, 10, 0.3);
+  border-radius: 8px;
+}
+
+.TemplateEditor__placeholder-examples-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: $amber;
+  margin-bottom: 2px;
+}
+
+.TemplateEditor__placeholder-example {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+
+  code {
+    font-family: monospace;
+    color: $amber;
+    background: rgba(212, 134, 10, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .arrow {
+    color: $muted;
+  }
+  .example {
+    color: rgba(0, 0, 0, 0.75);
+  }
 }
 
 .TemplateEditor__preview-note {

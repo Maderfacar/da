@@ -26,13 +26,24 @@ import type { ApiErrorDto } from '@/protocol/fetch-api/api/admin/line-api-error'
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
-type MainTab = 'richmenu' | 'templates' | 'bot-replies' | 'diagnostics';
+type MainTab = 'richmenu' | 'templates' | 'diagnostics';
 
 const MAIN_TABS: Array<{ key: MainTab; label: string; ready: boolean }> = [
   { key: 'richmenu', label: '圖文選單', ready: true },
-  { key: 'templates', label: 'Flex 模板', ready: true },
-  { key: 'bot-replies', label: '自動回覆', ready: true },
+  { key: 'templates', label: '訊息模板', ready: true },
   { key: 'diagnostics', label: '診斷', ready: true },
+];
+
+// W5：templates tab 下的 category sub-tab（含 bot-reply 為自動回覆，原 bot-replies 主 tab 整合進來）
+type CategoryKey = 'all' | 'order' | 'dispatch' | 'driver-notify' | 'softmatch' | 'bot-reply';
+
+const CATEGORY_TABS: Array<{ key: CategoryKey; label: string }> = [
+  { key: 'all', label: '全部' },
+  { key: 'order', label: '📦 訂單' },
+  { key: 'dispatch', label: '🚖 派發/配對' },
+  { key: 'driver-notify', label: '👤 司機通知' },
+  { key: 'softmatch', label: '🔁 軟配' },
+  { key: 'bot-reply', label: '🤖 自動回覆' },
 ];
 
 const BOT_REPLY_TYPE_LABEL: Record<'follow' | 'text', string> = {
@@ -52,13 +63,34 @@ const router = useRouter();
 
 const InitMainTab = (): MainTab => {
   const q = route.query.tab as string | undefined;
+  // W5：?tab=bot-replies 舊 URL → 自動 redirect 到 templates（category 由 InitCategory 處理）
+  if (q === 'bot-replies') return 'templates';
   return MAIN_TABS.find((t) => t.key === q)?.key ?? 'richmenu';
 };
 
+const InitCategory = (): CategoryKey => {
+  const tabQ = route.query.tab as string | undefined;
+  if (tabQ === 'bot-replies') return 'bot-reply';
+  const catQ = route.query.category as string | undefined;
+  return CATEGORY_TABS.find((c) => c.key === catQ)?.key ?? 'all';
+};
+
 const activeMainTab = ref<MainTab>(InitMainTab());
+const activeCategory = ref<CategoryKey>(InitCategory());
 
 watch(activeMainTab, (tab) => {
-  void router.replace({ query: { ...route.query, tab } });
+  const nextQuery: Record<string, string> = { ...route.query, tab };
+  if (tab === 'templates') {
+    nextQuery.category = activeCategory.value;
+  } else {
+    delete nextQuery.category;
+  }
+  void router.replace({ query: nextQuery });
+});
+
+watch(activeCategory, (cat) => {
+  if (activeMainTab.value !== 'templates') return;
+  void router.replace({ query: { ...route.query, tab: 'templates', category: cat } });
 });
 
 // ── Richmenu tab：channel × lang 子 tab + 列表 ──────────────
@@ -272,17 +304,22 @@ const ApiLoadTemplates = async () => {
       return;
     }
     templates.value = res.data?.items ?? [];
-    if (!selectedTemplateKey.value && templates.value.length > 0) {
-      selectedTemplateKey.value = templates.value[0]!.meta.templateKey;
-    }
+    EnsureSelectedTemplateInCategory();
   } finally {
     templatesLoading.value = false;
   }
 };
 
+// W5：依 activeCategory 過濾 registry templates；bot-reply 走獨立 BotReplies UI 不在這
+const FilteredTemplates = computed<NotificationTemplateItem[]>(() => {
+  if (activeCategory.value === 'all') return templates.value;
+  if (activeCategory.value === 'bot-reply') return [];
+  return templates.value.filter((t) => t.meta.category === activeCategory.value);
+});
+
 const TemplatesByCategory = computed(() => {
   const groups = new Map<string, NotificationTemplateItem[]>();
-  for (const t of templates.value) {
+  for (const t of FilteredTemplates.value) {
     const cat = t.meta.category;
     if (!groups.has(cat)) groups.set(cat, []);
     groups.get(cat)!.push(t);
@@ -292,10 +329,73 @@ const TemplatesByCategory = computed(() => {
 
 const CATEGORY_LABEL: Record<string, string> = {
   order: '訂單事件',
+  dispatch: '派發/配對',
+  softmatch: '軟性配對',
+  'driver-notify': '司機通知',
   announcement: '公告',
   bot: 'Bot 自動回覆',
   broadcast: '廣播',
 };
+
+// W7：列表 badge label + super 鎖
+const storeSelf = StoreSelf();
+
+const TRIGGER_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
+  auto: { icon: '📅', label: '自動' },
+  manual: { icon: '✋', label: '手動' },
+};
+const OUTPUT_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
+  flex: { icon: '🎴', label: 'Flex' },
+  text: { icon: '💬', label: '文字' },
+};
+const I18N_MODE_BADGE: Record<string, { icon: string; label: string }> = {
+  multi: { icon: '🌏', label: '三語' },
+  single: { icon: '🇹🇼', label: '繁中' },
+};
+const AUDIENCE_BADGE: Record<string, { icon: string; label: string }> = {
+  passenger: { icon: '🧑‍✈️', label: '乘客' },
+  driver: { icon: '🚗', label: '司機' },
+  admin: { icon: '👤', label: '管理員' },
+  both: { icon: '🌐', label: '全體' },
+};
+
+const IsTemplateLocked = (t: NotificationTemplateItem): boolean =>
+  t.meta.requiresSuperLevel && !storeSelf.isSuper;
+
+const ClickSelectTemplate = (t: NotificationTemplateItem): void => {
+  if (IsTemplateLocked(t)) {
+    ElMessage({ message: '此模板需 super 級別才能編輯', type: 'warning' });
+    return;
+  }
+  selectedTemplateKey.value = t.meta.templateKey;
+};
+
+// 切 category 時：保留當前 selection 若仍在過濾列表中，否則 reset 到第一筆（優先非鎖定）
+const EnsureSelectedTemplateInCategory = (): void => {
+  if (activeCategory.value === 'bot-reply') {
+    selectedTemplateKey.value = '';
+    return;
+  }
+  const list = FilteredTemplates.value;
+  if (list.length === 0) {
+    selectedTemplateKey.value = '';
+    return;
+  }
+  const stillValid = list.some((t) => t.meta.templateKey === selectedTemplateKey.value);
+  if (!stillValid) {
+    const firstUnlocked = list.find((t) => !IsTemplateLocked(t));
+    selectedTemplateKey.value = (firstUnlocked ?? list[0]!).meta.templateKey;
+  }
+};
+
+watch(activeCategory, (cat) => {
+  if (cat === 'bot-reply') {
+    selectedTemplateKey.value = '';
+    if (botReplies.value.length === 0) void ApiLoadBotReplies();
+    return;
+  }
+  EnsureSelectedTemplateInCategory();
+});
 
 const OnTemplateSaved = () => {
   void ApiLoadTemplates();
@@ -505,11 +605,11 @@ const ClickCleanupOrphan = async (channel: LineClient, orphan: { richMenuId: str
 };
 
 watch(activeMainTab, (tab) => {
-  if (tab === 'templates' && templates.value.length === 0) {
-    void ApiLoadTemplates();
-  }
-  if (tab === 'bot-replies' && botReplies.value.length === 0) {
-    void ApiLoadBotReplies();
+  if (tab === 'templates') {
+    if (templates.value.length === 0) void ApiLoadTemplates();
+    if (activeCategory.value === 'bot-reply' && botReplies.value.length === 0) {
+      void ApiLoadBotReplies();
+    }
   }
   if (tab === 'diagnostics') {
     if (diagnostics.passenger === null) void ApiLoadDiagnostics('passenger');
@@ -525,12 +625,16 @@ const FormatBytes = (bytes: number | null): string => {
 const FormatSize = (s: LineRichmenuDto['imageSize']): string => (s ? `${s.width}×${s.height}` : '—');
 
 onMounted(() => {
+  // W5：若初始 URL 為舊版 ?tab=bot-replies，cleanup query 為 ?tab=templates&category=bot-reply
+  if (route.query.tab === 'bot-replies') {
+    void router.replace({ query: { ...route.query, tab: 'templates', category: 'bot-reply' } });
+  }
   void ApiLoadList();
   if (activeMainTab.value === 'templates') {
     void ApiLoadTemplates();
-  }
-  if (activeMainTab.value === 'bot-replies') {
-    void ApiLoadBotReplies();
+    if (activeCategory.value === 'bot-reply') {
+      void ApiLoadBotReplies();
+    }
   }
   if (activeMainTab.value === 'diagnostics') {
     void ApiLoadDiagnostics('passenger');
@@ -672,78 +776,117 @@ onMounted(() => {
               @click="ClickDelete(m)"
             ) 刪除
 
-  //- ── Templates Tab ────────────────────────────────────
+  //- ── Templates Tab（W5：含 category sub-tab + bot-reply 整合）─────
   .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'templates'")
-    .PageAdminLineManagement__loading(v-if="templatesLoading") 載入中...
-    template(v-else)
-      .PageAdminLineManagement__templates
-        //- 左側 list（依 category 分組）
-        aside.PageAdminLineManagement__template-list
-          template(v-for="[cat, items] in TemplatesByCategory" :key="cat")
-            .PageAdminLineManagement__template-cat-label {{ CATEGORY_LABEL[cat] || cat }}
-            button.PageAdminLineManagement__template-entry(
-              v-for="t in items"
-              :key="t.meta.templateKey"
-              :class="{ 'is-active': selectedTemplateKey === t.meta.templateKey, 'is-customized': t.content !== null, 'is-disabled': !t.enabled }"
-              @click="selectedTemplateKey = t.meta.templateKey"
+    //- W5：category sub-tab
+    .PageAdminLineManagement__category-tabs
+      button.PageAdminLineManagement__category-tab(
+        v-for="c in CATEGORY_TABS"
+        :key="c.key"
+        :class="[`is-${c.key}`, { 'is-active': activeCategory === c.key }]"
+        @click="activeCategory = c.key"
+      ) {{ c.label }}
+
+    //- bot-reply category → BotReplies UI
+    template(v-if="activeCategory === 'bot-reply'")
+      .PageAdminLineManagement__loading(v-if="botRepliesLoading") 載入中...
+      template(v-else)
+        .PageAdminLineManagement__bot-intro
+          | 編輯後 LINE 端會優先用 admin 設定的文案；停用或留空則 fallback 系統預設。
+        .PageAdminLineManagement__bot-rows
+          .PageAdminLineManagement__bot-row(
+            v-for="item in botReplies"
+            :key="item.replyKey"
+            :class="`is-${item.client}`"
+          )
+            .PageAdminLineManagement__bot-head
+              span.PageAdminLineManagement__bot-channel(:class="`is-${item.client}`")
+                | {{ item.client === 'passenger' ? '乘客 OA' : '司機 OA' }}
+              span.PageAdminLineManagement__bot-type-label {{ BOT_REPLY_TYPE_LABEL[item.type] }}
+              span.PageAdminLineManagement__bot-customized(v-if="item.isCustomized") 已自訂
+              span.PageAdminLineManagement__bot-flex
+              label.PageAdminLineManagement__bot-enabled
+                input(type="checkbox" v-model="item.enabled")
+                | &nbsp;啟用
+            .PageAdminLineManagement__bot-desc {{ BOT_REPLY_TYPE_DESC[item.type] }}
+            textarea.PageAdminLineManagement__bot-text(
+              v-model="item.text"
+              rows="4"
+              :maxlength="TEXT_MAX"
+              placeholder="輸入要推送的文案（純文字，可含換行 / emoji）"
             )
-              span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
-              span.PageAdminLineManagement__template-dot(
-                :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
-              )
+            .PageAdminLineManagement__bot-foot
+              span.PageAdminLineManagement__bot-meta
+                | {{ item.text.length }} / {{ TEXT_MAX }}
+                template(v-if="item.updatedAt")
+                  | &nbsp; · &nbsp;最後編輯 {{ $dayjs(item.updatedAt).format('YYYY/MM/DD HH:mm') }}
+              span.PageAdminLineManagement__bot-actions
+                button.PageAdminLineManagement__btn.is-toggle(
+                  :disabled="savingBotReplyKey === item.replyKey"
+                  @click="ClickResetBotReply(item)"
+                ) 還原預設
+                button.PageAdminLineManagement__btn.is-approve(
+                  :disabled="savingBotReplyKey === item.replyKey"
+                  @click="ClickSaveBotReply(item)"
+                ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
 
-        //- 右側 editor
-        main.PageAdminLineManagement__template-editor
-          AdminLineManagementTemplateEditor(
-            v-if="selectedTemplateKey"
-            :template-key="selectedTemplateKey"
-            @saved="OnTemplateSaved"
-          )
-          .PageAdminLineManagement__placeholder(v-else)
-            span.PageAdminLineManagement__placeholder-text 選擇左側模板開始編輯
-
-  //- ── Bot Replies Tab（P40 Phase 2） ───────────────────
-  .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'bot-replies'")
-    .PageAdminLineManagement__loading(v-if="botRepliesLoading") 載入中...
+    //- 其他 category → registry templates UI
     template(v-else)
-      .PageAdminLineManagement__bot-intro
-        | 編輯後 LINE 端會優先用 admin 設定的文案；停用或留空則 fallback 系統預設。
-      .PageAdminLineManagement__bot-rows
-        .PageAdminLineManagement__bot-row(
-          v-for="item in botReplies"
-          :key="item.replyKey"
-          :class="`is-${item.client}`"
-        )
-          .PageAdminLineManagement__bot-head
-            span.PageAdminLineManagement__bot-channel(:class="`is-${item.client}`")
-              | {{ item.client === 'passenger' ? '乘客 OA' : '司機 OA' }}
-            span.PageAdminLineManagement__bot-type-label {{ BOT_REPLY_TYPE_LABEL[item.type] }}
-            span.PageAdminLineManagement__bot-customized(v-if="item.isCustomized") 已自訂
-            span.PageAdminLineManagement__bot-flex
-            label.PageAdminLineManagement__bot-enabled
-              input(type="checkbox" v-model="item.enabled")
-              | &nbsp;啟用
-          .PageAdminLineManagement__bot-desc {{ BOT_REPLY_TYPE_DESC[item.type] }}
-          textarea.PageAdminLineManagement__bot-text(
-            v-model="item.text"
-            rows="4"
-            :maxlength="TEXT_MAX"
-            placeholder="輸入要推送的文案（純文字，可含換行 / emoji）"
-          )
-          .PageAdminLineManagement__bot-foot
-            span.PageAdminLineManagement__bot-meta
-              | {{ item.text.length }} / {{ TEXT_MAX }}
-              template(v-if="item.updatedAt")
-                | &nbsp; · &nbsp;最後編輯 {{ $dayjs(item.updatedAt).format('YYYY/MM/DD HH:mm') }}
-            span.PageAdminLineManagement__bot-actions
-              button.PageAdminLineManagement__btn.is-toggle(
-                :disabled="savingBotReplyKey === item.replyKey"
-                @click="ClickResetBotReply(item)"
-              ) 還原預設
-              button.PageAdminLineManagement__btn.is-approve(
-                :disabled="savingBotReplyKey === item.replyKey"
-                @click="ClickSaveBotReply(item)"
-              ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
+      .PageAdminLineManagement__loading(v-if="templatesLoading") 載入中...
+      template(v-else)
+        .PageAdminLineManagement__templates
+          //- 左側 list（依 category 分組；單一 category 時不顯 group label）
+          aside.PageAdminLineManagement__template-list
+            .PageAdminLineManagement__template-empty(v-if="FilteredTemplates.length === 0")
+              span 此分類下沒有模板
+            template(v-else-if="activeCategory === 'all'")
+              template(v-for="[cat, items] in TemplatesByCategory" :key="cat")
+                .PageAdminLineManagement__template-cat-label {{ CATEGORY_LABEL[cat] || cat }}
+                button.PageAdminLineManagement__template-entry(
+                  v-for="t in items"
+                  :key="t.meta.templateKey"
+                  :class="{ 'is-active': selectedTemplateKey === t.meta.templateKey, 'is-customized': t.content !== null, 'is-disabled': !t.enabled, 'is-locked': IsTemplateLocked(t) }"
+                  :title="IsTemplateLocked(t) ? '需 super 權限' : ''"
+                  @click="ClickSelectTemplate(t)"
+                )
+                  span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
+                  span.PageAdminLineManagement__template-badges
+                    span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
+                    span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
+                    span.PageAdminLineManagement__template-badge(:title="I18N_MODE_BADGE[t.meta.i18nMode].label") {{ I18N_MODE_BADGE[t.meta.i18nMode].icon }}
+                    span.PageAdminLineManagement__template-badge(:title="AUDIENCE_BADGE[t.meta.audience].label") {{ AUDIENCE_BADGE[t.meta.audience].icon }}
+                    span.PageAdminLineManagement__template-badge.is-lock(v-if="IsTemplateLocked(t)" title="需 super 權限") 🔒
+                  span.PageAdminLineManagement__template-dot(
+                    :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
+                  )
+            template(v-else)
+              button.PageAdminLineManagement__template-entry(
+                v-for="t in FilteredTemplates"
+                :key="t.meta.templateKey"
+                :class="{ 'is-active': selectedTemplateKey === t.meta.templateKey, 'is-customized': t.content !== null, 'is-disabled': !t.enabled, 'is-locked': IsTemplateLocked(t) }"
+                :title="IsTemplateLocked(t) ? '需 super 權限' : ''"
+                @click="ClickSelectTemplate(t)"
+              )
+                span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
+                span.PageAdminLineManagement__template-badges
+                  span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
+                  span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
+                  span.PageAdminLineManagement__template-badge(:title="I18N_MODE_BADGE[t.meta.i18nMode].label") {{ I18N_MODE_BADGE[t.meta.i18nMode].icon }}
+                  span.PageAdminLineManagement__template-badge(:title="AUDIENCE_BADGE[t.meta.audience].label") {{ AUDIENCE_BADGE[t.meta.audience].icon }}
+                  span.PageAdminLineManagement__template-badge.is-lock(v-if="IsTemplateLocked(t)" title="需 super 權限") 🔒
+                span.PageAdminLineManagement__template-dot(
+                  :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
+                )
+
+          //- 右側 editor
+          main.PageAdminLineManagement__template-editor
+            AdminLineManagementTemplateEditor(
+              v-if="selectedTemplateKey"
+              :template-key="selectedTemplateKey"
+              @saved="OnTemplateSaved"
+            )
+            .PageAdminLineManagement__placeholder(v-else)
+              span.PageAdminLineManagement__placeholder-text 選擇左側模板開始編輯
 
   //- ── Diagnostics Tab（P40 MVP + P43 sub-tab 完整版）────
   .PageAdminLineManagement__panel(v-else-if="activeMainTab === 'diagnostics'")
@@ -1398,6 +1541,69 @@ $border: rgba(212, 134, 10, 0.18);
   }
 }
 
+// ── Templates Tab category sub-tab（W5）─────────────────
+.PageAdminLineManagement__category-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid $border;
+  flex-wrap: wrap;
+}
+
+.PageAdminLineManagement__category-tab {
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 100px;
+  padding: 5px 14px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.25);
+    color: #1f2937;
+  }
+
+  &.is-active {
+    background: $amber;
+    border-color: $amber;
+    color: #fff;
+  }
+
+  &.is-bot-reply.is-active {
+    background: #4338ca;
+    border-color: #4338ca;
+  }
+  &.is-dispatch.is-active {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+  &.is-softmatch.is-active {
+    background: #be185d;
+    border-color: #be185d;
+  }
+  &.is-driver-notify.is-active {
+    background: #059669;
+    border-color: #059669;
+  }
+  &.is-order.is-active {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+}
+
+.PageAdminLineManagement__template-empty {
+  padding: 28px 16px;
+  text-align: center;
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: $muted;
+}
+
 // ── Templates Tab ─────────────────────────────────────────
 .PageAdminLineManagement__templates {
   display: grid;
@@ -1424,7 +1630,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__template-entry {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   padding: 10px 16px;
   border: none;
@@ -1436,6 +1642,7 @@ $border: rgba(212, 134, 10, 0.18);
   text-align: left;
   border-left: 3px solid transparent;
   transition: background 0.15s;
+  flex-wrap: nowrap;
 
   &:hover { background: rgba(0, 0, 0, 0.03); }
   &.is-active {
@@ -1448,12 +1655,40 @@ $border: rgba(212, 134, 10, 0.18);
     text-decoration: line-through;
     opacity: 0.5;
   }
+  &.is-locked {
+    cursor: not-allowed;
+    opacity: 0.7;
+    .PageAdminLineManagement__template-name {
+      color: rgba(0, 0, 0, 0.4);
+    }
+    &:hover { background: rgba(239, 68, 68, 0.04); }
+  }
 }
 
 .PageAdminLineManagement__template-name {
   flex: 1;
   min-width: 0;
   word-break: break-word;
+}
+
+// W7：列表 entry badge（4 icon + optional lock）
+.PageAdminLineManagement__template-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.PageAdminLineManagement__template-badge {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.04);
+
+  &.is-lock {
+    background: rgba(239, 68, 68, 0.12);
+  }
 }
 
 .PageAdminLineManagement__template-dot {

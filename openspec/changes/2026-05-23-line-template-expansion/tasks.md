@@ -124,19 +124,19 @@
 
 ## W5 — Frontend Templates Tab Category
 
-- [ ] `app/pages/admin/line-management/index.vue`：`templates` tab 加 category sub-tab（all / order / dispatch / softmatch / driver-notify / bot-reply）
-- [ ] URL query 同步：`?tab=templates&category=dispatch`
-- [ ] 列表 filter 邏輯：按 category 過濾
-- [ ] bot-replies 整合進 templates tab（舊 `?tab=bot-replies` 做 redirect 到 `?tab=templates&category=bot-reply`）
+- [x] `app/pages/admin/line-management/index.vue`：`templates` tab 加 category sub-tab（all / order / dispatch / softmatch / driver-notify / bot-reply）
+- [x] URL query 同步：`?tab=templates&category=dispatch`
+- [x] 列表 filter 邏輯：按 category 過濾
+- [x] bot-replies 整合進 templates tab（舊 `?tab=bot-replies` 做 redirect 到 `?tab=templates&category=bot-reply`）
 
 ---
 
 ## W6 — TemplateEditor outputType 切換 + 純文字編輯器
 
-- [ ] `app/components/admin/line-management/TemplateEditor.vue`：根據 `template.outputType` 切換編輯器
-- [ ] 純文字編輯器：body textarea + placeholder hint chips + char count
-- [ ] Flex 編輯器既有不動
-- [ ] PUT endpoint payload schema 統一處理（content 結構依 outputType）
+- [x] `app/components/admin/line-management/TemplateEditor.vue`：根據 `template.outputType` 切換編輯器
+- [x] 純文字編輯器：body textarea + placeholder hint chips + char count
+- [x] Flex 編輯器既有不動
+- [x] PUT endpoint payload schema 統一處理（content 結構依 outputType）
 
 ---
 
@@ -144,26 +144,31 @@
 
 ### Multi-lang Tab
 
-- [ ] `i18nMode='multi'` 模板顯三語 tab（繁中 / EN / JA）
-- [ ] `i18nMode='single'` 模板不顯 tab（編輯區直接是繁中）
-- [ ] 切換 tab 時切換 content 來源（不重新 fetch）
+- [x] `i18nMode='multi'` 模板顯三語 tab（繁中 / EN / JA）
+- [x] `i18nMode='single'` 模板不顯 tab（編輯區直接是繁中）
+- [x] 切換 tab 時切換 content 來源（不重新 fetch；langCache + form 同步）
 
 ### 列表 Badge
 
-- [ ] 卡片加 4 個 badge：triggerType / outputType / i18nMode / audience
-- [ ] `requiresSuperLevel=true` 且 `!isSuper` 時：[編輯] 按鈕 disabled + tooltip「需 super 權限」
+- [x] 卡片加 4 個 badge：triggerType / outputType / i18nMode / audience
+- [x] `requiresSuperLevel=true` 且 `!isSuper` 時：[編輯] 按鈕 disabled + tooltip「需 super 權限」（列表 entry disable click + 🔒 icon + tooltip + EnsureSelectedTemplateInCategory 自動跳過 locked）
 
 ### 簡易卡片預覽
 
-- [ ] Flex 預覽：title / body / cover / CTA（無 LINE Bubble 完整模擬）
-- [ ] Text 預覽：body 原樣顯示 + placeholder 範例對照
-- [ ] 切 placeholder 範例值看渲染（範例值取自 PlaceholderDef.example）
+- [x] Flex 預覽：title / body / cover / CTA（無 LINE Bubble 完整模擬）（W6 已完成）
+- [x] Text 預覽：body 原樣顯示 + placeholder 範例對照（W6 已完成）
+- [x] 切 placeholder 範例值看渲染（範例值取自 PlaceholderDef.example）（W6 已完成）
+
+### Backend 微調（W7 多語 GET 必要）
+
+- [x] `server/routes/nuxt-api/admin/notification-templates/[key].get.ts` 加 `contentByLang: Record<TemplateLang, TemplateContent | null>` 欄位（additive，保留 legacy `content` 指向 zh_tw）
+- [x] `NotificationTemplateDetailRes` 同步擴 `contentByLang`
 
 ### 批次 2 prod 推送
 
-- [ ] `pnpm build` 綠燈
+- [x] `pnpm lint` + `pnpm build` 綠燈
 - [ ] commit + push main（Vercel 自動部署 prod）
-- [ ] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常
+- [ ] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常、三語 tab 可切換 + 各自編輯
 - [ ] 確認後進入批次 3
 
 ---
