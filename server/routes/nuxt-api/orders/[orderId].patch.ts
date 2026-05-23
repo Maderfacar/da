@@ -6,7 +6,7 @@ import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc } from '@@/utils/driver-stats';
 import { sendLinePush } from '@@/utils/line-push';
 import { getOrderMessage, getUserLang, type OrderMessageKey } from '@@/utils/i18n-message';
-import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
+import { buildTemplateFlex, loadTemplate, type TemplateContentFlex } from '@@/utils/template-registry';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import { activeBidderLineUids } from '@@/utils/order-dispatch';
 import { pushOrderCancelledToBidders } from '@@/utils/line-dispatch-push';
@@ -616,7 +616,9 @@ export default defineEventHandler(async (event) => {
               params.cancelReason = cancelReason;
             }
 
-            const template = await loadTemplate(db, messageKey);
+            // W2：4 個 status template 全部 outputType='flex'；narrow 成 Flex。
+            // W4 後改走 buildTemplate dispatcher + lang 參數。
+            const template = (await loadTemplate(db, messageKey)) as TemplateContentFlex | null;
             const flex = buildTemplateFlex(template, params);
             if (flex) {
               await sendLinePush('passenger', passengerLineUid, [flex]);

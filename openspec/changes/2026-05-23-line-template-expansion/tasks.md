@@ -10,39 +10,44 @@
 
 ### TemplateMeta interface
 
-- [ ] `server/utils/template-registry.ts`：`TemplateCategory` enum 加 `'dispatch' | 'softmatch' | 'driver-notify'`
-- [ ] 加 `TemplateOutputType / TemplateAudience / TemplateI18nMode / TemplateTriggerType` type
-- [ ] `TemplateMeta` interface 加 `outputType / audience / i18nMode / triggerType / triggerEvent / requiresSuperLevel`
-- [ ] 拔除 `fallbackI18nKey` 欄位（registry 5 個既有 entry 同步移除）
-- [ ] `TemplateContent` 拆 `TemplateContentFlex | TemplateContentText`
+- [x] `server/utils/template-registry.ts`：`TemplateCategory` enum 加 `'dispatch' | 'softmatch' | 'driver-notify'`
+- [x] 加 `TemplateOutputType / TemplateAudience / TemplateI18nMode / TemplateTriggerType` type
+- [x] `TemplateMeta` interface 加 `outputType / audience / i18nMode / triggerType / triggerEvent / requiresSuperLevel`
+- [x] 拔除 `fallbackI18nKey` 欄位（registry 5 個既有 entry 同步移除）
+- [x] `TemplateContent` 拆 `TemplateContentFlex | TemplateContentText`
 
 ### buildTemplate helper
 
-- [ ] 加 `buildTemplateText(content, params): LineMessage`（純文字 + placeholder 替換）
-- [ ] 加 `buildTemplate(template, params)`：依 `outputType` 分派到 `buildTemplateFlex` 或 `buildTemplateText`
-- [ ] `loadTemplate` 簽名加 `lang?: 'zh_tw' | 'en' | 'ja' = 'zh_tw'` 參數
-- [ ] Firestore 文件結構改：`content.{zh_tw|en|ja}.{title|body|...}`（i18nMode='multi'）或 `content.zh_tw.{...}`（i18nMode='single'）
+- [x] 加 `buildTemplateText(content, params): LineMessage`（純文字 + placeholder 替換）
+- [x] 加 `buildTemplate(template, params, outputType)`：依 `outputType` 分派到 `buildTemplateFlex` 或 `buildTemplateText`
+- [x] `loadTemplate` 簽名加 `lang?: 'zh_tw' | 'en' | 'ja' = 'zh_tw'` 參數
+- [x] Firestore 文件結構改：`content.{zh_tw|en|ja}.{title|body|...}`（i18nMode='multi'）或 `content.zh_tw.{...}`（i18nMode='single'）
+  - loadTemplate 同時容錯 pre-W2 root-level legacy doc，避免推 prod 後既有資料失效
+  - GET /admin/notification-templates(/[key]) 也讀 nested + legacy 雙路徑
+  - PUT /admin/notification-templates/[key] 寫 `content.{lang}.{...}`（W6 多語 editor 上線前 lang 預設 zh_tw）
 
 ### 既有 5 個 order template 升級
 
-- [ ] `order.pending`：加 audience='passenger' / i18nMode='multi' / outputType='flex' / requiresSuperLevel=false / triggerEvent
-- [ ] `order.confirmed`：同上
-- [ ] `order.en_route`：同上
-- [ ] `order.completed`：同上
-- [ ] `order.cancelled`：同上
-- [ ] 移除 5 個 entry 的 `fallbackI18nKey`
+- [x] `order.pending`：加 audience='passenger' / i18nMode='multi' / outputType='flex' / requiresSuperLevel=false / triggerEvent
+- [x] `order.confirmed`：同上
+- [x] `order.en_route`：同上
+- [x] `order.completed`：同上
+- [x] `order.cancelled`：同上
+- [x] 移除 5 個 entry 的 `fallbackI18nKey`
 
 ### i18n-message.ts 拔除
 
-- [ ] 確認 `getOrderMessage` / `getReferralPushMessage` 的所有 caller 已遷移後再 delete
-- [ ] `server/utils/i18n-message.ts` 整檔 delete（如有獨立 yaml 同步 delete）
-- [ ] `server/utils/referral.ts` 內 `getReferralPushMessage` import / call 同步處理（T14 hardcoded 三語直寫）
+> W2 階段先保留 i18n-message.ts；callers 在 W4 完成 12 個觸發點遷移後一併 delete。
+
+- [ ] 確認 `getOrderMessage` / `getReferralPushMessage` 的所有 caller 已遷移後再 delete *(W4)*
+- [ ] `server/utils/i18n-message.ts` 整檔 delete（如有獨立 yaml 同步 delete） *(W4)*
+- [ ] `server/utils/referral.ts` 內 `getReferralPushMessage` import / call 同步處理（T14 hardcoded 三語直寫） *(W4)*
 
 ### Build 驗證
 
-- [ ] `pnpm lint` 綠燈
-- [ ] `pnpm build` 綠燈
-- [ ] commit + push（不上 prod；批次 1 W4 結束才推）
+- [x] `pnpm lint` 綠燈
+- [x] `pnpm build` 綠燈
+- [x] commit + push（不上 prod；批次 1 W4 結束才推）
 
 ---
 

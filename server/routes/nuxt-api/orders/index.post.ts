@@ -7,7 +7,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getOrderMessage, getUserLang } from '@@/utils/i18n-message';
-import { buildTemplateFlex, loadTemplate } from '@@/utils/template-registry';
+import { buildTemplateFlex, loadTemplate, type TemplateContentFlex } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import {
@@ -406,7 +406,9 @@ export default defineEventHandler(async (event) => {
     // P40 Phase 4 A1 cleanup：直接走 template-registry（不再經 order-pending-flex thin wrapper）
     void (async () => {
       try {
-        const template = await loadTemplate(db, 'order.pending');
+        // W2：order.pending outputType='flex'；loadTemplate 回 TemplateContent union，narrow 成 Flex。
+        // W4 後改走 buildTemplate dispatcher + lang 參數。
+        const template = (await loadTemplate(db, 'order.pending')) as TemplateContentFlex | null;
         const flex = buildTemplateFlex(template, params);
         if (flex) {
           await sendLinePush('passenger', lineUserId, [flex]);

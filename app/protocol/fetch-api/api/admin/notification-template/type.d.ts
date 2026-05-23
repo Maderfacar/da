@@ -1,26 +1,33 @@
-// P38 Phase 4：admin notification template type 定義
+// P38 → 2026-05-23 line-template-expansion W2
 // 對齊 server/utils/template-registry.ts TEMPLATE_REGISTRY + TemplateContent / TemplateAction
+//
+// W2 schema 擴：
+//   - TemplateCategory 加 dispatch / softmatch / driver-notify
+//   - TemplateMeta 加 outputType / audience / i18nMode / triggerType / triggerEvent / requiresSuperLevel
+//   - TemplateContent 拆 Flex / Text union
+//   - 拔除 fallbackI18nKey
+//   - GET/PUT body 跟著拆語系
 
-export type TemplateCategory = 'order' | 'announcement' | 'bot' | 'broadcast';
+export type TemplateCategory =
+  | 'order'
+  | 'announcement'
+  | 'bot'
+  | 'broadcast'
+  | 'dispatch'
+  | 'softmatch'
+  | 'driver-notify';
+
+export type TemplateOutputType = 'flex' | 'text';
+export type TemplateAudience = 'passenger' | 'driver' | 'admin' | 'both';
+export type TemplateI18nMode = 'multi' | 'single';
+export type TemplateTriggerType = 'auto' | 'manual';
+export type TemplateLang = 'zh_tw' | 'en' | 'ja';
 
 export interface PlaceholderDef {
   key: string;
   label: string;
   example: string;
   required: boolean;
-}
-
-export interface TemplateMeta {
-  templateKey: string;
-  category: TemplateCategory;
-  displayName: string;
-  description: string;
-  placeholders: PlaceholderDef[];
-  defaultContent: {
-    title: string;
-    body: string;
-  };
-  fallbackI18nKey?: string;
 }
 
 export type TemplateAction =
@@ -33,11 +40,32 @@ export interface TemplateCtaButton {
   action: TemplateAction;
 }
 
-export interface TemplateContent {
+export interface TemplateContentFlex {
   title: string;
   body: string;
   coverImageUrl: string | null;
   ctaButton: TemplateCtaButton | null;
+}
+
+export interface TemplateContentText {
+  body: string;
+}
+
+export type TemplateContent = TemplateContentFlex | TemplateContentText;
+
+export interface TemplateMeta {
+  templateKey: string;
+  category: TemplateCategory;
+  displayName: string;
+  description: string;
+  triggerEvent: string;
+  outputType: TemplateOutputType;
+  audience: TemplateAudience;
+  i18nMode: TemplateI18nMode;
+  triggerType: TemplateTriggerType;
+  requiresSuperLevel: boolean;
+  placeholders: PlaceholderDef[];
+  defaultContent: TemplateContent;
 }
 
 export interface NotificationTemplateItem {
@@ -60,12 +88,19 @@ export interface NotificationTemplateDetailRes {
   updatedAt: string | null;
 }
 
+/**
+ * PUT body 沿用 Flex 欄位（單語、繁中）；W6 多語 editor 上線後會擴 lang 欄位。
+ * Text 模板（W4 之後出現）走 body-only；W6 前 PUT 仍以 Flex 欄位為主，server 端依
+ * meta.outputType 判斷是否忽略 title / cover / cta。
+ */
 export interface PutNotificationTemplateBody {
-  title: string;
+  title?: string;
   body: string;
-  coverImageUrl: string | null;
-  ctaButton: TemplateCtaButton | null;
+  coverImageUrl?: string | null;
+  ctaButton?: TemplateCtaButton | null;
   enabled?: boolean;
+  /** W6 多語 editor 用；不傳預設 zh_tw */
+  lang?: TemplateLang;
 }
 
 export interface UploadTemplateCoverRes {

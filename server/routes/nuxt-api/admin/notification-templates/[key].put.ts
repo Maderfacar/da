@@ -4,27 +4,35 @@
  * 編輯 template content（upsert）。
  *
  * Body：
- *   title:         string (1-60)
- *   body:          string (1-1000)
- *   coverImageUrl: null | string (https://...)
- *   ctaButton:     null | { label: 1-20, action: TemplateAction }
- *   enabled?:      boolean（default true）
+ *   title?:         string (1-60)，outputType='flex' 必填
+ *   body:           string (1-1000)
+ *   coverImageUrl?: null | string (https://...)
+ *   ctaButton?:     null | { label: 1-20, action: TemplateAction }
+ *   enabled?:       boolean（default true）
+ *   lang?:          'zh_tw' | 'en' | 'ja'（W6 多語 editor 用；不傳預設 zh_tw）
  *
  * 副作用：
- *   - merge 寫 notification_templates/{key}
+ *   - merge 寫 notification_templates/{key}.content.{lang}
  *   - audit log `line.template.update`
  *
- * 註：P40 Phase 4 A1 cleanup 移除舊 collection dual-write + legacy alias audit log；
- * 通用 endpoint 從此只寫新 collection，A1 admin UI 已隨同 cleanup 移除。
+ * W2 schema 變更：
+ *   - 之前 PUT 寫 root-level title/body/...；改為寫 content.{lang}.{...} 以支援多語
+ *   - i18nMode='single' 模板強制 lang='zh_tw'
+ *   - outputType='text' 模板只接受 body / enabled，忽略 title / coverImageUrl / ctaButton
  *
- * 權限：canBroadcast
+ * 權限：canBroadcast；W2 暫不導入 super 級別校驗（W8 audit + permission enforcement 階段加）
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
-import { TEMPLATE_REGISTRY, type TemplateAction } from '@@/utils/template-registry';
+import {
+  TEMPLATE_REGISTRY,
+  isValidLang,
+  type TemplateAction,
+  type TemplateLang,
+} from '@@/utils/template-registry';
 
 const TITLE_MAX = 60;
 const BODY_MAX = 1000;
@@ -48,6 +56,7 @@ interface PutBody {
     action?: { type?: string; url?: string; text?: string; data?: string; displayText?: string };
   } | null;
   enabled?: boolean;
+  lang?: string;
 }
 
 const _validAction = (raw: unknown): { ok: true; value: TemplateAction } | { ok: false; error: string } => {
@@ -92,7 +101,8 @@ export default defineEventHandler(async (event) => {
   if (!key) {
     return badRequestError({ zh_tw: 'key 缺失', en: 'key required', ja: 'key が必要' });
   }
-  if (!TEMPLATE_REGISTRY[key]) {
+  const meta = TEMPLATE_REGISTRY[key];
+  if (!meta) {
     return notFoundError({ zh_tw: '未知的 template key', en: 'Unknown template key', ja: '未知の template key' });
   }
 
@@ -101,44 +111,76 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid body', ja: 'リクエスト形式が不正' });
   }
 
-  const title = typeof body.title === 'string' ? body.title.trim() : '';
+  // 語系：i18nMode='single' 強制 zh_tw
+  const requestedLang = typeof body.lang === 'string' && isValidLang(body.lang) ? body.lang : 'zh_tw';
+  const lang: TemplateLang = meta.i18nMode === 'single' ? 'zh_tw' : requestedLang;
+
   const messageBody = typeof body.body === 'string' ? body.body.trim() : '';
-  if (!title || title.length > TITLE_MAX) {
-    return badRequestError({ zh_tw: `標題長度需 1-${TITLE_MAX} 字`, en: `Title 1-${TITLE_MAX}`, ja: `タイトル 1-${TITLE_MAX}` });
-  }
   if (!messageBody || messageBody.length > BODY_MAX) {
     return badRequestError({ zh_tw: `內文長度需 1-${BODY_MAX} 字`, en: `Body 1-${BODY_MAX}`, ja: `本文 1-${BODY_MAX}` });
   }
 
-  let coverImageUrl: string | null = null;
-  if (body.coverImageUrl !== undefined && body.coverImageUrl !== null) {
-    if (typeof body.coverImageUrl !== 'string') {
-      return badRequestError({ zh_tw: '封面圖網址必須為字串', en: 'coverImageUrl must be a string', ja: 'カバー画像 URL は文字列' });
-    }
-    if (!body.coverImageUrl.startsWith('https://')) {
-      return badRequestError({ zh_tw: '封面圖網址必須為 HTTPS', en: 'coverImageUrl must be HTTPS', ja: 'カバー画像 URL は HTTPS 必須' });
-    }
-    if (body.coverImageUrl.length > COVER_URL_MAX) {
-      return badRequestError({
-        zh_tw: `封面圖網址過長（最多 ${COVER_URL_MAX} 字元，實際 ${body.coverImageUrl.length}）`,
-        en: `coverImageUrl too long (max ${COVER_URL_MAX} chars, got ${body.coverImageUrl.length})`,
-        ja: `カバー画像 URL が長すぎる（最大 ${COVER_URL_MAX} 文字、実際 ${body.coverImageUrl.length}）`,
-      });
-    }
-    coverImageUrl = body.coverImageUrl;
-  }
+  // 視 outputType 組 sub-doc
+  let subDoc: Record<string, unknown>;
+  let auditPayload: Record<string, unknown>;
 
-  let ctaButton: { label: string; action: TemplateAction } | null = null;
-  if (body.ctaButton !== undefined && body.ctaButton !== null) {
-    const label = typeof body.ctaButton.label === 'string' ? body.ctaButton.label.trim() : '';
-    if (!label || label.length > LABEL_MAX) {
-      return badRequestError({ zh_tw: `按鈕標籤需 1-${LABEL_MAX} 字`, en: `Label 1-${LABEL_MAX}`, ja: `ラベル 1-${LABEL_MAX}` });
+  if (meta.outputType === 'text') {
+    // text 模板：只接受 body
+    subDoc = { body: messageBody };
+    auditPayload = { lang, bodyLen: messageBody.length, outputType: 'text' as const };
+  } else {
+    // flex 模板：title 必填 + 可選 cover / cta
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    if (!title || title.length > TITLE_MAX) {
+      return badRequestError({ zh_tw: `標題長度需 1-${TITLE_MAX} 字`, en: `Title 1-${TITLE_MAX}`, ja: `タイトル 1-${TITLE_MAX}` });
     }
-    const ar = _validAction(body.ctaButton.action);
-    if (!ar.ok) {
-      return badRequestError({ zh_tw: ar.error, en: ar.error, ja: ar.error });
+
+    let coverImageUrl: string | null = null;
+    if (body.coverImageUrl !== undefined && body.coverImageUrl !== null) {
+      if (typeof body.coverImageUrl !== 'string') {
+        return badRequestError({ zh_tw: '封面圖網址必須為字串', en: 'coverImageUrl must be a string', ja: 'カバー画像 URL は文字列' });
+      }
+      if (!body.coverImageUrl.startsWith('https://')) {
+        return badRequestError({ zh_tw: '封面圖網址必須為 HTTPS', en: 'coverImageUrl must be HTTPS', ja: 'カバー画像 URL は HTTPS 必須' });
+      }
+      if (body.coverImageUrl.length > COVER_URL_MAX) {
+        return badRequestError({
+          zh_tw: `封面圖網址過長（最多 ${COVER_URL_MAX} 字元，實際 ${body.coverImageUrl.length}）`,
+          en: `coverImageUrl too long (max ${COVER_URL_MAX} chars, got ${body.coverImageUrl.length})`,
+          ja: `カバー画像 URL が長すぎる（最大 ${COVER_URL_MAX} 文字、実際 ${body.coverImageUrl.length}）`,
+        });
+      }
+      coverImageUrl = body.coverImageUrl;
     }
-    ctaButton = { label, action: ar.value };
+
+    let ctaButton: { label: string; action: TemplateAction } | null = null;
+    if (body.ctaButton !== undefined && body.ctaButton !== null) {
+      const label = typeof body.ctaButton.label === 'string' ? body.ctaButton.label.trim() : '';
+      if (!label || label.length > LABEL_MAX) {
+        return badRequestError({ zh_tw: `按鈕標籤需 1-${LABEL_MAX} 字`, en: `Label 1-${LABEL_MAX}`, ja: `ラベル 1-${LABEL_MAX}` });
+      }
+      const ar = _validAction(body.ctaButton.action);
+      if (!ar.ok) {
+        return badRequestError({ zh_tw: ar.error, en: ar.error, ja: ar.error });
+      }
+      ctaButton = { label, action: ar.value };
+    }
+
+    subDoc = {
+      title,
+      body: messageBody,
+      coverImageUrl,
+      ctaButton,
+    };
+    auditPayload = {
+      lang,
+      titleLen: title.length,
+      bodyLen: messageBody.length,
+      hasCover: coverImageUrl !== null,
+      hasCta: ctaButton !== null,
+      ctaType: ctaButton?.action.type ?? null,
+      outputType: 'flex' as const,
+    };
   }
 
   const enabled = body.enabled !== false;
@@ -150,12 +192,9 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     await db.collection('notification_templates').doc(key).set({
       templateKey: key,
-      category: TEMPLATE_REGISTRY[key]!.category,
+      category: meta.category,
       enabled,
-      title,
-      body: messageBody,
-      coverImageUrl,
-      ctaButton,
+      content: { [lang]: subDoc },
       updatedBy: auth.lineUid,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -166,14 +205,7 @@ export default defineEventHandler(async (event) => {
       action: 'line.template.update',
       targetType: 'notification_template',
       targetId: key,
-      payload: {
-        titleLen: title.length,
-        bodyLen: messageBody.length,
-        hasCover: coverImageUrl !== null,
-        hasCta: ctaButton !== null,
-        ctaType: ctaButton?.action.type ?? null,
-        enabled,
-      },
+      payload: { ...auditPayload, enabled },
     });
 
     return successResponse({ ok: true });

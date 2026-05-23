@@ -12,7 +12,7 @@
  * coverImageUrl 限制：必須 HTTPS、LINE 可訪問（Firebase Storage signed URL ok）。
  */
 import type { LineMessage } from '@@/utils/line-push';
-import { buildTemplateFlex, type TemplateContent } from '@@/utils/template-registry';
+import { buildTemplateFlex, type TemplateContentFlex } from '@@/utils/template-registry';
 
 interface AnnouncementForFlex {
   title: string;
@@ -47,7 +47,7 @@ export function buildAnnouncementFlex(ann: AnnouncementForFlex): LineMessage {
       ? { label: ann.ctaButton.label, action: { type: 'uri' as const, url: ann.ctaButton.url } }
       : null;
 
-    const content: TemplateContent = {
+    const content: TemplateContentFlex = {
       title: ann.title,
       body: excerpt,
       coverImageUrl: ann.coverImageUrl,

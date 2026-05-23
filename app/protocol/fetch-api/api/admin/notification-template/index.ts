@@ -14,10 +14,17 @@ export type {
   PlaceholderDef,
   PutNotificationTemplateBody,
   TemplateAction,
+  TemplateAudience,
   TemplateCategory,
   TemplateContent,
+  TemplateContentFlex,
+  TemplateContentText,
   TemplateCtaButton,
+  TemplateI18nMode,
+  TemplateLang,
   TemplateMeta,
+  TemplateOutputType,
+  TemplateTriggerType,
   UploadTemplateCoverRes,
 } from './type.d';
 

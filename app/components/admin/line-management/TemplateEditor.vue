@@ -13,6 +13,7 @@ import type {
   NotificationTemplateDetailRes,
   PlaceholderDef,
   TemplateAction,
+  TemplateContentFlex,
   TemplateCtaButton,
 } from '@/protocol/fetch-api/api/admin/notification-template';
 import type { LinePostbackWhitelistItem } from '@/protocol/fetch-api/api/admin';
@@ -66,10 +67,13 @@ const ApiLoadDetail = async () => {
       return;
     }
     detail.value = res.data;
-    const c = res.data.content;
+    // W2：本元件只處理 Flex 模板（W6 才會擴文字模板編輯器）；
+    // 既有 5 個 order template 全部 outputType='flex'，narrowing 安全。
+    const c = res.data.content as TemplateContentFlex | null;
     const meta = res.data.meta;
-    form.title = c?.title ?? meta.defaultContent.title;
-    form.body = c?.body ?? meta.defaultContent.body;
+    const defaultFlex = meta.defaultContent as TemplateContentFlex;
+    form.title = c?.title ?? defaultFlex.title;
+    form.body = c?.body ?? defaultFlex.body;
     form.coverImageUrl = c?.coverImageUrl ?? null;
     form.enabled = res.data.enabled;
     if (c?.ctaButton) {

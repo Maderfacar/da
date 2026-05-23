@@ -1,18 +1,51 @@
 /**
  * GET /nuxt-api/admin/notification-templates/[key]
  *
- * 取單一 template 的 registry meta + Firestore 內容。
+ * 取單一 template 的 registry meta + Firestore 內容（zh_tw）。
  *
  * 回傳：
  *   { meta, content, enabled, updatedBy, updatedAt }
  *   content 為 null 時表示 admin 尚未編輯（套 registry defaultContent fallback）
+ *
+ * 文件容錯：先讀新 schema content.zh_tw；找不到時退回 legacy root-level（pre-W2 doc）。
  *
  * 權限：canBroadcast
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
-import { TEMPLATE_REGISTRY, type TemplateContent } from '@@/utils/template-registry';
+import {
+  TEMPLATE_REGISTRY,
+  type TemplateContent,
+  type TemplateContentFlex,
+  type TemplateContentText,
+  type TemplateOutputType,
+} from '@@/utils/template-registry';
+
+function _extractAdminContent(
+  data: Record<string, unknown>,
+  outputType: TemplateOutputType,
+): TemplateContent | null {
+  const contentMap = data.content as Record<string, unknown> | undefined;
+  const zh = contentMap && typeof contentMap === 'object' ? contentMap.zh_tw : null;
+  const source = (zh && typeof zh === 'object' ? zh : data) as Record<string, unknown>;
+
+  if (outputType === 'text') {
+    const body = typeof source.body === 'string' ? source.body : '';
+    if (!body) return null;
+    return { body } satisfies TemplateContentText;
+  }
+
+  const title = typeof source.title === 'string' ? source.title : '';
+  const body = typeof source.body === 'string' ? source.body : '';
+  if (!title || !body) return null;
+  return {
+    title,
+    body,
+    coverImageUrl: typeof source.coverImageUrl === 'string' ? source.coverImageUrl : null,
+    ctaButton: (source.ctaButton as TemplateContentFlex['ctaButton']) ?? null,
+  } satisfies TemplateContentFlex;
+}
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -37,13 +70,7 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     const snap = await db.collection('notification_templates').doc(key).get();
     const data = snap.exists ? snap.data() ?? {} : {};
-    const hasContent = typeof data.title === 'string' && typeof data.body === 'string' && data.title && data.body;
-    const content: TemplateContent | null = hasContent ? {
-      title: data.title as string,
-      body: data.body as string,
-      coverImageUrl: typeof data.coverImageUrl === 'string' ? data.coverImageUrl : null,
-      ctaButton: (data.ctaButton as TemplateContent['ctaButton']) ?? null,
-    } : null;
+    const content = _extractAdminContent(data, meta.outputType);
     const updatedAt = (data.updatedAt as { toDate?: () => Date } | undefined)?.toDate?.()?.toISOString() ?? null;
 
     return successResponse({
