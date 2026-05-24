@@ -508,6 +508,22 @@ const redispatching = ref(false);
 const assigningFromBid = ref<string | null>(null);
 const orderBids = ref<AdminBidWithMatch[]>([]);
 
+const { t: tI18n } = useI18n();
+
+// Wave 1A：列表派單按鈕用 — per-row loading state（modal 內既有 dispatching/redispatching 不動）
+// Set 取代 boolean，避免多個列同時點擊互相 disable；immutable 替換以觸發 reactivity。
+const rowDispatchingIds = ref<Set<string>>(new Set());
+const IsRowDispatching = (orderId: string) => rowDispatchingIds.value.has(orderId);
+
+/**
+ * Wave 1A：計算訂單「總派發次數」(含首發 + 所有重發)。
+ *   - dispatchAt 未存在    → 0 (尚未派發)
+ *   - dispatchAt 存在      → (dispatchCount ?? 0) + 1
+ *     （server 在首發時不寫 dispatchCount；每次重發 increment(1)）
+ */
+const DispatchAttemptCount = (order: AdminOrder): number =>
+  order.dispatchAt ? (order.dispatchCount ?? 0) + 1 : 0;
+
 const ActiveBidCount = (order: AdminOrder): number =>
   (order.bids ?? []).filter((b) => !b.withdrawnAt).length;
 
@@ -605,6 +621,96 @@ const ClickRedispatch = async () => {
     }
   } finally {
     redispatching.value = false;
+  }
+};
+
+/**
+ * Wave 1A：列表「📤 發布需求單」按鈕點擊流程（不開 modal）。
+ * 二次確認 → call DispatchOrder → toast + 重載列表。
+ */
+const ClickDispatchFromRow = async (order: AdminOrder) => {
+  if (IsRowDispatching(order.orderId)) return;
+  if (order.orderStatus !== 'pending') {
+    ElMessage({ message: '訂單狀態非待確認，無法發出需求單', type: 'warning' });
+    return;
+  }
+  if (order.dispatchAt) {
+    ElMessage({ message: '訂單已派發', type: 'warning' });
+    return;
+  }
+  const orderShort = order.orderId.slice(0, 8).toUpperCase();
+  const ok = await UseAsk().Any(
+    tI18n('admin.orders.dispatchConfirmMessage', { orderShort }),
+    tI18n('admin.orders.dispatchConfirmTitle'),
+    tI18n('admin.orders.cancelBtn'),
+    tI18n('admin.orders.dispatchConfirmOk'),
+  );
+  if (!ok) return;
+
+  // immutable 替換 Set 以觸發 reactivity
+  rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
+  try {
+    const res = await $api.DispatchOrder(order.orderId);
+    if (res.status.code === 200) {
+      ElMessage({ message: tI18n('admin.orders.dispatchSuccess'), type: 'success' });
+      await ApiLoadOrders();
+    } else {
+      ElMessage({
+        message: res.status?.message?.zh_tw ?? tI18n('admin.orders.dispatchFailed'),
+        type: 'error',
+      });
+    }
+  } finally {
+    const next = new Set(rowDispatchingIds.value);
+    next.delete(order.orderId);
+    rowDispatchingIds.value = next;
+  }
+};
+
+/**
+ * Wave 1A：列表「🔁 重新發佈」按鈕點擊流程（不開 modal）。
+ * 二次確認（顯示已發送 N 次）→ call RedispatchOrder → toast + 重載列表。
+ */
+const ClickRedispatchFromRow = async (order: AdminOrder) => {
+  if (IsRowDispatching(order.orderId)) return;
+  if (order.orderStatus !== 'pending') {
+    ElMessage({ message: '訂單狀態非待確認，無法重發', type: 'warning' });
+    return;
+  }
+  if (!order.dispatchAt) {
+    ElMessage({ message: '訂單尚未首次派發，請改點「發布需求單」', type: 'warning' });
+    return;
+  }
+  if (order.assignedDriverId) {
+    ElMessage({ message: '訂單已指派司機，無法重發', type: 'warning' });
+    return;
+  }
+  const orderShort = order.orderId.slice(0, 8).toUpperCase();
+  const sentCount = DispatchAttemptCount(order);
+  const ok = await UseAsk().Any(
+    tI18n('admin.orders.redispatchConfirmMessage', { orderShort, count: sentCount }),
+    tI18n('admin.orders.redispatchConfirmTitle'),
+    tI18n('admin.orders.cancelBtn'),
+    tI18n('admin.orders.redispatchConfirmOk'),
+  );
+  if (!ok) return;
+
+  rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
+  try {
+    const res = await $api.RedispatchOrder(order.orderId);
+    if (res.status.code === 200 && res.data?.redispatched === true) {
+      ElMessage({ message: tI18n('admin.orders.redispatchSuccess'), type: 'success' });
+      await ApiLoadOrders();
+    } else {
+      ElMessage({
+        message: res.status?.message?.zh_tw ?? tI18n('admin.orders.redispatchFailed'),
+        type: 'error',
+      });
+    }
+  } finally {
+    const next = new Set(rowDispatchingIds.value);
+    next.delete(order.orderId);
+    rowDispatchingIds.value = next;
   }
 };
 
@@ -777,7 +883,32 @@ onMounted(() => {
           span.PageAdminOrders__dispatch-badge.is-rematch(
             v-if="(o.reMatchRound ?? 0) > 0"
           ) 重派 {{ o.reMatchRound }} 次
-        .PageAdminOrders__cell.is-action
+        .PageAdminOrders__cell.is-action(data-label="操作")
+          //- Wave 1A：列表派單入口（不刪 modal 內既有「📤 發出需求單」）
+          template(v-if="o.orderStatus === 'pending' && !o.assignedDriverId")
+            //- 未派發 → 「📤 發布需求單」
+            button.PageAdminOrders__row-dispatch-btn(
+              v-if="!o.dispatchAt"
+              type="button"
+              :disabled="IsRowDispatching(o.orderId)"
+              :title="$t('admin.orders.dispatch')"
+              @click.stop="ClickDispatchFromRow(o)"
+            ) {{ IsRowDispatching(o.orderId) ? '⏳' : '📤' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.dispatching') : $t('admin.orders.dispatch') }}
+            //- 已派發未指派 → 「🔁 重新發佈」+ dispatchCount > 0 時加 ×N chip（×N = 總派發次數）
+            button.PageAdminOrders__row-dispatch-btn.is-redispatch(
+              v-else
+              type="button"
+              :disabled="IsRowDispatching(o.orderId)"
+              :title="$t('admin.orders.redispatch')"
+              @click.stop="ClickRedispatchFromRow(o)"
+            )
+              span.PageAdminOrders__row-dispatch-label
+                | {{ IsRowDispatching(o.orderId) ? '⏳' : '🔁' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.redispatching') : $t('admin.orders.redispatch') }}
+              span.PageAdminOrders__row-dispatch-chip(v-if="(o.dispatchCount ?? 0) > 0") ×{{ DispatchAttemptCount(o) }}
+          //- 已指派司機 → 不顯示按鈕，顯示「✓ 已指派」徽章
+          span.PageAdminOrders__row-action-tag.is-assigned(
+            v-else-if="o.assignedDriverId"
+          ) ✓ {{ $t('admin.orders.assigned') }}
           span.PageAdminOrders__row-chevron ›
 
   //- ── Modal 詳情 ──────────────────────────────────────
@@ -1335,14 +1466,15 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__row {
   display: grid;
-  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px 60px;
+  // Wave 1A：擴大 action column 容納「📤 發布需求單」/ 「🔁 重新發佈 ×N」按鈕
+  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px 160px;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
   background: $surface;
   border: 1px solid $border;
-  min-width: 680px;
+  min-width: 780px;
   transition: background 0.15s, border-color 0.15s;
 
   &.is-clickable {
@@ -1399,7 +1531,8 @@ $muted: rgba(255, 255, 255, 0.35);
       'id      status'
       'time    time'
       'driver  fare'
-      'type    vehicle';
+      'type    vehicle'
+      'action  action';
     min-width: 0;
     padding: 14px 14px 12px;
     gap: 8px 12px;
@@ -1446,7 +1579,18 @@ $muted: rgba(255, 255, 255, 0.35);
   .PageAdminOrders__cell.is-type { grid-area: type; }
   .PageAdminOrders__cell.is-vehicle { grid-area: vehicle; align-items: flex-end; }
 
-  .PageAdminOrders__cell.is-action { display: none; }
+  // Wave 1A：手機版讓 action 跨兩欄獨佔一行（含發布 / 重發按鈕），chevron 仍隱藏
+  .PageAdminOrders__cell.is-action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    grid-area: action;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .PageAdminOrders__cell.is-action::before { display: none; }
 }
 
 @media (max-width: 479.98px) {
@@ -2061,10 +2205,92 @@ $muted: rgba(255, 255, 255, 0.35);
   text-align: center;
   display: block;
   line-height: 1;
+  margin-left: auto;
 }
 
 @media (max-width: 767.98px) {
   .PageAdminOrders__row-chevron { display: none; }
+}
+
+// ── Wave 1A：列表派單按鈕（發布 / 重發） ──────────────────────
+.PageAdminOrders__cell.is-action {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  overflow: visible;
+}
+
+.PageAdminOrders__row-dispatch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba($amber, 0.4);
+  background: rgba($amber, 0.1);
+  color: $amber;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background: rgba($amber, 0.2);
+    border-color: rgba($amber, 0.6);
+  }
+  &:active:not(:disabled) { transform: scale(0.97); }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  // 重發按鈕用藍紫系區分（避免 admin 看混首發/重發）
+  &.is-redispatch {
+    border-color: rgba(140, 110, 220, 0.5);
+    background: rgba(140, 110, 220, 0.12);
+    color: rgba(180, 150, 240, 0.95);
+
+    &:hover:not(:disabled) {
+      background: rgba(140, 110, 220, 0.22);
+      border-color: rgba(140, 110, 220, 0.75);
+    }
+  }
+}
+
+.PageAdminOrders__row-dispatch-label { display: inline-flex; align-items: center; gap: 4px; }
+
+.PageAdminOrders__row-dispatch-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.PageAdminOrders__row-action-tag {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 5px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+
+  &.is-assigned {
+    background: rgba(80, 200, 120, 0.1);
+    border: 1px solid rgba(80, 200, 120, 0.3);
+    color: #50c878;
+  }
 }
 
 // ── modal 內司機列 ─────────────────────────────────────────

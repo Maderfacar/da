@@ -191,9 +191,17 @@ export interface AdminOrder {
   passengerPhone: string | null
   /** Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選） */
   preferences?: AdminOrderPreferences | null
-  /** Phase 1E：admin 派發時間（null = 尚未發出需求單） */
+  /** Phase 1E：admin 派發時間（null = 尚未發出需求單；首發後固定不變） */
   dispatchAt?: string | null
   dispatchedBy?: string | null
+  /** Phase 1E：最近一次重發推播時間（首發時無此欄位；每次重發 = serverTimestamp） */
+  lastDispatchAt?: string | null
+  lastDispatchedBy?: string | null
+  /**
+   * Phase 1E：重發累計次數（FieldValue.increment(1) 寫入；首發後仍為 undefined，
+   * 第 N 次重發後 = N）。Wave 1A：列表 chip 顯示總派發次數 = (dispatchCount ?? 0) + 1。
+   */
+  dispatchCount?: number
   /** Phase 1E：司機喊單 list（append-only；withdrawnAt 非 null 表示撤回） */
   bids?: AdminOrderBidSnapshot[]
   /** Phase 1E：admin 指派時間（null = 尚未指派） */

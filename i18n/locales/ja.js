@@ -801,6 +801,25 @@ export default {
       rejectConfirm: '確定退回此次提交？',
       verifiedAt: '上次驗證時間',
     },
+    // Wave 1A：admin/orders 列表派單按鈕（admin UI 暫沿用繁中值 — 規格 #14）
+    orders: {
+      dispatch: '發布需求單',
+      redispatch: '重新發佈',
+      assigned: '已指派',
+      dispatching: '發送中...',
+      redispatching: '重發中...',
+      dispatchConfirmTitle: '發布需求單',
+      dispatchConfirmMessage: '確定發送需求單 #{orderShort} 給所有已認證司機？',
+      dispatchConfirmOk: '確定發送',
+      redispatchConfirmTitle: '重新發佈需求單',
+      redispatchConfirmMessage: '訂單 #{orderShort} 已發送 {count} 次，確定再次重新推播給所有已認證司機？',
+      redispatchConfirmOk: '確定重發',
+      cancelBtn: '取消',
+      dispatchSuccess: '需求單已發出',
+      redispatchSuccess: '已重新發送需求單',
+      dispatchFailed: '發出需求單失敗',
+      redispatchFailed: '重發失敗',
+    },
   },
   // Phase 1B：driver 端（暫沿用繁中值 — 規格 #14）
   driver: {
