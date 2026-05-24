@@ -20,7 +20,11 @@
  *   - i18nMode='single' 模板強制 lang='zh_tw'
  *   - outputType='text' 模板只接受 body / enabled，忽略 title / coverImageUrl / ctaButton
  *
- * 權限：canBroadcast；W2 暫不導入 super 級別校驗（W8 audit + permission enforcement 階段加）
+ * 權限：
+ *   1. canBroadcast（admin / super level）
+ *   2. W8：meta.requiresSuperLevel=true 的模板（dispatch / driver-notify）額外要求 level=super
+ *      - 對應 design.md 權限分層表
+ *      - 非 super 回 403 + 三語錯誤訊息
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
@@ -104,6 +108,15 @@ export default defineEventHandler(async (event) => {
   const meta = TEMPLATE_REGISTRY[key];
   if (!meta) {
     return notFoundError({ zh_tw: '未知的 template key', en: 'Unknown template key', ja: '未知の template key' });
+  }
+
+  // W8：requiresSuperLevel 模板（dispatch / driver-notify）只有 super 可改
+  if (meta.requiresSuperLevel && auth.level !== 'super') {
+    return forbiddenError({
+      zh_tw: '此模板需 super 級別才能編輯',
+      en: 'Super level required to edit this template',
+      ja: 'このテンプレートを編集するには super 権限が必要です',
+    });
   }
 
   const body = await readBody<PutBody>(event).catch(() => null);
@@ -202,7 +215,7 @@ export default defineEventHandler(async (event) => {
     await writeAuditLog({
       event,
       auth,
-      action: 'line.template.update',
+      action: 'notification_template.update',
       targetType: 'notification_template',
       targetId: key,
       payload: { ...auditPayload, enabled },

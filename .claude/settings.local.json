@@ -47,7 +47,8 @@
       "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && pnpm *)",
       "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && npx *)",
       "Bash(npx openspec *)",
-      "Bash(pnpm eslint *)"
+      "Bash(pnpm eslint *)",
+      "Bash(pnpm openspec *)"
     ]
   }
 }

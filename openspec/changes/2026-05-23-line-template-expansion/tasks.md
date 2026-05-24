@@ -167,7 +167,7 @@
 ### 批次 2 prod 推送
 
 - [x] `pnpm lint` + `pnpm build` 綠燈
-- [ ] commit + push main（Vercel 自動部署 prod）
+- [x] commit + push main（commit f3174b1 已 push，Vercel 自動部署 prod）
 - [ ] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常、三語 tab 可切換 + 各自編輯
 - [ ] 確認後進入批次 3
 
@@ -177,15 +177,15 @@
 
 ### Audit log 寫入
 
-- [ ] `server/routes/nuxt-api/admin/notification-templates/[key].put.ts`：成功後 `writeAuditLog({ action: 'notification_template.update', targetType: 'notification_template', targetId: templateKey, payload: {} })`
-- [ ] `server/routes/nuxt-api/admin/notification-templates/[key]/reset.post.ts`：同上 `action: 'notification_template.reset'`
+- [x] `server/routes/nuxt-api/admin/notification-templates/[key].put.ts`：成功後 `writeAuditLog({ action: 'notification_template.update', targetType: 'notification_template', targetId: templateKey, payload: {} })`（W2 已寫入，W8 把 action 從 `line.template.update` 改名為 `notification_template.update` 對齊 design）
+- [x] `server/routes/nuxt-api/admin/notification-templates/[key]/reset.post.ts`：同上 `action: 'notification_template.reset'`（同上改名）
 
 ### Permission enforcement
 
-- [ ] PUT/reset endpoint：讀 `requiresSuperLevel` 後校驗 admin level=super；非 super 回 403 + 三語錯誤訊息
-- [ ] e2e：assistant 嘗試改 `dispatch.driver-pending` → 403
+- [x] PUT/reset endpoint：讀 `meta.requiresSuperLevel` 後校驗 `auth.level === 'super'`；非 super 回 403 + 三語錯誤訊息
+- [ ] e2e：assistant 嘗試改 `dispatch.driver-pending` → 403（待 Brain AI prod 實測）
 
-### 12 個模板 e2e 驗證
+### 12 個模板 e2e 驗證（Brain AI prod 實測）
 
 - [ ] F1 派發 → driver 收 Flex 文案正常
 - [ ] F3 配對成功 → passenger 收 Flex 三語
@@ -194,9 +194,9 @@
 - [ ] F6 重新配對 → passenger 收 Flex
 - [ ] T3-T9 → driver/applicant 收純文字、placeholder 替換正常
 
-### Fallback 路徑
+### Fallback 路徑（Brain AI prod 實測）
 
-- [ ] 模板 enabled=false 時：loadTemplate 回 defaultContent-based template，推播文案為 registry 預設
+- [ ] 模板 enabled=false 時：loadTemplate 回 null → resolveTemplate fallback registry default，推播文案為預設
 - [ ] 模板 doc 不存在時：同上
 
 ---
@@ -205,20 +205,20 @@
 
 ### OpenSpec
 
-- [ ] proposal.md / design.md / tasks.md 反映最終狀態（含修改紀錄）
-- [ ] `openspec validate 2026-05-23-line-template-expansion`
-- [ ] `/opsx:archive` 移到 `archive/`
+- [x] proposal.md / design.md / tasks.md 反映最終狀態（含修改紀錄；W2 nested content / W7 contentByLang / W8 super 校驗 / audit log action 改名統一全部勾選）
+- [ ] `openspec validate 2026-05-23-line-template-expansion`（local 無 openspec CLI；Brain AI 用 /opsx:verify 驗證）
+- [ ] `/opsx:archive` 移到 `archive/`（待 Brain AI prod 驗 W5-W8 後執行）
 
 ### Memory update
 
-- [ ] 新增 `memory/project-line-template-expansion.md`（OpenSpec 完工記錄）
-- [ ] 更新 `MEMORY.md` index
+- [x] 更新 `memory/project-line-template-expansion.md`（OpenSpec 完工記錄，已記 batch 1+2+3 全完成）
+- [x] 更新 `MEMORY.md` index（已標 batch 1+2+3）
 
 ### 批次 3 prod 推送
 
-- [ ] 最終一次 `pnpm build` 綠燈
-- [ ] commit + push main（如有 audit log 等小改）
-- [ ] Brain AI 最終確認
+- [x] 最終一次 `pnpm lint` + `pnpm build` 綠燈
+- [x] commit + push main（W8 audit log action 改名 + requiresSuperLevel 校驗）
+- [ ] Brain AI 最終確認（W5-W8 全功能 prod 實測）→ 確認後 Brain AI 觸發 archive
 
 ### Phase 2 留尾（不做、記錄）
 
