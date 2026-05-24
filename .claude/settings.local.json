@@ -48,7 +48,14 @@
       "Bash(cd C:/Users/awfulone/Desktop/Projects/cc_da && npx *)",
       "Bash(npx openspec *)",
       "Bash(pnpm eslint *)",
-      "Bash(pnpm openspec *)"
+      "Bash(pnpm openspec *)",
+      "Bash(where openspec *)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(openspec validate *)",
+      "Bash(ls \"C:/Users/awfulone/AppData/Roaming/npm/\" 2>&1 | grep -i openspec)",
+      "Bash(openspec status *)",
+      "Bash(where.exe openspec *)"
     ]
   }
 }

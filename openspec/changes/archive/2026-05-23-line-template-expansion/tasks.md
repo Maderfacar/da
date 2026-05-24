@@ -116,9 +116,9 @@
 
 - [x] `pnpm lint` 綠燈
 - [x] `pnpm build` 綠燈
-- [ ] commit + push main（Vercel 自動部署 prod）
-- [ ] Brain AI prod 實測：4 個關鍵場景（建單 / 派發 / 軟配 / 訂單取消）LINE 推播文案正常
-- [ ] 確認後進入批次 2
+- [x] commit + push main（commit 4249fff 已 push，Vercel 自動部署 prod）
+- [x] Brain AI prod 實測：4 個關鍵場景（建單 / 派發 / 軟配 / 訂單取消）LINE 推播文案正常（Brain AI 確認後已進入批次 2）
+- [x] 確認後進入批次 2（batch 2 commit f3174b1 已完成）
 
 ---
 
@@ -168,8 +168,8 @@
 
 - [x] `pnpm lint` + `pnpm build` 綠燈
 - [x] commit + push main（commit f3174b1 已 push，Vercel 自動部署 prod）
-- [ ] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常、三語 tab 可切換 + 各自編輯
-- [ ] 確認後進入批次 3
+- [x] Brain AI prod 實測：admin 可編輯各 category 模板、權限限制正確、預覽正常、三語 tab 可切換 + 各自編輯（Brain AI 確認後已進入批次 3）
+- [x] 確認後進入批次 3（batch 3 commit 2d25919 已完成）
 
 ---
 
