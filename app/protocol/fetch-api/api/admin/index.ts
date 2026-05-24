@@ -312,6 +312,35 @@ export const NotifyOrder = (orderId: string, body: NotifyOrderBody) =>
     body as unknown as Record<string, unknown>,
   );
 
+// Wave 1C：訂單後修 tag → 車資重算 -------------------------------------------
+
+export type OrderRecalcWarning = 'discount_expired_fallback';
+
+export interface OrderRecalcBeforeAfter {
+  tagIds: string[]
+  tagSurcharge: number
+  discountAmount: number
+  fareBeforeDiscount: number
+  finalTotal: number
+  /** preview 端點 after 才有，PATCH 不回傳 */
+  tagSnapshot?: AdminOrderPrefTagSnapshot[]
+}
+
+export interface OrderRecalcPreviewRes {
+  orderId: string
+  before: OrderRecalcBeforeAfter
+  after: OrderRecalcBeforeAfter
+  diff: { finalTotal: number; tagSurcharge: number; discountAmount: number }
+  warnings: OrderRecalcWarning[]
+}
+
+/** Wave 1C：訂單後修 tag 重算車資（dry-run，僅預覽，不寫 doc） */
+export const RecalcOrderPreview = (orderId: string, body: { tagIds: string[] }) =>
+  methods.post<OrderRecalcPreviewRes>(
+    `/nuxt-api/admin/orders/${orderId}/recalc-preview`,
+    body as unknown as Record<string, unknown>,
+  );
+
 // P18：admins collection 相關 ----------------------------------------------------
 
 // P34：細粒度權限類型（與 server/utils/require-permission.ts Permission 對齊）

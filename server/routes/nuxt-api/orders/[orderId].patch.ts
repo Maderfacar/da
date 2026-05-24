@@ -19,6 +19,12 @@ import {
   getReferralCampaign,
   buildReferralShareFlex,
 } from '@@/utils/referral';
+import {
+  validateAndSnapshotPreferences,
+  snapshotForFirestore,
+} from '@@/utils/order-preferences';
+import { recheckDiscountCode } from '@@/utils/discount-recheck';
+import { recalcFinalTotal } from '~shared/fare/recalc';
 
 interface GooglePlaceLite {
   address: string;
@@ -56,6 +62,8 @@ interface PatchOrderBody {
   contactPhone?: string;
   // Wave 1 D2：driver 推進 4 階段時附上當下 GPS（lat, lng）
   driverLocation?: { lat: number; lng: number };
+  // Wave 1C：admin 後修 tag → 重 snapshot + 重算 fare + 重檢 discount（僅 admin + 未指派狀態）
+  preferences?: { tagIds?: string[] } | null;
 }
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
@@ -128,10 +136,16 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<PatchOrderBody>(event);
 
-  // Phase 1D：忽略 body.preferences（snapshot 一旦寫入即固化，不支援 patch；
-  // 改價需求請走 cancel + 重新下單）
-  if ((body as { preferences?: unknown }).preferences !== undefined) {
-    console.warn('[orders.patch] preferences in patch body is ignored (snapshot is immutable)');
+  // Wave 1C：body.preferences.tagIds 為 admin-only 操作（後修 tag + 重算 fare + 重檢 discount）。
+  // 其他角色帶此欄位視同無效（與 Phase 1D 初版相容，避免乘客 / driver 誤觸）。
+  const rawPrefs = (body as { preferences?: unknown }).preferences;
+  const hasTagPatch =
+    rawPrefs !== undefined
+    && rawPrefs !== null
+    && typeof rawPrefs === 'object'
+    && Array.isArray((rawPrefs as { tagIds?: unknown }).tagIds);
+  if (!hasTagPatch) {
+    // 非 admin tag 後修場景一律忽略，避免 snapshot 被亂改
     delete (body as { preferences?: unknown }).preferences;
   }
 
@@ -148,6 +162,7 @@ export default defineEventHandler(async (event) => {
   const hasAnyField = body.orderStatus !== undefined
     || body.assignedDriverId !== undefined
     || body.cancelReason !== undefined
+    || hasTagPatch
     || ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
   if (!hasAnyField) {
     return badRequestError({ zh_tw: '沒有可更新的欄位', en: 'No fields to update', ja: '更新するフィールドがありません' });
@@ -192,8 +207,8 @@ export default defineEventHandler(async (event) => {
       if (body.orderStatus && body.orderStatus !== 'cancelled') {
         return forbiddenError({ zh_tw: '乘客僅能取消訂單', en: 'Passenger can only cancel order', ja: 'お客様はキャンセルのみ可能です' });
       }
-      // 乘客不可改 admin-only 欄位
-      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
+      // 乘客不可改 admin-only 欄位（含 preferences tag 後修）
+      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined) || hasTagPatch;
       if (adminFieldUsed) {
         return forbiddenError({ zh_tw: '乘客無權修改此欄位', en: 'Passenger cannot modify this field', ja: 'お客様はこの項目を変更する権限がありません' });
       }
@@ -201,7 +216,7 @@ export default defineEventHandler(async (event) => {
 
     // P22：driver 不可改 admin-only 欄位（只能改 status / 取消 + cancelReason）
     if (isDriver && !isAdmin) {
-      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
+      const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined) || hasTagPatch;
       if (adminFieldUsed) {
         return forbiddenError({ zh_tw: '司機無權修改此欄位', en: 'Driver cannot modify this field', ja: 'ドライバーはこの項目を変更する権限がありません' });
       }
@@ -383,6 +398,134 @@ export default defineEventHandler(async (event) => {
         lng: loc.lng,
         address: '',
         recordedAt: FieldValue.serverTimestamp(),
+      };
+    }
+
+    // ── Wave 1C：admin 後修 tag → 重 snapshot + 重算 fare + 重檢 discount ──
+    // 守則：admin only + 訂單未指派司機 + 仍 pending（dispatched 也是 pending）
+    // 留底 prevTagRecalc 供 audit log；非 tag-patch 路徑為 null
+    interface TagRecalcAudit {
+      tagIdsBefore: string[];
+      tagIdsAfter: string[];
+      fareBeforeDiscount: number;
+      tagSurchargeBefore: number;
+      tagSurchargeAfter: number;
+      discountAmountBefore: number;
+      discountAmountAfter: number;
+      finalTotalBefore: number;
+      finalTotalAfter: number;
+      warning: 'discount_expired_fallback' | null;
+    }
+    let tagRecalcAudit: TagRecalcAudit | null = null;
+    let tagRecalcWarning: 'discount_expired_fallback' | null = null;
+
+    if (hasTagPatch) {
+      if (!isAdmin) {
+        return forbiddenError({
+          zh_tw: '僅 admin 可後修偏好標籤',
+          en: 'Only admin can edit order tags',
+          ja: '管理者のみ注文タグを編集できます',
+        });
+      }
+      // 狀態守則：未指派司機才可改（assigned 後動價會混淆司機 / 乘客）
+      if (orderAssignedDriver) {
+        return forbiddenError({
+          zh_tw: '訂單已指派司機，無法修改偏好標籤',
+          en: 'Order already assigned to driver, cannot edit tags',
+          ja: 'ドライバー指定済みの注文はタグを編集できません',
+        });
+      }
+      // 仍 pending 才可改（cancelled / completed 不允許）
+      if (prevStatus !== 'pending') {
+        return forbiddenError({
+          zh_tw: '僅待確認狀態的訂單可修改偏好標籤',
+          en: 'Only pending orders can edit tags',
+          ja: '保留中の注文のみタグを編集できます',
+        });
+      }
+
+      const newTagIds = Array.from(
+        new Set(((rawPrefs as { tagIds: unknown }).tagIds as unknown[]).filter(
+          (x): x is string => typeof x === 'string' && x.length > 0,
+        )),
+      );
+
+      // 重 snapshot（validate + index + buildPreferencesSnapshot）
+      const { errors, snapshot } = await validateAndSnapshotPreferences(db, { tagIds: newTagIds });
+      if (errors.length > 0) {
+        const summary = errors.map((e) => `${e.field}:${e.code}`).join(', ');
+        return badRequestError({
+          zh_tw: `偏好標籤驗證失敗：${summary}`,
+          en: `Preferences validation failed: ${summary}`,
+          ja: `好み設定のバリデーション失敗：${summary}`,
+        });
+      }
+      const newSnapshot = snapshot ?? {
+        tagIds: newTagIds,
+        tagSnapshot: [],
+        tagSurcharge: 0,
+        snapshotAt: new Date().toISOString(),
+      };
+
+      // 既有 fare 欄位（建單時寫入；舊單可能無 fareBeforeDiscount → fallback estimatedFare）
+      const fareBeforeDiscount = typeof orderData.fareBeforeDiscount === 'number'
+        ? orderData.fareBeforeDiscount
+        : ((orderData.estimatedFare as number | undefined) ?? 0);
+      const tagSurchargeBefore = typeof orderData.preferences === 'object'
+        && orderData.preferences !== null
+        && typeof (orderData.preferences as { tagSurcharge?: number }).tagSurcharge === 'number'
+        ? (orderData.preferences as { tagSurcharge: number }).tagSurcharge
+        : 0;
+      const discountAmountBefore = typeof orderData.discountAmount === 'number'
+        ? orderData.discountAmount
+        : 0;
+      const tagIdsBefore = typeof orderData.preferences === 'object'
+        && orderData.preferences !== null
+        && Array.isArray((orderData.preferences as { tagIds?: unknown }).tagIds)
+        ? ((orderData.preferences as { tagIds: string[] }).tagIds)
+        : [];
+
+      // 重檢折扣碼
+      const recheck = await recheckDiscountCode(db, {
+        discountCode: (orderData.discountCode as string | null | undefined) ?? null,
+        originalDiscountAmount: discountAmountBefore,
+        orderType: (orderData.orderType as string | undefined) ?? '',
+        fareBeforeDiscount,
+      });
+
+      // 重算 finalTotal
+      const beforeCalc = recalcFinalTotal({
+        fareBeforeDiscount,
+        discountAmount: discountAmountBefore,
+        tagSurcharge: tagSurchargeBefore,
+      });
+      const afterCalc = recalcFinalTotal({
+        fareBeforeDiscount,
+        discountAmount: recheck.discountAmount,
+        tagSurcharge: newSnapshot.tagSurcharge,
+      });
+
+      // 寫入 updates（snapshot + 新車資 + discount fallback / 更新）
+      updates.preferences = snapshotForFirestore(newSnapshot);
+      updates.estimatedFare = afterCalc.finalTotal;
+      updates.discountAmount = recheck.discountAmount;
+      // fareBeforeDiscount 不變（route 未動）；舊單若無此欄位 → 補寫一筆便於日後 audit / 重算
+      if (typeof orderData.fareBeforeDiscount !== 'number') {
+        updates.fareBeforeDiscount = fareBeforeDiscount;
+      }
+
+      tagRecalcWarning = recheck.warning === 'expired_fallback' ? 'discount_expired_fallback' : null;
+      tagRecalcAudit = {
+        tagIdsBefore,
+        tagIdsAfter: newSnapshot.tagIds,
+        fareBeforeDiscount,
+        tagSurchargeBefore,
+        tagSurchargeAfter: newSnapshot.tagSurcharge,
+        discountAmountBefore,
+        discountAmountAfter: recheck.discountAmount,
+        finalTotalBefore: beforeCalc.finalTotal,
+        finalTotalAfter: afterCalc.finalTotal,
+        warning: tagRecalcWarning,
       };
     }
 
@@ -677,12 +820,58 @@ export default defineEventHandler(async (event) => {
       if (editedAdminFields.length > 0) {
         auditActions.push({ action: 'order.edit', payload: { fields: editedAdminFields, after: editedAdminFields.reduce((acc, k) => { acc[k] = body[k]; return acc; }, {} as Record<string, unknown>) } });
       }
+      // Wave 1C：tag 後修 + 車資重算
+      if (tagRecalcAudit) {
+        auditActions.push({
+          action: 'order.tag-update.price-recalc',
+          payload: {
+            before: {
+              tagIds: tagRecalcAudit.tagIdsBefore,
+              tagSurcharge: tagRecalcAudit.tagSurchargeBefore,
+              discountAmount: tagRecalcAudit.discountAmountBefore,
+              finalTotal: tagRecalcAudit.finalTotalBefore,
+            },
+            after: {
+              tagIds: tagRecalcAudit.tagIdsAfter,
+              tagSurcharge: tagRecalcAudit.tagSurchargeAfter,
+              discountAmount: tagRecalcAudit.discountAmountAfter,
+              finalTotal: tagRecalcAudit.finalTotalAfter,
+            },
+            fareBeforeDiscount: tagRecalcAudit.fareBeforeDiscount,
+            warning: tagRecalcAudit.warning,
+          },
+        });
+      }
       for (const a of auditActions) {
         await writeAuditLog({ event, auth, action: a.action, targetType: 'order', targetId: orderId, payload: a.payload });
       }
     }
 
-    return successResponse({ orderId, ...body });
+    // 回傳：基本欄位 + tag recalc 結果（admin 後修場景才有 finalTotal / warning）
+    const responsePayload: Record<string, unknown> = { orderId, ...body };
+    if (tagRecalcAudit) {
+      responsePayload.recalc = {
+        before: {
+          tagIds: tagRecalcAudit.tagIdsBefore,
+          tagSurcharge: tagRecalcAudit.tagSurchargeBefore,
+          discountAmount: tagRecalcAudit.discountAmountBefore,
+          finalTotal: tagRecalcAudit.finalTotalBefore,
+        },
+        after: {
+          tagIds: tagRecalcAudit.tagIdsAfter,
+          tagSurcharge: tagRecalcAudit.tagSurchargeAfter,
+          discountAmount: tagRecalcAudit.discountAmountAfter,
+          finalTotal: tagRecalcAudit.finalTotalAfter,
+        },
+        diff: {
+          finalTotal: tagRecalcAudit.finalTotalAfter - tagRecalcAudit.finalTotalBefore,
+          tagSurcharge: tagRecalcAudit.tagSurchargeAfter - tagRecalcAudit.tagSurchargeBefore,
+          discountAmount: tagRecalcAudit.discountAmountAfter - tagRecalcAudit.discountAmountBefore,
+        },
+        warnings: tagRecalcWarning ? [tagRecalcWarning] : [],
+      };
+    }
+    return successResponse(responsePayload);
   } catch (err) {
     console.error('[orders/patch] Firestore update failed:', err);
     return serverError();

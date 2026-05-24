@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch } from '@/protocol/fetch-api/api/admin';
+import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch, OrderRecalcPreviewRes, OrderRecalcWarning } from '@/protocol/fetch-api/api/admin';
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 import { ORDER_TYPES } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
@@ -100,6 +101,52 @@ const editForm = reactive<EditForm>({
   notes: '',
 });
 
+// Wave 1C：訂單偏好標籤後修狀態
+const vehicleTags = ref<TagDto[]>([]);
+const tagsLoading = ref(false);
+const editTagIds = ref<string[]>([]);
+const originalTagIds = ref<string[]>([]);
+const recalcPreview = ref<OrderRecalcPreviewRes | null>(null);
+const recalcLoading = ref(false);
+const recalcError = ref<string | null>(null);
+const savingTags = ref(false);
+let recalcDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const hasTagChange = computed(() => {
+  const a = [...editTagIds.value].sort().join('|');
+  const b = [...originalTagIds.value].sort().join('|');
+  return a !== b;
+});
+
+const canEditTags = computed(() => {
+  if (!selectedOrder.value) return false;
+  if (selectedOrder.value.assignedDriverId) return false;
+  return selectedOrder.value.orderStatus === 'pending';
+});
+
+const ApiLoadVehicleTags = async () => {
+  if (vehicleTags.value.length > 0) return;
+  tagsLoading.value = true;
+  try {
+    const res = await $api.GetActiveTags('vehicle');
+    if (res.status?.code === 200 && Array.isArray(res.data?.tags)) {
+      vehicleTags.value = res.data.tags;
+    }
+  } finally {
+    tagsLoading.value = false;
+  }
+};
+
+const ResetTagRecalcState = () => {
+  if (recalcDebounceTimer) {
+    clearTimeout(recalcDebounceTimer);
+    recalcDebounceTimer = null;
+  }
+  recalcPreview.value = null;
+  recalcError.value = null;
+  recalcLoading.value = false;
+};
+
 // 新增訂單彈窗
 const showCreate = ref(false);
 
@@ -179,11 +226,20 @@ const ClickEditMode = () => {
   editForm.flightNumber = o.flightNumber ?? '';
   editForm.terminal = o.terminal ?? '';
   editForm.notes = o.notes ?? '';
+  // Wave 1C：tag 後修初始化（同步 selectedOrder.preferences.tagIds）
+  const prefTagIds = o.preferences?.tagIds ?? [];
+  originalTagIds.value = [...prefTagIds];
+  editTagIds.value = [...prefTagIds];
+  ResetTagRecalcState();
+  ApiLoadVehicleTags();
   isEditing.value = true;
 };
 
 const ClickCancelEdit = () => {
   isEditing.value = false;
+  ResetTagRecalcState();
+  originalTagIds.value = [];
+  editTagIds.value = [];
 };
 
 // 停靠站操作
@@ -807,6 +863,97 @@ watch(() => selectedOrder.value?.orderId, async (id) => {
   }
 });
 
+// ── Wave 1C：訂單偏好標籤後修 — 預覽 / 儲存 ───────────────────────────────
+/** debounce 300ms 後 call ApiRecalcOrderPreview */
+const ApiRecalcPreviewFlow = async () => {
+  if (!selectedOrder.value) return;
+  if (!hasTagChange.value) {
+    recalcPreview.value = null;
+    recalcError.value = null;
+    return;
+  }
+  if (!canEditTags.value) {
+    recalcError.value = tI18n('admin.orders.tagEdit.assignedLocked');
+    recalcPreview.value = null;
+    return;
+  }
+  recalcLoading.value = true;
+  recalcError.value = null;
+  try {
+    const res = await $api.RecalcOrderPreview(selectedOrder.value.orderId, {
+      tagIds: editTagIds.value,
+    });
+    if (res.status.code === 200 && res.data) {
+      recalcPreview.value = res.data;
+    } else {
+      recalcPreview.value = null;
+      recalcError.value = res.status?.message?.zh_tw ?? tI18n('admin.orders.tagEdit.previewFailed');
+    }
+  } catch (_err) {
+    recalcPreview.value = null;
+    recalcError.value = tI18n('admin.orders.tagEdit.previewFailed');
+  } finally {
+    recalcLoading.value = false;
+  }
+};
+
+watch(editTagIds, () => {
+  if (!isEditing.value) return;
+  if (recalcDebounceTimer) clearTimeout(recalcDebounceTimer);
+  recalcDebounceTimer = setTimeout(() => {
+    void ApiRecalcPreviewFlow();
+  }, 300);
+}, { deep: true });
+
+const RecalcWarningLabel = (w: OrderRecalcWarning): string => {
+  if (w === 'discount_expired_fallback') return tI18n('admin.orders.tagEdit.discountExpiredWarning');
+  return w;
+};
+
+const ClickSaveTagsFlow = async () => {
+  if (!selectedOrder.value) return;
+  if (savingTags.value) return;
+  if (!hasTagChange.value) {
+    ElMessage({ message: tI18n('admin.orders.tagEdit.noChange'), type: 'info' });
+    return;
+  }
+  if (!canEditTags.value) {
+    ElMessage({ message: tI18n('admin.orders.tagEdit.assignedLocked'), type: 'warning' });
+    return;
+  }
+  // 二次確認（顯示差額）
+  const diffStr = recalcPreview.value
+    ? `${recalcPreview.value.diff.finalTotal > 0 ? '+' : ''}NT$ ${recalcPreview.value.diff.finalTotal.toLocaleString()}`
+    : '—';
+  const msg = tI18n('admin.orders.tagEdit.confirmMessage', { diff: diffStr });
+  const ok = await UseAsk().Any(
+    msg,
+    tI18n('admin.orders.tagEdit.confirmTitle'),
+    tI18n('admin.orders.cancelBtn'),
+    tI18n('admin.orders.tagEdit.confirmOk'),
+  );
+  if (!ok) return;
+  savingTags.value = true;
+  try {
+    const res = await $api.PatchOrder(selectedOrder.value.orderId, {
+      preferences: { tagIds: editTagIds.value },
+    } as unknown as PatchOrderParams);
+    if (res.status.code === 200) {
+      ElMessage({ message: tI18n('admin.orders.tagEdit.saveSuccess'), type: 'success' });
+      ResetTagRecalcState();
+      originalTagIds.value = [...editTagIds.value];
+      await ApiLoadOrders();
+    } else {
+      ElMessage({
+        message: res.status?.message?.zh_tw ?? tI18n('admin.orders.tagEdit.saveFailed'),
+        type: 'error',
+      });
+    }
+  } finally {
+    savingTags.value = false;
+  }
+};
+
 onMounted(() => {
   ApiLoadOrders();
   ApiLoadDrivers();
@@ -1201,6 +1348,49 @@ onMounted(() => {
                   :class="{ 'is-active': editForm.extraServices.includes(s.id) }"
                   @click="ClickToggleExtra(s.id)"
                 ) {{ s.label.zh }}
+
+            //- Wave 1C：訂單偏好標籤後修（會觸發車資重算）
+            .PageAdminOrders__edit-field.PageAdminOrders__tag-edit
+              label.PageAdminOrders__edit-label
+                | {{ $t('admin.orders.tagEdit.title') }}
+                span.PageAdminOrders__tag-edit-hint(v-if="!canEditTags")
+                  |   ({{ $t('admin.orders.tagEdit.assignedLocked') }})
+              .PageAdminOrders__tag-edit-empty(v-if="tagsLoading") {{ $t('admin.orders.tagEdit.loadingTags') }}
+              .PageAdminOrders__tag-edit-empty(v-else-if="vehicleTags.length === 0") {{ $t('admin.orders.tagEdit.noTags') }}
+              BookingPassengerTagPreferencePicker(
+                v-else
+                :tags="vehicleTags"
+                v-model="editTagIds"
+                :disabled="!canEditTags || savingTags"
+              )
+              //- 差價預覽卡
+              .PageAdminOrders__tag-edit-preview(v-if="hasTagChange")
+                .PageAdminOrders__tag-edit-row(v-if="recalcLoading") {{ $t('admin.orders.tagEdit.previewing') }}
+                .PageAdminOrders__tag-edit-row.is-error(v-else-if="recalcError") {{ recalcError }}
+                template(v-else-if="recalcPreview")
+                  .PageAdminOrders__tag-edit-row
+                    span.PageAdminOrders__tag-edit-key {{ $t('admin.orders.tagEdit.priceBefore') }}
+                    span.PageAdminOrders__tag-edit-val NT$ {{ recalcPreview.before.finalTotal.toLocaleString() }}
+                  .PageAdminOrders__tag-edit-row
+                    span.PageAdminOrders__tag-edit-key {{ $t('admin.orders.tagEdit.priceAfter') }}
+                    span.PageAdminOrders__tag-edit-val NT$ {{ recalcPreview.after.finalTotal.toLocaleString() }}
+                  .PageAdminOrders__tag-edit-row.is-diff(
+                    :class="{ 'is-up': recalcPreview.diff.finalTotal > 0, 'is-down': recalcPreview.diff.finalTotal < 0 }"
+                  )
+                    span.PageAdminOrders__tag-edit-key {{ $t('admin.orders.tagEdit.priceDiff') }}
+                    span.PageAdminOrders__tag-edit-val
+                      | {{ recalcPreview.diff.finalTotal > 0 ? '+' : '' }}NT$ {{ recalcPreview.diff.finalTotal.toLocaleString() }}
+                  .PageAdminOrders__tag-edit-row.is-warning(
+                    v-for="w in recalcPreview.warnings"
+                    :key="w"
+                  ) ⚠️ {{ RecalcWarningLabel(w) }}
+              //- 套用按鈕
+              .PageAdminOrders__tag-edit-actions(v-if="hasTagChange")
+                button.PageAdminOrders__action.is-primary(
+                  type="button"
+                  :disabled="savingTags || !canEditTags || recalcLoading"
+                  @click="ClickSaveTagsFlow"
+                ) {{ savingTags ? $t('admin.orders.tagEdit.saving') : $t('admin.orders.tagEdit.confirmOk') }}
 
             //- 航班 / 航廈（接送機才顯示但 admin 兩欄都可填）
             .PageAdminOrders__edit-grid
@@ -2130,6 +2320,77 @@ $muted: rgba(255, 255, 255, 0.35);
     background: rgba($amber, 0.12);
     color: $amber-light;
   }
+}
+
+// Wave 1C：訂單後修偏好標籤 + 差價預覽卡
+.PageAdminOrders__tag-edit { gap: 10px; }
+
+.PageAdminOrders__tag-edit-hint {
+  font-size: 11px;
+  color: rgba(255, 200, 100, 0.85);
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.PageAdminOrders__tag-edit-empty {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.PageAdminOrders__tag-edit-preview {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(100, 200, 255, 0.06);
+  border: 1px solid rgba(100, 200, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.PageAdminOrders__tag-edit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+
+  &.is-error { color: rgba(255, 120, 120, 0.95); justify-content: flex-start; }
+
+  &.is-warning {
+    color: rgba(255, 200, 100, 0.95);
+    font-size: 12px;
+    justify-content: flex-start;
+  }
+
+  &.is-diff {
+    font-weight: 700;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    margin-top: 2px;
+  }
+
+  &.is-up .PageAdminOrders__tag-edit-val { color: rgba(255, 120, 120, 0.95); }
+  &.is-down .PageAdminOrders__tag-edit-val { color: rgba(120, 220, 150, 0.95); }
+}
+
+.PageAdminOrders__tag-edit-key {
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.PageAdminOrders__tag-edit-val {
+  font-variant-numeric: tabular-nums;
+}
+
+.PageAdminOrders__tag-edit-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 // ── Modal Footer ──────────────────────────────────────────

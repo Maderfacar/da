@@ -60,6 +60,7 @@ export type AuditAction =
   | 'order.cancel_by_admin'
   | 'order.edit'
   | 'order.create'                 // admin 在 /admin/orders 手動建立訂單（guest 乘客）
+  | 'order.tag-update.price-recalc' // Wave 1C：admin 後修 tag 觸發車資重算
   // Phase 1E 訂單需求單 / 司機喊單 / 配對
   | 'order.dispatch'               // admin 發出需求單（dispatchAt 寫入）
   | 'order.redispatch'             // admin 對已派發未指派訂單重發推播（dispatchCount++）
