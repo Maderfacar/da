@@ -3,6 +3,7 @@ import { visualizer } from 'rollup-plugin-visualizer'; // 打包分析
 import { resolve } from 'node:path';
 import version from './version'; // 版本號
 import dayjs from 'dayjs'; // 日期處理
+import { getSecurityHeaders } from './server/utils/security-headers'; // W3：HTTP 安全標頭
 
 // ------------------------
 const useVisualizer = false; // 使用打包分析
@@ -255,10 +256,11 @@ export default defineNuxtConfig({
     // Nuxt route 路由設定 ------------
     // https://nuxt.com/docs/guide/concepts/rendering#route-rules
     routeRules: {
-      // '/api/**': { // 自訂反向代理
-      //   proxy: `${process.env.NUXT_API_BASE as string}/api/**`
-      // }
-      // '/': { ssr: true },
+      // W3：HTTP Security Headers
+      // 全站套基礎 hardening header（HSTS / CSP / X-Frame-Options 等）
+      // admin 端額外覆寫為更嚴的 frame 防護（DENY + frame-ancestors 'none'）
+      '/**': { headers: getSecurityHeaders('default') },
+      '/admin/**': { headers: getSecurityHeaders('admin') },
     }
   },
 
