@@ -23,6 +23,7 @@ import {
   validateBodyHtml,
   type LegalPageDoc,
 } from '@@/utils/legal-pages';
+import { sanitizeHtml } from '@@/utils/html-sanitize';
 
 interface PutBody {
   title?: unknown;
@@ -67,10 +68,12 @@ export default defineEventHandler(async (event) => {
     const prevVersion = snap.exists ? Number((snap.data() as Partial<LegalPageDoc>)?.version ?? 0) : 0;
     const nextVersion = (Number.isFinite(prevVersion) ? prevVersion : 0) + 1;
 
+    const sanitizedBodyHtml = sanitizeHtml(bodyCheck.value);
+
     const update: Partial<LegalPageDoc> & { updatedAt: FirebaseFirestore.FieldValue } = {
       key: keyCheck.value,
       title: titleCheck.value,
-      bodyHtml: bodyCheck.value,
+      bodyHtml: sanitizedBodyHtml,
       updatedBy: auth.lineUid,
       updatedAt: FieldValue.serverTimestamp(),
       version: nextVersion,
@@ -93,7 +96,7 @@ export default defineEventHandler(async (event) => {
         key: keyCheck.value,
         version: nextVersion,
         titleLen: titleCheck.value.length,
-        bodyHtmlLen: bodyCheck.value.length,
+        bodyHtmlLen: sanitizedBodyHtml.length,
       },
     });
 
