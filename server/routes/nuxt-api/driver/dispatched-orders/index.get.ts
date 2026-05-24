@@ -12,7 +12,9 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { successResponse, forbiddenError, serverError } from '@@/utils/response';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
-import type { OrderBidEntry } from '@@/utils/order-dispatch';
+import { type OrderBidEntry, loadDriverCategory } from '@@/utils/order-dispatch';
+import { getNextDowngradeAt } from '@@/utils/dispatch-duration';
+import { isDispatchLevel, type DispatchLevel } from '~shared/types/dispatch-visibility';
 import type { Timestamp } from 'firebase-admin/firestore';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
@@ -37,6 +39,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+    // Wave 2B+2C：先拉司機分級（缺 driver doc fallback '0' NOVICE）
+    const driverCategory = await loadDriverCategory(db, auth.lineUid);
+
     // 只用單欄位 orderBy('createdAt')（Firestore 自動建單欄位 index，零 composite index 需求），
     // orderStatus / dispatchAt / assignedDriverId 全部改 in-memory filter。
     //
@@ -56,6 +61,13 @@ export default defineEventHandler(async (event) => {
       .filter(({ data }) =>
         data.orderStatus === 'pending' && !!data.dispatchAt && !data.assignedDriverId,
       )
+      // Wave 2B+2C：driver category 必須 >= order currentLevel 才看得到
+      // 舊單無 dispatchVisibility → fallback currentLevel='0'（全開），等同無變化
+      .filter(({ data }) => {
+        const vis = (data.dispatchVisibility ?? null) as { currentLevel?: unknown } | null;
+        const currentLevel: DispatchLevel = isDispatchLevel(vis?.currentLevel) ? vis!.currentLevel : '0';
+        return driverCategory >= currentLevel; // 字串字典序比 '0'<'1'<'2'
+      })
       .map(({ id, data }) => {
         const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
         const myBid = rawBids.find((b) => b.driverId === myUid);
@@ -63,6 +75,18 @@ export default defineEventHandler(async (event) => {
         if (myBid) myBidStatus = myBid.withdrawnAt ? 'withdrawn' : 'bid';
 
         const activeBidCount = rawBids.filter((b) => !b.withdrawnAt).length;
+
+        // Wave 2B+2C：給 UI 倒數用
+        const vis = (data.dispatchVisibility ?? null) as
+          | { currentLevel?: unknown; openedAt?: Timestamp | null }
+          | null;
+        const currentLevel: DispatchLevel = isDispatchLevel(vis?.currentLevel) ? vis!.currentLevel : '0';
+        const openedAt = (vis?.openedAt ?? null) as Timestamp | null;
+        const nextDowngradeAt = getNextDowngradeAt(
+          (data.orderType as string) ?? '',
+          currentLevel,
+          openedAt,
+        );
 
         return {
           orderId: id,
@@ -85,6 +109,10 @@ export default defineEventHandler(async (event) => {
           dispatchAt: _tsToIso(data.dispatchAt),
           activeBidCount,
           myBidStatus,
+          // Wave 2B+2C
+          dispatchCurrentLevel: currentLevel,
+          dispatchOpenedAt: _tsToIso(openedAt),
+          dispatchNextDowngradeAt: _tsToIso(nextDowngradeAt),
         };
       });
 

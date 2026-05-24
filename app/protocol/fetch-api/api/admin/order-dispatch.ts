@@ -1,4 +1,5 @@
 import methods from '@/protocol/fetch-api/methods';
+import type { DispatchLevel } from '~shared/types/dispatch-visibility';
 
 // Phase 1E：訂單需求單 / 司機喊單 / 配對 — admin 端 API ----------------------
 
@@ -26,11 +27,17 @@ export interface AdminOrderBidsRes {
   bids: AdminBidWithMatch[];
 }
 
-/** Admin：對某筆 pending 訂單發出需求單（觸發 LINE multicast 給所有 active driver） */
-export const DispatchOrder = (orderId: string) =>
-  methods.post<{ orderId: string; dispatched: boolean }>(
+/**
+ * Admin：對某筆 pending 訂單發出需求單（觸發 LINE multicast 給符合首發等級的 active driver）
+ *
+ * Wave 2B+2C：startLevel 控制首發可見範圍：
+ *  - '2' 只 pro 司機 / '1' standard+pro / '0' 全車隊
+ *  - 未傳 → server fallback '0'（向後相容）
+ */
+export const DispatchOrder = (orderId: string, body?: { startLevel?: DispatchLevel }) =>
+  methods.post<{ orderId: string; dispatched: boolean; startLevel: DispatchLevel }>(
     `/nuxt-api/admin/orders/${orderId}/dispatch`,
-    {},
+    (body ?? {}) as unknown as Record<string, unknown>,
   );
 
 /**
@@ -42,10 +49,10 @@ export const DispatchOrder = (orderId: string) =>
  *
  * 行為：dispatchAt 保留首發時間，新寫 lastDispatchAt + dispatchCount++；bids 陣列保留。
  */
-export const RedispatchOrder = (orderId: string) =>
-  methods.post<{ orderId: string; redispatched: boolean }>(
+export const RedispatchOrder = (orderId: string, body?: { startLevel?: DispatchLevel }) =>
+  methods.post<{ orderId: string; redispatched: boolean; startLevel: DispatchLevel }>(
     `/nuxt-api/admin/orders/${orderId}/redispatch`,
-    {},
+    (body ?? {}) as unknown as Record<string, unknown>,
   );
 
 /** Admin：取某筆訂單目前所有 bids + 對應 driver match 計算 */

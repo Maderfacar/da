@@ -839,6 +839,15 @@ export default {
       redispatchSuccess: '已重新發送需求單',
       dispatchFailed: '發出需求單失敗',
       redispatchFailed: '重發失敗',
+      // Wave 2B+2C：首發等級 select / 司機端倒數
+      startLevel: {
+        label: '首發等級',
+        pro: '高級司機優先',
+        standard: '中級起（standard+）',
+        all: '全車隊',
+        draft: '暫不發布',
+        draftHint: '選擇「暫不發布」時不會推播；若要儲存其他欄位請點「編輯訂單」。',
+      },
       // Wave 1C：訂單後修偏好標籤 + 車資重算
       tagEdit: {
         title: '偏好標籤（會觸發車資重算）',
@@ -899,6 +908,11 @@ export default {
     driverSkill: {
       title: '司機能力標籤',
       desc: '勾選自己具備的能力（變更立即生效，不需審核）',
+    },
+    // Wave 2B+2C：dispatched 訂單卡上的等級倒數
+    dispatch: {
+      countdownLabel: '倒數 {time} 後將開放給更多司機',
+      aboutToDowngrade: '即將開放給更多司機',
     },
   },
   // Phase 1E：訂單需求單 / 司機喊單 / 配對 — 乘客端三語推播文案

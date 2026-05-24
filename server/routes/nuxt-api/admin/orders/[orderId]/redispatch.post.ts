@@ -30,8 +30,8 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
-import { loadActiveDrivers } from '@@/utils/order-dispatch';
-import { pushOrderDispatchToDrivers, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { multicastByLevel, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { isDispatchLevel, type DispatchLevel } from '~shared/types/dispatch-visibility';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -48,6 +48,20 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '缺少訂單 ID', en: 'Missing orderId', ja: '注文IDが必要です' });
   }
 
+  // Wave 2B+2C：可選 startLevel；不傳則沿用 dispatchVisibility.startLevel（缺則 '0'）
+  const body = await readBody<{ startLevel?: unknown }>(event).catch(() => ({}));
+  let overrideStartLevel: DispatchLevel | null = null;
+  if (body?.startLevel !== undefined) {
+    if (!isDispatchLevel(body.startLevel)) {
+      return badRequestError({
+        zh_tw: '首發等級不合法（限 0 / 1 / 2）',
+        en: 'Invalid startLevel (allowed: 0 / 1 / 2)',
+        ja: 'startLevel が不正です（0 / 1 / 2 のみ）',
+      });
+    }
+    overrideStartLevel = body.startLevel;
+  }
+
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
     return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
@@ -58,6 +72,7 @@ export default defineEventHandler(async (event) => {
     const ref = db.collection('orders').doc(orderId);
 
     // transaction 守 status / dispatchAt / assignedDriverId + 寫 lastDispatchAt / dispatchCount
+    // Wave 2B+2C：重發 = 重置 dispatchVisibility.currentLevel = startLevel + push history(reason='init')
     const result = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists) return { code: 'not_found' as const };
@@ -66,12 +81,32 @@ export default defineEventHandler(async (event) => {
       if (!d.dispatchAt) return { code: 'never_dispatched' as const };
       if (d.assignedDriverId) return { code: 'already_assigned' as const };
 
+      // 沿用 body.startLevel，否則沿用既有 startLevel，否則回 '0'
+      const existing = (d.dispatchVisibility ?? null) as
+        | { startLevel?: unknown; levelHistory?: unknown[] }
+        | null;
+      const existingStart = isDispatchLevel(existing?.startLevel) ? existing!.startLevel : '0';
+      const newStart: DispatchLevel = overrideStartLevel ?? existingStart;
+      const prevHistory = Array.isArray(existing?.levelHistory)
+        ? (existing!.levelHistory as Array<Record<string, unknown>>)
+        : [];
+      const now = new Date();
+
       tx.update(ref, {
         lastDispatchAt: FieldValue.serverTimestamp(),
         dispatchCount: FieldValue.increment(1),
         lastDispatchedBy: auth.lineUid,
+        dispatchVisibility: {
+          startLevel: newStart,
+          currentLevel: newStart,
+          openedAt: FieldValue.serverTimestamp(),
+          levelHistory: [
+            ...prevHistory,
+            { level: newStart, openedAt: now, openedBy: auth.lineUid, reason: 'init' },
+          ],
+        },
       });
-      return { code: 'ok' as const, data: d };
+      return { code: 'ok' as const, data: d, startLevel: newStart };
     });
 
     if (result.code === 'not_found') {
@@ -88,6 +123,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const d = result.data;
+    const finalStartLevel = result.startLevel;
     const pref = d.preferences as { tagSnapshot?: Array<{ name?: { zh_tw?: string } }> } | undefined;
     const preferenceChips = Array.isArray(pref?.tagSnapshot)
       ? pref!.tagSnapshot!.map((t) => t?.name?.zh_tw ?? '').filter(Boolean)
@@ -106,12 +142,10 @@ export default defineEventHandler(async (event) => {
       preferenceChips,
     };
 
-    // fire-and-forget 推播 + audit
+    // fire-and-forget 推播 + audit（Wave 2B+2C：依 finalStartLevel 過濾推送對象）
     void (async () => {
       try {
-        const drivers = await loadActiveDrivers(db);
-        const lineUserIds = drivers.map((dv) => dv.lineUserId).filter(Boolean);
-        await pushOrderDispatchToDrivers(db, payload, getDispatchPushEnv(), lineUserIds);
+        await multicastByLevel(db, payload, getDispatchPushEnv(), finalStartLevel);
       } catch (err) {
         console.error('[admin/orders/redispatch] multicast failed:', err);
       }
@@ -125,10 +159,11 @@ export default defineEventHandler(async (event) => {
       targetId: orderId,
       payload: {
         preferenceCount: preferenceChips.length,
+        startLevel: finalStartLevel,
       },
     });
 
-    return successResponse({ orderId, redispatched: true });
+    return successResponse({ orderId, redispatched: true, startLevel: finalStartLevel });
   } catch (err) {
     console.error('[admin/orders/redispatch] failed:', err);
     return serverError();

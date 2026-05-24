@@ -1,4 +1,7 @@
 import methods from '@/protocol/fetch-api/methods';
+import type { DispatchVisibilityDto, DispatchLevel } from '~shared/types/dispatch-visibility';
+
+export type { DispatchVisibilityDto, DispatchLevel } from '~shared/types/dispatch-visibility';
 
 // P37 Phase 3：公告 sub-module
 export * from './announcement';
@@ -213,6 +216,11 @@ export interface AdminOrder {
   reMatchRound?: number
   /** Phase 1F：歷次配對輪 snapshot（最後一輪不一定在這；當前的 bids 仍在 order.bids） */
   bidHistory?: AdminOrderBidHistoryEntry[]
+  /**
+   * Wave 2B+2C：派單分級可見性。
+   * 舊單（Migration 前）/ 從未派發的訂單可能無此欄位 → consumer fallback `currentLevel='0'`（全開）。
+   */
+  dispatchVisibility?: DispatchVisibilityDto | null
 }
 
 export interface PatchAdminOrderBody {

@@ -1,4 +1,7 @@
 import methods from '@/protocol/fetch-api/methods';
+import type { DispatchLevel } from '~shared/types/dispatch-visibility';
+
+export type { DispatchLevel } from '~shared/types/dispatch-visibility';
 
 // Phase 1E：訂單需求單 / 司機喊單 — driver 端 API -----------------------------
 // OrderPreferencesDto / OrderLuggageItem 為 type.d.ts 內 ambient 型別（全域）
@@ -25,6 +28,22 @@ export interface DriverDispatchedOrderItem {
   dispatchAt: string | null;
   activeBidCount: number;
   myBidStatus: 'none' | 'bid' | 'withdrawn';
+  /**
+   * Wave 2B+2C：當前派單可見等級（'0'/'1'/'2'，舊單 fallback '0'）。
+   * 司機端 server filter 已過濾不可見訂單；此欄位給 UI 顯示「目前 X 級開放」與倒數計算。
+   */
+  dispatchCurrentLevel: DispatchLevel;
+  /**
+   * Wave 2B+2C：當前等級開放時間 ISO（給倒數 UI 計算 = openedAt + duration[currentLevel]）。
+   * 舊單無此值 → null，UI 不顯示倒數。
+   */
+  dispatchOpenedAt: string | null;
+  /**
+   * Wave 2B+2C：下一次自動降級時間 ISO（server 端依 orderType + currentLevel + openedAt 算）。
+   *  - currentLevel='0' 或 orderType 無設定 → null
+   *  - UI 倒數 = nextDowngradeAt - now；歸 0 顯示「即將降級」並等下次 GET 觸發 lazy
+   */
+  dispatchNextDowngradeAt: string | null;
 }
 
 export interface DriverDispatchedOrderDetail extends DriverDispatchedOrderItem {

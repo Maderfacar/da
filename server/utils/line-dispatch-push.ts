@@ -17,6 +17,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush, sendLineMulticast, type LineMessage } from '@@/utils/line-push';
 import type { Lang } from '@@/utils/user-lang';
 import { resolveTemplate, type TemplateContentFlex, type TemplateContentText } from '@@/utils/template-registry';
+import { loadActiveDrivers } from '@@/utils/order-dispatch';
+import type { DispatchLevel } from '~shared/types/dispatch-visibility';
 
 export interface DispatchedOrderSummary {
   orderId: string;
@@ -434,6 +436,25 @@ export async function pushOrderCancelledToBidders(
   const text = tpl.body.replace(/\{orderId\}/g, orderShort);
   const result = await sendLineMulticast('driver', targets, [{ type: 'text', text }]);
   return { ...result, total: targets.length };
+}
+
+/**
+ * Wave 2B+2C：分級派單 multicast helper。
+ *
+ * 載入 driverCategory >= level 的 approved driver → resolveTemplate('dispatch.driver-pending')
+ * → 渲染 + multicast。封裝給 dispatch.post.ts / redispatch.post.ts / (Step 5) lazy 自動降級用。
+ *
+ * 注意：currentLevel='0' 等價於不過濾，會推給全 approved driver（含 NOVICE）。
+ */
+export async function multicastByLevel(
+  db: Firestore,
+  payload: DispatchedOrderSummary,
+  env: DispatchPushEnv,
+  minCategory: DispatchLevel,
+): Promise<{ sent: number; failed: number; total: number }> {
+  const drivers = await loadActiveDrivers(db, { minCategory });
+  const lineUserIds = drivers.map((d) => d.lineUserId).filter(Boolean);
+  return await pushOrderDispatchToDrivers(db, payload, env, lineUserIds);
 }
 
 /** 從 runtimeConfig 組 DispatchPushEnv（給 endpoint 用） */

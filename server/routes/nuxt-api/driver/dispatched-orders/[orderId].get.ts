@@ -16,7 +16,9 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
-import type { OrderBidEntry } from '@@/utils/order-dispatch';
+import { type OrderBidEntry, loadDriverCategory } from '@@/utils/order-dispatch';
+import { getNextDowngradeAt } from '@@/utils/dispatch-duration';
+import { isDispatchLevel, type DispatchLevel } from '~shared/types/dispatch-visibility';
 import type { Timestamp } from 'firebase-admin/firestore';
 
 const _tsToIso = (ts: Timestamp | null | undefined): string | null =>
@@ -61,6 +63,22 @@ export default defineEventHandler(async (event) => {
       return forbiddenError({ zh_tw: '訂單已指派其他司機', en: 'Order already assigned', ja: '注文は既に他のドライバーに割り当て済み' });
     }
 
+    // Wave 2B+2C：等級守則 — 司機分級必須 >= order currentLevel
+    const vis = (data.dispatchVisibility ?? null) as
+      | { currentLevel?: unknown; openedAt?: Timestamp | null }
+      | null;
+    const currentLevel: DispatchLevel = isDispatchLevel(vis?.currentLevel) ? vis!.currentLevel : '0';
+    const driverCategory = await loadDriverCategory(db, auth.lineUid);
+    if (driverCategory < currentLevel) {
+      return forbiddenError({
+        zh_tw: '此訂單尚未開放給您的分級',
+        en: 'This order is not yet open to your driver tier',
+        ja: 'このご注文はあなたのランクではまだご利用いただけません',
+      });
+    }
+    const openedAt = (vis?.openedAt ?? null) as Timestamp | null;
+    const nextDowngradeAt = getNextDowngradeAt((data.orderType as string) ?? '', currentLevel, openedAt);
+
     const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
     const myBid = rawBids.find((b) => b.driverId === auth.lineUid);
     let myBidStatus: 'none' | 'bid' | 'withdrawn' = 'none';
@@ -92,6 +110,10 @@ export default defineEventHandler(async (event) => {
       dispatchAt: _tsToIso(data.dispatchAt),
       activeBidCount,
       myBidStatus,
+      // Wave 2B+2C
+      dispatchCurrentLevel: currentLevel,
+      dispatchOpenedAt: _tsToIso(openedAt),
+      dispatchNextDowngradeAt: _tsToIso(nextDowngradeAt),
     });
   } catch (err) {
     console.error('[driver/dispatched-orders/:id] failed:', err);

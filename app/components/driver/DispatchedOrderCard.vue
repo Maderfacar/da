@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DriverDispatchedOrderItem } from '@/protocol/fetch-api/api/driver';
+import { useCountdown } from '@/composables/app/use-countdown';
 
 interface Props {
   order: DriverDispatchedOrderItem;
@@ -31,6 +32,14 @@ const dropoffAddr = computed(() => props.order.dropoffLocation.displayName || pr
 
 const preferenceChips = computed(() =>
   (props.order.preferences?.tagSnapshot ?? []).map((t) => t.name.zh_tw),
+);
+
+// Wave 2B+2C：倒數至下一次自動降級（currentLevel='0' 或缺 nextDowngradeAt 不顯）
+const nextDowngradeIso = computed<string | null>(() => props.order.dispatchNextDowngradeAt ?? null);
+const countdown = useCountdown(nextDowngradeIso);
+const showCountdown = computed(() => !!props.order.dispatchNextDowngradeAt);
+const isUrgent = computed(
+  () => countdown.remainingSeconds.value !== null && countdown.remainingSeconds.value <= 60,
 );
 
 const ClickOpen = () => {
@@ -68,6 +77,16 @@ const ClickWithdraw = (e: Event) => {
 
   .DriverDispatchedOrderCard__chips(v-if="preferenceChips.length")
     span.DriverDispatchedOrderCard__chip(v-for="(c, i) in preferenceChips" :key="i") {{ c }}
+
+  //- Wave 2B+2C：等級倒數（next downgrade 剩餘時間；0 → 「即將降級」等下次 GET 觸發 lazy）
+  .DriverDispatchedOrderCard__countdown(
+    v-if="showCountdown"
+    :class="{ 'is-urgent': isUrgent, 'is-expired': countdown.isExpired.value }"
+  )
+    template(v-if="countdown.isExpired.value")
+      | ⏱ {{ $t('driver.dispatch.aboutToDowngrade') }}
+    template(v-else)
+      | ⏱ {{ $t('driver.dispatch.countdownLabel', { time: countdown.text.value }) }}
 
   .DriverDispatchedOrderCard__foot
     .DriverDispatchedOrderCard__meta
@@ -231,6 +250,29 @@ $amber: #d4860a;
   flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 12px;
+}
+
+.DriverDispatchedOrderCard__countdown {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
+
+  &.is-urgent {
+    color: #ff8366;
+    border-color: rgba(255, 131, 102, 0.35);
+    background: rgba(255, 131, 102, 0.08);
+  }
+
+  &.is-expired {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+  }
 }
 
 .DriverDispatchedOrderCard__chip {

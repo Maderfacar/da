@@ -12,7 +12,8 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
-import { appendBid, loadDriverDisplayName, DispatchGuardError } from '@@/utils/order-dispatch';
+import { appendBid, loadDriverDisplayName, loadDriverCategory, DispatchGuardError } from '@@/utils/order-dispatch';
+import { writeLineApiError } from '@@/utils/line-api-error-log';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -36,10 +37,13 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
-    const displayName = await loadDriverDisplayName(db, auth.lineUid);
+    const [displayName, driverCategory] = await Promise.all([
+      loadDriverDisplayName(db, auth.lineUid),
+      loadDriverCategory(db, auth.lineUid),
+    ]);
 
     try {
-      await appendBid(db, orderId, auth.lineUid, displayName);
+      await appendBid(db, orderId, auth.lineUid, displayName, driverCategory);
     } catch (err) {
       if (err instanceof DispatchGuardError) {
         if (err.code === 'order_not_found') {
@@ -53,6 +57,24 @@ export default defineEventHandler(async (event) => {
         }
         if (err.code === 'driver_already_bid') {
           return badRequestError({ zh_tw: '您已喊單，請先撤回再重新喊單', en: 'You have already bid; withdraw first', ja: '既に入札済みです' });
+        }
+        if (err.code === 'level_mismatch') {
+          // Wave 2B+2C：分級不符 — 正常 client filter 過濾後不應走到這；純防直打 API
+          await writeLineApiError({
+            channel: 'unknown',
+            api: 'bid.level-mismatch',
+            method: 'POST',
+            statusCode: 403,
+            errorMessage: `driver ${auth.lineUid} (category=${driverCategory}) attempted to bid order ${orderId} below required level`,
+            context: { orderId, targetUid: auth.lineUid },
+          }).catch((logErr) => {
+            console.warn('[driver/orders/bid] anomaly log failed:', logErr);
+          });
+          return forbiddenError({
+            zh_tw: '此訂單尚未開放給您的分級',
+            en: 'This order is not yet open to your driver tier',
+            ja: 'このご注文はあなたのランクではまだご利用いただけません',
+          });
         }
       }
       throw err;

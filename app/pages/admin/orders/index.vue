@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch, OrderRecalcPreviewRes, OrderRecalcWarning } from '@/protocol/fetch-api/api/admin';
+import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch, OrderRecalcPreviewRes, OrderRecalcWarning, DispatchLevel } from '@/protocol/fetch-api/api/admin';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
 import { ORDER_TYPES } from '~shared/pricing';
 
@@ -196,6 +196,9 @@ const DriverNameOf = (uid: string) => {
 const ClickOpenDetail = (order: AdminOrder) => {
   selectedOrder.value = order;
   isEditing.value = false;
+  // Wave 2B+2C：modal 開啟時 startLevel 預設沿用既有 dispatchVisibility.startLevel（未派發的訂單 fallback '0'）
+  const existing = order.dispatchVisibility?.startLevel;
+  modalStartLevel.value = (existing === '0' || existing === '1' || existing === '2') ? existing : '0';
 };
 
 const ClickCloseDetail = () => {
@@ -571,6 +574,22 @@ const { t: tI18n } = useI18n();
 const rowDispatchingIds = ref<Set<string>>(new Set());
 const IsRowDispatching = (orderId: string) => rowDispatchingIds.value.has(orderId);
 
+// Wave 2B+2C：首發等級 select（列表 per-row、modal 各自一份；__draft__ 只允許 modal）
+type RowStartLevel = DispatchLevel; // '0' | '1' | '2'
+type ModalStartLevel = DispatchLevel | '__draft__';
+const rowStartLevels = ref<Record<string, RowStartLevel>>({});
+const modalStartLevel = ref<ModalStartLevel>('0');
+const RowStartLevelOf = (orderId: string): RowStartLevel =>
+  rowStartLevels.value[orderId] ?? '0';
+const SetRowStartLevel = (orderId: string, level: RowStartLevel) => {
+  rowStartLevels.value = { ...rowStartLevels.value, [orderId]: level };
+};
+const START_LEVEL_OPTIONS: ReadonlyArray<{ value: DispatchLevel; labelKey: string }> = [
+  { value: '2', labelKey: 'admin.orders.startLevel.pro' },
+  { value: '1', labelKey: 'admin.orders.startLevel.standard' },
+  { value: '0', labelKey: 'admin.orders.startLevel.all' },
+];
+
 /**
  * Wave 1A：計算訂單「總派發次數」(含首發 + 所有重發)。
  *   - dispatchAt 未存在    → 0 (尚未派發)
@@ -620,11 +639,17 @@ const ClickDispatch = async () => {
     ElMessage({ message: '訂單已派發', type: 'warning' });
     return;
   }
+  // Wave 2B+2C：__draft__ 等於不發布；只能先儲存其他欄位
+  if (modalStartLevel.value === '__draft__') {
+    ElMessage({ message: tI18n('admin.orders.startLevel.draftHint'), type: 'info' });
+    return;
+  }
+  const startLevel = modalStartLevel.value;
   dispatching.value = true;
   try {
-    const res = await $api.DispatchOrder(selectedOrder.value.orderId);
+    const res = await $api.DispatchOrder(selectedOrder.value.orderId, { startLevel });
     if (res.status.code === 200) {
-      ElMessage({ message: '需求單已發出，已通知全部司機', type: 'success' });
+      ElMessage({ message: '需求單已發出，已通知符合條件司機', type: 'success' });
       await ApiLoadOrders();
       await ApiLoadOrderBids();
     } else {
@@ -667,7 +692,13 @@ const ClickRedispatch = async () => {
 
   redispatching.value = true;
   try {
-    const res = await $api.RedispatchOrder(selectedOrder.value.orderId);
+    // Wave 2B+2C：重發沿用既有 startLevel；admin 想換等級用 modal select 再點，等同 override
+    const overrideLevel: DispatchLevel | undefined =
+      modalStartLevel.value === '__draft__' ? undefined : modalStartLevel.value;
+    const res = await $api.RedispatchOrder(
+      selectedOrder.value.orderId,
+      overrideLevel !== undefined ? { startLevel: overrideLevel } : undefined,
+    );
     if (res.status.code === 200 && res.data?.redispatched === true) {
       ElMessage({ message: '已重新發送需求單', type: 'success' });
       await ApiLoadOrders();
@@ -706,7 +737,9 @@ const ClickDispatchFromRow = async (order: AdminOrder) => {
   // immutable 替換 Set 以觸發 reactivity
   rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
   try {
-    const res = await $api.DispatchOrder(order.orderId);
+    // Wave 2B+2C：列表 per-row startLevel select 預設 '0'
+    const startLevel = RowStartLevelOf(order.orderId);
+    const res = await $api.DispatchOrder(order.orderId, { startLevel });
     if (res.status.code === 200) {
       ElMessage({ message: tI18n('admin.orders.dispatchSuccess'), type: 'success' });
       await ApiLoadOrders();
@@ -753,7 +786,12 @@ const ClickRedispatchFromRow = async (order: AdminOrder) => {
 
   rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
   try {
-    const res = await $api.RedispatchOrder(order.orderId);
+    // Wave 2B+2C：列表重發若 admin 有改 row select 等級則 override，否則沿用既有 startLevel
+    const rowLevel = rowStartLevels.value[order.orderId];
+    const res = await $api.RedispatchOrder(
+      order.orderId,
+      rowLevel !== undefined ? { startLevel: rowLevel } : undefined,
+    );
     if (res.status.code === 200 && res.data?.redispatched === true) {
       ElMessage({ message: tI18n('admin.orders.redispatchSuccess'), type: 'success' });
       await ApiLoadOrders();
@@ -1032,26 +1070,36 @@ onMounted(() => {
           ) 重派 {{ o.reMatchRound }} 次
         .PageAdminOrders__cell.is-action(data-label="操作")
           //- Wave 1A：列表派單入口（不刪 modal 內既有「📤 發出需求單」）
+          //- Wave 2B+2C：在按鈕旁加首發等級 select
           template(v-if="o.orderStatus === 'pending' && !o.assignedDriverId")
-            //- 未派發 → 「📤 發布需求單」
-            button.PageAdminOrders__row-dispatch-btn(
-              v-if="!o.dispatchAt"
-              type="button"
-              :disabled="IsRowDispatching(o.orderId)"
-              :title="$t('admin.orders.dispatch')"
-              @click.stop="ClickDispatchFromRow(o)"
-            ) {{ IsRowDispatching(o.orderId) ? '⏳' : '📤' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.dispatching') : $t('admin.orders.dispatch') }}
-            //- 已派發未指派 → 「🔁 重新發佈」+ dispatchCount > 0 時加 ×N chip（×N = 總派發次數）
-            button.PageAdminOrders__row-dispatch-btn.is-redispatch(
-              v-else
-              type="button"
-              :disabled="IsRowDispatching(o.orderId)"
-              :title="$t('admin.orders.redispatch')"
-              @click.stop="ClickRedispatchFromRow(o)"
-            )
-              span.PageAdminOrders__row-dispatch-label
-                | {{ IsRowDispatching(o.orderId) ? '⏳' : '🔁' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.redispatching') : $t('admin.orders.redispatch') }}
-              span.PageAdminOrders__row-dispatch-chip(v-if="(o.dispatchCount ?? 0) > 0") ×{{ DispatchAttemptCount(o) }}
+            .PageAdminOrders__row-dispatch-group
+              select.PageAdminOrders__row-dispatch-level(
+                :value="RowStartLevelOf(o.orderId)"
+                :disabled="IsRowDispatching(o.orderId)"
+                :title="$t('admin.orders.startLevel.label')"
+                @change="(e) => SetRowStartLevel(o.orderId, ((e.target as HTMLSelectElement).value as DispatchLevel))"
+                @click.stop
+              )
+                option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
+              //- 未派發 → 「📤 發布需求單」
+              button.PageAdminOrders__row-dispatch-btn(
+                v-if="!o.dispatchAt"
+                type="button"
+                :disabled="IsRowDispatching(o.orderId)"
+                :title="$t('admin.orders.dispatch')"
+                @click.stop="ClickDispatchFromRow(o)"
+              ) {{ IsRowDispatching(o.orderId) ? '⏳' : '📤' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.dispatching') : $t('admin.orders.dispatch') }}
+              //- 已派發未指派 → 「🔁 重新發佈」+ dispatchCount > 0 時加 ×N chip（×N = 總派發次數）
+              button.PageAdminOrders__row-dispatch-btn.is-redispatch(
+                v-else
+                type="button"
+                :disabled="IsRowDispatching(o.orderId)"
+                :title="$t('admin.orders.redispatch')"
+                @click.stop="ClickRedispatchFromRow(o)"
+              )
+                span.PageAdminOrders__row-dispatch-label
+                  | {{ IsRowDispatching(o.orderId) ? '⏳' : '🔁' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.redispatching') : $t('admin.orders.redispatch') }}
+                span.PageAdminOrders__row-dispatch-chip(v-if="(o.dispatchCount ?? 0) > 0") ×{{ DispatchAttemptCount(o) }}
           //- 已指派司機 → 不顯示按鈕，顯示「✓ 已指派」徽章
           span.PageAdminOrders__row-action-tag.is-assigned(
             v-else-if="o.assignedDriverId"
@@ -1073,11 +1121,18 @@ onMounted(() => {
         .PageAdminOrders__modal-id \#{{ selectedOrder.orderId.toUpperCase() }}
 
         //- 快速動作列（重發需求單）— 僅當 pending && 已派發 && 未指派時顯示
+        //- Wave 2B+2C：在按鈕旁加首發等級 select（含「暫不發布」__draft__ 選項）
         .PageAdminOrders__quick-actions(
           v-if="!isEditing && selectedOrder.orderStatus === 'pending' && !!selectedOrder.dispatchAt && !selectedOrder.assignedDriverId"
         )
-          button.PageAdminOrders__quick-btn(
+          select.PageAdminOrders__quick-level(
+            v-model="modalStartLevel"
             :disabled="redispatching"
+          )
+            option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
+            option(value="__draft__") {{ $t('admin.orders.startLevel.draft') }}
+          button.PageAdminOrders__quick-btn(
+            :disabled="redispatching || modalStartLevel === '__draft__'"
             type="button"
             @click="ClickRedispatch"
           ) {{ redispatching ? '重發中...' : '📤 重發需求單' }}
@@ -1116,11 +1171,22 @@ onMounted(() => {
               .PageAdminOrders__section-title 訂單需求單
               //- 未派發
               template(v-if="!selectedOrder.dispatchAt")
-                .PageAdminOrders__dispatch-empty 尚未發出需求單。發出後系統會以 LINE 推播通知全部已認證司機；司機可於接單看板喊單，您再從喊單清單挑選。
+                .PageAdminOrders__dispatch-empty 尚未發出需求單。發出後系統會以 LINE 推播通知符合首發等級的司機；司機可於接單看板喊單，您再從喊單清單挑選。
+                //- Wave 2B+2C：首發等級 select（含「暫不發布」__draft__）
+                .PageAdminOrders__dispatch-level-row
+                  label.PageAdminOrders__dispatch-level-label {{ $t('admin.orders.startLevel.label') }}
+                  select.PageAdminOrders__dispatch-level-select(
+                    v-model="modalStartLevel"
+                    :disabled="dispatching"
+                  )
+                    option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
+                    option(value="__draft__") {{ $t('admin.orders.startLevel.draft') }}
                 button.PageAdminOrders__action.is-primary.is-block(
-                  :disabled="dispatching"
+                  :disabled="dispatching || modalStartLevel === '__draft__'"
                   @click="ClickDispatch"
                 ) {{ dispatching ? '發送中...' : '📤 發出需求單' }}
+                .PageAdminOrders__dispatch-draft-hint(v-if="modalStartLevel === '__draft__'")
+                  | {{ $t('admin.orders.startLevel.draftHint') }}
               //- 已派發
               template(v-else)
                 .PageAdminOrders__dispatch-meta
@@ -2071,6 +2137,71 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: background 0.15s;
 
   &:hover:not(:disabled) { background: rgba(212, 134, 10, 0.18); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.PageAdminOrders__quick-level {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.PageAdminOrders__dispatch-level-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 10px;
+}
+
+.PageAdminOrders__dispatch-level-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: $muted;
+  text-transform: uppercase;
+}
+
+.PageAdminOrders__dispatch-level-select {
+  flex: 1;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.PageAdminOrders__dispatch-draft-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  margin-top: 6px;
+  color: #f7b96a;
+}
+
+.PageAdminOrders__row-dispatch-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.PageAdminOrders__row-dispatch-level {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

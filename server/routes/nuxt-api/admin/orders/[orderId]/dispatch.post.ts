@@ -14,8 +14,9 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
-import { dispatchOrder, loadActiveDrivers, DispatchGuardError } from '@@/utils/order-dispatch';
-import { pushOrderDispatchToDrivers, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { dispatchOrder, DispatchGuardError } from '@@/utils/order-dispatch';
+import { multicastByLevel, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { isDispatchLevel, type DispatchLevel } from '~shared/types/dispatch-visibility';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -32,6 +33,20 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '缺少訂單 ID', en: 'Missing orderId', ja: '注文IDが必要です' });
   }
 
+  // Wave 2B+2C：startLevel 控制首發可見範圍（'2'/'1'/'0'）；未傳 fallback '0' 全車隊
+  const body = await readBody<{ startLevel?: unknown }>(event).catch(() => ({}));
+  let startLevel: DispatchLevel = '0';
+  if (body?.startLevel !== undefined) {
+    if (!isDispatchLevel(body.startLevel)) {
+      return badRequestError({
+        zh_tw: '首發等級不合法（限 0 / 1 / 2）',
+        en: 'Invalid startLevel (allowed: 0 / 1 / 2)',
+        ja: 'startLevel が不正です（0 / 1 / 2 のみ）',
+      });
+    }
+    startLevel = body.startLevel;
+  }
+
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
     return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
@@ -41,7 +56,7 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
 
     try {
-      await dispatchOrder(db, orderId, auth.lineUid);
+      await dispatchOrder(db, orderId, auth.lineUid, startLevel);
     } catch (err) {
       if (err instanceof DispatchGuardError) {
         if (err.code === 'order_not_found') {
@@ -77,12 +92,10 @@ export default defineEventHandler(async (event) => {
       preferenceChips,
     };
 
-    // fire-and-forget 推播 + audit
+    // fire-and-forget 推播 + audit（Wave 2B+2C：只推給 driverCategory >= startLevel 的司機）
     void (async () => {
       try {
-        const drivers = await loadActiveDrivers(db);
-        const lineUserIds = drivers.map((dv) => dv.lineUserId).filter(Boolean);
-        await pushOrderDispatchToDrivers(db, payload, getDispatchPushEnv(), lineUserIds);
+        await multicastByLevel(db, payload, getDispatchPushEnv(), startLevel);
       } catch (err) {
         console.error('[admin/orders/dispatch] multicast failed:', err);
       }
@@ -97,10 +110,11 @@ export default defineEventHandler(async (event) => {
       payload: {
         dispatchAt: 'server',
         preferenceCount: preferenceChips.length,
+        startLevel,
       },
     });
 
-    return successResponse({ orderId, dispatched: true });
+    return successResponse({ orderId, dispatched: true, startLevel });
   } catch (err) {
     console.error('[admin/orders/dispatch] failed:', err);
     return serverError();

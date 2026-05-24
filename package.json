@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "migrate:driver-app": "node scripts/migrate-driver-application-to-drivers.mjs"
+    "migrate:driver-app": "node scripts/migrate-driver-application-to-drivers.mjs",
+    "migrate:dispatch-visibility": "node scripts/backfill-dispatch-visibility.mjs"
   },
   "dependencies": {
     "@line/liff": "^2.28.0",

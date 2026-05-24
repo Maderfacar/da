@@ -24,6 +24,8 @@ import type { Firestore, Timestamp } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { computeDriverMatch, type DispatchTagIndexEntry, type DriverMatchResult } from '~shared/orderDispatch';
 import type { TagLang } from '~shared/tagTaxonomy';
+import { DRIVER_CATEGORY, type DriverCategory } from '~shared/types/driver-category';
+import type { DispatchLevel } from '~shared/types/dispatch-visibility';
 
 export interface OrderBidEntry {
   driverId: string;
@@ -71,9 +73,21 @@ export function serializeBids(rawBids: unknown): OrderBidEntryDto[] {
 /**
  * 列出所有「approved=true & roles 含 driver」的司機 — 給 dispatch 推播 / admin 看 bids 用。
  *
- * 注意：撈 users collection（drivers collection 主要存 stats）；用 users.approved 判斷。
+ * Wave 2B+2C：opts.minCategory 設定後，會以 `drivers/{uid}.driverCategory >= minCategory`
+ *  進一步過濾；缺 drivers doc 視為 NOVICE='0'。讀法：先撈 users，再 batch getAll drivers。
+ *  不傳 minCategory 等價於舊行為（全 approved driver）。
+ *
+ * 注意：撈 users collection（drivers collection 主要存 stats / category）；用 users.approved 判斷。
  */
-export async function loadActiveDrivers(db: Firestore): Promise<ActiveDriverInfo[]> {
+export interface LoadActiveDriversOptions {
+  /** 最低 driverCategory；未傳 / '0' 等價於不過濾 */
+  minCategory?: DispatchLevel;
+}
+
+export async function loadActiveDrivers(
+  db: Firestore,
+  opts?: LoadActiveDriversOptions,
+): Promise<ActiveDriverInfo[]> {
   const snap = await db.collection('users')
     .where('roles', 'array-contains', 'driver')
     .get();
@@ -89,7 +103,33 @@ export async function loadActiveDrivers(db: Firestore): Promise<ActiveDriverInfo
       displayName: (d.displayName as string | undefined) ?? '',
     });
   });
-  return list;
+
+  const minCategory = opts?.minCategory;
+  if (!minCategory || minCategory === DRIVER_CATEGORY.NOVICE) {
+    // '0' = 全開，無需 join drivers doc
+    return list;
+  }
+
+  if (list.length === 0) return list;
+  const refs = list.map((d) => db.collection('drivers').doc(d.lineUid));
+  let categoryByUid = new Map<string, DriverCategory>();
+  try {
+    const snaps = await db.getAll(...refs);
+    snaps.forEach((s) => {
+      const raw = s.exists ? (s.data()?.driverCategory as unknown) : undefined;
+      const cat: DriverCategory = (raw === '1' || raw === '2') ? raw : '0';
+      categoryByUid.set(s.id, cat);
+    });
+  } catch (err) {
+    // 取不到 driverCategory：safety = 全部當 '0' 過濾掉（不誤推給未驗證司機）
+    console.warn('[order-dispatch] batch read drivers.driverCategory failed:', err);
+    categoryByUid = new Map();
+  }
+
+  return list.filter((d) => {
+    const cat = categoryByUid.get(d.lineUid) ?? '0';
+    return cat >= minCategory; // 字串比較 '0'/'1'/'2' 字典序 OK
+  });
 }
 
 /** 撈單一 driver 的 displayName（給 bid snapshot 用；不存在回空字串） */
@@ -104,6 +144,25 @@ export async function loadDriverDisplayName(db: Firestore, lineUid: string): Pro
   }
 }
 
+/**
+ * 撈單一 driver 的 driverCategory（給 server-side filter / bid 守則用）。
+ *
+ * Wave 2B+2C：drivers/{uid}.driverCategory，舊資料或 doc 不存在皆 fallback '0' NOVICE。
+ *  - 任何讀取失敗也回 '0'，避免 NOVICE 司機因 drivers doc bug 看不到任何訂單。
+ *  - 副作用：搬到 server-side 後不再 client filter（client UI 根本拿不到資料 → 無 toast UX）。
+ */
+export async function loadDriverCategory(db: Firestore, lineUid: string): Promise<DriverCategory> {
+  try {
+    const snap = await db.collection('drivers').doc(lineUid).get();
+    if (!snap.exists) return DRIVER_CATEGORY.NOVICE;
+    const raw = snap.data()?.driverCategory as unknown;
+    return (raw === '1' || raw === '2') ? raw : DRIVER_CATEGORY.NOVICE;
+  } catch (err) {
+    console.warn('[order-dispatch] loadDriverCategory failed:', err);
+    return DRIVER_CATEGORY.NOVICE;
+  }
+}
+
 export type DispatchGuardCode =
   | 'order_not_found'
   | 'invalid_status'
@@ -111,7 +170,8 @@ export type DispatchGuardCode =
   | 'already_assigned'
   | 'driver_already_bid'
   | 'bid_not_found'
-  | 'driver_not_in_bids';
+  | 'driver_not_in_bids'
+  | 'level_mismatch';
 
 export class DispatchGuardError extends Error {
   constructor(public code: DispatchGuardCode) {
@@ -122,13 +182,19 @@ export class DispatchGuardError extends Error {
 /**
  * Admin 發單 — transaction 守 status='pending' && dispatchAt 為 null。
  *
- * 寫入：dispatchAt = now（serverTimestamp）+ dispatchedBy = adminLineUid。
+ * 寫入：
+ *  - dispatchAt = serverTimestamp + dispatchedBy = adminLineUid
+ *  - Wave 2B+2C：dispatchVisibility = { startLevel, currentLevel=startLevel, openedAt, history[init] }
+ *
+ * 注意 array 內不可帶 serverTimestamp，levelHistory 用 client time 寫入（與 bids 同策略）。
+ *
  * 失敗 throw DispatchGuardError。
  */
 export async function dispatchOrder(
   db: Firestore,
   orderId: string,
   adminLineUid: string,
+  startLevel: DispatchLevel = '0',
 ): Promise<void> {
   const ref = db.collection('orders').doc(orderId);
   await db.runTransaction(async (tx) => {
@@ -137,21 +203,39 @@ export async function dispatchOrder(
     const d = snap.data() ?? {};
     if (d.orderStatus !== 'pending') throw new DispatchGuardError('invalid_status');
     if (d.dispatchAt) throw new DispatchGuardError('already_dispatched');
+    const now = new Date();
     tx.update(ref, {
       dispatchAt: FieldValue.serverTimestamp(),
       dispatchedBy: adminLineUid,
+      dispatchVisibility: {
+        startLevel,
+        currentLevel: startLevel,
+        openedAt: FieldValue.serverTimestamp(),
+        levelHistory: [{
+          level: startLevel,
+          openedAt: now,
+          openedBy: adminLineUid,
+          reason: 'init',
+        }],
+      },
     });
   });
 }
 
 /**
  * Driver 喊單 — transaction 守訂單仍為 pending、已 dispatched、未指派、自己沒未撤回 bid。
+ *
+ * Wave 2B+2C：driverCategory 必須 >= order.dispatchVisibility.currentLevel
+ *  正常 client UI 取不到該訂單 → 走到此分支表示直打 API；throw level_mismatch
+ *  讓 endpoint 寫 anomaly log + 回 403。caller 在進 transaction 前讀 driverCategory，
+ *  避免在 transaction 內額外讀 drivers/{uid} 增加 contention。
  */
 export async function appendBid(
   db: Firestore,
   orderId: string,
   driverLineUid: string,
   driverDisplayName: string,
+  driverCategory: DriverCategory,
 ): Promise<void> {
   const ref = db.collection('orders').doc(orderId);
   await db.runTransaction(async (tx) => {
@@ -161,6 +245,15 @@ export async function appendBid(
     if (d.orderStatus !== 'pending') throw new DispatchGuardError('invalid_status');
     if (!d.dispatchAt) throw new DispatchGuardError('invalid_status');
     if (d.assignedDriverId) throw new DispatchGuardError('already_assigned');
+
+    const vis = (d.dispatchVisibility ?? null) as { currentLevel?: unknown } | null;
+    const currentLevel: DispatchLevel =
+      typeof vis?.currentLevel === 'string' && (vis!.currentLevel === '0' || vis!.currentLevel === '1' || vis!.currentLevel === '2')
+        ? vis!.currentLevel
+        : '0';
+    if (driverCategory < currentLevel) {
+      throw new DispatchGuardError('level_mismatch');
+    }
 
     const bids = (Array.isArray(d.bids) ? d.bids : []) as OrderBidEntry[];
     const hasActive = bids.some((b) => b.driverId === driverLineUid && !b.withdrawnAt);
