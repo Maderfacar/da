@@ -64,9 +64,10 @@ export default defineEventHandler(async (event) => {
 
     setHeader(event, 'Content-Type', contentType);
     setHeader(event, 'Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=3600');
-    // 同源請求即使不加 ACAO 也 work；保留以便未來 cross-origin（admin 跨網域）情境
-    setHeader(event, 'Access-Control-Allow-Origin', '*');
-    setHeader(event, 'Cross-Origin-Resource-Policy', 'cross-origin');
+    // 安全收緊（資安修復 W1）：本 proxy 僅作同源圖檔代理用途，不應允許第三方網域抓取回應內容。
+    // 若未來確實需要 cross-origin（例如 admin 跨網域、多租戶 dashboard），請改為環境變數驅動的白名單，
+    // 而非開放 `*`。同源請求不需 ACAO header，移除後 same-origin 行為不變。
+    setHeader(event, 'Cross-Origin-Resource-Policy', 'same-origin');
     if (typeof metadata.size === 'string') {
       setHeader(event, 'Content-Length', metadata.size);
     }
