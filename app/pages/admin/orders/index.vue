@@ -808,6 +808,110 @@ const ClickRedispatchFromRow = async (order: AdminOrder) => {
   }
 };
 
+// ── Wave 2D：admin 立即降級 / 全開放 ──────────────────────────────
+/**
+ * 列表 + Edit modal 兩處共用：per-row loading state（避免兩個列同時點按互相 disable）。
+ * Set<orderId>；immutable 替換以觸發 reactivity。
+ */
+const rowDowngradingIds = ref<Set<string>>(new Set());
+const IsRowDowngrading = (orderId: string) => rowDowngradingIds.value.has(orderId);
+
+const CurrentDispatchLevel = (order: AdminOrder): DispatchLevel => {
+  const v = order.dispatchVisibility?.currentLevel;
+  if (v === '0' || v === '1' || v === '2') return v;
+  return '0';
+};
+
+const CanDowngradeLevel = (order: AdminOrder): boolean => {
+  if (order.orderStatus !== 'pending') return false;
+  if (!order.dispatchAt) return false;
+  if (order.assignedDriverId) return false;
+  return CurrentDispatchLevel(order) !== '0';
+};
+
+const _AddDowngradingId = (orderId: string) => {
+  rowDowngradingIds.value = new Set([...rowDowngradingIds.value, orderId]);
+};
+const _RemoveDowngradingId = (orderId: string) => {
+  const next = new Set(rowDowngradingIds.value);
+  next.delete(orderId);
+  rowDowngradingIds.value = next;
+};
+
+const _NextDowngradeLevel = (current: DispatchLevel): DispatchLevel => {
+  if (current === '2') return '1';
+  if (current === '1') return '0';
+  return '0';
+};
+
+/**
+ * Wave 2D：立即降一級流程（currentLevel 2→1 或 1→0）。
+ * 二次確認 → DowngradeDispatchLevel → toast + reload。
+ */
+const ClickDowngradeFlow = async (order: AdminOrder) => {
+  if (!CanDowngradeLevel(order) || IsRowDowngrading(order.orderId)) return;
+  const orderShort = order.orderId.slice(0, 8).toUpperCase();
+  const cur = CurrentDispatchLevel(order);
+  const next = _NextDowngradeLevel(cur);
+  const ok = await UseAsk().Any(
+    tI18n('admin.orders.downgradeConfirmMessage', { orderShort, currentLevel: cur, nextLevel: next }),
+    tI18n('admin.orders.downgradeConfirmTitle'),
+    tI18n('admin.orders.cancelBtn'),
+    tI18n('admin.orders.downgradeConfirmOk'),
+  );
+  if (!ok) return;
+  _AddDowngradingId(order.orderId);
+  try {
+    const res = await $api.DowngradeDispatchLevel(order.orderId);
+    if (res.status.code === 200 && res.data) {
+      ElMessage({
+        message: tI18n('admin.orders.downgradeSuccess', { newLevel: res.data.newLevel }),
+        type: 'success',
+      });
+      await ApiLoadOrders();
+    } else {
+      ElMessage({
+        message: res.status?.message?.zh_tw ?? tI18n('admin.orders.downgradeFailed'),
+        type: 'error',
+      });
+    }
+  } finally {
+    _RemoveDowngradingId(order.orderId);
+  }
+};
+
+/**
+ * Wave 2D：全開放流程（currentLevel='0'，全 approved driver 都看得到）。
+ * 二次確認 → ForceOpenDispatchLevel → toast + reload。
+ */
+const ClickForceOpenFlow = async (order: AdminOrder) => {
+  if (!CanDowngradeLevel(order) || IsRowDowngrading(order.orderId)) return;
+  const orderShort = order.orderId.slice(0, 8).toUpperCase();
+  const cur = CurrentDispatchLevel(order);
+  const ok = await UseAsk().Any(
+    tI18n('admin.orders.forceOpenConfirmMessage', { orderShort, currentLevel: cur }),
+    tI18n('admin.orders.forceOpenConfirmTitle'),
+    tI18n('admin.orders.cancelBtn'),
+    tI18n('admin.orders.forceOpenConfirmOk'),
+  );
+  if (!ok) return;
+  _AddDowngradingId(order.orderId);
+  try {
+    const res = await $api.ForceOpenDispatchLevel(order.orderId);
+    if (res.status.code === 200) {
+      ElMessage({ message: tI18n('admin.orders.forceOpenSuccess'), type: 'success' });
+      await ApiLoadOrders();
+    } else {
+      ElMessage({
+        message: res.status?.message?.zh_tw ?? tI18n('admin.orders.downgradeFailed'),
+        type: 'error',
+      });
+    }
+  } finally {
+    _RemoveDowngradingId(order.orderId);
+  }
+};
+
 const ClickAssignFromBid = async (driverId: string) => {
   if (!selectedOrder.value || assigningFromBid.value) return;
   assigningFromBid.value = driverId;
@@ -1100,6 +1204,20 @@ onMounted(() => {
                 span.PageAdminOrders__row-dispatch-label
                   | {{ IsRowDispatching(o.orderId) ? '⏳' : '🔁' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.redispatching') : $t('admin.orders.redispatch') }}
                 span.PageAdminOrders__row-dispatch-chip(v-if="(o.dispatchCount ?? 0) > 0") ×{{ DispatchAttemptCount(o) }}
+              //- Wave 2D：立即降級 / 全開放（只在已派發未指派時顯示；currentLevel='0' 時 disabled）
+              template(v-if="o.dispatchAt && !o.assignedDriverId")
+                button.PageAdminOrders__row-dispatch-btn.is-downgrade(
+                  type="button"
+                  :disabled="!CanDowngradeLevel(o) || IsRowDowngrading(o.orderId)"
+                  :title="$t('admin.orders.downgradeNow')"
+                  @click.stop="ClickDowngradeFlow(o)"
+                ) ⬇️ {{ $t('admin.orders.downgradeNow') }}
+                button.PageAdminOrders__row-dispatch-btn.is-force-open(
+                  type="button"
+                  :disabled="!CanDowngradeLevel(o) || IsRowDowngrading(o.orderId)"
+                  :title="$t('admin.orders.forceOpenAll')"
+                  @click.stop="ClickForceOpenFlow(o)"
+                ) 🔓 {{ $t('admin.orders.forceOpenAll') }}
           //- 已指派司機 → 不顯示按鈕，顯示「✓ 已指派」徽章
           span.PageAdminOrders__row-action-tag.is-assigned(
             v-else-if="o.assignedDriverId"
@@ -1122,6 +1240,7 @@ onMounted(() => {
 
         //- 快速動作列（重發需求單）— 僅當 pending && 已派發 && 未指派時顯示
         //- Wave 2B+2C：在按鈕旁加首發等級 select（含「暫不發布」__draft__ 選項）
+        //- Wave 2D：加「⬇️ 立即降級」/「🔓 全開放」按鈕（currentLevel='0' 時 disabled）
         .PageAdminOrders__quick-actions(
           v-if="!isEditing && selectedOrder.orderStatus === 'pending' && !!selectedOrder.dispatchAt && !selectedOrder.assignedDriverId"
         )
@@ -1136,6 +1255,18 @@ onMounted(() => {
             type="button"
             @click="ClickRedispatch"
           ) {{ redispatching ? '重發中...' : '📤 重發需求單' }}
+          button.PageAdminOrders__quick-btn.is-downgrade(
+            :disabled="!CanDowngradeLevel(selectedOrder) || IsRowDowngrading(selectedOrder.orderId)"
+            type="button"
+            :title="!CanDowngradeLevel(selectedOrder) ? $t('admin.orders.downgradeAtLowest') : ''"
+            @click="ClickDowngradeFlow(selectedOrder)"
+          ) ⬇️ {{ $t('admin.orders.downgradeNow') }}
+          button.PageAdminOrders__quick-btn.is-force-open(
+            :disabled="!CanDowngradeLevel(selectedOrder) || IsRowDowngrading(selectedOrder.orderId)"
+            type="button"
+            :title="!CanDowngradeLevel(selectedOrder) ? $t('admin.orders.downgradeAtLowest') : ''"
+            @click="ClickForceOpenFlow(selectedOrder)"
+          ) 🔓 {{ $t('admin.orders.forceOpenAll') }}
 
         //- Body
         .PageAdminOrders__modal-body
@@ -2138,6 +2269,21 @@ $muted: rgba(255, 255, 255, 0.35);
 
   &:hover:not(:disabled) { background: rgba(212, 134, 10, 0.18); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  // Wave 2D：立即降級（橘紅 — 警示性低於 force-open）
+  &.is-downgrade {
+    border-color: rgba(255, 165, 90, 0.5);
+    background: rgba(255, 165, 90, 0.12);
+    color: rgba(255, 185, 120, 0.95);
+    &:hover:not(:disabled) { background: rgba(255, 165, 90, 0.22); }
+  }
+  // Wave 2D：全開放（紅色警示，最強動作）
+  &.is-force-open {
+    border-color: rgba(240, 100, 100, 0.5);
+    background: rgba(240, 100, 100, 0.12);
+    color: rgba(255, 140, 140, 0.95);
+    &:hover:not(:disabled) { background: rgba(240, 100, 100, 0.22); }
+  }
 }
 
 .PageAdminOrders__quick-level {
@@ -2647,6 +2793,30 @@ $muted: rgba(255, 255, 255, 0.35);
     &:hover:not(:disabled) {
       background: rgba(140, 110, 220, 0.22);
       border-color: rgba(140, 110, 220, 0.75);
+    }
+  }
+
+  // Wave 2D：立即降級（橘紅色，警示性低於 force-open）
+  &.is-downgrade {
+    border-color: rgba(255, 165, 90, 0.5);
+    background: rgba(255, 165, 90, 0.12);
+    color: rgba(255, 185, 120, 0.95);
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 165, 90, 0.22);
+      border-color: rgba(255, 165, 90, 0.75);
+    }
+  }
+
+  // Wave 2D：全開放（紅色警示，最強動作）
+  &.is-force-open {
+    border-color: rgba(240, 100, 100, 0.5);
+    background: rgba(240, 100, 100, 0.12);
+    color: rgba(255, 140, 140, 0.95);
+
+    &:hover:not(:disabled) {
+      background: rgba(240, 100, 100, 0.22);
+      border-color: rgba(240, 100, 100, 0.75);
     }
   }
 }

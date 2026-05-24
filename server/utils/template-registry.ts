@@ -287,6 +287,34 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       ctaButton: null,
     },
   },
+  'dispatch.level-down': {
+    templateKey: 'dispatch.level-down',
+    category: 'dispatch',
+    displayName: '分級派單降級通知',
+    description: 'Wave 2D 訂單降級（auto-downgrade / manual-downgrade / force-open-all）後推給新加入等級的 driver；hybrid：title/ctaButton 可編、人數/車資 formatter + CTA URI 鎖死。',
+    triggerEvent: '訂單 dispatchVisibility.currentLevel 下降時推給該級以上 driver',
+    outputType: 'flex',
+    audience: 'driver',
+    i18nMode: 'single',
+    triggerType: 'auto',
+    requiresSuperLevel: true,
+    placeholders: [
+      { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
+      { key: 'orderType', label: '訂單類型', example: '機場接送', required: true },
+      { key: 'date', label: '搭乘時間', example: '05/15 14:30', required: true },
+      { key: 'pickupAddress', label: '上車點', example: '桃園機場第一航廈', required: true },
+      { key: 'dropoffAddress', label: '下車點', example: '台北車站', required: true },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: true },
+      { key: 'estimatedFare', label: '預估車資', example: '1,800', required: true },
+      { key: 'newLevel', label: '新開放等級（0/1/2）', example: '1', required: true },
+    ],
+    defaultContent: {
+      title: '📢 新需求單已開放給您',
+      body: '🔖 #{orderId}\n🚕 {orderType}\n📅 {date}\n📍 {pickupAddress}\n🏁 {dropoffAddress}\n👥 {paxSummary}  💰 NT$ {estimatedFare}',
+      coverImageUrl: null,
+      ctaButton: null,
+    },
+  },
 
   // ── Softmatch Flex（2 個；passenger 三語）────────────────────────────────
   'softmatch.passenger-choose': {

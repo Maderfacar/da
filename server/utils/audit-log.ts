@@ -64,6 +64,9 @@ export type AuditAction =
   // Phase 1E 訂單需求單 / 司機喊單 / 配對
   | 'order.dispatch'               // admin 發出需求單（dispatchAt 寫入）
   | 'order.redispatch'             // admin 對已派發未指派訂單重發推播（dispatchCount++）
+  | 'order.dispatch_level.downgrade'   // Wave 2D：admin 立即降一級（currentLevel--）
+  | 'order.dispatch_level.force_open'  // Wave 2D：admin 全開放（currentLevel='0'）
+  | 'order.dispatch_level.auto_downgrade' // Wave 2D：driver GET 觸發的 lazy 自動降級（actor=system）
   | 'order.bid'                    // driver 喊單
   | 'order.bid_withdraw'           // driver 撤回喊單
   | 'order.cancel_dispatched'      // 取消已派發訂單（通知 bidders）

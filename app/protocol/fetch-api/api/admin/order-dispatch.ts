@@ -74,6 +74,42 @@ export const AssignDriverFromBids = (orderId: string, body: { driverId: string }
     body as unknown as Record<string, unknown>,
   );
 
+// ── Wave 2D：admin 手動降級 / 全開放 ─────────────────────────────
+
+export interface DispatchLevelChangeRes {
+  orderId: string;
+  previousLevel: DispatchLevel;
+  newLevel: DispatchLevel;
+}
+
+/**
+ * Admin：對 pending 訂單立即降一級（currentLevel 2→1 或 1→0）。
+ *
+ * 副作用：fire-and-forget LINE multicast 推 dispatch.level-down template 給新加入等級 driver。
+ * audit log action='order.dispatch_level.downgrade'。
+ *
+ * 守則：訂單 pending + 已派發 + 未指派 + currentLevel !== '0'。
+ */
+export const DowngradeDispatchLevel = (orderId: string) =>
+  methods.post<DispatchLevelChangeRes>(
+    `/nuxt-api/admin/orders/${orderId}/dispatch-level/downgrade`,
+    {} as Record<string, unknown>,
+  );
+
+/**
+ * Admin：對 pending 訂單全開放（currentLevel='0'，全 approved driver 都看得到）。
+ *
+ * 副作用：fire-and-forget LINE multicast 推 dispatch.level-down template 給全 approved driver。
+ * audit log action='order.dispatch_level.force_open'。
+ *
+ * 守則：與 DowngradeDispatchLevel 相同。
+ */
+export const ForceOpenDispatchLevel = (orderId: string) =>
+  methods.post<DispatchLevelChangeRes>(
+    `/nuxt-api/admin/orders/${orderId}/dispatch-level/force-open`,
+    {} as Record<string, unknown>,
+  );
+
 // ── Phase 1F：強制重新配對 ─────────────────────────────────────────
 
 /**

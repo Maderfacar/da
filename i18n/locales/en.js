@@ -828,6 +828,19 @@ export default {
         draft: '暫不發布',
         draftHint: '選擇「暫不發布」時不會推播；若要儲存其他欄位請點「編輯訂單」。',
       },
+      // Wave 2D：立即降級 / 全開放（admin UI 沿用繁中值 — 規格 #14）
+      downgradeNow: '立即降級',
+      forceOpenAll: '全開放',
+      downgradeConfirmTitle: '立即降級',
+      downgradeConfirmMessage: '訂單 #{orderShort} 目前可見等級 L{currentLevel}，確定降到 L{nextLevel}？將推 LINE 通知該級新加入的司機。',
+      downgradeConfirmOk: '確定降級',
+      forceOpenConfirmTitle: '全開放（全車隊）',
+      forceOpenConfirmMessage: '訂單 #{orderShort} 目前可見等級 L{currentLevel}，確定改為「全車隊（L0）」？將推 LINE 通知所有已認證司機。',
+      forceOpenConfirmOk: '確定全開放',
+      downgradeSuccess: '已降到 L{newLevel}，LINE 通知已發出',
+      forceOpenSuccess: '已全開放（L0），LINE 通知已發出',
+      downgradeFailed: '降級失敗',
+      downgradeAtLowest: '訂單已是最低等級，無法再降',
       // Wave 1C：訂單後修偏好標籤 + 車資重算（admin UI 沿用繁中值 — 規格 #14）
       tagEdit: {
         title: '偏好標籤（會觸發車資重算）',

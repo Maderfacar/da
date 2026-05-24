@@ -35,6 +35,36 @@ export interface DispatchedOrderSummary {
   preferenceChips: string[];
 }
 
+/**
+ * Wave 2D：從 order doc 組 DispatchedOrderSummary。
+ *
+ * dispatch.post.ts / redispatch.post.ts 既有的 inline 組裝邏輯與這個函式同；
+ * Wave 2D lazy check + manual downgrade 兩個新觸發點共用此 helper 避免漂移。
+ */
+export function buildDispatchedOrderSummary(
+  orderId: string,
+  data: Record<string, unknown>,
+): DispatchedOrderSummary {
+  const pickup = data.pickupLocation as { displayName?: string; address?: string } | undefined;
+  const dropoff = data.dropoffLocation as { displayName?: string; address?: string } | undefined;
+  const pref = data.preferences as { tagSnapshot?: Array<{ name?: { zh_tw?: string } }> } | undefined;
+  const preferenceChips = Array.isArray(pref?.tagSnapshot)
+    ? pref!.tagSnapshot!.map((t) => t?.name?.zh_tw ?? '').filter(Boolean)
+    : [];
+  const passengerCount = (data.passengerCount as number | undefined) ?? 1;
+  return {
+    orderId,
+    pickupDateTime: (data.pickupDateTime as string) ?? '',
+    pickupAddress: pickup?.displayName || pickup?.address || '',
+    dropoffAddress: dropoff?.displayName || dropoff?.address || '',
+    passengerCount,
+    adultCount: (data.adultCount as number | undefined) ?? passengerCount,
+    childCount: (data.childCount as number | undefined) ?? 0,
+    estimatedFare: (data.estimatedFare as number | undefined) ?? 0,
+    preferenceChips,
+  };
+}
+
 export interface AssignedPassengerPayload {
   orderId: string;
   pickupDateTime: string;
@@ -442,7 +472,7 @@ export async function pushOrderCancelledToBidders(
  * Wave 2B+2C：分級派單 multicast helper。
  *
  * 載入 driverCategory >= level 的 approved driver → resolveTemplate('dispatch.driver-pending')
- * → 渲染 + multicast。封裝給 dispatch.post.ts / redispatch.post.ts / (Step 5) lazy 自動降級用。
+ * → 渲染 + multicast。封裝給 dispatch.post.ts / redispatch.post.ts 用。
  *
  * 注意：currentLevel='0' 等價於不過濾，會推給全 approved driver（含 NOVICE）。
  */
@@ -455,6 +485,34 @@ export async function multicastByLevel(
   const drivers = await loadActiveDrivers(db, { minCategory });
   const lineUserIds = drivers.map((d) => d.lineUserId).filter(Boolean);
   return await pushOrderDispatchToDrivers(db, payload, env, lineUserIds);
+}
+
+/**
+ * Wave 2D：分級派單「降級」multicast helper。
+ *
+ * 用 `dispatch.level-down` template（與首發的 `dispatch.driver-pending` 區分），
+ * 推給 driverCategory >= newLevel 的 approved driver。
+ *
+ * 觸發時機：
+ *  1. driver GET /dispatched-orders 時 lazy check 偵測超時 → 自動降級
+ *  2. admin 在 /admin/orders 點「⬇️ 立即降級」/「🔓 全開放」
+ *
+ * 注意：所有原本已看得到的高等級 driver 也會收到（multicast by min 不排除高等級）；
+ * Brain AI 拍板可接受小幅噪音換實作簡單。
+ */
+export async function multicastLevelDown(
+  db: Firestore,
+  payload: DispatchedOrderSummary,
+  env: DispatchPushEnv,
+  newLevel: DispatchLevel,
+): Promise<{ sent: number; failed: number; total: number }> {
+  const drivers = await loadActiveDrivers(db, { minCategory: newLevel });
+  const lineUserIds = drivers.map((d) => d.lineUserId).filter(Boolean);
+  if (lineUserIds.length === 0) return { sent: 0, failed: 0, total: 0 };
+  const tpl = (await resolveTemplate(db, 'dispatch.level-down')) as TemplateContentFlex;
+  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl));
+  const result = await sendLineMulticast('driver', lineUserIds, [flex]);
+  return { ...result, total: lineUserIds.length };
 }
 
 /** 從 runtimeConfig 組 DispatchPushEnv（給 endpoint 用） */

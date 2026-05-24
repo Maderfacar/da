@@ -25,7 +25,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { computeDriverMatch, type DispatchTagIndexEntry, type DriverMatchResult } from '~shared/orderDispatch';
 import type { TagLang } from '~shared/tagTaxonomy';
 import { DRIVER_CATEGORY, type DriverCategory } from '~shared/types/driver-category';
-import type { DispatchLevel } from '~shared/types/dispatch-visibility';
+import {
+  isDispatchLevel,
+  type DispatchLevel,
+  type DispatchLevelChangeReason,
+} from '~shared/types/dispatch-visibility';
+import { nextLowerLevel } from '@@/utils/dispatch-duration';
 
 export interface OrderBidEntry {
   driverId: string;
@@ -171,7 +176,9 @@ export type DispatchGuardCode =
   | 'driver_already_bid'
   | 'bid_not_found'
   | 'driver_not_in_bids'
-  | 'level_mismatch';
+  | 'level_mismatch'
+  | 'already_at_lowest_level'
+  | 'level_changed';
 
 export class DispatchGuardError extends Error {
   constructor(public code: DispatchGuardCode) {
@@ -330,6 +337,107 @@ export async function assignDriver(
       assignedBy: adminLineUid,
       'statusHistory.confirmedAt': FieldValue.serverTimestamp(),
     });
+  });
+}
+
+/**
+ * Wave 2D：分級派單降級 transaction。
+ *
+ * 三種觸發共用同一段 atomic update：
+ *   - mode='downgrade'      → admin 立即降一級（actor=adminLineUid，reason='manual-downgrade'）
+ *   - mode='force-open'     → admin 全開放（actor=adminLineUid，reason='force-open-all'）
+ *   - mode='auto-downgrade' → driver GET lazy 觸發（actor='system'，reason='auto-downgrade'）
+ *
+ * 守則：
+ *   - 訂單必須存在、status='pending'、已 dispatched、未指派 driver
+ *   - currentLevel !== '0'（否則 already_at_lowest_level）
+ *   - 'auto-downgrade' 模式需傳 expectedLevel；若 fresh read 後 currentLevel 已變 → level_changed（避免兩司機同時 GET 重複降級）
+ *
+ * 寫入：
+ *   - dispatchVisibility.currentLevel = newLevel
+ *   - dispatchVisibility.openedAt = serverTimestamp
+ *   - dispatchVisibility.levelHistory append 一筆 entry（array 內用 client Date；與 bids 同策略）
+ *
+ * @returns { previousLevel, newLevel } — 給 caller 寫 audit log + 觸發 multicast
+ */
+export type DowngradeMode = 'downgrade' | 'force-open' | 'auto-downgrade';
+
+const _modeToReason = (mode: DowngradeMode): DispatchLevelChangeReason => {
+  if (mode === 'force-open') return 'force-open-all';
+  if (mode === 'auto-downgrade') return 'auto-downgrade';
+  return 'manual-downgrade';
+};
+
+export interface DowngradeResult {
+  previousLevel: DispatchLevel;
+  newLevel: DispatchLevel;
+}
+
+export async function downgradeDispatchLevel(
+  db: Firestore,
+  orderId: string,
+  options: {
+    mode: DowngradeMode;
+    /** adminLineUid（manual / force-open）；'system'（auto-downgrade） */
+    actor: string;
+    /** 'auto-downgrade' 必傳 — race condition 守則：與 fresh read 比對 currentLevel 是否變動 */
+    expectedLevel?: DispatchLevel;
+  },
+): Promise<DowngradeResult> {
+  const ref = db.collection('orders').doc(orderId);
+  return await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new DispatchGuardError('order_not_found');
+    const d = snap.data() ?? {};
+    if (d.orderStatus !== 'pending') throw new DispatchGuardError('invalid_status');
+    if (!d.dispatchAt) throw new DispatchGuardError('invalid_status');
+    if (d.assignedDriverId) throw new DispatchGuardError('already_assigned');
+
+    const vis = (d.dispatchVisibility ?? null) as
+      | { currentLevel?: unknown; levelHistory?: unknown[] }
+      | null;
+    const currentLevel: DispatchLevel = isDispatchLevel(vis?.currentLevel) ? vis!.currentLevel : '0';
+
+    // lazy auto-downgrade 防 race：若被另一 request 降過則 skip（caller 不視為錯誤）
+    if (options.mode === 'auto-downgrade') {
+      if (!options.expectedLevel) {
+        throw new Error('downgradeDispatchLevel: auto-downgrade mode requires expectedLevel');
+      }
+      if (currentLevel !== options.expectedLevel) {
+        throw new DispatchGuardError('level_changed');
+      }
+    }
+
+    if (currentLevel === '0') throw new DispatchGuardError('already_at_lowest_level');
+
+    // 計算新等級：force-open 直降 '0'；downgrade / auto-downgrade 降一級
+    let newLevel: DispatchLevel;
+    if (options.mode === 'force-open') {
+      newLevel = '0';
+    } else {
+      const next = nextLowerLevel(currentLevel);
+      if (!next) throw new DispatchGuardError('already_at_lowest_level');
+      newLevel = next;
+    }
+
+    const prevHistory = Array.isArray(vis?.levelHistory)
+      ? (vis!.levelHistory as Array<Record<string, unknown>>)
+      : [];
+    const now = new Date();
+    tx.update(ref, {
+      'dispatchVisibility.currentLevel': newLevel,
+      'dispatchVisibility.openedAt': FieldValue.serverTimestamp(),
+      'dispatchVisibility.levelHistory': [
+        ...prevHistory,
+        {
+          level: newLevel,
+          openedAt: now,
+          openedBy: options.actor,
+          reason: _modeToReason(options.mode),
+        },
+      ],
+    });
+    return { previousLevel: currentLevel, newLevel };
   });
 }
 
