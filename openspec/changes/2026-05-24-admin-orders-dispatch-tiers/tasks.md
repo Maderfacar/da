@@ -112,34 +112,35 @@
 > 對應 Step 3 視窗。範圍小。
 
 ### 0. 探勘（10 min）
-- [ ] 讀 `app/pages/admin/drivers/[uid].vue:181` 既有 driverCategory 顯示位置
-- [ ] 讀 `server/routes/nuxt-api/admin/users/[uid].patch.ts:183-184` 既有 PATCH driverCategory 邏輯
+- [x] 讀 `app/pages/admin/drivers/[uid].vue:181` 既有 driverCategory 顯示位置
+- [x] 讀 `server/routes/nuxt-api/admin/users/[uid].patch.ts:183-184` 既有 PATCH driverCategory 邏輯
 
 ### 1. Enum + util（30 min）
-- [ ] `shared/types/driver-category.ts` 🆕：
+- [x] `shared/types/driver-category.ts` 🆕：
   - `DRIVER_CATEGORY` const enum（NOVICE='0' / STANDARD='1' / PRO='2'）
   - `DRIVER_CATEGORY_LABEL` 三語 record
   - `DriverCategory` type
-- [ ] `server/utils/driver-category.ts` 🆕：
+- [x] `server/utils/driver-category.ts` 🆕：
   - re-export from shared
   - `getCategoryLabel(level, lang)` helper
   - 升級規則 stub（comment block 列三 metric 候選）
 
 ### 2. UI（45 min）
-- [ ] `app/pages/admin/drivers/[uid].vue` 加 driverCategory 編輯區塊：
+- [x] `app/pages/admin/drivers/[uid].vue` 加 driverCategory 編輯區塊：
   - ElSelect 三選一（顯示中文 label + 等級號）
   - 「儲存」按鈕 → `UseAsk()` 二次確認
-  - 確認後 call `ApiUpdateDriver({ driverCategory })`
+  - 確認後 call `PatchAdminUser({ driverCategory })`
   - 成功 toast / 失敗錯誤訊息
-  - 顯示「最後修改」時間 + adminId（從 audit log 拉）
+  - 顯示「最後變更」時間 + actorDisplayName（從 audit_logs 拉）
 
 ### 3. Server 層（20 min）
-- [ ] `server/routes/nuxt-api/admin/users/[uid].patch.ts` 加 audit log：
-  - 若 body.driverCategory 改動 → write `driver.category-changed` audit entry
-  - 含 before / after / adminId / timestamp
+- [x] `server/routes/nuxt-api/admin/users/[uid].patch.ts` 補強 audit log：
+  - 既有 `driver.category_change` action 已存在，payload 擴充為 `{ before, after }`
+  - actorUid 由 writeAuditLog 自動寫（等同 adminId）
+  - 加 `isDriverCategory` runtime 驗證，非合法值 badRequest
 
 ### 4. i18n（10 min）
-- [ ] 三語加 `admin.drivers.categoryEdit` / `categoryLevels` / `categoryChangeConfirm`
+- [x] 三語加 `admin.drivers.categoryEdit.*`（label / edit / save / cancel / lastChanged / levels）
 
 ### 5. 驗證（10 min）
 - [ ] `pnpm lint:fix` / `pnpm test` / `pnpm build` 全綠

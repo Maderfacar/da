@@ -25,6 +25,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
+import { isDriverCategory } from '~shared/types/driver-category';
 
 type Role = 'passenger' | 'driver' | 'admin';
 
@@ -74,6 +75,15 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '不可移除 passenger 身分', en: 'Cannot remove passenger role', ja: 'passenger権限は削除できません' });
   }
 
+  // Wave 2A：driverCategory 必須是合法值 '0' | '1' | '2'
+  if (body!.driverCategory !== undefined && !isDriverCategory(body!.driverCategory)) {
+    return badRequestError({
+      zh_tw: '司機分級值不合法（限 0 / 1 / 2）',
+      en: 'Invalid driverCategory (allowed: 0 / 1 / 2)',
+      ja: 'driverCategory が不正です（0 / 1 / 2 のみ）',
+    });
+  }
+
   // P18：依 body 內容判斷需要哪些權限
   // - admin 操作（addRole/removeRole='admin'）→ canManageAdmins
   // - driver 管理（approved / rejectedAt / rejectReason / driverCategory / displayName / addRole/removeRole='driver' or 'passenger'）→ canManageDrivers
@@ -98,6 +108,19 @@ export default defineEventHandler(async (event) => {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
     const ref = db.collection('users').doc(uid);
     const snap = await ref.get();
+
+    // Wave 2A：driverCategory 變動需在寫入前讀取既有值，audit log 才能記 before/after
+    let beforeDriverCategory: string | null = null;
+    if (body!.driverCategory !== undefined) {
+      try {
+        const driverSnap = await db.collection('drivers').doc(uid).get();
+        const raw = driverSnap.exists ? (driverSnap.data()?.driverCategory as string | undefined) : undefined;
+        beforeDriverCategory = typeof raw === 'string' && raw.length > 0 ? raw : null;
+      } catch (err) {
+        // 讀失敗不阻擋主流程；audit log 內 before 標記為 unknown
+        console.warn('[admin/users.patch] read driver before driverCategory failed:', err);
+      }
+    }
 
     if (!snap.exists) {
       // 使用者不在 Firestore 中 → 允許新增（管理員手動加入白名單情境）
@@ -242,7 +265,15 @@ export default defineEventHandler(async (event) => {
       auditActions.push({ action: 'driver.unblock_cooldown', targetType: 'driver', payload: {} });
     }
     if (body!.driverCategory !== undefined) {
-      auditActions.push({ action: 'driver.category_change', targetType: 'driver', payload: { category: body!.driverCategory } });
+      // Wave 2A：補 before/after（actorUid 已由 writeAuditLog 自動寫 audit_logs.actorUid，等同 adminId）
+      auditActions.push({
+        action: 'driver.category_change',
+        targetType: 'driver',
+        payload: {
+          before: { driverCategory: beforeDriverCategory },
+          after: { driverCategory: body!.driverCategory },
+        },
+      });
     }
     for (const a of auditActions) {
       await writeAuditLog({ event, auth, action: a.action, targetType: a.targetType, targetId: uid, payload: a.payload });

@@ -6,6 +6,13 @@ import type {
   VehicleProfilePendingDto,
 } from '@/protocol/fetch-api/api/admin';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
+import {
+  DRIVER_CATEGORY,
+  DRIVER_CATEGORY_LABEL,
+  DRIVER_CATEGORY_VALUES,
+  isDriverCategory,
+  type DriverCategory,
+} from '~shared/types/driver-category';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -259,6 +266,113 @@ const ClickSavePhone = async () => {
   }
 };
 
+// ── 司機分級編輯（Wave 2A）────────────────────────────────
+// driverCategory '0' NOVICE / '1' STANDARD / '2' PRO，影響派單分級可見性
+// 提交呼叫 PATCH /nuxt-api/admin/users/{uid} 既有 endpoint（已支援 driverCategory + audit log）
+const editingCategory = ref(false);
+const categoryDraft = ref<DriverCategory>(DRIVER_CATEGORY.NOVICE);
+const savingCategory = ref(false);
+const lastCategoryChange = ref<{ at: string; actor: string } | null>(null);
+
+const categoryOptions = computed(() =>
+  DRIVER_CATEGORY_VALUES.map((v) => ({
+    value: v,
+    label: `${DRIVER_CATEGORY_LABEL[v].zh}（${v}）`,
+  })),
+);
+
+const currentCategoryLabel = computed(() => {
+  const raw = driver.value?.driverCategory;
+  const key: DriverCategory = isDriverCategory(raw) ? raw : DRIVER_CATEGORY.NOVICE;
+  return `${DRIVER_CATEGORY_LABEL[key].zh}（${key}）`;
+});
+
+const ClickEditCategory = () => {
+  if (!driver.value) return;
+  const raw = driver.value.driverCategory;
+  categoryDraft.value = isDriverCategory(raw) ? raw : DRIVER_CATEGORY.NOVICE;
+  editingCategory.value = true;
+};
+
+const ClickCancelCategory = () => {
+  editingCategory.value = false;
+};
+
+const ApiLoadLastCategoryChange = async () => {
+  // 從 audit_logs 撈最新一筆 driver.category_change（client-side 直接讀 firestore；rules 已限 admin 可讀）
+  if (!uid.value) return;
+  try {
+    const { getFirestore, collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app) return;
+    const db = getFirestore(app);
+    const q = query(
+      collection(db, 'audit_logs'),
+      where('targetType', '==', 'driver'),
+      where('targetId', '==', uid.value),
+      where('action', '==', 'driver.category_change'),
+      orderBy('createdAt', 'desc'),
+      limit(1),
+    );
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      lastCategoryChange.value = null;
+      return;
+    }
+    const data = snap.docs[0]?.data() ?? {};
+    const ts = data.createdAt as { toDate?: () => Date } | undefined;
+    const iso = ts?.toDate?.()?.toISOString?.() ?? '';
+    lastCategoryChange.value = {
+      at: iso,
+      actor: (data.actorDisplayName as string) || (data.actorUid as string) || '—',
+    };
+  } catch (err) {
+    // audit_logs rules 限制非 admin 讀會 throw；非 admin 進不來，silent
+    console.warn('[admin/drivers/[uid]] load last category change failed:', err);
+    lastCategoryChange.value = null;
+  }
+};
+
+const ClickSaveCategory = async () => {
+  if (!driver.value) return;
+  if (!isDriverCategory(categoryDraft.value)) {
+    ElMessage({ message: '司機分級值不合法', type: 'warning' });
+    return;
+  }
+  const before = isDriverCategory(driver.value.driverCategory)
+    ? (driver.value.driverCategory as DriverCategory)
+    : DRIVER_CATEGORY.NOVICE;
+  if (categoryDraft.value === before) {
+    ElMessage({ message: '分級未變更', type: 'info' });
+    editingCategory.value = false;
+    return;
+  }
+
+  const ok = await UseAsk().Any(
+    `將司機分級從「${DRIVER_CATEGORY_LABEL[before].zh}（${before}）」變更為「${DRIVER_CATEGORY_LABEL[categoryDraft.value].zh}（${categoryDraft.value}）」？\n此變更會影響該司機可見的派單範圍。`,
+    '變更司機分級',
+    '取消',
+    '確定變更',
+  );
+  if (!ok) return;
+
+  savingCategory.value = true;
+  try {
+    const res = await $api.PatchAdminUser(uid.value, { driverCategory: categoryDraft.value });
+    if (res.status.code === $enum.apiStatus.success) {
+      driver.value.driverCategory = categoryDraft.value;
+      editingCategory.value = false;
+      ElMessage({ message: '司機分級已更新', type: 'success' });
+      void ApiLoadLastCategoryChange();
+    } else {
+      ElMessage({ message: res.status.message?.zh_tw ?? '更新失敗', type: 'error' });
+    }
+  } finally {
+    savingCategory.value = false;
+  }
+};
+
 // ── 證件審批 ──────────────────────────────────────────────
 const reviewing = ref<DocType | ''>('');
 
@@ -298,6 +412,7 @@ const ClickBack = () => router.push('/admin/drivers');
 onMounted(() => {
   void ApiLoadDriver();
   void ApiLoadTagIndex();
+  void ApiLoadLastCategoryChange();
 });
 </script>
 
@@ -369,6 +484,37 @@ onMounted(() => {
             .PageAdminDriverDetail__row(v-if="driver.application.rejectedAt")
               span.PageAdminDriverDetail__row-key 上次退回原因
               span.PageAdminDriverDetail__row-val {{ driver.application.rejectReason || '—' }}
+
+            //- Wave 2A：司機分級編輯（NOVICE / STANDARD / PRO）
+            .PageAdminDriverDetail__row
+              span.PageAdminDriverDetail__row-key {{ $t('admin.drivers.categoryEdit.label') }}
+              template(v-if="!editingCategory")
+                .PageAdminDriverDetail__row-right
+                  span.PageAdminDriverDetail__row-val {{ currentCategoryLabel }}
+                  button.PageAdminDriverDetail__row-edit(@click="ClickEditCategory") {{ $t('admin.drivers.categoryEdit.edit') }}
+              template(v-else)
+                .PageAdminDriverDetail__row-editing
+                  ElSelect(
+                    v-model="categoryDraft"
+                    size="small"
+                    :disabled="savingCategory"
+                    value-on-clear=""
+                    style="min-width: 140px"
+                  )
+                    ElOption(
+                      v-for="opt in categoryOptions"
+                      :key="opt.value"
+                      :value="opt.value"
+                      :label="opt.label"
+                    )
+                  ElButton(type="primary" size="small" :loading="savingCategory" @click="ClickSaveCategory") {{ $t('admin.drivers.categoryEdit.save') }}
+                  ElButton(size="small" :disabled="savingCategory" @click="ClickCancelCategory") {{ $t('admin.drivers.categoryEdit.cancel') }}
+            .PageAdminDriverDetail__row(v-if="lastCategoryChange")
+              span.PageAdminDriverDetail__row-key {{ $t('admin.drivers.categoryEdit.lastChanged') }}
+              span.PageAdminDriverDetail__row-val
+                | {{ FormatTime(lastCategoryChange.at) }}
+                |  ·
+                | {{ lastCategoryChange.actor }}
 
       ElTabPane(:label="`車輛 Profile ${driver.vehicleProfilePending?.status === 'pending_review' ? '⚠ 待審' : ''}`" name="vehicle")
         .PageAdminDriverDetail__pane

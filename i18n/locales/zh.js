@@ -860,6 +860,21 @@ export default {
         noChange: '偏好標籤未變更',
       },
     },
+    // Wave 2A：admin 司機詳情頁分級編輯
+    drivers: {
+      categoryEdit: {
+        label: '司機分級',
+        edit: '編輯',
+        save: '儲存',
+        cancel: '取消',
+        lastChanged: '最後變更',
+        levels: {
+          0: '新手（0）',
+          1: '標準（1）',
+          2: '高級（2）',
+        },
+      },
+    },
   },
   // Phase 1B：driver 端 — 車輛資料 + 司機能力標籤
   driver: {
