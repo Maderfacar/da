@@ -215,8 +215,8 @@ export default defineNuxtConfig({
   app: {
     // baseURL: '/',
     buildAssetsDir: '/static/',
-    pageTransition: { name: 'page', mode: 'out-in' },
-    layoutTransition: { name: 'layout', mode: 'out-in' },
+    pageTransition: { name: 'page', mode: 'default' },
+    layoutTransition: { name: 'layout', mode: 'default' },
     // meta
     head: {
       bodyAttrs: {
@@ -261,6 +261,17 @@ export default defineNuxtConfig({
       // admin 端額外覆寫為更嚴的 frame 防護（DENY + frame-ancestors 'none'）
       '/**': { headers: getSecurityHeaders('default') },
       '/admin/**': { headers: getSecurityHeaders('admin') },
+      // Perf Wave 1 P0-2：公開靜態頁 SWR edge cache（不含用戶/Token 資料的頁面）
+      // 命中後 TTFB <50ms，未命中時背景 revalidate
+      '/fare':    { swr: 600 },
+      '/fleet':   { swr: 600 },
+      '/faq':     { swr: 3600 },
+      '/en/fare': { swr: 600 },
+      '/en/fleet':{ swr: 600 },
+      '/en/faq':  { swr: 3600 },
+      '/ja/fare': { swr: 600 },
+      '/ja/fleet':{ swr: 600 },
+      '/ja/faq':  { swr: 3600 },
     }
   },
 
