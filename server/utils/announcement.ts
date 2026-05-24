@@ -10,7 +10,6 @@
  * 對應 openspec/changes/2026-05-14-passenger-announcements/design.md
  */
 import type { Firestore } from 'firebase-admin/firestore';
-import { sanitizeHtml } from './html-sanitize';
 
 export type AnnouncementStatus = 'draft' | 'published' | 'archived';
 export type AnnouncementTargetType = 'all' | 'passenger' | 'driver' | 'order';
@@ -139,13 +138,19 @@ export function validateAnnouncementBody(
 }
 
 /**
- * HTML sanitize — W2 升級為 isomorphic-dompurify allowlist 過濾。
+ * 簡易 HTML sanitize — 移除明顯危險的內容。
  *
- * 委派到 [html-sanitize.ts](./html-sanitize.ts) 的 sanitizeHtml；
- * 保留此 export 避免 caller（admin/announcements POST/PATCH）改動。
+ * **不是**完整 XSS 防護；Phase 5 乘客端 v-html render 時應再過一次 DOMPurify。
+ * 此處主要擋住 admin 從 TinyEditor 不小心貼入的 <script> 與 javascript: URI。
  */
 export function sanitizeBody(html: string): string {
-  return sanitizeHtml(html);
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // <script>...</script>
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // <iframe>...</iframe>
+    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')   // onclick="..." onload="..." etc
+    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
+    .replace(/javascript:/gi, '')              // href="javascript:..."
+    .trim();
 }
 
 /**
