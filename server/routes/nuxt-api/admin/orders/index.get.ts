@@ -5,7 +5,34 @@ import { hasPermission } from '@@/utils/require-permission';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
 import { serializeBids } from '@@/utils/order-dispatch';
 
-type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
+type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string; city?: string; district?: string };
+
+/** 縣市 / 行政區 filter helper — cities / districts 為逗號分隔字串轉成 Set。
+ *  regionField 預設 'pickup'；非合法值（如空字串）一律當 'pickup'。
+ *  cities 空 → 不套用 city filter（district 同理）。
+ *  歷史訂單無 city/district 欄位 → cities 有值時自動歸入「未知」(空字串)，仍會被列出。*/
+function _matchRegion(
+  pickup: GooglePlaceLite | undefined,
+  dropoff: GooglePlaceLite | undefined,
+  regionField: 'pickup' | 'dropoff',
+  cities: Set<string>,
+  districts: Set<string>,
+): boolean {
+  if (cities.size === 0 && districts.size === 0) return true;
+  const target = regionField === 'dropoff' ? dropoff : pickup;
+  const city = (target?.city ?? '').trim();
+  const district = (target?.district ?? '').trim();
+  if (cities.size > 0) {
+    // 「未知」selectable：UI 端把空字串視為「未知」chip；歷史訂單 city='' 被歸入此 bucket
+    const cityKey = city || '__unknown__';
+    if (!cities.has(city) && !cities.has(cityKey)) return false;
+  }
+  if (districts.size > 0) {
+    const districtKey = district || '__unknown__';
+    if (!districts.has(district) && !districts.has(districtKey)) return false;
+  }
+  return true;
+}
 
 export default defineEventHandler(async (event) => {
   // P14：必須登入；P18：套 canManageOrders 權限（admin/assistant 都有此權限）
@@ -16,7 +43,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const query = getQuery(event);
-  const { status, from, to } = query as { status?: string; from?: string; to?: string };
+  const { status, from, to, regionField, cities, districts } = query as {
+    status?: string;
+    from?: string;
+    to?: string;
+    regionField?: string;
+    cities?: string;
+    districts?: string;
+  };
 
   // Wave 1 A3：from / to 為 ISO string（exclusive end）；於 server 內存 filter
   // pickupDateTime（避免動 Firestore composite index）。
@@ -24,6 +58,15 @@ export default defineEventHandler(async (event) => {
   const toMs = to ? Date.parse(to) : NaN;
   const hasFrom = Number.isFinite(fromMs);
   const hasTo = Number.isFinite(toMs);
+
+  // 縣市過濾參數
+  const effectiveRegionField: 'pickup' | 'dropoff' = regionField === 'dropoff' ? 'dropoff' : 'pickup';
+  const citiesSet = new Set(
+    (cities ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
+  const districtsSet = new Set(
+    (districts ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
   if (!firebaseServiceAccountJson) {
@@ -100,7 +143,7 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    const baseOrders = (hasFrom || hasTo)
+    const baseOrdersAfterDate = (hasFrom || hasTo)
       ? baseOrdersAll.filter((o) => {
         const t = Date.parse(o.pickupDateTime);
         if (!Number.isFinite(t)) return false;
@@ -109,6 +152,12 @@ export default defineEventHandler(async (event) => {
         return true;
       })
       : baseOrdersAll;
+
+    const baseOrders = (citiesSet.size > 0 || districtsSet.size > 0)
+      ? baseOrdersAfterDate.filter((o) =>
+        _matchRegion(o.pickupLocation, o.dropoffLocation, effectiveRegionField, citiesSet, districtsSet),
+      )
+      : baseOrdersAfterDate;
 
     // batch read users/{userId} 取乘客顯示名（既有 user 資料無 phone，passengerPhone 暫 null）
     const userIds = Array.from(new Set(baseOrders.map((o) => o.userId).filter(Boolean)));

@@ -52,6 +52,32 @@ const filterStatus = ref('');
 // Wave 1 A3：日期過濾（共用 UiDateRangeFilter）
 const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, to: null });
 
+// 縣市過濾（共用 UiCityFilter）— regionField 切換上/下車地，cities + districts 多選
+interface CityFilterState {
+  regionField: 'pickup' | 'dropoff';
+  cities: string[];
+  districts: string[];
+}
+const cityFilter = ref<CityFilterState>({ regionField: 'pickup', cities: [], districts: [] });
+
+// 從當前已載入 orders 聚合的 distinct district list（依 cityFilter.regionField + cities 過濾）
+// 「歷史訂單無 city」歸 '__unknown__' bucket（UI 顯示為「未知」）
+const availableDistricts = computed<string[]>(() => {
+  const field = cityFilter.value.regionField;
+  const citySet = new Set(cityFilter.value.cities);
+  if (citySet.size === 0) return [];
+  const set = new Set<string>();
+  for (const o of orders.value) {
+    const loc = field === 'dropoff' ? o.dropoffLocation : o.pickupLocation;
+    const city = ((loc?.city as string | undefined) ?? '').trim();
+    const cityKey = city || '__unknown__';
+    if (!citySet.has(city) && !citySet.has(cityKey)) continue;
+    const d = ((loc?.district as string | undefined) ?? '').trim() || '__unknown__';
+    set.add(d);
+  }
+  return Array.from(set).sort();
+});
+
 // 舊版「指派彈窗」狀態（Commit C 會整合進新 modal；先保留以維持指派功能）
 const assigningOrderId = ref<string | null>(null);
 const selectedDriverUid = ref('');
@@ -157,9 +183,17 @@ const filteredOrders = computed(() =>
 const ApiLoadOrders = async () => {
   loading.value = true;
   try {
-    const params: { status?: string; from?: string; to?: string } = {};
+    const params: { status?: string; from?: string; to?: string; regionField?: 'pickup' | 'dropoff'; cities?: string; districts?: string } = {};
     if (dateRange.value.from) params.from = dateRange.value.from;
     if (dateRange.value.to) params.to = dateRange.value.to;
+    // 縣市 filter：cities 空就完全不帶（regionField 也省）— server 端對齊：只有 cities/districts 非空才生效
+    if (cityFilter.value.cities.length > 0) {
+      params.regionField = cityFilter.value.regionField;
+      params.cities = cityFilter.value.cities.join(',');
+      if (cityFilter.value.districts.length > 0) {
+        params.districts = cityFilter.value.districts.join(',');
+      }
+    }
     const res = await $api.GetAllOrders(params);
     if (res.status?.code !== 200) {
       ElMessage({ message: res.status?.message?.zh_tw ?? '載入訂單失敗', type: 'error' });
@@ -1160,6 +1194,12 @@ onMounted(() => {
       v-model="dateRange"
       mode="single"
       granularity="day"
+      @change="ApiLoadOrders"
+    )
+    //- 縣市 / 行政區過濾（pickup OR dropoff toggle + 多選）
+    UiCityFilter(
+      v-model="cityFilter"
+      :available-districts="availableDistricts"
       @change="ApiLoadOrders"
     )
     .PageAdminOrders__count {{ filteredOrders.length }} 筆

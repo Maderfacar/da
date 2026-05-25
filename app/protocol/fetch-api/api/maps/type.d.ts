@@ -6,6 +6,10 @@ export interface GooglePlace {
   lat: number;
   lng: number;
   placeId?: string;
+  /** 縣市過濾用：administrative_area_level_1 中文名（如「台北市」「桃園市」） */
+  city?: string;
+  /** 縣市過濾用：administrative_area_level_2 / level_3 中文名（如「中正區」「龜山區」） */
+  district?: string;
 }
 
 export interface PlaceSuggestion {

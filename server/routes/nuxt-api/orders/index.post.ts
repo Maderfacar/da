@@ -29,6 +29,9 @@ interface GooglePlace {
   lat: number;
   lng: number;
   placeId?: string;
+  /** 縣市過濾用 — UiGooglePlaceInput onSelect 自動帶入；不在則寫入時為 undefined */
+  city?: string;
+  district?: string;
 }
 
 interface LuggageItemBody {

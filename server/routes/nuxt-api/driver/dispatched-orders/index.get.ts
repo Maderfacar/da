@@ -37,7 +37,31 @@ import type { Timestamp, Firestore  } from 'firebase-admin/firestore';
 import type { H3Event } from 'h3';
 import type { AuthOk } from '@@/utils/require-auth';
 
-type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string };
+type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string; city?: string; district?: string };
+
+/** 縣市過濾 helper — 與 admin/orders/index.get.ts 邏輯一致。
+ *  歷史訂單無 city 欄位 → '__unknown__' bucket（UI 端用「未知」chip 對應）。*/
+function _matchRegion(
+  pickup: GooglePlaceLite | undefined,
+  dropoff: GooglePlaceLite | undefined,
+  regionField: 'pickup' | 'dropoff',
+  cities: Set<string>,
+  districts: Set<string>,
+): boolean {
+  if (cities.size === 0 && districts.size === 0) return true;
+  const target = regionField === 'dropoff' ? dropoff : pickup;
+  const city = (target?.city ?? '').trim();
+  const district = (target?.district ?? '').trim();
+  if (cities.size > 0) {
+    const cityKey = city || '__unknown__';
+    if (!cities.has(city) && !cities.has(cityKey)) return false;
+  }
+  if (districts.size > 0) {
+    const districtKey = district || '__unknown__';
+    if (!districts.has(district) && !districts.has(districtKey)) return false;
+  }
+  return true;
+}
 
 const _tsToIso = (ts: Timestamp | null | undefined): string | null =>
   ts ? ts.toDate().toISOString() : null;
@@ -144,6 +168,21 @@ export default defineEventHandler(async (event) => {
     return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
 
+  // 縣市過濾參數（與 admin/orders 端對齊）
+  const query = getQuery(event);
+  const { regionField, cities, districts } = query as {
+    regionField?: string;
+    cities?: string;
+    districts?: string;
+  };
+  const effectiveRegionField: 'pickup' | 'dropoff' = regionField === 'dropoff' ? 'dropoff' : 'pickup';
+  const citiesSet = new Set(
+    (cities ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
+  const districtsSet = new Set(
+    (districts ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
+
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     // Wave 2B+2C：先拉司機分級（缺 driver doc fallback '0' NOVICE）
@@ -205,6 +244,16 @@ export default defineEventHandler(async (event) => {
         const currentLevel: DispatchLevel = isDispatchLevel(vis?.currentLevel) ? vis!.currentLevel : '0';
         return driverCategory >= currentLevel; // 字串字典序比 '0'<'1'<'2'
       })
+      // 縣市 / 行政區 filter（query 有帶才生效）
+      .filter(({ data }) =>
+        _matchRegion(
+          data.pickupLocation as GooglePlaceLite | undefined,
+          data.dropoffLocation as GooglePlaceLite | undefined,
+          effectiveRegionField,
+          citiesSet,
+          districtsSet,
+        ),
+      )
       .map(({ id, data }) => {
         const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
         const myBid = rawBids.find((b) => b.driverId === myUid);

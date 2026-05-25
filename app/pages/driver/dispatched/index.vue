@@ -8,13 +8,46 @@ const withdrawing = ref<string | null>(null);
 const orders = ref<DriverDispatchedOrderItem[]>([]);
 const activeTab = ref<'available' | 'mine'>('available');
 
+// 縣市過濾（共用 UiCityFilter）— 上/下車地 toggle + 縣市/行政區多選
+interface CityFilterState {
+  regionField: 'pickup' | 'dropoff';
+  cities: string[];
+  districts: string[];
+}
+const cityFilter = ref<CityFilterState>({ regionField: 'pickup', cities: [], districts: [] });
+
+// 從當前已載入 orders 聚合 distinct district（依 regionField + cities filter）
+const availableDistricts = computed<string[]>(() => {
+  const field = cityFilter.value.regionField;
+  const citySet = new Set(cityFilter.value.cities);
+  if (citySet.size === 0) return [];
+  const set = new Set<string>();
+  for (const o of orders.value) {
+    const loc = field === 'dropoff' ? o.dropoffLocation : o.pickupLocation;
+    const city = ((loc as { city?: string })?.city ?? '').trim();
+    const cityKey = city || '__unknown__';
+    if (!citySet.has(city) && !citySet.has(cityKey)) continue;
+    const d = ((loc as { district?: string })?.district ?? '').trim() || '__unknown__';
+    set.add(d);
+  }
+  return Array.from(set).sort();
+});
+
 const availableOrders = computed(() => orders.value.filter((o) => o.myBidStatus !== 'bid'));
 const myBids = computed(() => orders.value.filter((o) => o.myBidStatus === 'bid'));
 
 const ApiLoadOrders = async () => {
   loading.value = true;
   try {
-    const res = await $api.GetDispatchedOrders();
+    const params: { regionField?: 'pickup' | 'dropoff'; cities?: string; districts?: string } = {};
+    if (cityFilter.value.cities.length > 0) {
+      params.regionField = cityFilter.value.regionField;
+      params.cities = cityFilter.value.cities.join(',');
+      if (cityFilter.value.districts.length > 0) {
+        params.districts = cityFilter.value.districts.join(',');
+      }
+    }
+    const res = await $api.GetDispatchedOrders(params);
     if (res.status?.code === 200) {
       orders.value = (res.data as DriverDispatchedOrderItem[]) ?? [];
     } else {
@@ -53,6 +86,14 @@ onMounted(ApiLoadOrders);
   .PageDriverDispatched__header
     .PageDriverDispatched__header-label DISPATCHED ORDERS
     h1.PageDriverDispatched__header-title 訂單需求單
+
+  //- 縣市 / 行政區過濾（pickup OR dropoff toggle + 多選）
+  .PageDriverDispatched__filter
+    UiCityFilter(
+      v-model="cityFilter"
+      :available-districts="availableDistricts"
+      @change="ApiLoadOrders"
+    )
 
   .PageDriverDispatched__tabs
     button.PageDriverDispatched__tab(
@@ -136,6 +177,10 @@ $amber: #d4860a;
     letter-spacing: 0.04em;
     color: #fff;
   }
+}
+
+.PageDriverDispatched__filter {
+  margin-bottom: 12px;
 }
 
 .PageDriverDispatched__tabs {

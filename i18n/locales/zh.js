@@ -472,6 +472,13 @@ export default {
   ui: {
     googlePlace: { placeholder: '搜尋地址或地點名稱…' },
     bookingLocation: { placeholder: '請輸入地址或地點' },
+    cityFilter: {
+      pickup: '上車地',
+      dropoff: '下車地',
+      cityPlaceholder: '縣市',
+      districtPlaceholder: '行政區',
+      clear: '清除',
+    },
   },
   // ── Admin Dashboard ───────────────────────────────────────
   adminDashboard: {

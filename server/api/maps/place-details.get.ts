@@ -6,6 +6,27 @@ interface PlaceDetailData {
   lat: number;
   lng: number;
   placeId: string;
+  /** 縣市過濾用：administrative_area_level_1 中文名；找不到時 undefined */
+  city?: string;
+  /** 縣市過濾用：administrative_area_level_2 / level_3 中文名；找不到時 undefined */
+  district?: string;
+}
+
+interface PlaceAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+/** 從 Google Places address_components 抽縣市 + 行政區（中文）。
+ *  台灣行政區劃：administrative_area_level_1 = 縣市；level_2 / level_3 = 鄉鎮市區。
+ *  Google 對直轄市（台北市等）level_2 偶爾為空，退回 level_3。 */
+function _extractCityDistrict(components: PlaceAddressComponent[] | undefined): { city?: string; district?: string } {
+  if (!Array.isArray(components)) return {};
+  const city = components.find((c) => c.types?.includes('administrative_area_level_1'))?.long_name;
+  const district = components.find((c) => c.types?.includes('administrative_area_level_2'))?.long_name
+    ?? components.find((c) => c.types?.includes('administrative_area_level_3'))?.long_name;
+  return { city, district };
 }
 
 interface UnifiedResponse<T> {
@@ -58,7 +79,7 @@ export default defineEventHandler(async (event): Promise<UnifiedResponse<PlaceDe
     const params = new URLSearchParams({
       place_id: placeId,
       key: apiKey,
-      fields: 'name,formatted_address,geometry',
+      fields: 'name,formatted_address,geometry,address_components',
       language: 'zh-TW',
       ...(sessiontoken ? { sessiontoken } : {}),
     });
@@ -70,6 +91,7 @@ export default defineEventHandler(async (event): Promise<UnifiedResponse<PlaceDe
         name: string;
         formatted_address: string;
         geometry: { location: { lat: number; lng: number } };
+        address_components?: PlaceAddressComponent[];
       };
     }>(`https://maps.googleapis.com/maps/api/place/details/json?${params.toString()}`);
 
@@ -93,6 +115,8 @@ export default defineEventHandler(async (event): Promise<UnifiedResponse<PlaceDe
       };
     }
 
+    const { city, district } = _extractCityDistrict(res.result.address_components);
+
     return {
       data: {
         displayName: res.result.name,
@@ -100,6 +124,8 @@ export default defineEventHandler(async (event): Promise<UnifiedResponse<PlaceDe
         lat,
         lng,
         placeId,
+        ...(city ? { city } : {}),
+        ...(district ? { district } : {}),
       },
       status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
     };

@@ -455,6 +455,13 @@ export default {
   ui: {
     googlePlace: { placeholder: '住所または地名で検索…' },
     bookingLocation: { placeholder: '住所または地名を入力' },
+    cityFilter: {
+      pickup: '乗車地',
+      dropoff: '降車地',
+      cityPlaceholder: '都市',
+      districtPlaceholder: '区',
+      clear: 'クリア',
+    },
   },
   adminDashboard: {
     title: 'ダッシュボード',

@@ -455,6 +455,13 @@ export default {
   ui: {
     googlePlace: { placeholder: 'Search address or place name…' },
     bookingLocation: { placeholder: 'Enter address or place' },
+    cityFilter: {
+      pickup: 'Pickup',
+      dropoff: 'Drop-off',
+      cityPlaceholder: 'City',
+      districtPlaceholder: 'District',
+      clear: 'Clear',
+    },
   },
   adminDashboard: {
     title: 'Dashboard',

@@ -298,8 +298,20 @@ export const GetAdminUsers = (params: { role: Role; approved?: boolean }) =>
 export const PatchAdminUser = (uid: string, body: PatchAdminUserBody) =>
   methods.patch<{ uid: string; updated?: boolean }>(`/nuxt-api/admin/users/${uid}`, body);
 
-/** 查詢所有訂單（Admin 用）— Wave 1 A3：支援 from/to ISO 範圍過濾 pickupDateTime */
-export const GetAllOrders = (params: { status?: string; from?: string; to?: string } = {}) =>
+/** 查詢所有訂單（Admin 用）— Wave 1 A3：支援 from/to ISO 範圍過濾 pickupDateTime
+ *  region filter：regionField=pickup|dropoff + cities=台北市,新北市 + districts=中正區,信義區 */
+export interface GetAllOrdersParams {
+  status?: string;
+  from?: string;
+  to?: string;
+  regionField?: 'pickup' | 'dropoff';
+  /** 逗號分隔的縣市中文全名 list */
+  cities?: string;
+  /** 逗號分隔的鄉鎮市區中文全名 list */
+  districts?: string;
+}
+
+export const GetAllOrders = (params: GetAllOrdersParams = {}) =>
   methods.get<AdminOrder[]>('/nuxt-api/admin/orders', params as Record<string, unknown>);
 
 /** Admin 手動建立訂單（乘客為 server 自動產生的 guest id；車資手動輸入，不自動試算） */

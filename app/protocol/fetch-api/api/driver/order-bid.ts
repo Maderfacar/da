@@ -10,9 +10,9 @@ export interface DriverDispatchedOrderItem {
   orderId: string;
   orderType: string;
   pickupDateTime: string;
-  pickupLocation: { address: string; lat: number; lng: number; displayName?: string };
-  dropoffLocation: { address: string; lat: number; lng: number; displayName?: string };
-  stopovers: Array<{ address: string; lat: number; lng: number; displayName?: string }>;
+  pickupLocation: { address: string; lat: number; lng: number; displayName?: string; city?: string; district?: string };
+  dropoffLocation: { address: string; lat: number; lng: number; displayName?: string; city?: string; district?: string };
+  stopovers: Array<{ address: string; lat: number; lng: number; displayName?: string; city?: string; district?: string }>;
   vehicleType: string;
   passengerCount: number;
   /** Booking v2 批次 2：大人數（舊單 fallback = passengerCount） */
@@ -52,9 +52,18 @@ export interface DriverDispatchedOrderDetail extends DriverDispatchedOrderItem {
   estimatedTime: number;
 }
 
-/** Driver：列所有 dispatched 但未指派的訂單（含自己的 bid 狀態） */
-export const GetDispatchedOrders = () =>
-  methods.get<DriverDispatchedOrderItem[]>('/nuxt-api/driver/dispatched-orders', {});
+/** Driver：列所有 dispatched 但未指派的訂單（含自己的 bid 狀態）
+ *  region filter：regionField=pickup|dropoff + cities=台北市,新北市 + districts=中正區,信義區 */
+export interface GetDispatchedOrdersParams {
+  regionField?: 'pickup' | 'dropoff';
+  /** 逗號分隔的縣市中文全名 list */
+  cities?: string;
+  /** 逗號分隔的鄉鎮市區中文全名 list */
+  districts?: string;
+}
+
+export const GetDispatchedOrders = (params: GetDispatchedOrdersParams = {}) =>
+  methods.get<DriverDispatchedOrderItem[]>('/nuxt-api/driver/dispatched-orders', params as Record<string, unknown>);
 
 /** Driver：取單筆訂單詳情（給接單看板進入詳情頁用；訂單必須仍 dispatchable） */
 export const GetDispatchedOrderDetail = (orderId: string) =>
