@@ -4,35 +4,18 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
 import { serializeBids } from '@@/utils/order-dispatch';
+import { matchRegion } from '~shared/region-match';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string; city?: string; district?: string };
 
-/** 縣市 / 行政區 filter helper — cities / districts 為逗號分隔字串轉成 Set。
- *  regionField 預設 'pickup'；非合法值（如空字串）一律當 'pickup'。
- *  cities 空 → 不套用 city filter（district 同理）。
- *  歷史訂單無 city/district 欄位 → cities 有值時自動歸入「未知」(空字串)，仍會被列出。*/
-function _matchRegion(
-  pickup: GooglePlaceLite | undefined,
-  dropoff: GooglePlaceLite | undefined,
-  regionField: 'pickup' | 'dropoff',
-  cities: Set<string>,
-  districts: Set<string>,
-): boolean {
-  if (cities.size === 0 && districts.size === 0) return true;
-  const target = regionField === 'dropoff' ? dropoff : pickup;
-  const city = (target?.city ?? '').trim();
-  const district = (target?.district ?? '').trim();
-  if (cities.size > 0) {
-    // 「未知」selectable：UI 端把空字串視為「未知」chip；歷史訂單 city='' 被歸入此 bucket
-    const cityKey = city || '__unknown__';
-    if (!cities.has(city) && !cities.has(cityKey)) return false;
-  }
-  if (districts.size > 0) {
-    const districtKey = district || '__unknown__';
-    if (!districts.has(district) && !districts.has(districtKey)) return false;
-  }
-  return true;
-}
+// Phase 1 FU：縣市別名 + 舊單 address contains fallback 全部抽到 shared/region-match。
+// 給 __unknown__ bucket 比對用 — 列出 22 縣市 id（locations-taiwan.ts 對齊）。
+const ALL_CITY_NAMES: readonly string[] = [
+  '台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市',
+  '基隆市', '新竹市', '新竹縣', '苗栗縣', '彰化縣', '南投縣',
+  '雲林縣', '嘉義市', '嘉義縣', '屏東縣', '宜蘭縣', '花蓮縣',
+  '台東縣', '澎湖縣', '金門縣', '連江縣',
+];
 
 export default defineEventHandler(async (event) => {
   // P14：必須登入；P18：套 canManageOrders 權限（admin/assistant 都有此權限）
@@ -155,7 +138,14 @@ export default defineEventHandler(async (event) => {
 
     const baseOrders = (citiesSet.size > 0 || districtsSet.size > 0)
       ? baseOrdersAfterDate.filter((o) =>
-        _matchRegion(o.pickupLocation, o.dropoffLocation, effectiveRegionField, citiesSet, districtsSet),
+        matchRegion({
+          pickup: o.pickupLocation,
+          dropoff: o.dropoffLocation,
+          regionField: effectiveRegionField,
+          cities: citiesSet,
+          districts: districtsSet,
+          allSelectableCityNames: ALL_CITY_NAMES,
+        }),
       )
       : baseOrdersAfterDate;
 

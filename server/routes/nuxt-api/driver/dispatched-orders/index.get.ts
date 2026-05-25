@@ -33,35 +33,21 @@ import {
   buildDispatchedOrderSummary,
 } from '@@/utils/line-dispatch-push';
 import { writeAuditLog } from '@@/utils/audit-log';
+import { matchRegion } from '~shared/region-match';
 import type { Timestamp, Firestore  } from 'firebase-admin/firestore';
 import type { H3Event } from 'h3';
 import type { AuthOk } from '@@/utils/require-auth';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string; city?: string; district?: string };
 
-/** 縣市過濾 helper — 與 admin/orders/index.get.ts 邏輯一致。
- *  歷史訂單無 city 欄位 → '__unknown__' bucket（UI 端用「未知」chip 對應）。*/
-function _matchRegion(
-  pickup: GooglePlaceLite | undefined,
-  dropoff: GooglePlaceLite | undefined,
-  regionField: 'pickup' | 'dropoff',
-  cities: Set<string>,
-  districts: Set<string>,
-): boolean {
-  if (cities.size === 0 && districts.size === 0) return true;
-  const target = regionField === 'dropoff' ? dropoff : pickup;
-  const city = (target?.city ?? '').trim();
-  const district = (target?.district ?? '').trim();
-  if (cities.size > 0) {
-    const cityKey = city || '__unknown__';
-    if (!cities.has(city) && !cities.has(cityKey)) return false;
-  }
-  if (districts.size > 0) {
-    const districtKey = district || '__unknown__';
-    if (!districts.has(district) && !districts.has(districtKey)) return false;
-  }
-  return true;
-}
+// Phase 1 FU：跟 admin/orders 對齊 — 縣市別名 + 舊單 address contains fallback 走
+// shared/region-match。給 __unknown__ bucket 比對用的全 city list（locations-taiwan.ts 對齊）。
+const ALL_CITY_NAMES: readonly string[] = [
+  '台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市',
+  '基隆市', '新竹市', '新竹縣', '苗栗縣', '彰化縣', '南投縣',
+  '雲林縣', '嘉義市', '嘉義縣', '屏東縣', '宜蘭縣', '花蓮縣',
+  '台東縣', '澎湖縣', '金門縣', '連江縣',
+];
 
 const _tsToIso = (ts: Timestamp | null | undefined): string | null =>
   ts ? ts.toDate().toISOString() : null;
@@ -246,13 +232,14 @@ export default defineEventHandler(async (event) => {
       })
       // 縣市 / 行政區 filter（query 有帶才生效）
       .filter(({ data }) =>
-        _matchRegion(
-          data.pickupLocation as GooglePlaceLite | undefined,
-          data.dropoffLocation as GooglePlaceLite | undefined,
-          effectiveRegionField,
-          citiesSet,
-          districtsSet,
-        ),
+        matchRegion({
+          pickup: data.pickupLocation as GooglePlaceLite | undefined,
+          dropoff: data.dropoffLocation as GooglePlaceLite | undefined,
+          regionField: effectiveRegionField,
+          cities: citiesSet,
+          districts: districtsSet,
+          allSelectableCityNames: ALL_CITY_NAMES,
+        }),
       )
       .map(({ id, data }) => {
         const rawBids = (Array.isArray(data.bids) ? data.bids : []) as OrderBidEntry[];
