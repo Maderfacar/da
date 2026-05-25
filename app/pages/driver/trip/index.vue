@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ORDER_TYPES } from '~shared/pricing';
+import { checkTimeGate, formatRemaining } from '~shared/trip-time-gate';
 
 // P19：driver/trip 改為列表 + modal 詳情設計
 // - 列表卡片只顯示日期 / 時間 / 訂單號 / 路線簡略 / 狀態徽章
@@ -44,6 +45,33 @@ const loading = ref(false);
 const advancing = ref<string | null>(null);
 const selectedOrder = ref<AssignedOrder | null>(null);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// Phase 3 時間 gate：modal 開啟時每 15 秒重算倒數
+const nowTick = ref(Date.now());
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+// 當前 modal 內訂單若處於 arrived_pickup / in_transit，要看時間 gate
+const advanceGate = computed(() => {
+  const order = selectedOrder.value;
+  if (!order) return { ok: true as const };
+  const cfg = ACTION_BY_STATUS[order.orderStatus];
+  if (!cfg) return { ok: true as const };
+  // depend on nowTick to make this reactive
+  const now = new Date(nowTick.value);
+  return checkTimeGate({
+    currentStatus: order.orderStatus,
+    nextStatus: cfg.next,
+    pickupDateTime: order.pickupDateTime,
+    estimatedTimeMin: order.estimatedTime ?? null,
+    now,
+  });
+});
+
+const advanceCountdownLabel = computed(() => {
+  const g = advanceGate.value;
+  if (g.ok) return '';
+  return `${formatRemaining(g.remainingMs)}後可執行`;
+});
 
 // Wave 1 D1：Tab 切換 + 已完成歷史列表
 type TripTab = 'active' | 'history';
@@ -106,6 +134,8 @@ const ClickTab = (tab: TripTab) => {
 
 const ClickOpenDetail = (order: AssignedOrder) => {
   selectedOrder.value = order;
+  // Phase 3：開 modal 時即時更新倒數（避免顯示舊的 tick）
+  nowTick.value = Date.now();
 };
 
 const ClickCloseDetail = () => {
@@ -150,6 +180,19 @@ const ClickAdvance = async (order: AssignedOrder) => {
   if (advancing.value) return;
   const cfg = ACTION_BY_STATUS[order.orderStatus];
   if (!cfg) return;
+
+  // Phase 3 前端 gate：太早不送出（避免 server 400 + 友善提示）
+  const gate = checkTimeGate({
+    currentStatus: order.orderStatus,
+    nextStatus: cfg.next,
+    pickupDateTime: order.pickupDateTime,
+    estimatedTimeMin: order.estimatedTime ?? null,
+    now: new Date(),
+  });
+  if (!gate.ok) {
+    ElMessage({ message: `尚未到可執行時間（${formatRemaining(gate.remainingMs)}後可執行）`, type: 'warning' });
+    return;
+  }
 
   advancing.value = order.orderId;
   try {
@@ -200,11 +243,14 @@ const _OnVisibilityChange = () => {
 onMounted(() => {
   ApiLoadAssignedOrders();
   pollTimer = setInterval(ApiLoadAssignedOrders, 30_000);
+  // Phase 3：每 15 秒 tick 一次讓倒數 label 重算（modal 開著時才視覺更新）
+  tickTimer = setInterval(() => { nowTick.value = Date.now(); }, 15_000);
   document.addEventListener('visibilitychange', _OnVisibilityChange);
 });
 
 onUnmounted(() => {
   if (pollTimer !== null) clearInterval(pollTimer);
+  if (tickTimer !== null) clearInterval(tickTimer);
   document.removeEventListener('visibilitychange', _OnVisibilityChange);
 });
 </script>
@@ -420,11 +466,13 @@ onUnmounted(() => {
               span.PageDriverTrip__section-val {{ selectedOrder.estimatedTime }} 分鐘
 
         //- Footer：四階段主操作按鈕
+        //- Phase 3：客上 / 客下 兩階段加時間 gate；未到時 button disable + 顯示倒數
         .PageDriverTrip__modal-foot
           button.PageDriverTrip__action(
-            :disabled="advancing === selectedOrder.orderId"
+            :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
             @click="ClickAdvance(selectedOrder)"
           ) {{ advancing === selectedOrder.orderId ? '處理中...' : (ACTION_BY_STATUS[selectedOrder.orderStatus]?.label ?? '無可用操作') }}
+          .PageDriverTrip__action-hint(v-if="!advanceGate.ok") {{ advanceCountdownLabel }}
 </template>
 
 <style lang="scss" scoped>
@@ -983,6 +1031,16 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
   &:active:not(:disabled) { transform: scale(0.98); }
+}
+
+// Phase 3：時間 gate 倒數提示（緊貼按鈕下方，置中）
+.PageDriverTrip__action-hint {
+  margin-top: 8px;
+  font-family: $font-condensed;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
 }
 
 // transition

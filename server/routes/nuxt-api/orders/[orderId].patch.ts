@@ -25,6 +25,7 @@ import {
 } from '@@/utils/order-preferences';
 import { recheckDiscountCode } from '@@/utils/discount-recheck';
 import { recalcFinalTotal } from '~shared/fare/recalc';
+import { checkTimeGate, formatRemaining } from '~shared/trip-time-gate';
 
 interface GooglePlaceLite {
   address: string;
@@ -320,6 +321,25 @@ export default defineEventHandler(async (event) => {
             zh_tw: `狀態轉換錯誤：${prevStatus} 不可改為 ${body.orderStatus}`,
             en: `Invalid status transition: ${prevStatus} cannot become ${body.orderStatus}`,
             ja: `状態遷移エラー: ${prevStatus} は ${body.orderStatus} に変更できません`,
+          });
+        }
+
+        // Phase 3：driver 推進「客上 / 客下」需通過時間 gate
+        // 客上 (arrived_pickup → in_transit)：now >= pickupDateTime - 60min
+        // 客下 (in_transit → completed)：now >= pickupDateTime + estimatedTime - 20min
+        const gate = checkTimeGate({
+          currentStatus: prevStatus,
+          nextStatus: body.orderStatus,
+          pickupDateTime: orderData.pickupDateTime as string | undefined,
+          estimatedTimeMin: (orderData.estimatedTime as number | undefined) ?? null,
+          now: new Date(),
+        });
+        if (!gate.ok) {
+          const remain = formatRemaining(gate.remainingMs);
+          return badRequestError({
+            zh_tw: `尚未到可執行時間（${remain} 後可執行）`,
+            en: `Too early to advance (ready in ${remain})`,
+            ja: `実行可能時刻になっていません（あと ${remain}）`,
           });
         }
       }
