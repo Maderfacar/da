@@ -1940,14 +1940,15 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__row {
   display: grid;
   // Wave 1A：擴大 action column 容納「📤 發布需求單」/ 「🔁 重新發佈 ×N」按鈕
-  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px 160px;
+  // Wave 2D FU：action column 改 minmax + flex-wrap，容納等級 select + 主按鈕 + 立即降級/全開放
+  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px minmax(280px, 1fr);
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   border-radius: 12px;
   background: $surface;
   border: 1px solid $border;
-  min-width: 780px;
+  min-width: 960px;
   transition: background 0.15s, border-color 0.15s;
 
   &.is-clickable {
@@ -2429,8 +2430,10 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__row-dispatch-group {
   display: flex;
+  flex-wrap: wrap;
+  width: 100%;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .PageAdminOrders__row-dispatch-level {
@@ -2852,17 +2855,19 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 8px;
   justify-content: flex-end;
   overflow: visible;
+  white-space: normal;
+  min-width: 0;
 }
 
 .PageAdminOrders__row-dispatch-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  padding: 6px 12px;
+  padding: 5px 9px;
   border-radius: 8px;
   border: 1px solid rgba($amber, 0.4);
   background: rgba($amber, 0.1);
