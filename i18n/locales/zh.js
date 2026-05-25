@@ -847,6 +847,9 @@ export default {
         all: '全車隊',
         draft: '暫不發布',
         draftHint: '選擇「暫不發布」時不會推播；若要儲存其他欄位請點「編輯訂單」。',
+        // 強制必選版：placeholder + 提示
+        placeholder: '請選擇首發等級',
+        requiredHint: '請先選擇首發等級才能發布需求單',
       },
       // Wave 2D：立即降級 / 全開放
       downgradeNow: '立即降級',

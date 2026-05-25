@@ -196,9 +196,15 @@ const DriverNameOf = (uid: string) => {
 const ClickOpenDetail = (order: AdminOrder) => {
   selectedOrder.value = order;
   isEditing.value = false;
-  // Wave 2B+2C：modal 開啟時 startLevel 預設沿用既有 dispatchVisibility.startLevel（未派發的訂單 fallback '0'）
+  // Wave 2B+2C 強制必選版：
+  //  - 已派發（重發場景）→ 沿用既有 dispatchVisibility.startLevel
+  //  - 未派發（首發場景）→ '' 強制 admin 必選才能發布
   const existing = order.dispatchVisibility?.startLevel;
-  modalStartLevel.value = (existing === '0' || existing === '1' || existing === '2') ? existing : '0';
+  if (order.dispatchAt && (existing === '0' || existing === '1' || existing === '2')) {
+    modalStartLevel.value = existing;
+  } else {
+    modalStartLevel.value = '';
+  }
 };
 
 const ClickCloseDetail = () => {
@@ -575,15 +581,33 @@ const rowDispatchingIds = ref<Set<string>>(new Set());
 const IsRowDispatching = (orderId: string) => rowDispatchingIds.value.has(orderId);
 
 // Wave 2B+2C：首發等級 select（列表 per-row、modal 各自一份；__draft__ 只允許 modal）
-type RowStartLevel = DispatchLevel; // '0' | '1' | '2'
-type ModalStartLevel = DispatchLevel | '__draft__';
+// 強制必選版：首發場景預設 '' 強制 admin 選擇；重發場景沿用既有 startLevel
+type RowStartLevel = DispatchLevel | ''; // '' = 未選（強制必選 placeholder）
+type ModalStartLevel = DispatchLevel | '__draft__' | ''; // '' = 未選
 const rowStartLevels = ref<Record<string, RowStartLevel>>({});
-const modalStartLevel = ref<ModalStartLevel>('0');
-const RowStartLevelOf = (orderId: string): RowStartLevel =>
-  rowStartLevels.value[orderId] ?? '0';
+const modalStartLevel = ref<ModalStartLevel>('');
+/**
+ * 列表 per-row select 顯示值：
+ *  - 首發場景（!dispatchAt）→ 若 admin 未動 select 則回 ''（觸發 placeholder，按鈕 disabled）
+ *  - 重發場景（dispatchAt && !assignedDriverId）→ 若 admin 未動則回既有 startLevel（不強制改）
+ */
+const RowStartLevelOf = (order: AdminOrder): RowStartLevel => {
+  const override = rowStartLevels.value[order.orderId];
+  if (override !== undefined) return override;
+  // 重發場景：沿用既有 startLevel（已分級過，不強制再選）
+  if (order.dispatchAt) {
+    const existing = order.dispatchVisibility?.startLevel;
+    if (existing === '0' || existing === '1' || existing === '2') return existing;
+  }
+  // 首發場景：未選 → '' 觸發強制必選
+  return '';
+};
 const SetRowStartLevel = (orderId: string, level: RowStartLevel) => {
   rowStartLevels.value = { ...rowStartLevels.value, [orderId]: level };
 };
+/** 判斷是否為有效首發等級（'0' / '1' / '2'，排除 '' 與 '__draft__'） */
+const IsValidStartLevel = (v: unknown): v is DispatchLevel =>
+  v === '0' || v === '1' || v === '2';
 const START_LEVEL_OPTIONS: ReadonlyArray<{ value: DispatchLevel; labelKey: string }> = [
   { value: '2', labelKey: 'admin.orders.startLevel.pro' },
   { value: '1', labelKey: 'admin.orders.startLevel.standard' },
@@ -644,7 +668,13 @@ const ClickDispatch = async () => {
     ElMessage({ message: tI18n('admin.orders.startLevel.draftHint'), type: 'info' });
     return;
   }
-  const startLevel = modalStartLevel.value;
+  // 強制必選 runtime guard：button disabled 已守過一道，這裡是 defense-in-depth
+  const level = modalStartLevel.value;
+  if (!IsValidStartLevel(level)) {
+    ElMessage({ message: tI18n('admin.orders.startLevel.requiredHint'), type: 'warning' });
+    return;
+  }
+  const startLevel: DispatchLevel = level;
   dispatching.value = true;
   try {
     const res = await $api.DispatchOrder(selectedOrder.value.orderId, { startLevel });
@@ -693,8 +723,9 @@ const ClickRedispatch = async () => {
   redispatching.value = true;
   try {
     // Wave 2B+2C：重發沿用既有 startLevel；admin 想換等級用 modal select 再點，等同 override
-    const overrideLevel: DispatchLevel | undefined =
-      modalStartLevel.value === '__draft__' ? undefined : modalStartLevel.value;
+    // 強制必選版：modalStartLevel 多了 '' 型別，IsValidStartLevel 過濾後才作為 override
+    const modalLevel = modalStartLevel.value;
+    const overrideLevel: DispatchLevel | undefined = IsValidStartLevel(modalLevel) ? modalLevel : undefined;
     const res = await $api.RedispatchOrder(
       selectedOrder.value.orderId,
       overrideLevel !== undefined ? { startLevel: overrideLevel } : undefined,
@@ -725,6 +756,13 @@ const ClickDispatchFromRow = async (order: AdminOrder) => {
     ElMessage({ message: '訂單已派發', type: 'warning' });
     return;
   }
+  // 強制必選 runtime guard：button disabled 已守過一道，這裡是 defense-in-depth
+  const level = RowStartLevelOf(order);
+  if (!IsValidStartLevel(level)) {
+    ElMessage({ message: tI18n('admin.orders.startLevel.requiredHint'), type: 'warning' });
+    return;
+  }
+  const startLevel: DispatchLevel = level;
   const orderShort = order.orderId.slice(0, 8).toUpperCase();
   const ok = await UseAsk().Any(
     tI18n('admin.orders.dispatchConfirmMessage', { orderShort }),
@@ -737,8 +775,7 @@ const ClickDispatchFromRow = async (order: AdminOrder) => {
   // immutable 替換 Set 以觸發 reactivity
   rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
   try {
-    // Wave 2B+2C：列表 per-row startLevel select 預設 '0'
-    const startLevel = RowStartLevelOf(order.orderId);
+    // Wave 2B+2C 強制必選版：已 guard，startLevel 必為 DispatchLevel
     const res = await $api.DispatchOrder(order.orderId, { startLevel });
     if (res.status.code === 200) {
       ElMessage({ message: tI18n('admin.orders.dispatchSuccess'), type: 'success' });
@@ -787,10 +824,12 @@ const ClickRedispatchFromRow = async (order: AdminOrder) => {
   rowDispatchingIds.value = new Set([...rowDispatchingIds.value, order.orderId]);
   try {
     // Wave 2B+2C：列表重發若 admin 有改 row select 等級則 override，否則沿用既有 startLevel
+    // 強制必選版：RowStartLevel 多了 '' 型別，IsValidStartLevel 過濾後才作為 override
     const rowLevel = rowStartLevels.value[order.orderId];
+    const overrideLevel: DispatchLevel | undefined = IsValidStartLevel(rowLevel) ? rowLevel : undefined;
     const res = await $api.RedispatchOrder(
       order.orderId,
-      rowLevel !== undefined ? { startLevel: rowLevel } : undefined,
+      overrideLevel !== undefined ? { startLevel: overrideLevel } : undefined,
     );
     if (res.status.code === 200 && res.data?.redispatched === true) {
       ElMessage({ message: tI18n('admin.orders.redispatchSuccess'), type: 'success' });
@@ -1174,23 +1213,24 @@ onMounted(() => {
           ) 重派 {{ o.reMatchRound }} 次
         .PageAdminOrders__cell.is-action(data-label="操作")
           //- Wave 1A：列表派單入口（不刪 modal 內既有「📤 發出需求單」）
-          //- Wave 2B+2C：在按鈕旁加首發等級 select
+          //- Wave 2B+2C 強制必選版：select 含 placeholder option；未派發訂單未選等級時按鈕 disabled
           template(v-if="o.orderStatus === 'pending' && !o.assignedDriverId")
             .PageAdminOrders__row-dispatch-group
               select.PageAdminOrders__row-dispatch-level(
-                :value="RowStartLevelOf(o.orderId)"
+                :value="RowStartLevelOf(o)"
                 :disabled="IsRowDispatching(o.orderId)"
                 :title="$t('admin.orders.startLevel.label')"
-                @change="(e) => SetRowStartLevel(o.orderId, ((e.target as HTMLSelectElement).value as DispatchLevel))"
+                @change="(e) => SetRowStartLevel(o.orderId, ((e.target as HTMLSelectElement).value as RowStartLevel))"
                 @click.stop
               )
+                option(value="" disabled) {{ $t('admin.orders.startLevel.placeholder') }}
                 option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
-              //- 未派發 → 「📤 發布需求單」
+              //- 未派發 → 「📤 發布需求單」（強制必選：startLevel='' 時 disabled）
               button.PageAdminOrders__row-dispatch-btn(
                 v-if="!o.dispatchAt"
                 type="button"
-                :disabled="IsRowDispatching(o.orderId)"
-                :title="$t('admin.orders.dispatch')"
+                :disabled="IsRowDispatching(o.orderId) || !IsValidStartLevel(RowStartLevelOf(o))"
+                :title="!IsValidStartLevel(RowStartLevelOf(o)) ? $t('admin.orders.startLevel.requiredHint') : $t('admin.orders.dispatch')"
                 @click.stop="ClickDispatchFromRow(o)"
               ) {{ IsRowDispatching(o.orderId) ? '⏳' : '📤' }} {{ IsRowDispatching(o.orderId) ? $t('admin.orders.dispatching') : $t('admin.orders.dispatch') }}
               //- 已派發未指派 → 「🔁 重新發佈」+ dispatchCount > 0 時加 ×N chip（×N = 總派發次數）
@@ -1250,8 +1290,10 @@ onMounted(() => {
           )
             option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
             option(value="__draft__") {{ $t('admin.orders.startLevel.draft') }}
+          //- 強制必選：重發場景 modalStartLevel 開啟時已預載既有等級，但保險起見 guard
           button.PageAdminOrders__quick-btn(
-            :disabled="redispatching || modalStartLevel === '__draft__'"
+            :disabled="redispatching || !IsValidStartLevel(modalStartLevel)"
+            :title="!IsValidStartLevel(modalStartLevel) ? $t('admin.orders.startLevel.requiredHint') : ''"
             type="button"
             @click="ClickRedispatch"
           ) {{ redispatching ? '重發中...' : '📤 重發需求單' }}
@@ -1303,21 +1345,25 @@ onMounted(() => {
               //- 未派發
               template(v-if="!selectedOrder.dispatchAt")
                 .PageAdminOrders__dispatch-empty 尚未發出需求單。發出後系統會以 LINE 推播通知符合首發等級的司機；司機可於接單看板喊單，您再從喊單清單挑選。
-                //- Wave 2B+2C：首發等級 select（含「暫不發布」__draft__）
+                //- Wave 2B+2C 強制必選版：首發場景 select 預設 '' placeholder，admin 必選才能發布
                 .PageAdminOrders__dispatch-level-row
                   label.PageAdminOrders__dispatch-level-label {{ $t('admin.orders.startLevel.label') }}
                   select.PageAdminOrders__dispatch-level-select(
                     v-model="modalStartLevel"
                     :disabled="dispatching"
                   )
+                    option(value="" disabled) {{ $t('admin.orders.startLevel.placeholder') }}
                     option(v-for="opt in START_LEVEL_OPTIONS" :key="opt.value" :value="opt.value") {{ $t(opt.labelKey) }}
                     option(value="__draft__") {{ $t('admin.orders.startLevel.draft') }}
                 button.PageAdminOrders__action.is-primary.is-block(
-                  :disabled="dispatching || modalStartLevel === '__draft__'"
+                  :disabled="dispatching || !IsValidStartLevel(modalStartLevel)"
+                  :title="!IsValidStartLevel(modalStartLevel) ? $t('admin.orders.startLevel.requiredHint') : ''"
                   @click="ClickDispatch"
                 ) {{ dispatching ? '發送中...' : '📤 發出需求單' }}
                 .PageAdminOrders__dispatch-draft-hint(v-if="modalStartLevel === '__draft__'")
                   | {{ $t('admin.orders.startLevel.draftHint') }}
+                .PageAdminOrders__dispatch-required-hint(v-else-if="modalStartLevel === ''")
+                  | {{ $t('admin.orders.startLevel.requiredHint') }}
               //- 已派發
               template(v-else)
                 .PageAdminOrders__dispatch-meta
@@ -2331,6 +2377,14 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 12px;
   margin-top: 6px;
   color: #f7b96a;
+}
+
+// 強制必選版：未選首發等級時提示（紅色警示，比 draft-hint 更顯眼）
+.PageAdminOrders__dispatch-required-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  margin-top: 6px;
+  color: #ef6f6f;
 }
 
 .PageAdminOrders__row-dispatch-group {
