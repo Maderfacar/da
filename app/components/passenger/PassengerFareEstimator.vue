@@ -414,18 +414,24 @@ const extrasNetSum = computed(() => {
   .PassengerFareEstimator__error(v-if="error") ⚠ {{ error }}
 
   //- 結果拆解（只列 > 0 的項目；不顯示「小計」）──────────────
+  //- 起跳費 floor 套用：里程費 < 起跳費 → 顯示「起跳費」單行
+  //- 否則 → 顯示「里程費」單行（chargedDistanceFee 已含起跳，不再雙計）
   .PassengerFareEstimator__result(v-if="result")
     .PassengerFareEstimator__result-title {{ $t('fare.calc.result.title') }}
-    .PassengerFareEstimator__line
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.baseFare') }}
-      span.PassengerFareEstimator__line-val NT$ {{ fmt(result.baseFare) }}
-    .PassengerFareEstimator__line(v-if="result.distanceFee > 0")
+    .PassengerFareEstimator__line(v-if="result.distanceFee < result.baseFare")
+      span.PassengerFareEstimator__line-key
+        | {{ $t('fare.calc.result.baseFare') }}
+        span.PassengerFareEstimator__line-badge(v-if="result.mountainMul !== 1")
+          | {{ $t('fare.calc.result.mountainBadge', { mul: result.mountainMul }) }}
+      span.PassengerFareEstimator__line-val
+        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
+    .PassengerFareEstimator__line(v-else)
       span.PassengerFareEstimator__line-key
         | {{ $t('fare.calc.result.distance') }}
         span.PassengerFareEstimator__line-badge(v-if="result.mountainMul !== 1")
           | {{ $t('fare.calc.result.mountainBadge', { mul: result.mountainMul }) }}
       span.PassengerFareEstimator__line-val
-        | +NT$ {{ fmt(result.distanceFee * result.mountainMul) }}
+        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
     .PassengerFareEstimator__line(v-if="extrasNetSum > 0")
       span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.extras') }}
       span.PassengerFareEstimator__line-val +NT$ {{ fmt(extrasNetSum) }}

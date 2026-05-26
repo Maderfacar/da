@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  calculateFare,
   calculateFareV2,
   computeMountainMul,
   computeJamFee,
@@ -415,17 +414,21 @@ describe('computeDistanceFee — 里程分段累進折扣', () => {
 });
 
 describe('calculateFareV2 — 代表情境', () => {
-  it('純市區短程：無山區/國道/跨縣市 → 與 v1 公式等價', () => {
+  it('短程：里程費 < 起跳費 → 起跳費 floor 生效（chargedDistanceFee = baseFare）', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), OFFPEAK_MON_1200, [], RULES);
-    expect(b.final).toBe(550);
-    expect(b.final).toBe(calculateFare(SEDAN, 10, []));
+    // distanceFee = 10×25 = 250；< baseFare 300 → chargedDistanceFee = 300
+    expect(b.distanceFee).toBe(250);
+    expect(b.chargedDistanceFee).toBe(300);
     expect(b.mountainMul).toBe(1);
     expect(b.jamFee).toBe(0);
     expect(b.crossCountyFee).toBe(0);
     expect(b.freewayToll).toBe(0);
+    // raw = 300×1 + 0 + 0 = 300（baseFare 不再單獨加）→ 進位 → 300
+    expect(b.raw).toBe(300);
+    expect(b.final).toBe(300);
   });
 
-  it('跨縣市 + 國道：里程費（分段累進折扣）+ 跨縣市補貼 + 國道通行費', () => {
+  it('跨縣市 + 國道：里程費 > 起跳費 → 用里程費（不雙計）+ 跨縣市補貼 + 國道通行費', () => {
     const m = metrics({ distanceKm: 40, freewayKm: 30, countiesVisited: ['TYN', 'HSZ'] });
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
     expect(b.crossCountyFee).toBe(200);
@@ -433,12 +436,14 @@ describe('calculateFareV2 — 代表情境', () => {
     expect(b.mountainMul).toBe(1);
     // distanceFee = 10×25×1 + 20×25×0.9 + 10×25×0.8 = 250 + 450 + 200 = 900
     expect(b.distanceFee).toBe(900);
-    // 300 + 900×1 + 200 + 12 = 1412 → 進位 50 → 1450
-    expect(b.raw).toBe(1412);
-    expect(b.final).toBe(1450);
+    // chargedDistanceFee = max(300, 900) = 900
+    expect(b.chargedDistanceFee).toBe(900);
+    // 900×1 + 200 + 12 = 1112 → 進位 50 → 1150
+    expect(b.raw).toBe(1112);
+    expect(b.final).toBe(1150);
   });
 
-  it('山區路線：三訊號達標 → mountainMul 1.5，且只乘 distanceFee+jamFee', () => {
+  it('山區路線：三訊號達標 → mountainMul 1.5，套在 chargedDistanceFee+jamFee 上', () => {
     const m = metrics({
       distanceKm: 70,
       elevationDiffM: 500,
@@ -448,23 +453,25 @@ describe('calculateFareV2 — 代表情境', () => {
     });
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
     expect(b.mountainMul).toBe(1.5);
-    // distanceFee = 10×25 + 20×25×0.9 + 40×25×0.8 = 250 + 450 + 800 = 1500
+    // distanceFee = 1500；chargedDistanceFee = max(300, 1500) = 1500
     expect(b.distanceFee).toBe(1500);
-    // 300 + 1500×1.5 = 300 + 2250 = 2550 → 進位 → 2550
+    expect(b.chargedDistanceFee).toBe(1500);
+    // variableScaled = 1500×1.5 = 2250；raw = 2250（無 baseFare 加總）→ 進位 → 2250
     expect(b.variableScaled).toBe(2250);
-    expect(b.raw).toBe(2550);
-    expect(b.final).toBe(2550);
+    expect(b.raw).toBe(2250);
+    expect(b.final).toBe(2250);
   });
 
   it('顛峰時段：jamFee 觸發，且 jamFee 參與山區係數放大', () => {
     const m = metrics({ distanceKm: 20, pureJamMinutes: 10 });
     const b = calculateFareV2(SEDAN, m, PEAK_MON_0800, [], RULES);
     expect(b.jamFee).toBe(150);
-    // distanceFee = 10×25 + 10×25×0.9 = 250 + 225 = 475
+    // distanceFee = 10×25 + 10×25×0.9 = 250 + 225 = 475；chargedDistanceFee = max(300, 475) = 475
     expect(b.distanceFee).toBe(475);
-    // 300 + (475 + 150)×1 = 925
-    expect(b.raw).toBe(925);
-    expect(b.final).toBe(950);
+    expect(b.chargedDistanceFee).toBe(475);
+    // (475 + 150)×1 = 625 → 進位 → 650
+    expect(b.raw).toBe(625);
+    expect(b.final).toBe(650);
   });
 
   it('加值服務不被山區係數放大，加在最後', () => {
@@ -472,9 +479,9 @@ describe('calculateFareV2 — 代表情境', () => {
     const extras = [{ price: 200 }, { price: 200 }];
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, extras, RULES);
     expect(b.extrasSum).toBe(400);
-    // distanceFee = 1500（同山區測試）；300 + 1500×1.5 + 400 = 2950 → 進位 → 2950
-    expect(b.raw).toBe(2950);
-    expect(b.final).toBe(2950);
+    // chargedDistanceFee = 1500；1500×1.5 + 400 = 2650 → 進位 → 2650
+    expect(b.raw).toBe(2650);
+    expect(b.final).toBe(2650);
   });
 
   it('優惠時段：promoDiscount 平面折抵，不被山區係數連乘', () => {
@@ -490,10 +497,10 @@ describe('calculateFareV2 — 代表情境', () => {
     const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
     const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithPromo);
     expect(b.promoDiscount).toBe(200);
-    // distanceFee = 1500；300 + 1500×1.5 − 200 = 2350 → 進位 → 2350
+    // chargedDistanceFee = 1500；1500×1.5 − 200 = 2050 → 進位 → 2050
     expect(b.variableScaled).toBe(2250);
-    expect(b.raw).toBe(2350);
-    expect(b.final).toBe(2350);
+    expect(b.raw).toBe(2050);
+    expect(b.final).toBe(2050);
   });
 
   it('折抵大於車資 → final 鎖 0（不為負）', () => {
@@ -524,10 +531,10 @@ describe('calculateFareV2 — 代表情境', () => {
     const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
     const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithSurcharge);
     expect(b.surcharge).toBe(200);
-    // distanceFee = 1500；300 + 1500×1.5 + 200 = 300 + 2250 + 200 = 2750 → 進位 → 2750
+    // chargedDistanceFee = 1500；1500×1.5 + 200 = 2450 → 進位 → 2450
     expect(b.variableScaled).toBe(2250);
-    expect(b.raw).toBe(2750);
-    expect(b.final).toBe(2750);
+    expect(b.raw).toBe(2450);
+    expect(b.final).toBe(2450);
   });
 
   it('時段加價與優惠折抵同時生效：先加價後折抵', () => {
@@ -549,9 +556,52 @@ describe('calculateFareV2 — 代表情境', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), new Date('2026-05-18T06:00:00Z'), [], rules);
     expect(b.surcharge).toBe(200);
     expect(b.promoDiscount).toBe(80);
-    // 300 + (10×25)×1 + 200 − 80 = 670 → 進位 → 700
-    expect(b.raw).toBe(670);
-    expect(b.final).toBe(700);
+    // distanceFee=250 < baseFare 300 → chargedDistanceFee=300；300 + 200 − 80 = 420 → 進位 → 450
+    expect(b.chargedDistanceFee).toBe(300);
+    expect(b.raw).toBe(420);
+    expect(b.final).toBe(450);
+  });
+
+  it('起跳費 floor — 邊界：里程費接近但低於起跳費 → 仍以起跳費計', () => {
+    // 12 km 含 tier：10×25 + 2×25×0.9 = 250 + 45 = 295 < baseFare 300
+    const b = calculateFareV2(SEDAN, metrics({ distanceKm: 12 }), OFFPEAK_MON_1200, [], RULES);
+    expect(b.distanceFee).toBe(295);
+    expect(b.chargedDistanceFee).toBe(300);
+    expect(b.raw).toBe(300);
+    expect(b.final).toBe(300);
+  });
+
+  it('起跳費 floor — 長程：里程費遠大於起跳費 → chargedDistanceFee = 里程費（不重複加 base）', () => {
+    // 40 km tier-applied = 900；max(300, 900) = 900
+    const b = calculateFareV2(SEDAN, metrics({ distanceKm: 40 }), OFFPEAK_MON_1200, [], RULES);
+    expect(b.chargedDistanceFee).toBe(900);
+    expect(b.raw).toBe(900); // 沒有其他費用 → raw = chargedDistanceFee
+    expect(b.final).toBe(900);
+  });
+
+  it('起跳費 floor — 短程：里程費 < 起跳費 → 以起跳費計', () => {
+    // 5 km × 25 = 125；max(300, 125) = 300
+    const b = calculateFareV2(SEDAN, metrics({ distanceKm: 5 }), OFFPEAK_MON_1200, [], RULES);
+    expect(b.distanceFee).toBe(125);
+    expect(b.chargedDistanceFee).toBe(300);
+    expect(b.raw).toBe(300);
+    expect(b.final).toBe(300);
+  });
+
+  it('起跳費 floor 與山區係數互動：mountainMul 作用於 chargedDistanceFee（不雙重加 baseFare）', () => {
+    // 5 km × 25 = 125 < 300；chargedDistanceFee = 300；山區 1.5
+    const m = metrics({
+      distanceKm: 5,
+      elevationDiffM: 500,
+      sinuosity: 1.4,
+      freeFlowKmh: 35,
+    });
+    const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
+    expect(b.mountainMul).toBe(1.5);
+    expect(b.chargedDistanceFee).toBe(300);
+    // raw = 300×1.5 = 450
+    expect(b.raw).toBe(450);
+    expect(b.final).toBe(450);
   });
 
   it('失敗降級：apiSourcesOk.routes=false → freeFlow 訊號歸 0（3 達標降 2 → 1.3）', () => {

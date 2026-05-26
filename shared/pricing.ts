@@ -249,10 +249,14 @@ export interface RouteMetrics {
 // ── 車資明細 ────────────────────────────────────────────────────────────────
 
 export interface FareBreakdownV2 {
+  /** 車型起跳費（informational；起跳費作為里程費下限，不再單獨加總） */
   baseFare: number;
+  /** 里程費（分段累進折扣後的原始值，僅供顯示） */
   distanceFee: number;
+  /** 起跳費 floor 後實際計入小計的里程相關費用 = max(baseFare, distanceFee) */
+  chargedDistanceFee: number;
   jamFee: number;
-  /** distanceFee + jamFee（套係數前） */
+  /** chargedDistanceFee + jamFee（套係數前） */
   variableSubtotal: number;
   mountainMul: number;
   /** variableSubtotal × mountainMul */
@@ -649,6 +653,10 @@ export function calculateFareV2(
   const distanceFee = computeDistanceFee(metrics.distanceKm, vehicle.perKmRate, rules.distanceTier);
   const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam, orderType);
 
+  // 1b. 起跳費 floor：里程費 < 起跳費 → 以起跳費計；里程費 ≥ 起跳費 → 以里程費計
+  //     等價於 max(baseFare, distanceFee)；baseFare 不再單獨加總（已含在 chargedDistanceFee）
+  const chargedDistanceFee = Math.max(vehicle.baseFare, distanceFee);
+
   // 2. 山區係數
   const mountainMul = computeMountainMul(metrics, rules.mountain);
 
@@ -663,11 +671,10 @@ export function calculateFareV2(
   const surcharge = computeSurcharge(pickupTime, rules.surcharge, orderType);
   const promoDiscount = computePromoDiscount(pickupTime, rules.promo, orderType);
 
-  // 6. 公式骨架
-  const variableSubtotal = distanceFee + jamFee;
+  // 6. 公式骨架：chargedDistanceFee（已含起跳） + jamFee → 套山區係數 → 加固定費 / 服務 / 時段差
+  const variableSubtotal = chargedDistanceFee + jamFee;
   const variableScaled = variableSubtotal * mountainMul;
   const raw =
-    vehicle.baseFare +
     variableScaled +
     crossCountyFee +
     freewayToll +
@@ -681,6 +688,7 @@ export function calculateFareV2(
   return {
     baseFare: vehicle.baseFare,
     distanceFee,
+    chargedDistanceFee,
     jamFee,
     variableSubtotal,
     mountainMul,

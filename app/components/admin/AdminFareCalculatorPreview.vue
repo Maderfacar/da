@@ -265,14 +265,20 @@ const fmt = (n: number): string => {
   .AdminFareCalculatorPreview__error(v-if="error") ⚠️ {{ error }}
 
   //- 結果明細：逐項金額相加 − 優惠折抵 = 小計（進位前）
+  //- 起跳費 floor：里程費 < 起跳費 → 顯示「起跳費」單行；否則 → 顯示「里程費」單行（已含起跳）
   .AdminFareCalculatorPreview__result(v-if="result")
     .AdminFareCalculatorPreview__result-title 計算結果（規則版本 v{{ result.rulesVersion }}）
-    .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 起跳費
-      span.AdminFareCalculatorPreview__line-val NT$ {{ fmt(result.baseFare) }}
-    .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 里程費{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
-      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.distanceFee * result.mountainMul) }}
+    .AdminFareCalculatorPreview__line(v-if="result.distanceFee < result.baseFare")
+      span.AdminFareCalculatorPreview__line-key
+        | 起跳費（里程費 NT$ {{ fmt(result.distanceFee) }} &lt; 起跳，套 floor）
+        | {{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
+      span.AdminFareCalculatorPreview__line-val
+        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
+    .AdminFareCalculatorPreview__line(v-else)
+      span.AdminFareCalculatorPreview__line-key
+        | 里程費（含起跳）{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
+      span.AdminFareCalculatorPreview__line-val
+        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
     .AdminFareCalculatorPreview__line
       span.AdminFareCalculatorPreview__line-key 顛峰塞車{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
       span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.jamFee * result.mountainMul) }}
