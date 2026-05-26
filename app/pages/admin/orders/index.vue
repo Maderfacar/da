@@ -2448,6 +2448,18 @@ $muted: rgba(255, 255, 255, 0.35);
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
+// Native <select> dropdown 在 dark theme 下白底白字 fix
+// Windows Chrome / Edge：<option> 的背景不繼承 <select>（瀏覽器強制白底），文字繼承 #fff → 看不見
+// 修：option 自帶深色背景 + 對應文字色；disabled placeholder option 淡化
+// 套用範圍：本頁所有 native <select>（首發等級 / 重發 / 編輯訂單 / 指派司機 / 取消原因）
+select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+select option:disabled {
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .PageAdminOrders__modal-body {
   flex: 1;
   overflow-y: auto;
