@@ -100,7 +100,14 @@ export async function getRouteWithFare(input: GetRouteWithFareInput): Promise<Fa
       waypoints: input.waypoints,
       apiKey: input.apiKey,
     });
-    const final = calculateFare(input.vehicle, route.distanceKm, input.extras);
+    // v1 fallback 也套用 distanceTier + 起跳費 floor（與 v2 公式同源；rules 可能已在上方載入失敗，重抓一次）
+    let v1Rules;
+    try {
+      v1Rules = await getFareRules();
+    } catch {
+      v1Rules = undefined; // 連 fare-rules 都載失敗 → calculateFare 內部用 DEFAULT_FARE_RULES
+    }
+    const final = calculateFare(input.vehicle, route.distanceKm, input.extras, v1Rules);
     return { version: 'v1', route, final };
   }
 }

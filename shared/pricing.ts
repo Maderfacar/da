@@ -63,19 +63,27 @@ export const ORDER_TYPES: Array<{ value: OrderType; label: string; labelEn: stri
 ];
 
 /**
- * 計算預估車資（無條件進位至最近 50 元）
+ * 計算預估車資（v1 — 簡化版，Routes API 全失敗時的 fallback / 公開頁示範估價）。
  *
- * P23：簽名改為接 vehicle 物件 + extras 物件陣列，前後端皆需先撈 Firestore fleet config
- * 才能呼叫（client 走 StoreConfig，server 走 fleet-config util）。
+ * 行為對齊 v2（calculateFareV2）核心：
+ *   - 里程分段累進折扣（rules.distanceTier 套用）
+ *   - 起跳費 floor：里程費 < 起跳費 → 以起跳費計
+ *   - 加值服務在最後加總
+ *   - 進位至 rules.rounding（預設 50）
+ * 不含：山區係數 / 顛峰塞車 / 跨縣市 / 國道 / 時段加價折抵（皆需 routeMetrics）。
+ *
+ * @param rules optional；省略時用 DEFAULT_FARE_RULES（沿用 v1 既有行為的數值常數）
  */
 export const calculateFare = (
   vehicle: Pick<FleetVehicle, 'baseFare' | 'perKmRate'>,
   distanceKm: number,
   extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
+  rules: Pick<FareRules, 'distanceTier' | 'rounding'> = DEFAULT_FARE_RULES,
 ): number => {
-  const base = vehicle.baseFare + distanceKm * vehicle.perKmRate;
+  const distanceFee = computeDistanceFee(distanceKm, vehicle.perKmRate, rules.distanceTier);
+  const chargedDistanceFee = Math.max(vehicle.baseFare, distanceFee);
   const extrasSum = extras.reduce((sum, e) => sum + e.price, 0);
-  return Math.ceil((base + extrasSum) / 50) * 50;
+  return Math.ceil((chargedDistanceFee + extrasSum) / rules.rounding) * rules.rounding;
 };
 
 // =============================================================================

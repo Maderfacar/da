@@ -23,6 +23,7 @@ interface SampleFare {
 const sampleFares = computed<SampleFare[]>(() => {
   const v = standardVehicle.value;
   if (!v) return [];
+  // 與 booking 估價同源：套用 distanceTier + 起跳費 floor（rules 從 admin 後台拉的 storeConfig.fareRules）
   return POPULAR_ROUTES.map((r) => ({
     id: r.id,
     fromCode: r.fromCode,
@@ -31,7 +32,7 @@ const sampleFares = computed<SampleFare[]>(() => {
     toKey: r.toKey,
     km: r.km,
     flightNo: r.flightNo,
-    fare: calculateFare(v, r.km, []),
+    fare: calculateFare(v, r.km, [], storeConfig.fareRules),
   }));
 });
 </script>

@@ -6,6 +6,7 @@ import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
+import { getFareRules } from '@@/utils/fare-rules-cache';
 import { getUserLang } from '@@/utils/user-lang';
 import { buildTemplate, resolveTemplate } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
@@ -243,10 +244,16 @@ export default defineEventHandler(async (event) => {
       estimatedTime = fareResult.route.durationMinutes;
     }
   } catch (err) {
-    // 連 v1 Directions 都失敗 → 最終 fallback：距離 25km + v1 公式
+    // 連 v1 Directions 都失敗 → 最終 fallback：距離 25km + v1 公式（含 distanceTier / 起跳費 floor）
     console.error('[orders/post] fare calculation failed, using 25km fallback:', err);
     distanceKm = 25;
-    estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras);
+    let fallbackRules;
+    try {
+      fallbackRules = await getFareRules();
+    } catch {
+      fallbackRules = undefined;
+    }
+    estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras, fallbackRules);
     estimatedTime = Math.round(distanceKm * 1.8);
   }
 

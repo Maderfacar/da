@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  calculateFare,
   calculateFareV2,
   computeMountainMul,
   computeJamFee,
@@ -331,6 +332,38 @@ describe('orderType 行程過濾', () => {
     const m = metrics({ distanceKm: 10 });
     expect(calculateFareV2(SEDAN, m, MON_1400, [], rules, 'airport-pickup').surcharge).toBe(200);
     expect(calculateFareV2(SEDAN, m, MON_1400, [], rules, 'charter').surcharge).toBe(0);
+  });
+});
+
+describe('calculateFare（v1 fallback）— 同步套 distanceTier + 起跳費 floor', () => {
+  it('短程 distanceFee < baseFare → 以起跳費計，再進位 50', () => {
+    // 5 km × 25 = 125 < 300 → chargedDistanceFee = 300
+    // 300 + 0 extras = 300 → 進位 → 300
+    expect(calculateFare(SEDAN, 5, [])).toBe(300);
+  });
+
+  it('長程 distanceFee ≥ baseFare → 以里程費計（tier 折扣套用，不再雙計 baseFare）', () => {
+    // 40 km tier-applied = 900；max(300, 900) = 900；900 + 0 extras = 900 → 進位 → 900
+    expect(calculateFare(SEDAN, 40, [])).toBe(900);
+  });
+
+  it('帶 extras → 累加後一次進位', () => {
+    // 5 km：chargedDistanceFee = 300；extras = 200 + 200 = 400；300+400 = 700 → 進位 → 700
+    expect(calculateFare(SEDAN, 5, [{ price: 200 }, { price: 200 }])).toBe(700);
+  });
+
+  it('帶自訂 rules（disabled tier + rounding 10）→ 套客製設定', () => {
+    const customRules = {
+      distanceTier: { enabled: false, tiers: [{ fromKm: 0, discountPct: 0 }] },
+      rounding: 10,
+    };
+    // tier disabled → distanceFee = 40 × 25 = 1000；max(300, 1000) = 1000；進位 10 → 1000
+    expect(calculateFare(SEDAN, 40, [], customRules)).toBe(1000);
+  });
+
+  it('未傳 rules → 套 DEFAULT_FARE_RULES（向後相容）', () => {
+    // 與「長程 40 km」同結果
+    expect(calculateFare(SEDAN, 40, [])).toBe(900);
   });
 });
 

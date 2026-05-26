@@ -26,7 +26,8 @@ const rows = computed<BoardRow[]>(() => {
     fromKey: r.fromKey,
     toKey: r.toKey,
     flightNo: r.flightNo,
-    fare: v ? calculateFare(v, r.km, []) : 0,
+    // 與 booking 估價同源：套 distanceTier + 起跳費 floor
+    fare: v ? calculateFare(v, r.km, [], storeConfig.fareRules) : 0,
   }));
 });
 
