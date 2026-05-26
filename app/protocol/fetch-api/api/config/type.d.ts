@@ -41,6 +41,8 @@ interface GetFleetConfigRes {
   vehicles: FleetVehicleDto[];
   luggageTypes: FleetLuggageTypeDto[];
   extras: FleetExtraDto[];
+  /** Fare V2 進階規則（server 側來自 fare_rules/v1 或預設）— 型別實為 FareRules（~shared/pricing），呼叫端自行 cast */
+  fareRules: Record<string, unknown>;
 }
 
 // ===== Admin CRUD payload =====

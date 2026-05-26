@@ -46,18 +46,31 @@ const sampleFares = computed<SampleFare[]>(() => {
     h1.PageFare__header-title {{ $t('fare.title') }}
     p.PageFare__header-intro {{ $t('fare.intro') }}
 
-  //- 計價方式
+  //- PRICING ENGINE — 3 卡計價引擎介紹
   section.PageFare__section.is-cream
-    .PageFare__section-label {{ $t('fare.how.label') }}
-    h2.PageFare__section-title {{ $t('fare.how.title') }}
-    p.PageFare__section-desc {{ $t('fare.how.desc') }}
-    .PageFare__how-grid
-      .PageFare__how-card
-        .PageFare__how-k {{ $t('fare.how.baseTitle') }}
-        p.PageFare__how-v {{ $t('fare.how.baseBody') }}
-      .PageFare__how-card
-        .PageFare__how-k {{ $t('fare.how.kmTitle') }}
-        p.PageFare__how-v {{ $t('fare.how.kmBody') }}
+    .PageFare__section-label {{ $t('fare.engine.label') }}
+    h2.PageFare__section-title {{ $t('fare.engine.title') }}
+    p.PageFare__section-desc {{ $t('fare.engine.desc') }}
+    .PageFare__engine-grid
+      .PageFare__engine-card
+        .PageFare__engine-num 01
+        .PageFare__engine-k {{ $t('fare.engine.card1Title') }}
+        p.PageFare__engine-v {{ $t('fare.engine.card1Body') }}
+      .PageFare__engine-card
+        .PageFare__engine-num 02
+        .PageFare__engine-k {{ $t('fare.engine.card2Title') }}
+        p.PageFare__engine-v {{ $t('fare.engine.card2Body') }}
+      .PageFare__engine-card
+        .PageFare__engine-num 03
+        .PageFare__engine-k {{ $t('fare.engine.card3Title') }}
+        p.PageFare__engine-v {{ $t('fare.engine.card3Body') }}
+
+  //- TRY IT — 乘客試算機
+  section.PageFare__section.is-off-white
+    .PageFare__section-label {{ $t('fare.calc.label') }}
+    h2.PageFare__section-title {{ $t('fare.calc.title') }}
+    p.PageFare__section-desc {{ $t('fare.calc.desc') }}
+    PassengerFareEstimator
 
   .PageFare__stripe
 
@@ -83,18 +96,6 @@ const sampleFares = computed<SampleFare[]>(() => {
             .PageFare__ticket-fare-val NT${{ s.fare.toLocaleString() }}
 
   .PageFare__stripe
-
-  //- 進階規則
-  section.PageFare__section.is-cream
-    .PageFare__section-label {{ $t('fare.advanced.label') }}
-    h2.PageFare__section-title {{ $t('fare.advanced.title') }}
-    p.PageFare__section-desc {{ $t('fare.advanced.desc') }}
-    ul.PageFare__adv-list
-      li {{ $t('fare.advanced.mountain') }}
-      li {{ $t('fare.advanced.crossCounty') }}
-      li {{ $t('fare.advanced.surcharge') }}
-      li {{ $t('fare.advanced.promo') }}
-    p.PageFare__disclaimer {{ $t('fare.disclaimer') }}
 
   //- 結尾 CTA
   section.PageFare__cta
@@ -189,12 +190,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   align-items: center;
   gap: 10px;
+}
 
-  &::before {
-    content: '';
-    width: 24px; height: 1.5px;
-    background: var(--da-amber);
-  }
+.PageFare__section-label::before {
+  content: '';
+  width: 24px; height: 1.5px;
+  background: var(--da-amber);
 }
 
 .PageFare__section-title {
@@ -227,34 +228,46 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   opacity: 0.85;
 }
 
-// ── 計價方式 ──────────────────────────────────────────────
-.PageFare__how-grid {
+// ── PRICING ENGINE 卡 ─────────────────────────────────────
+.PageFare__engine-grid {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.PageFare__how-card {
+.PageFare__engine-card {
   background: var(--da-glass-bg);
   border: 1px solid var(--da-glass-border);
   border-radius: 16px;
-  padding: 20px;
+  padding: 22px;
+  position: relative;
+  box-shadow: var(--da-glass-shadow);
 }
 
-.PageFare__how-k {
+.PageFare__engine-num {
   font-family: $font-display;
-  font-size: 24px;
+  font-size: 14px;
+  letter-spacing: 0.2em;
   color: var(--da-amber);
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
-.PageFare__how-v {
+.PageFare__engine-k {
   font-family: $font-body;
-  font-size: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--da-dark);
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.PageFare__engine-v {
+  font-family: $font-body;
+  font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 // ── 示範路線估價票券 ──────────────────────────────────────
@@ -345,39 +358,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-family: $font-display;
   font-size: 28px;
   color: var(--da-amber);
-}
-
-// ── 進階規則 ──────────────────────────────────────────────
-.PageFare__adv-list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.PageFare__adv-list li {
-  font-family: $font-body;
-  font-size: 14px;
-  color: var(--da-gray);
-  line-height: 1.7;
-  padding-left: 22px;
-  position: relative;
-}
-
-.PageFare__adv-list li::before {
-  content: '✈';
-  position: absolute;
-  left: 0;
-  color: var(--da-amber);
-}
-
-.PageFare__disclaimer {
-  font-family: $font-body;
-  font-size: 12px;
-  color: var(--da-gray-light);
-  line-height: 1.7;
-  margin-top: 18px;
 }
 
 // ── 結尾 CTA ──────────────────────────────────────────────

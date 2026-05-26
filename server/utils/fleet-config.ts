@@ -13,6 +13,8 @@
  * （避免 user 上線後資料庫空白看不到車型）。
  */
 import type { Firestore } from 'firebase-admin/firestore';
+import { getFareRules } from '@@/utils/fare-rules-cache';
+import type { FareRules } from '~shared/pricing';
 
 export interface I18nLabel {
   zh: string;
@@ -59,6 +61,8 @@ export interface FleetConfig {
   vehicles: FleetVehicle[];
   luggageTypes: FleetLuggageType[];
   extras: FleetExtra[];
+  /** Fare V2 進階規則（fare_rules/v1 doc 或預設）— /fare 試算機與 booking 估價同源 */
+  fareRules: FareRules;
 }
 
 export type FleetResource = 'vehicles' | 'luggage-types' | 'extras';
@@ -278,16 +282,18 @@ const docToFleetItem = <T extends { id: string }>(doc: FirebaseFirestore.QueryDo
 export const getFleetConfig = async (db: Firestore): Promise<FleetConfig> => {
   await seedFleetConfigIfEmpty(db);
 
-  const [vehiclesSnap, luggageTypesSnap, extrasSnap] = await Promise.all([
+  const [vehiclesSnap, luggageTypesSnap, extrasSnap, fareRules] = await Promise.all([
     db.collection('fleet_vehicles').orderBy('sortOrder').get(),
     db.collection('fleet_luggage_types').orderBy('sortOrder').get(),
     db.collection('fleet_extras').orderBy('sortOrder').get(),
+    getFareRules(),
   ]);
 
   return {
     vehicles: vehiclesSnap.docs.map((d) => docToFleetItem<FleetVehicle>(d)),
     luggageTypes: luggageTypesSnap.docs.map((d) => docToFleetItem<FleetLuggageType>(d)),
     extras: extrasSnap.docs.map((d) => docToFleetItem<FleetExtra>(d)),
+    fareRules,
   };
 };
 

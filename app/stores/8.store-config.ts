@@ -6,7 +6,14 @@
 // 載入時機：app 啟動時由 `plugins/init-config.client.ts` 觸發 Init() 一次；
 // admin 在 settings 編輯後手動呼叫 Reload() 刷新。
 
-import type { FleetVehicle, FleetLuggageType, FleetExtra, I18nLabel } from '~shared/pricing';
+import {
+  DEFAULT_FARE_RULES,
+  type FareRules,
+  type FleetVehicle,
+  type FleetLuggageType,
+  type FleetExtra,
+  type I18nLabel,
+} from '~shared/pricing';
 
 type Locale = 'zh' | 'en' | 'ja';
 
@@ -14,6 +21,7 @@ export const StoreConfig = defineStore('StoreConfig', () => {
   const vehicles = ref<FleetVehicle[]>([]);
   const luggageTypes = ref<FleetLuggageType[]>([]);
   const extras = ref<FleetExtra[]>([]);
+  const fareRules = ref<FareRules>(DEFAULT_FARE_RULES);
 
   const isLoaded = ref(false);
   const isLoading = ref(false);
@@ -28,6 +36,7 @@ export const StoreConfig = defineStore('StoreConfig', () => {
         vehicles.value = (data.vehicles ?? []) as FleetVehicle[];
         luggageTypes.value = (data.luggageTypes ?? []) as FleetLuggageType[];
         extras.value = (data.extras ?? []) as FleetExtra[];
+        if (data.fareRules) fareRules.value = data.fareRules as unknown as FareRules;
         isLoaded.value = true;
       }
     } finally {
@@ -70,6 +79,7 @@ export const StoreConfig = defineStore('StoreConfig', () => {
     vehicles,
     luggageTypes,
     extras,
+    fareRules,
     isLoaded,
     isLoading,
     Init,
