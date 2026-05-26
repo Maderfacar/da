@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
 import { DEFAULT_FARE_RULES } from '~shared/pricing';
-import type { FareRules, PeakWindow, PromoWindow, SurchargeWindow, MountainTier, Weekday, OrderType } from '~shared/pricing';
+import type { DistanceTier, FareRules, PeakWindow, PromoWindow, SurchargeWindow, MountainTier, Weekday, OrderType } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -350,6 +350,20 @@ onMounted(() => {
   void ApiLoadFareRules();
 });
 
+// 里程分段累進折扣：新段預設「上一段 fromKm + 10、折扣 +5%」
+const ClickAddDistanceTier = () => {
+  const tiers = fareRules.value.distanceTier.tiers;
+  const last = tiers[tiers.length - 1];
+  const nextFromKm = last ? last.fromKm + 10 : 0;
+  const nextDiscountPct = last ? Math.min(100, last.discountPct + 5) : 0;
+  tiers.push({ fromKm: nextFromKm, discountPct: nextDiscountPct } as DistanceTier);
+};
+const ClickRemoveDistanceTier = (index: number) => {
+  // 第一段不可刪（fromKm 必為 0）
+  if (index === 0) return;
+  fareRules.value.distanceTier.tiers.splice(index, 1);
+};
+
 // 階梯 / 時段陣列操作
 const ClickAddMountainTier = () => {
   fareRules.value.mountain.tiers.push({ minScore: 1, multiplier: 1.1 } as MountainTier);
@@ -448,6 +462,24 @@ const _validateFareRules = (): string => {
   }
   if (r.rounding <= 0) return '進位基數必須大於 0';
   if (r.crossCounty.tieredNtd.length !== 3) return '跨縣市需設定三級費率';
+  // 里程分段折扣：tiers 非空、首段 fromKm=0、嚴格遞增、pct 0–100
+  const dt = r.distanceTier;
+  if (dt.tiers.length === 0) return '里程分段需至少 1 段';
+  for (const t of dt.tiers) {
+    if (typeof t.fromKm !== 'number' || Number.isNaN(t.fromKm) || t.fromKm < 0) {
+      return '里程分段的 fromKm 必須 ≥ 0';
+    }
+    if (typeof t.discountPct !== 'number' || Number.isNaN(t.discountPct) || t.discountPct < 0 || t.discountPct > 100) {
+      return '里程分段的折扣 % 必須在 0–100 之間';
+    }
+  }
+  const sortedDt = [...dt.tiers].sort((a, b) => a.fromKm - b.fromKm);
+  if (sortedDt[0]!.fromKm !== 0) return '里程分段第一段的起始里程必須為 0';
+  for (let i = 1; i < sortedDt.length; i++) {
+    if (sortedDt[i]!.fromKm <= sortedDt[i - 1]!.fromKm) {
+      return '里程分段的起始里程必須由小到大且不重覆';
+    }
+  }
   for (const w of r.trafficJam.peakWindows) {
     if (!w.start || !w.end) return '顛峰時段的起訖時間皆必填';
     if (w.days.length === 0) return '每個顛峰時段至少需選一天';
@@ -718,6 +750,42 @@ const ClickSaveFareRules = async () => {
               type="number"
               inputmode="numeric"
             )
+
+      //- 里程分段累進折扣（全車型一致；折扣套在 distanceFee 上）
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 里程分段折扣
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.distanceTier.enabled")
+            span 啟用
+        .PageAdminSettings__fare-subhead
+          | 距離切段、每段套各自費率（perKmRate × (1 − 折扣%/100)）。第一段起始里程必為 0；折扣 0 = 原價、10 = 9 折。
+        .PageAdminSettings__fare-tier(
+          v-for="(tier, i) in fareRules.distanceTier.tiers"
+          :key="i"
+        )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 起始里程 (km)
+            ElInput(
+              v-model.number="tier.fromKm"
+              type="number"
+              inputmode="numeric"
+              :disabled="i === 0"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 折扣 (%)
+            ElInput(
+              v-model.number="tier.discountPct"
+              type="number"
+              inputmode="numeric"
+            )
+          button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+            :disabled="i === 0"
+            @click="ClickRemoveDistanceTier(i)"
+          ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddDistanceTier"
+        ) + 新增分段
 
       //- 山區加成
       .PageAdminSettings__fare-block
