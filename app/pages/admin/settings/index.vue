@@ -66,12 +66,12 @@ const activeTab = ref<AccessTab>('driver');
 type FleetTab = 'vehicles' | 'luggage' | 'extras';
 const fleetTab = ref<FleetTab>('vehicles');
 
-// 確保 StoreConfig 已載入（plugin 啟動時也會 Init，這裡加保險，避免 admin 直接深連結到此頁時空白）
+// admin/settings 是後台即時編輯入口：每次進頁都強制 Reload，避免 user 開著 stale tab 時
+// 點到舊 docId 導致 PUT 404（fleet 資料量小、Reload 成本低）。
 const storeConfig = StoreConfig();
 onMounted(() => {
-  if (!storeConfig.isLoaded && !storeConfig.isLoading) {
-    void storeConfig.Init();
-  }
+  if (storeConfig.isLoading) return;
+  void storeConfig.Reload();
 });
 
 // 管理員清單（P18：改從 admins collection 讀，含 level）

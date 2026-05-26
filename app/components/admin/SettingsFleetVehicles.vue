@@ -36,6 +36,18 @@ const dialog = reactive<{ open: boolean; mode: DialogMode; original: FleetVehicl
 const form = reactive<VehicleFormState>(_emptyForm());
 const togglingId = ref('');
 const deletingId = ref('');
+const reloading = ref(false);
+
+const ClickReload = async () => {
+  if (reloading.value) return;
+  reloading.value = true;
+  try {
+    await storeConfig.Reload();
+    ElMessage({ message: '已重新整理車型列表', type: 'success' });
+  } finally {
+    reloading.value = false;
+  }
+};
 
 function _emptyForm(): VehicleFormState {
   return {
@@ -207,7 +219,13 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   .SettingsFleetVehicles__head
     .SettingsFleetVehicles__head-left
       span.SettingsFleetVehicles__count {{ storeConfig.vehicles.length }} 種
-    button.SettingsFleetVehicles__add-btn(@click="ClickOpenCreate") + 新增車型
+    .SettingsFleetVehicles__head-actions
+      button.SettingsFleetVehicles__reload-btn(
+        :disabled="reloading"
+        @click="ClickReload"
+        title="從 Firestore 重新讀取最新車型列表（避免 stale tab 編輯到舊 docId）"
+      ) {{ reloading ? '同步中…' : '↻ 重新整理' }}
+      button.SettingsFleetVehicles__add-btn(@click="ClickOpenCreate") + 新增車型
 
   //- 列表
   .SettingsFleetVehicles__empty(v-if="storeConfig.vehicles.length === 0") 尚無車型，按上方「新增車型」開始設定
@@ -377,6 +395,29 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.1em;
   color: $muted;
+}
+
+.SettingsFleetVehicles__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.SettingsFleetVehicles__reload-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .SettingsFleetVehicles__add-btn {
