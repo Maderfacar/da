@@ -187,6 +187,24 @@ export interface FreewayRule {
   dailyCapDiscountPct: number;
 }
 
+/** 里程分段累進折扣的一段 */
+export interface DistanceTier {
+  /** 此段下界（km，含）；第一段必為 0；陣列須按 fromKm 升冪 */
+  fromKm: number;
+  /** 此段折扣百分比（0–100）；0 = 原價，10 = 9 折，20 = 8 折 */
+  discountPct: number;
+}
+
+/**
+ * 里程分段累進折扣規則：依距離切段，每段套各自費率（perKmRate × (1 − discountPct/100)）。
+ * 隱含上界為下一段的 fromKm；最後一段為「剩餘里程」。
+ */
+export interface DistanceTierRule {
+  enabled: boolean;
+  /** 至少 1 段；第一段 fromKm 必為 0；按 fromKm 升冪 */
+  tiers: DistanceTier[];
+}
+
 export interface FareRules {
   version: number;
   currency: string;
@@ -198,6 +216,8 @@ export interface FareRules {
   freeway: FreewayRule;
   promo: PromoRule;
   surcharge: SurchargeRule;
+  /** 里程分段累進折扣（distanceFee 計算規則）；全車型一致；折扣套在 distanceFee 上 */
+  distanceTier: DistanceTierRule;
 }
 
 // ── 路線訊號（route-metrics 產出，calculateFareV2 消費）──────────────────────
@@ -301,6 +321,14 @@ export const DEFAULT_FARE_RULES: FareRules = {
     windows: [],
     weekendMode: 'OFF',
     defaultSurchargeNtd: 100,
+  },
+  distanceTier: {
+    enabled: true,
+    tiers: [
+      { fromKm: 0,  discountPct: 0 },
+      { fromKm: 10, discountPct: 10 },
+      { fromKm: 30, discountPct: 20 },
+    ],
   },
 };
 
@@ -476,6 +504,38 @@ export function computeCrossCountyFee(visited: ReadonlyArray<string>, rule: Cros
   return total;
 }
 
+/**
+ * 里程費（分段累進折扣）：依規則把距離切段，每段套 perKmRate × (1 − discountPct/100) 累加。
+ *
+ * - rule.enabled=false / tiers 空 → 退回 distanceKm × perKmRate（原 v1 邏輯）
+ * - 第一段隱含下界 = 0；最後一段為「剩餘里程」（無上界）
+ * - 不在此處進位 — 由 calculateFareV2 最後統一 ceil 50 元
+ */
+export function computeDistanceFee(
+  distanceKm: number,
+  perKmRate: number,
+  rule: DistanceTierRule,
+): number {
+  if (distanceKm <= 0 || perKmRate <= 0) return 0;
+  if (!rule.enabled || rule.tiers.length === 0) return distanceKm * perKmRate;
+
+  const sorted = [...rule.tiers].sort((a, b) => a.fromKm - b.fromKm);
+  let fee = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const cur = sorted[i];
+    if (!cur) continue;
+    const next = sorted[i + 1];
+    const lower = Math.max(0, cur.fromKm);
+    const upper = next ? next.fromKm : Number.POSITIVE_INFINITY;
+    if (distanceKm <= lower) break;
+    const segKm = Math.min(distanceKm, upper) - lower;
+    if (segKm <= 0) continue;
+    const pct = Math.min(100, Math.max(0, cur.discountPct));
+    fee += segKm * perKmRate * (1 - pct / 100);
+  }
+  return fee;
+}
+
 /** 國道通行費：首段免費 + 每 km 費率 + 日上限後折扣（單次接送通常不觸及上限）。 */
 export function computeFreewayToll(freewayKm: number, rule: FreewayRule): number {
   if (!rule.enabled || freewayKm <= 0) return 0;
@@ -585,8 +645,8 @@ export function calculateFareV2(
   rules: FareRules,
   orderType: OrderType | null = null,
 ): FareBreakdownV2 {
-  // 1. 基本里程費 + 塞車費
-  const distanceFee = metrics.distanceKm * vehicle.perKmRate;
+  // 1. 基本里程費（分段累進折扣，全車型一致）+ 塞車費
+  const distanceFee = computeDistanceFee(metrics.distanceKm, vehicle.perKmRate, rules.distanceTier);
   const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam, orderType);
 
   // 2. 山區係數

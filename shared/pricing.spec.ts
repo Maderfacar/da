@@ -6,6 +6,7 @@ import {
   computeJamFee,
   computeCrossCountyFee,
   computeFreewayToll,
+  computeDistanceFee,
   computePromoDiscount,
   findActivePromoDiscount,
   computeSurcharge,
@@ -13,6 +14,7 @@ import {
   buildTagSurchargeIndex,
   calcTagSurcharge,
   DEFAULT_FARE_RULES,
+  type DistanceTierRule,
   type FareRules,
   type PromoRule,
   type SurchargeRule,
@@ -333,6 +335,85 @@ describe('orderType 行程過濾', () => {
   });
 });
 
+describe('computeDistanceFee — 里程分段累進折扣', () => {
+  const DEFAULT_TIER = DEFAULT_FARE_RULES.distanceTier;
+
+  it('disabled → 回退 distanceKm × perKmRate', () => {
+    expect(computeDistanceFee(40, 25, { ...DEFAULT_TIER, enabled: false })).toBe(1000);
+  });
+
+  it('distanceKm = 0 → 0', () => {
+    expect(computeDistanceFee(0, 25, DEFAULT_TIER)).toBe(0);
+  });
+
+  it('全程落在第一段（0–10km，0 折扣）→ 等於原 km×rate', () => {
+    expect(computeDistanceFee(8, 25, DEFAULT_TIER)).toBe(200);
+    expect(computeDistanceFee(10, 25, DEFAULT_TIER)).toBe(250);
+  });
+
+  it('跨第一第二段（10–30km，9 折）— 分段累加', () => {
+    // 10×25×1 + 10×25×0.9 = 250 + 225 = 475
+    expect(computeDistanceFee(20, 25, DEFAULT_TIER)).toBe(475);
+  });
+
+  it('跨三段（30+km，8 折）— 預設情境', () => {
+    // 10×25×1 + 20×25×0.9 + 10×25×0.8 = 250 + 450 + 200 = 900
+    expect(computeDistanceFee(40, 25, DEFAULT_TIER)).toBe(900);
+    // 70km：10×25 + 20×25×0.9 + 40×25×0.8 = 250 + 450 + 800 = 1500
+    expect(computeDistanceFee(70, 25, DEFAULT_TIER)).toBe(1500);
+  });
+
+  it('tiers 空陣列 → 退回 flat 公式', () => {
+    expect(computeDistanceFee(40, 25, { enabled: true, tiers: [] })).toBe(1000);
+  });
+
+  it('單一段（無折扣）→ 等同 flat', () => {
+    const oneTier: DistanceTierRule = {
+      enabled: true,
+      tiers: [{ fromKm: 0, discountPct: 0 }],
+    };
+    expect(computeDistanceFee(40, 25, oneTier)).toBe(1000);
+  });
+
+  it('單一段（30% 折扣）→ 整段套同一折扣', () => {
+    const oneTier: DistanceTierRule = {
+      enabled: true,
+      tiers: [{ fromKm: 0, discountPct: 30 }],
+    };
+    // 40 × 25 × 0.7 = 700
+    expect(computeDistanceFee(40, 25, oneTier)).toBe(700);
+  });
+
+  it('perKmRate = 0 → 0', () => {
+    expect(computeDistanceFee(40, 0, DEFAULT_TIER)).toBe(0);
+  });
+
+  it('tiers 順序錯亂 → 內部自動排序', () => {
+    const messy: DistanceTierRule = {
+      enabled: true,
+      tiers: [
+        { fromKm: 30, discountPct: 20 },
+        { fromKm: 0,  discountPct: 0 },
+        { fromKm: 10, discountPct: 10 },
+      ],
+    };
+    expect(computeDistanceFee(40, 25, messy)).toBe(900);
+  });
+
+  it('折扣 100% → 該段全免', () => {
+    const freeMiddle: DistanceTierRule = {
+      enabled: true,
+      tiers: [
+        { fromKm: 0,  discountPct: 0 },
+        { fromKm: 10, discountPct: 100 },
+        { fromKm: 30, discountPct: 0 },
+      ],
+    };
+    // 10×25 + 20×25×0 + 10×25 = 250 + 0 + 250 = 500
+    expect(computeDistanceFee(40, 25, freeMiddle)).toBe(500);
+  });
+});
+
 describe('calculateFareV2 — 代表情境', () => {
   it('純市區短程：無山區/國道/跨縣市 → 與 v1 公式等價', () => {
     const b = calculateFareV2(SEDAN, metrics({ distanceKm: 10 }), OFFPEAK_MON_1200, [], RULES);
@@ -344,15 +425,17 @@ describe('calculateFareV2 — 代表情境', () => {
     expect(b.freewayToll).toBe(0);
   });
 
-  it('跨縣市 + 國道：v1 里程費 + 跨縣市補貼 + 國道通行費', () => {
+  it('跨縣市 + 國道：里程費（分段累進折扣）+ 跨縣市補貼 + 國道通行費', () => {
     const m = metrics({ distanceKm: 40, freewayKm: 30, countiesVisited: ['TYN', 'HSZ'] });
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
     expect(b.crossCountyFee).toBe(200);
     expect(b.freewayToll).toBe(12);
     expect(b.mountainMul).toBe(1);
-    // 300 + (40×25)×1 + 200 + 12 = 1512 → 進位 50 → 1550
-    expect(b.raw).toBe(1512);
-    expect(b.final).toBe(1550);
+    // distanceFee = 10×25×1 + 20×25×0.9 + 10×25×0.8 = 250 + 450 + 200 = 900
+    expect(b.distanceFee).toBe(900);
+    // 300 + 900×1 + 200 + 12 = 1412 → 進位 50 → 1450
+    expect(b.raw).toBe(1412);
+    expect(b.final).toBe(1450);
   });
 
   it('山區路線：三訊號達標 → mountainMul 1.5，且只乘 distanceFee+jamFee', () => {
@@ -365,18 +448,22 @@ describe('calculateFareV2 — 代表情境', () => {
     });
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, [], RULES);
     expect(b.mountainMul).toBe(1.5);
-    // 300 + (70×25)×1.5 = 300 + 2625 = 2925 → 進位 → 2950
-    expect(b.variableScaled).toBe(2625);
-    expect(b.raw).toBe(2925);
-    expect(b.final).toBe(2950);
+    // distanceFee = 10×25 + 20×25×0.9 + 40×25×0.8 = 250 + 450 + 800 = 1500
+    expect(b.distanceFee).toBe(1500);
+    // 300 + 1500×1.5 = 300 + 2250 = 2550 → 進位 → 2550
+    expect(b.variableScaled).toBe(2250);
+    expect(b.raw).toBe(2550);
+    expect(b.final).toBe(2550);
   });
 
   it('顛峰時段：jamFee 觸發，且 jamFee 參與山區係數放大', () => {
     const m = metrics({ distanceKm: 20, pureJamMinutes: 10 });
     const b = calculateFareV2(SEDAN, m, PEAK_MON_0800, [], RULES);
     expect(b.jamFee).toBe(150);
-    // 300 + (20×25 + 150)×1 = 950
-    expect(b.raw).toBe(950);
+    // distanceFee = 10×25 + 10×25×0.9 = 250 + 225 = 475
+    expect(b.distanceFee).toBe(475);
+    // 300 + (475 + 150)×1 = 925
+    expect(b.raw).toBe(925);
     expect(b.final).toBe(950);
   });
 
@@ -385,9 +472,9 @@ describe('calculateFareV2 — 代表情境', () => {
     const extras = [{ price: 200 }, { price: 200 }];
     const b = calculateFareV2(SEDAN, m, OFFPEAK_MON_1200, extras, RULES);
     expect(b.extrasSum).toBe(400);
-    // 300 + 2625 + 0 + 0 + 400 = 3325 → 進位 → 3350
-    expect(b.raw).toBe(3325);
-    expect(b.final).toBe(3350);
+    // distanceFee = 1500（同山區測試）；300 + 1500×1.5 + 400 = 2950 → 進位 → 2950
+    expect(b.raw).toBe(2950);
+    expect(b.final).toBe(2950);
   });
 
   it('優惠時段：promoDiscount 平面折抵，不被山區係數連乘', () => {
@@ -403,10 +490,10 @@ describe('calculateFareV2 — 代表情境', () => {
     const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
     const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithPromo);
     expect(b.promoDiscount).toBe(200);
-    // 300 + (70×25)×1.5 − 200 = 2725 → 進位 → 2750
-    expect(b.variableScaled).toBe(2625);
-    expect(b.raw).toBe(2725);
-    expect(b.final).toBe(2750);
+    // distanceFee = 1500；300 + 1500×1.5 − 200 = 2350 → 進位 → 2350
+    expect(b.variableScaled).toBe(2250);
+    expect(b.raw).toBe(2350);
+    expect(b.final).toBe(2350);
   });
 
   it('折抵大於車資 → final 鎖 0（不為負）', () => {
@@ -437,10 +524,10 @@ describe('calculateFareV2 — 代表情境', () => {
     const m = metrics({ distanceKm: 70, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35 });
     const b = calculateFareV2(SEDAN, m, new Date('2026-05-18T06:00:00Z'), [], rulesWithSurcharge);
     expect(b.surcharge).toBe(200);
-    // 300 + (70×25)×1.5 + 200 = 300 + 2625 + 200 = 3125 → 進位 → 3150
-    expect(b.variableScaled).toBe(2625);
-    expect(b.raw).toBe(3125);
-    expect(b.final).toBe(3150);
+    // distanceFee = 1500；300 + 1500×1.5 + 200 = 300 + 2250 + 200 = 2750 → 進位 → 2750
+    expect(b.variableScaled).toBe(2250);
+    expect(b.raw).toBe(2750);
+    expect(b.final).toBe(2750);
   });
 
   it('時段加價與優惠折抵同時生效：先加價後折抵', () => {

@@ -11,6 +11,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import {
   DEFAULT_FARE_RULES,
+  type DistanceTier,
   type FareRules,
   type MountainTier,
   type OrderType,
@@ -126,6 +127,28 @@ function validatePromoWindows(raw: unknown): PromoWindow[] | string {
     windows.push(pw);
   }
   return windows;
+}
+
+function validateDistanceTiers(raw: unknown): DistanceTier[] | string {
+  if (!Array.isArray(raw) || raw.length === 0) return 'distanceTier.tiers 必須是非空陣列';
+  const tiers: DistanceTier[] = [];
+  for (const t of raw) {
+    if (!isObj(t)) return 'distanceTier.tiers 元素必須是物件';
+    if (!isNonNegNum(t.fromKm)) return 'distanceTier.tier.fromKm 必須 ≥ 0';
+    if (!isNum(t.discountPct) || (t.discountPct as number) < 0 || (t.discountPct as number) > 100) {
+      return 'distanceTier.tier.discountPct 必須是 0-100';
+    }
+    tiers.push({ fromKm: t.fromKm as number, discountPct: t.discountPct as number });
+  }
+  // 首段 fromKm 必為 0；fromKm 必須嚴格遞增
+  tiers.sort((a, b) => a.fromKm - b.fromKm);
+  if (tiers[0]!.fromKm !== 0) return 'distanceTier 第一段 fromKm 必須為 0';
+  for (let i = 1; i < tiers.length; i++) {
+    if (tiers[i]!.fromKm <= tiers[i - 1]!.fromKm) {
+      return 'distanceTier.tiers fromKm 必須嚴格遞增';
+    }
+  }
+  return tiers;
 }
 
 function validateSurchargeWindows(raw: unknown): SurchargeWindow[] | string {
@@ -248,6 +271,17 @@ export function validateFareRules(raw: unknown): ValidateResult {
     };
   }
 
+  // distanceTier（向後相容：舊 fare_rules/v1 doc 無此欄位 → 套預設，不視為格式錯誤）
+  let distanceTier = DEFAULT_FARE_RULES.distanceTier;
+  if (raw.distanceTier !== undefined) {
+    const d = raw.distanceTier;
+    if (!isObj(d)) return { ok: false, error: 'distanceTier 缺失' };
+    if (!isBool(d.enabled)) return { ok: false, error: 'distanceTier.enabled 必須是 boolean' };
+    const distanceTierTiers = validateDistanceTiers(d.tiers);
+    if (typeof distanceTierTiers === 'string') return { ok: false, error: distanceTierTiers };
+    distanceTier = { enabled: d.enabled, tiers: distanceTierTiers };
+  }
+
   return {
     ok: true,
     value: {
@@ -281,6 +315,7 @@ export function validateFareRules(raw: unknown): ValidateResult {
       },
       promo,
       surcharge,
+      distanceTier,
     },
   };
 }

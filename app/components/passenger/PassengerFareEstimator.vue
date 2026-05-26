@@ -43,6 +43,9 @@ const lang = computed<Lang>(() => _normalizeLang(String(locale.value)));
 interface CalcInput {
   distanceKm: number;
   vehicleId: string;
+  /** 日期 YYYY-MM-DD（ElDatePicker value-format） */
+  pickupDate: string;
+  /** 時間 HH:mm（ElTimeSelect，10 分鐘為單位） */
   pickupTime: string;
   orderType: OrderType;
   extraIds: string[];
@@ -53,20 +56,23 @@ interface CalcInput {
   freewayKm: number;
 }
 
-/** 預設上車時間 = 明天 09:00（local TZ） */
-function _defaultPickupTime(): string {
-  const t = new Date();
-  t.setDate(t.getDate() + 1);
-  t.setHours(9, 0, 0, 0);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}T${pad(t.getHours())}:${pad(t.getMinutes())}`;
+/** 今日 YYYY-MM-DD（與 booking 一致） */
+function _todayDate(): string {
+  return $dayjs().format('YYYY-MM-DD');
+}
+
+/** 當下時間往後最近的 10 分鐘時段 HH:mm（與 booking _nextTenMinSlot 一致） */
+function _nextTenMinSlot(): string {
+  const now = $dayjs().second(0).millisecond(0);
+  return now.minute(Math.ceil(now.minute() / 10) * 10).format('HH:mm');
 }
 
 function _defaultInput(): CalcInput {
   return {
     distanceKm: 15,
     vehicleId: storeConfig.EnabledVehicles[0]?.id ?? '',
-    pickupTime: _defaultPickupTime(),
+    pickupDate: _todayDate(),
+    pickupTime: _nextTenMinSlot(),
     orderType: 'airport-pickup',
     extraIds: [],
     selectedTagIds: [],
@@ -181,6 +187,14 @@ function _buildSyntheticMetrics(): RouteMetrics {
 }
 
 // ── 驗證 ──────────────────────────────────────────────────────────────────
+/** 組合 pickupDate + pickupTime → local Date（ISO 解析以避免時區誤差） */
+function _composePickupDate(): Date | null {
+  if (!input.pickupDate || !input.pickupTime) return null;
+  const iso = `${input.pickupDate}T${input.pickupTime}:00`;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function _validate(): string {
   if (typeof input.distanceKm !== 'number' || Number.isNaN(input.distanceKm) || input.distanceKm < 0) {
     return t('fare.calc.error.distance');
@@ -189,9 +203,7 @@ function _validate(): string {
     return t('fare.calc.error.freeway');
   }
   if (!input.vehicleId) return t('fare.calc.error.vehicle');
-  if (!input.pickupTime) return t('fare.calc.error.pickup');
-  const time = new Date(input.pickupTime);
-  if (Number.isNaN(time.getTime())) return t('fare.calc.error.pickup');
+  if (!_composePickupDate()) return t('fare.calc.error.pickup');
   return '';
 }
 
@@ -232,11 +244,18 @@ const ClickCalculate = () => {
     ? [...realExtras, { price: tagCalc.surcharge }]
     : realExtras;
 
+  const pickupDate = _composePickupDate();
+  if (!pickupDate) {
+    error.value = t('fare.calc.error.pickup');
+    result.value = null;
+    return;
+  }
+
   error.value = '';
   result.value = calculateFareV2(
     vehicle,
     _buildSyntheticMetrics(),
-    new Date(input.pickupTime),
+    pickupDate,
     extrasForCalc,
     storeConfig.fareRules,
     input.orderType,
@@ -288,13 +307,23 @@ const extrasNetSum = computed(() => {
           :label="storeConfig.LabelOf(v.label, lang)"
           :value="v.id"
         )
-    .PassengerFareEstimator__field
+    .PassengerFareEstimator__field.is-wide
       label.PassengerFareEstimator__label {{ $t('fare.calc.field.pickup') }}
-      ElInput(
-        v-model="input.pickupTime"
-        type="datetime-local"
-        maxlength="20"
-      )
+      .PassengerFareEstimator__datetime
+        ElDatePicker.PassengerFareEstimator__date(
+          v-model="input.pickupDate"
+          type="date"
+          format="YYYY/MM/DD"
+          value-format="YYYY-MM-DD"
+          :clearable="false"
+        )
+        ElTimeSelect.PassengerFareEstimator__time(
+          v-model="input.pickupTime"
+          start="00:00"
+          end="23:50"
+          step="00:10"
+          :clearable="false"
+        )
     .PassengerFareEstimator__field
       label.PassengerFareEstimator__label {{ $t('fare.calc.field.orderType') }}
       ElSelect(v-model="input.orderType")
@@ -456,6 +485,17 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerFareEstimator__field.is-wide {
   grid-column: 1 / -1;
+}
+
+.PassengerFareEstimator__datetime {
+  display: flex;
+  gap: 10px;
+}
+
+.PassengerFareEstimator__date,
+.PassengerFareEstimator__time {
+  flex: 1;
+  min-width: 0;
 }
 
 .PassengerFareEstimator__label {
