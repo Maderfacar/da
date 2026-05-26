@@ -3086,3 +3086,21 @@ select option:disabled {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+
+<!--
+  Unscoped style 專門處理 native <select> dropdown popup 白底白字。
+  原因：Windows Chrome/Edge 把 <option> popup 當成 OS-level UI，scoped CSS 對部分
+  v-for option 的 hash attribute 不一定生效；改用 unscoped + !important + 限制 root
+  selector `.PageAdminOrders`，確保本頁 6 個 native select 內所有 option（含 placeholder
+  / __draft__「暫不發布」/ START_LEVEL_OPTIONS / 駕駛清單 / orderType / cancelReason）
+  都吃到深色背景 + 白字。
+-->
+<style lang="scss">
+.PageAdminOrders select option {
+  background: #1a1a2e !important;
+  color: #fff !important;
+}
+.PageAdminOrders select option:disabled {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+</style>
