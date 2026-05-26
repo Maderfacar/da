@@ -723,7 +723,7 @@ const ClickSaveFareRules = async () => {
   .PageAdminSettings__section(v-show="authStore.isSuper && mainTab === 'fare'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label FARE RULES
-      span.PageAdminSettings__section-title 車資進階規則 v1
+      span.PageAdminSettings__section-title 車資進階規則
       span.PageAdminSettings__fare-flex
       button.PageAdminSettings__btn.is-approve.PageAdminSettings__fare-save(
         :disabled="fareRulesLoading || fareRulesSaving"
