@@ -54,9 +54,15 @@ export const ApplyDriver = (body: DriverApplyBody) =>
 
 // ── P26 driver self-edit ───────────────────────────────────────────
 
-/** 司機自編 profile（目前只開放 phone） */
-export const UpdateDriverSelfProfile = (body: { phone: string }) =>
-  methods.patch<{ uid: string; updated: boolean }>('/nuxt-api/drivers/me/profile', body);
+/** 司機自編 profile（partial — 至少一個欄位；2026-05-27 起開放 4 欄位） */
+export interface UpdateDriverSelfProfileBody {
+  driverName?: string;
+  phone?: string;
+  plateNumber?: string;
+  vehicleModel?: string;
+}
+export const UpdateDriverSelfProfile = (body: UpdateDriverSelfProfileBody) =>
+  methods.patch<{ uid: string; updated: boolean }>('/nuxt-api/drivers/me/profile', body as unknown as Record<string, unknown>);
 
 /**
  * 司機自上傳新證件 — 兩步流程的第 2 步：

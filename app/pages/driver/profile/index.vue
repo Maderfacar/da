@@ -28,6 +28,10 @@ interface DriverDocs {
   goodCitizenUrl?: string;
 }
 const phone = ref('');
+// 2026-05-27 起：開放司機自編 driverName / plateNumber / vehicleModel
+const driverName = ref('');
+const plateNumber = ref('');
+const vehicleModel = ref('');
 const documents = ref<DriverDocs>({});
 const documentsPending = ref<Partial<Record<DocType, PendingDocument>>>({});
 
@@ -68,7 +72,11 @@ const ApiLoadDriverData = async () => {
     if (driverSnap.exists()) {
       const driverData = driverSnap.data() ?? {};
       const application = driverData.application as {
+        driverName?: string;
         phone?: string;
+        plateNumber?: string;
+        vehicleType?: string;
+        vehicleModel?: string;
         documents?: DriverDocs;
         documentsPending?: Record<string, {
           url: string;
@@ -80,6 +88,14 @@ const ApiLoadDriverData = async () => {
       } | undefined;
 
       phone.value = application?.phone ?? '';
+      driverName.value = application?.driverName ?? '';
+      plateNumber.value = application?.plateNumber ?? '';
+      // 舊資料 fallback：application.vehicleModel 不存在 → 顯示 4 選 1 vehicleType 文字（司機可改）
+      const VEHICLE_TYPE_LABEL: Record<string, string> = {
+        sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
+      };
+      vehicleModel.value = application?.vehicleModel
+        ?? (application?.vehicleType ? VEHICLE_TYPE_LABEL[application.vehicleType] ?? application.vehicleType : '');
 
       // Phase 1B：driver-scope tags + vehicleProfile + pending
       const _toIso = (v: unknown): string | null => {
@@ -198,34 +214,75 @@ const ApiLoadTripCount = async () => {
   }
 };
 
-// ── phone 編輯 ───────────────────────────────────────────
-const editingPhone = ref(false);
-const phoneDraft = ref('');
-const savingPhone = ref(false);
+// ── 個人資料 inline 編輯（單欄位排他）────────────────────
+type EditField = 'driverName' | 'phone' | 'plateNumber' | 'vehicleModel';
+const editingField = ref<EditField | ''>('');
+const fieldDraft = ref('');
+const savingField = ref(false);
 const TW_MOBILE_RE = /^09\d{8}$/;
 
-const ClickEditPhone = () => {
-  phoneDraft.value = phone.value;
-  editingPhone.value = true;
+const _FieldValue: Record<EditField, () => string> = {
+  driverName: () => driverName.value,
+  phone: () => phone.value,
+  plateNumber: () => plateNumber.value,
+  vehicleModel: () => vehicleModel.value,
 };
 
-const ClickCancelPhone = () => {
-  editingPhone.value = false;
-  phoneDraft.value = '';
+const ClickEditField = (field: EditField) => {
+  if (savingField.value) return;
+  editingField.value = field;
+  fieldDraft.value = _FieldValue[field]();
 };
 
-const ClickSavePhone = async () => {
-  if (!TW_MOBILE_RE.test(phoneDraft.value)) {
-    ElMessage({ message: '電話格式不正確（需 09 開頭 10 碼）', type: 'warning' });
+const ClickCancelField = () => {
+  if (savingField.value) return;
+  editingField.value = '';
+  fieldDraft.value = '';
+};
+
+const _ValidateField = (field: EditField, v: string): string => {
+  const t = v.trim();
+  if (!t) return '此欄位為必填';
+  if (field === 'phone') {
+    if (!TW_MOBILE_RE.test(t)) return '電話格式不正確（需 09 開頭 10 碼）';
+  } else if (field === 'driverName') {
+    if (t.length > 40) return '姓名最多 40 字';
+  } else if (field === 'plateNumber') {
+    if (t.length > 10) return '車牌最多 10 字';
+  } else if (field === 'vehicleModel') {
+    if (t.length > 80) return '車型最多 80 字';
+  }
+  return '';
+};
+
+const _SuccessMsg: Record<EditField, string> = {
+  driverName: '聯絡姓名已更新',
+  phone: '電話已更新',
+  plateNumber: '車牌已更新',
+  vehicleModel: '車型已更新',
+};
+
+const ClickSaveField = async () => {
+  const field = editingField.value;
+  if (!field) return;
+  const err = _ValidateField(field, fieldDraft.value);
+  if (err) {
+    ElMessage({ message: err, type: 'warning' });
     return;
   }
-  savingPhone.value = true;
-  const res = await $api.UpdateDriverSelfProfile({ phone: phoneDraft.value });
-  savingPhone.value = false;
+  const trimmed = field === 'plateNumber'
+    ? fieldDraft.value.trim().toUpperCase()
+    : fieldDraft.value.trim();
+  savingField.value = true;
+  const res = await $api.UpdateDriverSelfProfile({ [field]: trimmed });
+  savingField.value = false;
   if (res.status.code === 200) {
-    phone.value = phoneDraft.value;
-    editingPhone.value = false;
-    ElMessage({ message: '電話已更新', type: 'success' });
+    if (field === 'driverName') driverName.value = trimmed;
+    else if (field === 'phone') phone.value = trimmed;
+    else if (field === 'plateNumber') plateNumber.value = trimmed;
+    else if (field === 'vehicleModel') vehicleModel.value = trimmed;
+    editingField.value = '';
+    ElMessage({ message: _SuccessMsg[field], type: 'success' });
   } else {
     ElMessage({ message: res.status.message.zh_tw ?? '更新失敗', type: 'error' });
   }
@@ -326,33 +383,123 @@ onMounted(() => {
       .PageDriverProfile__stat-label ROLE
       .PageDriverProfile__stat-val 司機
 
-  //- 聯絡電話（可編輯）
+  //- 個人資料（可編輯：聯絡姓名 / 電話 / 車牌 / 車型）
   .PageDriverProfile__section
-    .PageDriverProfile__section-label CONTACT
+    .PageDriverProfile__section-label CONTACT & VEHICLE
+
+    //- 聯絡姓名
     .PageDriverProfile__rows
       .PageDriverProfile__row
-        span.PageDriverProfile__row-key 聯絡電話
-        template(v-if="!editingPhone")
+        span.PageDriverProfile__row-key 聯絡姓名
+        template(v-if="editingField !== 'driverName'")
           .PageDriverProfile__row-right
-            span.PageDriverProfile__row-val {{ phone || '尚未設定' }}
-            button.PageDriverProfile__row-edit(@click="ClickEditPhone") 編輯
+            span.PageDriverProfile__row-val {{ driverName || '尚未設定' }}
+            button.PageDriverProfile__row-edit(
+              :disabled="savingField || (editingField !== '' && editingField !== 'driverName')"
+              @click="ClickEditField('driverName')"
+            ) 編輯
         template(v-else)
           .PageDriverProfile__row-editing
             ElInput(
-              v-model="phoneDraft"
-              maxlength="10"
-              inputmode="numeric"
-              placeholder="09xxxxxxxx"
-              :disabled="savingPhone"
+              v-model="fieldDraft"
+              maxlength="40"
+              placeholder="請填寫真實姓名"
+              :disabled="savingField"
               size="small"
             )
             button.PageDriverProfile__row-save(
-              :disabled="savingPhone"
-              @click="ClickSavePhone"
-            ) {{ savingPhone ? '...' : '儲存' }}
+              :disabled="savingField"
+              @click="ClickSaveField"
+            ) {{ savingField ? '...' : '儲存' }}
             button.PageDriverProfile__row-cancel(
-              :disabled="savingPhone"
-              @click="ClickCancelPhone"
+              :disabled="savingField"
+              @click="ClickCancelField"
+            ) 取消
+
+      //- 聯絡電話
+      .PageDriverProfile__row
+        span.PageDriverProfile__row-key 聯絡電話
+        template(v-if="editingField !== 'phone'")
+          .PageDriverProfile__row-right
+            span.PageDriverProfile__row-val {{ phone || '尚未設定' }}
+            button.PageDriverProfile__row-edit(
+              :disabled="savingField || (editingField !== '' && editingField !== 'phone')"
+              @click="ClickEditField('phone')"
+            ) 編輯
+        template(v-else)
+          .PageDriverProfile__row-editing
+            ElInput(
+              v-model="fieldDraft"
+              maxlength="10"
+              inputmode="numeric"
+              placeholder="09xxxxxxxx"
+              :disabled="savingField"
+              size="small"
+            )
+            button.PageDriverProfile__row-save(
+              :disabled="savingField"
+              @click="ClickSaveField"
+            ) {{ savingField ? '...' : '儲存' }}
+            button.PageDriverProfile__row-cancel(
+              :disabled="savingField"
+              @click="ClickCancelField"
+            ) 取消
+
+      //- 車牌號碼
+      .PageDriverProfile__row
+        span.PageDriverProfile__row-key 車牌號碼
+        template(v-if="editingField !== 'plateNumber'")
+          .PageDriverProfile__row-right
+            span.PageDriverProfile__row-val {{ plateNumber || '尚未設定' }}
+            button.PageDriverProfile__row-edit(
+              :disabled="savingField || (editingField !== '' && editingField !== 'plateNumber')"
+              @click="ClickEditField('plateNumber')"
+            ) 編輯
+        template(v-else)
+          .PageDriverProfile__row-editing
+            ElInput(
+              v-model="fieldDraft"
+              maxlength="10"
+              placeholder="ABC-1234"
+              :disabled="savingField"
+              size="small"
+              style="text-transform: uppercase"
+            )
+            button.PageDriverProfile__row-save(
+              :disabled="savingField"
+              @click="ClickSaveField"
+            ) {{ savingField ? '...' : '儲存' }}
+            button.PageDriverProfile__row-cancel(
+              :disabled="savingField"
+              @click="ClickCancelField"
+            ) 取消
+
+      //- 車型（品牌與型號 自由文字）
+      .PageDriverProfile__row
+        span.PageDriverProfile__row-key 車輛品牌與型號
+        template(v-if="editingField !== 'vehicleModel'")
+          .PageDriverProfile__row-right
+            span.PageDriverProfile__row-val {{ vehicleModel || '尚未設定' }}
+            button.PageDriverProfile__row-edit(
+              :disabled="savingField || (editingField !== '' && editingField !== 'vehicleModel')"
+              @click="ClickEditField('vehicleModel')"
+            ) 編輯
+        template(v-else)
+          .PageDriverProfile__row-editing
+            ElInput(
+              v-model="fieldDraft"
+              maxlength="80"
+              placeholder="例：Tesla Model S、Benz Vito、Toyota RAV4"
+              :disabled="savingField"
+              size="small"
+            )
+            button.PageDriverProfile__row-save(
+              :disabled="savingField"
+              @click="ClickSaveField"
+            ) {{ savingField ? '...' : '儲存' }}
+            button.PageDriverProfile__row-cancel(
+              :disabled="savingField"
+              @click="ClickCancelField"
             ) 取消
 
   //- 證件（可重新上傳，admin 核准前不覆蓋現用版本）
