@@ -7,6 +7,20 @@ interface I18nLabelDto {
   ja: string;
 }
 
+// ===== Charter Fare V1：包車三檔時長套餐 =====
+// 與 shared/pricing.ts::CharterPlan 對齊；W1 鎖介面，W2 server 端 plumbing。
+type CharterPlanKeyDto = '4h' | '8h' | '10h';
+
+interface CharterPlanDto {
+  key: CharterPlanKeyDto;
+  durationHours: number;
+  basePrice: number;
+  includedKm: number;
+  extraKmRate: number;
+  overtimeRatePer30min: number;
+  enabled: boolean;
+}
+
 interface FleetVehicleDto {
   id: string;
   label: I18nLabelDto;
@@ -19,6 +33,8 @@ interface FleetVehicleDto {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional） */
   tagline?: I18nLabelDto;
+  /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2） */
+  charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>>;
 }
 
 interface FleetLuggageTypeDto {
@@ -60,6 +76,8 @@ interface CreateVehiclePayload {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional；null 表示清除） */
   tagline?: I18nLabelDto | null;
+  /** Charter Fare V1：包車三檔時長套餐（optional；null 表示清除整個 map） */
+  charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>> | null;
 }
 
 interface CreateLuggageTypePayload {

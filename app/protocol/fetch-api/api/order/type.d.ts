@@ -50,6 +50,60 @@ interface OrderPreferencesDto {
   snapshotAt: string;
 }
 
+// ===== Charter Fare V1：包車三檔時長套餐 =====
+// 與 shared/pricing.ts::CharterPlan / app/protocol/fetch-api/api/config/type.d.ts::CharterPlanDto 對齊。
+// W1 鎖介面，W2 server 端 plumbing。
+type OrderCharterPlanKey = '4h' | '8h' | '10h';
+
+interface OrderCharterPlanSnapshot {
+  key: OrderCharterPlanKey;
+  durationHours: number;
+  basePrice: number;
+  includedKm: number;
+  extraKmRate: number;
+  overtimeRatePer30min: number;
+  enabled: boolean;
+}
+
+interface OrderCharterStopover {
+  name: string;
+  lat: number;
+  lng: number;
+  order: number;
+}
+
+/** orders/{orderId}.charter — 僅 orderType='charter' 訂單有此 block；W2 server 端寫入 snapshot */
+interface OrderCharter {
+  /** 第一天 plan key（summary 顯示用） */
+  planKey: OrderCharterPlanKey;
+  /** 行程天數（≥ 1） */
+  days: number;
+  /** 多日各天 plan snapshot（length = days；plans 整份 freeze 避免後續 fleet_vehicles 變動影響舊單） */
+  plans: OrderCharterPlanSnapshot[];
+  /** 預估結束時間 ISO（pickupTime + Σ plans.durationHours，下訂時寫入） */
+  estimatedEndTime: string;
+  /** 實際結束時間 ISO（W5 driver app 結束任務時寫入） */
+  actualEndTime?: string;
+  /** OT 超時分鐘（W5 計算回寫） */
+  overtimeMinutes?: number;
+  /** OT 段數（W5；每 30 min 為一段，寬限後計算） */
+  overtimeBlocks?: number;
+  /** OT 加收 NTD（W5；overtimeBlocks × plan.overtimeRatePer30min） */
+  overtimeCharge?: number;
+  /** 來回判定結果（W2 編排層算） */
+  isRoundTrip: boolean;
+  /** 山區命中（W2 編排層算） */
+  isMountain: boolean;
+  /** 山區係數（W2，套用於 baseLayer） */
+  mountainMul: number;
+  /** 過夜晚數 = max(0, days - 1) */
+  nights: number;
+  /** 整段路線含 stopover 總里程 km */
+  distanceKm: number;
+  /** 停靠點清單（依 order 排序） */
+  stopovers: OrderCharterStopover[];
+}
+
 interface CreateOrderParams {
   userId?: string;
   lineUserId?: string;
@@ -81,6 +135,14 @@ interface CreateOrderParams {
   preferences?: {
     tagIds?: string[];
   } | null;
+  /** Charter Fare V1：orderType='charter' 時必填；非 charter 訂單忽略
+   *  W1 鎖介面，W2 server 端在 /orders POST 編排層讀取此欄計算車資 */
+  charter?: {
+    /** length = days；多日可不同 plan，同車型 */
+    planKeys: OrderCharterPlanKey[];
+    /** 行程天數（≥ 1） */
+    days: number;
+  };
 }
 
 interface CreateOrderRes {
@@ -272,6 +334,8 @@ interface OrderDetail {
   driver: OrderDriverInfo | null;
   /** Phase 1D：偏好標籤 snapshot；null = 乘客建單時未勾選（舊單也是 null） */
   preferences?: OrderPreferencesDto | null;
+  /** Charter Fare V1：包車訂單 snapshot；非 charter 訂單為 null，舊 charter 訂單也是 null（W2 之前未紀錄） */
+  charter?: OrderCharter | null;
 }
 
 // ===== 更新訂單 =====

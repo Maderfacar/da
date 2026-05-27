@@ -37,6 +37,8 @@ export interface FleetVehicle {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional；向後相容） */
   tagline?: I18nLabel;
+  /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2，由編排層處理） */
+  charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
 }
 
 export interface FleetLuggageType {
@@ -226,6 +228,104 @@ export interface FareRules {
   surcharge: SurchargeRule;
   /** 里程分段累進折扣（distanceFee 計算規則）；全車型一致；折扣套在 distanceFee 上 */
   distanceTier: DistanceTierRule;
+  /** Charter Fare V1：包車（orderType='charter'）獨立計費規則；W1 鎖介面，W2 實作 */
+  charter: CharterRule;
+}
+
+// =============================================================================
+// Charter Fare V1 — 包車車資（時長套餐 + 超時 + 過夜 + 來回 + 山區）
+//
+// W1 範圍（本檔）：型別 + 預設值 + calculateCharterFareV2 stub。
+// W2 範圍：填滿 stub 實作 + 14 個 vitest it.todo + 來回判定演算法。
+// 詳見 openspec/changes/2026-05-28-charter-fare-v1/design.md。
+//
+// 公式骨架（hardcode，不可改）：
+//   A = plan.basePrice（多日累加）
+//   B = max(0, distanceKm − plan.includedKm) × plan.extraKmRate
+//   mountainScaled = (A + B) × mountainMul
+//   raw   = mountainScaled + roundTripFee + overnightFee + overtimeCharge
+//         + extrasTotal + surcharge − promoDiscount
+//   final = ⌈ raw / charter.rounding ⌉ × charter.rounding
+//
+// 包車不套：crossCountyFee / freewayToll / distanceTier（與 fare-v2 公式關鍵差異）。
+// =============================================================================
+
+/** 三檔時長套餐 key — 鎖定 union，不可擴充其他鍵 */
+export type CharterPlanKey = '4h' | '8h' | '10h';
+
+export interface CharterPlan {
+  key: CharterPlanKey;
+  /** 套餐時長（4 / 8 / 10），與 key 對齊；冗餘存以便讀取端不用 parse key */
+  durationHours: number;
+  /** 套餐底價 NTD */
+  basePrice: number;
+  /** 含里程（km）；超過部分按 extraKmRate 加收 */
+  includedKm: number;
+  /** 超公里費率 NTD / km */
+  extraKmRate: number;
+  /** OT 段價 NTD / 30min */
+  overtimeRatePer30min: number;
+  enabled: boolean;
+}
+
+export interface CharterMountainRule {
+  enabled: boolean;
+  /** 山區階梯（沿用 fare-v2 三訊號偵測，僅 multiplier 階梯獨立於 fare-v2） */
+  tiers: MountainTier[];
+}
+
+export interface CharterRule {
+  enabled: boolean;
+  /** 最終進位基數（元）；charter 預設 100，與 fare-v2 的 50 分離 */
+  rounding: number;
+  /** OT 寬限（分鐘）；actual − planned ≤ grace → 不收 */
+  overtimeGraceMin: number;
+  /** 來回固定加收 NTD（命中 isRoundTrip 時加一次） */
+  roundTripFlatFee: number;
+  /** D 到 (X→A polyline) 最短距離門檻（km） */
+  roundTripBufferKm: number;
+  /** D 到 A 直線距離門檻（km，過頭情境） */
+  roundTripOverShootMaxKm: number;
+  /** 每晚過夜固定加收 NTD（司機住宿補貼） */
+  overnightFlatFee: number;
+  /** 山區係數（沿用 fare-v2 三訊號偵測；階梯獨立） */
+  mountain: CharterMountainRule;
+  /** 是否套 fare-v2 時段加價（windows）— 沿用同套 windows，僅以 orderType='charter' 過濾 */
+  applySurchargeWindows: boolean;
+  /** 是否套 fare-v2 時段優惠（windows）— 沿用同套 windows，僅以 orderType='charter' 過濾 */
+  applyPromoWindows: boolean;
+}
+
+/** 計算結果明細（W2 填入；W1 stub 不產生此物件） */
+export interface CharterFareBreakdownV2 {
+  /** 多日 plan basePrice 加總（A） */
+  planBasePriceSum: number;
+  /** 超公里加收（B），用第一天 plan 的 includedKm / extraKmRate */
+  extraKmCharge: number;
+  /** A + B，套山區係數前的底層 */
+  baseLayer: number;
+  /** 山區係數（沿用 fare-v2 三訊號分數 + charter.mountain.tiers） */
+  mountainMul: number;
+  /** baseLayer × mountainMul */
+  mountainScaled: number;
+  /** 來回固定加收（C） */
+  roundTripFee: number;
+  /** 過夜固定加收 = nights × charter.overnightFlatFee（D） */
+  overnightFee: number;
+  /** OT 加收 = overtimeBlocks × plan.overtimeRatePer30min（E） */
+  overtimeCharge: number;
+  /** 加值服務加總（F） */
+  extrasTotal: number;
+  /** 時段固定加價（G）— 沿用 fare-v2 windows，以 orderType='charter' 過濾 */
+  surcharge: number;
+  /** 時段折抵（H）— 沿用 fare-v2 windows，以 orderType='charter' 過濾 */
+  promoDiscount: number;
+  /** 進位前合計 */
+  raw: number;
+  /** 進位後最終車資 */
+  final: number;
+  /** 多日各 plan basePrice 明細（供 UI 顯示「Day 1 8h / Day 2 8h」）*/
+  daysBreakdown: Array<{ day: number; planKey: CharterPlanKey; basePrice: number }>;
 }
 
 // ── 路線訊號（route-metrics 產出，calculateFareV2 消費）──────────────────────
@@ -341,6 +441,24 @@ export const DEFAULT_FARE_RULES: FareRules = {
       { fromKm: 10, discountPct: 10 },
       { fromKm: 30, discountPct: 20 },
     ],
+  },
+  charter: {
+    enabled: true,
+    rounding: 100,
+    overtimeGraceMin: 15,
+    roundTripFlatFee: 1500,
+    roundTripBufferKm: 5,
+    roundTripOverShootMaxKm: 15,
+    overnightFlatFee: 2000,
+    mountain: {
+      enabled: true,
+      tiers: [
+        { minScore: 2, multiplier: 1.4 },
+        { minScore: 3, multiplier: 1.6 },
+      ],
+    },
+    applySurchargeWindows: true,
+    applyPromoWindows: true,
   },
 };
 
@@ -644,6 +762,27 @@ export function calcTagSurcharge(
     matchedTagIds: matched.map((t) => t.id),
     invalidTagIds,
   };
+}
+
+// =============================================================================
+// Charter Fare V1 — calculateCharterFareV2 stub
+//
+// W1 僅鎖介面 + 預設值 + 14 個 vitest it.todo；本 stub 在 W2 補完。
+// 公式見 design.md（openspec/changes/2026-05-28-charter-fare-v1/design.md）。
+// =============================================================================
+
+export function calculateCharterFareV2(
+  _vehicle: FleetVehicle,
+  _planKeys: CharterPlanKey[],
+  _routeMetrics: RouteMetrics,
+  _isRoundTripFlag: boolean,
+  _pickupTime: Date,
+  _estimatedEndTime: Date,
+  _actualEndTime: Date | null,
+  _extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
+  _rules: FareRules,
+): CharterFareBreakdownV2 {
+  throw new Error('charter fare engine not implemented yet — W2');
 }
 
 /**

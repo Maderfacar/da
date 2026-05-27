@@ -777,3 +777,34 @@ describe('buildTagSurchargeIndex + calcTagSurcharge', () => {
     expect(r.invalidTagIds).toEqual(['t-driver-en']);
   });
 });
+
+// =============================================================================
+// Charter Fare V1 — W1 鎖介面 + 14 個 it.todo（W2 填實作 + expect）
+//
+// 公式骨架（hardcode in calculateCharterFareV2，design.md 詳述）：
+//   A = plan.basePrice（多日累加）
+//   B = max(0, distanceKm − plan.includedKm) × plan.extraKmRate
+//   mountainScaled = (A + B) × mountainMul
+//   raw   = mountainScaled + roundTripFee + overnightFee + overtimeCharge
+//         + extrasTotal + surcharge − promoDiscount
+//   final = ⌈ raw / charter.rounding ⌉ × charter.rounding
+//
+// 包車不套：crossCountyFee / freewayToll / distanceTier。
+// =============================================================================
+
+describe('calculateCharterFareV2', () => {
+  it.todo('4hr plan 基本計費：無超公里 / 無山區 / 無 OT');
+  it.todo('8hr plan 超公里加收：80 km includedKm，實跑 120 km 收 40 km 超公里');
+  it.todo('10hr plan + 來回加乘 NT$1500');
+  it.todo('多日包 2 天（8hr + 8hr）+ 1 晚過夜費 NT$2000');
+  it.todo('多日包 3 天（10hr + 10hr + 4hr）+ 2 晚過夜費');
+  it.todo('山區 2 分 → 1.4x（重用 fare-v2 三訊號偵測）');
+  it.todo('山區 3 分 → 1.6x');
+  it.todo('apiSourcesOk.routes=false → freeFlow 訊號歸 0 → 山區降級');
+  it.todo('OT 超寬限 15 min 第 1 min → 收 1 段（30 min）');
+  it.todo('OT 超 46 min → 收 2 段');
+  it.todo('rules.charter.enabled=false → throw 或回 0（W1 stub 維持 throw；W2 由編排層 fallback fare-v2）');
+  it.todo('進位 rounding=100：5237 → 5300');
+  it.todo('extras 不被山區係數放大，加在最後');
+  it.todo('surcharge / promo windows 套 orderType=charter 過濾');
+});
