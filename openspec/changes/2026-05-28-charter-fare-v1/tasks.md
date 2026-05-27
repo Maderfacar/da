@@ -45,15 +45,28 @@
   - [x] 缺 plans / engine throw → fallback fare-v2 + `line_api_errors` warning（charter-fare/* api 標記）
 - [x] **W2.6** vitest 428 全綠（既有 407 + charter 14 + OT helper 7）+ lint + build + push main
 
-## W3：Admin UI（後續）
+## W3：Admin UI（本視窗）
 
-- [ ] W3.1 `/admin/settings` 加「包車車資 v1」section（super only）
-  - [ ] 基本（rounding / grace / 來回 / 過夜固定值）
-  - [ ] 山區階梯（沿用 fare-v2 三訊號偵測；僅 multiplier tiers 獨立）
-  - [ ] applySurchargeWindows / applyPromoWindows toggle
-- [ ] W3.2 `SettingsFleetVehicles.vue` 加 `charterPlans` CRUD（每車型 3 個 plan card：4h / 8h / 10h）
-- [ ] W3.3 `AdminCharterFareCalculatorPreview.vue` 試算機（distanceKm / days / plan / estimatedEnd / actualEnd / mountain 訊號 → 完整明細）
-- [ ] W3.4 admin/fare-rules PATCH 既有 endpoint 擴 charter block 驗證
+- [x] **W3.1** `/admin/settings` 加「包車車資 v1」section（super only）
+  - [x] 基本（rounding / grace / 來回 / 過夜固定值）
+  - [x] 來回判定（buffer / overshoot）
+  - [x] 山區階梯（沿用 fare-v2 三訊號偵測；僅 multiplier tiers 獨立，minScore 限 0-3 整數）
+  - [x] applySurchargeWindows / applyPromoWindows toggle
+  - [x] 沿用既有 ClickSaveFareRules（PATCH /admin/fare-rules）+ writeAuditLog 'fare_rules.update' 涵蓋 charter 變動
+- [x] **W3.2** `SettingsFleetVehicles.vue` 加 `charterPlans` CRUD（每車型 3 個 plan card：4h / 8h / 10h + 「從其他車型複製套餐」快捷）
+  - [x] fleet-config.ts FleetVehicle 加 charterPlans optional + validateVehiclePayload 接收並校驗（全 disabled → null 清除）
+  - [x] ClickToggleEnabled 快速切啟用同步保留 charterPlans（避免 PUT 全量覆寫清掉）
+  - [x] 既有 PUT /admin/config/vehicles/{id} audit log action 'fleet.update' 自動涵蓋 charterPlans 變動
+- [x] **W3.3** `AdminCharterFareCalculatorPreview.vue` 試算機（純前端 calculateCharterFareV2，不打 Routes API）
+  - [x] 車型 select（過濾 charterPlans 齊全 + at least 1 enabled）+ 1-7 天 + 每日 plan picker
+  - [x] distanceKm / pickupTime / actualEndTime（空 = 不算 OT）/ 三山區訊號 toggle / 來回 override / extras
+  - [x] estimatedEnd 自動推算（plans 時長累加）
+  - [x] 完整 CharterFareBreakdownV2 明細 + daysBreakdown + OT 段數顯示
+- [x] **W3.4** admin/fare-rules PATCH 既有 endpoint 擴 charter block 完整驗證
+  - [x] charter.rounding 必須正整數
+  - [x] charter.overtimeGraceMin 0-60 區間
+  - [x] charter.mountain.tier.minScore 0-3 整數（新增 validateCharterMountainTiers helper，與 fare-v2 tiers 分離）
+  - [x] 向後相容：raw.charter undefined → fallback DEFAULT_FARE_RULES.charter；存在但欄位錯 → 回 error
 
 ## W4：Booking UI（後續）
 

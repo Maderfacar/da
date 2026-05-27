@@ -14,7 +14,15 @@
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import { getFareRules } from '@@/utils/fare-rules-cache';
-import type { FareRules } from '~shared/pricing';
+import type { CharterPlan, CharterPlanKey, FareRules } from '~shared/pricing';
+
+/** Charter Fare V1：合法 plan key 鎖 4h / 8h / 10h，對應時長 4 / 8 / 10 小時 */
+const CHARTER_PLAN_KEY_TO_HOURS: Readonly<Record<CharterPlanKey, number>> = {
+  '4h': 4,
+  '8h': 8,
+  '10h': 10,
+};
+const CHARTER_PLAN_KEYS: ReadonlyArray<CharterPlanKey> = ['4h', '8h', '10h'];
 
 export interface I18nLabel {
   zh: string;
@@ -38,6 +46,8 @@ export interface FleetVehicle {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional） */
   tagline?: I18nLabel;
+  /** Charter Fare V1：包車三檔時長套餐（optional；缺省 charter 訂單 fallback fare-v2） */
+  charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
 }
 
 export interface FleetLuggageType {
@@ -205,6 +215,75 @@ const isFiniteNumber = (raw: unknown): raw is number =>
 const isPositiveOrZero = (raw: unknown): raw is number =>
   isFiniteNumber(raw) && raw >= 0;
 
+/**
+ * Charter Fare V1：校驗 charterPlans map（每車型 3 個 plan）。
+ *
+ * - `null` / `undefined` → 視為清除（不寫入欄位）；其他訂單仍會 fallback fare-v2
+ * - 非物件 → error
+ * - key 必須是 '4h' / '8h' / '10h'；不在清單內 → error
+ * - 每 plan 必須是 { key, durationHours, basePrice, includedKm, extraKmRate, overtimeRatePer30min, enabled }
+ *   - key 與外層 map key 對齊
+ *   - durationHours 對齊 key（4 / 8 / 10）
+ *   - 4 個數值欄位 ≥ 0
+ *   - enabled boolean
+ * - 全部 enabled=false 的 map 視為清除（不寫入欄位）— 避免 driver/booking 端撈到「全停用」噪音
+ */
+const validateCharterPlans = (
+  raw: unknown,
+): { ok: true; value: Partial<Record<CharterPlanKey, CharterPlan>> | null } | { ok: false; error: string } => {
+  if (raw === undefined || raw === null) return { ok: true, value: null };
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ok: false, error: 'charterPlans 必須是物件' };
+  }
+  const map: Partial<Record<CharterPlanKey, CharterPlan>> = {};
+  let enabledCount = 0;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!(CHARTER_PLAN_KEYS as ReadonlyArray<string>).includes(k)) {
+      return { ok: false, error: `charterPlans.${k}：key 必須是 4h / 8h / 10h` };
+    }
+    const planKey = k as CharterPlanKey;
+    if (!v || typeof v !== 'object') {
+      return { ok: false, error: `charterPlans.${k} 必須是物件` };
+    }
+    const plan = v as Record<string, unknown>;
+    if (plan.key !== planKey) {
+      return { ok: false, error: `charterPlans.${k}.key 必須等於 ${k}` };
+    }
+    const expectHours = CHARTER_PLAN_KEY_TO_HOURS[planKey];
+    if (plan.durationHours !== expectHours) {
+      return { ok: false, error: `charterPlans.${k}.durationHours 必須是 ${expectHours}` };
+    }
+    if (!isPositiveOrZero(plan.basePrice)) {
+      return { ok: false, error: `charterPlans.${k}.basePrice 必須 ≥ 0` };
+    }
+    if (!isPositiveOrZero(plan.includedKm)) {
+      return { ok: false, error: `charterPlans.${k}.includedKm 必須 ≥ 0` };
+    }
+    if (!isPositiveOrZero(plan.extraKmRate)) {
+      return { ok: false, error: `charterPlans.${k}.extraKmRate 必須 ≥ 0` };
+    }
+    if (!isPositiveOrZero(plan.overtimeRatePer30min)) {
+      return { ok: false, error: `charterPlans.${k}.overtimeRatePer30min 必須 ≥ 0` };
+    }
+    if (typeof plan.enabled !== 'boolean') {
+      return { ok: false, error: `charterPlans.${k}.enabled 必須是 boolean` };
+    }
+    if (plan.enabled) enabledCount++;
+    map[planKey] = {
+      key: planKey,
+      durationHours: expectHours,
+      basePrice: plan.basePrice,
+      includedKm: plan.includedKm,
+      extraKmRate: plan.extraKmRate,
+      overtimeRatePer30min: plan.overtimeRatePer30min,
+      enabled: plan.enabled,
+    };
+  }
+  // 全部 enabled=false → 視為清除（fallback fare-v2）
+  if (enabledCount === 0) return { ok: true, value: null };
+  return { ok: true, value: map };
+};
+
 export const validateVehiclePayload = (
   raw: Record<string, unknown>,
 ): { ok: true; data: Omit<FleetVehicle, 'id'> } | { ok: false; error: string } => {
@@ -223,6 +302,9 @@ export const validateVehiclePayload = (
     const t = raw.tagline;
     if (t.zh.trim() || t.en.trim() || t.ja.trim()) tagline = { zh: t.zh, en: t.en, ja: t.ja };
   }
+  // Charter Fare V1：charterPlans optional（null / 全 disabled → 不寫入欄位）
+  const plansResult = validateCharterPlans(raw.charterPlans);
+  if (!plansResult.ok) return { ok: false, error: plansResult.error };
   const data: Omit<FleetVehicle, 'id'> = {
     label: raw.label,
     capacity: raw.capacity as number,
@@ -234,6 +316,7 @@ export const validateVehiclePayload = (
     enabled: raw.enabled,
   };
   if (tagline) data.tagline = tagline;
+  if (plansResult.value) data.charterPlans = plansResult.value;
   return { ok: true, data };
 };
 

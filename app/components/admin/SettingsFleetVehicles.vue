@@ -2,8 +2,30 @@
 // P23 Stage 5：admin/settings 車型 CRUD 區塊
 // 從 StoreConfig() 撈 vehicles 列表，提供新增/編輯/刪除/啟用切換。
 // 編輯 / 新增彈窗含三語 label（zh/en/ja）與 4 個數值欄位（capacity / luggageSU / baseFare / perKmRate）。
+//
+// Charter Fare V1 W3：彈窗底部加「包車套餐」摺疊區，每車型 3 個 plan card（4h / 8h / 10h），
+// 含「從其他車型複製」快捷；儲存時自動過濾全停用 → null（清除欄位）。
+
+import type { CharterPlanKey } from '~shared/pricing';
 
 type DialogMode = 'create' | 'edit';
+
+const CHARTER_PLAN_KEYS: ReadonlyArray<CharterPlanKey> = ['4h', '8h', '10h'];
+const CHARTER_PLAN_KEY_TO_HOURS: Readonly<Record<CharterPlanKey, number>> = {
+  '4h': 4,
+  '8h': 8,
+  '10h': 10,
+};
+
+interface PlanFormState {
+  enabled: boolean;
+  basePrice: number;
+  includedKm: number;
+  extraKmRate: number;
+  overtimeRatePer30min: number;
+}
+
+type CharterPlansForm = Record<CharterPlanKey, PlanFormState>;
 
 interface VehicleFormState {
   id: string;
@@ -21,6 +43,9 @@ interface VehicleFormState {
   icon: string;
   sortOrder: number;
   enabled: boolean;
+  charterPlans: CharterPlansForm;
+  charterCopySourceId: string;
+  showCharter: boolean;
 }
 
 const storeConfig = StoreConfig();
@@ -49,6 +74,24 @@ const ClickReload = async () => {
   }
 };
 
+function _emptyPlanForm(): PlanFormState {
+  return {
+    enabled: false,
+    basePrice: 0,
+    includedKm: 0,
+    extraKmRate: 0,
+    overtimeRatePer30min: 0,
+  };
+}
+
+function _emptyCharterPlans(): CharterPlansForm {
+  return {
+    '4h': _emptyPlanForm(),
+    '8h': _emptyPlanForm(),
+    '10h': _emptyPlanForm(),
+  };
+}
+
 function _emptyForm(): VehicleFormState {
   return {
     id: '',
@@ -65,7 +108,53 @@ function _emptyForm(): VehicleFormState {
     icon: 'mdi:car',
     sortOrder: 99,
     enabled: true,
+    charterPlans: _emptyCharterPlans(),
+    charterCopySourceId: '',
+    showCharter: false,
   };
+}
+
+/**
+ * 由 FleetVehicle.charterPlans 物件還原 form 用的 CharterPlansForm。
+ * 缺 key → 空 plan（disabled）；多餘 key → 忽略。
+ */
+function _planFromVehicle(plans: FleetVehicleDto['charterPlans']): CharterPlansForm {
+  const out = _emptyCharterPlans();
+  if (!plans) return out;
+  for (const k of CHARTER_PLAN_KEYS) {
+    const p = plans[k];
+    if (!p) continue;
+    out[k] = {
+      enabled: !!p.enabled,
+      basePrice: Number(p.basePrice) || 0,
+      includedKm: Number(p.includedKm) || 0,
+      extraKmRate: Number(p.extraKmRate) || 0,
+      overtimeRatePer30min: Number(p.overtimeRatePer30min) || 0,
+    };
+  }
+  return out;
+}
+
+/**
+ * 把 form charterPlans 收成 payload；全部 plan 都 disabled → 回 null（後端清除欄位）。
+ */
+function _planToPayload(plans: CharterPlansForm): CreateVehiclePayload['charterPlans'] {
+  const map: Partial<Record<CharterPlanKey, CharterPlanDto>> = {};
+  let enabledCount = 0;
+  for (const k of CHARTER_PLAN_KEYS) {
+    const p = plans[k];
+    map[k] = {
+      key: k,
+      durationHours: CHARTER_PLAN_KEY_TO_HOURS[k],
+      basePrice: p.basePrice,
+      includedKm: p.includedKm,
+      extraKmRate: p.extraKmRate,
+      overtimeRatePer30min: p.overtimeRatePer30min,
+      enabled: p.enabled,
+    };
+    if (p.enabled) enabledCount++;
+  }
+  return enabledCount === 0 ? null : map;
 }
 
 const ClickOpenCreate = () => {
@@ -94,10 +183,24 @@ const ClickOpenEdit = (v: FleetVehicleDto) => {
   form.icon = v.icon;
   form.sortOrder = v.sortOrder;
   form.enabled = v.enabled;
+  form.charterPlans = _planFromVehicle(v.charterPlans);
+  form.charterCopySourceId = '';
+  form.showCharter = !!v.charterPlans && Object.keys(v.charterPlans).length > 0;
   dialog.mode = 'edit';
   dialog.original = v;
   dialog.error = '';
   dialog.open = true;
+};
+
+// 從其他車型複製 charterPlans（pull-style，使用者要在來源 select 選好再按按鈕）
+const ClickCopyCharterPlans = () => {
+  const src = storeConfig.vehicles.find((v) => v.id === form.charterCopySourceId);
+  if (!src || !src.charterPlans) {
+    ElMessage({ message: '所選來源車型尚未設定包車套餐', type: 'warning' });
+    return;
+  }
+  form.charterPlans = _planFromVehicle(src.charterPlans);
+  ElMessage({ message: `已從「${src.label.zh}」複製套餐`, type: 'success' });
 };
 
 const ClickClose = () => {
@@ -118,6 +221,15 @@ const _validate = (): string => {
   if (!(form.perKmRate >= 0)) return 'perKmRate 必須 ≥ 0';
   if (!form.icon.trim()) return 'icon 必填（例：mdi:car）';
   if (!Number.isInteger(form.sortOrder)) return 'sortOrder 必須整數';
+  // 包車套餐欄位驗證：僅 enabled=true 的 plan 強制 4 數值欄位 > 0（admin 沒填會被乘客扣 0 元）
+  for (const k of CHARTER_PLAN_KEYS) {
+    const p = form.charterPlans[k];
+    if (!Number.isFinite(p.basePrice) || p.basePrice < 0) return `包車 ${k} basePrice 必須 ≥ 0`;
+    if (!Number.isFinite(p.includedKm) || p.includedKm < 0) return `包車 ${k} includedKm 必須 ≥ 0`;
+    if (!Number.isFinite(p.extraKmRate) || p.extraKmRate < 0) return `包車 ${k} extraKmRate 必須 ≥ 0`;
+    if (!Number.isFinite(p.overtimeRatePer30min) || p.overtimeRatePer30min < 0) return `包車 ${k} OT 段價必須 ≥ 0`;
+    if (p.enabled && p.basePrice <= 0) return `包車 ${k} 已啟用但 basePrice 為 0；請填寫或停用`;
+  }
   return '';
 };
 
@@ -148,6 +260,7 @@ const ClickSave = async () => {
       sortOrder: form.sortOrder,
       enabled: form.enabled,
       tagline: taglinePayload,
+      charterPlans: _planToPayload(form.charterPlans),
     };
     const res = dialog.mode === 'create'
       ? await $api.CreateFleetVehicle({ ...payload, id: form.id.trim() })
@@ -178,6 +291,8 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
       enabled: !v.enabled,
       // Booking v2：保留既有 tagline，避免被 PUT 全量覆寫清掉
       tagline: v.tagline ?? null,
+      // Charter Fare V1：保留既有 charterPlans，避免快速切啟用後 plans 被清掉
+      charterPlans: v.charterPlans ?? null,
     });
     if (res.status?.code !== 200) {
       ElMessage({ message: res.status?.message?.zh_tw ?? '切換失敗', type: 'error' });
@@ -355,6 +470,85 @@ const ClickDelete = async (v: FleetVehicleDto) => {
               type="button"
             )
               span.SettingsFleetVehicles__switch-thumb
+
+        //- Charter Fare V1：包車套餐（3 個 plan card，可摺疊）
+        .SettingsFleetVehicles__charter
+          button.SettingsFleetVehicles__charter-toggle(
+            type="button"
+            :class="{ 'is-open': form.showCharter }"
+            @click="form.showCharter = !form.showCharter"
+          )
+            span.SettingsFleetVehicles__charter-toggle-label 包車套餐（charter fare v1）
+            span.SettingsFleetVehicles__charter-toggle-hint {{ form.showCharter ? '收起' : '展開' }}
+          template(v-if="form.showCharter")
+            .SettingsFleetVehicles__charter-hint
+              | 三檔可獨立啟用；至少 1 個 enabled 才會套包車計費，全停用 → charter 訂單 fallback fare-v2。
+            .SettingsFleetVehicles__charter-copy
+              span.SettingsFleetVehicles__charter-copy-label 從其他車型複製
+              ElSelect(
+                v-model="form.charterCopySourceId"
+                placeholder="選擇來源車型"
+                clearable
+                value-on-clear=""
+                style="flex:1;min-width:160px"
+              )
+                ElOption(
+                  v-for="src in storeConfig.vehicles.filter((vv) => vv.id !== form.id && vv.charterPlans)"
+                  :key="src.id"
+                  :label="src.label.zh"
+                  :value="src.id"
+                )
+              button.SettingsFleetVehicles__btn.is-toggle(
+                type="button"
+                :disabled="!form.charterCopySourceId"
+                @click="ClickCopyCharterPlans"
+              ) 複製套餐
+            .SettingsFleetVehicles__plan-grid
+              .SettingsFleetVehicles__plan(
+                v-for="k in CHARTER_PLAN_KEYS"
+                :key="k"
+                :class="{ 'is-on': form.charterPlans[k].enabled }"
+              )
+                .SettingsFleetVehicles__plan-head
+                  span.SettingsFleetVehicles__plan-title {{ k }}（{{ CHARTER_PLAN_KEY_TO_HOURS[k] }} 小時）
+                  button.SettingsFleetVehicles__switch.is-small(
+                    type="button"
+                    :class="{ 'is-on': form.charterPlans[k].enabled }"
+                    @click="form.charterPlans[k].enabled = !form.charterPlans[k].enabled"
+                  )
+                    span.SettingsFleetVehicles__switch-thumb
+                .SettingsFleetVehicles__plan-field
+                  label.SettingsFleetVehicles__label basePrice (NT$)
+                  input.SettingsFleetVehicles__input(
+                    v-model.number="form.charterPlans[k].basePrice"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                  )
+                .SettingsFleetVehicles__plan-field
+                  label.SettingsFleetVehicles__label includedKm
+                  input.SettingsFleetVehicles__input(
+                    v-model.number="form.charterPlans[k].includedKm"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                  )
+                .SettingsFleetVehicles__plan-field
+                  label.SettingsFleetVehicles__label extraKm (NT$/km)
+                  input.SettingsFleetVehicles__input(
+                    v-model.number="form.charterPlans[k].extraKmRate"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                  )
+                .SettingsFleetVehicles__plan-field
+                  label.SettingsFleetVehicles__label OT 30min (NT$)
+                  input.SettingsFleetVehicles__input(
+                    v-model.number="form.charterPlans[k].overtimeRatePer30min"
+                    type="number"
+                    min="0"
+                    inputmode="numeric"
+                  )
 
         .SettingsFleetVehicles__error(v-if="dialog.error") ⚠️ {{ dialog.error }}
 
@@ -670,6 +864,131 @@ $surface-2: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   background: #fff;
   transition: transform 0.18s;
+}
+
+.SettingsFleetVehicles__switch.is-small {
+  width: 38px;
+  height: 22px;
+
+  .SettingsFleetVehicles__switch-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.is-on .SettingsFleetVehicles__switch-thumb {
+    transform: translateX(16px);
+  }
+}
+
+// ── Charter Fare V1：包車套餐 section ─────────────────────────────────────
+.SettingsFleetVehicles__charter {
+  border-top: 1px dashed $border;
+  padding-top: 14px;
+  margin-top: 2px;
+}
+
+.SettingsFleetVehicles__charter-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &.is-open {
+    background: rgba($amber, 0.08);
+    border-color: rgba($amber, 0.35);
+  }
+}
+
+.SettingsFleetVehicles__charter-toggle-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.SettingsFleetVehicles__charter-toggle-hint {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  color: $muted;
+}
+
+.SettingsFleetVehicles__charter-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 10px 2px 6px;
+  line-height: 1.5;
+}
+
+.SettingsFleetVehicles__charter-copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 10px;
+  flex-wrap: wrap;
+}
+
+.SettingsFleetVehicles__charter-copy-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: $muted;
+}
+
+.SettingsFleetVehicles__plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 699.98px) {
+  .SettingsFleetVehicles__plan-grid { grid-template-columns: 1fr; }
+}
+
+.SettingsFleetVehicles__plan {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.15s, background 0.15s;
+
+  &.is-on {
+    border-color: rgba($amber, 0.45);
+    background: rgba($amber, 0.06);
+  }
+}
+
+.SettingsFleetVehicles__plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.SettingsFleetVehicles__plan-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.SettingsFleetVehicles__plan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .SettingsFleetVehicles__error {

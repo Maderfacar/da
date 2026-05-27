@@ -372,6 +372,14 @@ const ClickRemoveMountainTier = (index: number) => {
   fareRules.value.mountain.tiers.splice(index, 1);
 };
 
+// Charter Fare V1：charter.mountain.tiers 階梯操作（minScore 限制 0-3 整數，由 server 端 validateCharterMountainTiers 把關）
+const ClickAddCharterMountainTier = () => {
+  fareRules.value.charter.mountain.tiers.push({ minScore: 2, multiplier: 1.4 } as MountainTier);
+};
+const ClickRemoveCharterMountainTier = (index: number) => {
+  fareRules.value.charter.mountain.tiers.splice(index, 1);
+};
+
 const ClickAddPeakWindow = () => {
   fareRules.value.trafficJam.peakWindows.push({
     days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
@@ -491,6 +499,23 @@ const _validateFareRules = (): string => {
   for (const w of r.surcharge.windows) {
     if (!w.start || !w.end) return '加價時段的起訖時間皆必填';
     if (w.days.length === 0) return '每個加價時段至少需選一天';
+  }
+  // Charter Fare V1：charter block 完整檢查（server 端 validateFareRules 已嚴格驗證，前端先擋常見錯誤）
+  const ch = r.charter;
+  if (!Number.isInteger(ch.rounding) || ch.rounding < 1) return '包車進位基數必須是正整數';
+  if (typeof ch.overtimeGraceMin !== 'number' || ch.overtimeGraceMin < 0 || ch.overtimeGraceMin > 60) {
+    return '包車超時寬限分鐘必須在 0-60';
+  }
+  if (!(ch.roundTripFlatFee >= 0)) return '包車來回固定加收必須 ≥ 0';
+  if (!(ch.roundTripBufferKm >= 0)) return '包車來回 buffer (km) 必須 ≥ 0';
+  if (!(ch.roundTripOverShootMaxKm >= 0)) return '包車來回過頭門檻 (km) 必須 ≥ 0';
+  if (!(ch.overnightFlatFee >= 0)) return '包車每晚過夜固定費必須 ≥ 0';
+  if (ch.mountain.tiers.length === 0) return '包車山區階梯至少 1 段';
+  for (const t of ch.mountain.tiers) {
+    if (!Number.isInteger(t.minScore) || t.minScore < 0 || t.minScore > 3) {
+      return '包車山區階梯 minScore 必須是 0-3 整數';
+    }
+    if (!(t.multiplier > 0)) return '包車山區階梯 multiplier 必須 > 0';
   }
   return '';
 };
@@ -1114,10 +1139,116 @@ const ClickSaveFareRules = async () => {
               inputmode="numeric"
             )
 
+      //- ── Charter Fare V1（包車車資 v1，super only）─────────────────────
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 包車車資 v1 — 基本
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.charter.enabled")
+            span 啟用
+        .PageAdminSettings__fare-subhead
+          | 包車計費引擎獨立於 fare-v2；停用後 charter 訂單 fallback fare-v2 公式。
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 進位至（元）
+            ElInput(
+              v-model.number="fareRules.charter.rounding"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label OT 寬限（分鐘 0-60）
+            ElInput(
+              v-model.number="fareRules.charter.overtimeGraceMin"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 來回固定加收（元）
+            ElInput(
+              v-model.number="fareRules.charter.roundTripFlatFee"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 過夜固定加收（元 / 晚）
+            ElInput(
+              v-model.number="fareRules.charter.overnightFlatFee"
+              type="number"
+              inputmode="numeric"
+            )
+
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 包車 — 來回判定
+        .PageAdminSettings__fare-subhead
+          | D 到 (X→A polyline) 最短距離 ≤ buffer，或 D 到 A 直線 ≤ overshoot 兩條件 OR 命中 → 視為來回。
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label buffer (km)
+            ElInput(
+              v-model.number="fareRules.charter.roundTripBufferKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label overshoot 過頭 (km)
+            ElInput(
+              v-model.number="fareRules.charter.roundTripOverShootMaxKm"
+              type="number"
+              inputmode="numeric"
+            )
+
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 包車 — 山區階梯
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.charter.mountain.enabled")
+            span 啟用
+        .PageAdminSettings__fare-subhead
+          | 沿用 fare-v2 三 threshold；僅 multiplier 階梯獨立（minScore 限 0-3 整數）。
+        .PageAdminSettings__fare-tier(
+          v-for="(tier, i) in fareRules.charter.mountain.tiers"
+          :key="i"
+        )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 達分數（0-3）
+            ElInput(
+              v-model.number="tier.minScore"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 係數
+            ElInput(
+              v-model.number="tier.multiplier"
+              type="number"
+              inputmode="numeric"
+            )
+          button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+            @click="ClickRemoveCharterMountainTier(i)"
+          ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddCharterMountainTier"
+        ) + 新增階梯
+
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 包車 — 時段聯動
+        .PageAdminSettings__fare-subhead
+          | window 自身可設 orderTypes 過濾；這裡是 charter 全域開關，off → charter 訂單一律不套對應 window。
+        label.PageAdminSettings__fare-switch-label.PageAdminSettings__fare-inline-check
+          input(type="checkbox" v-model="fareRules.charter.applySurchargeWindows")
+          span 套用時段加價（applySurchargeWindows）
+        label.PageAdminSettings__fare-switch-label.PageAdminSettings__fare-inline-check
+          input(type="checkbox" v-model="fareRules.charter.applyPromoWindows")
+          span 套用優惠時段（applyPromoWindows）
+
       .PageAdminSettings__fare-error(v-if="fareRulesError") ⚠️ {{ fareRulesError }}
 
-      //- 試算機
+      //- 試算機（fare-v2 + charter 各一）
       AdminFareCalculatorPreview(:rules="fareRules")
+      AdminCharterFareCalculatorPreview(:rules="fareRules")
 
   //- 折扣碼管理
   .PageAdminSettings__section(v-show="mainTab === 'promotions'")

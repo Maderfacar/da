@@ -76,6 +76,28 @@ function validateMountainTiers(raw: unknown): MountainTier[] | string {
   return tiers;
 }
 
+/**
+ * Charter 山區階梯驗證：minScore 限制在 0-3 整數（三訊號最大分數為 3）。
+ * 與 fare-v2 validateMountainTiers 共用相同 multiplier 約束，但 minScore 加上界。
+ */
+function validateCharterMountainTiers(raw: unknown): MountainTier[] | string {
+  if (!Array.isArray(raw) || raw.length === 0) return 'charter.mountain.tiers 必須是非空陣列';
+  const tiers: MountainTier[] = [];
+  for (const t of raw) {
+    if (!isObj(t)) return 'charter.mountain.tiers 元素必須是物件';
+    if (
+      !Number.isInteger(t.minScore) ||
+      (t.minScore as number) < 0 ||
+      (t.minScore as number) > 3
+    ) {
+      return 'charter.mountain.tier.minScore 必須是 0-3 整數';
+    }
+    if (!isPosNum(t.multiplier)) return 'charter.mountain.tier.multiplier 必須是正數';
+    tiers.push({ minScore: t.minScore as number, multiplier: t.multiplier });
+  }
+  return tiers;
+}
+
 function validatePeakWindows(raw: unknown): PeakWindow[] | string {
   if (!Array.isArray(raw)) return 'trafficJam.peakWindows 必須是陣列';
   const windows: PeakWindow[] = [];
@@ -283,16 +305,25 @@ export function validateFareRules(raw: unknown): ValidateResult {
     distanceTier = { enabled: d.enabled, tiers: distanceTierTiers };
   }
 
-  // charter（Charter Fare V1 W2：最小驗證 — admin UI 在 W3 才上完整 PATCH 編輯。
-  // 舊 fare_rules/v1 doc 無此欄位 → 套 DEFAULT_FARE_RULES.charter，與 promo / surcharge 同模式。
-  // 缺欄位 → 用 default；型別錯誤 → 回 error）
+  // charter（Charter Fare V1 W3：admin UI 已上完整 PATCH 編輯路徑，本驗證為完整模式。
+  // 向後相容：舊 fare_rules/v1 doc 無此欄位 → fallback DEFAULT_FARE_RULES.charter；
+  // raw.charter 存在但欄位錯 → 回 error（W3 新增加嚴格）。
+  // 完整驗證：rounding 正整數、grace 0-60、mountain tier minScore 整數 0-3。）
   let charter: CharterRule = DEFAULT_FARE_RULES.charter;
   if (raw.charter !== undefined) {
     const ch = raw.charter;
     if (!isObj(ch)) return { ok: false, error: 'charter 必須是物件' };
     if (!isBool(ch.enabled)) return { ok: false, error: 'charter.enabled 必須是 boolean' };
-    if (!isPosNum(ch.rounding)) return { ok: false, error: 'charter.rounding 必須是正數' };
-    if (!isNonNegNum(ch.overtimeGraceMin)) return { ok: false, error: 'charter.overtimeGraceMin 必須 ≥ 0' };
+    if (!Number.isInteger(ch.rounding) || (ch.rounding as number) < 1) {
+      return { ok: false, error: 'charter.rounding 必須是正整數' };
+    }
+    if (
+      !isNum(ch.overtimeGraceMin) ||
+      (ch.overtimeGraceMin as number) < 0 ||
+      (ch.overtimeGraceMin as number) > 60
+    ) {
+      return { ok: false, error: 'charter.overtimeGraceMin 必須是 0-60' };
+    }
     if (!isNonNegNum(ch.roundTripFlatFee)) return { ok: false, error: 'charter.roundTripFlatFee 必須 ≥ 0' };
     if (!isNonNegNum(ch.roundTripBufferKm)) return { ok: false, error: 'charter.roundTripBufferKm 必須 ≥ 0' };
     if (!isNonNegNum(ch.roundTripOverShootMaxKm)) return { ok: false, error: 'charter.roundTripOverShootMaxKm 必須 ≥ 0' };
@@ -302,12 +333,12 @@ export function validateFareRules(raw: unknown): ValidateResult {
     const cm = ch.mountain;
     if (!isObj(cm)) return { ok: false, error: 'charter.mountain 缺失' };
     if (!isBool(cm.enabled)) return { ok: false, error: 'charter.mountain.enabled 必須是 boolean' };
-    const charterTiers = validateMountainTiers(cm.tiers);
-    if (typeof charterTiers === 'string') return { ok: false, error: `charter.${charterTiers}` };
+    const charterTiers = validateCharterMountainTiers(cm.tiers);
+    if (typeof charterTiers === 'string') return { ok: false, error: charterTiers };
     charter = {
       enabled: ch.enabled,
-      rounding: ch.rounding,
-      overtimeGraceMin: ch.overtimeGraceMin,
+      rounding: ch.rounding as number,
+      overtimeGraceMin: ch.overtimeGraceMin as number,
       roundTripFlatFee: ch.roundTripFlatFee,
       roundTripBufferKm: ch.roundTripBufferKm,
       roundTripOverShootMaxKm: ch.roundTripOverShootMaxKm,
