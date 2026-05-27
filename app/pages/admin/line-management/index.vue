@@ -338,7 +338,8 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 // W7：列表 badge label + super 鎖
-const storeSelf = StoreSelf();
+// 注意：必須用 StoreAuth（admin level 在這），StoreSelf 沒有 isSuper → 會永遠鎖死所有 super 模板
+const storeAuth = StoreAuth();
 
 const TRIGGER_TYPE_BADGE: Record<string, { icon: string; label: string }> = {
   auto: { icon: '📅', label: '自動' },
@@ -360,7 +361,7 @@ const AUDIENCE_BADGE: Record<string, { icon: string; label: string }> = {
 };
 
 const IsTemplateLocked = (t: NotificationTemplateItem): boolean =>
-  t.meta.requiresSuperLevel && !storeSelf.isSuper;
+  t.meta.requiresSuperLevel && !storeAuth.isSuper;
 
 const ClickSelectTemplate = (t: NotificationTemplateItem): void => {
   if (IsTemplateLocked(t)) {

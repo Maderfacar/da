@@ -100,7 +100,9 @@ export default defineEventHandler(async (event) => {
           const dd = driverSnap.data() ?? {};
           const app = (dd.application as Record<string, unknown> | undefined) ?? {};
           driver = {
-            displayName: (dd.displayName as string) ?? (app.driverName as string) ?? '',
+            // 司機顯示名：優先註冊聯絡姓名（application.driverName），fallback LINE displayName
+            // 避免司機未編輯 profile 前乘客端看到的是 LINE 暱稱
+            displayName: (app.driverName as string) ?? (dd.displayName as string) ?? '',
             pictureUrl: (dd.pictureUrl as string) ?? '',
             plateNumber: (app.plateNumber as string) ?? '',
             vehicleType: (dd.vehicleType as string) ?? '',
