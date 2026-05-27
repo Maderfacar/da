@@ -27,7 +27,8 @@ interface ApplyBody {
   driverName: string;
   phone: string;
   plateNumber: string;
-  vehicleType: 'sedan' | 'mpv' | 'suv' | 'van';
+  /** 自由文字「車輛品牌與型號」（例：Tesla Model S）— 取代舊 vehicleType 4 選 1 radio */
+  vehicleModel: string;
   bankCode: string;
   bankAccount: string;
   documents: {
@@ -89,7 +90,7 @@ export default defineEventHandler(async (event) => {
 
     const requiredFields: (keyof ApplyBody)[] = [
       'lineUserId', 'driverName', 'phone', 'plateNumber',
-      'vehicleType', 'bankCode', 'bankAccount', 'documents',
+      'vehicleModel', 'bankCode', 'bankAccount', 'documents',
     ];
     const missingTop = requiredFields.filter((k) => !body[k]);
     if (missingTop.length > 0) {
@@ -103,8 +104,8 @@ export default defineEventHandler(async (event) => {
       return badRequestError({ zh_tw: `證件圖片缺失：${missingDocs.join(', ')}`, en: `Missing documents: ${missingDocs.join(', ')}`, ja: `証明書画像不足: ${missingDocs.join(', ')}` });
     }
 
-    if (!['sedan', 'mpv', 'suv', 'van'].includes(body.vehicleType)) {
-      return badRequestError({ zh_tw: '車型無效', en: 'Invalid vehicle type', ja: '車種が無効です' });
+    if (typeof body.vehicleModel !== 'string' || body.vehicleModel.trim().length === 0 || body.vehicleModel.length > 80) {
+      return badRequestError({ zh_tw: '車輛品牌與型號格式錯誤', en: 'Invalid vehicle model', ja: '車両のブランド/型番が不正です' });
     }
 
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
@@ -155,7 +156,7 @@ export default defineEventHandler(async (event) => {
       driverName: body.driverName,
       phone: body.phone,
       plateNumber: body.plateNumber,
-      vehicleType: body.vehicleType,
+      vehicleModel: body.vehicleModel.trim(),
       bankCode: body.bankCode,
       bankAccount: body.bankAccount,
       documents: {
@@ -187,7 +188,8 @@ export default defineEventHandler(async (event) => {
         todayTrips: 0,
         todayEarnings: 0,
         driverCategory: '0',
-        vehicleType: body.vehicleType,
+        // 車型分類已淘汰；改記司機自填的品牌與型號（top-level 方便 admin 列表/詳情顯示）
+        vehicleModel: body.vehicleModel.trim(),
         application: applicationPayload,
         createdAt: FieldValue.serverTimestamp(),
         lastActiveAt: FieldValue.serverTimestamp(),
@@ -197,7 +199,7 @@ export default defineEventHandler(async (event) => {
         lineUserId: body.lineUserId,
         displayName,
         pictureUrl,
-        vehicleType: body.vehicleType,
+        vehicleModel: body.vehicleModel.trim(),
         application: applicationPayload,
         lastActiveAt: FieldValue.serverTimestamp(),
       }, { merge: true });
@@ -216,7 +218,7 @@ export default defineEventHandler(async (event) => {
       try {
         await notifyAdmins(db, 'adminNotify.driverApplied', {
           driverName: body.driverName,
-          vehicleType: body.vehicleType,
+          vehicleType: body.vehicleModel.trim(),
         });
       } catch (err) {
         console.error('[driver/apply] admin notify failed:', err);

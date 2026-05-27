@@ -37,6 +37,7 @@ interface DriverDetail {
     phone: string;
     plateNumber: string;
     vehicleType: string;
+    vehicleModel: string;
     bankCode: string;
     bankAccount: string;
     documents: DriverDocs;
@@ -84,6 +85,15 @@ const VEHICLE_LABEL: Record<string, string> = {
   mpv: 'MPV',
   suv: 'SUV',
   van: '廂型車',
+};
+
+// 新欄位 vehicleModel 自由文字優先；舊資料 fallback 顯示 4 選 1 分類
+const VehicleDisplay = (app: { vehicleModel?: string; vehicleType?: string }): string => {
+  const m = app.vehicleModel?.trim();
+  if (m) return m;
+  const t = app.vehicleType?.trim();
+  if (!t) return '—';
+  return VEHICLE_LABEL[t] ?? t;
 };
 
 const _ts = (v: unknown): string | null => {
@@ -191,6 +201,7 @@ const ApiLoadDriver = async () => {
         phone: (app1.phone as string) ?? '',
         plateNumber: (app1.plateNumber as string) ?? '',
         vehicleType: (app1.vehicleType as string) ?? '',
+        vehicleModel: (app1.vehicleModel as string) ?? '',
         bankCode: (app1.bankCode as string) ?? '',
         bankAccount: (app1.bankAccount as string) ?? '',
         documents: freshDocs,
@@ -470,8 +481,8 @@ onMounted(() => {
               span.PageAdminDriverDetail__row-key 車牌號碼
               span.PageAdminDriverDetail__row-val {{ driver.application.plateNumber || '—' }}
             .PageAdminDriverDetail__row
-              span.PageAdminDriverDetail__row-key 車種
-              span.PageAdminDriverDetail__row-val {{ VEHICLE_LABEL[driver.application.vehicleType] || driver.application.vehicleType || '—' }}
+              span.PageAdminDriverDetail__row-key 車輛品牌與型號
+              span.PageAdminDriverDetail__row-val {{ VehicleDisplay(driver.application) }}
             .PageAdminDriverDetail__row
               span.PageAdminDriverDetail__row-key 銀行代號 / 帳號
               span.PageAdminDriverDetail__row-val {{ driver.application.bankCode || '—' }} / {{ driver.application.bankAccount || '—' }}

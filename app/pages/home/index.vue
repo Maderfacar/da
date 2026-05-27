@@ -3,14 +3,17 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
 
-// ── Wave 2 P4：「下一趟」單張卡片（取代原 upcoming 三筆列表，/upcoming 整頁刪除）──
+// ── Home redesign 2026-05-27 ──────────────────────────────
+// 重排首頁：Hero → 安心接送的理由(合併 Steps+LINE) → 即將到來行程 → 預約您的行程 CTA → 現正優惠
+// 移除：RouteBoard / Coverage / FAQ / Closing（component 檔保留以利未來重用）
+
 const { isSignIn } = storeToRefs(StoreAuth());
 const storeConfig = StoreConfig();
 
 const nextTrip = ref<UpcomingOrder | null>(null);
 const nextTripLoaded = ref(false);
 
-const _LocLabel = (loc: GooglePlace | undefined): string => {
+const _LocLabel = (loc: GooglePlace | undefined | null): string => {
   if (!loc) return '--';
   const raw = loc.displayName ?? loc.address ?? '--';
   return raw.split(',')[0].split('(')[0].trim();
@@ -21,15 +24,39 @@ const nextTripDisplay = computed(() => {
   const o = nextTrip.value;
   const dt = $dayjs(o.pickupDateTime);
   const vehicleCfg = storeConfig.GetVehicle(o.vehicleType);
+  const stopovers = Array.isArray(o.stopovers) ? o.stopovers.filter(Boolean) : [];
+
+  // 司機車型顯示：vehicleModel（自由文字）> 訂單 vehicleType label > driver.vehicleType label
+  const driverVehicleLabel = (() => {
+    if (!o.driver) return '';
+    const m = o.driver.vehicleModel?.trim();
+    if (m) return m;
+    const t2 = o.driver.vehicleType?.trim();
+    if (!t2) return '';
+    const cfg = storeConfig.GetVehicle(t2);
+    return cfg?.label.zh ?? t2;
+  })();
+
   return {
     orderId: o.orderId,
-    from: _LocLabel(o.pickupLocation),
-    to: _LocLabel(o.dropoffLocation),
+    pickup: _LocLabel(o.pickupLocation),
+    stopovers: stopovers.map((s) => _LocLabel(s)).filter((s) => s !== '--'),
+    dropoff: _LocLabel(o.dropoffLocation),
     status: o.orderStatus,
     date: dt.isValid() ? dt.format('YYYY.MM.DD') : '',
     time: dt.isValid() ? dt.format('HH:mm') : '',
+    weekday: dt.isValid() ? dt.format('dd') : '',
     vehicle: vehicleCfg?.label.zh ?? t(`vehicle.${o.vehicleType}`, o.vehicleType),
     passengers: o.passengerCount,
+    flightNumber: o.flightNumber ?? '',
+    driver: o.driver
+      ? {
+          displayName: o.driver.displayName,
+          phone: o.driver.phone,
+          plateNumber: o.driver.plateNumber,
+          vehicleLabel: driverVehicleLabel,
+        }
+      : null,
   };
 });
 
@@ -57,7 +84,7 @@ const ClickOpenNextTrip = () => {
   if (nextTrip.value) navigateTo(`/orders/${nextTrip.value.orderId}`);
 };
 
-// 30s polling + visibility refresh（與 admin/driver/passenger orders 一致）
+// 30s polling + visibility refresh
 let nextTripTimer: ReturnType<typeof setInterval> | null = null;
 const NEXT_TRIP_POLL_MS = 30_000;
 const _OnVisibilityChange = () => {
@@ -65,9 +92,7 @@ const _OnVisibilityChange = () => {
 };
 watch(isSignIn, () => { ApiLoadNextTrip(); });
 
-// ── Scroll reveal observer（提升至 setup 範圍，動態加入的 .reveal 也可補 observe） ──
-// 修 bug：onMounted 跑 querySelectorAll('.reveal') 時 trip-card 還在 v-if="nextTripDisplay"
-// 後面尚未 render，observer 沒抓到它 → 永遠維持 opacity: 0 → 「卡片可點但空白」
+// Scroll reveal observer
 let revealObserver: IntersectionObserver | null = null;
 const _observedReveals = typeof WeakSet !== 'undefined' ? new WeakSet<Element>() : null;
 const _observeNewReveals = () => {
@@ -79,20 +104,16 @@ const _observeNewReveals = () => {
   });
 };
 
-// 任何 nextTrip 狀態變化 → DOM 更新後補 observe（新出現的 trip-card / empty-cta）
 watch([nextTripLoaded, nextTripDisplay], async () => {
   await nextTick();
   _observeNewReveals();
 });
 
-// ── 生命週期 ──────────────────────────────────────────────
 onMounted(() => {
-  // 載入下一趟
   ApiLoadNextTrip();
   nextTripTimer = setInterval(ApiLoadNextTrip, NEXT_TRIP_POLL_MS);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', _OnVisibilityChange);
 
-  // Scroll reveal
   revealObserver = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (e.isIntersecting) e.target.classList.add('visible');
@@ -115,9 +136,16 @@ onUnmounted(() => {
       .PageHome__hero-bg
       .PageHome__hero-runway
 
+      //- 浮動機場碼水印（9 個錯位散佈）
       .PageHome__airport-badge.is-tpe TPE
       .PageHome__airport-badge.is-jfk JFK
       .PageHome__airport-badge.is-nrt NRT
+      .PageHome__airport-badge.is-hnd HND
+      .PageHome__airport-badge.is-icn ICN
+      .PageHome__airport-badge.is-lax LAX
+      .PageHome__airport-badge.is-hkg HKG
+      .PageHome__airport-badge.is-sin SIN
+      .PageHome__airport-badge.is-sfo SFO
 
       svg.PageHome__hero-plane(viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg")
         path(d="M44 8L4 22L18 26L20 44L28 32L40 36L44 8Z" fill="#1A1814" stroke="#1A1814" stroke-width="1.5" stroke-linejoin="round")
@@ -131,17 +159,21 @@ onUnmounted(() => {
         .PageHome__hero-cta
           button.PageHome__cta-primary(@click="navigateTo('/booking')") {{ $t('home.hero.cta.book') }}
           button.PageHome__cta-secondary(@click="navigateTo('/fare')") {{ $t('home.hero.cta.fare') }}
+          button.PageHome__cta-secondary(@click="navigateTo('/fleet')") {{ $t('home.hero.cta.fleet') }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
 
-  //- ── Wave 2 P4：下一趟（單張卡 / 無單 CTA）──────────────────
-  section#nextTrip.PageHome__section.is-cream
+  //- ── 1. 安心接送的理由（合併 Steps + LINE Only 提示）───────
+  PassengerHomeFeatures
+
+  //- ── 2. 即將到來行程 ──────────────────────────────────────
+  section#nextTrip.PageHome__section.is-off-white
     .PageHome__section-label DEPARTURE & ARRIVAL
     h2.PageHome__section-title {{ $t('home.nextTrip.title') }}
     p.PageHome__section-desc {{ nextTripDisplay ? $t('home.nextTrip.descHas') : $t('home.nextTrip.descEmpty') }}
 
-    //- 有單：點擊跳訂單詳情頁
+    //- 有單：完整資訊 + 點擊跳訂單詳情頁
     .PageHome__trip-card.is-clickable.reveal(
       v-if="nextTripDisplay"
       role="button"
@@ -149,30 +181,61 @@ onUnmounted(() => {
       @click="ClickOpenNextTrip"
       @keydown.enter="ClickOpenNextTrip"
     )
-      .PageHome__trip-header
-        .PageHome__trip-route
-          .PageHome__route-code {{ nextTripDisplay.from }}
-          .PageHome__route-arrow
-            .PageHome__route-line
-            span ✈
-            .PageHome__route-line
-          .PageHome__route-code {{ nextTripDisplay.to }}
+      //- 區塊 1：日期時間（置頂）
+      .PageHome__trip-datetime
+        .PageHome__trip-datetime-left
+          .PageHome__trip-date {{ nextTripDisplay.date }}
+          .PageHome__trip-weekday(v-if="nextTripDisplay.weekday") {{ nextTripDisplay.weekday }}
+        .PageHome__trip-time {{ nextTripDisplay.time }}
         span.PageHome__trip-status(:class="`is-${nextTripDisplay.status}`") {{ $t('status.' + nextTripDisplay.status) }}
-      .PageHome__trip-info
-        .PageHome__info-item
-          .PageHome__info-label {{ $t('home.nextTrip.date') }}
-          .PageHome__info-val {{ nextTripDisplay.date }}
-        .PageHome__info-item
-          .PageHome__info-label {{ $t('home.nextTrip.time') }}
-          .PageHome__info-val {{ nextTripDisplay.time }}
-        .PageHome__info-item
-          .PageHome__info-label {{ $t('home.nextTrip.vehicle') }}
-          .PageHome__info-val {{ nextTripDisplay.vehicle }}
-        .PageHome__info-item
-          .PageHome__info-label {{ $t('home.nextTrip.passengers') }}
-          .PageHome__info-val {{ nextTripDisplay.passengers }}
 
-    //- 無單：CTA 卡（已登入但無 active order；未登入也走此分支以鼓勵訂車）
+      //- 區塊 2：路線（上車 → 中途 → 下車）
+      .PageHome__trip-route
+        .PageHome__trip-route-row
+          span.PageHome__trip-route-dot.is-pickup
+          .PageHome__trip-route-text
+            .PageHome__trip-route-label {{ $t('home.nextTrip.pickup') }}
+            .PageHome__trip-route-val {{ nextTripDisplay.pickup }}
+        .PageHome__trip-route-row(v-for="(s, i) in nextTripDisplay.stopovers" :key="i")
+          span.PageHome__trip-route-dot.is-stop
+          .PageHome__trip-route-text
+            .PageHome__trip-route-label {{ $t('home.nextTrip.stopover') }}{{ nextTripDisplay.stopovers.length > 1 ? ` ${i + 1}` : '' }}
+            .PageHome__trip-route-val {{ s }}
+        .PageHome__trip-route-row
+          span.PageHome__trip-route-dot.is-dropoff
+          .PageHome__trip-route-text
+            .PageHome__trip-route-label {{ $t('home.nextTrip.dropoff') }}
+            .PageHome__trip-route-val {{ nextTripDisplay.dropoff }}
+
+      //- 區塊 3：航班（接送機才有）
+      .PageHome__trip-flight(v-if="nextTripDisplay.flightNumber")
+        span.PageHome__trip-flight-icon ✈
+        span.PageHome__trip-flight-label {{ $t('home.nextTrip.flightNumber') }}
+        span.PageHome__trip-flight-val {{ nextTripDisplay.flightNumber }}
+
+      //- 區塊 4：司機資料（confirmed 後才出現）
+      .PageHome__trip-driver(v-if="nextTripDisplay.driver")
+        .PageHome__trip-driver-head
+          span.PageHome__trip-driver-badge {{ $t('home.nextTrip.driverSection') }}
+        .PageHome__trip-driver-rows
+          .PageHome__trip-driver-row
+            span.PageHome__trip-driver-key {{ $t('home.nextTrip.driverName') }}
+            span.PageHome__trip-driver-val {{ nextTripDisplay.driver.displayName || '—' }}
+          .PageHome__trip-driver-row(v-if="nextTripDisplay.driver.phone")
+            span.PageHome__trip-driver-key {{ $t('home.nextTrip.driverPhone') }}
+            a.PageHome__trip-driver-phone(
+              :href="`tel:${nextTripDisplay.driver.phone}`"
+              @click.stop
+            ) {{ nextTripDisplay.driver.phone }}
+              span.PageHome__trip-driver-call ☎ {{ $t('home.nextTrip.callDriver') }}
+          .PageHome__trip-driver-row(v-if="nextTripDisplay.driver.vehicleLabel")
+            span.PageHome__trip-driver-key {{ $t('home.nextTrip.vehicle') }}
+            span.PageHome__trip-driver-val {{ nextTripDisplay.driver.vehicleLabel }}
+          .PageHome__trip-driver-row(v-if="nextTripDisplay.driver.plateNumber")
+            span.PageHome__trip-driver-key {{ $t('home.nextTrip.plateNumber') }}
+            span.PageHome__trip-driver-plate {{ nextTripDisplay.driver.plateNumber }}
+
+    //- 無單：CTA 卡
     button.PageHome__next-trip-empty.reveal(
       v-else-if="nextTripLoaded"
       type="button"
@@ -181,34 +244,20 @@ onUnmounted(() => {
       span.PageHome__next-trip-empty-icon ＋
       span.PageHome__next-trip-empty-text {{ $t('home.nextTrip.emptyCta') }}
 
-  //- ── 航班看板＝熱門路線 ──────────────────────────────────────
-  PassengerHomeRouteBoard
+  //- ── 3. 預約您的行程 CTA ────────────────────────────────
+  section.PageHome__book-section
+    .PageHome__book-card.reveal
+      .PageHome__book-label BOOK YOUR TRIP
+      h2.PageHome__book-title 預約您的行程
+      p.PageHome__book-desc 填寫出發資訊，專屬司機將準時候駕。
+      button.PageHome__book-btn(@click="navigateTo('/booking')")
+        | 前往預約
+        span.PageHome__book-btn-arrow →
 
-  //- ── 服務特色 ────────────────────────────────────────────────
-  PassengerHomeFeatures
-
-  //- ── How-it-works ───────────────────────────────────────────
-  PassengerHomeSteps
-
-  //- ── 優惠專區（無生效折扣碼時自身 v-if 隱藏整區）──────────────
+  //- ── 4. 現正優惠（無折扣碼自動隱藏）───────────────────
   PassengerHomePromo
 
-  //- ── 服務範圍 ────────────────────────────────────────────────
-  PassengerHomeCoverage
-
-  //- ── 精選 FAQ ────────────────────────────────────────────────
-  section.PageHome__section.is-cream
-    .PageHome__section-label {{ $t('homeFaq.label') }}
-    h2.PageHome__section-title {{ $t('homeFaq.title') }}
-    p.PageHome__section-desc {{ $t('homeFaq.desc') }}
-    PassengerFaqList(:item-keys="FAQ_HOME_PICKS")
-    button.PageHome__faq-more(type="button" @click="navigateTo('/faq')")
-      | {{ $t('homeFaq.more') }}
-
-  //- ── 結尾雙動作 CTA ──────────────────────────────────────────
-  PassengerHomeClosing
-
-  //- ── Footer ─────────────────────────────────────────────────
+  //- ── Footer ─────────────────────────────────────────────
   CommonFooter
 
 </template>
@@ -283,7 +332,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   pointer-events: none;
 }
 
-// Airport badge watermarks
+// Airport badge watermarks — 9 個錯位浮動
 .PageHome__airport-badge {
   position: absolute;
   font-family: $font-display;
@@ -295,7 +344,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
   &.is-tpe {
     font-size: 120px;
-    top: 80px; right: -20px;
+    top: 60px; right: -20px;
     animation: floatY 8s ease-in-out infinite;
   }
   &.is-jfk {
@@ -305,8 +354,39 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   }
   &.is-nrt {
     font-size: 60px;
-    top: 320px; right: 10px;
+    top: 320px; right: 16px;
     animation: floatY 7s 1s ease-in-out infinite;
+  }
+  &.is-hnd {
+    font-size: 72px;
+    top: 420px; left: 20px;
+    animation: floatY 9s 0.5s ease-in-out infinite;
+  }
+  &.is-icn {
+    font-size: 56px;
+    top: 520px; right: 40px;
+    animation: floatY 11s 1.5s ease-in-out infinite;
+  }
+  &.is-lax {
+    font-size: 90px;
+    top: 140px; left: 38%;
+    opacity: 0.045;
+    animation: floatY 13s 0.8s ease-in-out infinite;
+  }
+  &.is-hkg {
+    font-size: 50px;
+    top: 600px; left: -8px;
+    animation: floatY 6s 2.4s ease-in-out infinite;
+  }
+  &.is-sin {
+    font-size: 64px;
+    top: 680px; right: 24px;
+    animation: floatY 12s 1.2s ease-in-out infinite;
+  }
+  &.is-sfo {
+    font-size: 56px;
+    top: 760px; left: 36%;
+    animation: floatY 8s 3.2s ease-in-out infinite;
   }
 }
 
@@ -379,18 +459,18 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageHome__hero-cta {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   animation: fadeUp 0.8s 0.3s ease both;
 }
 
 .PageHome__cta-primary,
 .PageHome__cta-secondary {
-  flex: 1;
-  min-width: 140px;
-  padding: 16px 24px;
+  flex: 1 1 calc(50% - 5px);
+  min-width: 130px;
+  padding: 14px 16px;
   font-family: $font-condensed;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -403,9 +483,12 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__cta-primary {
+  flex-basis: 100%;
   background: var(--da-dark);
   color: var(--da-cream);
   border: none;
+  padding: 16px 24px;
+  font-size: 15px;
 }
 
 .PageHome__cta-secondary {
@@ -427,7 +510,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── SECTION ───────────────────────────────────────────────────────────────────
 .PageHome__section {
-  padding: 72px 24px;
+  padding: 64px 24px;
   scroll-margin-top: 56px;
 
   &.is-cream    { background: var(--da-cream); }
@@ -455,8 +538,8 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageHome__section-title {
   font-family: $font-display;
-  font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
+  font-size: clamp(36px, 10vw, 48px);
+  line-height: 0.95;
   letter-spacing: 0.01em;
   color: var(--da-dark);
   margin-bottom: 8px;
@@ -467,23 +550,25 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 300;
   color: var(--da-gray);
   line-height: 1.7;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   max-width: 320px;
   font-family: $font-body;
 }
 
-// ── TRIP CARD ─────────────────────────────────────────────────────────────────
+// ── TRIP CARD（手機優先重排）─────────────────────────────────────────────────
 .PageHome__trip-card {
   background: var(--da-glass-bg);
   border: 1px solid var(--da-glass-border);
   border-radius: 20px;
   padding: 20px;
-  margin-bottom: 16px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--da-glass-shadow);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 
   &::before {
     content: '';
@@ -494,7 +579,6 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
     border-radius: 20px 0 0 20px;
   }
 
-  // Wave 2 P4：可點擊整卡跳訂單詳情頁
   &.is-clickable {
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
@@ -511,7 +595,276 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
-// Wave 2 P4：無單時的 CTA 卡（樣式與 trip-card 同框，但偏 dashed 邀請感）
+// 區塊 1：日期時間
+.PageHome__trip-datetime {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed rgba(26, 24, 20, 0.1);
+}
+
+.PageHome__trip-datetime-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.PageHome__trip-date {
+  font-family: $font-display;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--da-dark);
+}
+
+.PageHome__trip-weekday {
+  font-family: $font-condensed;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--da-gray-light);
+}
+
+.PageHome__trip-time {
+  font-family: $font-display;
+  font-size: 30px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--da-amber);
+  font-variant-numeric: tabular-nums;
+}
+
+.PageHome__trip-status {
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 100px;
+  margin-left: auto;
+  white-space: nowrap;
+
+  &.is-pending {
+    background: rgba(26, 24, 20, 0.06);
+    color: var(--da-dark);
+    border: 1px solid rgba(26, 24, 20, 0.15);
+  }
+  &.is-confirmed,
+  &.is-en_route,
+  &.is-arrived_pickup,
+  &.is-in_transit {
+    background: rgba(212, 134, 10, 0.12);
+    color: var(--da-amber);
+    border: 1px solid rgba(212, 134, 10, 0.25);
+  }
+}
+
+// 區塊 2：路線
+.PageHome__trip-route {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.PageHome__trip-route-row {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+  position: relative;
+
+  // 用 ::after 連虛線（最後一行不畫）
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 18px;
+    bottom: -14px;
+    width: 2px;
+    background: repeating-linear-gradient(to bottom, rgba(212, 134, 10, 0.5) 0 3px, transparent 3px 7px);
+  }
+}
+
+.PageHome__trip-route-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+
+  &.is-pickup {
+    background: var(--da-amber);
+    box-shadow: 0 0 0 3px rgba(212, 134, 10, 0.15);
+  }
+  &.is-stop {
+    background: var(--da-cream);
+    border: 2px solid var(--da-amber);
+  }
+  &.is-dropoff {
+    background: var(--da-dark);
+    box-shadow: 0 0 0 3px rgba(26, 24, 20, 0.1);
+  }
+}
+
+.PageHome__trip-route-label {
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--da-gray-light);
+  margin-bottom: 2px;
+}
+
+.PageHome__trip-route-val {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--da-dark);
+  font-family: $font-body;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+// 區塊 3：航班
+.PageHome__trip-flight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(212, 134, 10, 0.08);
+  border: 1px solid rgba(212, 134, 10, 0.2);
+  border-radius: 10px;
+}
+
+.PageHome__trip-flight-icon {
+  font-size: 14px;
+  color: var(--da-amber);
+}
+
+.PageHome__trip-flight-label {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--da-amber);
+}
+
+.PageHome__trip-flight-val {
+  font-family: $font-display;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  color: var(--da-dark);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+// 區塊 4：司機資料
+.PageHome__trip-driver {
+  padding-top: 14px;
+  border-top: 1px dashed rgba(26, 24, 20, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.PageHome__trip-driver-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.PageHome__trip-driver-badge {
+  display: inline-block;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #06c755;
+  background: rgba(6, 199, 85, 0.12);
+  padding: 3px 8px;
+  border-radius: 100px;
+}
+
+.PageHome__trip-driver-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PageHome__trip-driver-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.PageHome__trip-driver-key {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--da-gray-light);
+}
+
+.PageHome__trip-driver-val {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--da-dark);
+  font-family: $font-body;
+  word-break: break-word;
+}
+
+.PageHome__trip-driver-plate {
+  font-family: $font-display;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--da-dark);
+  background: var(--da-cream);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--da-dark);
+  justify-self: start;
+}
+
+.PageHome__trip-driver-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: $font-body;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--da-amber);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+
+  &:hover { text-decoration: underline; }
+}
+
+.PageHome__trip-driver-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--da-amber);
+  color: var(--da-cream);
+  padding: 3px 8px;
+  border-radius: 100px;
+}
+
+// 無單 CTA
 .PageHome__next-trip-empty {
   display: flex;
   align-items: center;
@@ -548,102 +901,97 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.12em;
 }
 
-.PageHome__trip-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
+// ── 預約您的行程 CTA section ──────────────────────────────────────────────────
+.PageHome__book-section {
+  padding: 64px 24px;
+  background: var(--da-cream);
 }
 
-.PageHome__trip-route {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.PageHome__book-card {
+  background: linear-gradient(135deg, var(--da-dark), #2a2520);
+  color: var(--da-cream);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245, 200, 66, 0.25), transparent 70%);
+    pointer-events: none;
+  }
 }
 
-.PageHome__route-code {
-  font-family: $font-display;
-  font-size: 28px;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  color: var(--da-dark);
-}
-
-.PageHome__route-arrow {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  color: var(--da-amber);
-  font-size: 18px;
-}
-
-.PageHome__route-line {
-  width: 24px; height: 1.5px;
-  background: linear-gradient(90deg, var(--da-amber), var(--da-amber-light));
-}
-
-.PageHome__trip-status {
+.PageHome__book-label {
   font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--da-amber);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &::before {
+    content: '';
+    width: 24px;
+    height: 1.5px;
+    background: var(--da-amber);
+  }
+}
+
+.PageHome__book-title {
+  font-family: $font-display;
+  font-size: clamp(36px, 11vw, 52px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  color: var(--da-cream);
+  margin-bottom: 12px;
+}
+
+.PageHome__book-desc {
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(248, 244, 235, 0.7);
+  line-height: 1.7;
+  margin-bottom: 24px;
+  max-width: 320px;
+}
+
+.PageHome__book-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: var(--da-amber);
+  color: var(--da-dark);
+  border: none;
+  border-radius: 100px;
+  font-family: $font-condensed;
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 5px 12px;
-  border-radius: 100px;
-
-  &.is-confirmed {
-    background: rgba(212, 134, 10, 0.12);
-    color: var(--da-amber);
-    border: 1px solid rgba(212, 134, 10, 0.25);
-  }
-  &.is-pending {
-    background: rgba(26, 24, 20, 0.06);
-    color: var(--da-dark);
-    border: 1px solid rgba(26, 24, 20, 0.15);
-  }
-}
-
-.PageHome__trip-info {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.PageHome__info-label {
-  font-family: $font-condensed;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--da-gray-light);
-  margin-bottom: 3px;
-}
-
-.PageHome__info-val {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--da-dark);
-  font-family: $font-body;
-}
-
-// ── FAQ MORE ──────────────────────────────────────────────────────────────────
-.PageHome__faq-more {
-  width: 100%;
-  margin-top: 16px;
-  padding: 14px;
-  background: transparent;
-  color: var(--da-dark);
-  font-family: $font-condensed;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  border: 1.5px solid var(--da-dark);
-  border-radius: 12px;
   cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
 
-  &:active { transform: scale(0.98); }
+  &:hover { opacity: 0.92; }
+  &:active { transform: scale(0.97); }
+}
+
+.PageHome__book-btn-arrow {
+  font-size: 18px;
+  font-family: $font-display;
 }
 
 // ── SCROLL REVEAL ─────────────────────────────────────────────────────────────

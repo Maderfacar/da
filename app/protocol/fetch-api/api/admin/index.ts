@@ -48,7 +48,10 @@ export interface DriverApplication {
   driverName?: string
   phone?: string
   plateNumber?: string
+  /** 舊欄位（fallback only）：4 選 1 分類 sedan/mpv/suv/van — 已被 vehicleModel 取代 */
   vehicleType?: 'sedan' | 'mpv' | 'suv' | 'van'
+  /** 司機自填「車輛品牌與型號」自由文字（例：Tesla Model S） */
+  vehicleModel?: string
   bankCode?: string
   bankAccount?: string
   documents?: {

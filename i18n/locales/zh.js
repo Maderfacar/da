@@ -210,11 +210,12 @@ export default {
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
     hero: {
-      tag: '✈ 高階機場接送服務',
+      tag: '✈ 專業機場接送服務',
       subtitle: '每一次旅程，都是一段值得記憶的體驗。從出發到抵達，我們為您守候。',
       cta: {
-        book: '立即預約接送',
+        book: '立即預約',
         fare: '車資估算',
+        fleet: '車型介紹',
       },
     },
     stats: {
@@ -223,9 +224,9 @@ export default {
       rating: '用戶評分',
       service: '全天候服務',
     },
-    // Wave 2 P4：取代 home.upcoming — 首頁「下一趟」單卡（有單顯示資訊；無單顯示 CTA）
+    // Home redesign：取代「下一趟」— 首頁「即將到來行程」單卡（含上下車/中途/航班/司機）
     nextTrip: {
-      title: '下一趟',
+      title: '即將到來行程',
       descHas: '您的下一段旅程已就緒，點擊查看詳情。',
       descEmpty: '目前沒有即將出發的行程，立即訂車吧。',
       date: '日期',
@@ -233,6 +234,23 @@ export default {
       vehicle: '車型',
       passengers: '人數',
       emptyCta: '立即訂車',
+      pickup: '上車',
+      stopover: '中途停靠',
+      dropoff: '下車',
+      flightNumber: '航班',
+      driverSection: '已敲定司機',
+      driverName: '司機',
+      driverPhone: '聯絡電話',
+      plateNumber: '車牌',
+      callDriver: '撥打',
+    },
+    // Home redesign：合併「安心接送的理由 + 三步完成預約 + 無需 APP」單一 section
+    reasons: {
+      lineOnlyBadge: 'LINE ONLY',
+      lineOnlyTitle: '無需下載 APP',
+      lineOnlyBody: '擁有 LINE 帳號，即可預約接送服務。',
+      flowLabel: '預約流程',
+      flowTitle: '三步完成預約',
     },
     book: {
       title: '預約您的行程',

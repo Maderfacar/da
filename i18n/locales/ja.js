@@ -198,11 +198,12 @@ export default {
   },
   home: {
     hero: {
-      tag: '✈ プレミアム空港送迎',
+      tag: '✈ プロフェッショナル空港送迎',
       subtitle: 'すべての旅に、忘れられない記憶を。出発から到着まで、私たちがお守りします。',
       cta: {
         book: '今すぐ予約',
         fare: '料金試算',
+        fleet: '車両紹介',
       },
     },
     stats: {
@@ -211,9 +212,9 @@ export default {
       rating: '評価',
       service: 'サービス',
     },
-    // Wave 2 P4：home.upcoming を置換 — ホーム「次の旅程」単一カード（旅程ありは詳細、なしは CTA）
+    // Home redesign：「次の旅程」を「これからの旅程」へ — 乗降地/経由地/便名/ドライバー情報を含む
     nextTrip: {
-      title: '次の旅程',
+      title: 'これからの旅程',
       descHas: '次の旅の準備が整いました。タップで詳細を確認。',
       descEmpty: '今後の旅程はありません。今すぐ予約を。',
       date: '日付',
@@ -221,6 +222,23 @@ export default {
       vehicle: '車種',
       passengers: '乗客数',
       emptyCta: '今すぐ予約',
+      pickup: '乗車地',
+      stopover: '経由地',
+      dropoff: '降車地',
+      flightNumber: '便名',
+      driverSection: 'ドライバー確定',
+      driverName: 'ドライバー',
+      driverPhone: '連絡電話',
+      plateNumber: 'ナンバー',
+      callDriver: '電話する',
+    },
+    // Home redesign：「選ばれる理由 + 3 ステップ + アプリ不要」を単一セクションに統合
+    reasons: {
+      lineOnlyBadge: 'LINE ONLY',
+      lineOnlyTitle: 'アプリのダウンロード不要',
+      lineOnlyBody: 'LINE アカウントだけで送迎をご予約いただけます。',
+      flowLabel: '予約フロー',
+      flowTitle: '3 ステップで完了',
     },
     book: {
       title: '旅程を予約する',

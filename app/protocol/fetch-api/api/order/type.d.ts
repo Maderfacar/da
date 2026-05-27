@@ -172,12 +172,26 @@ interface DriverHistoryOrder {
 }
 
 // ===== Wave 2 P4：乘客下一趟訂單 =====
+// Home redesign：加 stopovers / flightNumber / driver（confirmed 後才有）
+interface UpcomingOrderDriver {
+  displayName: string;
+  plateNumber: string;
+  /** sedan/mpv/suv/van 分類（舊司機資料） */
+  vehicleType: string;
+  /** 品牌型號自由文字（如 "Tesla Model S"） */
+  vehicleModel: string;
+  /** 真實電話（drivers.application.phone）— confirmed 後乘客可直接撥；無設定回 null */
+  phone: string | null;
+}
+
 interface UpcomingOrder {
   orderId: string;
   orderType: string;
   pickupDateTime: string;
   pickupLocation: GooglePlace;
   dropoffLocation: GooglePlace;
+  /** Home redesign：中途停靠站（舊單 fallback []） */
+  stopovers: GooglePlace[];
   vehicleType: string;
   passengerCount: number;
   /** Booking v2 批次 2：大人數 */
@@ -186,6 +200,10 @@ interface UpcomingOrder {
   childCount?: number;
   estimatedFare: number;
   orderStatus: string;
+  /** Home redesign：航班資訊（接機 / 送機才會有） */
+  flightNumber: string | null;
+  /** Home redesign：敲定司機後才出現（confirmed 以後） */
+  driver: UpcomingOrderDriver | null;
 }
 
 // ===== P36：訂單詳情（單筆完整資訊）=====

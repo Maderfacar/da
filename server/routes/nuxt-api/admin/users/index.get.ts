@@ -150,6 +150,7 @@ async function _serializeApplication(app: Record<string, unknown>, storage: Stor
     phone: app.phone as string | undefined,
     plateNumber: app.plateNumber as string | undefined,
     vehicleType: app.vehicleType as string | undefined,
+    vehicleModel: app.vehicleModel as string | undefined,
     bankCode: app.bankCode as string | undefined,
     bankAccount: app.bankAccount as string | undefined,
     documents,

@@ -47,7 +47,8 @@ const lineUserId = computed(() => {
 const driverName = ref('');
 const phone = ref('');
 const plateNumber = ref('');
-const vehicleType = ref<'sedan' | 'mpv' | 'suv' | 'van'>('sedan');
+// Home redesign 同期：把 4 選 1 分類 radio 換成「車輛品牌與型號」自由文字欄
+const vehicleModel = ref('');
 const bankCode = ref('');
 const bankAccount = ref('');
 
@@ -58,13 +59,6 @@ const docs = ref({
   goodCitizenUrl: '',
 });
 
-const VEHICLE_OPTIONS = [
-  { value: 'sedan' as const, label: '商務轎車 Sedan' },
-  { value: 'mpv'   as const, label: '商務 MPV' },
-  { value: 'suv'   as const, label: '商務 SUV' },
-  { value: 'van'   as const, label: '廂型車 Van' },
-];
-
 const submitting = ref(false);
 const submitError = ref('');
 const submitSuccess = ref(false);
@@ -73,7 +67,7 @@ const isFormValid = computed(() =>
   !!driverName.value.trim()
   && !!phone.value.trim()
   && !!plateNumber.value.trim()
-  && !!vehicleType.value
+  && !!vehicleModel.value.trim()
   && !!bankCode.value.trim()
   && !!bankAccount.value.trim()
   && !!docs.value.licenseUrl
@@ -92,7 +86,7 @@ const ApiSubmit = async () => {
       driverName: driverName.value.trim(),
       phone: phone.value.trim(),
       plateNumber: plateNumber.value.trim(),
-      vehicleType: vehicleType.value,
+      vehicleModel: vehicleModel.value.trim(),
       bankCode: bankCode.value.trim(),
       bankAccount: bankAccount.value.trim(),
       documents: docs.value,
@@ -223,20 +217,14 @@ onUnmounted(() => {
           )
 
         .PageDriverRegister__field
-          label.PageDriverRegister__label 車型
+          label.PageDriverRegister__label 車輛品牌與型號
             span.PageDriverRegister__required *
-          .PageDriverRegister__radio-group
-            label.PageDriverRegister__radio(
-              v-for="opt in VEHICLE_OPTIONS"
-              :key="opt.value"
-              :class="{ 'is-active': vehicleType === opt.value }"
-            )
-              input(
-                v-model="vehicleType"
-                type="radio"
-                :value="opt.value"
-              )
-              span {{ opt.label }}
+          input.PageDriverRegister__input(
+            v-model="vehicleModel"
+            type="text"
+            maxlength="80"
+            placeholder="例：Tesla Model S、Benz Vito、Toyota RAV4"
+          )
 
         //- ── 銀行帳戶（用於收款） ─────────────────────
         .PageDriverRegister__section-title 銀行帳戶（用於收款）

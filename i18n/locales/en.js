@@ -198,11 +198,12 @@ export default {
   },
   home: {
     hero: {
-      tag: '✈ Premium Airport Transfer',
+      tag: '✈ Professional Airport Transfer',
       subtitle: 'Every journey, a memory worth keeping. From departure to arrival, we\'re here for you.',
       cta: {
-        book: 'Book a Transfer',
+        book: 'Book Now',
         fare: 'Fare Estimate',
+        fleet: 'Our Fleet',
       },
     },
     stats: {
@@ -211,9 +212,9 @@ export default {
       rating: 'Rating',
       service: 'Service',
     },
-    // Wave 2 P4: replaces home.upcoming — single Next Trip card on home (with details, or CTA when empty)
+    // Home redesign: replaces "Next Trip" — single Upcoming Trip card with pickup/stopovers/dropoff/flight/driver
     nextTrip: {
-      title: 'Next Trip',
+      title: 'Upcoming Trip',
       descHas: 'Your next journey is ready. Tap to view details.',
       descEmpty: 'No upcoming trip — book one now.',
       date: 'Date',
@@ -221,6 +222,23 @@ export default {
       vehicle: 'Vehicle',
       passengers: 'Passengers',
       emptyCta: 'Book Now',
+      pickup: 'Pickup',
+      stopover: 'Stopover',
+      dropoff: 'Dropoff',
+      flightNumber: 'Flight',
+      driverSection: 'Driver Assigned',
+      driverName: 'Driver',
+      driverPhone: 'Phone',
+      plateNumber: 'Plate',
+      callDriver: 'Call',
+    },
+    // Home redesign: merged "Why us + 3 steps + no app needed" single section
+    reasons: {
+      lineOnlyBadge: 'LINE ONLY',
+      lineOnlyTitle: 'No App Download Required',
+      lineOnlyBody: 'A LINE account is all you need to book your transfer.',
+      flowLabel: 'Booking Flow',
+      flowTitle: '3 Simple Steps',
     },
     book: {
       title: 'Book Your Trip',

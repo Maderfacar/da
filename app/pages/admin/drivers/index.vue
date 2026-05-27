@@ -120,6 +120,16 @@ const CooldownText = (d: AdminUser): string => {
 const VEHICLE_LABEL: Record<string, string> = {
   sedan: '商務轎車', mpv: '商務 MPV', suv: '商務 SUV', van: '廂型車',
 };
+
+// 新欄位 vehicleModel 自由文字優先；舊資料 fallback 顯示 4 選 1 分類
+const VehicleDisplay = (app: { vehicleModel?: string; vehicleType?: string } | undefined): string => {
+  if (!app) return '—';
+  const m = app.vehicleModel?.trim();
+  if (m) return m;
+  const t = app.vehicleType?.trim();
+  if (!t) return '—';
+  return VEHICLE_LABEL[t] ?? t;
+};
 const DOC_LABEL: Record<string, string> = {
   licenseUrl: '駕照',
   registrationUrl: '行照',
@@ -217,8 +227,8 @@ const DOC_LABEL: Record<string, string> = {
                 span.PageAdminDrivers__expand-key 車牌號碼
                 span.PageAdminDrivers__expand-val {{ d.driverApplication.plateNumber ?? '—' }}
               .PageAdminDrivers__expand-row
-                span.PageAdminDrivers__expand-key 車型
-                span.PageAdminDrivers__expand-val {{ VEHICLE_LABEL[d.driverApplication.vehicleType ?? ''] ?? '—' }}
+                span.PageAdminDrivers__expand-key 車輛品牌與型號
+                span.PageAdminDrivers__expand-val {{ VehicleDisplay(d.driverApplication) }}
               .PageAdminDrivers__expand-row
                 span.PageAdminDrivers__expand-key 銀行代號
                 span.PageAdminDrivers__expand-val {{ d.driverApplication.bankCode ?? '—' }}

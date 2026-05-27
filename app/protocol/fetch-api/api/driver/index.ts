@@ -8,7 +8,8 @@ export interface DriverApplyBody {
   driverName: string
   phone: string
   plateNumber: string
-  vehicleType: 'sedan' | 'mpv' | 'suv' | 'van'
+  /** 自由文字「車輛品牌與型號」（例：Tesla Model S）— 取代舊 vehicleType 4 選 1 radio */
+  vehicleModel: string
   bankCode: string
   bankAccount: string
   documents: {
