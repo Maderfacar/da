@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import type { VehicleType, FleetVehicle, OrderType } from '~shared/pricing';
+import {
+  calculateCharterFareV2,
+  type VehicleType,
+  type FleetVehicle,
+  type OrderType,
+  type CharterPlanKey,
+  type CharterFareBreakdownV2,
+  type RouteMetrics,
+} from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
 import { Swiper, SwiperSlide } from 'swiper/vue';
@@ -23,6 +31,10 @@ interface Props {
   pickupDateTime: string;
   /** 行程類型 — 供 Fare V2 時段規則的行程過濾 */
   orderType: OrderType | undefined;
+  /** Charter Fare V1 W4：包車天數（1-7）— charter 訂單必填，其他訂單忽略 */
+  charterDays?: number;
+  /** Charter Fare V1 W4：每日 plan key 陣列（length 應 = days）— charter 訂單必填，其他訂單忽略 */
+  charterPlanKeys?: CharterPlanKey[];
   /** Booking v2：vehicle-scope active tags（已 filter 掉 vehicleType group） */
   availableTags?: TagDto[];
   /** Booking v2：當前勾選的偏好 tag id */
@@ -30,6 +42,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  charterDays: 1,
+  charterPlanKeys: () => [] as CharterPlanKey[],
   availableTags: () => [] as TagDto[],
   selectedTagIds: () => [] as string[],
 });
@@ -39,7 +53,9 @@ const emit = defineEmits<{
   (e: 'update:luggageItems', val: LuggageItem[]): void;
   (e: 'update:vehicleType', val: VehicleType): void;
   (e: 'update:selectedTagIds', val: string[]): void;
+  (e: 'update:charterPlanKeys', val: CharterPlanKey[]): void;
   (e: 'fareResult', val: MapsRouteRes): void;
+  (e: 'charterCalc', val: CharterFareBreakdownV2 | null): void;
   (e: 'next' | 'back'): void;
 }>();
 
@@ -81,12 +97,30 @@ const totalSU = computed(() =>
 const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
   storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
 
+// ── Charter Fare V1 W4：常數 & helpers ─────────────────────────────────────
+const CHARTER_PLAN_KEYS: ReadonlyArray<CharterPlanKey> = ['4h', '8h', '10h'];
+const CHARTER_PLAN_KEY_TO_HOURS: Readonly<Record<CharterPlanKey, number>> = {
+  '4h': 4,
+  '8h': 8,
+  '10h': 10,
+};
+
+const isCharter = computed(() => props.orderType === 'charter');
+
+// 該車型有任一 enabled charterPlan（charter 模式下沒有任何 plan 的車型不可選）
+const _vehicleHasCharterPlans = (v: FleetVehicle): boolean => {
+  if (!v.charterPlans) return false;
+  return CHARTER_PLAN_KEYS.some((k) => v.charterPlans?.[k]?.enabled);
+};
+
 // ── 車型容量 vs 行李 SU 校驗 ─────────────────────────────────────────────────
 // Booking v2 批次 2：容量校驗改用 adult + child（兒童佔 1 座位）
 type VehicleStatus = 'ok' | 'warn' | 'disabled';
 const _GetVehicleStatus = (v: FleetVehicle): VehicleStatus => {
   if (totalPax.value > v.capacity) return 'disabled';
   if (totalSU.value > v.luggageSU * 1.5) return 'disabled';
+  // Charter Fare V1 W4：charter 模式下，車型若無啟用任一 plan → 不可選
+  if (isCharter.value && !_vehicleHasCharterPlans(v)) return 'disabled';
   if (totalSU.value > v.luggageSU) return 'warn';
   return 'ok';
 };
@@ -94,6 +128,7 @@ const _GetVehicleStatus = (v: FleetVehicle): VehicleStatus => {
 const _GetVehicleHint = (v: FleetVehicle): string => {
   if (totalPax.value > v.capacity) return t('booking.options.exceedCapacity', { n: v.capacity });
   if (totalSU.value > v.luggageSU * 1.5) return t('booking.options.exceedLuggage');
+  if (isCharter.value && !_vehicleHasCharterPlans(v)) return t('booking.options.charterNotOpen');
   if (totalSU.value > v.luggageSU) return t('booking.options.warnLuggage');
   return '';
 };
@@ -108,13 +143,104 @@ const vehicles = computed(() =>
 
 const luggageTypes = computed(() => storeConfig.luggageTypes);
 
-// ── 車資試算（Fare V2：明細由 server 計算）──────────────────────────────────
+// ── 車資試算（Fare V2：明細由 server 計算；charter 走純幾何 + client charter 引擎）─
 const fareResult = ref<MapsRouteRes | null>(null);
 const fareLoading = ref(false);
+const charterResult = ref<CharterFareBreakdownV2 | null>(null);
 let _fareTimer: ReturnType<typeof setTimeout> | null = null;
+
+// charter 估價：純幾何模式取 isRoundTrip + distanceKm → client calculateCharterFareV2（mountain 訊號取不到一律 1.0；下訂時 server 編排會用真實 Routes API 重算）
+const _BuildCharterMetrics = (distanceKm: number): RouteMetrics => ({
+  distanceKm,
+  staticDurationSec: 0,
+  durationSec: 0,
+  pureJamMinutes: 0,
+  freeFlowKmh: 80,
+  polylineEncoded: '',
+  elevationDiffM: 0,
+  freewayKm: 0,
+  hasTrunk: false,
+  countiesVisited: [],
+  straightLineKm: distanceKm,
+  sinuosity: 1.0,
+  computedAt: Date.now(),
+  // 預估階段不打 elevation / OSM / counties → 三 source 全 false（mountain 訊號 0 分 → 山區係數 1.0）
+  apiSourcesOk: { routes: true, elevation: false, osm: false, counties: false },
+});
+
+const ApiFetchCharterFare = async () => {
+  charterResult.value = null;
+  if (!props.pickupLocation || !props.dropoffLocation || !vehicle.value) {
+    emit('charterCalc', null);
+    return;
+  }
+  const fleetVehicle = storeConfig.GetVehicle(vehicle.value);
+  if (!fleetVehicle || !_vehicleHasCharterPlans(fleetVehicle)) {
+    emit('charterCalc', null);
+    return;
+  }
+  const planKeys = props.charterPlanKeys.slice(0, props.charterDays);
+  if (planKeys.length !== props.charterDays || planKeys.length === 0) {
+    emit('charterCalc', null);
+    return;
+  }
+  // 校驗每個 planKey 都對應有效 plan
+  for (const k of planKeys) {
+    if (!fleetVehicle.charterPlans?.[k]?.enabled) {
+      emit('charterCalc', null);
+      return;
+    }
+  }
+
+  fareLoading.value = true;
+  const validWps = props.stopovers.filter((s) => s.lat !== 0);
+  // 純幾何模式：不帶 vehicleType / pickupTime，但帶 orderType=charter（server 會回 isRoundTrip + returnLegPolyline）
+  const res = await $api.GetMapsRoute({
+    origin: `${props.pickupLocation.lat},${props.pickupLocation.lng}`,
+    destination: `${props.dropoffLocation.lat},${props.dropoffLocation.lng}`,
+    ...(validWps.length ? { waypoints: validWps.map((s) => `${s.lat},${s.lng}`).join('|') } : {}),
+    orderType: 'charter',
+  });
+  fareLoading.value = false;
+  if (res.status.code !== 200 || !res.data) {
+    emit('charterCalc', null);
+    return;
+  }
+
+  const pickup = props.pickupDateTime ? new Date(props.pickupDateTime) : new Date();
+  const totalHours = planKeys.reduce((s, k) => s + CHARTER_PLAN_KEY_TO_HOURS[k], 0);
+  const estimatedEnd = new Date(pickup.getTime() + totalHours * 3600 * 1000);
+  // 預估階段不算 extras（與 fare-v2 booking 預估行為一致；server 編排會用真實 fleet extras 重算）
+  const extras: ReadonlyArray<{ price: number }> = [];
+
+  try {
+    const breakdown = calculateCharterFareV2(
+      fleetVehicle,
+      planKeys,
+      _BuildCharterMetrics(res.data.distance_km),
+      res.data.isRoundTrip ?? false,
+      pickup,
+      estimatedEnd,
+      null, // booking 估價階段無 actualEndTime → OT = 0
+      extras,
+      storeConfig.fareRules,
+    );
+    charterResult.value = breakdown;
+    emit('fareCalc', breakdown.final);
+    emit('charterCalc', breakdown);
+  } catch (err) {
+    // engine throw（plan 缺等）→ silent；status 已守在前面
+    console.error('[BookingStepOptions] charter calc failed:', err);
+    emit('charterCalc', null);
+  }
+};
 
 const ApiFetchFare = async () => {
   if (!props.pickupLocation || !props.dropoffLocation || !vehicle.value) return;
+  if (isCharter.value) {
+    await ApiFetchCharterFare();
+    return;
+  }
   fareLoading.value = true;
   const validWps = props.stopovers.filter((s) => s.lat !== 0);
   const res = await $api.GetMapsRoute({
@@ -138,6 +264,23 @@ const ApiFetchFare = async () => {
 const FareFetchFlow = () => {
   if (_fareTimer) clearTimeout(_fareTimer);
   _fareTimer = setTimeout(ApiFetchFare, 400);
+};
+
+// charter days / planKeys 變動 → debounce 重新估價（charter only）
+watch(
+  () => [props.charterDays, props.charterPlanKeys.slice(0, props.charterDays).join(',')],
+  () => { if (isCharter.value) FareFetchFlow(); },
+);
+watch(isCharter, () => FareFetchFlow());
+
+// Plan picker 單格變動 → emit 完整 charterPlanKeys（補齊到 days 長度）
+const OnUpdateCharterPlan = (idx: number, val: CharterPlanKey) => {
+  const next: CharterPlanKey[] = [];
+  for (let i = 0; i < props.charterDays; i++) {
+    if (i === idx) next.push(val);
+    else next.push(props.charterPlanKeys[i] ?? '8h');
+  }
+  emit('update:charterPlanKeys', next);
 };
 
 // ── Sync ────────────────────────────────────────────────────────────────────
@@ -277,6 +420,28 @@ const swiperBreakpoints = {
       @click="ClickSwiperNext"
     ) ›
 
+  //- Charter Fare V1 W4：每日 plan picker（charter only；days >= 1 都顯示，days=1 也可選 4h/8h/10h）
+  .PassengerBookingStepOptions__charter-plans(v-if="isCharter")
+    .PassengerBookingStepOptions__section-label.mt CHARTER PLAN
+    h2.PassengerBookingStepOptions__title {{ $t('booking.options.charterPlanTitle', { days: charterDays }) }}
+    .PassengerBookingStepOptions__charter-plan-row(
+      v-for="(_, i) in charterDays"
+      :key="i"
+    )
+      span.PassengerBookingStepOptions__charter-plan-label {{ $t('booking.options.charterDayLabel', { n: i + 1 }) }}
+      ElSelect(
+        :model-value="charterPlanKeys[i] ?? '8h'"
+        style="flex:1"
+        @update:model-value="(v) => OnUpdateCharterPlan(i, v)"
+      )
+        ElOption(
+          v-for="k in CHARTER_PLAN_KEYS"
+          :key="k"
+          :label="$t('booking.options.charterPlanOption', { hours: CHARTER_PLAN_KEY_TO_HOURS[k] })"
+          :value="k"
+        )
+    p.PassengerBookingStepOptions__charter-hint {{ $t('booking.options.charterPlanHint') }}
+
   //- Booking v2：車型與期望特徵之間的提示
   .PassengerBookingStepOptions__passenger-hint(v-if="availableTags.length")
     NuxtIcon(name="mdi:lightbulb-on-outline")
@@ -293,7 +458,7 @@ const swiperBreakpoints = {
     )
 
   PassengerFareBreakdownCard(
-    :fare-total="fareResult ? fareResult.fareTotal : null"
+    :fare-total="isCharter ? (charterResult ? charterResult.final : null) : (fareResult ? fareResult.fareTotal : null)"
     :loading="fareLoading"
   )
 
@@ -644,6 +809,40 @@ const swiperBreakpoints = {
 
     .is-disabled & { color: #ef4444; }
     .is-warn & { color: #d97706; }
+  }
+
+  // ── Charter Fare V1 W4：每日 plan picker ────────────────────────────────
+  &__charter-plans {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--da-amber-pale);
+    border: 1px dashed var(--da-amber);
+    border-radius: 14px;
+  }
+
+  &__charter-plan-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__charter-plan-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--da-amber);
+    min-width: 56px;
+  }
+
+  &__charter-hint {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: var(--da-gray);
+    margin: 6px 0 0;
+    line-height: 1.5;
   }
 
   // ── Booking v2：特殊需求引導提示 ────────────────────────────────────────

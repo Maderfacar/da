@@ -34,6 +34,9 @@ export interface MapsRouteRes {
   routeMetrics: RouteMetrics | null;
   static_duration_minutes: number | null;
   pure_jam_minutes: number | null;
+  // Charter Fare V1（W2 server 端純幾何模式 + orderType=charter + 有 stopover 才有值）
+  isRoundTrip: boolean | null;
+  returnLegPolyline: string | null;
 }
 
 /**

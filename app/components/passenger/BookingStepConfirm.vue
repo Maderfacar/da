@@ -4,6 +4,8 @@ import {
   buildTagSurchargeIndex,
   calcTagSurcharge,
   type TagSurchargeIndexEntry,
+  type CharterPlanKey,
+  type CharterFareBreakdownV2,
 } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
@@ -30,12 +32,21 @@ interface Props {
   availableTags?: TagDto[];
   /** Phase 1D：當前勾選的偏好 tag id 陣列（Booking v2 起在 Step 3 編輯、Step 4 只讀） */
   selectedTagIds?: string[];
+  /** Charter Fare V1 W4：包車天數（charter 訂單） */
+  charterDays?: number;
+  /** Charter Fare V1 W4：每日 plan key 陣列（charter 訂單） */
+  charterPlanKeys?: CharterPlanKey[];
+  /** Charter Fare V1 W4：step 3 估出的 charter 完整明細；非 charter 訂單或未估出 null */
+  charterResult?: CharterFareBreakdownV2 | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   flightInfo: null,
   availableTags: () => [] as TagDto[],
   selectedTagIds: () => [] as string[],
+  charterDays: 1,
+  charterPlanKeys: () => [] as CharterPlanKey[],
+  charterResult: null,
 });
 
 const { t, locale } = useI18n();
@@ -232,6 +243,19 @@ const fareAfterDiscount = computed(() =>
   Math.max(0, props.fareTotal + tagSurcharge.value - (appliedDiscount.value?.amount ?? 0)),
 );
 
+// Charter Fare V1 W4：charter 訂單 — 明細卡顯示
+const isCharter = computed(() => props.draft.orderType === 'charter');
+
+const charterPlanLabel = (k: CharterPlanKey): string => {
+  const hours = k === '4h' ? 4 : k === '8h' ? 8 : 10;
+  return t('booking.options.charterPlanOption', { hours });
+};
+
+const fmtNtd = (n: number): string => {
+  const rounded = Math.round(n * 100) / 100;
+  return rounded.toLocaleString('en-US');
+};
+
 const ApiApplyDiscount = async () => {
   const code = discountInput.value.trim();
   if (!code) {
@@ -417,6 +441,14 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.vehicle') }}
       span.PassengerBookingStepConfirm__row-value {{ vehicleLabel }}
+    //- Charter Fare V1 W4：包車訂單摘要 — 天數 + 每日 plan
+    .PassengerBookingStepConfirm__row(v-if="isCharter")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.charterDays') }}
+      span.PassengerBookingStepConfirm__row-value {{ $t('booking.confirm.charterDaysVal', { n: charterDays }) }}
+    .PassengerBookingStepConfirm__row(v-if="isCharter")
+      span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.charterPlan') }}
+      span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi
+        | {{ charterPlanKeys.slice(0, charterDays).map((k, i) => `Day ${i + 1}：${charterPlanLabel(k)}`).join('、') }}
     //- Booking v2：期望特徵 chip 摘要（移自 Step 3）
     .PassengerBookingStepConfirm__row(v-if="selectedTagNames.length")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.preferences.summary') }}
@@ -436,6 +468,51 @@ const ClickSubmit = () => {
     .PassengerBookingStepConfirm__row(v-if="notesInput")
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.notes') }}
       span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi {{ notesInput }}
+
+  //- Charter Fare V1 W4：charter 訂單顯示完整 CharterFareBreakdownV2（daysBreakdown + 各層級 + raw → final）
+  .PassengerBookingStepConfirm__charter-breakdown(v-if="isCharter && charterResult")
+    .PassengerBookingStepConfirm__charter-title {{ $t('booking.confirm.charterBreakdownTitle') }}
+    //- daysBreakdown 表格
+    .PassengerBookingStepConfirm__charter-days
+      .PassengerBookingStepConfirm__charter-day(
+        v-for="d in charterResult.daysBreakdown"
+        :key="d.day"
+      )
+        span.PassengerBookingStepConfirm__charter-day-key Day {{ d.day }} · {{ charterPlanLabel(d.planKey) }}
+        span.PassengerBookingStepConfirm__charter-day-val NT$ {{ fmtNtd(d.basePrice) }}
+    //- 各層級
+    .PassengerBookingStepConfirm__charter-line
+      span {{ $t('booking.confirm.charterPlanSum') }}
+      span NT$ {{ fmtNtd(charterResult.planBasePriceSum) }}
+    .PassengerBookingStepConfirm__charter-line
+      span {{ $t('booking.confirm.charterExtraKm') }}
+      span +NT$ {{ fmtNtd(charterResult.extraKmCharge) }}
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.mountainMul !== 1")
+      span {{ $t('booking.confirm.charterMountain', { mul: charterResult.mountainMul }) }}
+      span NT$ {{ fmtNtd(charterResult.mountainScaled) }}
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.roundTripFee > 0")
+      span {{ $t('booking.confirm.charterRoundTrip') }}
+      span +NT$ {{ fmtNtd(charterResult.roundTripFee) }}
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.overnightFee > 0")
+      span {{ $t('booking.confirm.charterOvernight') }}
+      span +NT$ {{ fmtNtd(charterResult.overnightFee) }}
+    //- OT：W4 估價階段 actualEndTime 為 null → overtimeCharge = 0；仍顯示提示行
+    .PassengerBookingStepConfirm__charter-line.is-hint
+      span {{ $t('booking.confirm.charterOtPending') }}
+      span NT$ 0
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.extrasTotal > 0")
+      span {{ $t('booking.confirm.charterExtras') }}
+      span +NT$ {{ fmtNtd(charterResult.extrasTotal) }}
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.surcharge > 0")
+      span {{ $t('booking.confirm.charterSurcharge') }}
+      span +NT$ {{ fmtNtd(charterResult.surcharge) }}
+    .PassengerBookingStepConfirm__charter-line(v-if="charterResult.promoDiscount > 0")
+      span {{ $t('booking.confirm.charterPromo') }}
+      span −NT$ {{ fmtNtd(charterResult.promoDiscount) }}
+    .PassengerBookingStepConfirm__charter-line.is-raw
+      span {{ $t('booking.confirm.charterRaw') }}
+      span NT$ {{ fmtNtd(charterResult.raw) }}
+    .PassengerBookingStepConfirm__charter-note {{ $t('booking.confirm.charterEstimateNote') }}
 
   //- Booking v2：總價只顯一行「應付車資 NT$ X」（不再拆距離 / 時間 / 折扣 / tagSurcharge）
   .PassengerBookingStepConfirm__final
@@ -679,6 +756,79 @@ const ClickSubmit = () => {
   &__divider {
     height: 1px;
     background: var(--da-gray-pale);
+  }
+
+  // ── Charter Fare V1 W4：包車明細卡 ──────────────────────────────────────
+  &__charter-breakdown {
+    background: var(--da-glass-bg);
+    border: 1px solid var(--da-amber);
+    border-radius: 16px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__charter-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--da-amber);
+    margin-bottom: 4px;
+  }
+
+  &__charter-days {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--da-gray-pale);
+  }
+
+  &__charter-day {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+  }
+
+  &__charter-day-key { color: var(--da-gray); }
+  &__charter-day-val { color: var(--da-dark); font-weight: 600; }
+
+  &__charter-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+
+    span:first-child { color: var(--da-gray); }
+    span:last-child  { color: var(--da-dark); font-weight: 600; }
+
+    &.is-hint {
+      span:first-child { color: var(--da-gray-light); font-style: italic; }
+      span:last-child  { color: var(--da-gray-light); }
+    }
+
+    &.is-raw {
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--da-gray-pale);
+
+      span { font-weight: 700; }
+    }
+  }
+
+  &__charter-note {
+    margin-top: 4px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: var(--da-gray-light);
+    line-height: 1.5;
   }
 
   // ── Booking v2：單行總價 ────────────────────────────────────────────────

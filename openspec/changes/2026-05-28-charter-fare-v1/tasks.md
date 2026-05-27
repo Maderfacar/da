@@ -68,12 +68,22 @@
   - [x] charter.mountain.tier.minScore 0-3 整數（新增 validateCharterMountainTiers helper，與 fare-v2 tiers 分離）
   - [x] 向後相容：raw.charter undefined → fallback DEFAULT_FARE_RULES.charter；存在但欄位錯 → 回 error
 
-## W4：Booking UI（後續）
+## W4：Booking UI（本視窗）
 
-- [ ] W4.1 `BookingStepBasic`：orderType=charter 觸發「行程天數」selector（預設 1，1-7 天）
-- [ ] W4.2 `BookingStepOptions`：days > 1 渲染「每天 plan picker」（同車型，可不同 plan）
-- [ ] W4.3 charter 訂單 stopover 編輯增強（拖拉 / 刪除）
-- [ ] W4.4 明細卡：charter 訂單顯示完整 `CharterFareBreakdownV2`（plan basePrice 加總 / 超公里 / 山區 / 來回 / 過夜 / OT 預估 / extras / surcharge / promo）
+- [x] **W4.1** `BookingStepType`：orderType=charter 觸發「行程天數」selector（預設 1，1-7 天，7 顆 button grid + active 視覺）
+- [x] **W4.2** `BookingStepOptions`：包車訂單顯示「每天 plan picker」（4h/8h/10h；days >= 1 都顯示，可日日不同）
+  - [x] charter 車型過濾：vehicle.charterPlans 缺 / 全 disabled → 該車型 disabled + 「此車型尚未開放包車」hint
+  - [x] charter 估價：client 用純幾何 `/api/maps/route` + orderType=charter 拿 isRoundTrip + distanceKm → `calculateCharterFareV2`（合成 RouteMetrics，山區 3 訊號取不到一律 1.0；server 編排會用真實 Routes API 重算）
+  - [x] PassengerFareBreakdownCard charter 模式顯示 charterResult.final
+- [x] **W4.3** charter 訂單 stopover 編輯（拖拉 / 刪除）— `BookingStepRoute` 既有 HTML5 drag + 刪除按鈕，charter / 其他訂單共用，W4 audit 確認完整無需新增
+- [x] **W4.4** 明細卡：charter 訂單在 `BookingStepConfirm` 顯示完整 `CharterFareBreakdownV2`
+  - [x] daysBreakdown 表格（Day N · {hours}h / NT$X）
+  - [x] 各層級 line：planBasePriceSum / extraKmCharge / mountain×mul / roundTripFee / overnightFee / extras / surcharge / promoDiscount / raw
+  - [x] OT 預估行：W4 估價階段 actualEndTime=null → 顯示 NT$0 + 「行程結束後實收」hint
+  - [x] 估價說明 note：實際以行程結束系統重算為準
+  - [x] 摘要區加 charterDays / charterPlan rows（i18n 三語齊）
+- [x] **W4.5** `/nuxt-api/orders` POST body：booking `ClickSubmit` charter 訂單帶 `charter: { planKeys: planKeys.slice(0, days), days }`；W2 server 編排已校驗
+- [x] **W4.6** i18n 三語齊（zh / en / ja）：booking.type.charterDays* + booking.options.charter* + booking.confirm.charter*
 
 ## W5：Driver App + Admin 對帳（後續）
 

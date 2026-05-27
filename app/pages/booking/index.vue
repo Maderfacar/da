@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VehicleType, OrderType } from '~shared/pricing';
+import type { VehicleType, OrderType, CharterPlanKey, CharterFareBreakdownV2 } from '~shared/pricing';
 import type { FlightInfo } from '@@/api/flight.get';
 import type { LuggageItem } from '@/components/passenger/BookingStepOptions.vue';
 import type { MapsRouteRes } from '~/protocol/fetch-api/api/maps';
@@ -85,6 +85,33 @@ const discountCode = ref('');
 const activeVehicleTags = ref<TagDto[]>([]);
 const selectedTagIds = ref<string[]>([]);
 
+// Charter Fare V1 W4：包車天數 + 每日 plan picker；非 charter 訂單忽略
+// draft 不存 charter（store-order draft 不需擴），由本頁 reactive 管理；submit 時 SyncToStore 同時寫進 draft
+const CHARTER_MAX_DAYS = 7;
+const charterDays = ref<number>(
+  Math.max(1, Math.min(CHARTER_MAX_DAYS, storeOrder.draft.charter?.days ?? 1)),
+);
+const charterPlanKeys = ref<CharterPlanKey[]>(
+  ((storeOrder.draft.charter?.planKeys as CharterPlanKey[] | undefined) ?? []).slice(0, CHARTER_MAX_DAYS),
+);
+// 確保 planKeys 長度永遠 = days（不足補 '8h'，超出 trim）
+watch(charterDays, (d) => {
+  if (charterPlanKeys.value.length < d) {
+    charterPlanKeys.value = [
+      ...charterPlanKeys.value,
+      ...Array.from({ length: d - charterPlanKeys.value.length }, () => '8h' as CharterPlanKey),
+    ];
+  } else if (charterPlanKeys.value.length > d) {
+    charterPlanKeys.value = charterPlanKeys.value.slice(0, d);
+  }
+}, { immediate: true });
+
+// Step 3 charter 引擎計算結果（client 用 calculateCharterFareV2 算）；step 4 顯示完整明細
+const charterResult = ref<CharterFareBreakdownV2 | null>(null);
+const OnCharterCalc = (r: CharterFareBreakdownV2 | null) => { charterResult.value = r; };
+
+const isCharter = computed(() => orderType.value === 'charter');
+
 const ApiLoadActiveVehicleTags = async () => {
   try {
     const res = await $api.GetActiveTags('vehicle');
@@ -154,6 +181,10 @@ const SyncToStore = () => {
     contactName: contactName.value,
     passengerName: passengerName.value,
     notes: notes.value,
+    // Charter Fare V1 W4：包車訂單寫入 charter draft；非 charter 訂單不帶（保留為 undefined）
+    ...(isCharter.value
+      ? { charter: { planKeys: charterPlanKeys.value.slice(0, charterDays.value), days: charterDays.value } }
+      : { charter: undefined }),
   });
 };
 
@@ -212,6 +243,15 @@ const ClickSubmit = async () => {
     preferences: selectedTagIds.value.length > 0
       ? { tagIds: selectedTagIds.value }
       : null,
+    // Charter Fare V1 W4：包車訂單帶 charter payload；server W2 編排會校驗 days/planKeys 並 snapshot freeze
+    ...(isCharter.value
+      ? {
+        charter: {
+          planKeys: charterPlanKeys.value.slice(0, charterDays.value),
+          days: charterDays.value,
+        },
+      }
+      : {}),
   });
   isSubmitting.value = false;
 
@@ -253,6 +293,9 @@ const ClickNewOrder = () => {
   durationMinutes.value = 0;
   estimatedFare.value = 0;
   fareResult.value = null;
+  charterDays.value = 1;
+  charterPlanKeys.value = ['8h'];
+  charterResult.value = null;
 };
 </script>
 
@@ -310,6 +353,7 @@ const ClickNewOrder = () => {
           v-model:pickup-date-time="pickupDateTime"
           v-model:flight-no="flightNo"
           v-model:flight-info="flightInfo"
+          v-model:charter-days="charterDays"
           @next="GoNext"
         )
 
@@ -334,14 +378,17 @@ const ClickNewOrder = () => {
           v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
           v-model:selected-tag-ids="selectedTagIds"
+          v-model:charter-plan-keys="charterPlanKeys"
           :pickup-location="pickupLocation"
           :dropoff-location="dropoffLocation"
           :stopovers="stopovers"
           :pickup-date-time="pickupDateTime"
           :order-type="orderType"
+          :charter-days="charterDays"
           :available-tags="activeVehicleTags"
           @fare-calc="OnFareCalc"
           @fare-result="OnFareResult"
+          @charter-calc="OnCharterCalc"
           @next="GoNext"
           @back="GoBack"
         )
@@ -357,6 +404,9 @@ const ClickNewOrder = () => {
           :flight-info="flightInfo"
           :available-tags="activeVehicleTags"
           :selected-tag-ids="selectedTagIds"
+          :charter-days="charterDays"
+          :charter-plan-keys="charterPlanKeys"
+          :charter-result="charterResult"
           v-model:contact-phone="contactPhone"
           v-model:contact-name="contactName"
           v-model:passenger-name="passengerName"

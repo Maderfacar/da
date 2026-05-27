@@ -349,6 +349,10 @@ export default {
           submitFail: '送出失敗，請稍後再試',
         },
       },
+      // Charter Fare V1 W4：包車天數 selector
+      charterDaysTitle: '行程天數',
+      charterDaysUnit: '天',
+      charterDaysHint: '包車支援 1-7 天，多日行程每日可選不同套餐。',
     },
     route: {
       title: '設定路線',
@@ -382,6 +386,12 @@ export default {
       warnLuggage: '行李接近車型上限，建議改選大車',
       // Booking v2 批次 1：車型與期望特徵之間的提示
       passengerHint: '如有特殊需求請從下方選擇',
+      // Charter Fare V1 W4：每日 plan picker
+      charterPlanTitle: '每日套餐（共 {days} 天）',
+      charterDayLabel: 'Day {n}',
+      charterPlanOption: '{hours} 小時套餐',
+      charterPlanHint: '同車型不同天可選不同套餐；超公里以第一天套餐為基準計算。',
+      charterNotOpen: '此車型尚未開放包車',
     },
     fareBreakdown: {
       title: '預估車資',
@@ -429,6 +439,22 @@ export default {
       submitFailed: '訂單送出失敗，請稍後再試',
       back: '← 返回修改',
       extrasSep: '、',
+      // Charter Fare V1 W4：包車摘要 + 明細卡
+      charterDays: '包車天數',
+      charterDaysVal: '{n} 天',
+      charterPlan: '每日套餐',
+      charterBreakdownTitle: '包車車資明細（預估）',
+      charterPlanSum: '套餐底價合計',
+      charterExtraKm: '超公里加收（首日套餐基準）',
+      charterMountain: '山區加成 ×{mul}',
+      charterRoundTrip: '來回固定加收',
+      charterOvernight: '過夜固定加收',
+      charterOtPending: 'OT 加收（行程結束後實收）',
+      charterExtras: '加值服務',
+      charterSurcharge: '時段加價',
+      charterPromo: '時段優惠折抵',
+      charterRaw: '預估小計',
+      charterEstimateNote: '預估值不含實際路線山區係數與 OT；最終以行程結束後系統重新計算為準。',
     },
     form: {
       contactSection: '聯絡資訊',

@@ -334,6 +334,10 @@ export default {
           submitFail: 'Submission failed, please try again',
         },
       },
+      // Charter Fare V1 W4: charter days selector
+      charterDaysTitle: 'Trip Days',
+      charterDaysUnit: 'day',
+      charterDaysHint: 'Charter supports 1–7 days. Each day can use a different package.',
     },
     route: {
       title: 'Set Route',
@@ -367,6 +371,12 @@ export default {
       warnLuggage: 'Luggage near vehicle limit, consider a larger one',
       // Booking v2 batch 1: hint between vehicle cards and expectation chips
       passengerHint: 'Special requirements? Pick from below.',
+      // Charter Fare V1 W4: per-day plan picker
+      charterPlanTitle: 'Daily Package ({days} day(s))',
+      charterDayLabel: 'Day {n}',
+      charterPlanOption: '{hours}-hour package',
+      charterPlanHint: 'Each day can use a different package; extra-km uses day-one package as basis.',
+      charterNotOpen: 'Charter not available for this vehicle',
     },
     fareBreakdown: {
       title: 'Estimated Fare',
@@ -414,6 +424,22 @@ export default {
       submitFailed: 'Failed to submit order. Please try again later.',
       back: '← Edit',
       extrasSep: ', ',
+      // Charter Fare V1 W4: charter summary + breakdown card
+      charterDays: 'Charter Days',
+      charterDaysVal: '{n} day(s)',
+      charterPlan: 'Daily Package',
+      charterBreakdownTitle: 'Charter Fare Breakdown (estimate)',
+      charterPlanSum: 'Package base sum',
+      charterExtraKm: 'Extra km (day-one basis)',
+      charterMountain: 'Mountain ×{mul}',
+      charterRoundTrip: 'Round-trip flat fee',
+      charterOvernight: 'Overnight flat fee',
+      charterOtPending: 'Overtime (charged after trip)',
+      charterExtras: 'Add-on services',
+      charterSurcharge: 'Time-window surcharge',
+      charterPromo: 'Time-window discount',
+      charterRaw: 'Estimated subtotal',
+      charterEstimateNote: 'Estimate excludes real-time mountain coefficient and overtime; final fare recalculated after the trip.',
     },
     form: {
       contactSection: 'Contact Info',

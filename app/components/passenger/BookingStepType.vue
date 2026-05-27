@@ -10,20 +10,35 @@ interface Props {
   pickupDateTime: string;
   flightNo: string;
   flightInfo: FlightInfo | null;
+  /** Charter Fare V1 W4：包車天數（1-7，預設 1）；非 charter 訂單忽略 */
+  charterDays?: number;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  charterDays: 1,
+});
 
 const emit = defineEmits<{
   (e: 'update:orderType', val: OrderType): void;
   (e: 'update:pickupDateTime' | 'update:flightNo', val: string): void;
   (e: 'update:flightInfo', val: FlightInfo | null): void;
+  (e: 'update:charterDays', val: number): void;
   (e: 'next'): void;
 }>();
 
 const selectedType = ref<OrderType | undefined>(props.orderType);
 const dateTime = ref(props.pickupDateTime ?? '');
 const flightNoInput = ref(props.flightNo ?? '');
+
+// ── Charter days selector（orderType=charter 才顯示）────────────────────────
+const CHARTER_DAYS_RANGE = [1, 2, 3, 4, 5, 6, 7] as const;
+const charterDaysInput = ref(props.charterDays);
+watch(charterDaysInput, (val) => emit('update:charterDays', val));
+watch(() => props.charterDays, (val) => {
+  if (val !== charterDaysInput.value) charterDaysInput.value = val;
+});
+
+const isCharter = computed(() => selectedType.value === 'charter');
 
 // ── 日期 / 時間 拆兩個下拉（時間以 10 分鐘為單位）─────────────────────────────
 // dateTime 為單一事實來源（ISO YYYY-MM-DDTHH:mm:ss）；pickupDate / pickupTime 為 picker 雙向綁定值
@@ -381,6 +396,23 @@ const ClickNext = () => {
       span.PassengerBookingStepType__card-en {{ t.labelEn }}
       span.PassengerBookingStepType__card-zh {{ t.label }}
 
+  //- Charter Fare V1 W4：行程天數 selector（orderType=charter 才顯示）
+  Transition(name="flight-slide")
+    .PassengerBookingStepType__charter(v-if="isCharter")
+      .PassengerBookingStepType__section-label.mt CHARTER DAYS
+      h2.PassengerBookingStepType__title {{ $t('booking.type.charterDaysTitle') }}
+      .PassengerBookingStepType__charter-grid
+        button.PassengerBookingStepType__charter-day(
+          v-for="d in CHARTER_DAYS_RANGE"
+          :key="d"
+          type="button"
+          :class="{ 'is-active': charterDaysInput === d }"
+          @click="charterDaysInput = d"
+        )
+          span.PassengerBookingStepType__charter-day-n {{ d }}
+          span.PassengerBookingStepType__charter-day-unit {{ $t('booking.type.charterDaysUnit') }}
+      p.PassengerBookingStepType__charter-hint {{ $t('booking.type.charterDaysHint') }}
+
   //- 航班號碼輸入（接機 / 送機）
   Transition(name="flight-slide")
     .PassengerBookingStepType__flight(v-if="needsFlight")
@@ -562,6 +594,58 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     font-size: 15px;
     font-weight: 700;
     color: var(--da-dark);
+  }
+
+  // ── Charter days selector ────────────────────────────────────
+  &__charter { overflow: hidden; }
+
+  &__charter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  &__charter-day {
+    background: var(--da-glass-bg);
+    border: 1.5px solid var(--da-gray-pale);
+    border-radius: 12px;
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.12s;
+
+    &:active { transform: scale(0.97); }
+    &.is-active {
+      border-color: var(--da-amber);
+      background: var(--da-amber-pale);
+    }
+  }
+
+  &__charter-day-n {
+    font-family: $font-display;
+    font-size: 22px;
+    color: var(--da-dark);
+    line-height: 1;
+  }
+
+  &__charter-day-unit {
+    font-family: $font-condensed;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--da-gray);
+  }
+
+  &__charter-hint {
+    font-family: $font-body;
+    font-size: 11px;
+    color: var(--da-gray);
+    margin: 8px 0 0;
+    line-height: 1.5;
   }
 
   // ── 航班區塊 ──────────────────────────────────────────────────

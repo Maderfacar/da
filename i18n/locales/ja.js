@@ -334,6 +334,10 @@ export default {
           submitFail: '送信に失敗しました。もう一度お試しください',
         },
       },
+      // Charter Fare V1 W4：チャーター日数セレクター
+      charterDaysTitle: '旅程日数',
+      charterDaysUnit: '日',
+      charterDaysHint: 'チャーターは1〜7日対応。毎日異なるプランを選択できます。',
     },
     route: {
       title: 'ルートを設定',
@@ -367,6 +371,12 @@ export default {
       warnLuggage: '荷物が車種上限に接近、より大型を推奨',
       // Booking v2 批次 1：車種と希望特徴の間のヒント
       passengerHint: '特別なご要望は下から選択ください',
+      // Charter Fare V1 W4：日別プランピッカー
+      charterPlanTitle: '日別プラン（合計 {days} 日）',
+      charterDayLabel: 'Day {n}',
+      charterPlanOption: '{hours}時間プラン',
+      charterPlanHint: '日ごとに異なるプランを選択可能。超過キロは初日プランを基準に計算。',
+      charterNotOpen: 'この車種はチャーター未対応',
     },
     fareBreakdown: {
       title: '予想料金',
@@ -414,6 +424,22 @@ export default {
       submitFailed: '注文の送信に失敗しました。後ほど再度お試しください。',
       back: '← 修正する',
       extrasSep: '、',
+      // Charter Fare V1 W4：チャーター摘要 + 明細カード
+      charterDays: 'チャーター日数',
+      charterDaysVal: '{n} 日',
+      charterPlan: '日別プラン',
+      charterBreakdownTitle: 'チャーター料金明細（見積もり）',
+      charterPlanSum: 'プラン基本料金合計',
+      charterExtraKm: '超過キロ加算（初日プラン基準）',
+      charterMountain: '山間部 ×{mul}',
+      charterRoundTrip: '往復固定加算',
+      charterOvernight: '宿泊固定加算',
+      charterOtPending: '超過料金（行程終了後に実費）',
+      charterExtras: '追加サービス',
+      charterSurcharge: '時間帯加算',
+      charterPromo: '時間帯割引',
+      charterRaw: '見積もり小計',
+      charterEstimateNote: '見積もりには実際のルートの山間部係数および超過料金は含まれません。最終料金は行程終了後にシステムで再計算されます。',
     },
     form: {
       contactSection: '連絡先情報',
