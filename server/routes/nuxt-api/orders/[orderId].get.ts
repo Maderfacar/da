@@ -88,6 +88,7 @@ export default defineEventHandler(async (event) => {
       pictureUrl: string;
       plateNumber: string;
       vehicleType: string;
+      vehicleModel: string;
       phone: string | null;
     } | null = null;
 
@@ -103,6 +104,7 @@ export default defineEventHandler(async (event) => {
             pictureUrl: (dd.pictureUrl as string) ?? '',
             plateNumber: (app.plateNumber as string) ?? '',
             vehicleType: (dd.vehicleType as string) ?? '',
+            vehicleModel: (app.vehicleModel as string) ?? (dd.vehicleModel as string) ?? '',
             phone: (app.phone as string) ?? null,
           };
         }

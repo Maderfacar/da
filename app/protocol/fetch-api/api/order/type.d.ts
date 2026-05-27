@@ -229,7 +229,10 @@ interface OrderDriverInfo {
   displayName: string;
   pictureUrl: string;
   plateNumber: string;
+  /** 舊欄位（fallback only）：4 選 1 分類 sedan/mpv/suv/van */
   vehicleType: string;
+  /** 司機自填「車輛品牌與型號」自由文字（例：Tesla Model S）— 2026-05-27 起新訂單會有 */
+  vehicleModel: string;
   /** P36 選項 A：真實電話（drivers.application.phone）；未設定回 null */
   phone: string | null;
 }

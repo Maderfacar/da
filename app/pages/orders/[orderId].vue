@@ -61,6 +61,17 @@ const DriverTelHref = computed(() => {
   return `tel:${phone.replace(/[^\d+]/g, '')}`;
 });
 
+// 司機車型顯示：vehicleModel（自由文字）優先；舊資料 fallback 4 選 1 中文 label
+const DriverVehicleLabel = computed((): string => {
+  const d = order.value?.driver;
+  if (!d) return '';
+  const m = d.vehicleModel?.trim();
+  if (m) return m;
+  const t2 = d.vehicleType?.trim();
+  if (!t2) return '';
+  return VehicleLabel(t2);
+});
+
 const ApiLoadOrder = async () => {
   if (!orderId.value) return;
   const isFirstLoad = !order.value;
@@ -181,29 +192,28 @@ onUnmounted(() => {
           .PageOrderDetail__route-meta-label ETA
           .PageOrderDetail__route-meta-val {{ $t('orderDetail.route.eta', { min: order.estimatedTime }) }}
 
-    //- 司機卡（confirmed 後才顯示）
+    //- 司機卡（confirmed 後才顯示）— 2026-05-27 對齊首頁 trip-card 司機區格式（rows + LINE 綠 badge）
     section.PageOrderDetail__section.is-driver(v-if="ShowDriver && order.driver")
       .PageOrderDetail__section-label DRIVER
       .PageOrderDetail__driver
-        img.PageOrderDetail__driver-avatar(
-          v-if="order.driver.pictureUrl"
-          :src="order.driver.pictureUrl"
-          :alt="order.driver.displayName"
-        )
-        .PageOrderDetail__driver-avatar-fallback(v-else) 🚖
-        .PageOrderDetail__driver-info
-          .PageOrderDetail__driver-name {{ order.driver.displayName || $t('orderDetail.driverCard.unknownName') }}
-          .PageOrderDetail__driver-meta
-            span.PageOrderDetail__driver-plate(v-if="order.driver.plateNumber") {{ order.driver.plateNumber }}
-            span.PageOrderDetail__driver-vehicle(v-if="order.driver.vehicleType") {{ VehicleLabel(order.driver.vehicleType) }}
-
-        a.PageOrderDetail__driver-call(
-          v-if="order.driver.phone"
-          :href="DriverTelHref"
-        )
-          span 📞
-          span {{ $t('orderDetail.driverCard.call') }}
-        .PageOrderDetail__driver-call.is-disabled(v-else) {{ $t('orderDetail.driverCard.noPhone') }}
+        .PageOrderDetail__driver-head
+          span.PageOrderDetail__driver-badge {{ $t('home.nextTrip.driverSection') }}
+        .PageOrderDetail__driver-rows
+          .PageOrderDetail__driver-row
+            span.PageOrderDetail__driver-key {{ $t('home.nextTrip.driverName') }}
+            span.PageOrderDetail__driver-val {{ order.driver.displayName || $t('orderDetail.driverCard.unknownName') }}
+          .PageOrderDetail__driver-row(v-if="order.driver.phone")
+            span.PageOrderDetail__driver-key {{ $t('home.nextTrip.driverPhone') }}
+            a.PageOrderDetail__driver-phone(:href="DriverTelHref")
+              | {{ order.driver.phone }}
+              span.PageOrderDetail__driver-call ☎ {{ $t('home.nextTrip.callDriver') }}
+          .PageOrderDetail__driver-row(v-if="DriverVehicleLabel")
+            span.PageOrderDetail__driver-key {{ $t('home.nextTrip.vehicle') }}
+            span.PageOrderDetail__driver-val.is-vehicle {{ DriverVehicleLabel }}
+          .PageOrderDetail__driver-row(v-if="order.driver.plateNumber")
+            span.PageOrderDetail__driver-key {{ $t('home.nextTrip.plateNumber') }}
+            span.PageOrderDetail__driver-plate {{ order.driver.plateNumber }}
+        .PageOrderDetail__driver-nophone(v-if="!order.driver.phone") {{ $t('orderDetail.driverCard.noPhone') }}
 
     //- 訂單資訊
     section.PageOrderDetail__section
@@ -482,83 +492,124 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-top: 2px;
 }
 
-// ── Driver（dark accent 內元素）──────────────────────────
+// ── Driver（dark accent 內元素）— 2026-05-27 改為 rows 列表，對齊首頁 trip-card 司機區
 .PageOrderDetail__driver {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
 }
 
-.PageOrderDetail__driver-avatar,
-.PageOrderDetail__driver-avatar-fallback {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(240, 168, 48, 0.5);
-  flex-shrink: 0;
-}
-
-.PageOrderDetail__driver-avatar-fallback {
+.PageOrderDetail__driver-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.PageOrderDetail__driver-info { flex: 1; min-width: 0; }
-
-.PageOrderDetail__driver-name {
-  font-family: $font-condensed;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--da-cream);
-}
-
-.PageOrderDetail__driver-meta {
-  display: flex;
   gap: 8px;
+}
+
+.PageOrderDetail__driver-badge {
+  display: inline-block;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #06c755;
+  background: rgba(6, 199, 85, 0.18);
+  border: 1px solid rgba(6, 199, 85, 0.4);
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.PageOrderDetail__driver-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.PageOrderDetail__driver-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
   align-items: center;
+}
+
+.PageOrderDetail__driver-key {
   font-family: $font-condensed;
   font-size: 11px;
-  color: rgba(245, 242, 236, 0.6);
-  letter-spacing: 0.06em;
-  margin-top: 3px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245, 242, 236, 0.55);
+}
 
-  & > span + span {
-    padding-left: 8px;
-    border-left: 1px solid rgba(255, 255, 255, 0.12);
+.PageOrderDetail__driver-val {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--da-cream);
+  font-family: $font-body;
+  word-break: break-word;
+
+  // 車型放大、加粗
+  &.is-vehicle {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--da-amber-light);
   }
+}
+
+.PageOrderDetail__driver-plate {
+  font-family: $font-display;
+  font-size: 24px;
+  letter-spacing: 0.08em;
+  color: var(--da-dark);
+  background: var(--da-cream);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 2px solid var(--da-amber);
+  justify-self: start;
+  font-variant-numeric: tabular-nums;
+}
+
+.PageOrderDetail__driver-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: $font-body;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--da-amber-light);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+
+  &:hover { text-decoration: underline; }
 }
 
 .PageOrderDetail__driver-call {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 4px;
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   background: var(--da-amber);
-  border: 1px solid var(--da-amber);
+  color: var(--da-dark);
+  padding: 4px 10px;
   border-radius: 100px;
+}
+
+.PageOrderDetail__driver-nophone {
   font-family: $font-condensed;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
-  color: #fff;
-  text-decoration: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
-
-  &:hover { background: var(--da-amber-light); border-color: var(--da-amber-light); }
-
-  &.is-disabled {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: rgba(245, 242, 236, 0.4);
-    cursor: not-allowed;
-  }
+  color: rgba(245, 242, 236, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
 }
 
 // ── Trip info ──────────────────────────────────────────

@@ -164,10 +164,7 @@ onUnmounted(() => {
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
 
-  //- ── 1. 安心接送的理由（合併 Steps + LINE Only 提示）───────
-  PassengerHomeFeatures
-
-  //- ── 2. 即將到來行程 ──────────────────────────────────────
+  //- ── 1. 即將到來行程（Hero 下第一順位）──────────────────
   section#nextTrip.PageHome__section.is-off-white
     .PageHome__section-label DEPARTURE & ARRIVAL
     h2.PageHome__section-title {{ $t('home.nextTrip.title') }}
@@ -230,7 +227,7 @@ onUnmounted(() => {
               span.PageHome__trip-driver-call ☎ {{ $t('home.nextTrip.callDriver') }}
           .PageHome__trip-driver-row(v-if="nextTripDisplay.driver.vehicleLabel")
             span.PageHome__trip-driver-key {{ $t('home.nextTrip.vehicle') }}
-            span.PageHome__trip-driver-val {{ nextTripDisplay.driver.vehicleLabel }}
+            span.PageHome__trip-driver-val.is-vehicle {{ nextTripDisplay.driver.vehicleLabel }}
           .PageHome__trip-driver-row(v-if="nextTripDisplay.driver.plateNumber")
             span.PageHome__trip-driver-key {{ $t('home.nextTrip.plateNumber') }}
             span.PageHome__trip-driver-plate {{ nextTripDisplay.driver.plateNumber }}
@@ -243,6 +240,9 @@ onUnmounted(() => {
     )
       span.PageHome__next-trip-empty-icon ＋
       span.PageHome__next-trip-empty-text {{ $t('home.nextTrip.emptyCta') }}
+
+  //- ── 2. 安心接送的理由（合併 Steps + LINE Only 提示）───────
+  PassengerHomeFeatures
 
   //- ── 3. 預約您的行程 CTA ────────────────────────────────
   section.PageHome__book-section
@@ -821,18 +821,26 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
   font-family: $font-body;
   word-break: break-word;
+
+  // 車型放大、加粗 — 與車牌一致辨識度
+  &.is-vehicle {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
 }
 
 .PageHome__trip-driver-plate {
   font-family: $font-display;
-  font-size: 16px;
-  letter-spacing: 0.06em;
+  font-size: 22px;
+  letter-spacing: 0.08em;
   color: var(--da-dark);
   background: var(--da-cream);
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1.5px solid var(--da-dark);
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 2px solid var(--da-dark);
   justify-self: start;
+  font-variant-numeric: tabular-nums;
 }
 
 .PageHome__trip-driver-phone {
