@@ -11,6 +11,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import {
   DEFAULT_FARE_RULES,
+  type CharterRule,
   type DistanceTier,
   type FareRules,
   type MountainTier,
@@ -282,6 +283,41 @@ export function validateFareRules(raw: unknown): ValidateResult {
     distanceTier = { enabled: d.enabled, tiers: distanceTierTiers };
   }
 
+  // charter（Charter Fare V1 W2：最小驗證 — admin UI 在 W3 才上完整 PATCH 編輯。
+  // 舊 fare_rules/v1 doc 無此欄位 → 套 DEFAULT_FARE_RULES.charter，與 promo / surcharge 同模式。
+  // 缺欄位 → 用 default；型別錯誤 → 回 error）
+  let charter: CharterRule = DEFAULT_FARE_RULES.charter;
+  if (raw.charter !== undefined) {
+    const ch = raw.charter;
+    if (!isObj(ch)) return { ok: false, error: 'charter 必須是物件' };
+    if (!isBool(ch.enabled)) return { ok: false, error: 'charter.enabled 必須是 boolean' };
+    if (!isPosNum(ch.rounding)) return { ok: false, error: 'charter.rounding 必須是正數' };
+    if (!isNonNegNum(ch.overtimeGraceMin)) return { ok: false, error: 'charter.overtimeGraceMin 必須 ≥ 0' };
+    if (!isNonNegNum(ch.roundTripFlatFee)) return { ok: false, error: 'charter.roundTripFlatFee 必須 ≥ 0' };
+    if (!isNonNegNum(ch.roundTripBufferKm)) return { ok: false, error: 'charter.roundTripBufferKm 必須 ≥ 0' };
+    if (!isNonNegNum(ch.roundTripOverShootMaxKm)) return { ok: false, error: 'charter.roundTripOverShootMaxKm 必須 ≥ 0' };
+    if (!isNonNegNum(ch.overnightFlatFee)) return { ok: false, error: 'charter.overnightFlatFee 必須 ≥ 0' };
+    if (!isBool(ch.applySurchargeWindows)) return { ok: false, error: 'charter.applySurchargeWindows 必須是 boolean' };
+    if (!isBool(ch.applyPromoWindows)) return { ok: false, error: 'charter.applyPromoWindows 必須是 boolean' };
+    const cm = ch.mountain;
+    if (!isObj(cm)) return { ok: false, error: 'charter.mountain 缺失' };
+    if (!isBool(cm.enabled)) return { ok: false, error: 'charter.mountain.enabled 必須是 boolean' };
+    const charterTiers = validateMountainTiers(cm.tiers);
+    if (typeof charterTiers === 'string') return { ok: false, error: `charter.${charterTiers}` };
+    charter = {
+      enabled: ch.enabled,
+      rounding: ch.rounding,
+      overtimeGraceMin: ch.overtimeGraceMin,
+      roundTripFlatFee: ch.roundTripFlatFee,
+      roundTripBufferKm: ch.roundTripBufferKm,
+      roundTripOverShootMaxKm: ch.roundTripOverShootMaxKm,
+      overnightFlatFee: ch.overnightFlatFee,
+      mountain: { enabled: cm.enabled, tiers: charterTiers },
+      applySurchargeWindows: ch.applySurchargeWindows,
+      applyPromoWindows: ch.applyPromoWindows,
+    };
+  }
+
   return {
     ok: true,
     value: {
@@ -316,6 +352,7 @@ export function validateFareRules(raw: unknown): ValidateResult {
       promo,
       surcharge,
       distanceTier,
+      charter,
     },
   };
 }

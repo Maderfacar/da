@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateFare,
   calculateFareV2,
+  calculateCharterFareV2,
   computeMountainMul,
   computeJamFee,
   computeCrossCountyFee,
@@ -11,11 +12,15 @@ import {
   findActivePromoDiscount,
   computeSurcharge,
   findActiveSurcharge,
+  computeOvertimeBlocks,
   buildTagSurchargeIndex,
   calcTagSurcharge,
   DEFAULT_FARE_RULES,
+  type CharterPlan,
+  type CharterPlanKey,
   type DistanceTierRule,
   type FareRules,
+  type FleetVehicle,
   type PromoRule,
   type SurchargeRule,
   type TrafficJamRule,
@@ -792,19 +797,340 @@ describe('buildTagSurchargeIndex + calcTagSurcharge', () => {
 // 包車不套：crossCountyFee / freewayToll / distanceTier。
 // =============================================================================
 
+// charter 測試共用：plan / vehicle / metrics / 時間 helper
+const PLAN_4H: CharterPlan = {
+  key: '4h', durationHours: 4, basePrice: 4500, includedKm: 80, extraKmRate: 20,
+  overtimeRatePer30min: 400, enabled: true,
+};
+const PLAN_8H: CharterPlan = {
+  key: '8h', durationHours: 8, basePrice: 7800, includedKm: 160, extraKmRate: 18,
+  overtimeRatePer30min: 400, enabled: true,
+};
+const PLAN_10H: CharterPlan = {
+  key: '10h', durationHours: 10, basePrice: 9500, includedKm: 200, extraKmRate: 18,
+  overtimeRatePer30min: 400, enabled: true,
+};
+
+function charterVehicle(plans?: Partial<Record<CharterPlanKey, CharterPlan>>): FleetVehicle {
+  return {
+    id: 'sedan-suv', label: { zh: 'SUV', en: 'SUV', ja: 'SUV' },
+    capacity: 4, luggageSU: 4, baseFare: 300, perKmRate: 25,
+    icon: 'mdi:car', sortOrder: 1, enabled: true,
+    charterPlans: plans ?? { '4h': PLAN_4H, '8h': PLAN_8H, '10h': PLAN_10H },
+  };
+}
+
+function charterMetrics(over: Partial<RouteMetrics> = {}): RouteMetrics {
+  return {
+    distanceKm: 50,
+    staticDurationSec: 3600,
+    durationSec: 3600,
+    pureJamMinutes: 0,
+    freeFlowKmh: 60,
+    polylineEncoded: '',
+    elevationDiffM: 50,
+    freewayKm: 0,
+    hasTrunk: false,
+    countiesVisited: ['TPE'],
+    straightLineKm: 45,
+    sinuosity: 1.1,
+    computedAt: 0,
+    apiSourcesOk: { routes: true, elevation: true, osm: true, counties: true },
+    ...over,
+  };
+}
+
+const CHARTER_MON_1200 = new Date('2026-05-18T04:00:00Z'); // 週一 12:00 台北（預設 RULES 下不命中任何 window）
+
+/** 上車時 + N 小時 */
+function addHours(base: Date, hours: number): Date {
+  return new Date(base.getTime() + hours * 3600 * 1000);
+}
+
+describe('computeOvertimeBlocks', () => {
+  const grace = { overtimeGraceMin: 15 };
+  const planned = new Date('2026-05-18T12:00:00+08:00');
+  it('actualEnd=null → 0', () => {
+    expect(computeOvertimeBlocks(planned, null, grace)).toBe(0);
+  });
+  it('提早結束 → 0', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() - 30 * 60000), grace)).toBe(0);
+  });
+  it('寬限內 14 分 → 0', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 14 * 60000), grace)).toBe(0);
+  });
+  it('寬限邊界 15 分 → 0', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 15 * 60000), grace)).toBe(0);
+  });
+  it('寬限後 1 分（grace 16）→ 1 段', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 16 * 60000), grace)).toBe(1);
+  });
+  it('寬限後 30 分（grace 45）→ 1 段', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 45 * 60000), grace)).toBe(1);
+  });
+  it('寬限後 31 分（grace 46）→ 2 段', () => {
+    expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 46 * 60000), grace)).toBe(2);
+  });
+});
+
 describe('calculateCharterFareV2', () => {
-  it.todo('4hr plan 基本計費：無超公里 / 無山區 / 無 OT');
-  it.todo('8hr plan 超公里加收：80 km includedKm，實跑 120 km 收 40 km 超公里');
-  it.todo('10hr plan + 來回加乘 NT$1500');
-  it.todo('多日包 2 天（8hr + 8hr）+ 1 晚過夜費 NT$2000');
-  it.todo('多日包 3 天（10hr + 10hr + 4hr）+ 2 晚過夜費');
-  it.todo('山區 2 分 → 1.4x（重用 fare-v2 三訊號偵測）');
-  it.todo('山區 3 分 → 1.6x');
-  it.todo('apiSourcesOk.routes=false → freeFlow 訊號歸 0 → 山區降級');
-  it.todo('OT 超寬限 15 min 第 1 min → 收 1 段（30 min）');
-  it.todo('OT 超 46 min → 收 2 段');
-  it.todo('rules.charter.enabled=false → throw 或回 0（W1 stub 維持 throw；W2 由編排層 fallback fare-v2）');
-  it.todo('進位 rounding=100：5237 → 5300');
-  it.todo('extras 不被山區係數放大，加在最後');
-  it.todo('surcharge / promo windows 套 orderType=charter 過濾');
+  it('4hr plan 基本計費：無超公里 / 無山區 / 無 OT', () => {
+    // 4h plan basePrice=4500, includedKm=80, distance=50 → 無超公里
+    // raw = 4500（無山區 / 無 OT / 無 extras / 無 surcharge/promo）→ 進位 100 → 4500
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], charterMetrics({ distanceKm: 50 }), false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.planBasePriceSum).toBe(4500);
+    expect(b.extraKmCharge).toBe(0);
+    expect(b.baseLayer).toBe(4500);
+    expect(b.mountainMul).toBe(1);
+    expect(b.mountainScaled).toBe(4500);
+    expect(b.roundTripFee).toBe(0);
+    expect(b.overnightFee).toBe(0);
+    expect(b.overtimeCharge).toBe(0);
+    expect(b.surcharge).toBe(0);
+    expect(b.promoDiscount).toBe(0);
+    expect(b.raw).toBe(4500);
+    expect(b.final).toBe(4500);
+    expect(b.daysBreakdown).toEqual([{ day: 1, planKey: '4h', basePrice: 4500 }]);
+  });
+
+  it('8hr plan 超公里加收：80 km includedKm，實跑 120 km 收 40 km 超公里', () => {
+    // 用客製 plan：8h plan basePrice=7800, includedKm=80, extraKmRate=20
+    // distance=120 → extraKm=40, extraCharge=40×20=800
+    // baseLayer = 7800 + 800 = 8600 → 進位 100 → 8600
+    const custom8h: CharterPlan = { ...PLAN_8H, includedKm: 80, extraKmRate: 20 };
+    const planned = addHours(CHARTER_MON_1200, 8);
+    const b = calculateCharterFareV2(
+      charterVehicle({ '8h': custom8h }), ['8h'],
+      charterMetrics({ distanceKm: 120 }), false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.planBasePriceSum).toBe(7800);
+    expect(b.extraKmCharge).toBe(800);
+    expect(b.baseLayer).toBe(8600);
+    expect(b.mountainMul).toBe(1);
+    expect(b.raw).toBe(8600);
+    expect(b.final).toBe(8600);
+  });
+
+  it('10hr plan + 來回加乘 NT$1500', () => {
+    // 10h basePrice=9500, includedKm=200, distance=150 → 無超公里
+    // baseLayer = 9500；isRoundTrip=true → +1500 → raw=11000 → 進位 → 11000
+    const planned = addHours(CHARTER_MON_1200, 10);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['10h'], charterMetrics({ distanceKm: 150 }), true,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.baseLayer).toBe(9500);
+    expect(b.roundTripFee).toBe(1500);
+    expect(b.raw).toBe(11000);
+    expect(b.final).toBe(11000);
+  });
+
+  it('多日包 2 天（8hr + 8hr）+ 1 晚過夜費 NT$2000', () => {
+    // 8h+8h basePrice 合計 15600；dayOnePlan=8h includedKm=160
+    // distance=200 → extraKm=40 × 18 = 720
+    // baseLayer = 15600 + 720 = 16320；nights=1 → +2000 = 18320 → 進位 100 → 18400
+    const planned = addHours(CHARTER_MON_1200, 16);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['8h', '8h'],
+      charterMetrics({ distanceKm: 200 }), false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.planBasePriceSum).toBe(15600);
+    expect(b.extraKmCharge).toBe(720);
+    expect(b.baseLayer).toBe(16320);
+    expect(b.overnightFee).toBe(2000);
+    expect(b.raw).toBe(18320);
+    expect(b.final).toBe(18400);
+    expect(b.daysBreakdown).toHaveLength(2);
+  });
+
+  it('多日包 3 天（10hr + 10hr + 4hr）+ 2 晚過夜費', () => {
+    // basePrice 合計：9500+9500+4500 = 23500；dayOnePlan=10h includedKm=200
+    // distance=180 → 無超公里；baseLayer=23500；nights=2 → +4000 = 27500 → 27500
+    const planned = addHours(CHARTER_MON_1200, 24);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['10h', '10h', '4h'],
+      charterMetrics({ distanceKm: 180 }), false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.planBasePriceSum).toBe(23500);
+    expect(b.extraKmCharge).toBe(0);
+    expect(b.baseLayer).toBe(23500);
+    expect(b.overnightFee).toBe(4000);
+    expect(b.raw).toBe(27500);
+    expect(b.final).toBe(27500);
+  });
+
+  it('山區 2 分 → 1.4x（重用 fare-v2 三訊號偵測，但 charter.mountain.tiers）', () => {
+    // 4h basePrice=4500, distance=50；山區 2 分（elevation + sinuosity）
+    // baseLayer=4500；mountainMul=1.4；raw = 4500 × 1.4 = 6300 → 進位 100 → 6300
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const m = charterMetrics({
+      distanceKm: 50, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 60,
+    });
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], m, false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.mountainMul).toBe(1.4);
+    expect(b.mountainScaled).toBe(6300);
+    expect(b.raw).toBe(6300);
+    expect(b.final).toBe(6300);
+  });
+
+  it('山區 3 分 → 1.6x', () => {
+    // 4h plan；3 訊號全達標 → 1.6
+    // baseLayer=4500；mountainScaled=7200；final=7200
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const m = charterMetrics({
+      distanceKm: 50, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35,
+    });
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], m, false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.mountainMul).toBe(1.6);
+    expect(b.mountainScaled).toBe(7200);
+    expect(b.final).toBe(7200);
+  });
+
+  it('apiSourcesOk.routes=false → freeFlow 訊號歸 0 → 山區降級', () => {
+    // 三訊號達標但 routes=false → freeFlow 訊號歸 0，剩 2 分 → 1.4
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const m = charterMetrics({
+      distanceKm: 50, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35,
+      apiSourcesOk: { routes: false, elevation: true, osm: true, counties: true },
+    });
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], m, false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.mountainMul).toBe(1.4);
+    expect(b.final).toBe(6300);
+  });
+
+  it('OT 超寬限 15 min 第 1 min → 收 1 段（30 min × 400 = 400）', () => {
+    // 4h plan；actualEnd = plannedEnd + 16 min → overshootMin=1 → blocks=1 → charge=400
+    // baseLayer=4500；raw = 4500 + 400 = 4900 → 進位 → 4900
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const actual = new Date(planned.getTime() + 16 * 60000);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], charterMetrics({ distanceKm: 50 }), false,
+      CHARTER_MON_1200, planned, actual, [], RULES,
+    );
+    expect(b.overtimeCharge).toBe(400);
+    expect(b.raw).toBe(4900);
+    expect(b.final).toBe(4900);
+  });
+
+  it('OT 超 46 min → 收 2 段（800）', () => {
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const actual = new Date(planned.getTime() + 46 * 60000);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], charterMetrics({ distanceKm: 50 }), false,
+      CHARTER_MON_1200, planned, actual, [], RULES,
+    );
+    expect(b.overtimeCharge).toBe(800);
+    expect(b.raw).toBe(5300);
+    expect(b.final).toBe(5300);
+  });
+
+  it('rules.charter.enabled=false 不影響純運算結果（fallback 由編排層處理）', () => {
+    // engine 本身不關心 charter.enabled；orchestration layer decides fallback to fare-v2.
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const m = charterMetrics({ distanceKm: 50 });
+    const args = [charterVehicle(), ['4h'] as CharterPlanKey[], m, false, CHARTER_MON_1200, planned, null, [], RULES] as const;
+    const enabledRes = calculateCharterFareV2(...args);
+    const disabledRules: FareRules = { ...RULES, charter: { ...RULES.charter, enabled: false } };
+    const disabledRes = calculateCharterFareV2(
+      args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], disabledRules,
+    );
+    expect(disabledRes.final).toBe(enabledRes.final);
+    expect(disabledRes.raw).toBe(enabledRes.raw);
+  });
+
+  it('進位 rounding=100：raw=5237 → final=5300', () => {
+    // 構造 raw=5237：客製 4h plan basePrice=5237、distance ≤ includedKm、無其他費
+    const custom4h: CharterPlan = { ...PLAN_4H, basePrice: 5237 };
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const b = calculateCharterFareV2(
+      charterVehicle({ '4h': custom4h }), ['4h'],
+      charterMetrics({ distanceKm: 50 }), false,
+      CHARTER_MON_1200, planned, null, [], RULES,
+    );
+    expect(b.raw).toBe(5237);
+    expect(b.final).toBe(5300);
+  });
+
+  it('extras 不被山區係數放大，加在最後', () => {
+    // 4h basePrice=4500；山區 3 分 → 1.6；mountainScaled=7200
+    // extras=200+200=400；raw=7200+400=7600 → 進位 → 7600
+    const planned = addHours(CHARTER_MON_1200, 4);
+    const m = charterMetrics({
+      distanceKm: 50, elevationDiffM: 500, sinuosity: 1.4, freeFlowKmh: 35,
+    });
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], m, false,
+      CHARTER_MON_1200, planned, null, [{ price: 200 }, { price: 200 }], RULES,
+    );
+    expect(b.mountainMul).toBe(1.6);
+    expect(b.mountainScaled).toBe(7200);
+    expect(b.extrasTotal).toBe(400);
+    expect(b.raw).toBe(7600);
+    expect(b.final).toBe(7600);
+  });
+
+  it('surcharge / promo windows 套 orderType=charter 過濾', () => {
+    // window 1：orderTypes=['charter']，週一 13:00-16:00 +300
+    // window 2：orderTypes=['airport-pickup']，同時段 +500（charter 不命中）
+    // promo：orderTypes=['charter']，同時段 -100
+    // pickup 12:00 → 都不命中；13:30 → charter 命中 +300 / -100；airport 命中 +500
+    const rules: FareRules = {
+      ...RULES,
+      surcharge: {
+        enabled: true,
+        windows: [
+          { days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 300, orderTypes: ['charter'] },
+          { days: ['MON'], start: '13:00', end: '16:00', surchargeNtd: 500, orderTypes: ['airport-pickup'] },
+        ],
+        weekendMode: 'OFF',
+        defaultSurchargeNtd: 0,
+      },
+      promo: {
+        enabled: true,
+        windows: [{ days: ['MON'], start: '13:00', end: '16:00', discountNtd: 100, orderTypes: ['charter'] }],
+        weekendMode: 'OFF',
+        defaultDiscountNtd: 0,
+      },
+    };
+    const pickup13_30 = new Date('2026-05-18T05:30:00Z'); // 週一 13:30 台北
+    const planned = addHours(pickup13_30, 4);
+    const b = calculateCharterFareV2(
+      charterVehicle(), ['4h'], charterMetrics({ distanceKm: 50 }), false,
+      pickup13_30, planned, null, [], rules,
+    );
+    expect(b.surcharge).toBe(300); // charter 命中 300，不是 500
+    expect(b.promoDiscount).toBe(100);
+    // baseLayer=4500；raw = 4500 + 300 - 100 = 4700 → 進位 100 → 4700
+    expect(b.raw).toBe(4700);
+    expect(b.final).toBe(4700);
+
+    // applySurchargeWindows=false / applyPromoWindows=false → 0
+    const rulesOff: FareRules = {
+      ...rules,
+      charter: { ...rules.charter, applySurchargeWindows: false, applyPromoWindows: false },
+    };
+    const bOff = calculateCharterFareV2(
+      charterVehicle(), ['4h'], charterMetrics({ distanceKm: 50 }), false,
+      pickup13_30, planned, null, [], rulesOff,
+    );
+    expect(bOff.surcharge).toBe(0);
+    expect(bOff.promoDiscount).toBe(0);
+    expect(bOff.final).toBe(4500);
+  });
 });

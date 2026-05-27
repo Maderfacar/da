@@ -22,27 +22,28 @@
 - [x] **W1.9** git commit + push origin main（直推 prod）
 - [x] **W1.10** 寫 W2 handoff prompt（單塊 code block，無嵌套 fence）給 Brain AI
 
-## W2：計費引擎實作（下視窗）
+## W2：計費引擎實作（本視窗）
 
-- [ ] W2.1 實作 `calculateCharterFareV2`（移除 stub throw，填入完整公式）
-  - [ ] planBasePriceSum / extraKmCharge / baseLayer
-  - [ ] mountainMul（重用 `computeMountainMul`，但帶 `charter.mountain` 而非 `rules.mountain` 的 tiers — 需擴充或新增 `computeCharterMountainMul`）
-  - [ ] roundTripFee / overnightFee / overtimeCharge
-  - [ ] extrasTotal
-  - [ ] surcharge / promoDiscount（套 `applySurchargeWindows` / `applyPromoWindows` toggle + `orderType='charter'` 過濾）
-  - [ ] raw / final（rounding 套 `charter.rounding`，Math.max(0, ...) 保底）
-- [ ] W2.2 來回判定演算法
-  - [ ] `shortestDistanceKmFromPointToPolyline(point, polyline)` 純函式（point-to-segment haversine 投影）
-  - [ ] `detectRoundTrip(A, X, D, returnLegPolyline, charter)`
-- [ ] W2.3 Routes API 整合
-  - [ ] `server/utils/route-metrics.ts` charter 模式擴充：除整段 polyline 外，另取「X→A」polyline（最後 stopover 回上車點）
-  - [ ] `server/api/maps/route.get.ts` 支援 `orderType=charter` query：回傳 `returnLegPolyline` + `isRoundTrip` flag
-- [ ] W2.4 14 個 `it.todo` 全部實作（變成 `it(...)`）+ expect
-- [ ] W2.5 charter 訂單建立編排層（`server/routes/nuxt-api/orders/index.post.ts`）
-  - [ ] orderType=charter + vehicle.charterPlans 齊全 → calculateCharterFareV2
-  - [ ] 缺 plans → fallback fare-v2 + line_api_errors warning
-  - [ ] orders/{id}.charter snapshot 寫入（含 plans 完整 freeze 避免 fleet_vehicles 後續變動影響歷史單）
-- [ ] W2.6 vitest 28+ 測試全綠 + lint + build + push main
+- [x] **W2.1** 實作 `calculateCharterFareV2`（移除 stub throw，填入完整公式）
+  - [x] planBasePriceSum / extraKmCharge / baseLayer
+  - [x] mountainMul（抽 `computeMountainScoreFromMetrics` helper，`computeMountainMul`（fare-v2）與 `computeCharterMountainMul`（charter）共用三訊號偵測；tiers 各自獨立）
+  - [x] roundTripFee / overnightFee / overtimeCharge（`computeOvertimeBlocks` helper exported）
+  - [x] extrasTotal
+  - [x] surcharge / promoDiscount（套 `applySurchargeWindows` / `applyPromoWindows` toggle + `orderType='charter'` 過濾）
+  - [x] raw / final（rounding 套 `charter.rounding`，Math.max(0, ...) 保底）
+- [x] **W2.2** 來回判定演算法（新檔 `shared/geo/round-trip.ts`）
+  - [x] `shortestDistanceKmFromPointToPolyline(point, encodedPolyline)` 純函式（equirectangular 投影 + haversine）
+  - [x] `detectRoundTrip(A, X, D, returnLegPolyline, charter)` — X / polyline 任一 null → false
+- [x] **W2.3** Routes API 整合
+  - [x] 抽 polyline 純函式到 `shared/geo/polyline.ts`（server 端 re-export 維持 import 路徑相容）
+  - [x] `server/utils/route-metrics.ts` 加 `fetchReturnLeg?: boolean` input + 取 X→A polyline 後 attach `RouteMetrics.returnLegPolyline`
+  - [x] `server/api/maps/route.get.ts` 純幾何模式 + orderType=charter + 有 stopover → 回傳 `isRoundTrip` + `returnLegPolyline`（其他模式皆 null）
+- [x] **W2.4** 14 個 `it.todo` 全部實作（變成 `it(...)`）+ expect；額外 7 個 `computeOvertimeBlocks` unit 測試（grace 邊界完整）
+- [x] **W2.5** charter 訂單建立編排層（`server/routes/nuxt-api/orders/index.post.ts`）
+  - [x] orderType=charter body 校驗（days 1-7 / planKeys 長度對齊 / key 合法）
+  - [x] vehicle.charterPlans 齊全 → `getCharterRouteWithFare` → `orders/{id}.charter` 完整 snapshot（plans freeze）
+  - [x] 缺 plans / engine throw → fallback fare-v2 + `line_api_errors` warning（charter-fare/* api 標記）
+- [x] **W2.6** vitest 428 全綠（既有 407 + charter 14 + OT helper 7）+ lint + build + push main
 
 ## W3：Admin UI（後續）
 

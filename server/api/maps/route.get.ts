@@ -14,9 +14,10 @@ import { LRUCache } from 'lru-cache';
 import { boundsFromPolyline, type LatLng, type LatLngBounds } from '@@/utils/polyline';
 import { getSimpleRoute } from '@@/utils/route-metrics';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
-import { getFareRulesEpoch } from '@@/utils/fare-rules-cache';
+import { getFareRules, getFareRulesEpoch } from '@@/utils/fare-rules-cache';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getFleetConfig } from '@@/utils/fleet-config';
+import { detectRoundTrip } from '~shared/geo/round-trip';
 import type { FareBreakdownV2, OrderType, RouteMetrics } from '~shared/pricing';
 
 const VALID_ORDER_TYPES: ReadonlySet<string> = new Set([
@@ -40,6 +41,9 @@ interface RouteRes {
   // 塞車（車資模式 v2）
   static_duration_minutes: number | null;
   pure_jam_minutes: number | null;
+  // Charter Fare V1：orderType=charter + 有 stopover 時才有值；其他情況皆 null
+  isRoundTrip: boolean | null;
+  returnLegPolyline: string | null;
 }
 
 const routeCache = new LRUCache<string, RouteRes>({
@@ -115,6 +119,23 @@ export default defineEventHandler(async (event) => {
   if (!fareMode) {
     try {
       const route = await getSimpleRoute({ origin, destination, waypoints, apiKey: googleMapsApiKey });
+
+      // Charter Fare V1：orderType=charter + 有 stopover → 額外取 X→A polyline + 算 isRoundTrip
+      let isRoundTrip: boolean | null = null;
+      let returnLegPolyline: string | null = null;
+      if (orderType === 'charter' && waypoints.length > 0) {
+        try {
+          const X = waypoints[waypoints.length - 1]!;
+          const back = await getSimpleRoute({ origin: X, destination: origin, apiKey: googleMapsApiKey });
+          returnLegPolyline = back.polylineEncoded || null;
+          const rules = await getFareRules();
+          isRoundTrip = detectRoundTrip(origin, X, destination, returnLegPolyline, rules.charter);
+        } catch (err) {
+          console.error('[maps/route] charter return-leg fetch failed:', err);
+          isRoundTrip = false;
+        }
+      }
+
       const data: RouteRes = {
         polyline: route.polylineEncoded,
         bounds: route.bounds,
@@ -126,6 +147,8 @@ export default defineEventHandler(async (event) => {
         routeMetrics: null,
         static_duration_minutes: null,
         pure_jam_minutes: null,
+        isRoundTrip,
+        returnLegPolyline,
       };
       routeCache.set(cacheKey, data);
       return { data, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
@@ -180,6 +203,8 @@ export default defineEventHandler(async (event) => {
         routeMetrics: m,
         static_duration_minutes: Math.round(m.staticDurationSec / 60),
         pure_jam_minutes: Math.round(m.pureJamMinutes),
+        isRoundTrip: null,
+        returnLegPolyline: null,
       };
     } else {
       // v1 降級：只有基本路線 + 簡化車資
@@ -194,6 +219,8 @@ export default defineEventHandler(async (event) => {
         routeMetrics: null,
         static_duration_minutes: null,
         pure_jam_minutes: null,
+        isRoundTrip: null,
+        returnLegPolyline: null,
       };
     }
 

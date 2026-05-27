@@ -1,61 +1,12 @@
-// Polyline 解碼與地理距離工具 — Fare V2 route-metrics / county-detect 共用。
+// Polyline 解碼與地理距離工具 — Fare V2 route-metrics / county-detect / charter round-trip 共用。
 //
-// Google encoded polyline algorithm（precision 5），Routes API v2 的
-// polyline.encodedPolyline 與舊 Directions overview_polyline 同編碼。
+// 純函式部分（decodePolyline / haversineKm / LatLng）抽到 shared/geo/polyline.ts，
+// 以便 shared/pricing.ts 與 shared/geo/round-trip.ts 也能直接呼叫並跑 vitest。
+// 本檔保留 server 端取樣 / bounds 工具，並 re-export shared 介面以維持原 import 路徑相容。
 
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
+import { decodePolyline, haversineKm, type LatLng } from '~shared/geo/polyline';
 
-const EARTH_RADIUS_KM = 6371;
-
-/** 解碼 Google encoded polyline 字串為座標點陣列。 */
-export function decodePolyline(encoded: string): LatLng[] {
-  const points: LatLng[] = [];
-  let index = 0;
-  let lat = 0;
-  let lng = 0;
-
-  while (index < encoded.length) {
-    let result = 0;
-    let shift = 0;
-    let byte: number;
-    do {
-      byte = encoded.charCodeAt(index++) - 63;
-      result |= (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20);
-    lat += result & 1 ? ~(result >> 1) : result >> 1;
-
-    result = 0;
-    shift = 0;
-    do {
-      byte = encoded.charCodeAt(index++) - 63;
-      result |= (byte & 0x1f) << shift;
-      shift += 5;
-    } while (byte >= 0x20);
-    lng += result & 1 ? ~(result >> 1) : result >> 1;
-
-    points.push({ lat: lat / 1e5, lng: lng / 1e5 });
-  }
-  return points;
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180;
-}
-
-/** 兩點 haversine 大圓距離（公里）。 */
-export function haversineKm(a: LatLng, b: LatLng): number {
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
-}
+export { decodePolyline, haversineKm, type LatLng } from '~shared/geo/polyline';
 
 /**
  * 沿 polyline 點序每隔 intervalKm 取一點（含首尾）。供 Elevation API 等距取樣。

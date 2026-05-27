@@ -352,6 +352,9 @@ export interface RouteMetrics {
   // meta
   computedAt: number;
   apiSourcesOk: { routes: boolean; elevation: boolean; osm: boolean; counties: boolean };
+  /** Charter Fare V1：最後 stopover X → 上車點 A 的 encoded polyline（W2 額外取一次 Routes 計算）。
+   *  非 charter 模式或無 stopover 時為 undefined；來回判定（shortestDistanceKmFromPointToPolyline）使用。 */
+  returnLegPolyline?: string;
 }
 
 // ── 車資明細 ────────────────────────────────────────────────────────────────
@@ -475,21 +478,58 @@ function taipeiParts(t: Date): { dayKey: Weekday; hhmm: string } {
   return { dayKey, hhmm: `${hh}:${mm}` };
 }
 
+/** 三個門檻（fare-v2 與 charter 共用）。charter.mountain 沿用同套 threshold，只 multiplier tiers 獨立。 */
+type MountainThresholds = Pick<
+  MountainRule,
+  'thresholdElevationDiffM' | 'thresholdSinuosity' | 'thresholdFreeFlowKmh'
+>;
+
 /**
- * 山區係數：三訊號（海拔起伏 / 曲折度 / 無塞車時速）各 1 分，依階梯取最高符合的 multiplier。
+ * 三訊號分數（0-3）：海拔起伏 / 曲折度 / 無塞車時速 各 1 分。
+ * 任一訊號取不到（apiSourcesOk 對應 false）→ 該訊號 0 分。
+ * 抽出共用以便 fare-v2 與 charter 共享偵測邏輯，僅 tiers 不同。
+ */
+function computeMountainScoreFromMetrics(m: RouteMetrics, t: MountainThresholds): number {
+  let score = 0;
+  if (m.apiSourcesOk.elevation && m.elevationDiffM >= t.thresholdElevationDiffM) score++;
+  if (m.sinuosity >= t.thresholdSinuosity) score++;
+  if (m.apiSourcesOk.routes && m.freeFlowKmh <= t.thresholdFreeFlowKmh) score++;
+  return score;
+}
+
+/** 依分數從 tiers 中取最高符合的 multiplier；無命中回 1。 */
+function pickMountainMulFromTiers(score: number, tiers: ReadonlyArray<MountainTier>): number {
+  const sorted = [...tiers].sort((a, b) => b.minScore - a.minScore);
+  for (const tier of sorted) {
+    if (score >= tier.minScore) return tier.multiplier;
+  }
+  return 1;
+}
+
+/**
+ * 山區係數（fare-v2）：三訊號分數 → rule.tiers 取階梯。
  * 任一訊號取不到（apiSourcesOk 對應 false）→ 該訊號 0 分。
  */
 export function computeMountainMul(m: RouteMetrics, rule: MountainRule): number {
   if (!rule.enabled) return 1;
-  let score = 0;
-  if (m.apiSourcesOk.elevation && m.elevationDiffM >= rule.thresholdElevationDiffM) score++;
-  if (m.sinuosity >= rule.thresholdSinuosity) score++;
-  if (m.apiSourcesOk.routes && m.freeFlowKmh <= rule.thresholdFreeFlowKmh) score++;
-  const sortedTiers = [...rule.tiers].sort((a, b) => b.minScore - a.minScore);
-  for (const tier of sortedTiers) {
-    if (score >= tier.minScore) return tier.multiplier;
-  }
-  return 1;
+  const score = computeMountainScoreFromMetrics(m, rule);
+  return pickMountainMulFromTiers(score, rule.tiers);
+}
+
+/**
+ * 山區係數（charter）：偵測訊號沿用 fare-v2 三 threshold（baseThresholds），
+ * 但 multiplier 階梯來自 charter.mountain.tiers（W1 預設 2 分 1.4x / 3 分 1.6x）。
+ *
+ * charter.mountain.enabled=false → 一律 1。
+ */
+export function computeCharterMountainMul(
+  m: RouteMetrics,
+  charterMountain: CharterMountainRule,
+  baseThresholds: MountainThresholds,
+): number {
+  if (!charterMountain.enabled) return 1;
+  const score = computeMountainScoreFromMetrics(m, baseThresholds);
+  return pickMountainMulFromTiers(score, charterMountain.tiers);
 }
 
 /**
@@ -765,24 +805,112 @@ export function calcTagSurcharge(
 }
 
 // =============================================================================
-// Charter Fare V1 — calculateCharterFareV2 stub
+// Charter Fare V1 — calculateCharterFareV2
 //
-// W1 僅鎖介面 + 預設值 + 14 個 vitest it.todo；本 stub 在 W2 補完。
-// 公式見 design.md（openspec/changes/2026-05-28-charter-fare-v1/design.md）。
+// 公式骨架（見 design.md / spec.md，不可改）：
+//   A = plan.basePrice（多日累加）
+//   B = max(0, distanceKm − dayOnePlan.includedKm) × dayOnePlan.extraKmRate
+//   mountainScaled = (A + B) × mountainMul
+//   raw = mountainScaled + roundTripFee + overnightFee + overtimeCharge
+//         + extrasTotal + surcharge − promoDiscount
+//   final = max(0, ⌈ raw / charter.rounding ⌉ × charter.rounding)
+//
+// 包車不套：crossCountyFee / freewayToll / distanceTier。
+// engine 本身不關心 charter.enabled — 編排層決定走 charter 引擎或 fallback fare-v2。
 // =============================================================================
 
+/**
+ * OT 段數計算：actualEnd（或 estimatedEnd 兜底）− estimatedEnd − grace 分鐘，
+ * 不足 0 視 0；正值 ceil / 30 取段。
+ *
+ * 寬限邊界：15 分（grace 15） → overshootMin=0 / blocks=0；16 分 → overshootMin=1 / blocks=1；
+ * 46 分 → overshootMin=31 / blocks=2。
+ */
+export function computeOvertimeBlocks(
+  estimatedEndTime: Date,
+  actualEndTime: Date | null,
+  charter: Pick<CharterRule, 'overtimeGraceMin'>,
+): number {
+  const effectiveEnd = actualEndTime ?? estimatedEndTime;
+  const diffMin = (effectiveEnd.getTime() - estimatedEndTime.getTime()) / 60000;
+  const overshootMin = Math.max(0, diffMin - charter.overtimeGraceMin);
+  return overshootMin > 0 ? Math.ceil(overshootMin / 30) : 0;
+}
+
 export function calculateCharterFareV2(
-  _vehicle: FleetVehicle,
-  _planKeys: CharterPlanKey[],
-  _routeMetrics: RouteMetrics,
-  _isRoundTripFlag: boolean,
-  _pickupTime: Date,
-  _estimatedEndTime: Date,
-  _actualEndTime: Date | null,
-  _extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
-  _rules: FareRules,
+  vehicle: FleetVehicle,
+  planKeys: CharterPlanKey[],
+  routeMetrics: RouteMetrics,
+  isRoundTripFlag: boolean,
+  pickupTime: Date,
+  estimatedEndTime: Date,
+  actualEndTime: Date | null,
+  extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
+  rules: FareRules,
 ): CharterFareBreakdownV2 {
-  throw new Error('charter fare engine not implemented yet — W2');
+  if (planKeys.length === 0) {
+    throw new Error('calculateCharterFareV2: planKeys is empty');
+  }
+  const plans = planKeys.map((k) => {
+    const p = vehicle.charterPlans?.[k];
+    if (!p) throw new Error(`calculateCharterFareV2: vehicle.charterPlans missing plan "${k}"`);
+    return p;
+  });
+  const dayOnePlan = plans[0]!;
+
+  // 1. 多日 plan basePrice 加總 + 超公里加收（用第一天 plan 的 includedKm / extraKmRate）
+  const planBasePriceSum = plans.reduce((s, p) => s + p.basePrice, 0);
+  const extraKm = Math.max(0, routeMetrics.distanceKm - dayOnePlan.includedKm);
+  const extraKmCharge = extraKm * dayOnePlan.extraKmRate;
+  const baseLayer = planBasePriceSum + extraKmCharge;
+
+  // 2. 山區係數（charter 沿用 fare-v2 三訊號偵測，tiers 取自 charter.mountain.tiers）
+  const mountainMul = computeCharterMountainMul(routeMetrics, rules.charter.mountain, rules.mountain);
+  const mountainScaled = baseLayer * mountainMul;
+
+  // 3. 來回 / 過夜 / OT
+  const roundTripFee = isRoundTripFlag ? rules.charter.roundTripFlatFee : 0;
+  const nights = Math.max(0, planKeys.length - 1);
+  const overnightFee = nights * rules.charter.overnightFlatFee;
+  const overtimeBlocks = computeOvertimeBlocks(estimatedEndTime, actualEndTime, rules.charter);
+  const overtimeCharge = overtimeBlocks * dayOnePlan.overtimeRatePer30min;
+
+  // 4. extras（平面加總，不被山區係數放大）
+  const extrasTotal = extras.reduce((s, e) => s + e.price, 0);
+
+  // 5. 時段加價 / 折抵（共用 fare-v2 windows + orderType='charter' 過濾；charter 可 opt-out）
+  const surcharge = rules.charter.applySurchargeWindows
+    ? computeSurcharge(pickupTime, rules.surcharge, 'charter')
+    : 0;
+  const promoDiscount = rules.charter.applyPromoWindows
+    ? computePromoDiscount(pickupTime, rules.promo, 'charter')
+    : 0;
+
+  // 6. 合計 + 進位（charter.rounding，與 fare-v2 的 rounding 分離；最後一次 ceil）
+  const raw =
+    mountainScaled + roundTripFee + overnightFee + overtimeCharge + extrasTotal + surcharge - promoDiscount;
+  const final = Math.max(0, Math.ceil(raw / rules.charter.rounding) * rules.charter.rounding);
+
+  return {
+    planBasePriceSum,
+    extraKmCharge,
+    baseLayer,
+    mountainMul,
+    mountainScaled,
+    roundTripFee,
+    overnightFee,
+    overtimeCharge,
+    extrasTotal,
+    surcharge,
+    promoDiscount,
+    raw,
+    final,
+    daysBreakdown: planKeys.map((k, i) => ({
+      day: i + 1,
+      planKey: k,
+      basePrice: plans[i]!.basePrice,
+    })),
+  };
 }
 
 /**

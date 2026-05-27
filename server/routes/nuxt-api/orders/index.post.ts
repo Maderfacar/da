@@ -1,12 +1,13 @@
 import { calculateFare } from '~shared/pricing';
-import type { OrderType, FareBreakdownV2 } from '~shared/pricing';
+import type { CharterPlanKey, FareBreakdownV2, OrderType } from '~shared/pricing';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { getFleetConfig } from '@@/utils/fleet-config';
-import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
+import { getCharterRouteWithFare, getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getFareRules } from '@@/utils/fare-rules-cache';
+import { writeLineApiError } from '@@/utils/line-api-error-log';
 import { getUserLang } from '@@/utils/user-lang';
 import { buildTemplate, resolveTemplate } from '@@/utils/template-registry';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
@@ -73,7 +74,44 @@ interface CreateOrderBody {
   preferences?: {
     tagIds?: string[];
   } | null;
+  /** Charter Fare V1：orderType='charter' 時必填；非 charter 訂單忽略 */
+  charter?: {
+    planKeys: CharterPlanKey[];
+    days: number;
+  };
 }
+
+interface CharterSnapshotPlan {
+  key: CharterPlanKey;
+  durationHours: number;
+  basePrice: number;
+  includedKm: number;
+  extraKmRate: number;
+  overtimeRatePer30min: number;
+  enabled: boolean;
+}
+
+interface CharterSnapshotStopover {
+  name: string;
+  lat: number;
+  lng: number;
+  order: number;
+}
+
+interface CharterOrderSnapshot {
+  planKey: CharterPlanKey;
+  days: number;
+  plans: CharterSnapshotPlan[];
+  estimatedEndTime: string;
+  isRoundTrip: boolean;
+  isMountain: boolean;
+  mountainMul: number;
+  nights: number;
+  distanceKm: number;
+  stopovers: CharterSnapshotStopover[];
+}
+
+const VALID_CHARTER_KEYS: ReadonlySet<CharterPlanKey> = new Set(['4h', '8h', '10h']);
 
 const PHONE_REGEX = /^09\d{8}$/;
 const NOTES_MAX_LENGTH = 200;
@@ -213,48 +251,169 @@ export default defineEventHandler(async (event) => {
 
   const orderId = crypto.randomUUID();
 
+  // Charter Fare V1：先校驗 charter body（必要時驗失敗直接 400）；通過後嘗試 charter 引擎
+  let charterPlanKeys: CharterPlanKey[] | null = null;
+  let charterDays = 0;
+  let charterEstimatedEnd: Date | null = null;
+  if (body.orderType === 'charter') {
+    const c = body.charter;
+    if (!c || !Array.isArray(c.planKeys) || c.planKeys.length === 0) {
+      return badRequestError({
+        zh_tw: '包車訂單需指定行程天數與時長套餐',
+        en: 'Charter order requires days and plan keys',
+        ja: 'チャーター予約には日数とプランキーが必要です',
+      });
+    }
+    if (!Number.isInteger(c.days) || c.days < 1 || c.days > 7) {
+      return badRequestError({
+        zh_tw: '包車天數須為 1-7 天',
+        en: 'Charter days must be between 1 and 7',
+        ja: 'チャーター日数は1-7日',
+      });
+    }
+    if (c.planKeys.length !== c.days) {
+      return badRequestError({
+        zh_tw: '行程天數與套餐數量不一致',
+        en: 'planKeys length must equal days',
+        ja: 'planKeysの長さがdaysと一致しません',
+      });
+    }
+    if (!c.planKeys.every((k) => VALID_CHARTER_KEYS.has(k))) {
+      return badRequestError({
+        zh_tw: '包車套餐代號無效（僅接受 4h / 8h / 10h）',
+        en: 'Invalid plan key (only 4h / 8h / 10h accepted)',
+        ja: 'プランキーが無効です（4h / 8h / 10h のみ）',
+      });
+    }
+    charterPlanKeys = c.planKeys;
+    charterDays = c.days;
+  }
+
   // Fare V2：與 booking step 3/4 顯示一致的車資來源。
   // getRouteWithFare 內部：Routes API 失敗自動降級 v1；連 v1 Directions 也失敗才 throw。
-  let estimatedFare: number;
-  let distanceKm: number;
-  let estimatedTime: number;
+  let estimatedFare = 0;
+  let distanceKm = 0;
+  let estimatedTime = 0;
   let fareBreakdown: FareBreakdownV2 | null = null;
   let fareVersion: 'v1' | 'v2' = 'v1';
-  try {
-    const fareResult = await getRouteWithFare({
-      origin: { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
-      destination: { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
-      waypoints: validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
-      vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
-      extras: selectedExtras.map((e) => ({ price: e.price })),
-      pickupTime: parseTaiwanTime(body.pickupDateTime),
-      orderType: body.orderType,
-      apiKey: googleMapsApiKey,
-      orderId,
-    });
-    if (fareResult.version === 'v2') {
-      estimatedFare = fareResult.breakdown.final;
-      distanceKm = fareResult.metrics.distanceKm;
-      estimatedTime = Math.round(fareResult.metrics.durationSec / 60);
-      fareBreakdown = fareResult.breakdown;
-      fareVersion = 'v2';
+  let charterSnapshot: CharterOrderSnapshot | null = null;
+
+  // ---- charter 路徑優先嘗試（失敗 silent fall through 到 fare-v2 + 寫 warning）----
+  let charterApplied = false;
+  if (charterPlanKeys && vehicle.charterPlans) {
+    const missingKey = charterPlanKeys.find((k) => !vehicle.charterPlans?.[k]);
+    if (missingKey) {
+      await writeLineApiError({
+        channel: 'unknown',
+        api: 'charter-fare/plan-missing',
+        method: 'POST',
+        statusCode: 0,
+        errorMessage: `vehicle ${vehicle.id} missing charter plan "${missingKey}"`,
+        context: { orderId },
+      });
     } else {
-      estimatedFare = fareResult.final;
-      distanceKm = fareResult.route.distanceKm;
-      estimatedTime = fareResult.route.durationMinutes;
+      const pickupDate = parseTaiwanTime(body.pickupDateTime);
+      const totalHours = charterPlanKeys.reduce(
+        (s, k) => s + (vehicle.charterPlans?.[k]?.durationHours ?? 0),
+        0,
+      );
+      charterEstimatedEnd = new Date(pickupDate.getTime() + totalHours * 3600 * 1000);
+      try {
+        const charterResult = await getCharterRouteWithFare({
+          origin: { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
+          destination: { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
+          waypoints: validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
+          vehicle,
+          extras: selectedExtras.map((e) => ({ price: e.price })),
+          pickupTime: pickupDate,
+          planKeys: charterPlanKeys,
+          estimatedEndTime: charterEstimatedEnd,
+          apiKey: googleMapsApiKey,
+          orderId,
+        });
+        estimatedFare = charterResult.breakdown.final;
+        distanceKm = charterResult.metrics.distanceKm;
+        estimatedTime = Math.round(charterResult.metrics.durationSec / 60);
+        fareVersion = 'v2';
+        // fareBreakdown 留 null；charter 明細存於 orders/{id}.charter
+        charterSnapshot = {
+          planKey: charterPlanKeys[0]!,
+          days: charterDays,
+          plans: charterPlanKeys.map((k) => ({ ...vehicle.charterPlans![k]! })),
+          estimatedEndTime: charterEstimatedEnd.toISOString(),
+          isRoundTrip: charterResult.isRoundTrip,
+          isMountain: charterResult.breakdown.mountainMul > 1,
+          mountainMul: charterResult.breakdown.mountainMul,
+          nights: Math.max(0, charterDays - 1),
+          distanceKm: charterResult.metrics.distanceKm,
+          stopovers: validStopovers.map((s, i) => ({
+            name: s.address,
+            lat: s.lat,
+            lng: s.lng,
+            order: i + 1,
+          })),
+        };
+        charterApplied = true;
+      } catch (err) {
+        await writeLineApiError({
+          channel: 'unknown',
+          api: 'charter-fare/engine',
+          method: 'POST',
+          statusCode: 0,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          errorDetails: err instanceof Error ? err.stack : undefined,
+          context: { orderId },
+        });
+      }
     }
-  } catch (err) {
-    // 連 v1 Directions 都失敗 → 最終 fallback：距離 25km + v1 公式（含 distanceTier / 起跳費 floor）
-    console.error('[orders/post] fare calculation failed, using 25km fallback:', err);
-    distanceKm = 25;
-    let fallbackRules;
+  } else if (charterPlanKeys && !vehicle.charterPlans) {
+    await writeLineApiError({
+      channel: 'unknown',
+      api: 'charter-fare/vehicle-no-plans',
+      method: 'POST',
+      statusCode: 0,
+      errorMessage: `vehicle ${vehicle.id} has no charterPlans configured`,
+      context: { orderId },
+    });
+  }
+
+  if (!charterApplied) {
     try {
-      fallbackRules = await getFareRules();
-    } catch {
-      fallbackRules = undefined;
+      const fareResult = await getRouteWithFare({
+        origin: { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
+        destination: { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
+        waypoints: validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
+        vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
+        extras: selectedExtras.map((e) => ({ price: e.price })),
+        pickupTime: parseTaiwanTime(body.pickupDateTime),
+        orderType: body.orderType,
+        apiKey: googleMapsApiKey,
+        orderId,
+      });
+      if (fareResult.version === 'v2') {
+        estimatedFare = fareResult.breakdown.final;
+        distanceKm = fareResult.metrics.distanceKm;
+        estimatedTime = Math.round(fareResult.metrics.durationSec / 60);
+        fareBreakdown = fareResult.breakdown;
+        fareVersion = 'v2';
+      } else {
+        estimatedFare = fareResult.final;
+        distanceKm = fareResult.route.distanceKm;
+        estimatedTime = fareResult.route.durationMinutes;
+      }
+    } catch (err) {
+      // 連 v1 Directions 都失敗 → 最終 fallback：距離 25km + v1 公式（含 distanceTier / 起跳費 floor）
+      console.error('[orders/post] fare calculation failed, using 25km fallback:', err);
+      distanceKm = 25;
+      let fallbackRules;
+      try {
+        fallbackRules = await getFareRules();
+      } catch {
+        fallbackRules = undefined;
+      }
+      estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras, fallbackRules);
+      estimatedTime = Math.round(distanceKm * 1.8);
     }
-    estimatedFare = calculateFare(vehicle, distanceKm, selectedExtras, fallbackRules);
-    estimatedTime = Math.round(distanceKm * 1.8);
   }
 
   // P23：行李 SU 校驗（伺服器端最後一道把關，前端 UI 應已 disable 超 1.5 倍車型）
@@ -389,6 +548,8 @@ export default defineEventHandler(async (event) => {
       fareBeforeDiscount,
       // Phase 1D：偏好標籤 snapshot（null 表示乘客未勾選）；tagSurcharge 已併入 estimatedFare
       preferences: preferencesSnapshot,
+      // Charter Fare V1：包車訂單 snapshot（含 plans 整份 freeze；非 charter 訂單寫 null）
+      charter: charterSnapshot,
       orderStatus: 'pending',
       createdAt: FieldValue.serverTimestamp(),
     });

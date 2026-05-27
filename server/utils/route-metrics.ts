@@ -31,6 +31,14 @@ export interface RouteMetricsInput {
   /** 預約上車時間；未來時間才送 Routes API departureTime（過去時間 API 會拒絕） */
   departureTime?: Date;
   apiKey: string;
+  /**
+   * Charter Fare V1：是否額外取「最後 waypoint X → 上車點 A」polyline，
+   * 供包車來回判定（shortestDistanceKmFromPointToPolyline）使用。
+   *
+   * - true + waypoints.length > 0 → 多打一次 Directions（X→A，無 intermediates），attach 至 returnLegPolyline
+   * - 失敗 silent skip（returnLegPolyline 留 undefined，呼叫端 detectRoundTrip 回 false）
+   */
+  fetchReturnLeg?: boolean;
 }
 
 const ROUTES_ENDPOINT = 'https://routes.googleapis.com/directions/v2:computeRoutes';
@@ -219,6 +227,22 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
   const freeFlowKmh =
     route.staticDurationSec > 0 ? route.distanceKm / (route.staticDurationSec / 3600) : 0;
 
+  // 5. Charter Fare V1：取 X→A polyline 供來回判定（失敗 silent skip）
+  let returnLegPolyline: string | undefined;
+  if (input.fetchReturnLeg && input.waypoints && input.waypoints.length > 0) {
+    const X = input.waypoints[input.waypoints.length - 1]!;
+    try {
+      const back = await getSimpleRoute({
+        origin: X,
+        destination: input.origin,
+        apiKey: input.apiKey,
+      });
+      if (back.polylineEncoded) returnLegPolyline = back.polylineEncoded;
+    } catch (err) {
+      console.error('[route-metrics] return-leg fetch failed:', err);
+    }
+  }
+
   return {
     distanceKm: route.distanceKm,
     staticDurationSec: route.staticDurationSec,
@@ -234,6 +258,7 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
     sinuosity,
     computedAt: Date.now(),
     apiSourcesOk: { routes: true, elevation: elevationOk, osm: osmOk, counties: countiesOk },
+    ...(returnLegPolyline ? { returnLegPolyline } : {}),
   };
 }
 
