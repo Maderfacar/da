@@ -851,11 +851,11 @@ onMounted(() => {
                   @click="ClickSelectTemplate(t)"
                 )
                   span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
+                  span.PageAdminLineManagement__template-audience(:class="`is-${t.meta.audience}`") {{ AUDIENCE_TEXT[t.meta.audience] || t.meta.audience }}
                   span.PageAdminLineManagement__template-badges
                     span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
                     span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
                     span.PageAdminLineManagement__template-badge(:title="I18N_MODE_BADGE[t.meta.i18nMode].label") {{ I18N_MODE_BADGE[t.meta.i18nMode].icon }}
-                    span.PageAdminLineManagement__template-badge(:title="AUDIENCE_BADGE[t.meta.audience].label") {{ AUDIENCE_BADGE[t.meta.audience].icon }}
                     span.PageAdminLineManagement__template-badge.is-lock(v-if="IsTemplateLocked(t)" title="需 super 權限") 🔒
                   span.PageAdminLineManagement__template-dot(
                     :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
@@ -869,11 +869,11 @@ onMounted(() => {
                 @click="ClickSelectTemplate(t)"
               )
                 span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
+                span.PageAdminLineManagement__template-audience(:class="`is-${t.meta.audience}`") {{ AUDIENCE_TEXT[t.meta.audience] || t.meta.audience }}
                 span.PageAdminLineManagement__template-badges
                   span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
                   span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
                   span.PageAdminLineManagement__template-badge(:title="I18N_MODE_BADGE[t.meta.i18nMode].label") {{ I18N_MODE_BADGE[t.meta.i18nMode].icon }}
-                  span.PageAdminLineManagement__template-badge(:title="AUDIENCE_BADGE[t.meta.audience].label") {{ AUDIENCE_BADGE[t.meta.audience].icon }}
                   span.PageAdminLineManagement__template-badge.is-lock(v-if="IsTemplateLocked(t)" title="需 super 權限") 🔒
                 span.PageAdminLineManagement__template-dot(
                   :title="t.content ? (t.enabled ? '已自訂' : '已自訂但停用') : '使用預設'"
@@ -1670,6 +1670,35 @@ $border: rgba(212, 134, 10, 0.18);
   flex: 1;
   min-width: 0;
   word-break: break-word;
+}
+
+// 2026-05-29：列表卡片顯眼版 audience pill — 一眼分辨「給乘客 / 給司機」
+.PageAdminLineManagement__template-audience {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid;
+  flex-shrink: 0;
+
+  &.is-passenger {
+    color: #2563eb;
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.08);
+  }
+  &.is-driver {
+    color: #059669;
+    border-color: rgba(5, 150, 105, 0.4);
+    background: rgba(5, 150, 105, 0.08);
+  }
+  &.is-admin,
+  &.is-both {
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.4);
+    background: rgba(107, 114, 128, 0.08);
+  }
 }
 
 // W7：列表 entry badge（4 icon + optional lock）

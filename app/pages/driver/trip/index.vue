@@ -189,7 +189,7 @@ const _GetFreshLocation = (): Promise<{ lat: number; lng: number } | null> => {
   });
 };
 
-const ClickAdvance = async (order: AssignedOrder) => {
+const ClickAdvance = async (order: AssignedOrder, skipPassengerNotify = false) => {
   if (advancing.value) return;
   const cfg = ACTION_BY_STATUS[order.orderStatus];
   if (!cfg) return;
@@ -222,10 +222,16 @@ const ClickAdvance = async (order: AssignedOrder) => {
     if (order.orderType === 'charter' && cfg.next === 'completed') {
       patchBody.actualEndTime = new Date().toISOString();
     }
+    // 2026-05-29：司機按「已到達上車點（僅紀錄）」時帶 skipPassengerNotify=true，
+    // server 端會跳過 order.en_route 推播但狀態切換 / GPS / war-room 狀態仍正常
+    if (skipPassengerNotify) patchBody.skipPassengerNotify = true;
 
     const res = await $api.PatchOrder(order.orderId, patchBody);
     if (res.status.code === $enum.apiStatus.success) {
-      ElMessage({ message: `已更新：${cfg.label}`, type: 'success' });
+      const successMsg = skipPassengerNotify
+        ? `已更新：${cfg.label}（未通知乘客）`
+        : `已更新：${cfg.label}`;
+      ElMessage({ message: successMsg, type: 'success' });
       // completed 後該訂單不再屬於 active 列表，關閉 modal
       if (cfg.next === 'completed') selectedOrder.value = null;
       await ApiLoadAssignedOrders();
@@ -484,12 +490,24 @@ onUnmounted(() => {
               span.PageDriverTrip__section-val {{ selectedOrder.estimatedTime }} 分鐘
 
         //- Footer：四階段主操作按鈕
+        //- 2026-05-29：en_route → arrived_pickup 拆兩個按鈕（通知乘客 / 僅紀錄），
+        //- 對應「司機到點通知」可選擇是否推 LINE；其他狀態維持單一按鈕。
         //- Phase 3：客上 / 客下 兩階段加時間 gate；未到時 button disable + 顯示倒數
         .PageDriverTrip__modal-foot
-          button.PageDriverTrip__action(
-            :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
-            @click="ClickAdvance(selectedOrder)"
-          ) {{ advancing === selectedOrder.orderId ? '處理中...' : currentActionLabel }}
+          template(v-if="selectedOrder.orderStatus === 'en_route'")
+            button.PageDriverTrip__action(
+              :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
+              @click="ClickAdvance(selectedOrder, false)"
+            ) {{ advancing === selectedOrder.orderId ? '處理中...' : '已到達上車點（通知乘客）' }}
+            button.PageDriverTrip__action.is-quiet(
+              :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
+              @click="ClickAdvance(selectedOrder, true)"
+            ) {{ advancing === selectedOrder.orderId ? '處理中...' : '已到達上車點（僅紀錄）' }}
+          template(v-else)
+            button.PageDriverTrip__action(
+              :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
+              @click="ClickAdvance(selectedOrder)"
+            ) {{ advancing === selectedOrder.orderId ? '處理中...' : currentActionLabel }}
           .PageDriverTrip__action-hint(v-if="!advanceGate.ok") {{ advanceCountdownLabel }}
 </template>
 
@@ -1049,6 +1067,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
   &:active:not(:disabled) { transform: scale(0.98); }
+
+  // 「僅紀錄」次按鈕：與主按鈕同寬，但低調配色（不發 LINE 給乘客）
+  &.is-quiet {
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
 }
 
 // Phase 3：時間 gate 倒數提示（緊貼按鈕下方，置中）

@@ -375,6 +375,12 @@ interface PatchOrderParams {
    *  3. 寫 audit log 'order.charter.actual_end'
    *  非 charter 訂單 / 非 driver(自己被指派) 角色 / 訂單無 charter block → server 忽略 */
   actualEndTime?: string;
+  /**
+   * 司機推進狀態時可選擇「不通知乘客」（目前用於「已到達上車點（僅紀錄）」按鈕）。
+   * true 時 server 端跳過 order.en_route（司機到點通知）的 LINE push，
+   * 但狀態切換 / war-room 狀態 / statusHistoryLocations 仍正常更新。
+   */
+  skipPassengerNotify?: boolean;
 }
 
 // ===== Maps =====

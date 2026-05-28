@@ -70,6 +70,12 @@ interface PatchOrderBody {
   actualEndTime?: string;
   // Wave 1C：admin 後修 tag → 重 snapshot + 重算 fare + 重檢 discount（僅 admin + 未指派狀態）
   preferences?: { tagIds?: string[] } | null;
+  /**
+   * Driver 推狀態時可選擇「僅紀錄、不通知乘客」。
+   * 目前用於司機按「已到達上車點（僅紀錄）」按鈕：切 arrived_pickup + 更新 war-room 狀態 + 記錄時間，
+   * 但不推送 order.en_route（司機到點通知）給乘客 OA。
+   */
+  skipPassengerNotify?: boolean;
 }
 
 // P23：vehicleType / extraServices 不再硬編碼 union — fleet config 動態化後，
@@ -824,29 +830,32 @@ export default defineEventHandler(async (event) => {
     // 改由 admin 用「通知乘客」按鈕手動推（admin 場景常見：先指派 + 改其他欄位 + 才通知）。
     // driver 自己搶單觸發的 confirmed 仍會推（isAdmin=false / isDriver=true 路徑）。
     if (body.orderStatus && body.orderStatus !== prevStatus) {
+      // 2026-05-29：order.en_route template 重新定位為「司機到點通知」，掛 arrived_pickup 觸發
+      // （en_route「司機已出發」不再推播；司機按「已到達上車點」才推給乘客）。
+      // skipPassengerNotify=true 時整段跳過推播，但訂單狀態仍會切（war-room 狀態與時間記錄正常）。
       const PUSH_MAP: Partial<Record<OrderStatus, string>> = {
-        confirmed: 'order.confirmed',
-        en_route:  'order.en_route',
-        completed: 'order.completed',
-        cancelled: 'order.cancelled',
-        // arrived_pickup / in_transit / pending 不推（spec 拍板）
+        confirmed:      'order.confirmed',
+        arrived_pickup: 'order.en_route',
+        completed:      'order.completed',
+        cancelled:      'order.cancelled',
+        // en_route / in_transit / pending 不推（spec）
       };
       const isAdminConfirmAssign = isAdmin && body.orderStatus === 'confirmed';
+      const skipNotify = body.skipPassengerNotify === true;
       const messageKey = PUSH_MAP[body.orderStatus as OrderStatus];
       const passengerLineUid = (orderData.lineUserId as string | undefined) || orderUserId;
-      if (messageKey && passengerLineUid && !isAdminConfirmAssign) {
+      if (messageKey && passengerLineUid && !isAdminConfirmAssign && !skipNotify) {
         const newStatus = body.orderStatus as OrderStatus;
         const cancelReason = body.cancelReason || undefined;
         void (async () => {
           try {
             const lang = await getUserLang(db, passengerLineUid);
-            // W4：4 個 status template 全部 outputType='flex' + i18nMode='multi'；
-            // 走 resolveTemplate(lang) + buildTemplate dispatcher，缺值由 resolveTemplate
-            // 自動退 registry default（i18n-message fallback 已拔除）。
             const params: Record<string, string> = {
               orderId: orderId.slice(0, 8).toUpperCase(),
             };
-            if ((newStatus === 'confirmed' || newStatus === 'en_route') && orderAssignedDriver) {
+
+            // confirmed / arrived_pickup（含司機到點）→ 帶上司機 + 地點資訊
+            if ((newStatus === 'confirmed' || newStatus === 'arrived_pickup') && orderAssignedDriver) {
               try {
                 const driverLineUid = _stripLinePrefix(orderAssignedDriver);
                 const driverSnap = await db.collection('drivers').doc(driverLineUid).get();
@@ -854,9 +863,25 @@ export default defineEventHandler(async (event) => {
                   const dd = driverSnap.data() ?? {};
                   if (typeof dd.driverName === 'string') params.driverName = dd.driverName;
                   if (typeof dd.plateNumber === 'string') params.vehiclePlate = dd.plateNumber;
+                  // 司機註冊時填的車輛品牌與型號（top-level field；2026-05-12 P27 起放在 driver doc root）
+                  if (typeof dd.vehicleModel === 'string') params.vehicleModel = dd.vehicleModel;
+                  else if (typeof dd.application === 'object' && dd.application !== null) {
+                    const app = dd.application as Record<string, unknown>;
+                    if (typeof app.vehicleModel === 'string') params.vehicleModel = app.vehicleModel;
+                  }
                 }
               } catch (err) {
                 console.warn('[orders/patch] driver lookup for push failed:', err);
+              }
+
+              // 地點：上車 / 中途停靠站 / 下車（從 orderData 讀）
+              const pickup = orderData.pickupLocation as { address?: string } | undefined;
+              if (pickup?.address) params.pickup = pickup.address;
+              const dropoff = orderData.dropoffLocation as { address?: string } | undefined;
+              if (dropoff?.address) params.dropoff = dropoff.address;
+              const stops = orderData.stopovers as Array<{ address?: string }> | undefined;
+              if (Array.isArray(stops) && stops.length > 0) {
+                params.stopovers = stops.map((s) => s.address ?? '').filter(Boolean).join('\n');
               }
             }
             if (newStatus === 'completed') {

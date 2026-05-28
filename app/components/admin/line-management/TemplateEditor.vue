@@ -445,8 +445,15 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
     header.TemplateEditor__header
       .TemplateEditor__meta-row
         h3.TemplateEditor__title {{ detail.meta.displayName }}
+        //- 顯眼的 audience badge — 一眼分辨此模板發給乘客 / 司機 / 管理員 / 全體
+        span.TemplateEditor__audience(:class="`is-${detail.meta.audience}`")
+          template(v-if="detail.meta.audience === 'passenger'") 🧑‍✈️ 發送給乘客
+          template(v-else-if="detail.meta.audience === 'driver'") 🚗 發送給司機
+          template(v-else-if="detail.meta.audience === 'admin'") 👤 發送給管理員
+          template(v-else) 🌐 全體
         span.TemplateEditor__key {{ detail.meta.templateKey }}
       p.TemplateEditor__desc {{ detail.meta.description }}
+      p.TemplateEditor__trigger 觸發時機：{{ detail.meta.triggerEvent }}
       .TemplateEditor__last-edit(v-if="detail.updatedAt")
         | 最後編輯：{{ $dayjs(detail.updatedAt).format('YYYY/MM/DD HH:mm') }}
         | （by {{ detail.updatedBy || '—' }}）
@@ -711,11 +718,51 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 2px 8px;
 }
 
+// 顯眼的 audience badge — 配色標識「給乘客 / 給司機」
+.TemplateEditor__audience {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1.5px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &.is-passenger {
+    color: #2563eb;
+    border-color: rgba(37, 99, 235, 0.4);
+    background: rgba(37, 99, 235, 0.08);
+  }
+  &.is-driver {
+    color: #059669;
+    border-color: rgba(5, 150, 105, 0.4);
+    background: rgba(5, 150, 105, 0.08);
+  }
+  &.is-admin,
+  &.is-both {
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.4);
+    background: rgba(107, 114, 128, 0.08);
+  }
+}
+
 .TemplateEditor__desc {
   font-family: 'Barlow', sans-serif;
   font-size: 12px;
   color: $muted;
   margin: 6px 0 0;
+}
+
+.TemplateEditor__trigger {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.55);
+  margin: 4px 0 0;
+  padding-left: 8px;
+  border-left: 2px solid rgba(212, 134, 10, 0.3);
 }
 
 .TemplateEditor__last-edit {
