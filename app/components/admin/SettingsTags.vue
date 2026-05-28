@@ -10,6 +10,11 @@ import type { TagDto, TagAuditLogDto } from '@/protocol/fetch-api/api/tag';
 
 const { t } = useI18n();
 
+// admin 標籤管理白名單：只顯示「設備」(interior) / 「服務」(equipment) / 「司機能力」(driverSkill)；
+// 動力 / 車型 / 產地 已不開放編輯
+const VISIBLE_GROUPS: ReadonlyArray<TagGroup> = ['interior', 'equipment', 'driverSkill'];
+const visibleGroups = TAG_GROUPS_ORDERED.filter(([g]) => VISIBLE_GROUPS.includes(g));
+
 const tags = ref<TagDto[]>([]);
 const loading = ref(false);
 const seedLoading = ref(false);
@@ -147,7 +152,7 @@ onMounted(() => {
   .AdminSettingsTags__loading(v-if="loading") 載入中...
 
   template(v-else)
-    .AdminSettingsTags__group(v-for="entry in TAG_GROUPS_ORDERED" :key="entry[0]")
+    .AdminSettingsTags__group(v-for="entry in visibleGroups" :key="entry[0]")
       .AdminSettingsTags__group-head
         span.AdminSettingsTags__group-name {{ entry[1].label.zh_tw }}
         span.AdminSettingsTags__group-meta

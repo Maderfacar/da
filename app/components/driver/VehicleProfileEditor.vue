@@ -50,8 +50,10 @@ const driverGroups = TAG_GROUPS_ORDERED
   .filter(([, m]) => m.scope === 'driver')
   .map(([g]) => g);
 
+// 司機端 vehicle-scope 白名單：只開放「設備」（interior group）讓司機勾選；
+// 動力 / 車型 / 產地 / 服務（equipment）由 admin 端管理或不開放
 const vehicleGroups = TAG_GROUPS_ORDERED
-  .filter(([, m]) => m.scope === 'vehicle')
+  .filter(([g, m]) => m.scope === 'vehicle' && g === 'interior')
   .map(([g]) => g);
 
 // ── driver-scope tags：立即生效 ────────────────────────
