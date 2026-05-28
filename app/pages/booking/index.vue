@@ -381,6 +381,7 @@ const ClickNewOrder = () => {
           v-model:luggage-items="luggageItems"
           v-model:vehicle-type="vehicleType"
           v-model:selected-tag-ids="selectedTagIds"
+          v-model:extra-services="extraServices"
           v-model:charter-plan-keys="charterPlanKeys"
           :pickup-location="pickupLocation"
           :dropoff-location="dropoffLocation"

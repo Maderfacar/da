@@ -39,6 +39,8 @@ interface Props {
   availableTags?: TagDto[];
   /** Booking v2：當前勾選的偏好 tag id */
   selectedTagIds?: string[];
+  /** 加值服務 id 陣列（fleet_extras） */
+  extraServices?: string[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -46,13 +48,14 @@ const props = withDefaults(defineProps<Props>(), {
   charterPlanKeys: () => [] as CharterPlanKey[],
   availableTags: () => [] as TagDto[],
   selectedTagIds: () => [] as string[],
+  extraServices: () => [] as string[],
 });
 
 const emit = defineEmits<{
   (e: 'update:adultCount' | 'update:childCount' | 'fareCalc', val: number): void;
   (e: 'update:luggageItems', val: LuggageItem[]): void;
   (e: 'update:vehicleType', val: VehicleType): void;
-  (e: 'update:selectedTagIds', val: string[]): void;
+  (e: 'update:selectedTagIds' | 'update:extraServices', val: string[]): void;
   (e: 'update:charterPlanKeys', val: CharterPlanKey[]): void;
   (e: 'fareResult', val: MapsRouteRes): void;
   (e: 'charterCalc', val: CharterFareBreakdownV2 | null): void;
@@ -66,6 +69,17 @@ const storeConfig = StoreConfig();
 const adults = ref(Math.max(1, props.adultCount));
 const children = ref(Math.max(0, props.childCount));
 const vehicle = ref<VehicleType>(props.vehicleType);
+// 加值服務 — 還原自 booking v2 之前邏輯（4273ef6 前移除，現恢復顯示在 Step 3 車型之後）
+const extras = ref<string[]>([...props.extraServices]);
+const ToggleExtra = (id: string) => {
+  const idx = extras.value.indexOf(id);
+  if (idx === -1) extras.value.push(id);
+  else extras.value.splice(idx, 1);
+};
+const isExtraSelected = (id: string) => extras.value.includes(id);
+
+// 期望特徵預設收合；使用者點擊 header 才展開
+const expectationsOpen = ref(false);
 
 const totalPax = computed(() => adults.value + children.value);
 
@@ -251,6 +265,7 @@ const ApiFetchFare = async () => {
     pickupTime: props.pickupDateTime
       ? $dayjs(props.pickupDateTime).toISOString()
       : new Date().toISOString(),
+    ...(extras.value.length ? { extras: extras.value.join(',') } : {}),
     ...(props.orderType ? { orderType: props.orderType } : {}),
   });
   fareLoading.value = false;
@@ -288,6 +303,7 @@ watch(adults, (val) => emit('update:adultCount', val));
 watch(children, (val) => emit('update:childCount', val));
 watch(luggage, (val) => emit('update:luggageItems', val), { deep: true });
 watch(vehicle, (val) => { emit('update:vehicleType', val); FareFetchFlow(); });
+watch(extras, (val) => { emit('update:extraServices', val); FareFetchFlow(); }, { deep: true });
 
 onMounted(ApiFetchFare);
 
@@ -415,6 +431,21 @@ const swiperBreakpoints = {
       @click="ClickSwiperNext"
     ) ›
 
+  //- 加值服務（位置：車型 swiper 之後、期望特徵之前；charter 訂單預估階段不算入車資，server 編排會以實際 fleet extras 重算）
+  template(v-if="storeConfig.EnabledExtras.length")
+    .PassengerBookingStepOptions__section-label.mt EXTRAS
+    h2.PassengerBookingStepOptions__title {{ $t('booking.options.extrasTitle') }}
+    .PassengerBookingStepOptions__extras
+      .PassengerBookingStepOptions__extra-card(
+        v-for="svc in storeConfig.EnabledExtras"
+        :key="svc.id"
+        :class="{ 'is-active': isExtraSelected(svc.id) }"
+        @click="ToggleExtra(svc.id)"
+      )
+        NuxtIcon(:name="svc.icon")
+        span {{ Loc(svc.label) }}
+        span.PassengerBookingStepOptions__extra-price +NT${{ svc.price }}
+
   //- Charter Fare V1 W4：每日 plan picker（charter only；days >= 1 都顯示，days=1 也可選 4h/8h/10h）
   .PassengerBookingStepOptions__charter-plans(v-if="isCharter")
     .PassengerBookingStepOptions__section-label.mt CHARTER PLAN
@@ -437,20 +468,23 @@ const swiperBreakpoints = {
         )
     p.PassengerBookingStepOptions__charter-hint {{ $t('booking.options.charterPlanHint') }}
 
-  //- Booking v2：車型與期望特徵之間的提示
-  .PassengerBookingStepOptions__passenger-hint(v-if="availableTags.length")
-    NuxtIcon(name="mdi:lightbulb-on-outline")
-    span {{ $t('booking.options.passengerHint') }}
-
-  //- Booking v2：期望特徵 chip（直接顯示、不摺疊）
+  //- 期望特徵（預設收合；點 header 展開）
   template(v-if="availableTags.length")
     .PassengerBookingStepOptions__section-label.mt EXPECTATIONS
-    h2.PassengerBookingStepOptions__title {{ $t('booking.preferences.title') }}
-    BookingPassengerTagPreferencePicker(
-      :tags="availableTags"
-      :model-value="selectedTagIds"
-      @update:model-value="HandleUpdateTags"
+    button.PassengerBookingStepOptions__expectations-header(
+      type="button"
+      :aria-expanded="expectationsOpen"
+      @click="expectationsOpen = !expectationsOpen"
     )
+      h2.PassengerBookingStepOptions__title {{ $t('booking.preferences.title') }}
+      span.PassengerBookingStepOptions__expectations-chevron(:class="{ 'is-open': expectationsOpen }") ▾
+    p.PassengerBookingStepOptions__expectations-hint {{ $t('booking.options.passengerHint') }}
+    .PassengerBookingStepOptions__expectations-body(v-show="expectationsOpen")
+      BookingPassengerTagPreferencePicker(
+        :tags="availableTags"
+        :model-value="selectedTagIds"
+        @update:model-value="HandleUpdateTags"
+      )
 
   //- 車資僅在第四步 Confirm 顯示；第三步隱藏預估卡
 
@@ -805,21 +839,85 @@ const swiperBreakpoints = {
     line-height: 1.5;
   }
 
-  // ── Booking v2：特殊需求引導提示 ────────────────────────────────────────
-  &__passenger-hint {
+  // ── 加值服務 card grid ───────────────────────────────────────────────
+  &__extras {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  &__extra-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px;
+    background: var(--da-glass-bg);
+    border: 1.5px solid var(--da-gray-pale);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--da-dark);
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: 'Noto Sans TC', sans-serif;
+
+    .nuxt-icon { font-size: 24px; color: var(--da-gray-light); }
+
+    &.is-active {
+      border-color: var(--da-amber);
+      background: var(--da-amber-pale);
+
+      .nuxt-icon { color: var(--da-amber); }
+    }
+  }
+
+  &__extra-price {
+    font-size: 11px;
+    color: var(--da-amber);
+    font-family: 'Barlow', sans-serif;
+  }
+
+  // ── 期望特徵 可摺疊 header ──────────────────────────────────────────
+  &__expectations-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: var(--da-amber-pale);
-    border: 1px dashed var(--da-amber);
-    color: var(--da-dark);
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 13px;
-    line-height: 1.5;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
 
-    .nuxt-icon { color: var(--da-amber); font-size: 18px; flex-shrink: 0; }
+    &:hover .PassengerBookingStepOptions__title { color: var(--da-amber); }
+  }
+
+  &__expectations-chevron {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--da-gray-light);
+    transition: transform 0.2s, color 0.2s;
+    margin-top: -4px;
+    line-height: 1;
+    user-select: none;
+
+    &.is-open { transform: rotate(180deg); color: var(--da-amber); }
+  }
+
+  &__expectations-hint {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: var(--da-gray);
+    margin: -4px 0 4px;
+    line-height: 1.5;
+  }
+
+  &__expectations-body {
+    margin-top: 4px;
   }
 
   &__actions {
