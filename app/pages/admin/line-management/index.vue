@@ -35,14 +35,14 @@ const MAIN_TABS: Array<{ key: MainTab; label: string; ready: boolean }> = [
 ];
 
 // W5：templates tab 下的 category sub-tab（含 bot-reply 為自動回覆，原 bot-replies 主 tab 整合進來）
-type CategoryKey = 'all' | 'order' | 'dispatch' | 'driver-notify' | 'softmatch' | 'bot-reply';
+// 2026-05-29：軟配（softmatch）整套停用 — UI 不再展示該分類，模板仍在 registry / firestore（保留歷史）
+type CategoryKey = 'all' | 'order' | 'dispatch' | 'driver-notify' | 'bot-reply';
 
 const CATEGORY_TABS: Array<{ key: CategoryKey; label: string }> = [
   { key: 'all', label: '全部' },
   { key: 'order', label: '📦 訂單' },
   { key: 'dispatch', label: '🚖 派發/配對' },
   { key: 'driver-notify', label: '👤 司機通知' },
-  { key: 'softmatch', label: '🔁 軟配' },
   { key: 'bot-reply', label: '🤖 自動回覆' },
 ];
 
@@ -311,10 +311,17 @@ const ApiLoadTemplates = async () => {
 };
 
 // W5：依 activeCategory 過濾 registry templates；bot-reply 走獨立 BotReplies UI 不在這
+// 2026-05-29：軟配整套停用 — 不論 all / 其他 category，都不再展示 softmatch / driver.softmatch-rejected 模板
+const HIDDEN_TEMPLATE_KEYS = new Set<string>(['driver.softmatch-rejected']);
+const VisibleTemplates = computed<NotificationTemplateItem[]>(() =>
+  templates.value.filter(
+    (t) => t.meta.category !== 'softmatch' && !HIDDEN_TEMPLATE_KEYS.has(t.meta.templateKey),
+  ),
+);
 const FilteredTemplates = computed<NotificationTemplateItem[]>(() => {
-  if (activeCategory.value === 'all') return templates.value;
+  if (activeCategory.value === 'all') return VisibleTemplates.value;
   if (activeCategory.value === 'bot-reply') return [];
-  return templates.value.filter((t) => t.meta.category === activeCategory.value);
+  return VisibleTemplates.value.filter((t) => t.meta.category === activeCategory.value);
 });
 
 const TemplatesByCategory = computed(() => {

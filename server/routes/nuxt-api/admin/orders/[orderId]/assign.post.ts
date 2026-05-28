@@ -133,7 +133,11 @@ export default defineEventHandler(async (event) => {
       passengerLang,
     );
 
-    const { isSoft, confirmationStatus } = decideConfirmationStatus(preferenceTagIds, matchResult);
+    // 2026-05-29：軟配完全停用 — 即使 decideConfirmationStatus 判定 isSoft，也強制走 hard match 流程
+    // （乘客直接收到「配對成功」訊息、不需 postback「就這位 / 等下一位」）
+    const decided = decideConfirmationStatus(preferenceTagIds, matchResult);
+    const isSoft = false;
+    const confirmationStatus = isSoft ? decided.confirmationStatus : 'hard';
 
     // 寫 passengerConfirmationStatus（transaction 外，但 assign 已落定，這裡單純 patch field）
     try {

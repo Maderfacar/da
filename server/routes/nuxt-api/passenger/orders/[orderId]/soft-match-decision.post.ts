@@ -41,6 +41,22 @@ interface PostBody {
 }
 
 export default defineEventHandler(async (event) => {
+  // 2026-05-29：軟配（softmatch）整套已停用（user 拍板）。
+  // 此 endpoint 不再接受新請求；保留檔案以接收 LINE webhook 既有訊息的 postback 殘留。
+  // 直接回 410 Gone，client 端理應顯示「功能已停用」訊息。
+  return {
+    data: null,
+    status: {
+      code: 410,
+      message: {
+        zh_tw: '軟性配對功能已停用',
+        en: 'Soft match feature is no longer available',
+        ja: 'ソフトマッチ機能は廃止されました',
+      },
+    },
+  };
+
+   
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
 

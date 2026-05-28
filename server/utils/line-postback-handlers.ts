@@ -225,6 +225,11 @@ const PREFIX_HANDLERS: PrefixHandlerEntry[] = [
     prefix: 'passenger.softMatch.',
     channel: 'passenger',
     handler: async (ctx) => {
+      // 2026-05-29：軟配整套停用 — 既有訊息殘留按鈕被按時 graceful 回覆，不再執行 accept/wait/cancel 流程
+      console.info('[postback soft-match] softmatch 已停用，忽略 postback', { data: ctx.data });
+      return { replyMessages: [{ type: 'text', text: 'ℹ️ 軟性配對功能已停用，本次選擇不再有效。如需協助請聯絡客服。' }] };
+
+       
       const parsed = _parseSoftMatchData(ctx.data);
       if (!parsed) {
         console.warn('[postback] passenger.softMatch invalid data:', ctx.data);

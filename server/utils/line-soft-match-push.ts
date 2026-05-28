@@ -259,6 +259,18 @@ const _softMatchLabelsFromTemplate = (tpl: TemplateContentFlex): SoftMatchCustom
  * W4：caller 必須帶 db + lang，內部 resolveTemplate('softmatch.passenger-choose', lang)
  * 取多語 admin 編輯版（缺值退 registry default 繁中）後組 customLabels。
  */
+/**
+ * 2026-05-29：「軟配」功能完全停用（user 拍板）。
+ * 3 個 push helper 統一 early return + 日誌；caller code 路徑保留以利未來重啟。
+ * 完全停用意味著：
+ *   - 部分符合的指派由 assign.post.ts fallback 走 hard match flex
+ *   - 乘客不再看到「就這位 / 等下一位 / 取消」選擇 flex
+ *   - driver 不會收到「軟配未中選」訊息
+ *   - soft-match-decision endpoint 回 410 Gone
+ *   - line-postback-handlers 對 softMatch postback 直接 no-op
+ */
+const SOFTMATCH_ENABLED = false;
+
 export async function pushSoftMatchToPassenger(
   db: Firestore,
   passengerLineUid: string,
@@ -266,6 +278,10 @@ export async function pushSoftMatchToPassenger(
   env: DispatchPushEnv,
   lang: Lang,
 ): Promise<void> {
+  if (!SOFTMATCH_ENABLED) {
+    console.info('[line-soft-match-push] softmatch 已停用，跳過 pushSoftMatchToPassenger', { orderId: payload.orderId });
+    return;
+  }
   if (!passengerLineUid) return;
   const tpl = (await resolveTemplate(db, 'softmatch.passenger-choose', lang)) as TemplateContentFlex;
   const flex = buildSoftMatchPassengerFlex(payload, env, lang, _softMatchLabelsFromTemplate(tpl));
@@ -288,6 +304,10 @@ export async function pushPassengerRematch(
   payload: PassengerRematchPayload,
   lang: Lang,
 ): Promise<void> {
+  if (!SOFTMATCH_ENABLED) {
+    console.info('[line-soft-match-push] softmatch 已停用，跳過 pushPassengerRematch', { orderId: payload.orderId });
+    return;
+  }
   if (!passengerLineUid) return;
   const tpl = await resolveTemplate(db, 'softmatch.passenger-rematching', lang);
   const params: Record<string, string> = {
@@ -308,6 +328,10 @@ export async function pushDriverDeselected(
   driverLineUserId: string,
   payload: DriverDeselectedPayload,
 ): Promise<void> {
+  if (!SOFTMATCH_ENABLED) {
+    console.info('[line-soft-match-push] softmatch 已停用，跳過 pushDriverDeselected', { orderId: payload.orderId });
+    return;
+  }
   if (!driverLineUserId) return;
   const tpl = (await resolveTemplate(db, 'driver.softmatch-rejected')) as TemplateContentText;
   const params: Record<string, string> = {
