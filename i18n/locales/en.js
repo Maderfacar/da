@@ -371,6 +371,8 @@ export default {
       warnLuggage: 'Luggage near vehicle limit, consider a larger one',
       // Booking v2 batch 1: hint between vehicle cards and expectation chips
       passengerHint: 'Special requirements? Pick from below.',
+      // Shown when no vehicle is selected
+      pickVehicleHint: 'Please select a vehicle to continue',
       // Charter Fare V1 W4: per-day plan picker
       charterPlanTitle: 'Daily Package ({days} day(s))',
       charterDayLabel: 'Day {n}',

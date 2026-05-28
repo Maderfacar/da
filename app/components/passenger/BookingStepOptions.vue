@@ -155,6 +155,15 @@ const vehicles = computed(() =>
   })),
 );
 
+// 「下一步」必須校驗：當前 vehicle.value 對應到一張存在、且 status !== 'disabled' 的車型卡。
+// 防止 fleet_vehicles 重整後 draft.vehicleType 對不上任何車型（會送出 0 元訂單）。
+const selectedVehicleCard = computed(() =>
+  vehicles.value.find((v) => v.id === vehicle.value),
+);
+const canGoNext = computed(
+  () => !!selectedVehicleCard.value && selectedVehicleCard.value.status !== 'disabled',
+);
+
 const luggageTypes = computed(() => storeConfig.luggageTypes);
 
 // ── 車資試算（Fare V2：明細由 server 計算；charter 走純幾何 + client charter 引擎）─
@@ -468,29 +477,35 @@ const swiperBreakpoints = {
         )
     p.PassengerBookingStepOptions__charter-hint {{ $t('booking.options.charterPlanHint') }}
 
-  //- 期望特徵（預設收合；點 header 展開）
+  //- 期望特徵（預設收合；整塊包成可點按卡片，承襲 PassengerFaqList 視覺語言）
   template(v-if="availableTags.length")
     .PassengerBookingStepOptions__section-label.mt EXPECTATIONS
-    button.PassengerBookingStepOptions__expectations-header(
-      type="button"
-      :aria-expanded="expectationsOpen"
-      @click="expectationsOpen = !expectationsOpen"
-    )
-      h2.PassengerBookingStepOptions__title {{ $t('booking.preferences.title') }}
-      span.PassengerBookingStepOptions__expectations-chevron(:class="{ 'is-open': expectationsOpen }") ▾
-    p.PassengerBookingStepOptions__expectations-hint {{ $t('booking.options.passengerHint') }}
-    .PassengerBookingStepOptions__expectations-body(v-show="expectationsOpen")
-      BookingPassengerTagPreferencePicker(
-        :tags="availableTags"
-        :model-value="selectedTagIds"
-        @update:model-value="HandleUpdateTags"
+    .PassengerBookingStepOptions__expectations(:class="{ 'is-open': expectationsOpen }")
+      button.PassengerBookingStepOptions__expectations-header(
+        type="button"
+        :aria-expanded="expectationsOpen"
+        @click="expectationsOpen = !expectationsOpen"
       )
+        .PassengerBookingStepOptions__expectations-titles
+          h2.PassengerBookingStepOptions__expectations-title {{ $t('booking.preferences.title') }}
+          span.PassengerBookingStepOptions__expectations-hint {{ $t('booking.options.passengerHint') }}
+        span.PassengerBookingStepOptions__expectations-mark(aria-hidden="true") {{ expectationsOpen ? '−' : '+' }}
+      transition(name="expectations-expand")
+        .PassengerBookingStepOptions__expectations-body(v-show="expectationsOpen")
+          BookingPassengerTagPreferencePicker(
+            :tags="availableTags"
+            :model-value="selectedTagIds"
+            @update:model-value="HandleUpdateTags"
+          )
 
   //- 車資僅在第四步 Confirm 顯示；第三步隱藏預估卡
 
+  //- 未選車型時提示（讓使用者明白為什麼「下一步」按不下去）
+  p.PassengerBookingStepOptions__next-hint(v-if="!canGoNext") {{ $t('booking.options.pickVehicleHint') }}
+
   .PassengerBookingStepOptions__actions
     UiButton(type="secondary" @click="$emit('back')") {{ $t('booking.nav.back') }}
-    UiButton(type="primary" @click="$emit('next')") {{ $t('booking.nav.next') }}
+    UiButton(type="primary" :disabled="!canGoNext" @click="canGoNext && $emit('next')") {{ $t('booking.nav.next') }}
 </template>
 
 <style lang="scss" scoped>
@@ -878,51 +893,117 @@ const swiperBreakpoints = {
     font-family: 'Barlow', sans-serif;
   }
 
-  // ── 期望特徵 可摺疊 header ──────────────────────────────────────────
+  // ── 期望特徵 可摺疊卡片（承襲 PassengerFaqList 的 cream theme collapsible 風格）
+  &__expectations {
+    background: var(--da-glass-bg);
+    border: 1.5px solid var(--da-gray-pale);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+
+    &:hover { border-color: var(--da-amber); }
+
+    &.is-open {
+      border-color: var(--da-amber);
+      background: var(--da-amber-pale);
+    }
+  }
+
   &__expectations-header {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    background: none;
+    gap: 12px;
+    padding: 14px 16px;
+    background: transparent;
     border: none;
     cursor: pointer;
     text-align: left;
     color: inherit;
-
-    &:hover .PassengerBookingStepOptions__title { color: var(--da-amber); }
+    font: inherit;
   }
 
-  &__expectations-chevron {
+  &__expectations-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__expectations-title {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 22px;
-    color: var(--da-gray-light);
-    transition: transform 0.2s, color 0.2s;
-    margin-top: -4px;
-    line-height: 1;
-    user-select: none;
-
-    &.is-open { transform: rotate(180deg); color: var(--da-amber); }
+    color: var(--da-dark);
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+    margin: 0;
   }
 
   &__expectations-hint {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 12px;
     color: var(--da-gray);
-    margin: -4px 0 4px;
-    line-height: 1.5;
+    line-height: 1.45;
+  }
+
+  &__expectations-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--da-amber);
+    background: var(--da-cream);
+    color: var(--da-amber);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    user-select: none;
+    transition: background 0.15s, color 0.15s, transform 0.2s;
+
+    .PassengerBookingStepOptions__expectations-header:hover & {
+      background: var(--da-amber-pale);
+      transform: scale(1.05);
+    }
+
+    .is-open & {
+      background: var(--da-amber);
+      color: #fff;
+    }
   }
 
   &__expectations-body {
-    margin-top: 4px;
+    padding: 4px 16px 16px;
+  }
+
+  // 未選車型時的下一步提示
+  &__next-hint {
+    margin: 0 0 -6px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: #ef4444;
+    text-align: center;
+    line-height: 1.4;
   }
 
   &__actions {
     display: flex;
     gap: 12px;
   }
+}
+
+// ── expectations 展開動畫 ───────────────────────────────────────────
+.expectations-expand-enter-active,
+.expectations-expand-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.expectations-expand-enter-from,
+.expectations-expand-leave-to {
+  opacity: 0;
 }
 </style>

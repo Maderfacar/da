@@ -371,6 +371,8 @@ export default {
       warnLuggage: '荷物が車種上限に接近、より大型を推奨',
       // Booking v2 批次 1：車種と希望特徴の間のヒント
       passengerHint: '特別なご要望は下から選択ください',
+      // 車種未選択時のヒント
+      pickVehicleHint: '先に車種を選択してください',
       // Charter Fare V1 W4：日別プランピッカー
       charterPlanTitle: '日別プラン（合計 {days} 日）',
       charterDayLabel: 'Day {n}',

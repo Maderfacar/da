@@ -386,6 +386,8 @@ export default {
       warnLuggage: '行李接近車型上限，建議改選大車',
       // Booking v2 批次 1：車型與期望特徵之間的提示
       passengerHint: '如有特殊需求請從下方選擇',
+      // 未選車型時下一步提示
+      pickVehicleHint: '請先選擇車型再進行下一步',
       // Charter Fare V1 W4：每日 plan picker
       charterPlanTitle: '每日套餐（共 {days} 天）',
       charterDayLabel: 'Day {n}',
