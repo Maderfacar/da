@@ -37,7 +37,27 @@ interface ApplyBody {
     insuranceUrl: string;
     goodCitizenUrl: string;
   };
+  /** interior（「設備」）tag ids — 寫進 vehicleProfilePending 走 admin 審核 */
+  vehicleProfileTags?: string[];
+  /** driverSkill（「司機能力」）tag ids — 直接寫 driver.tags 立即生效 */
+  driverTags?: string[];
 }
+
+// 標籤 id 衛生過濾：去 null/非 string、修剪、限長 64 字、限數量 20、去重
+const MAX_TAG_IDS = 20;
+const MAX_TAG_ID_LEN = 64;
+const _sanitizeTagIds = (raw: unknown): string[] => {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  for (const v of raw) {
+    if (typeof v !== 'string') continue;
+    const trimmed = v.trim();
+    if (!trimmed || trimmed.length > MAX_TAG_ID_LEN) continue;
+    seen.add(trimmed);
+    if (seen.size >= MAX_TAG_IDS) break;
+  }
+  return Array.from(seen);
+};
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 小時
 
@@ -172,6 +192,22 @@ export default defineEventHandler(async (event) => {
       rejectReason: null,
     };
 
+    // 申請時填的標籤：interior（設備）→ vehicleProfilePending 走 admin 審核；
+    // driverSkill（司機能力）→ driver.tags 立即生效。兩者皆 optional 可空陣列
+    const driverSkillIds = _sanitizeTagIds(body.driverTags);
+    const interiorIds = _sanitizeTagIds(body.vehicleProfileTags);
+    const vehicleProfilePendingPayload = interiorIds.length > 0
+      ? {
+          photos: [],
+          tags: interiorIds,
+          status: 'pending_review' as const,
+          submittedAt: FieldValue.serverTimestamp(),
+          rejectReason: null,
+          reviewedAt: null,
+          reviewedBy: null,
+        }
+      : null;
+
     const driverRef = db.collection('drivers').doc(body.lineUserId);
     const driverSnap = await driverRef.get();
 
@@ -191,16 +227,23 @@ export default defineEventHandler(async (event) => {
         // 車型分類已淘汰；改記司機自填的品牌與型號（top-level 方便 admin 列表/詳情顯示）
         vehicleModel: body.vehicleModel.trim(),
         application: applicationPayload,
+        // 司機能力 — 立即生效，不需審核
+        tags: driverSkillIds,
+        // 設備 — 跟證件一起 admin 審核
+        ...(vehicleProfilePendingPayload ? { vehicleProfilePending: vehicleProfilePendingPayload } : {}),
         createdAt: FieldValue.serverTimestamp(),
         lastActiveAt: FieldValue.serverTimestamp(),
       });
     } else {
+      // re-apply：以本次表單填值覆蓋舊 driver.tags 與 vehicleProfilePending（rejected 後重新申請的常見場景）
       await driverRef.set({
         lineUserId: body.lineUserId,
         displayName,
         pictureUrl,
         vehicleModel: body.vehicleModel.trim(),
         application: applicationPayload,
+        tags: driverSkillIds,
+        ...(vehicleProfilePendingPayload ? { vehicleProfilePending: vehicleProfilePendingPayload } : {}),
         lastActiveAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     }

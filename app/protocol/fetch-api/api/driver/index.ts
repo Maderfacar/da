@@ -18,6 +18,10 @@ export interface DriverApplyBody {
     insuranceUrl: string
     goodCitizenUrl: string
   }
+  /** interior group tag ids（「設備」）— 寫進 vehicleProfilePending 並 status='pending_review'，等 admin 審核 */
+  vehicleProfileTags?: string[]
+  /** driverSkill group tag ids（「司機能力」）— 直接寫 driver.tags，立即生效 */
+  driverTags?: string[]
 }
 
 export interface DriverApplyResponse {

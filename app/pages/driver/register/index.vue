@@ -2,11 +2,12 @@
 // PageDriverRegister 司機申請頁面（P8-2 完整版）
 //
 // 三模式：
-//   1. 無 driver 身分（純 passenger）→ apply 模式：完整申請表單（6 欄位 + 4 證件）
+//   1. 無 driver 身分（純 passenger）→ apply 模式：完整申請表單（6 欄位 + 4 證件 + 設備 / 司機能力標籤）
 //   2. driver + !approved + 無 rejectedAt → pending 模式：「審核中」提示
 //   3. driver + !approved + 有 rejectedAt → rejected 模式：拒絕原因 + 24h 冷卻倒數
 //
 // approved driver 不會進到此頁（middleware/role.ts 會放行至 /driver/dashboard）
+import type { TagDto } from '@/protocol/fetch-api/api/tag';
 
 definePageMeta({ layout: false, ssr: false });
 
@@ -59,6 +60,29 @@ const docs = ref({
   goodCitizenUrl: '',
 });
 
+// 申請時填的標籤：interior（設備）走 admin 審核、driverSkill（司機能力）立即生效
+const activeTagsRaw = ref<TagDto[]>([]);
+const selectedInteriorIds = ref<string[]>([]);
+const selectedDriverSkillIds = ref<string[]>([]);
+
+const interiorTags = computed(() =>
+  activeTagsRaw.value.filter((t) => t.group === 'interior' && t.status === 'active'),
+);
+const driverSkillTags = computed(() =>
+  activeTagsRaw.value.filter((t) => t.group === 'driverSkill' && t.status === 'active'),
+);
+
+const ApiLoadTags = async () => {
+  try {
+    const res = await $api.GetActiveTags();
+    if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
+      activeTagsRaw.value = res.data.tags;
+    }
+  } catch { /* silent — apply 流程容錯 */ }
+};
+
+onMounted(() => { void ApiLoadTags(); });
+
 const submitting = ref(false);
 const submitError = ref('');
 const submitSuccess = ref(false);
@@ -90,6 +114,8 @@ const ApiSubmit = async () => {
       bankCode: bankCode.value.trim(),
       bankAccount: bankAccount.value.trim(),
       documents: docs.value,
+      vehicleProfileTags: [...selectedInteriorIds.value],
+      driverTags: [...selectedDriverSkillIds.value],
     });
     if (res.status?.code === 200) {
       submitSuccess.value = true;
@@ -250,6 +276,27 @@ onUnmounted(() => {
             inputmode="numeric"
             placeholder="請填完整帳號"
           )
+
+        //- ── 設備 / 司機能力（非必填；設備需 admin 審核，司機能力立即生效） ──
+        .PageDriverRegister__section-title 車輛設備與司機能力（非必填）
+
+        .PageDriverRegister__tags
+          DriverTagGroupPicker(
+            group="interior"
+            :tags="interiorTags"
+            :model-value="selectedInteriorIds"
+            @update:model-value="(v: string[]) => selectedInteriorIds = v"
+          )
+        .PageDriverRegister__tag-hint 「設備」會與證件一起送 admin 審核
+
+        .PageDriverRegister__tags
+          DriverTagGroupPicker(
+            group="driverSkill"
+            :tags="driverSkillTags"
+            :model-value="selectedDriverSkillIds"
+            @update:model-value="(v: string[]) => selectedDriverSkillIds = v"
+          )
+        .PageDriverRegister__tag-hint 「司機能力」核准後立即生效，日後可在司機個人頁修改
 
         //- ── 證件上傳 ─────────────────────────────────
         .PageDriverRegister__section-title 證件上傳（jpg / png / pdf · 5MB 內）
@@ -543,6 +590,22 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &:hover:not(.is-active) {
     background: rgba(255, 255, 255, 0.08);
   }
+}
+
+// ── 設備 / 司機能力 picker 區 ─────────────────────────
+.PageDriverRegister__tags {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.PageDriverRegister__tag-hint {
+  width: 100%;
+  font-family: $font-condensed;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.4);
+  margin: -2px 0 12px;
+  line-height: 1.5;
 }
 
 // ── 證件上傳區 ──────────────────────────────────────────
