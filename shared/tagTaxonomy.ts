@@ -29,8 +29,8 @@ export const TAG_GROUPS: Record<TagGroup, TagGroupMeta> = {
   power:       { multiplicity: 'single', scope: 'vehicle', sortOrder: 1, label: { zh_tw: '動力',     en: 'Power',         ja: '動力' } },
   vehicleType: { multiplicity: 'single', scope: 'vehicle', sortOrder: 2, label: { zh_tw: '車型',     en: 'Type',          ja: '車種' } },
   origin:      { multiplicity: 'single', scope: 'vehicle', sortOrder: 3, label: { zh_tw: '產地',     en: 'Origin',        ja: '産地' } },
-  interior:    { multiplicity: 'multi',  scope: 'vehicle', sortOrder: 4, label: { zh_tw: '內裝',     en: 'Interior',      ja: '内装' } },
-  equipment:   { multiplicity: 'multi',  scope: 'vehicle', sortOrder: 5, label: { zh_tw: '設備',     en: 'Equipment',     ja: '装備' } },
+  interior:    { multiplicity: 'multi',  scope: 'vehicle', sortOrder: 4, label: { zh_tw: '設備',     en: 'Equipment',     ja: '装備' } },
+  equipment:   { multiplicity: 'multi',  scope: 'vehicle', sortOrder: 5, label: { zh_tw: '服務',     en: 'Service',       ja: 'サービス' } },
   driverSkill: { multiplicity: 'multi',  scope: 'driver',  sortOrder: 6, label: { zh_tw: '司機能力', en: 'Driver Skills', ja: 'ドライバー' } },
 };
 

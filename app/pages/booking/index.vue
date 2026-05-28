@@ -116,8 +116,11 @@ const ApiLoadActiveVehicleTags = async () => {
   try {
     const res = await $api.GetActiveTags('vehicle');
     if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
-      // Booking v2：乘客 booking 端不顯示 vehicleType group（保留給司機端標車輛 / admin 分類車隊）
-      activeVehicleTags.value = res.data.tags.filter((t) => t.group !== 'vehicleType');
+      // 乘客 booking 偏好標籤白名單：只保留 interior（設備）與 equipment（服務），
+      // 其他 group（power/vehicleType/origin）給司機端 / admin 端用
+      activeVehicleTags.value = res.data.tags.filter(
+        (t) => t.group === 'interior' || t.group === 'equipment',
+      );
     }
   } catch { /* silent */ }
 };

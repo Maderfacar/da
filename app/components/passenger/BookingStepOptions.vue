@@ -365,15 +365,10 @@ const swiperBreakpoints = {
     )
       .PassengerBookingStepOptions__luggage-info
         span.PassengerBookingStepOptions__luggage-name {{ Loc(lt.label) }}
-        span.PassengerBookingStepOptions__luggage-su {{ lt.su }} SU
       .PassengerBookingStepOptions__luggage-ctrl
         button(@click="_SetLuggageCount(lt.id, _GetLuggageCount(lt.id) - 1)") −
         span {{ _GetLuggageCount(lt.id) }}
         button(@click="_SetLuggageCount(lt.id, _GetLuggageCount(lt.id) + 1)") +
-
-  .PassengerBookingStepOptions__su-total
-    span.PassengerBookingStepOptions__su-total-label {{ $t('booking.options.suTotal') }}
-    span.PassengerBookingStepOptions__su-total-val {{ totalSU }} SU
 
   //- 車型選擇（批次 2：Swiper Slider）
   .PassengerBookingStepOptions__section-label.mt VEHICLE
@@ -457,10 +452,7 @@ const swiperBreakpoints = {
       @update:model-value="HandleUpdateTags"
     )
 
-  PassengerFareBreakdownCard(
-    :fare-total="isCharter ? (charterResult ? charterResult.final : null) : (fareResult ? fareResult.fareTotal : null)"
-    :loading="fareLoading"
-  )
+  //- 車資僅在第四步 Confirm 顯示；第三步隱藏預估卡
 
   .PassengerBookingStepOptions__actions
     UiButton(type="secondary" @click="$emit('back')") {{ $t('booking.nav.back') }}
@@ -608,13 +600,6 @@ const swiperBreakpoints = {
     line-height: 1.3;
   }
 
-  &__luggage-su {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    color: var(--da-amber);
-  }
-
   &__luggage-ctrl {
     display: flex;
     align-items: center;
@@ -645,31 +630,6 @@ const swiperBreakpoints = {
       min-width: 20px;
       text-align: center;
     }
-  }
-
-  &__su-total {
-    background: var(--da-dark);
-    border-radius: 12px;
-    padding: 10px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 4px;
-  }
-
-  &__su-total-label {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--da-gray-light);
-  }
-
-  &__su-total-val {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    color: var(--da-amber-light);
-    letter-spacing: 0.05em;
   }
 
   // ── Booking v2 批次 2：車型卡 Slider ──────────────────────────────────
