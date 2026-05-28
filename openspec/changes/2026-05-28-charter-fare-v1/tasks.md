@@ -85,13 +85,21 @@
 - [x] **W4.5** `/nuxt-api/orders` POST body：booking `ClickSubmit` charter 訂單帶 `charter: { planKeys: planKeys.slice(0, days), days }`；W2 server 編排已校驗
 - [x] **W4.6** i18n 三語齊（zh / en / ja）：booking.type.charterDays* + booking.options.charter* + booking.confirm.charter*
 
-## W5：Driver App + Admin 對帳（後續）
+## W5：Driver App + Admin 對帳（本視窗）
 
-- [ ] W5.1 driver 結束包車任務按鈕：寫 `orders/{id}.charter.actualEndTime`
-- [ ] W5.2 server trigger：actualEndTime 寫入時重算 `overtimeMinutes` / `overtimeBlocks` / `overtimeCharge` 回寫 charter block
-- [ ] W5.3 admin `/admin/orders/[id]` 顯示 OT 對帳區（estimated / actual / blocks / charge）+ 司機應跟客人收的金額提示
-- [ ] W5.4 不寄通知客人（W5 hardcode 不發 LINE flex）
+- [x] **W5.1** driver 結束包車任務按鈕：charter 訂單 in_transit→completed 時 button label 改「結束包車任務」+ `PatchOrder` body 帶 `actualEndTime: nowIso`（非 charter 訂單沿用「乘客已下車（完成）」label）
+- [x] **W5.2** server PATCH `/nuxt-api/orders/[orderId]` 對帳分支：
+  - [x] `PatchOrderBody` 加 `actualEndTime?: string`；passenger 帶此欄位 forbidden（admin / driver 可帶）
+  - [x] charter 訂單 + 有 charter.estimatedEndTime → 用 `computeCharterReconciliation` 重算 OT 三欄回寫 `charter.{actualEndTime,overtimeMinutes,overtimeBlocks,overtimeCharge}`（dayOnePlan = `charter.plans[0]` snapshot freeze；rules 從 `getFareRules()` 取）
+  - [x] 不動 `estimatedFare`；admin 對帳區自行呈現「乘客現付 = estimatedFare + overtimeCharge」
+  - [x] 寫 `audit_logs` action `'order.charter.actual_end'`（actor 不限 admin，driver 自結也記錄；fire-and-forget silent）
+  - [x] 不寄通知客人（W5 hardcode）
+- [x] **W5.3** admin `/admin/orders` modal 加包車 OT 對帳區（`selectedOrder.charter` 存在才顯示）：預估結束 / 實際結束（未填時黃 hint「司機尚未結束行程」）/ 超時分鐘 / OT 段數 / OT 加收 / 「司機應現場收取」高亮金額（`CharterDriverCollectAmount = estimatedFare + overtimeCharge`）
+- [x] **W5.4** 純函式抽出 + 單元測試：
+  - [x] `shared/pricing.ts` 加 `computeCharterReconciliation` helper（純函式對帳，PATCH endpoint 共用）
+  - [x] `shared/pricing.spec.ts` 加 3 unit tests（提早結束 / 剛超 grace +16 min / +75 min 多段 OT）
+  - [x] `AdminOrder` 加 `charter?: OrderCharter | null`；`server/routes/nuxt-api/admin/orders/index.get.ts` echo charter 欄位（plain object 無 Timestamp）
 
 ## 待 archive 條件
 
-⏳ **未 archive**：等 W5 完工 + Brain AI 在 prod 估價 5 條包車路線（1 日 / 多日 / 山區 / 來回 / OT）都報合理後跑 `openspec archive 2026-05-28-charter-fare-v1`。
+⏳ **未 archive**：W5 已上 prod，等 Brain AI 在 prod 估價 5 條包車路線（1 日 / 多日 / 山區 / 來回 / OT）都報合理後跑 `openspec archive 2026-05-28-charter-fare-v1`。

@@ -26,6 +26,8 @@ import {
 import { recheckDiscountCode } from '@@/utils/discount-recheck';
 import { recalcFinalTotal } from '~shared/fare/recalc';
 import { checkTimeGate, formatRemaining } from '~shared/trip-time-gate';
+import { computeCharterReconciliation } from '~shared/pricing';
+import { getFareRules } from '@@/utils/fare-rules-cache';
 
 interface GooglePlaceLite {
   address: string;
@@ -63,6 +65,9 @@ interface PatchOrderBody {
   contactPhone?: string;
   // Wave 1 D2：driver 推進 4 階段時附上當下 GPS（lat, lng）
   driverLocation?: { lat: number; lng: number };
+  // Charter Fare V1 W5：driver / admin 結束包車任務時帶當下時間 ISO；
+  // server 寫入 orders.charter.actualEndTime + 重算 overtimeMinutes/Blocks/Charge
+  actualEndTime?: string;
   // Wave 1C：admin 後修 tag → 重 snapshot + 重算 fare + 重檢 discount（僅 admin + 未指派狀態）
   preferences?: { tagIds?: string[] } | null;
 }
@@ -163,6 +168,7 @@ export default defineEventHandler(async (event) => {
   const hasAnyField = body.orderStatus !== undefined
     || body.assignedDriverId !== undefined
     || body.cancelReason !== undefined
+    || body.actualEndTime !== undefined
     || hasTagPatch
     || ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined);
   if (!hasAnyField) {
@@ -212,6 +218,10 @@ export default defineEventHandler(async (event) => {
       const adminFieldUsed = ADMIN_ONLY_FIELDS.some((k) => body[k] !== undefined) || hasTagPatch;
       if (adminFieldUsed) {
         return forbiddenError({ zh_tw: '乘客無權修改此欄位', en: 'Passenger cannot modify this field', ja: 'お客様はこの項目を変更する権限がありません' });
+      }
+      // Charter Fare V1 W5：乘客不可結束包車任務（actualEndTime 由 driver / admin 寫入）
+      if (body.actualEndTime !== undefined) {
+        return forbiddenError({ zh_tw: '乘客無權結束包車任務', en: 'Passenger cannot end charter trip', ja: '乗客はチャーター任務を終了できません' });
       }
     }
 
@@ -419,6 +429,68 @@ export default defineEventHandler(async (event) => {
         address: '',
         recordedAt: FieldValue.serverTimestamp(),
       };
+    }
+
+    // ── Charter Fare V1 W5：driver / admin 結束包車任務時補寫 actualEndTime + 重算 OT ──
+    // 條件：(1) body 帶 actualEndTime (2) 訂單為 charter (3) 訂單有 charter block + estimatedEndTime
+    //       (4) actualEndTime 為合法 ISO（actualEnd < estimatedEnd 也接受，會 blocks=0）
+    // 寫入 charter.actualEndTime / overtimeMinutes / overtimeBlocks / overtimeCharge；
+    // 不動 estimatedFare，admin 對帳區自行呈現「乘客現付 = estimatedFare + overtimeCharge」。
+    interface CharterActualEndAudit {
+      actualEndTime: string;
+      estimatedEndTime: string;
+      overtimeMinutes: number;
+      overtimeBlocks: number;
+      overtimeCharge: number;
+    }
+    let charterActualEndAudit: CharterActualEndAudit | null = null;
+    if (body.actualEndTime !== undefined) {
+      if (typeof body.actualEndTime !== 'string') {
+        return badRequestError({ zh_tw: 'actualEndTime 必須是 ISO 字串', en: 'actualEndTime must be ISO string', ja: 'actualEndTime は ISO 文字列' });
+      }
+      const actualMs = Date.parse(body.actualEndTime);
+      if (!Number.isFinite(actualMs)) {
+        return badRequestError({ zh_tw: 'actualEndTime 格式錯誤', en: 'Invalid actualEndTime', ja: 'actualEndTime 形式が無効' });
+      }
+      const orderType = orderData.orderType as string | undefined;
+      const charterBlock = orderData.charter as Record<string, unknown> | null | undefined;
+      const estimatedEndIso = charterBlock && typeof charterBlock.estimatedEndTime === 'string'
+        ? charterBlock.estimatedEndTime
+        : null;
+      // 非 charter 訂單 / 無 charter block / 無 estimatedEndTime → 視為 no-op（silent ignore，不報錯，
+      // 避免既有 charter 引擎 fallback 失敗的訂單 driver 結束時被阻擋）
+      if (orderType === 'charter' && estimatedEndIso) {
+        const estimatedMs = Date.parse(estimatedEndIso);
+        if (Number.isFinite(estimatedMs)) {
+          const plans = Array.isArray(charterBlock!.plans) ? charterBlock!.plans : [];
+          const dayOnePlan = plans[0] as Record<string, unknown> | undefined;
+          const overtimeRatePer30min = typeof dayOnePlan?.overtimeRatePer30min === 'number'
+            ? dayOnePlan.overtimeRatePer30min
+            : 0;
+          const rules = await getFareRules();
+          const actual = new Date(actualMs);
+          const estimated = new Date(estimatedMs);
+          const recon = computeCharterReconciliation({
+            estimatedEndTime: estimated,
+            actualEndTime: actual,
+            overtimeRatePer30min,
+            charter: rules.charter,
+          });
+          const { overtimeMinutes, overtimeBlocks, overtimeCharge } = recon;
+          const actualEndIso = actual.toISOString();
+          updates['charter.actualEndTime'] = actualEndIso;
+          updates['charter.overtimeMinutes'] = overtimeMinutes;
+          updates['charter.overtimeBlocks'] = overtimeBlocks;
+          updates['charter.overtimeCharge'] = overtimeCharge;
+          charterActualEndAudit = {
+            actualEndTime: actualEndIso,
+            estimatedEndTime: estimatedEndIso,
+            overtimeMinutes,
+            overtimeBlocks,
+            overtimeCharge,
+          };
+        }
+      }
     }
 
     // ── Wave 1C：admin 後修 tag → 重 snapshot + 重算 fare + 重檢 discount ──
@@ -864,6 +936,23 @@ export default defineEventHandler(async (event) => {
       }
       for (const a of auditActions) {
         await writeAuditLog({ event, auth, action: a.action, targetType: 'order', targetId: orderId, payload: a.payload });
+      }
+    }
+
+    // Charter Fare V1 W5：actor 不限角色（driver 自行結束行程也要記錄）— 獨立寫 audit
+    // 失敗一律 silent，不阻擋主流程
+    if (charterActualEndAudit) {
+      try {
+        await writeAuditLog({
+          event,
+          auth,
+          action: 'order.charter.actual_end',
+          targetType: 'order',
+          targetId: orderId,
+          payload: charterActualEndAudit,
+        });
+      } catch (err) {
+        console.error('[orders/patch] charter actual_end audit failed:', err);
       }
     }
 

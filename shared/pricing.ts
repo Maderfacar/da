@@ -837,6 +837,39 @@ export function computeOvertimeBlocks(
   return overshootMin > 0 ? Math.ceil(overshootMin / 30) : 0;
 }
 
+export interface CharterReconciliationInput {
+  estimatedEndTime: Date;
+  actualEndTime: Date;
+  overtimeRatePer30min: number;
+  charter: Pick<CharterRule, 'overtimeGraceMin'>;
+}
+
+export interface CharterReconciliationResult {
+  /** 實際 − 預估，分鐘（提早 / 0 差 → 0；小數四捨五入） */
+  overtimeMinutes: number;
+  /** 套 grace 後的 30 分段數（ceil） */
+  overtimeBlocks: number;
+  /** blocks × overtimeRatePer30min */
+  overtimeCharge: number;
+}
+
+/**
+ * Charter Fare V1 W5：driver 結束包車任務後，server 端用此純函式重算 OT 對帳。
+ * 三欄回寫 orders/{id}.charter.{overtimeMinutes,overtimeBlocks,overtimeCharge}。
+ *
+ * - overtimeMinutes 提早結束視為 0（avoid 負數混淆 admin 對帳）
+ * - overtimeBlocks 完整套 computeOvertimeBlocks（grace + 30 分 ceil）
+ * - overtimeCharge = blocks × overtimeRatePer30min（dayOnePlan 凍結價）
+ */
+export function computeCharterReconciliation(input: CharterReconciliationInput): CharterReconciliationResult {
+  const { estimatedEndTime, actualEndTime, overtimeRatePer30min, charter } = input;
+  const diffMs = actualEndTime.getTime() - estimatedEndTime.getTime();
+  const overtimeMinutes = Math.max(0, Math.round(diffMs / 60000));
+  const overtimeBlocks = computeOvertimeBlocks(estimatedEndTime, actualEndTime, charter);
+  const overtimeCharge = overtimeBlocks * overtimeRatePer30min;
+  return { overtimeMinutes, overtimeBlocks, overtimeCharge };
+}
+
 export function calculateCharterFareV2(
   vehicle: FleetVehicle,
   planKeys: CharterPlanKey[],

@@ -422,6 +422,14 @@ const notifyDialog = reactive<NotifyDialog>({
 
 const _formatDateTime = (iso: string) => $dayjs(iso).format('YYYY/MM/DD (ddd) HH:mm');
 
+// Charter Fare V1 W5：admin OT 對帳區計算
+// 司機應向乘客現場收取的金額 = estimatedFare（已含 discount / tagSurcharge）+ overtimeCharge
+const CharterDriverCollectAmount = (order: AdminOrder): number => {
+  const base = order.estimatedFare ?? 0;
+  const ot = order.charter?.overtimeCharge ?? 0;
+  return base + ot;
+};
+
 const _DriverDocOf = (assignedDriverId: string): AdminUser | undefined => {
   if (!assignedDriverId) return undefined;
   const cleanUid = assignedDriverId.startsWith('line:') ? assignedDriverId.slice(5) : assignedDriverId;
@@ -1526,6 +1534,35 @@ onMounted(() => {
                 span.PageAdminOrders__section-key 距離
                 span.PageAdminOrders__section-val {{ selectedOrder.distanceKm }} km
 
+            //- Charter Fare V1 W5：包車 OT 對帳區（charter 訂單才顯示）
+            //- 預估 / 實際 / 超時分鐘 / OT 段數 / OT 加收 / 司機應現場收取金額
+            .PageAdminOrders__section(v-if="selectedOrder.charter")
+              .PageAdminOrders__section-title 包車 OT 對帳
+              .PageAdminOrders__section-row
+                span.PageAdminOrders__section-key 預估結束
+                span.PageAdminOrders__section-val {{ $dayjs(selectedOrder.charter.estimatedEndTime).format('YYYY/MM/DD HH:mm') }}
+              //- 司機尚未結束
+              .PageAdminOrders__section-row(v-if="!selectedOrder.charter.actualEndTime")
+                span.PageAdminOrders__section-key 實際結束
+                span.PageAdminOrders__section-val.is-muted 司機尚未結束行程
+              //- 已結束 — 全套 OT 對帳
+              template(v-else)
+                .PageAdminOrders__section-row
+                  span.PageAdminOrders__section-key 實際結束
+                  span.PageAdminOrders__section-val {{ $dayjs(selectedOrder.charter.actualEndTime).format('YYYY/MM/DD HH:mm') }}
+                .PageAdminOrders__section-row
+                  span.PageAdminOrders__section-key 超時分鐘
+                  span.PageAdminOrders__section-val {{ selectedOrder.charter.overtimeMinutes ?? 0 }} 分鐘
+                .PageAdminOrders__section-row
+                  span.PageAdminOrders__section-key OT 段數
+                  span.PageAdminOrders__section-val {{ selectedOrder.charter.overtimeBlocks ?? 0 }} 段（每段 30 分）
+                .PageAdminOrders__section-row
+                  span.PageAdminOrders__section-key OT 加收
+                  span.PageAdminOrders__section-val.is-fare +NT$ {{ (selectedOrder.charter.overtimeCharge ?? 0).toLocaleString() }}
+                .PageAdminOrders__section-row.is-charter-collect
+                  span.PageAdminOrders__section-key 司機應現場收取
+                  span.PageAdminOrders__section-val.is-fare NT$ {{ CharterDriverCollectAmount(selectedOrder).toLocaleString() }}
+
             //- 取消原因（如已取消）
             .PageAdminOrders__section(v-if="selectedOrder.orderStatus === 'cancelled' && selectedOrder.cancelReason")
               .PageAdminOrders__section-title 取消原因
@@ -2489,6 +2526,22 @@ select option:disabled {
   padding: 6px 0;
   font-family: 'Noto Sans TC', sans-serif;
   font-size: 13px;
+
+  // Charter Fare V1 W5：司機應現場收取金額 — 整段高亮提示
+  &.is-charter-collect {
+    margin-top: 6px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba($amber, 0.35);
+    background: rgba($amber, 0.08);
+    font-size: 14px;
+
+    .PageAdminOrders__section-key {
+      color: $amber-light;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+  }
 }
 
 .PageAdminOrders__section-key { color: rgba(255, 255, 255, 0.45); }

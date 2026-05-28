@@ -73,6 +73,8 @@ export type AuditAction =
   // Phase 1F Soft Match / 重新配對
   | 'order.rematch'                // admin 強制重新配對 OR passenger soft match 選「等下一輪」
   | 'order.soft_match_response'    // passenger 收 soft-match Flex 後 3 選 1（accept/wait/cancel）
+  // Charter Fare V1 W5：driver 結束包車任務寫入 actualEndTime + 重算 OT 段數
+  | 'order.charter.actual_end'
   // broadcast / notify
   | 'broadcast.send'
   | 'broadcast.notify_one'        // legacy（P37 前；passenger / driver 共用）

@@ -369,6 +369,12 @@ interface PatchOrderParams {
    *  附上當下 GPS 座標。server 寫入 orders.statusHistoryLocations.{state}。
    *  其他角色 / 其他狀態提供本欄位會被 server 忽略。*/
   driverLocation?: { lat: number; lng: number };
+  /** Charter Fare V1 W5：driver 結束包車任務時帶上當下時間 ISO；server 端會：
+   *  1. 把值寫入 orders/{id}.charter.actualEndTime
+   *  2. 用 computeOvertimeBlocks 重算 overtimeMinutes/Blocks/Charge 回寫 charter block
+   *  3. 寫 audit log 'order.charter.actual_end'
+   *  非 charter 訂單 / 非 driver(自己被指派) 角色 / 訂單無 charter block → server 忽略 */
+  actualEndTime?: string;
 }
 
 // ===== Maps =====

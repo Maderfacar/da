@@ -108,6 +108,9 @@ export default defineEventHandler(async (event) => {
         // Phase 1F：Soft Match / 重新配對欄位 echo
         passengerConfirmationStatus: (d.passengerConfirmationStatus as string | undefined) ?? null,
         reMatchRound: typeof d.reMatchRound === 'number' ? d.reMatchRound : 0,
+        // Charter Fare V1：包車訂單 snapshot（plans 已 freeze；actualEndTime / overtime* 為 W5 driver 結束後寫入）
+        // 全 plain object（無 Timestamp），直接 echo 即可
+        charter: (d.charter as Record<string, unknown> | null | undefined) ?? null,
         bidHistory: Array.isArray(d.bidHistory)
           ? (d.bidHistory as Array<{ round?: number; bids?: unknown; endReason?: string; endedAt?: unknown; endedBy?: string }>).map((h) => {
             const e = h.endedAt as { toDate?: () => Date } | Date | null | undefined;

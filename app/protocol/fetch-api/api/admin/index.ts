@@ -224,6 +224,13 @@ export interface AdminOrder {
    * 舊單（Migration 前）/ 從未派發的訂單可能無此欄位 → consumer fallback `currentLevel='0'`（全開）。
    */
   dispatchVisibility?: DispatchVisibilityDto | null
+  /**
+   * Charter Fare V1：包車訂單 snapshot；非 charter 訂單為 null。
+   * 訂單建立時寫入 plans 整份 freeze + estimatedEndTime；
+   * W5 driver 結束行程時補寫 actualEndTime / overtimeMinutes / overtimeBlocks / overtimeCharge。
+   * 型別與 app/protocol/fetch-api/api/order/type.d.ts::OrderCharter 對齊。
+   */
+  charter?: OrderCharter | null
 }
 
 export interface PatchAdminOrderBody {

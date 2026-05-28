@@ -73,6 +73,19 @@ const advanceCountdownLabel = computed(() => {
   return `${formatRemaining(g.remainingMs)}後可執行`;
 });
 
+// Charter Fare V1 W5：包車訂單最後一段（in_transit → completed）按鈕文案改「結束包車任務」
+// 非 charter 訂單沿用既有 ACTION_BY_STATUS label
+const currentActionLabel = computed(() => {
+  const order = selectedOrder.value;
+  if (!order) return '';
+  const cfg = ACTION_BY_STATUS[order.orderStatus];
+  if (!cfg) return '無可用操作';
+  if (order.orderType === 'charter' && cfg.next === 'completed') {
+    return '結束包車任務';
+  }
+  return cfg.label;
+});
+
 // Wave 1 D1：Tab 切換 + 已完成歷史列表
 type TripTab = 'active' | 'history';
 const activeTab = ref<TripTab>('active');
@@ -204,6 +217,11 @@ const ClickAdvance = async (order: AssignedOrder) => {
 
     const patchBody: PatchOrderParams = { orderStatus: cfg.next };
     if (driverLocation) patchBody.driverLocation = driverLocation;
+    // Charter Fare V1 W5：charter 訂單結束行程（in_transit → completed）帶上實際結束時間，
+    // server 端會用 computeOvertimeBlocks 重算 overtimeMinutes/Blocks/Charge 寫回 charter block
+    if (order.orderType === 'charter' && cfg.next === 'completed') {
+      patchBody.actualEndTime = new Date().toISOString();
+    }
 
     const res = await $api.PatchOrder(order.orderId, patchBody);
     if (res.status.code === $enum.apiStatus.success) {
@@ -471,7 +489,7 @@ onUnmounted(() => {
           button.PageDriverTrip__action(
             :disabled="advancing === selectedOrder.orderId || !advanceGate.ok"
             @click="ClickAdvance(selectedOrder)"
-          ) {{ advancing === selectedOrder.orderId ? '處理中...' : (ACTION_BY_STATUS[selectedOrder.orderStatus]?.label ?? '無可用操作') }}
+          ) {{ advancing === selectedOrder.orderId ? '處理中...' : currentActionLabel }}
           .PageDriverTrip__action-hint(v-if="!advanceGate.ok") {{ advanceCountdownLabel }}
 </template>
 

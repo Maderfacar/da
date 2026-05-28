@@ -13,6 +13,7 @@ import {
   computeSurcharge,
   findActiveSurcharge,
   computeOvertimeBlocks,
+  computeCharterReconciliation,
   buildTagSurchargeIndex,
   calcTagSurcharge,
   DEFAULT_FARE_RULES,
@@ -870,6 +871,52 @@ describe('computeOvertimeBlocks', () => {
   });
   it('寬限後 31 分（grace 46）→ 2 段', () => {
     expect(computeOvertimeBlocks(planned, new Date(planned.getTime() + 46 * 60000), grace)).toBe(2);
+  });
+});
+
+// Charter Fare V1 W5：admin OT 對帳純函式（PATCH endpoint 抽出共用）
+describe('computeCharterReconciliation', () => {
+  const charter = { overtimeGraceMin: 15 };
+  const estimatedEndTime = new Date('2026-05-28T18:00:00+08:00');
+
+  it('actualEnd 早於 estimatedEnd → minutes=0 / blocks=0 / charge=0', () => {
+    const actualEndTime = new Date(estimatedEndTime.getTime() - 20 * 60000); // 提早 20 分
+    const res = computeCharterReconciliation({
+      estimatedEndTime,
+      actualEndTime,
+      overtimeRatePer30min: 500,
+      charter,
+    });
+    expect(res.overtimeMinutes).toBe(0);
+    expect(res.overtimeBlocks).toBe(0);
+    expect(res.overtimeCharge).toBe(0);
+  });
+
+  it('actualEnd 剛超 grace（+16 分）→ minutes=16 / blocks=1 / charge=rate×1', () => {
+    const actualEndTime = new Date(estimatedEndTime.getTime() + 16 * 60000);
+    const res = computeCharterReconciliation({
+      estimatedEndTime,
+      actualEndTime,
+      overtimeRatePer30min: 500,
+      charter,
+    });
+    expect(res.overtimeMinutes).toBe(16);
+    expect(res.overtimeBlocks).toBe(1);
+    expect(res.overtimeCharge).toBe(500);
+  });
+
+  it('多段 OT：grace=15、+75 分 → minutes=75 / blocks=2 / charge=rate×2', () => {
+    // overshoot = 75 − 15 = 60 → ceil(60/30) = 2
+    const actualEndTime = new Date(estimatedEndTime.getTime() + 75 * 60000);
+    const res = computeCharterReconciliation({
+      estimatedEndTime,
+      actualEndTime,
+      overtimeRatePer30min: 600,
+      charter,
+    });
+    expect(res.overtimeMinutes).toBe(75);
+    expect(res.overtimeBlocks).toBe(2);
+    expect(res.overtimeCharge).toBe(1200);
   });
 });
 
