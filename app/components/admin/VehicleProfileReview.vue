@@ -2,7 +2,7 @@
 // Phase 1B：admin 端 — 司機車輛 Profile 審核（左 current / 右 pending diff + approve/reject）
 //
 // 本元件不負責 admin 守衛；server endpoint 已檢 hasPermission(canManageDrivers)。
-import { TAG_GROUPS_ORDERED, type TagGroup, localizedTagName } from '~shared/tagTaxonomy';
+import { TAG_GROUPS, TAG_GROUPS_ORDERED, type TagGroup, localizedTagName } from '~shared/tagTaxonomy';
 import type {
   VehicleProfileDto,
   VehicleProfilePendingDto,
@@ -20,14 +20,20 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{ refresh: [] }>();
 
+// admin 審核頁面標籤白名單 — 對齊 /admin/settings：只顯示「設備」(interior) 與「服務」(equipment)；
+// 動力 / 車型 / 產地 不再顯示。司機能力（driverSkill）為 driver scope、立即生效不走審核，故不在此頁出現
+const VISIBLE_VEHICLE_GROUPS: ReadonlyArray<TagGroup> = ['interior', 'equipment'];
 const vehicleGroups = TAG_GROUPS_ORDERED
-  .filter(([, m]) => m.scope === 'vehicle')
+  .filter(([g, m]) => m.scope === 'vehicle' && VISIBLE_VEHICLE_GROUPS.includes(g))
   .map(([g]) => g);
 
 const TagName = (id: string): string => {
   const t = props.tagIndex.get(id);
   return t ? localizedTagName(t, 'zh_tw') : id;
 };
+
+// group key → 繁中 label（對齊 admin/settings：「設備」/「服務」）
+const GroupLabel = (g: TagGroup): string => TAG_GROUPS[g]?.label.zh_tw ?? g;
 
 const groupOfTag = (id: string): TagGroup | null => {
   return props.tagIndex.get(id)?.group ?? null;
@@ -124,7 +130,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
             .VehicleProfileReview__photo.is-fallback(v-else) 圖片
           .VehicleProfileReview__photos-empty(v-if="!current.photos.length") 無照片
         .VehicleProfileReview__group(v-for="g in vehicleGroups" :key="`cg-${g}`")
-          .VehicleProfileReview__group-label {{ g }}
+          .VehicleProfileReview__group-label {{ GroupLabel(g) }}
           .VehicleProfileReview__chips(v-if="TagsForGroup(current.tags, g).length")
             span.VehicleProfileReview__chip(
               v-for="id in TagsForGroup(current.tags, g)"
@@ -160,7 +166,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
             .VehicleProfileReview__photo.is-fallback(v-else) 圖片
           .VehicleProfileReview__photos-empty(v-if="!pending.photos.length") 無照片
         .VehicleProfileReview__group(v-for="g in vehicleGroups" :key="`pg-${g}`")
-          .VehicleProfileReview__group-label {{ g }}
+          .VehicleProfileReview__group-label {{ GroupLabel(g) }}
           .VehicleProfileReview__chips(v-if="TagsForGroup(pending.tags, g).length")
             span.VehicleProfileReview__chip.is-pending(
               v-for="id in TagsForGroup(pending.tags, g)"
