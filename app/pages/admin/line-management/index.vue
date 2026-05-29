@@ -366,6 +366,18 @@ const AUDIENCE_BADGE: Record<string, { icon: string; label: string }> = {
   admin: { icon: '👤', label: '管理員' },
   both: { icon: '🌐', label: '全體' },
 };
+// 顯眼版 audience 文字 pill — 列表卡片上明確標示「給乘客 / 給司機」
+// 注意：之前用 AUDIENCE_TEXT[t.meta.audience] 物件動態 key 存取的寫法，
+// 在 production Pug → Vue 編譯出的 minified runtime 會抛
+// "Cannot read properties of undefined (reading 'passenger')" — 改用 function call 規避
+const AudienceText = (a: string | undefined): string => {
+  if (a === 'passenger') return '給乘客';
+  if (a === 'driver') return '給司機';
+  if (a === 'admin') return '給管理員';
+  if (a === 'both') return '全體';
+  return a || '';
+};
+const AudienceClass = (a: string | undefined): string => `is-${a || 'other'}`;
 
 const IsTemplateLocked = (t: NotificationTemplateItem): boolean =>
   t.meta.requiresSuperLevel && !storeAuth.isSuper;
@@ -858,7 +870,7 @@ onMounted(() => {
                   @click="ClickSelectTemplate(t)"
                 )
                   span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
-                  span.PageAdminLineManagement__template-audience(:class="`is-${t.meta.audience}`") {{ AUDIENCE_TEXT[t.meta.audience] || t.meta.audience }}
+                  span.PageAdminLineManagement__template-audience(:class="AudienceClass(t.meta && t.meta.audience)") {{ AudienceText(t.meta && t.meta.audience) }}
                   span.PageAdminLineManagement__template-badges
                     span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
                     span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
@@ -876,7 +888,7 @@ onMounted(() => {
                 @click="ClickSelectTemplate(t)"
               )
                 span.PageAdminLineManagement__template-name {{ t.meta.displayName }}
-                span.PageAdminLineManagement__template-audience(:class="`is-${t.meta.audience}`") {{ AUDIENCE_TEXT[t.meta.audience] || t.meta.audience }}
+                span.PageAdminLineManagement__template-audience(:class="AudienceClass(t.meta && t.meta.audience)") {{ AudienceText(t.meta && t.meta.audience) }}
                 span.PageAdminLineManagement__template-badges
                   span.PageAdminLineManagement__template-badge(:title="TRIGGER_TYPE_BADGE[t.meta.triggerType].label") {{ TRIGGER_TYPE_BADGE[t.meta.triggerType].icon }}
                   span.PageAdminLineManagement__template-badge(:title="OUTPUT_TYPE_BADGE[t.meta.outputType].label") {{ OUTPUT_TYPE_BADGE[t.meta.outputType].icon }}
