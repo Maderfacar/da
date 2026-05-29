@@ -96,6 +96,16 @@ const isTextMode = computed(() => outputType.value === 'text');
 
 // W7：i18nMode='multi' 才顯三語 tab
 const isMultiLang = computed(() => detail.value?.meta.i18nMode === 'multi');
+
+// audience badge 文字（替代 pug 內 nested template v-if 寫法 — 在某些 Pug → Vue 編譯路徑會炸）
+const audienceLabel = computed(() => {
+  const a = detail.value?.meta.audience;
+  if (a === 'passenger') return '🧑‍✈️ 發送給乘客';
+  if (a === 'driver') return '🚗 發送給司機';
+  if (a === 'admin') return '👤 發送給管理員';
+  if (a === 'both') return '🌐 全體';
+  return '';
+});
 const hasContentInActiveLang = computed(() => {
   const c = detail.value?.contentByLang?.[activeLang.value];
   return c !== null && c !== undefined;
@@ -446,11 +456,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
       .TemplateEditor__meta-row
         h3.TemplateEditor__title {{ detail.meta.displayName }}
         //- 顯眼的 audience badge — 一眼分辨此模板發給乘客 / 司機 / 管理員 / 全體
-        span.TemplateEditor__audience(:class="`is-${detail.meta.audience}`")
-          template(v-if="detail.meta.audience === 'passenger'") 🧑‍✈️ 發送給乘客
-          template(v-else-if="detail.meta.audience === 'driver'") 🚗 發送給司機
-          template(v-else-if="detail.meta.audience === 'admin'") 👤 發送給管理員
-          template(v-else) 🌐 全體
+        span.TemplateEditor__audience(:class="'is-' + detail.meta.audience") {{ audienceLabel }}
         span.TemplateEditor__key {{ detail.meta.templateKey }}
       p.TemplateEditor__desc {{ detail.meta.description }}
       p.TemplateEditor__trigger 觸發時機：{{ detail.meta.triggerEvent }}
