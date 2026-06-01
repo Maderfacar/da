@@ -40,6 +40,10 @@ interface VehicleFormState {
   luggageDescZh: string;
   luggageDescEn: string;
   luggageDescJa: string;
+  // 車卡圖庫（exterior 為卡片主圖；其餘 lightbox 顯示）
+  imageExterior: string;
+  imageInterior: string;
+  imageTrunk: string;
   capacity: number;
   baseFare: number;
   perKmRate: number;
@@ -107,6 +111,9 @@ function _emptyForm(): VehicleFormState {
     luggageDescZh: '',
     luggageDescEn: '',
     luggageDescJa: '',
+    imageExterior: '',
+    imageInterior: '',
+    imageTrunk: '',
     capacity: 4,
     baseFare: 300,
     perKmRate: 25,
@@ -184,6 +191,9 @@ const ClickOpenEdit = (v: FleetVehicleDto) => {
   form.luggageDescZh = v.luggageDescription?.zh ?? '';
   form.luggageDescEn = v.luggageDescription?.en ?? '';
   form.luggageDescJa = v.luggageDescription?.ja ?? '';
+  form.imageExterior = v.images?.exterior ?? '';
+  form.imageInterior = v.images?.interior ?? '';
+  form.imageTrunk = v.images?.trunk ?? '';
   form.capacity = v.capacity;
   form.baseFare = v.baseFare;
   form.perKmRate = v.perKmRate;
@@ -263,6 +273,17 @@ const ClickSave = async () => {
       (luggageDescZh || luggageDescEn || luggageDescJa)
         ? { zh: luggageDescZh, en: luggageDescEn, ja: luggageDescJa }
         : null;
+    const imgExt = form.imageExterior.trim();
+    const imgInt = form.imageInterior.trim();
+    const imgTrk = form.imageTrunk.trim();
+    const imagesPayload: { exterior?: string; interior?: string; trunk?: string } | null =
+      (imgExt || imgInt || imgTrk)
+        ? {
+            ...(imgExt ? { exterior: imgExt } : {}),
+            ...(imgInt ? { interior: imgInt } : {}),
+            ...(imgTrk ? { trunk: imgTrk } : {}),
+          }
+        : null;
     const payload: CreateVehiclePayload = {
       label: { zh: form.labelZh.trim(), en: form.labelEn.trim(), ja: form.labelJa.trim() },
       capacity: form.capacity,
@@ -273,6 +294,7 @@ const ClickSave = async () => {
       enabled: form.enabled,
       tagline: taglinePayload,
       luggageDescription: luggageDescriptionPayload,
+      images: imagesPayload,
       charterPlans: _planToPayload(form.charterPlans),
     };
     const res = dialog.mode === 'create'
@@ -303,8 +325,9 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
       enabled: !v.enabled,
       // Booking v2：保留既有 tagline，避免被 PUT 全量覆寫清掉
       tagline: v.tagline ?? null,
-      // airport-calibration wave：保留既有 luggageDescription
+      // airport-calibration wave：保留既有 luggageDescription / images
       luggageDescription: v.luggageDescription ?? null,
+      images: v.images ?? null,
       // Charter Fare V1：保留既有 charterPlans，避免快速切啟用後 plans 被清掉
       charterPlans: v.charterPlans ?? null,
     });
@@ -425,6 +448,33 @@ const ClickDelete = async (v: FleetVehicleDto) => {
           .SettingsFleetVehicles__field
             label.SettingsFleetVehicles__label 情境文案（日）
             input.SettingsFleetVehicles__input(v-model="form.taglineJa" maxlength="60" placeholder="例：通勤 / 空港送迎")
+
+        //- 車卡圖庫（exterior 為卡片主圖；空字串 → 不送）
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 外觀照 URL
+            input.SettingsFleetVehicles__input(
+              v-model="form.imageExterior"
+              type="url"
+              maxlength="2048"
+              placeholder="https://... 卡片主圖"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 內裝照 URL
+            input.SettingsFleetVehicles__input(
+              v-model="form.imageInterior"
+              type="url"
+              maxlength="2048"
+              placeholder="https://... lightbox"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 後車廂照 URL
+            input.SettingsFleetVehicles__input(
+              v-model="form.imageTrunk"
+              type="url"
+              maxlength="2048"
+              placeholder="https://... lightbox"
+            )
 
         //- 行李容量描述（取代 SU 數字；三語都空 → 不送）
         .SettingsFleetVehicles__field-grid

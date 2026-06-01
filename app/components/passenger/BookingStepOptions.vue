@@ -410,9 +410,14 @@ const swiperBreakpoints = {
     )
       SwiperSlide(v-for="cfg in vehicles" :key="cfg.id")
         .PassengerBookingStepOptions__vehicle-card(
-          :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
+          :class="[{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }, /(business|vip)/.test(cfg.id) ? 'is-luxury' : 'is-standard']"
           @click="ClickVehicle(cfg)"
         )
+          //- 主視覺：有 images.exterior 顯示縮圖，否則 fallback mdi icon
+          .PassengerBookingStepOptions__vehicle-hero(v-if="cfg.images?.exterior")
+            img.PassengerBookingStepOptions__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en")
+          .PassengerBookingStepOptions__vehicle-hero.is-icon(v-else)
+            NuxtIcon.PassengerBookingStepOptions__vehicle-hero-icon(:name="cfg.icon")
           .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
           .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
           .PassengerBookingStepOptions__vehicle-specs
@@ -722,14 +727,14 @@ const swiperBreakpoints = {
     padding: 14px 16px;
     display: grid;
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto auto;
     gap: 4px 12px;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
     position: relative;
     height: 100%;
     box-sizing: border-box;
-    min-height: 180px;
+    min-height: 200px;
 
     &.is-active {
       border-color: var(--da-amber);
@@ -743,6 +748,59 @@ const swiperBreakpoints = {
       cursor: not-allowed;
       border-color: #ef4444;
     }
+
+    // ── airport-calibration wave D：商務線 dark luxury accent / 經濟線 cream ───
+    &.is-luxury {
+      background: linear-gradient(180deg, #1c1714 0%, #2a201a 100%);
+      border-color: rgba(212, 175, 55, 0.4); // soft gold
+      color: #f4e9d4;
+
+      .PassengerBookingStepOptions__vehicle-name { color: #f4e9d4; }
+      .PassengerBookingStepOptions__vehicle-sub { color: rgba(244, 233, 212, 0.55); }
+      .PassengerBookingStepOptions__vehicle-specs { color: rgba(244, 233, 212, 0.8); }
+      .PassengerBookingStepOptions__vehicle-fare {
+        color: rgba(244, 233, 212, 0.7);
+        span { color: #d4af37; }
+      }
+      .PassengerBookingStepOptions__vehicle-tagline { color: rgba(244, 233, 212, 0.7); }
+
+      &.is-active {
+        border-color: #d4af37;
+        background: linear-gradient(180deg, #2a201a 0%, #3a2a1a 100%);
+        box-shadow: 0 4px 18px rgba(212, 175, 55, 0.25);
+      }
+    }
+  }
+
+  &__vehicle-hero {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.04);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.is-icon {
+      background: rgba(0, 0, 0, 0.03);
+      .is-luxury & { background: rgba(255, 255, 255, 0.04); }
+    }
+  }
+
+  &__vehicle-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__vehicle-hero-icon {
+    font-size: 56px;
+    opacity: 0.55;
+    .is-luxury & { color: #d4af37; opacity: 0.8; }
   }
 
   &__vehicle-name {
@@ -751,7 +809,7 @@ const swiperBreakpoints = {
     font-weight: 700;
     color: var(--da-dark);
     grid-column: 1;
-    grid-row: 1;
+    grid-row: 2;
   }
 
   &__vehicle-sub {
@@ -760,7 +818,7 @@ const swiperBreakpoints = {
     letter-spacing: 0.1em;
     color: var(--da-gray);
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
   }
 
   &__vehicle-specs {
@@ -769,7 +827,7 @@ const swiperBreakpoints = {
     font-size: 13px;
     color: var(--da-gray);
     grid-column: 2;
-    grid-row: 1 / 3;
+    grid-row: 2 / 4;
     align-items: center;
 
     span {
@@ -783,7 +841,7 @@ const swiperBreakpoints = {
     font-size: 13px;
     color: var(--da-gray);
     grid-column: 1 / 3;
-    grid-row: 3;
+    grid-row: 4;
     display: flex;
     gap: 6px;
     align-items: center;
@@ -794,7 +852,7 @@ const swiperBreakpoints = {
 
   &__vehicle-tagline {
     grid-column: 1 / 3;
-    grid-row: 4;
+    grid-row: 5;
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 12px;
     color: var(--da-gray);
@@ -804,7 +862,7 @@ const swiperBreakpoints = {
 
   &__vehicle-hint {
     grid-column: 1 / 3;
-    grid-row: 5;
+    grid-row: 6;
     font-size: 12px;
     margin-top: 4px;
     font-family: 'Noto Sans TC', sans-serif;

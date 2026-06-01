@@ -36,8 +36,16 @@ interface FleetVehicleDto {
   tagline?: I18nLabelDto;
   /** 行李容量與適用情境的市面描述（三語；UI 取代 SU 對照表） */
   luggageDescription?: I18nLabelDto;
+  /** 車卡圖庫（exterior 為主圖；interior / trunk 補充） */
+  images?: VehicleImagesDto;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2） */
   charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>>;
+}
+
+interface VehicleImagesDto {
+  exterior?: string;
+  interior?: string;
+  trunk?: string;
 }
 
 interface FleetLuggageTypeDto {
@@ -82,6 +90,8 @@ interface CreateVehiclePayload {
   tagline?: I18nLabelDto | null;
   /** 行李容量與適用情境的市面描述（三語；optional，null 表示清除） */
   luggageDescription?: I18nLabelDto | null;
+  /** 車卡圖庫（optional；null 表示清除整個物件） */
+  images?: VehicleImagesDto | null;
   /** Charter Fare V1：包車三檔時長套餐（optional；null 表示清除整個 map） */
   charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>> | null;
 }

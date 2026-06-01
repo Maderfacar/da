@@ -40,8 +40,19 @@ export interface FleetVehicle {
   tagline?: I18nLabel;
   /** 行李容量與適用情境的市面描述（三語；admin 編輯，UI 取代行李 SU 對照表） */
   luggageDescription?: I18nLabel;
+  /** 車卡圖庫（airport-calibration wave D）— exterior 為主圖；interior / trunk 補充顯示 lightbox */
+  images?: VehicleImages;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2，由編排層處理） */
   charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
+}
+
+export interface VehicleImages {
+  /** 外觀照（主圖；卡片預設顯示） */
+  exterior?: string;
+  /** 內裝照 */
+  interior?: string;
+  /** 後車廂照（與 driver vehicleCapacity.trunkPhotoUrl 不同 — 此為車型展示用） */
+  trunk?: string;
 }
 
 export interface FleetLuggageType {

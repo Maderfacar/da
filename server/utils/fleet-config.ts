@@ -48,8 +48,16 @@ export interface FleetVehicle {
   tagline?: I18nLabel;
   /** 行李容量與適用情境的市面描述（三語；admin 編輯，取代行李 SU 對照表） */
   luggageDescription?: I18nLabel;
+  /** 車卡圖庫（airport-calibration wave D）— exterior 為主圖；interior / trunk 補充顯示 lightbox */
+  images?: VehicleImages;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省 charter 訂單 fallback fare-v2） */
   charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
+}
+
+export interface VehicleImages {
+  exterior?: string;
+  interior?: string;
+  trunk?: string;
 }
 
 export interface FleetLuggageType {
@@ -326,6 +334,26 @@ export const validateVehiclePayload = (
   if (isPositiveOrZero(raw.luggageSU)) data.luggageSU = raw.luggageSU as number;
   if (tagline) data.tagline = tagline;
   if (luggageDescription) data.luggageDescription = luggageDescription;
+  // images optional；null / 全空 → 不寫入；任一非空 URL → 保留
+  if (raw.images !== undefined && raw.images !== null) {
+    if (typeof raw.images !== 'object' || Array.isArray(raw.images)) {
+      return { ok: false, error: 'images 必須是物件' };
+    }
+    const imgs = raw.images as { exterior?: unknown; interior?: unknown; trunk?: unknown };
+    const cleaned: { exterior?: string; interior?: string; trunk?: string } = {};
+    for (const key of ['exterior', 'interior', 'trunk'] as const) {
+      const v = imgs[key];
+      if (v === undefined || v === null || v === '') continue;
+      if (typeof v !== 'string' || v.length > 2048) {
+        return { ok: false, error: `images.${key} 必須是字串（≤ 2048 字元）` };
+      }
+      if (!/^https?:\/\//.test(v)) {
+        return { ok: false, error: `images.${key} 必須是 http(s) URL` };
+      }
+      cleaned[key] = v;
+    }
+    if (Object.keys(cleaned).length > 0) data.images = cleaned;
+  }
   if (plansResult.value) data.charterPlans = plansResult.value;
   return { ok: true, data };
 };
