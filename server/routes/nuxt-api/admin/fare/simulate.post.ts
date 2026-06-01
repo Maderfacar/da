@@ -88,18 +88,18 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const config = useRuntimeConfig();
-  if (!config.firebaseServiceAccountJson) {
+  const { googleMapsApiKey, firebaseServiceAccountJson } = useRuntimeConfig();
+  if (!firebaseServiceAccountJson) {
     return serverError({ zh_tw: 'Firebase 未設定', en: 'Firebase not configured', ja: 'Firebase未設定' });
   }
-  const mapsKey = (config as { googleMapsServerKey?: string }).googleMapsServerKey;
-  if (!mapsKey) {
+  if (!googleMapsApiKey) {
     return serverError({
-      zh_tw: 'Google Maps server key 未設定',
-      en: 'Google Maps server key not configured',
-      ja: 'Google Maps サーバーキー未設定',
+      zh_tw: 'Google Maps API key 未設定',
+      en: 'Google Maps API key not configured',
+      ja: 'Google Maps API キー未設定',
     });
   }
+  const mapsKey = googleMapsApiKey;
 
   const body = await readBody<SimulateBody>(event).catch(() => null);
   if (!body) {
@@ -158,7 +158,7 @@ export default defineEventHandler(async (event) => {
     : [];
 
   try {
-    const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
     const [fleet, rules] = await Promise.all([getFleetConfig(db), getFareRules()]);
 
     const vehicle = fleet.vehicles.find((v) => v.id === body.vehicleId);
