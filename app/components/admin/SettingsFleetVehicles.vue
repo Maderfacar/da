@@ -36,8 +36,11 @@ interface VehicleFormState {
   taglineZh: string;
   taglineEn: string;
   taglineJa: string;
+  // airport-calibration wave：luggageDescription 三語（取代 SU 容量數字；三語都空 → 不送）
+  luggageDescZh: string;
+  luggageDescEn: string;
+  luggageDescJa: string;
   capacity: number;
-  luggageSU: number;
   baseFare: number;
   perKmRate: number;
   icon: string;
@@ -101,8 +104,10 @@ function _emptyForm(): VehicleFormState {
     taglineZh: '',
     taglineEn: '',
     taglineJa: '',
+    luggageDescZh: '',
+    luggageDescEn: '',
+    luggageDescJa: '',
     capacity: 4,
-    luggageSU: 4,
     baseFare: 300,
     perKmRate: 25,
     icon: 'mdi:car',
@@ -176,8 +181,10 @@ const ClickOpenEdit = (v: FleetVehicleDto) => {
   form.taglineZh = v.tagline?.zh ?? '';
   form.taglineEn = v.tagline?.en ?? '';
   form.taglineJa = v.tagline?.ja ?? '';
+  form.luggageDescZh = v.luggageDescription?.zh ?? '';
+  form.luggageDescEn = v.luggageDescription?.en ?? '';
+  form.luggageDescJa = v.luggageDescription?.ja ?? '';
   form.capacity = v.capacity;
-  form.luggageSU = v.luggageSU;
   form.baseFare = v.baseFare;
   form.perKmRate = v.perKmRate;
   form.icon = v.icon;
@@ -216,7 +223,6 @@ const _validate = (): string => {
   }
   if (!form.labelZh.trim() || !form.labelEn.trim() || !form.labelJa.trim()) return '三語 label 都必填';
   if (!Number.isInteger(form.capacity) || form.capacity < 1) return 'capacity 必須是正整數';
-  if (!(form.luggageSU >= 0)) return 'luggageSU 必須 ≥ 0';
   if (!(form.baseFare >= 0)) return 'baseFare 必須 ≥ 0';
   if (!(form.perKmRate >= 0)) return 'perKmRate 必須 ≥ 0';
   if (!form.icon.trim()) return 'icon 必填（例：mdi:car）';
@@ -250,16 +256,23 @@ const ClickSave = async () => {
       (taglineZh || taglineEn || taglineJa)
         ? { zh: taglineZh, en: taglineEn, ja: taglineJa }
         : null;
+    const luggageDescZh = form.luggageDescZh.trim();
+    const luggageDescEn = form.luggageDescEn.trim();
+    const luggageDescJa = form.luggageDescJa.trim();
+    const luggageDescriptionPayload: { zh: string; en: string; ja: string } | null =
+      (luggageDescZh || luggageDescEn || luggageDescJa)
+        ? { zh: luggageDescZh, en: luggageDescEn, ja: luggageDescJa }
+        : null;
     const payload: CreateVehiclePayload = {
       label: { zh: form.labelZh.trim(), en: form.labelEn.trim(), ja: form.labelJa.trim() },
       capacity: form.capacity,
-      luggageSU: form.luggageSU,
       baseFare: form.baseFare,
       perKmRate: form.perKmRate,
       icon: form.icon.trim(),
       sortOrder: form.sortOrder,
       enabled: form.enabled,
       tagline: taglinePayload,
+      luggageDescription: luggageDescriptionPayload,
       charterPlans: _planToPayload(form.charterPlans),
     };
     const res = dialog.mode === 'create'
@@ -283,7 +296,6 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
     const res = await $api.UpdateFleetVehicle(v.id, {
       label: v.label,
       capacity: v.capacity,
-      luggageSU: v.luggageSU,
       baseFare: v.baseFare,
       perKmRate: v.perKmRate,
       icon: v.icon,
@@ -291,6 +303,8 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
       enabled: !v.enabled,
       // Booking v2：保留既有 tagline，避免被 PUT 全量覆寫清掉
       tagline: v.tagline ?? null,
+      // airport-calibration wave：保留既有 luggageDescription
+      luggageDescription: v.luggageDescription ?? null,
       // Charter Fare V1：保留既有 charterPlans，避免快速切啟用後 plans 被清掉
       charterPlans: v.charterPlans ?? null,
     });
@@ -355,11 +369,12 @@ const ClickDelete = async (v: FleetVehicleDto) => {
         .SettingsFleetVehicles__row-meta
           span 載客 {{ v.capacity }} 人
           span ·
-          span 行李 {{ v.luggageSU }} SU
-          span ·
           span 起跳 NT$ {{ v.baseFare }}
           span ·
           span {{ v.perKmRate }}/km
+          template(v-if="v.luggageDescription?.zh")
+            span ·
+            span {{ v.luggageDescription.zh }}
       .SettingsFleetVehicles__row-actions
         button.SettingsFleetVehicles__btn.is-toggle(
           :disabled="togglingId === v.id"
@@ -411,6 +426,30 @@ const ClickDelete = async (v: FleetVehicleDto) => {
             label.SettingsFleetVehicles__label 情境文案（日）
             input.SettingsFleetVehicles__input(v-model="form.taglineJa" maxlength="60" placeholder="例：通勤 / 空港送迎")
 
+        //- 行李容量描述（取代 SU 數字；三語都空 → 不送）
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 行李容量描述（中）
+            input.SettingsFleetVehicles__input(
+              v-model="form.luggageDescZh"
+              maxlength="80"
+              placeholder="例：4 人座 / 2 大 2 小行李 / 適合一般機場接送"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 行李容量描述（英）
+            input.SettingsFleetVehicles__input(
+              v-model="form.luggageDescEn"
+              maxlength="120"
+              placeholder="例：4 seats / 2 large + 2 small luggage / standard airport transfer"
+            )
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 行李容量描述（日）
+            input.SettingsFleetVehicles__input(
+              v-model="form.luggageDescJa"
+              maxlength="120"
+              placeholder="例：4 人乗り / 大型 2 個＋小型 2 個 / 一般空港送迎"
+            )
+
         //- 數值欄位
         .SettingsFleetVehicles__field-grid
           .SettingsFleetVehicles__field
@@ -419,14 +458,6 @@ const ClickDelete = async (v: FleetVehicleDto) => {
               v-model.number="form.capacity"
               type="number"
               min="1"
-              inputmode="numeric"
-            )
-          .SettingsFleetVehicles__field
-            label.SettingsFleetVehicles__label 行李 SU 容量
-            input.SettingsFleetVehicles__input(
-              v-model.number="form.luggageSU"
-              type="number"
-              min="0"
               inputmode="numeric"
             )
           .SettingsFleetVehicles__field

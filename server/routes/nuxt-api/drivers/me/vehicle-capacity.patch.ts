@@ -1,28 +1,29 @@
 /**
  * PATCH /nuxt-api/drivers/me/vehicle-capacity
- * 司機自編車輛載運容量（立即生效，不走審核流程）— SU V2
+ * 司機自編車輛資訊（airport-calibration wave 後 SU 已停用）
  *
- * Body: { trunkVolumeLiters: number; seatConfigs?: SeatConfig[] }
+ * Body: { trunkPhotoUrl?: string }
  *
  * 寫入：drivers/{lineUid}.vehicleCapacity = {
- *   trunkVolumeLiters,
- *   derivedLuggageSU,  // server 端計算
- *   seatConfigs,
+ *   trunkPhotoUrl,  // Firebase Storage 公開 URL，admin 審核背書「車輛符合所掛車型描述」
  *   updatedAt,
  * }
  *
  * 認證：require driver self
+ *
+ * 註：trunkVolumeLiters / derivedLuggageSU / seatConfigs 已 deprecated；
+ *     舊資料保留不刪，新請求不再寫入。
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
-import { computeSU, validateSeatConfigs } from '~shared/luggageSU';
 
 interface PatchBody {
-  trunkVolumeLiters?: unknown;
-  seatConfigs?: unknown;
+  trunkPhotoUrl?: unknown;
 }
+
+const MAX_URL_LENGTH = 2048;
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -42,18 +43,24 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '請求格式錯誤', en: 'Invalid request body', ja: 'リクエスト形式が不正です' });
   }
 
-  const liters = body.trunkVolumeLiters;
-  if (liters === undefined || !Number.isFinite(liters as number) || (liters as number) <= 0) {
-    return badRequestError({
-      zh_tw: 'trunkVolumeLiters 必須是正數（公升）',
-      en: 'trunkVolumeLiters must be a positive number (liters)',
-      ja: 'trunkVolumeLiters は正の数（リットル）が必要です',
-    });
-  }
-
-  const configError = validateSeatConfigs(body.seatConfigs);
-  if (configError) {
-    return badRequestError({ zh_tw: configError, en: configError, ja: configError });
+  const url = body.trunkPhotoUrl;
+  let trunkPhotoUrl: string | null = null;
+  if (url !== undefined && url !== null && url !== '') {
+    if (typeof url !== 'string' || url.length > MAX_URL_LENGTH) {
+      return badRequestError({
+        zh_tw: 'trunkPhotoUrl 必須是字串（≤ 2048 字元）',
+        en: 'trunkPhotoUrl must be a string (≤ 2048 chars)',
+        ja: 'trunkPhotoUrl は文字列が必要です（2048 文字以下）',
+      });
+    }
+    if (!/^https:\/\//.test(url)) {
+      return badRequestError({
+        zh_tw: 'trunkPhotoUrl 必須是 https URL',
+        en: 'trunkPhotoUrl must be an https URL',
+        ja: 'trunkPhotoUrl は https URL が必要です',
+      });
+    }
+    trunkPhotoUrl = url;
   }
 
   try {
@@ -64,18 +71,14 @@ export default defineEventHandler(async (event) => {
       return notFoundError({ zh_tw: '找不到司機資料', en: 'Driver record not found', ja: 'ドライバー情報が見つかりません' });
     }
 
-    const derivedLuggageSU = computeSU(liters as number);
-
     const vehicleCapacity: Record<string, unknown> = {
-      trunkVolumeLiters: liters as number,
-      derivedLuggageSU,
-      seatConfigs: Array.isArray(body.seatConfigs) ? body.seatConfigs : null,
+      trunkPhotoUrl,
       updatedAt: FieldValue.serverTimestamp(),
     };
 
     await driverRef.update({ vehicleCapacity });
 
-    return successResponse({ derivedLuggageSU });
+    return successResponse({ trunkPhotoUrl });
   } catch (err) {
     console.error('[drivers/me/vehicle-capacity.patch] failed:', err);
     return serverError();

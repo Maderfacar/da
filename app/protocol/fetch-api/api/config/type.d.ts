@@ -25,7 +25,8 @@ interface FleetVehicleDto {
   id: string;
   label: I18nLabelDto;
   capacity: number;
-  luggageSU: number;
+  /** @deprecated SU 系統已停用（airport-calibration wave）；保留欄位向後相容既有資料 */
+  luggageSU?: number;
   baseFare: number;
   perKmRate: number;
   icon: string;
@@ -33,6 +34,8 @@ interface FleetVehicleDto {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional） */
   tagline?: I18nLabelDto;
+  /** 行李容量與適用情境的市面描述（三語；UI 取代 SU 對照表） */
+  luggageDescription?: I18nLabelDto;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2） */
   charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>>;
 }
@@ -68,7 +71,8 @@ interface CreateVehiclePayload {
   id?: string;
   label: I18nLabelDto;
   capacity: number;
-  luggageSU: number;
+  /** @deprecated 保留向後相容；可省略或填 0 */
+  luggageSU?: number;
   baseFare: number;
   perKmRate: number;
   icon: string;
@@ -76,6 +80,8 @@ interface CreateVehiclePayload {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional；null 表示清除） */
   tagline?: I18nLabelDto | null;
+  /** 行李容量與適用情境的市面描述（三語；optional，null 表示清除） */
+  luggageDescription?: I18nLabelDto | null;
   /** Charter Fare V1：包車三檔時長套餐（optional；null 表示清除整個 map） */
   charterPlans?: Partial<Record<CharterPlanKeyDto, CharterPlanDto>> | null;
 }

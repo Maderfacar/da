@@ -35,8 +35,8 @@ export interface FleetVehicle {
   label: I18nLabel;
   /** 最大乘客數 */
   capacity: number;
-  /** 行李 SU 容量上限 */
-  luggageSU: number;
+  /** @deprecated SU 系統已停用（airport-calibration wave）；保留欄位向後相容 Firestore 既有資料 */
+  luggageSU?: number;
   /** 起跳車資（TWD） */
   baseFare: number;
   /** 每公里費用（TWD） */
@@ -46,6 +46,8 @@ export interface FleetVehicle {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional） */
   tagline?: I18nLabel;
+  /** 行李容量與適用情境的市面描述（三語；admin 編輯，取代行李 SU 對照表） */
+  luggageDescription?: I18nLabel;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省 charter 訂單 fallback fare-v2） */
   charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
 }
@@ -289,7 +291,6 @@ export const validateVehiclePayload = (
 ): { ok: true; data: Omit<FleetVehicle, 'id'> } | { ok: false; error: string } => {
   if (!isI18nLabel(raw.label)) return { ok: false, error: 'label 必須含 zh/en/ja 三語' };
   if (!Number.isInteger(raw.capacity) || (raw.capacity as number) < 1) return { ok: false, error: 'capacity 必須是正整數' };
-  if (!isPositiveOrZero(raw.luggageSU)) return { ok: false, error: 'luggageSU 必須 ≥ 0' };
   if (!isPositiveOrZero(raw.baseFare)) return { ok: false, error: 'baseFare 必須 ≥ 0' };
   if (!isPositiveOrZero(raw.perKmRate)) return { ok: false, error: 'perKmRate 必須 ≥ 0' };
   if (typeof raw.icon !== 'string') return { ok: false, error: 'icon 必須字串' };
@@ -302,20 +303,29 @@ export const validateVehiclePayload = (
     const t = raw.tagline;
     if (t.zh.trim() || t.en.trim() || t.ja.trim()) tagline = { zh: t.zh, en: t.en, ja: t.ja };
   }
+  // luggageDescription optional；同 tagline 規則（三語空字串 → 不寫入）
+  let luggageDescription: I18nLabel | undefined;
+  if (raw.luggageDescription !== undefined && raw.luggageDescription !== null) {
+    if (!isI18nLabel(raw.luggageDescription)) return { ok: false, error: 'luggageDescription 必須含 zh/en/ja 三語' };
+    const d = raw.luggageDescription;
+    if (d.zh.trim() || d.en.trim() || d.ja.trim()) luggageDescription = { zh: d.zh, en: d.en, ja: d.ja };
+  }
   // Charter Fare V1：charterPlans optional（null / 全 disabled → 不寫入欄位）
   const plansResult = validateCharterPlans(raw.charterPlans);
   if (!plansResult.ok) return { ok: false, error: plansResult.error };
   const data: Omit<FleetVehicle, 'id'> = {
     label: raw.label,
     capacity: raw.capacity as number,
-    luggageSU: raw.luggageSU as number,
     baseFare: raw.baseFare as number,
     perKmRate: raw.perKmRate as number,
     icon: raw.icon,
     sortOrder: raw.sortOrder as number,
     enabled: raw.enabled,
   };
+  // luggageSU 為 deprecated optional 欄位；只在 payload 帶非負數時保留（向後相容）
+  if (isPositiveOrZero(raw.luggageSU)) data.luggageSU = raw.luggageSU as number;
   if (tagline) data.tagline = tagline;
+  if (luggageDescription) data.luggageDescription = luggageDescription;
   if (plansResult.value) data.charterPlans = plansResult.value;
   return { ok: true, data };
 };

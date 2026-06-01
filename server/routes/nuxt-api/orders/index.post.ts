@@ -416,19 +416,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // P23：行李 SU 校驗（伺服器端最後一道把關，前端 UI 應已 disable 超 1.5 倍車型）
-  const luggageItems = Array.isArray(body.luggageItems) ? body.luggageItems : [];
-  const totalSU = luggageItems.reduce((sum, item) => {
-    const lt = fleet.luggageTypes.find((t) => t.id === item.typeId);
-    return sum + (lt?.su ?? 0) * (item.count ?? 0);
-  }, 0);
-  if (totalSU > vehicle.luggageSU * 1.5) {
-    return badRequestError({
-      zh_tw: `行李超出車型容量上限（${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU）`,
-      en: `Luggage exceeds vehicle capacity (${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU)`,
-      ja: `荷物が車種容量を超過（${totalSU} SU > ${Math.floor(vehicle.luggageSU * 1.5)} SU）`,
-    });
-  }
+  // SU 系統砍除（airport-calibration wave）：行李容量改為司機後車廂照片 + 車型市面描述，
+  // 不再以 SU 為派單過濾或下單 gate。新訂單不寫 totalSU 欄位；舊資料保留不刪。
 
   // ── 折扣碼處理 ────────────────────────────────────────────────────
   // estimatedFare 此時為「折扣前車資」；套折扣後 estimatedFare 重算為折後最終車資。

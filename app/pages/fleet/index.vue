@@ -66,10 +66,10 @@ const sampleFare = computed(() => {
           .PageFleet__spec-info
             span.PageFleet__spec-val {{ selected.capacity }} {{ $t('fleet.unit.person') }}
             span.PageFleet__spec-key {{ $t('fleet.spec.capacity') }}
-        .PageFleet__spec-item
+        .PageFleet__spec-item(v-if="selected.luggageDescription")
           NuxtIcon(name="mdi:bag-suitcase")
           .PageFleet__spec-info
-            span.PageFleet__spec-val {{ selected.luggageSU }} SU
+            span.PageFleet__spec-val {{ selected.luggageDescription[locale === 'ja' ? 'ja' : (locale === 'en' ? 'en' : 'zh')] || selected.luggageDescription.zh }}
             span.PageFleet__spec-key {{ $t('fleet.spec.luggage') }}
         .PageFleet__spec-item
           NuxtIcon(name="mdi:currency-twd")

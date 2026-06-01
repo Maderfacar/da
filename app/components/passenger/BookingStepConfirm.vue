@@ -85,12 +85,7 @@ const luggageDetails = computed(() => {
     .filter((s) => s);
 });
 
-const totalSU = computed(() =>
-  (props.draft.luggageItems ?? []).reduce((sum, item) => {
-    const lt = storeConfig.GetLuggageType(item.typeId);
-    return sum + (lt?.su ?? 0) * item.count;
-  }, 0),
-);
+// SU 已停用 — confirm 頁不再顯示 SU 總數
 
 const formattedDateTime = computed(() => {
   if (!props.draft.pickupDateTime) return '';
@@ -437,7 +432,6 @@ const ClickSubmit = () => {
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.luggage') }}
       span.PassengerBookingStepConfirm__row-value.PassengerBookingStepConfirm__row-value--multi
         | {{ luggageDetails.join('、') }}
-        | （{{ totalSU }} SU）
     .PassengerBookingStepConfirm__row
       span.PassengerBookingStepConfirm__row-label {{ $t('booking.confirm.vehicle') }}
       span.PassengerBookingStepConfirm__row-value {{ vehicleLabel }}

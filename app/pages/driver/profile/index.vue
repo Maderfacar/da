@@ -144,8 +144,9 @@ const ApiLoadDriverData = async () => {
           }
         : null;
 
-      // SU V2：vehicleCapacity（trunkVolumeLiters / derivedLuggageSU / seatConfigs）
+      // vehicleCapacity（SU 已停用；新流程只讀 trunkPhotoUrl，舊欄位保留向後相容顯示）
       const vc = driverData.vehicleCapacity as {
+        trunkPhotoUrl?: string | null;
         trunkVolumeLiters?: number;
         derivedLuggageSU?: number;
         seatConfigs?: Array<{ label: string; passengerCapacity: number; luggageSU: number }> | null;
@@ -153,8 +154,9 @@ const ApiLoadDriverData = async () => {
       } | null | undefined;
       vehicleCapacity.value = vc
         ? {
-            trunkVolumeLiters: vc.trunkVolumeLiters ?? 0,
-            derivedLuggageSU: vc.derivedLuggageSU ?? 0,
+            trunkPhotoUrl: vc.trunkPhotoUrl ?? null,
+            trunkVolumeLiters: vc.trunkVolumeLiters,
+            derivedLuggageSU: vc.derivedLuggageSU,
             seatConfigs: Array.isArray(vc.seatConfigs) ? vc.seatConfigs : null,
             updatedAt: _toIso(vc.updatedAt),
           }

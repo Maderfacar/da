@@ -10,10 +10,9 @@
 // 規格：driver 端文字維持繁中（議題 #14）。
 import { TAG_GROUPS_ORDERED, type TagGroup, localizedTagName } from '~shared/tagTaxonomy';
 import { MAX_PHOTOS } from '~shared/vehicleProfile';
-import { computeSU } from '~shared/luggageSU';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
 import type { VehicleProfileDto, VehicleProfilePendingDto } from '@/protocol/fetch-api/api/admin';
-import type { VehicleCapacityDto, PatchVehicleCapacityBody, SeatConfig } from '@/protocol/fetch-api/api/driver';
+import type { VehicleCapacityDto, PatchVehicleCapacityBody } from '@/protocol/fetch-api/api/driver';
 
 interface Props {
   driverTags: string[];
@@ -289,37 +288,21 @@ const TagName = (id: string) => {
 
 onMounted(ApiLoadTags);
 
-// ── 車輛載運容量（立即生效）────────────────────────────────
-const localLiters = ref<number | null>(null);
-const localSeatConfigs = reactive<SeatConfig[]>([]);
-const hasSeatConfigs = ref(false);
+// ── 車輛後車廂照片（SU 系統已停用 — airport-calibration wave 後改照片背書） ────────
+const localTrunkPhotoUrl = ref<string | null>(null);
 const savingCapacity = ref(false);
 
-const previewSU = computed(() => {
-  if (localLiters.value === null || localLiters.value <= 0) return null;
-  return computeSU(localLiters.value);
-});
-
 watch(() => props.vehicleCapacity, (cap) => {
-  localLiters.value = cap?.trunkVolumeLiters ?? null;
-  localSeatConfigs.splice(0, localSeatConfigs.length, ...(cap?.seatConfigs?.map((c) => ({ ...c })) ?? []));
-  hasSeatConfigs.value = !!cap?.seatConfigs?.length;
+  localTrunkPhotoUrl.value = cap?.trunkPhotoUrl ?? null;
 }, { immediate: true });
 
-const ApiSaveVehicleCapacity = async () => {
-  if (localLiters.value === null || localLiters.value <= 0) {
-    ElMessage({ message: '請輸入有效的行李廂容積（公升）', type: 'warning' });
-    return;
-  }
+const ApiSaveTrunkPhoto = async () => {
   savingCapacity.value = true;
   try {
-    const body: PatchVehicleCapacityBody = { trunkVolumeLiters: localLiters.value };
-    if (hasSeatConfigs.value && localSeatConfigs.length) {
-      body.seatConfigs = [...localSeatConfigs];
-    }
+    const body: PatchVehicleCapacityBody = { trunkPhotoUrl: localTrunkPhotoUrl.value };
     const res = await $api.PatchVehicleCapacity(body);
     if (res.status?.code === $enum.apiStatus.success) {
-      ElMessage({ message: `已儲存，載運容量 ${res.data.derivedLuggageSU} SU`, type: 'success' });
+      ElMessage({ message: '已儲存後車廂照片', type: 'success' });
       emit('refresh');
     } else {
       ElMessage({ message: res.status?.message?.zh_tw ?? '儲存失敗', type: 'error' });
@@ -327,15 +310,6 @@ const ApiSaveVehicleCapacity = async () => {
   } finally {
     savingCapacity.value = false;
   }
-};
-
-const AddSeatConfig = () => {
-  if (localSeatConfigs.length >= 3) return;
-  localSeatConfigs.push({ label: '', passengerCapacity: 4, luggageSU: 2 });
-};
-
-const RemoveSeatConfig = (idx: number) => {
-  localSeatConfigs.splice(idx, 1);
 };
 
 defineExpose({ reloadTags: ApiLoadTags });
@@ -449,71 +423,30 @@ defineExpose({ reloadTags: ApiLoadTags });
           @click="ClickSubmit"
         ) {{ submitting ? '送審中…' : '送審' }}
 
-  //- 車輛載運容量（立即生效）
+  //- 後車廂照片（airport-calibration wave 後：admin 用照片背書「車輛符合所掛車型描述」）
   .VehicleProfileEditor__block
     .VehicleProfileEditor__block-head
-      .VehicleProfileEditor__block-title 車輛載運容量
-      .VehicleProfileEditor__block-sub 設定後立即生效，乘客可依此安排行李
+      .VehicleProfileEditor__block-title 後車廂照片
+      .VehicleProfileEditor__block-sub 上傳清晰的後車廂內部照（讓 admin 確認載運容量符合所掛車型描述）
     .VehicleProfileEditor__capacity
       .VehicleProfileEditor__capacity-row
-        label.VehicleProfileEditor__capacity-label 行李廂容積（公升）
-        el-input-number.VehicleProfileEditor__capacity-input(
-          v-model="localLiters"
-          :min="1"
-          :max="2000"
-          :step="10"
-          :precision="0"
-          inputmode="numeric"
-          placeholder="例：250"
+        label.VehicleProfileEditor__capacity-label 後車廂照片 URL
+        el-input.VehicleProfileEditor__capacity-input(
+          v-model="localTrunkPhotoUrl"
+          type="url"
+          placeholder="https://... （Firebase Storage 公開連結）"
+          maxlength="2048"
+          clearable
+          :value-on-clear="''"
         )
-        .VehicleProfileEditor__capacity-su(v-if="previewSU !== null")
-          span.VehicleProfileEditor__capacity-su-val {{ previewSU }}
-          span.VehicleProfileEditor__capacity-su-label  SU
-      .VehicleProfileEditor__capacity-hint 1 SU ≈ 48L（20" 登機箱）；系統扣除 20% 死角空間後換算
-    .VehicleProfileEditor__seat-toggle
-      el-switch(
-        v-model="hasSeatConfigs"
-        active-text="宣告彈性座椅配置"
-      )
-    template(v-if="hasSeatConfigs")
-      .VehicleProfileEditor__seat-list
-        .VehicleProfileEditor__seat-item(v-for="(cfg, idx) in localSeatConfigs" :key="idx")
-          el-input.VehicleProfileEditor__seat-label(
-            v-model="localSeatConfigs[idx].label"
-            placeholder="模式名稱，例：折座模式"
-            maxlength="20"
-          )
-          el-input-number.VehicleProfileEditor__seat-pax(
-            v-model="localSeatConfigs[idx].passengerCapacity"
-            :min="1"
-            :max="9"
-            :precision="0"
-            controls-position="right"
-            inputmode="numeric"
-          )
-          span.VehicleProfileEditor__seat-sep 人
-          el-input-number.VehicleProfileEditor__seat-su(
-            v-model="localSeatConfigs[idx].luggageSU"
-            :min="1"
-            :max="30"
-            :precision="0"
-            controls-position="right"
-            inputmode="numeric"
-          )
-          span.VehicleProfileEditor__seat-sep SU
-          button.VehicleProfileEditor__seat-remove(type="button" @click="RemoveSeatConfig(idx)") ×
-        button.VehicleProfileEditor__seat-add(
-          v-if="localSeatConfigs.length < 3"
-          type="button"
-          @click="AddSeatConfig"
-        ) + 新增模式
+      .VehicleProfileEditor__capacity-hint 照片需符合所掛車型行李容量描述；admin 審核時會比對車型描述背書通過
     .VehicleProfileEditor__capacity-actions
       button.VehicleProfileEditor__btn.is-primary(
-        :disabled="savingCapacity || previewSU === null"
-        @click="ApiSaveVehicleCapacity"
-      ) {{ savingCapacity ? '儲存中…' : '儲存容量設定' }}
-      .VehicleProfileEditor__capacity-current(v-if="vehicleCapacity")
-        | 目前：{{ vehicleCapacity.trunkVolumeLiters }}L → {{ vehicleCapacity.derivedLuggageSU }} SU
+        :disabled="savingCapacity"
+        @click="ApiSaveTrunkPhoto"
+      ) {{ savingCapacity ? '儲存中…' : '儲存後車廂照片' }}
+      .VehicleProfileEditor__capacity-current(v-if="vehicleCapacity?.trunkPhotoUrl")
+        | 目前：已上傳
 </template>
 
 <style lang="scss" scoped>

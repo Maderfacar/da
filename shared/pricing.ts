@@ -29,7 +29,8 @@ export interface FleetVehicle {
   id: string;
   label: I18nLabel;
   capacity: number;
-  luggageSU: number;
+  /** @deprecated SU 系統已停用（airport-calibration wave）；保留欄位向後相容 Firestore 既有資料 */
+  luggageSU?: number;
   baseFare: number;
   perKmRate: number;
   icon: string;
@@ -37,6 +38,8 @@ export interface FleetVehicle {
   enabled: boolean;
   /** Booking v2：車型卡情境文案三語（optional；向後相容） */
   tagline?: I18nLabel;
+  /** 行李容量與適用情境的市面描述（三語；admin 編輯，UI 取代行李 SU 對照表） */
+  luggageDescription?: I18nLabel;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2，由編排層處理） */
   charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
 }

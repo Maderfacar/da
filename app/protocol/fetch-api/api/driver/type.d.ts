@@ -41,7 +41,8 @@ interface DriverStats {
   status?: 'online' | 'busy' | 'offline';
 }
 
-// SU V2：車輛載運容量（立即生效）
+// 車輛載運容量（SU 已停用 — airport-calibration wave；保留 deprecated 欄位向後相容舊資料）
+/** @deprecated SU 系統已停用 */
 interface SeatConfig {
   label: string;
   passengerCapacity: number;
@@ -49,13 +50,18 @@ interface SeatConfig {
 }
 
 interface VehicleCapacityDto {
-  trunkVolumeLiters: number;
-  derivedLuggageSU: number;
-  seatConfigs: SeatConfig[] | null;
+  /** 後車廂照片（Firebase Storage URL；admin 審核司機背書「車輛符合所掛車型描述」） */
+  trunkPhotoUrl: string | null;
+  /** @deprecated SU 系統已停用 */
+  trunkVolumeLiters?: number;
+  /** @deprecated SU 系統已停用 */
+  derivedLuggageSU?: number;
+  /** @deprecated SU 系統已停用 */
+  seatConfigs?: SeatConfig[] | null;
   updatedAt: string | null;
 }
 
 interface PatchVehicleCapacityBody {
-  trunkVolumeLiters: number;
-  seatConfigs?: SeatConfig[];
+  /** 後車廂照片 URL（https） */
+  trunkPhotoUrl?: string | null;
 }

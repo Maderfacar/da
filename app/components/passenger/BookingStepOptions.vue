@@ -101,11 +101,9 @@ const _SetLuggageCount = (typeId: string, count: number) => {
   }
 };
 
-const totalSU = computed(() =>
-  luggage.value.reduce((sum, item) => {
-    const t = storeConfig.GetLuggageType(item.typeId);
-    return sum + (t?.su ?? 0) * item.count;
-  }, 0),
+// SU 系統已停用（airport-calibration wave）；保留 luggage count 供下單寫入 / admin 顯示，不再參與容量校驗
+const totalLuggageItems = computed(() =>
+  luggage.value.reduce((sum, item) => sum + item.count, 0),
 );
 
 const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
@@ -127,23 +125,18 @@ const _vehicleHasCharterPlans = (v: FleetVehicle): boolean => {
   return CHARTER_PLAN_KEYS.some((k) => v.charterPlans?.[k]?.enabled);
 };
 
-// ── 車型容量 vs 行李 SU 校驗 ─────────────────────────────────────────────────
-// Booking v2 批次 2：容量校驗改用 adult + child（兒童佔 1 座位）
+// ── 車型容量校驗（SU 已停用，只剩座位 + charter plan）─────────────────────
 type VehicleStatus = 'ok' | 'warn' | 'disabled';
 const _GetVehicleStatus = (v: FleetVehicle): VehicleStatus => {
   if (totalPax.value > v.capacity) return 'disabled';
-  if (totalSU.value > v.luggageSU * 1.5) return 'disabled';
   // Charter Fare V1 W4：charter 模式下，車型若無啟用任一 plan → 不可選
   if (isCharter.value && !_vehicleHasCharterPlans(v)) return 'disabled';
-  if (totalSU.value > v.luggageSU) return 'warn';
   return 'ok';
 };
 
 const _GetVehicleHint = (v: FleetVehicle): string => {
   if (totalPax.value > v.capacity) return t('booking.options.exceedCapacity', { n: v.capacity });
-  if (totalSU.value > v.luggageSU * 1.5) return t('booking.options.exceedLuggage');
   if (isCharter.value && !_vehicleHasCharterPlans(v)) return t('booking.options.charterNotOpen');
-  if (totalSU.value > v.luggageSU) return t('booking.options.warnLuggage');
   return '';
 };
 
@@ -322,8 +315,8 @@ const ClickVehicle = (v: FleetVehicle) => {
   vehicle.value = v.id;
 };
 
-// 若當前選擇的車型變 disabled（人數或 SU 超出），自動切到第一個 ok 車型
-watch([adults, children, totalSU], () => {
+// 若當前選擇的車型變 disabled（人數超出），自動切到第一個 ok 車型
+watch([adults, children, totalLuggageItems], () => {
   const current = vehicles.value.find((v) => v.id === vehicle.value);
   if (current && current.status === 'disabled') {
     const next = vehicles.value.find((v) => v.status !== 'disabled');
@@ -426,9 +419,9 @@ const swiperBreakpoints = {
             span
               NuxtIcon(name="mdi:account-group")
               | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
-            span
+            span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
               NuxtIcon(name="mdi:bag-suitcase")
-              | {{ cfg.luggageSU }} SU
+              | {{ Loc(cfg.luggageDescription) }}
           .PassengerBookingStepOptions__vehicle-fare
             | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
             span + NT${{ cfg.perKmRate }}/km
