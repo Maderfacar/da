@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 計費沙盒 — admin 試算機；走 prod fare-v2 編排（getRouteWithFare）+ 命中規則明細。
 import type { OrderType, CharterPlanKey } from '~shared/pricing';
+import type { AdminFareSimulateBody, AdminFareSimulateRes } from '@/protocol/fetch-api/api/admin';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -49,30 +50,16 @@ const SetCharterDays = (days: number) => {
 };
 
 // ── 試算結果 ────────────────────────────────────────────────────
-interface SimulateRes {
-  strategy: 'fare-v2' | 'fare-v1' | 'charter';
-  breakdown: Record<string, unknown>;
-  metrics?: Record<string, unknown>;
-  isRoundTrip?: boolean;
-  hits: {
-    mountain: { score: number; multiplier: number };
-    crossCounty: { visited: string[]; crossings: number; fee: number };
-    peak: { active: boolean; jamFee: number };
-    promo: { active: boolean; discount: number };
-    surcharge: { active: boolean; amount: number };
-  };
-}
-
 const loading = ref(false);
 const errorMsg = ref('');
-const result = ref<SimulateRes | null>(null);
+const result = ref<AdminFareSimulateRes | null>(null);
 
 const ApiSimulate = async () => {
   errorMsg.value = '';
   result.value = null;
   loading.value = true;
   try {
-    const body: Record<string, unknown> = {
+    const body: AdminFareSimulateBody = {
       origin: { lat: origin.lat, lng: origin.lng },
       destination: { lat: destination.lat, lng: destination.lng },
       vehicleId: vehicleId.value,
@@ -87,12 +74,9 @@ const ApiSimulate = async () => {
       body.charterDays = charterDays.value;
       body.charterPlanKeys = [...charterPlanKeys.value];
     }
-    const res = await $fetch<{ data: SimulateRes; status: { code: number; message: { zh_tw: string } } }>('/nuxt-api/admin/fare/simulate', {
-      method: 'POST',
-      body,
-    });
-    if (res.status.code !== 200) {
-      errorMsg.value = res.status.message.zh_tw;
+    const res = await $api.PostAdminFareSimulate(body);
+    if (res.status?.code !== $enum.apiStatus.success) {
+      errorMsg.value = res.status?.message?.zh_tw ?? '試算失敗';
       return;
     }
     result.value = res.data;
