@@ -172,6 +172,7 @@ const metricsRows = computed(() => {
 <template lang="pug">
 .AdminFareSandbox
   .AdminFareSandbox__head
+    NuxtLink.AdminFareSandbox__back(to="/admin/settings") ← 回設定
     h1.AdminFareSandbox__title 計費沙盒
     p.AdminFareSandbox__sub 走 prod fare-v2 編排 + 命中規則明細（同 booking 下單估價路徑）
 
@@ -316,6 +317,16 @@ $accent-soft: #e8d5d0;
 
 .AdminFareSandbox__head {
   margin-bottom: 24px;
+}
+
+.AdminFareSandbox__back {
+  display: inline-block;
+  color: $muted;
+  font-size: 13px;
+  text-decoration: none;
+  margin-bottom: 8px;
+
+  &:hover { color: $accent; }
 }
 
 .AdminFareSandbox__title {

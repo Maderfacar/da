@@ -750,6 +750,10 @@ const ClickSaveFareRules = async () => {
       span.PageAdminSettings__section-label FARE RULES
       span.PageAdminSettings__section-title 車資進階規則
       span.PageAdminSettings__fare-flex
+      NuxtLink.PageAdminSettings__btn.is-secondary.PageAdminSettings__fare-save(
+        to="/admin/settings/fare-sandbox"
+        style="margin-right: 8px;"
+      ) 🧪 計費沙盒
       button.PageAdminSettings__btn.is-approve.PageAdminSettings__fare-save(
         :disabled="fareRulesLoading || fareRulesSaving"
         @click="ClickSaveFareRules"
