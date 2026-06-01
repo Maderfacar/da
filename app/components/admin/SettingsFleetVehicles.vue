@@ -9,6 +9,7 @@
 import type { CharterPlanKey } from '~shared/pricing';
 
 type DialogMode = 'create' | 'edit';
+type VehicleImageSlot = 'exterior' | 'interior' | 'trunk';
 
 const CHARTER_PLAN_KEYS: ReadonlyArray<CharterPlanKey> = ['4h', '8h', '10h'];
 const CHARTER_PLAN_KEY_TO_HOURS: Readonly<Record<CharterPlanKey, number>> = {
@@ -69,6 +70,85 @@ const form = reactive<VehicleFormState>(_emptyForm());
 const togglingId = ref('');
 const deletingId = ref('');
 const reloading = ref(false);
+
+// 圖片上傳：3 個 slot 共用一個 ref map + 上傳中狀態
+const uploadingSlot = ref<VehicleImageSlot | ''>('');
+const fileInputs: Record<VehicleImageSlot, HTMLInputElement | null> = {
+  exterior: null,
+  interior: null,
+  trunk: null,
+};
+const SetFileInput = (slot: VehicleImageSlot) => (el: unknown) => {
+  fileInputs[slot] = el as HTMLInputElement | null;
+};
+
+const VEHICLE_IMAGE_SLOTS: ReadonlyArray<VehicleImageSlot> = ['exterior', 'interior', 'trunk'];
+
+const IMAGE_SLOT_META: Record<VehicleImageSlot, {
+  label: string;
+  hint: string;
+  ratio: string;
+  field: 'imageExterior' | 'imageInterior' | 'imageTrunk';
+}> = {
+  exterior: {
+    label: '外觀照（卡片主圖）',
+    hint: '建議 1600 × 900 px（16:9）',
+    ratio: '16/9',
+    field: 'imageExterior',
+  },
+  interior: {
+    label: '內裝照',
+    hint: '建議 1500 × 1000 px（3:2）',
+    ratio: '3/2',
+    field: 'imageInterior',
+  },
+  trunk: {
+    label: '後車廂照',
+    hint: '建議 1500 × 1000 px（3:2）',
+    ratio: '3/2',
+    field: 'imageTrunk',
+  },
+};
+
+const ClickPickImage = (slot: VehicleImageSlot) => {
+  fileInputs[slot]?.click();
+};
+
+const OnImageChange = async (e: Event, slot: VehicleImageSlot) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (target) target.value = '';
+  if (!file) return;
+  await UploadImageFlow(file, slot);
+};
+
+const UploadImageFlow = async (file: File, slot: VehicleImageSlot) => {
+  const ALLOWED = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+  if (!ALLOWED.includes(file.type)) {
+    ElMessage({ message: '僅接受 jpg / png / webp', type: 'warning' });
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage({ message: '檔案超過 5MB 限制', type: 'warning' });
+    return;
+  }
+  uploadingSlot.value = slot;
+  try {
+    const res = await $api.UploadAdminFleetVehicleImage(file, slot);
+    if (res.status?.code !== 200 || !res.data?.url) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '上傳失敗', type: 'error' });
+      return;
+    }
+    form[IMAGE_SLOT_META[slot].field] = res.data.url;
+    ElMessage({ message: `${IMAGE_SLOT_META[slot].label.replace('（卡片主圖）', '')} 已上傳`, type: 'success' });
+  } finally {
+    uploadingSlot.value = '';
+  }
+};
+
+const ClickRemoveImage = (slot: VehicleImageSlot) => {
+  form[IMAGE_SLOT_META[slot].field] = '';
+};
 
 const ClickReload = async () => {
   if (reloading.value) return;
@@ -449,32 +529,42 @@ const ClickDelete = async (v: FleetVehicleDto) => {
             label.SettingsFleetVehicles__label 情境文案（日）
             input.SettingsFleetVehicles__input(v-model="form.taglineJa" maxlength="60" placeholder="例：通勤 / 空港送迎")
 
-        //- 車卡圖庫（exterior 為卡片主圖；空字串 → 不送）
-        .SettingsFleetVehicles__field-grid
-          .SettingsFleetVehicles__field
-            label.SettingsFleetVehicles__label 外觀照 URL
-            input.SettingsFleetVehicles__input(
-              v-model="form.imageExterior"
-              type="url"
-              maxlength="2048"
-              placeholder="https://... 卡片主圖"
+        //- 車卡圖庫（exterior 為卡片主圖；以上傳取代 URL，5MB / jpg|png|webp）
+        .SettingsFleetVehicles__image-hint
+          | 圖片直接上傳到雲端儲存；建議比例如下說明，單檔 ≤ 5 MB、格式 jpg / png / webp。
+        .SettingsFleetVehicles__image-grid
+          .SettingsFleetVehicles__image-slot(v-for="slotKey in VEHICLE_IMAGE_SLOTS" :key="slotKey")
+            label.SettingsFleetVehicles__label
+              | {{ IMAGE_SLOT_META[slotKey].label }}
+              span.SettingsFleetVehicles__image-spec  · {{ IMAGE_SLOT_META[slotKey].hint }}
+            .SettingsFleetVehicles__image-frame(:style="{ aspectRatio: IMAGE_SLOT_META[slotKey].ratio }")
+              img.SettingsFleetVehicles__image-preview(
+                v-if="form[IMAGE_SLOT_META[slotKey].field]"
+                :src="form[IMAGE_SLOT_META[slotKey].field]"
+                :alt="IMAGE_SLOT_META[slotKey].label"
+              )
+              .SettingsFleetVehicles__image-empty(v-else)
+                span 尚未上傳
+              .SettingsFleetVehicles__image-overlay(v-if="uploadingSlot === slotKey") 上傳中…
+            input(
+              :ref="SetFileInput(slotKey)"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style="display:none"
+              @change="(e) => OnImageChange(e as Event, slotKey)"
             )
-          .SettingsFleetVehicles__field
-            label.SettingsFleetVehicles__label 內裝照 URL
-            input.SettingsFleetVehicles__input(
-              v-model="form.imageInterior"
-              type="url"
-              maxlength="2048"
-              placeholder="https://... lightbox"
-            )
-          .SettingsFleetVehicles__field
-            label.SettingsFleetVehicles__label 後車廂照 URL
-            input.SettingsFleetVehicles__input(
-              v-model="form.imageTrunk"
-              type="url"
-              maxlength="2048"
-              placeholder="https://... lightbox"
-            )
+            .SettingsFleetVehicles__image-actions
+              button.SettingsFleetVehicles__btn.is-toggle(
+                type="button"
+                :disabled="uploadingSlot === slotKey"
+                @click="ClickPickImage(slotKey)"
+              ) {{ form[IMAGE_SLOT_META[slotKey].field] ? '更換圖片' : '上傳圖片' }}
+              button.SettingsFleetVehicles__btn.is-delete(
+                v-if="form[IMAGE_SLOT_META[slotKey].field]"
+                type="button"
+                :disabled="uploadingSlot === slotKey"
+                @click="ClickRemoveImage(slotKey)"
+              ) 移除
 
         //- 行李容量描述（取代 SU 數字；三語都空 → 不送）
         .SettingsFleetVehicles__field-grid
@@ -959,6 +1049,87 @@ $surface-2: rgba(255, 255, 255, 0.08);
   &.is-on .SettingsFleetVehicles__switch-thumb {
     transform: translateX(16px);
   }
+}
+
+// ── 車卡圖片上傳 ─────────────────────────────────────────────────────────
+.SettingsFleetVehicles__image-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+  padding: 2px 2px 0;
+}
+
+.SettingsFleetVehicles__image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+
+  @media (max-width: 699.98px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.SettingsFleetVehicles__image-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.SettingsFleetVehicles__image-spec {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: none;
+}
+
+.SettingsFleetVehicles__image-frame {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.SettingsFleetVehicles__image-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.SettingsFleetVehicles__image-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.SettingsFleetVehicles__image-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+.SettingsFleetVehicles__image-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 // ── Charter Fare V1：包車套餐 section ─────────────────────────────────────

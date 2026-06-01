@@ -48,6 +48,16 @@ interface VehicleImagesDto {
   trunk?: string;
 }
 
+type VehicleImageSlotDto = 'exterior' | 'interior' | 'trunk';
+
+interface UploadVehicleImageRes {
+  url: string;
+  objectPath: string;
+  slot: VehicleImageSlotDto;
+  sizeBytes: number;
+  mime: string;
+}
+
 interface FleetLuggageTypeDto {
   id: string;
   label: I18nLabelDto;

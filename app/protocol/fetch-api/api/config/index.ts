@@ -33,3 +33,10 @@ export const DeleteFleetLuggageType = (id: string) =>
 
 export const DeleteFleetExtra = (id: string) =>
   methods.delete<{ id: string }>(`/nuxt-api/admin/config/extras/${id}`);
+
+/** 上傳車型卡圖片（exterior / interior / trunk）；回傳 1 年 TTL signed URL，由前端寫回 images.{slot}。 */
+export const UploadAdminFleetVehicleImage = (file: File, slot: VehicleImageSlotDto) =>
+  methods.formData<UploadVehicleImageRes>(
+    '/nuxt-api/admin/config/upload-vehicle-image',
+    { file, slot },
+  );

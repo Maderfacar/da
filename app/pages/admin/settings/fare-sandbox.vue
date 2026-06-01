@@ -2,21 +2,24 @@
 // 計費沙盒 — admin 試算機；走 prod fare-v2 編排（getRouteWithFare）+ 命中規則明細。
 import type { OrderType, CharterPlanKey } from '~shared/pricing';
 import type { AdminFareSimulateBody, AdminFareSimulateRes } from '@/protocol/fetch-api/api/admin';
+import type { GooglePlace } from '@/protocol/fetch-api/api/maps';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
 const storeConfig = StoreConfig();
 const { locale } = useI18n();
 
-// ── 輸入 ────────────────────────────────────────────────────────
-interface LatLngInput {
-  lat: number;
-  lng: number;
-}
+// ── 輸入（地址搜尋 = booking 同一個 UiGooglePlaceInput 組件） ───────────
+const TPE_T1: GooglePlace = {
+  displayName: '桃園國際機場 第一航廈',
+  address: '337 桃園市大園區航站南路 9 號',
+  lat: 25.0797,
+  lng: 121.2342,
+};
 
-const origin = reactive<LatLngInput>({ lat: 25.0797, lng: 121.2342 });   // 桃機 T1 預設
-const destination = reactive<LatLngInput>({ lat: 25.0330, lng: 121.5654 }); // 台北 101 預設
-const stopovers = ref<LatLngInput[]>([]);
+const originPlace = ref<GooglePlace | null>({ ...TPE_T1 });
+const destinationPlace = ref<GooglePlace | null>(null);
+const stopoverPlaces = ref<Array<GooglePlace | null>>([]);
 const vehicleId = ref('sedan-suv');
 const pickupTime = ref(new Date().toISOString().slice(0, 16)); // datetime-local
 const orderType = ref<OrderType>('airport-pickup');
@@ -39,8 +42,11 @@ const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
   storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
 
 // stopover 操作
-const AddStopover = () => stopovers.value.push({ lat: 0, lng: 0 });
-const RemoveStopover = (idx: number) => stopovers.value.splice(idx, 1);
+const AddStopover = () => stopoverPlaces.value.push(null);
+const RemoveStopover = (idx: number) => stopoverPlaces.value.splice(idx, 1);
+const UpdateStopover = (idx: number, val: GooglePlace | null) => {
+  stopoverPlaces.value[idx] = val;
+};
 
 // charter plan 操作
 const SetCharterDays = (days: number) => {
@@ -57,18 +63,27 @@ const result = ref<AdminFareSimulateRes | null>(null);
 const ApiSimulate = async () => {
   errorMsg.value = '';
   result.value = null;
+  if (!originPlace.value) {
+    errorMsg.value = '請選上車點地址';
+    return;
+  }
+  if (!destinationPlace.value) {
+    errorMsg.value = '請選下車點地址';
+    return;
+  }
   loading.value = true;
   try {
     const body: AdminFareSimulateBody = {
-      origin: { lat: origin.lat, lng: origin.lng },
-      destination: { lat: destination.lat, lng: destination.lng },
+      origin: { lat: originPlace.value.lat, lng: originPlace.value.lng },
+      destination: { lat: destinationPlace.value.lat, lng: destinationPlace.value.lng },
       vehicleId: vehicleId.value,
       pickupTime: new Date(pickupTime.value).toISOString(),
       orderType: orderType.value,
       extraIds: [...selectedExtras.value],
     };
-    if (stopovers.value.length) {
-      body.waypoints = stopovers.value.map((s) => ({ lat: s.lat, lng: s.lng }));
+    const validStops = stopoverPlaces.value.filter((s): s is GooglePlace => !!s);
+    if (validStops.length) {
+      body.waypoints = validStops.map((s) => ({ lat: s.lat, lng: s.lng }));
     }
     if (isCharter.value) {
       body.charterDays = charterDays.value;
@@ -166,22 +181,29 @@ const metricsRows = computed(() => {
       h2.AdminFareSandbox__panel-title 行程輸入
 
       .AdminFareSandbox__row
-        label.AdminFareSandbox__label 上車點 (lat, lng)
-        .AdminFareSandbox__pair
-          el-input-number(v-model="origin.lat" :precision="6" :step="0.0001" controls-position="right" size="small")
-          el-input-number(v-model="origin.lng" :precision="6" :step="0.0001" controls-position="right" size="small")
+        label.AdminFareSandbox__label 上車點
+        .AdminFareSandbox__place
+          UiGooglePlaceInput(
+            v-model="originPlace"
+            placeholder="搜尋地址（例：桃園國際機場）"
+          )
 
       .AdminFareSandbox__row
-        label.AdminFareSandbox__label 下車點 (lat, lng)
-        .AdminFareSandbox__pair
-          el-input-number(v-model="destination.lat" :precision="6" :step="0.0001" controls-position="right" size="small")
-          el-input-number(v-model="destination.lng" :precision="6" :step="0.0001" controls-position="right" size="small")
+        label.AdminFareSandbox__label 下車點
+        .AdminFareSandbox__place
+          UiGooglePlaceInput(
+            v-model="destinationPlace"
+            placeholder="搜尋地址（例：台北 101）"
+          )
 
-      .AdminFareSandbox__row(v-for="(s, idx) in stopovers" :key="idx")
+      .AdminFareSandbox__row(v-for="(_, idx) in stopoverPlaces" :key="idx")
         label.AdminFareSandbox__label 中停 {{ idx + 1 }}
-        .AdminFareSandbox__pair
-          el-input-number(v-model="s.lat" :precision="6" :step="0.0001" controls-position="right" size="small")
-          el-input-number(v-model="s.lng" :precision="6" :step="0.0001" controls-position="right" size="small")
+        .AdminFareSandbox__place
+          UiGooglePlaceInput(
+            :model-value="stopoverPlaces[idx]"
+            placeholder="搜尋中停地址"
+            @update:model-value="(v: GooglePlace | null) => UpdateStopover(idx, v)"
+          )
           button.AdminFareSandbox__btn-mini(@click="RemoveStopover(idx)") ×
 
       .AdminFareSandbox__row
@@ -368,6 +390,13 @@ $accent-soft: #e8d5d0;
   gap: 8px;
   align-items: center;
   flex: 1;
+}
+
+.AdminFareSandbox__place {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .AdminFareSandbox__input,
