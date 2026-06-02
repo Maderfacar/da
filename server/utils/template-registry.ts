@@ -25,7 +25,8 @@ export type TemplateCategory =
   | 'broadcast'
   | 'dispatch'        // F1 / F3 / F4 派發 / 配對
   | 'softmatch'       // F5 / F6 軟性配對
-  | 'driver-notify';  // T3-T9 司機通知
+  | 'driver-notify'   // T3-T9 司機通知
+  | 'penalty';        // A2 醜點系統（warning / suspended）
 
 export type TemplateOutputType = 'flex' | 'text';
 export type TemplateAudience = 'passenger' | 'driver' | 'admin' | 'both';
@@ -500,6 +501,53 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       body: '📋 證件審核結果：{result}\n{reason}',
     },
   },
+  // ── Penalty Flex（2 個；passenger 三語；A2 醜點系統 Phase 1）──────────
+  'penalty.warning': {
+    templateKey: 'penalty.warning',
+    category: 'penalty',
+    displayName: '醜點最後警告通知',
+    description: 'A2 乘客累計達 2 醜點時推播；下次再記點即達暫停門檻。',
+    triggerEvent: '乘客累計醜點剛好達 2 點時自動推播',
+    outputType: 'flex',
+    audience: 'passenger',
+    i18nMode: 'multi',
+    triggerType: 'auto',
+    requiresSuperLevel: false,
+    placeholders: [
+      { key: 'uglyCount', label: '當前醜點數', example: '2', required: false },
+    ],
+    defaultContent: {
+      title: '⚠️ 服務使用提醒',
+      body: '您已累計 {uglyCount} 次未準時取消或未到的紀錄。\n\n再記 1 次將暫停您的訂車服務。\n\n• 24 小時前取消：不記點\n• 24 小時內取消：記 1 點\n• 司機到場未出現：記 2 點\n• 6 個月內無新紀錄將自動歸零\n\n感謝您的理解與配合。',
+      coverImageUrl: null,
+      ctaButton: null,
+    },
+  },
+  'penalty.suspended': {
+    templateKey: 'penalty.suspended',
+    category: 'penalty',
+    displayName: '服務暫停通知',
+    description: 'A2 乘客累計達 3 醜點或被 admin 拉黑時推播。',
+    triggerEvent: '乘客醜點達 3 點 / admin 手動拉黑時推播',
+    outputType: 'flex',
+    audience: 'passenger',
+    i18nMode: 'multi',
+    triggerType: 'auto',
+    requiresSuperLevel: false,
+    placeholders: [
+      { key: 'reason', label: '暫停原因（admin 拉黑時可帶；累計到頂時為空）', example: '多次未準時取消', required: false },
+    ],
+    defaultContent: {
+      title: '🚫 服務暫停通知',
+      body: '您的訂車服務已暫停。\n{reason}\n\n如需恢復服務或了解詳情，請聯絡客服協助處理。',
+      coverImageUrl: null,
+      ctaButton: {
+        label: '聯絡客服',
+        action: { type: 'uri', url: 'https://line.me/R/ti/p/@986qtjwt' },
+      },
+    },
+  },
+
   'driver.vehicle-profile-review': {
     templateKey: 'driver.vehicle-profile-review',
     category: 'driver-notify',

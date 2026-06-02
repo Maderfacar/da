@@ -205,6 +205,22 @@ export default defineEventHandler(async (event) => {
 
   const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
 
+  // A2 醜點系統 Phase 1：拉黑乘客不可下訂
+  // 守則：先看 users/{lineUid}.blacklisted，避開後續所有業務邏輯花費
+  try {
+    const selfSnap = await db.collection('users').doc(auth.lineUid).get();
+    if (selfSnap.exists && selfSnap.data()?.blacklisted === true) {
+      return forbiddenError({
+        zh_tw: '您的服務已暫停，請聯絡客服',
+        en: 'Your service is suspended, please contact support',
+        ja: 'サービスが停止されています、サポートまでご連絡ください',
+      });
+    }
+  } catch (err) {
+    // 讀失敗 silent fall through — 不能因為 user doc 讀不到就擋下訂單（新用戶 doc 還沒建）
+    console.warn('[orders/post] blacklist guard read failed:', err);
+  }
+
   // P25：訂單上限檢查 — 同一使用者最多 4 筆未完成且未取消的訂單，避免單帳號亂訂
   // 用單欄位 where + client filter（不需 composite index）；測試階段每位 user 訂單 < 10 可接受
   const ACTIVE_ORDER_LIMIT = 4;

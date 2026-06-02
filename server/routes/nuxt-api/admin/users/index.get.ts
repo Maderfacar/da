@@ -67,6 +67,11 @@ export default defineEventHandler(async (event) => {
         verifiedAt: null as string | null,
         verifiedBy: null as string | null,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? '',
+        // A2 醜點系統 Phase 1：暴露給 admin 列表
+        uglyCount: typeof d.uglyCount === 'number' ? (d.uglyCount as number) : 0,
+        blacklisted: d.blacklisted === true,
+        blacklistedAt: d.blacklistedAt?.toDate?.()?.toISOString() ?? null,
+        blacklistedReason: (d.blacklistedReason as string | null | undefined) ?? null,
       };
     });
 

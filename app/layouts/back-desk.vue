@@ -25,6 +25,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'notifications',   icon: '🔔', label: '通知管理',  path: '/admin/notifications'   },
   { id: 'line-management', icon: '💬', label: 'LINE OA 管理', path: '/admin/line-management' },
   { id: 'drivers',         icon: '🚗', label: '司機管理',  path: '/admin/drivers'         },
+  { id: 'users',           icon: '👥', label: '乘客管理',  path: '/admin/users'           },
   { id: 'referral',        icon: '🎁', label: '推薦獎勵',  path: '/admin/referral'        },
   { id: 'settings',        icon: '⚙️', label: '系統設定',  path: '/admin/settings'        },
   // P25-2：操作日誌僅 super 可見

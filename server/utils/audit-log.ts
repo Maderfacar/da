@@ -109,6 +109,12 @@ export type AuditAction =
   | 'fleet.delete'
   // P42 user 自助設定
   | 'user.lang.update'
+  // A2 醜點系統 Phase 1（2026-06-03）
+  | 'order.mark_no_show'      // admin 後台手動標記 no-show（+2 醜）
+  | 'user.penalty_apply'      // 系統累計醜點（late_cancel +1 / no_show +2）
+  | 'user.penalty_reset'      // lazy 歸零（6 個月內無新醜）
+  | 'user.blacklist_add'      // admin 手動拉黑
+  | 'user.blacklist_remove'   // admin 解除拉黑
   // migration（P27 一次性）
   | 'migration.driver_application_move'
   // Legal pages（會員條款 / 隱私政策 admin 編輯）

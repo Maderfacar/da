@@ -106,6 +106,14 @@ export interface AdminUser {
   verifiedAt?: string | null
   verifiedBy?: string | null
   createdAt: string
+  /** A2 醜點系統 Phase 1：當前累計醜點（0 = 無紀錄） */
+  uglyCount?: number
+  /** A2 醜點系統 Phase 1：是否被 admin 拉黑 */
+  blacklisted?: boolean
+  /** A2 醜點系統 Phase 1：被拉黑的 ISO 時間（blacklisted=false 時為 null） */
+  blacklistedAt?: string | null
+  /** A2 醜點系統 Phase 1：被拉黑的原因（blacklisted=false 時為 null） */
+  blacklistedReason?: string | null
 }
 
 export interface GooglePlaceLite {
@@ -307,6 +315,22 @@ export const GetAdminUsers = (params: { role: Role; approved?: boolean }) =>
 /** 更新使用者 roles（addRole / removeRole）或 approved 狀態 */
 export const PatchAdminUser = (uid: string, body: PatchAdminUserBody) =>
   methods.patch<{ uid: string; updated?: boolean }>(`/nuxt-api/admin/users/${uid}`, body);
+
+// ── A2 醜點系統 Phase 1 ────────────────────────────────────────────
+
+/** Admin 對訂單手動標記乘客未到（+2 醜；訂單轉 cancelled） */
+export const MarkOrderNoShow = (orderId: string, body?: { reason?: string }) =>
+  methods.post<{ orderId: string; cancellationCategory: 'no_show'; uglyCount: number | null; pushed: 'warning' | 'suspended' | null }>(
+    `/nuxt-api/admin/orders/${orderId}/no-show`,
+    (body ?? {}) as unknown as Record<string, unknown>,
+  );
+
+/** Admin 對乘客拉黑 / 解黑（add 後該乘客無法下訂） */
+export const PostUserBlacklist = (uid: string, body: { action: 'add' | 'remove'; reason?: string }) =>
+  methods.post<{ uid: string; blacklisted: boolean }>(
+    `/nuxt-api/admin/users/${uid}/blacklist`,
+    body as unknown as Record<string, unknown>,
+  );
 
 /** 查詢所有訂單（Admin 用）— Wave 1 A3：支援 from/to ISO 範圍過濾 pickupDateTime
  *  region filter：regionField=pickup|dropoff + cities=台北市,新北市 + districts=中正區,信義區 */

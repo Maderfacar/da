@@ -226,6 +226,74 @@ const DriverNameOf = (uid: string) => {
   return drivers.value.find((d) => d.uid === cleanUid)?.displayName ?? `UID:${cleanUid.slice(0, 6)}`;
 };
 
+// A2 醜點系統 Phase 1：載 passenger 集合（uglyCount / blacklisted）供列表紅旗 + modal 顯示
+const passengers = ref<AdminUser[]>([]);
+const ApiLoadPassengers = async () => {
+  const res = await $api.GetAdminUsers({ role: 'passenger' });
+  if (res.status?.code !== 200) {
+    passengers.value = [];
+    return;
+  }
+  passengers.value = Array.isArray(res.data) ? (res.data as AdminUser[]) : [];
+};
+
+interface PassengerFlag {
+  uglyCount: number;
+  blacklisted: boolean;
+}
+const PassengerFlagOf = (uid: string | null | undefined): PassengerFlag | null => {
+  if (!uid) return null;
+  const cleanUid = uid.startsWith('line:') ? uid.slice(5) : uid;
+  const p = passengers.value.find((u) => u.uid === cleanUid);
+  if (!p) return null;
+  return { uglyCount: p.uglyCount ?? 0, blacklisted: p.blacklisted === true };
+};
+
+// no-show sub-modal 狀態
+const noShowDialog = reactive({
+  open: false,
+  reason: '',
+  marking: false,
+});
+const ClickOpenNoShow = () => {
+  if (!selectedOrder.value) return;
+  noShowDialog.reason = '';
+  noShowDialog.open = true;
+};
+const ClickCloseNoShow = () => {
+  if (noShowDialog.marking) return;
+  noShowDialog.open = false;
+};
+const NO_SHOW_VALID_STATUSES = new Set(['confirmed', 'en_route', 'arrived_pickup', 'in_transit']);
+const canMarkNoShow = computed(() => {
+  if (!selectedOrder.value) return false;
+  return NO_SHOW_VALID_STATUSES.has(selectedOrder.value.orderStatus);
+});
+const ApiMarkNoShow = async () => {
+  if (!selectedOrder.value) return;
+  noShowDialog.marking = true;
+  try {
+    const res = await $api.MarkOrderNoShow(selectedOrder.value.orderId, {
+      reason: noShowDialog.reason.trim() || undefined,
+    });
+    if (res.status.code === 200) {
+      const pushed = res.data?.pushed;
+      const pushMsg = pushed === 'suspended'
+        ? '；已推送服務暫停通知'
+        : pushed === 'warning'
+          ? '；已推送最後警告'
+          : '';
+      ElMessage({ message: `已標記為 no-show（醜點 +2）${pushMsg}`, type: 'success' });
+      noShowDialog.open = false;
+      await Promise.all([ApiLoadOrders(), ApiLoadPassengers()]);
+    } else {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '標記失敗', type: 'error' });
+    }
+  } finally {
+    noShowDialog.marking = false;
+  }
+};
+
 // ── 列表點擊開 modal ──────────────────────────────────────
 const ClickOpenDetail = (order: AdminOrder) => {
   selectedOrder.value = order;
@@ -1180,6 +1248,7 @@ const ClickSaveTagsFlow = async () => {
 onMounted(() => {
   ApiLoadOrders();
   ApiLoadDrivers();
+  ApiLoadPassengers();
 });
 </script>
 
@@ -1370,6 +1439,12 @@ onMounted(() => {
             //- 乘客資訊
             .PageAdminOrders__section
               .PageAdminOrders__section-title 乘客資訊
+              //- A2 醜點系統 Phase 1：醜點紅旗 / 拉黑徽章
+              .PageAdminOrders__penalty-row(v-if="PassengerFlagOf(selectedOrder.userId)")
+                template(v-if="PassengerFlagOf(selectedOrder.userId)!.blacklisted")
+                  span.PageAdminOrders__penalty-badge.is-blacklist 🚫 已拉黑
+                template(v-else-if="PassengerFlagOf(selectedOrder.userId)!.uglyCount > 0")
+                  span.PageAdminOrders__penalty-badge.is-ugly ⚠ {{ PassengerFlagOf(selectedOrder.userId)!.uglyCount }} 醜
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 姓名
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerName || '—' }}
@@ -1738,6 +1813,11 @@ onMounted(() => {
               v-if="canCancel"
               @click="ClickOpenCancel"
             ) 取消訂單
+            //- A2 醜點系統 Phase 1：admin 手動標記乘客未到（+2 醜）
+            button.PageAdminOrders__action.is-warn(
+              v-if="canMarkNoShow"
+              @click="ClickOpenNoShow"
+            ) 標記 no-show
             .PageAdminOrders__foot-spacer
             button.PageAdminOrders__action.is-secondary(
               :disabled="!selectedOrder.assignedDriverId"
@@ -1817,6 +1897,29 @@ onMounted(() => {
           :disabled="cancelDialog.cancelling"
           @click="ApiCancelOrder"
         ) {{ cancelDialog.cancelling ? '處理中...' : '確認取消訂單' }}
+
+  //- A2 醜點系統 Phase 1：標記 no-show sub-modal
+  .PageAdminOrders__sub-mask(v-if="noShowDialog.open" @click.self="ClickCloseNoShow")
+    .PageAdminOrders__sub-modal
+      .PageAdminOrders__sub-title 標記 no-show
+      .PageAdminOrders__sub-body
+        label.PageAdminOrders__edit-label 備註原因（選填）
+        textarea.PageAdminOrders__edit-textarea(
+          v-model="noShowDialog.reason"
+          rows="3"
+          maxlength="200"
+          placeholder="例：司機到場等候 15 分鐘乘客未出現..."
+        )
+        p.PageAdminOrders__sub-hint.is-warn ⚠️ 標記後：訂單會被取消、乘客自動 +2 醜（達 2 醜推警告、達 3 醜推暫停）；admin 仍需手動拉黑暫停服務。
+      .PageAdminOrders__sub-actions
+        button.PageAdminOrders__action.is-secondary(
+          @click="ClickCloseNoShow"
+          :disabled="noShowDialog.marking"
+        ) 返回
+        button.PageAdminOrders__action.is-warn(
+          :disabled="noShowDialog.marking"
+          @click="ApiMarkNoShow"
+        ) {{ noShowDialog.marking ? '處理中...' : '確認標記 no-show' }}
 
   //- Phase 1F：強制重新配對 sub-modal
   .PageAdminOrders__sub-mask(v-if="showRematchDialog" @click.self="ClickCloseRematch")
@@ -2552,6 +2655,37 @@ select option:disabled {
 
   &.is-fare { color: $amber; font-weight: 700; }
   &.is-muted { color: $muted; }
+}
+
+// A2 醜點系統 Phase 1：乘客紅旗 / 拉黑徽章
+.PageAdminOrders__penalty-row {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.PageAdminOrders__penalty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+
+  &.is-ugly {
+    color: #f7b96a;
+    background: rgba(247, 185, 106, 0.12);
+    border: 1px solid rgba(247, 185, 106, 0.35);
+  }
+
+  &.is-blacklist {
+    color: #ff7a7a;
+    background: rgba(255, 122, 122, 0.14);
+    border: 1px solid rgba(255, 122, 122, 0.4);
+  }
 }
 
 .PageAdminOrders__notes {

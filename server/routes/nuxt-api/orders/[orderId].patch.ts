@@ -28,6 +28,8 @@ import { recalcFinalTotal } from '~shared/fare/recalc';
 import { checkTimeGate, formatRemaining } from '~shared/trip-time-gate';
 import { computeCharterReconciliation } from '~shared/pricing';
 import { getFareRules } from '@@/utils/fare-rules-cache';
+import { classifyCancellation } from '~shared/penalty';
+import { applyUglyPoint } from '@@/utils/penalty';
 
 interface GooglePlaceLite {
   address: string;
@@ -627,7 +629,42 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    // ── A2 醜點系統 Phase 1：取消邊界判定 cancellationCategory ──
+    // 條件：本次切 cancelled + 前一狀態非 cancelled + 有 orderUserId（owner）
+    // - 24h 前取消 = free（不記）
+    // - 24h 內取消 = late（記 1 醜，異步累計）
+    // - no_show 不在此處（由 admin /admin/orders/[id]/no-show endpoint 寫入）
+    let pendingLateCancelOwnerUid: string | null = null;
+    if (body.orderStatus === 'cancelled' && prevStatus !== 'cancelled' && orderUserId) {
+      const category = classifyCancellation({
+        now: new Date(),
+        pickupDateTime: (orderData.pickupDateTime as string | undefined) ?? null,
+      });
+      updates.cancellationCategory = category;
+      if (category === 'late') {
+        pendingLateCancelOwnerUid = orderUserId;
+      }
+    }
+
     await ref.update(updates);
+
+    // A2：late_cancel 累計醜點 + 推 LINE（fire-and-forget；失敗不影響訂單取消主流程）
+    if (pendingLateCancelOwnerUid) {
+      const ownerUid = pendingLateCancelOwnerUid;
+      void (async () => {
+        try {
+          await applyUglyPoint(db, {
+            ownerUid,
+            type: 'late_cancel',
+            orderId,
+            event,
+            auth,
+          });
+        } catch (err) {
+          console.error('[orders/patch] late-cancel penalty apply failed:', err);
+        }
+      })();
+    }
 
     // 通知司機訂單已取消（pending 無指派司機則不通知；fire-and-forget）
     // W4：改走 driver.order-cancelled-assigned 模板；cancelReason 預組「原因：...\n」或空字串
