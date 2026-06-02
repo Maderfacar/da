@@ -11,7 +11,7 @@ export interface FaqCategory {
 
 export const FAQ_CATEGORIES: ReadonlyArray<FaqCategory> = [
   { id: 'booking', itemKeys: ['bookingHow', 'bookingWhen', 'bookingDriver'] },
-  { id: 'payment', itemKeys: ['paymentHow', 'paymentCard', 'paymentWhen'] },
+  { id: 'payment', itemKeys: ['paymentHow', 'paymentCard', 'paymentWhen', 'fareSurcharge'] },
   { id: 'service', itemKeys: ['serviceArrive', 'servicePickup', 'serviceDelay'] },
   { id: 'change',  itemKeys: ['changeCancel', 'changeModify'] },
   { id: 'luggage', itemKeys: ['luggageCount', 'luggageMany'] },
