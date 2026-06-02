@@ -514,7 +514,7 @@ export default defineEventHandler(async (event) => {
       adultCount,
       childCount,
       // P23：行李改 luggageItems 陣列（typeId + count）
-      luggageItems,
+      luggageItems: Array.isArray(body.luggageItems) ? body.luggageItems : [],
       vehicleType: body.vehicleType,
       extraServices: extraServiceIds,
       estimatedFare,
