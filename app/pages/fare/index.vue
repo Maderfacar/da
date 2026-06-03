@@ -1,40 +1,5 @@
 <script setup lang="ts">
-import { calculateFare } from '~shared/pricing';
-
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
-
-const storeConfig = StoreConfig();
-
-// 標準車型：第一台啟用車型（依 sortOrder）
-const standardVehicle = computed(() => storeConfig.EnabledVehicles[0]);
-
-// 每條示範路線的參考起價（標準車型 + 路線固定 km，無額外服務）
-interface SampleFare {
-  id: string;
-  fromCode: string;
-  toCode: string;
-  fromKey: string;
-  toKey: string;
-  km: number;
-  flightNo: string;
-  fare: number;
-}
-
-const sampleFares = computed<SampleFare[]>(() => {
-  const v = standardVehicle.value;
-  if (!v) return [];
-  // 與 booking 估價同源：套用 distanceTier + 起跳費 floor（rules 從 admin 後台拉的 storeConfig.fareRules）
-  return POPULAR_ROUTES.map((r) => ({
-    id: r.id,
-    fromCode: r.fromCode,
-    toCode: r.toCode,
-    fromKey: r.fromKey,
-    toKey: r.toKey,
-    km: r.km,
-    flightNo: r.flightNo,
-    fare: calculateFare(v, r.km, [], storeConfig.fareRules),
-  }));
-});
 </script>
 
 <template lang="pug">
@@ -72,29 +37,6 @@ const sampleFares = computed<SampleFare[]>(() => {
     h2.PageFare__section-title {{ $t('fare.calc.title') }}
     p.PageFare__section-desc {{ $t('fare.calc.desc') }}
     PassengerFareEstimator
-
-  .PageFare__stripe
-
-  //- 示範路線估價
-  section.PageFare__section.is-off-white
-    .PageFare__section-label {{ $t('fare.samples.label') }}
-    h2.PageFare__section-title {{ $t('fare.samples.title') }}
-    p.PageFare__section-desc {{ $t('fare.samples.desc') }}
-    .PageFare__tickets
-      .PageFare__ticket(v-for="s in sampleFares" :key="s.id")
-        .PageFare__ticket-head
-          .PageFare__ticket-route
-            span.PageFare__ticket-code {{ s.fromCode }}
-            span.PageFare__ticket-arrow ✈
-            span.PageFare__ticket-code {{ s.toCode }}
-          span.PageFare__ticket-flightno {{ s.flightNo }}
-        .PageFare__ticket-names
-          | {{ $t('routeBoard.routes.' + s.fromKey) }} → {{ $t('routeBoard.routes.' + s.toKey) }}
-        .PageFare__ticket-stub
-          .PageFare__ticket-km {{ $t('fare.samples.kmLabel', { km: s.km }) }}
-          .PageFare__ticket-fare
-            .PageFare__ticket-fare-label {{ $t('fare.samples.estLabel') }}
-            .PageFare__ticket-fare-val NT${{ s.fare.toLocaleString() }}
 
   .PageFare__stripe
 
@@ -269,96 +211,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 300;
   color: var(--da-gray);
   line-height: 1.75;
-}
-
-// ── 示範路線估價票券 ──────────────────────────────────────
-.PageFare__tickets {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.PageFare__ticket {
-  background: var(--da-cream);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.PageFare__ticket-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-}
-
-.PageFare__ticket-route {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.PageFare__ticket-code {
-  font-family: $font-display;
-  font-size: 30px;
-  color: var(--da-dark);
-  letter-spacing: 0.04em;
-}
-
-.PageFare__ticket-arrow {
-  color: var(--da-amber);
-  font-size: 16px;
-}
-
-.PageFare__ticket-flightno {
-  font-family: $font-condensed;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: var(--da-gray-light);
-}
-
-.PageFare__ticket-names {
-  padding: 0 20px 12px;
-  font-family: $font-body;
-  font-size: 13px;
-  color: var(--da-gray);
-}
-
-.PageFare__ticket-stub {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-top: 2px dashed var(--da-gray-pale);
-  background: var(--da-off-white);
-}
-
-.PageFare__ticket-km {
-  font-family: $font-condensed;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--da-gray);
-}
-
-.PageFare__ticket-fare {
-  text-align: right;
-}
-
-.PageFare__ticket-fare-label {
-  font-family: $font-condensed;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--da-gray-light);
-}
-
-.PageFare__ticket-fare-val {
-  font-family: $font-display;
-  font-size: 28px;
-  color: var(--da-amber);
 }
 
 // ── 結尾 CTA ──────────────────────────────────────────────

@@ -12,36 +12,33 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
     h1.PageService__header-title {{ $t('service.title') }}
     p.PageService__header-intro {{ $t('service.intro') }}
 
-  //- 機場接送怎麼運作
+  //- 四種行程（合併原 howItWorks + 接機/送機，並加入交通接送與包車）
   section.PageService__section.is-cream
-    .PageService__section-label {{ $t('service.howItWorks.label') }}
-    h2.PageService__section-title {{ $t('service.howItWorks.title') }}
-    p.PageService__section-desc {{ $t('service.howItWorks.desc') }}
-    .PageService__prose
-      p {{ $t('service.howItWorks.p1') }}
-      p {{ $t('service.howItWorks.p2') }}
-
-  .PageService__stripe
-
-  //- 接機 vs 送機
-  section.PageService__section.is-off-white
-    .PageService__section-label {{ $t('service.pickupVsDropoff.label') }}
-    h2.PageService__section-title {{ $t('service.pickupVsDropoff.title') }}
-    p.PageService__section-desc {{ $t('service.pickupVsDropoff.desc') }}
+    .PageService__section-label {{ $t('service.tripTypes.label') }}
+    h2.PageService__section-title {{ $t('service.tripTypes.title') }}
+    p.PageService__section-desc {{ $t('service.tripTypes.desc') }}
     .PageService__pass-grid
       .PageService__pass-card
-        .PageService__pass-tag {{ $t('service.pickupVsDropoff.pickup.tag') }}
-        .PageService__pass-title {{ $t('service.pickupVsDropoff.pickup.title') }}
-        p.PageService__pass-body {{ $t('service.pickupVsDropoff.pickup.body') }}
+        .PageService__pass-tag {{ $t('service.tripTypes.pickup.tag') }}
+        .PageService__pass-title {{ $t('service.tripTypes.pickup.title') }}
+        p.PageService__pass-body {{ $t('service.tripTypes.pickup.body') }}
       .PageService__pass-card
-        .PageService__pass-tag {{ $t('service.pickupVsDropoff.dropoff.tag') }}
-        .PageService__pass-title {{ $t('service.pickupVsDropoff.dropoff.title') }}
-        p.PageService__pass-body {{ $t('service.pickupVsDropoff.dropoff.body') }}
+        .PageService__pass-tag {{ $t('service.tripTypes.dropoff.tag') }}
+        .PageService__pass-title {{ $t('service.tripTypes.dropoff.title') }}
+        p.PageService__pass-body {{ $t('service.tripTypes.dropoff.body') }}
+      .PageService__pass-card
+        .PageService__pass-tag {{ $t('service.tripTypes.transfer.tag') }}
+        .PageService__pass-title {{ $t('service.tripTypes.transfer.title') }}
+        p.PageService__pass-body {{ $t('service.tripTypes.transfer.body') }}
+      .PageService__pass-card
+        .PageService__pass-tag {{ $t('service.tripTypes.charter.tag') }}
+        .PageService__pass-title {{ $t('service.tripTypes.charter.title') }}
+        p.PageService__pass-body {{ $t('service.tripTypes.charter.body') }}
 
   .PageService__stripe
 
   //- 航班延誤政策
-  section.PageService__section.is-cream
+  section.PageService__section.is-off-white
     .PageService__section-label {{ $t('service.delay.label') }}
     h2.PageService__section-title {{ $t('service.delay.title') }}
     p.PageService__section-desc {{ $t('service.delay.desc') }}
@@ -53,16 +50,9 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
         .PageService__policy-k {{ $t('service.delay.dropoffTitle') }}
         .PageService__policy-v {{ $t('service.delay.dropoffBody') }}
       .PageService__policy-note {{ $t('service.delay.overtime') }}
-
-  .PageService__stripe
-
-  //- 行李計算
-  section.PageService__section.is-off-white
-    .PageService__section-label {{ $t('service.luggage.label') }}
-    h2.PageService__section-title {{ $t('service.luggage.title') }}
-    p.PageService__section-desc {{ $t('service.luggage.desc') }}
-    .PageService__prose
-      p {{ $t('service.luggage.body') }}
+    .PageService__policy-reassign
+      .PageService__policy-reassign-tag REASSIGN
+      p.PageService__policy-reassign-body {{ $t('service.delay.reassign') }}
 
   .PageService__stripe
 
@@ -156,8 +146,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── SECTION ───────────────────────────────────────────────
 .PageService__section {
-  padding: 72px 24px;
+  padding: 96px 24px;
   scroll-margin-top: 56px;
+
+  @include rwd-pc-big {
+    padding: 120px 32px;
+  }
 }
 
 .PageService__section.is-cream {
@@ -316,6 +310,44 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-gray);
   padding: 14px 0;
   font-weight: 500;
+}
+
+// ── 司機重派提示（航班延誤 fallback） ──────────────────────
+.PageService__policy-reassign {
+  margin-top: 18px;
+  padding: 18px 22px;
+  background: var(--da-dark);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--da-amber);
+  }
+}
+
+.PageService__policy-reassign-tag {
+  font-family: $font-condensed;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--da-amber);
+}
+
+.PageService__policy-reassign-body {
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--da-cream);
+  line-height: 1.7;
+  margin: 0;
 }
 
 // ── 司機與保障 ────────────────────────────────────────────
