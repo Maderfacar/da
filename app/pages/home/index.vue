@@ -248,10 +248,10 @@ onUnmounted(() => {
   section.PageHome__book-section
     .PageHome__book-card.reveal
       .PageHome__book-label BOOK YOUR TRIP
-      h2.PageHome__book-title 預約您的行程
-      p.PageHome__book-desc 填寫出發資訊，專屬司機將準時候駕。
+      h2.PageHome__book-title {{ $t('home.book.title') }}
+      p.PageHome__book-desc {{ $t('home.book.desc') }}
       button.PageHome__book-btn(@click="navigateTo('/booking')")
-        | 前往預約
+        | {{ $t('home.book.btn') }}
         span.PageHome__book-btn-arrow →
 
   //- ── 4. 現正優惠（無折扣碼自動隱藏）───────────────────

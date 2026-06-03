@@ -120,6 +120,7 @@ export default {
   },
   orders: {
     title: '利用履歴',
+    heading: 'マイオーダー',
     note: '直近の注文のみ表示しています。他の注文は日付で検索してください。',
     empty: { text: '注文履歴がありません', btn: '今すぐ予約' },
     loadFailed: '注文の読み込みに失敗しました',
@@ -243,8 +244,14 @@ export default {
     book: {
       title: '旅程を予約する',
       desc: '出発情報を入力すると、専属ドライバーが準備いたします。',
-      btn: '予約フォームへ',
+      btn: '予約する',
     },
+  },
+  // ログインページ
+  login: {
+    tagline: '台湾プレミアム空港送迎',
+    loggingIn: 'ログイン中...',
+    lineLogin: 'LINE でログイン',
   },
   fleet: {
     title: '車両ラインナップ',
@@ -286,6 +293,7 @@ export default {
       4: '注文確認',
     },
     newOrder: '再予約',
+    viewTrip: '旅程を確認',
     success: {
       title: '注文を送信しました',
       orderLabel: '注文番号',

@@ -120,6 +120,7 @@ export default {
   },
   orders: {
     title: 'Trip History',
+    heading: 'My Orders',
     note: 'Showing only your most recent order. Use the date filter to find others.',
     empty: { text: 'No order records yet', btn: 'Book Now' },
     loadFailed: 'Failed to load orders',
@@ -243,8 +244,14 @@ export default {
     book: {
       title: 'Book Your Trip',
       desc: 'Enter your departure details and your dedicated driver will be ready on time.',
-      btn: 'Go to Booking Form',
+      btn: 'Book Now',
     },
+  },
+  // Login page
+  login: {
+    tagline: 'Premium Airport Transfer in Taiwan',
+    loggingIn: 'Signing in...',
+    lineLogin: 'Sign in with LINE',
   },
   fleet: {
     title: 'Our Fleet',
@@ -286,6 +293,7 @@ export default {
       4: 'Confirm',
     },
     newOrder: 'Book Again',
+    viewTrip: 'View Trip',
     success: {
       title: 'Order Submitted',
       orderLabel: 'Order ID',

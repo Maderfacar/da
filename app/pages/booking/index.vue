@@ -322,7 +322,7 @@ const ClickNewOrder = () => {
         type="primary"
         style="margin-top: 24px; width: 100%"
         @click="navigateTo(storeOrder.currentOrder?.orderId ? `/orders/${storeOrder.currentOrder.orderId}` : '/orders')"
-      ) 查看行程
+      ) {{ $t('booking.viewTrip') }}
       UiButton(type="secondary" style="margin-top: 12px; width: 100%" @click="ClickNewOrder") {{ $t('booking.newOrder') }}
 
   //- 表單主體

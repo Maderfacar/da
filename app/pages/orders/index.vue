@@ -115,7 +115,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   //- Section 3：我的訂單（日期篩選 + 列表）
   section.PageOrders__orders
     .PageOrders__orders-label MY ORDERS
-    h2.PageOrders__orders-title 我的訂單
+    h2.PageOrders__orders-title {{ $t('orders.heading') }}
     .PageOrders__orders-bar
       UiDateRangeFilter(
         v-model="dateRange"
