@@ -469,7 +469,10 @@ const _validateFareRules = (): string => {
     return '所有數字欄位皆必填且需為有效數字';
   }
   if (r.rounding <= 0) return '進位基數必須大於 0';
-  if (r.crossCounty.tieredNtd.length !== 3) return '跨縣市需設定三級費率';
+  if (r.crossCounty.tieredNtd.length === 0) return '跨縣市至少需設定 1 級費率';
+  if (r.crossCounty.tieredNtd.some((n) => typeof n !== 'number' || Number.isNaN(n) || n < 0)) {
+    return '跨縣市費率必須是 ≥ 0 的數字';
+  }
   // 里程分段折扣：tiers 非空、首段 fromKm=0、嚴格遞增、pct 0–100
   const dt = r.distanceTier;
   if (dt.tiers.length === 0) return '里程分段需至少 1 段';
@@ -524,6 +527,7 @@ const ClickSaveFareRules = async () => {
   const err = _validateFareRules();
   if (err) {
     fareRulesError.value = err;
+    ElMessage({ message: err, type: 'warning' });
     return;
   }
   fareRulesError.value = '';
@@ -758,6 +762,9 @@ const ClickSaveFareRules = async () => {
         :disabled="fareRulesLoading || fareRulesSaving"
         @click="ClickSaveFareRules"
       ) {{ fareRulesSaving ? '儲存中...' : '💾 儲存' }}
+
+    //- 儲存按鈕旁的即時 error（與底部 L1251 同步，方便不必捲到頁尾就看到）
+    .PageAdminSettings__fare-error.is-near-save(v-if="fareRulesError") ⚠️ {{ fareRulesError }}
 
     .PageAdminSettings__loading(v-if="fareRulesLoading") 載入中...
 
@@ -2056,6 +2063,16 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 8px;
   padding: 8px 12px;
   margin: 0 16px 4px;
+
+  // 靠近儲存按鈕的即時警告：加強對比 + 更明顯邊框
+  &.is-near-save {
+    margin: 8px 16px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255, 200, 0, 0.14);
+    border-color: rgba(255, 200, 0, 0.45);
+    color: rgba(255, 215, 50, 1);
+  }
 }
 
 .PageAdminSettings__promotions {
