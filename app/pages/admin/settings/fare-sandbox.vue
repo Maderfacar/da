@@ -211,7 +211,7 @@ const metricsRows = computed(() => {
 
       .AdminFareSandbox__row
         label.AdminFareSandbox__label 上車時間
-        input.AdminFareSandbox__input(v-model="pickupTime" type="datetime-local")
+        input.AdminFareSandbox__input(v-model="pickupTime" type="datetime-local" lang="en-GB")
 
       .AdminFareSandbox__row
         label.AdminFareSandbox__label 行程類型

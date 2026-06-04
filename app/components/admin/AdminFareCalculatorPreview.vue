@@ -220,6 +220,7 @@ const fmt = (n: number): string => {
       ElInput(
         v-model="input.pickupTime"
         type="datetime-local"
+        lang="en-GB"
       )
     .AdminFareCalculatorPreview__field
       label.AdminFareCalculatorPreview__label 行程類型

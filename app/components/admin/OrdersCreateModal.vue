@@ -191,7 +191,7 @@ Transition(name="fade")
         //- 用車時間
         .AdminOrdersCreateModal__field
           label.AdminOrdersCreateModal__label 用車日期 / 時間
-          input.AdminOrdersCreateModal__input(type="datetime-local" v-model="form.pickupDateTime")
+          input.AdminOrdersCreateModal__input(type="datetime-local" lang="en-GB" v-model="form.pickupDateTime")
 
         //- 上車點
         .AdminOrdersCreateModal__field

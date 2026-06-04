@@ -1667,7 +1667,7 @@ onMounted(() => {
             //- 用車時間
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 用車日期 / 時間
-              input.PageAdminOrders__edit-input(type="datetime-local" v-model="editForm.pickupDateTime")
+              input.PageAdminOrders__edit-input(type="datetime-local" lang="en-GB" v-model="editForm.pickupDateTime")
 
             //- 上車點
             .PageAdminOrders__edit-field

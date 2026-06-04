@@ -944,10 +944,10 @@ const ClickSaveFareRules = async () => {
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
-              ElInput(v-model="win.start" type="time")
+              ElInput(v-model="win.start" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 訖
-              ElInput(v-model="win.end" type="time")
+              ElInput(v-model="win.end" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 加價 (元，留空用 default)
               ElInput(
@@ -1011,10 +1011,10 @@ const ClickSaveFareRules = async () => {
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
-              ElInput(v-model="win.start" type="time")
+              ElInput(v-model="win.start" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 訖
-              ElInput(v-model="win.end" type="time")
+              ElInput(v-model="win.end" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 折扣 (元，留空用 default)
               ElInput(
@@ -1078,10 +1078,10 @@ const ClickSaveFareRules = async () => {
           .PageAdminSettings__fare-window-times
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 起
-              ElInput(v-model="win.start" type="time")
+              ElInput(v-model="win.start" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 訖
-              ElInput(v-model="win.end" type="time")
+              ElInput(v-model="win.end" type="time" lang="en-GB")
             .PageAdminSettings__fare-field
               label.PageAdminSettings__fare-label 費率 (元/min，留空用 default)
               ElInput(

@@ -468,6 +468,7 @@ const ClickNext = () => {
             input.PassengerBookingStepType__manual-input(
               v-model="manualTime"
               type="time"
+              lang="en-GB"
               step="60"
               inputmode="numeric"
               :placeholder="$t('booking.type.manual.timePlaceholder')"

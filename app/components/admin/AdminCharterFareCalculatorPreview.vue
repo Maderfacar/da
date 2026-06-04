@@ -265,12 +265,14 @@ const estimatedEndDisplay = computed(() => {
       ElInput(
         v-model="input.pickupTime"
         type="datetime-local"
+        lang="en-GB"
       )
     .AdminCharterFareCalculatorPreview__field
       label.AdminCharterFareCalculatorPreview__label actualEndTime（空 = 不算 OT）
       ElInput(
         v-model="input.actualEndTime"
         type="datetime-local"
+        lang="en-GB"
       )
     .AdminCharterFareCalculatorPreview__field
       label.AdminCharterFareCalculatorPreview__label 預估結束（自動推算）
