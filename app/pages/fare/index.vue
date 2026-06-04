@@ -40,6 +40,16 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
   .PageFare__stripe
 
+  //- 車資說明（含/不含）
+  section.PageFare__section.is-cream
+    .PageFare__section-label {{ $t('fare.notes.label') }}
+    h2.PageFare__section-title {{ $t('fare.notes.title') }}
+    ul.PageFare__notes-list
+      li {{ $t('fare.notes.included') }}
+      li {{ $t('fare.notes.excluded') }}
+
+  .PageFare__stripe
+
   //- 結尾 CTA
   section.PageFare__cta
     h2.PageFare__cta-title {{ $t('fare.cta.title') }}
@@ -158,6 +168,36 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-bottom: 32px;
   max-width: 320px;
   font-family: $font-body;
+}
+
+// ── 車資說明 list（FARE NOTES section）────────────────────
+.PageFare__notes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.PageFare__notes-list li {
+  font-family: $font-body;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--da-dark);
+  padding-left: 22px;
+  position: relative;
+}
+
+.PageFare__notes-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 12px;
+  height: 2px;
+  background: var(--da-amber, #d4860a);
 }
 
 // ── 分隔線 ────────────────────────────────────────────────

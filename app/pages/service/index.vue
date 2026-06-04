@@ -65,6 +65,8 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
       li {{ $t('service.trust.driver') }}
       li {{ $t('service.trust.insurance') }}
       li {{ $t('service.trust.sign') }}
+      li {{ $t('service.trust.lawfulVehicle') }}
+      li {{ $t('service.trust.dispatchPolicy') }}
 
   .PageService__stripe
 

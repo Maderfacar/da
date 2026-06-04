@@ -628,6 +628,8 @@ export default {
       driver: '司機須持職業駕駛執照、提供無犯罪紀錄證明（良民證），並通過平台內部二次審查。',
       insurance: '全車投保旅客責任險，保額 500 萬元。',
       sign: '接機可加選專人於入境大廳舉牌迎接。',
+      lawfulVehicle: '車款皆為合法營業租賃車。',
+      dispatchPolicy: '所派遣的車型皆依照車行安排為主。',
     },
     brand: {
       label: '關於我們',
@@ -708,6 +710,12 @@ export default {
         final: '最終車資（進位 {round} 元）',
       },
       disclaimer: '試算為估價工具，未納入即時車流的塞車費。下單時系統會接上 Google 路徑與即時車程資料重新計算 — 實際金額以下單系統結果為準。',
+    },
+    notes: {
+      label: 'FARE NOTES',
+      title: '車資說明',
+      included: '車資費用包含：保險、過路費、油資。',
+      excluded: '不含：發票稅金、小費。',
     },
     cta: {
       title: '想知道您的路線多少錢',

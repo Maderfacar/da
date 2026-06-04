@@ -610,6 +610,8 @@ export default {
       driver: 'Drivers must hold a professional driving license, present a clean criminal-record clearance, and pass the platform\'s internal secondary review.',
       insurance: 'Every vehicle is covered by passenger liability insurance up to NT$5,000,000.',
       sign: 'Meet-and-greet with a name sign in the arrivals hall is available as an add-on for airport pickups.',
+      lawfulVehicle: 'All vehicles are legally licensed commercial rental cars.',
+      dispatchPolicy: 'Final vehicle assignment follows the operating fleet\'s scheduling.',
     },
     brand: {
       label: 'About Us',
@@ -690,6 +692,12 @@ export default {
         final: 'Final fare (rounded to NT${round})',
       },
       disclaimer: 'This estimator is a guide only — it does not include real-time traffic jam fees. When you book, the system pulls a live Google route and current traffic data to recalculate; the booking total is the binding figure.',
+    },
+    notes: {
+      label: 'FARE NOTES',
+      title: 'What\'s in the Fare',
+      included: 'Included: insurance, tolls, fuel.',
+      excluded: 'Not included: invoice tax, tips.',
     },
     cta: {
       title: 'Want to Know Your Route\'s Fare?',
