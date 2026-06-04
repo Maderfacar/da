@@ -26,7 +26,11 @@ import {
 export const FARE_RULES_COLLECTION = 'fare_rules';
 export const FARE_RULES_DOC_ID = 'v1';
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// 30 秒：admin 改規則後最多等 30 秒，prod 各 serverless instance 即可自動拿到新規則。
+// 設計取捨：Vercel serverless instance 各自有 module-level 快取，admin invalidateFareRulesCache
+// 只清「處理該 PATCH 請求的 instance」，其他 instance 仍需等 TTL 才會重讀 Firestore。
+// 短 TTL 讓校準時的驗證體驗大幅改善；Firestore 讀取每次 ~10ms / $0.000006，年成本可忽略。
+const CACHE_TTL_MS = 30 * 1000;
 
 const VALID_WEEKDAYS: ReadonlySet<string> = new Set(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']);
 const VALID_WEEKEND_MODES: ReadonlySet<string> = new Set(['OFF', 'ALL_DAY', 'EVENING_ONLY']);
