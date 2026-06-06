@@ -1,31 +1,21 @@
 <script setup lang="ts">
-// 乘客端車資試算機（/fare 頁 TRY IT 區塊）
+// 乘客端 /fare 試算機（沙盒風格，2026-06-07 改版）
 //
-// 規則來源：StoreConfig.fareRules（從 /nuxt-api/config/fleet 拉，與 booking 估價同源）
-// 計算：calculateFareV2（~shared/pricing），組合手動輸入 + tag surcharge 為合成 RouteMetrics
+// 流程：UiGooglePlaceInput × 3（上車 / 中途停靠站 / 下車）+ 車型 + 時間 + orderType + 加值服務
+// 走 booking 同一個 /api/maps/route endpoint（vehicleType + pickupTime + extras + orderType → 回 fareBreakdown）
 //
-// 與 admin 試算機（AdminFareCalculatorPreview）的差異：
-//   - 欄位精簡（基本 6 + 進階 3）
-//   - 偏好標籤改用 chip picker（同 booking PassengerTagPreferencePicker）
-//   - cream / glass 配色（admin 為 dark）
-//   - 結果只顯示 > 0 的拆解項（避免列一堆 NT$0）
-//   - 不顯示「小計」（對乘客太技術）
-import {
-  buildTagSurchargeIndex,
-  calcTagSurcharge,
-  calculateFareV2,
-  ORDER_TYPES,
-  type FareBreakdownV2,
-  type OrderType,
-  type RouteMetrics,
-  type TagSurchargeIndexEntry,
-} from '~shared/pricing';
-import { TPE_METRO_CODES } from '~shared/geo/county-codes';
-import { TAG_GROUPS, TAG_GROUPS_ORDERED, type TagGroup, localizedTagName } from '~shared/tagTaxonomy';
-import type { TagDto } from '@/protocol/fetch-api/api/tag';
+// 結果只顯示 5 項：
+//   1. 最終車資（不顯示「進位 50 元」字樣）
+//   2. 總距離（公里，小數 1 位）
+//   3. 國道里程（公里，小數 1 位）
+//   4. 加值服務（元）
+//   5. 夜間加乘（時段加價，元）
+//   6. 山區命中綠勾（若 mountainMul > 1）
+
+import { ORDER_TYPES, type OrderType } from '~shared/pricing';
+import type { GooglePlace, MapsRouteRes } from '@/protocol/fetch-api/api/maps';
 
 type Lang = 'zh' | 'en' | 'ja';
-type TagLang = 'zh_tw' | 'en' | 'ja';
 
 const storeConfig = StoreConfig();
 const { locale, t } = useI18n();
@@ -35,276 +25,197 @@ const _normalizeLang = (l: string): Lang => {
   if (l === 'ja') return 'ja';
   return 'zh';
 };
-const _toTagLang = (l: Lang): TagLang => (l === 'zh' ? 'zh_tw' : l);
-
 const lang = computed<Lang>(() => _normalizeLang(String(locale.value)));
 
-// ── 試算輸入 ───────────────────────────────────────────────────
-interface CalcInput {
-  distanceKm: number;
-  vehicleId: string;
-  /** 日期 YYYY-MM-DD（ElDatePicker value-format） */
-  pickupDate: string;
-  /** 時間 HH:mm（ElTimeSelect，10 分鐘為單位） */
-  pickupTime: string;
-  orderType: OrderType;
-  extraIds: string[];
-  selectedTagIds: string[];
-  isMountain: boolean;
-  crossCountyCount: 0 | 1 | 2 | 3;
-  allInTpeMetro: boolean;
-  freewayKm: number;
-}
+// ── 試算輸入 ──────────────────────────────────────────────────────────
+const pickup = ref<GooglePlace | null>(null);
+const dropoff = ref<GooglePlace | null>(null);
+const stopovers = ref<GooglePlace[]>([]);
+const vehicleId = ref('');
+const pickupDate = ref(_todayDate());
+const pickupTime = ref(_nextTenMinSlot());
+const orderType = ref<OrderType>('airport-pickup');
+const extraIds = ref<string[]>([]);
 
-/** 今日 YYYY-MM-DD（與 booking 一致） */
+const result = ref<MapsRouteRes | null>(null);
+const error = ref('');
+const calcing = ref(false);
+
+/** 今日 YYYY-MM-DD */
 function _todayDate(): string {
   return $dayjs().format('YYYY-MM-DD');
 }
-
-/** 當下時間往後最近的 10 分鐘時段 HH:mm（與 booking _nextTenMinSlot 一致） */
+/** 下一個 10 分鐘整點 HH:mm */
 function _nextTenMinSlot(): string {
   const now = $dayjs().second(0).millisecond(0);
   return now.minute(Math.ceil(now.minute() / 10) * 10).format('HH:mm');
 }
 
-function _defaultInput(): CalcInput {
-  return {
-    distanceKm: 15,
-    vehicleId: storeConfig.EnabledVehicles[0]?.id ?? '',
-    pickupDate: _todayDate(),
-    pickupTime: _nextTenMinSlot(),
-    orderType: 'airport-pickup',
-    extraIds: [],
-    selectedTagIds: [],
-    isMountain: false,
-    crossCountyCount: 0,
-    allInTpeMetro: false,
-    freewayKm: 0,
-  };
-}
-
-const input = reactive<CalcInput>(_defaultInput());
-const result = ref<FareBreakdownV2 | null>(null);
-const error = ref('');
-const isAdvancedOpen = ref(false);
-
 // 車型載入後若 vehicleId 仍為空 → 補預設首選
 watch(
   () => storeConfig.EnabledVehicles,
   (list) => {
-    if (!input.vehicleId && list.length > 0) input.vehicleId = list[0].id;
+    if (!vehicleId.value && list.length > 0) vehicleId.value = list[0].id;
   },
   { immediate: true },
 );
 
-// ── 標籤載入（vehicle-scope, active-only；driverSkill group 不顯示）──────────
-const activeVehicleTags = ref<TagDto[]>([]);
-
-const ApiLoadActiveVehicleTags = async () => {
-  try {
-    const res = await $api.GetActiveTags('vehicle');
-    if (res.status?.code === $enum.apiStatus.success && res.data?.tags) {
-      // 與 booking 對齊：不顯示 vehicleType group（屬司機端標車屬性）
-      activeVehicleTags.value = res.data.tags.filter((t) => t.group !== 'vehicleType');
-    }
-  } catch { /* silent */ }
+// ── 中途停靠站操作 ────────────────────────────────────────────────────
+const ClickAddStopover = () => {
+  stopovers.value = [...stopovers.value, { name: '', lat: 0, lng: 0, placeId: '' } as GooglePlace];
+};
+const ClickRemoveStopover = (idx: number) => {
+  stopovers.value = stopovers.value.filter((_, i) => i !== idx);
+};
+const UpdateStopover = (idx: number, val: GooglePlace | null) => {
+  if (!val) {
+    ClickRemoveStopover(idx);
+    return;
+  }
+  const next = [...stopovers.value];
+  next[idx] = val;
+  stopovers.value = next;
 };
 
-onMounted(() => { void ApiLoadActiveVehicleTags(); });
-
-// ── 標籤分群顯示（與 booking PassengerTagPreferencePicker 一致）──────────────
-const groupedTags = computed(() =>
-  TAG_GROUPS_ORDERED
-    .filter(([, meta]) => meta.scope === 'vehicle')
-    .map(([key, meta]) => ({
-      key,
-      meta,
-      tags: activeVehicleTags.value
-        .filter((tag) => tag.group === key && tag.status === 'active')
-        .sort((a, b) => a.sortOrder - b.sortOrder),
-    }))
-    .filter((g) => g.tags.length > 0),
-);
-
-const IsTagSelected = (id: string) => input.selectedTagIds.includes(id);
-
-const TagLabel = (tag: TagDto) => localizedTagName(tag, _toTagLang(lang.value));
-
-const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
-  const meta = TAG_GROUPS[group];
-  const cur = input.selectedTagIds;
-
-  if (meta.multiplicity === 'single') {
-    const otherIdsInGroup = activeVehicleTags.value
-      .filter((tagItem) => tagItem.group === group && tagItem.id !== tag.id)
-      .map((tagItem) => tagItem.id);
-    const isCurrentlySelected = cur.includes(tag.id);
-    const cleaned = cur.filter((id) => !otherIdsInGroup.includes(id));
-    input.selectedTagIds = isCurrentlySelected
-      ? cleaned.filter((id) => id !== tag.id)
-      : [...cleaned.filter((id) => id !== tag.id), tag.id];
-    return;
-  }
-
-  input.selectedTagIds = cur.includes(tag.id)
-    ? cur.filter((id) => id !== tag.id)
-    : [...cur, tag.id];
-};
-
-// ── 跨縣市選項（4 chip）──────────────────────────────────────────────────────
-const CROSS_COUNTY_OPTIONS = [0, 1, 2, 3] as const;
-
-// ── 合成 RouteMetrics ──────────────────────────────────────────────────────
-/** 跨縣市數 N → 訪問縣市清單長度 N+1；TPE 全境模式下重覆循環北北桃 3 碼 */
-function _buildCountiesVisited(crossCount: number, allInTpeMetro: boolean): string[] {
-  const n = Math.max(0, Math.floor(crossCount));
-  const len = n + 1;
-  if (allInTpeMetro) {
-    const metro = Array.from(TPE_METRO_CODES); // ['TPE', 'NTPE', 'TYN']
-    return Array.from({ length: len }, (_, i) => metro[i % metro.length] ?? 'TPE');
-  }
-  const nonMetro = ['TXG', 'CHA', 'NAN', 'YUN', 'CYQ', 'TNN', 'KHH'];
-  return nonMetro.slice(0, len);
-}
-
-function _buildSyntheticMetrics(): RouteMetrics {
-  // 視窗 1：乘客試算機沒有真實 steps，用 user 填的 freewayKm 當 highwayKm 估算。
-  // 沒填即視為平面（保守估算 → surchargeable）；user 可在進階面板覆寫。
-  const highwayKm = Math.max(0, Math.min(input.freewayKm, input.distanceKm));
-  const surfaceKm = Math.max(0, input.distanceKm - highwayKm);
-  return {
-    distanceKm: input.distanceKm,
-    staticDurationSec: 0,
-    durationSec: 0,
-    pureJamMinutes: 0,
-    freeFlowKmh: 0,
-    polylineEncoded: '',
-    elevationDiffM: input.isMountain ? 500 : 0,
-    sinuosity: input.isMountain ? 1.4 : 1.0,
-    freewayKm: input.freewayKm,
-    hasTrunk: false,
-    highwayKm,
-    surfaceKm,
-    countiesVisited: _buildCountiesVisited(input.crossCountyCount, input.allInTpeMetro),
-    straightLineKm: input.distanceKm,
-    computedAt: Date.now(),
-    apiSourcesOk: { routes: true, elevation: true, osm: true, counties: true },
-  };
-}
-
-// ── 驗證 ──────────────────────────────────────────────────────────────────
-/** 組合 pickupDate + pickupTime → local Date（ISO 解析以避免時區誤差） */
-function _composePickupDate(): Date | null {
-  if (!input.pickupDate || !input.pickupTime) return null;
-  const iso = `${input.pickupDate}T${input.pickupTime}:00`;
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function _validate(): string {
-  if (typeof input.distanceKm !== 'number' || Number.isNaN(input.distanceKm) || input.distanceKm < 0) {
-    return t('fare.calc.error.distance');
-  }
-  if (typeof input.freewayKm !== 'number' || Number.isNaN(input.freewayKm) || input.freewayKm < 0) {
-    return t('fare.calc.error.freeway');
-  }
-  if (!input.vehicleId) return t('fare.calc.error.vehicle');
-  if (!_composePickupDate()) return t('fare.calc.error.pickup');
-  return '';
-}
-
-// ── 試算 ──────────────────────────────────────────────────────────────────
-const tagSurchargeDisplay = ref(0);
-
-const ClickCalculate = () => {
-  const err = _validate();
-  if (err) {
-    error.value = err;
-    result.value = null;
-    return;
-  }
-  const vehicle = storeConfig.GetVehicle(input.vehicleId);
-  if (!vehicle) {
-    error.value = t('fare.calc.error.vehicle');
-    result.value = null;
-    return;
-  }
-
-  // 標籤加價：max(surchargeAmount)；組成虛擬 extra 併入 extras（不改 calculateFareV2 簽名）
-  const tagIndexEntries: TagSurchargeIndexEntry[] = activeVehicleTags.value.map((tag) => ({
-    id: tag.id,
-    group: tag.group,
-    scope: tag.scope,
-    surchargeAmount: tag.surchargeAmount,
-    status: tag.status,
-  }));
-  const tagIndex = buildTagSurchargeIndex(tagIndexEntries);
-  const tagCalc = calcTagSurcharge(input.selectedTagIds, tagIndex);
-  tagSurchargeDisplay.value = tagCalc.surcharge;
-
-  const realExtras = input.extraIds
-    .map((id) => storeConfig.GetExtra(id))
-    .filter((e): e is NonNullable<typeof e> => !!e)
-    .map((e) => ({ price: e.price }));
-  const extrasForCalc = tagCalc.surcharge > 0
-    ? [...realExtras, { price: tagCalc.surcharge }]
-    : realExtras;
-
-  const pickupDate = _composePickupDate();
-  if (!pickupDate) {
-    error.value = t('fare.calc.error.pickup');
-    result.value = null;
-    return;
-  }
-
+// ── 試算 ──────────────────────────────────────────────────────────────
+const ClickCalculate = async () => {
   error.value = '';
-  result.value = calculateFareV2(
-    vehicle,
-    _buildSyntheticMetrics(),
-    pickupDate,
-    extrasForCalc,
-    storeConfig.fareRules,
-    input.orderType,
-  );
+  if (!pickup.value || pickup.value.lat === 0) {
+    error.value = t('fare.calc.error.pickupLocation');
+    return;
+  }
+  if (!dropoff.value || dropoff.value.lat === 0) {
+    error.value = t('fare.calc.error.dropoffLocation');
+    return;
+  }
+  if (!vehicleId.value) {
+    error.value = t('fare.calc.error.vehicle');
+    return;
+  }
+  if (!pickupDate.value || !pickupTime.value) {
+    error.value = t('fare.calc.error.pickup');
+    return;
+  }
+
+  const validWps = stopovers.value.filter((s) => s.lat !== 0);
+  const pickupIso = `${pickupDate.value}T${pickupTime.value}:00`;
+  const d = new Date(pickupIso);
+  if (Number.isNaN(d.getTime())) {
+    error.value = t('fare.calc.error.pickup');
+    return;
+  }
+
+  calcing.value = true;
+  try {
+    const res = await $api.GetMapsRoute({
+      origin: `${pickup.value.lat},${pickup.value.lng}`,
+      destination: `${dropoff.value.lat},${dropoff.value.lng}`,
+      ...(validWps.length ? { waypoints: validWps.map((s) => `${s.lat},${s.lng}`).join('|') } : {}),
+      vehicleType: vehicleId.value,
+      pickupTime: d.toISOString(),
+      ...(extraIds.value.length ? { extras: extraIds.value.join(',') } : {}),
+      orderType: orderType.value,
+    });
+    if (res.status?.code !== $enum.apiStatus.success || !res.data) {
+      error.value = res.status?.message?.zh_tw ?? t('fare.calc.error.fetch');
+      result.value = null;
+      return;
+    }
+    result.value = res.data;
+  } catch {
+    error.value = t('fare.calc.error.fetch');
+    result.value = null;
+  } finally {
+    calcing.value = false;
+  }
 };
 
 const ClickReset = () => {
-  Object.assign(input, _defaultInput());
+  pickup.value = null;
+  dropoff.value = null;
+  stopovers.value = [];
+  pickupDate.value = _todayDate();
+  pickupTime.value = _nextTenMinSlot();
+  orderType.value = 'airport-pickup';
+  extraIds.value = [];
   result.value = null;
   error.value = '';
-  tagSurchargeDisplay.value = 0;
-  isAdvancedOpen.value = false;
 };
 
-// ── 顯示輔助 ──────────────────────────────────────────────────────────────
-const fmt = (n: number): string => {
-  const rounded = Math.round(n);
-  return rounded.toLocaleString('en-US');
-};
+// ── 結果欄位（精簡 5 項）─────────────────────────────────────────────
+const fmt = (n: number): string => Math.round(n).toLocaleString('en-US');
+const fmtKm = (n: number): string => n.toFixed(1);
 
-/** extrasSum 在 calculateFareV2 內包含 tag surcharge；UI 拆兩列時要扣掉 */
-const extrasNetSum = computed(() => {
+const finalFare = computed<number | null>(() => {
+  if (!result.value) return null;
+  return result.value.fareTotal ?? null;
+});
+const distanceKm = computed<number>(() => {
   if (!result.value) return 0;
-  return Math.max(0, result.value.extrasSum - tagSurchargeDisplay.value);
+  return result.value.routeMetrics?.distanceKm ?? result.value.distance_km ?? 0;
+});
+const freewayKm = computed<number>(() => {
+  if (!result.value) return 0;
+  return result.value.routeMetrics?.freewayKm ?? 0;
+});
+const extrasSum = computed<number>(() => {
+  if (!result.value?.fareBreakdown) return 0;
+  return result.value.fareBreakdown.extrasSum ?? 0;
+});
+const nightSurcharge = computed<number>(() => {
+  if (!result.value?.fareBreakdown) return 0;
+  return result.value.fareBreakdown.surcharge ?? 0;
+});
+const mountainHit = computed<boolean>(() => {
+  if (!result.value?.fareBreakdown) return false;
+  return (result.value.fareBreakdown.mountainMul ?? 1) > 1;
 });
 </script>
 
 <template lang="pug">
 .PassengerFareEstimator
-  //- 基本欄位 ────────────────────────────────────────────────
+  //- ── 行程輸入 ────────────────────────────────────────────────
+  .PassengerFareEstimator__inputs
+    //- 上車
+    UiGooglePlaceInput(
+      v-model="pickup"
+      :label="$t('fare.calc.field.pickupLocation')"
+      :placeholder="$t('fare.calc.field.pickupLocationPlaceholder')"
+    )
+
+    //- 中途停靠站（上下車中間）
+    .PassengerFareEstimator__stopovers(v-if="stopovers.length")
+      .PassengerFareEstimator__stopover(v-for="(_, idx) in stopovers" :key="idx")
+        UiGooglePlaceInput.PassengerFareEstimator__stopover-input(
+          :model-value="stopovers[idx] && stopovers[idx].lat !== 0 ? stopovers[idx] : null"
+          :label="$t('fare.calc.field.stopover', { n: idx + 1 })"
+          :placeholder="$t('fare.calc.field.stopoverPlaceholder')"
+          @update:model-value="(v: GooglePlace | null) => UpdateStopover(idx, v)"
+        )
+        button.PassengerFareEstimator__remove-btn(
+          type="button"
+          @click="ClickRemoveStopover(idx)"
+          :aria-label="$t('fare.calc.field.removeStopover')"
+        )
+          NuxtIcon(name="mdi:close-circle-outline")
+
+    button.PassengerFareEstimator__add-btn(type="button" @click="ClickAddStopover")
+      NuxtIcon(name="mdi:plus-circle-outline")
+      span {{ $t('fare.calc.field.addStopover') }}
+
+    //- 下車
+    UiGooglePlaceInput(
+      v-model="dropoff"
+      :label="$t('fare.calc.field.dropoffLocation')"
+      :placeholder="$t('fare.calc.field.dropoffLocationPlaceholder')"
+    )
+
+  //- ── 選項 ─────────────────────────────────────────────────────
   .PassengerFareEstimator__grid
     .PassengerFareEstimator__field
-      label.PassengerFareEstimator__label {{ $t('fare.calc.field.distance') }}
-      ElInput(
-        v-model.number="input.distanceKm"
-        type="number"
-        inputmode="numeric"
-        maxlength="6"
-      )
-    .PassengerFareEstimator__field
-      label.PassengerFareEstimator__label {{ $t('fare.calc.field.vehicle') }}
+      label.PassengerFareEstimator__field-label {{ $t('fare.calc.field.vehicle') }}
       ElSelect(
-        v-model="input.vehicleId"
+        v-model="vehicleId"
         :placeholder="$t('fare.calc.field.vehicle')"
       )
         ElOption(
@@ -313,36 +224,39 @@ const extrasNetSum = computed(() => {
           :label="storeConfig.LabelOf(v.label, lang)"
           :value="v.id"
         )
+
+    .PassengerFareEstimator__field
+      label.PassengerFareEstimator__field-label {{ $t('fare.calc.field.orderType') }}
+      ElSelect(v-model="orderType")
+        ElOption(
+          v-for="o in ORDER_TYPES.filter((o) => o.value !== 'charter')"
+          :key="o.value"
+          :label="$t(`orderType.${o.value}`)"
+          :value="o.value"
+        )
+
     .PassengerFareEstimator__field.is-wide
-      label.PassengerFareEstimator__label {{ $t('fare.calc.field.pickup') }}
+      label.PassengerFareEstimator__field-label {{ $t('fare.calc.field.pickup') }}
       .PassengerFareEstimator__datetime
         ElDatePicker.PassengerFareEstimator__date(
-          v-model="input.pickupDate"
+          v-model="pickupDate"
           type="date"
           format="YYYY/MM/DD"
           value-format="YYYY-MM-DD"
           :clearable="false"
         )
         ElTimeSelect.PassengerFareEstimator__time(
-          v-model="input.pickupTime"
+          v-model="pickupTime"
           start="00:00"
           end="23:50"
           step="00:10"
           :clearable="false"
         )
-    .PassengerFareEstimator__field
-      label.PassengerFareEstimator__label {{ $t('fare.calc.field.orderType') }}
-      ElSelect(v-model="input.orderType")
-        ElOption(
-          v-for="o in ORDER_TYPES"
-          :key="o.value"
-          :label="$t(`orderType.${o.value}`)"
-          :value="o.value"
-        )
+
     .PassengerFareEstimator__field.is-wide
-      label.PassengerFareEstimator__label {{ $t('fare.calc.field.extras') }}
+      label.PassengerFareEstimator__field-label {{ $t('fare.calc.field.extras') }}
       ElSelect(
-        v-model="input.extraIds"
+        v-model="extraIds"
         multiple
         clearable
         value-on-clear=""
@@ -355,113 +269,48 @@ const extrasNetSum = computed(() => {
           :value="e.id"
         )
 
-  //- 偏好標籤 ────────────────────────────────────────────────
-  .PassengerFareEstimator__tags(v-if="groupedTags.length")
-    label.PassengerFareEstimator__label {{ $t('fare.calc.field.tags') }}
-    .PassengerFareEstimator__tag-groups
-      .PassengerFareEstimator__tag-group(v-for="group in groupedTags" :key="group.key")
-        .PassengerFareEstimator__tag-group-header
-          span.PassengerFareEstimator__tag-group-name
-            | {{ TAG_GROUPS[group.key].label[_toTagLang(lang)] || TAG_GROUPS[group.key].label.zh_tw }}
-          span.PassengerFareEstimator__tag-group-meta
-            | {{ group.meta.multiplicity === 'single' ? $t('booking.preferences.singleHint') : $t('booking.preferences.multiHint') }}
-        .PassengerFareEstimator__tag-chips
-          button.PassengerFareEstimator__tag-chip(
-            v-for="tag in group.tags"
-            :key="tag.id"
-            type="button"
-            :class="{ 'is-selected': IsTagSelected(tag.id) }"
-            @click="ClickToggleChip(tag, group.key)"
-          )
-            span.PassengerFareEstimator__tag-chip-name {{ TagLabel(tag) }}
-            span.PassengerFareEstimator__tag-chip-surcharge(v-if="tag.surchargeAmount > 0")
-              | +NT$ {{ tag.surchargeAmount }}
-
-  //- 進階選項（摺疊）─────────────────────────────────────────
-  details.PassengerFareEstimator__advanced(:open="isAdvancedOpen" @toggle="isAdvancedOpen = ($event.target as HTMLDetailsElement).open")
-    summary.PassengerFareEstimator__advanced-summary
-      | {{ isAdvancedOpen ? $t('fare.calc.advanced.toggleOpen') : $t('fare.calc.advanced.toggleClosed') }}
-    .PassengerFareEstimator__advanced-body
-      .PassengerFareEstimator__field
-        label.PassengerFareEstimator__label {{ $t('fare.calc.advanced.mountain') }}
-        ElSwitch(v-model="input.isMountain")
-      .PassengerFareEstimator__field
-        label.PassengerFareEstimator__label {{ $t('fare.calc.advanced.crossCounty') }}
-        .PassengerFareEstimator__cross-chips
-          button.PassengerFareEstimator__cross-chip(
-            v-for="opt in CROSS_COUNTY_OPTIONS"
-            :key="opt"
-            type="button"
-            :class="{ 'is-selected': input.crossCountyCount === opt }"
-            @click="input.crossCountyCount = opt"
-          )
-            | {{ $t(`fare.calc.advanced.crossCountyOptions.${opt}`) }}
-        label.PassengerFareEstimator__checkbox(v-if="input.crossCountyCount > 0")
-          input(type="checkbox" v-model="input.allInTpeMetro")
-          span {{ $t('fare.calc.advanced.tpeMetro') }}
-      .PassengerFareEstimator__field
-        label.PassengerFareEstimator__label {{ $t('fare.calc.advanced.freeway') }}
-        ElInput(
-          v-model.number="input.freewayKm"
-          type="number"
-          inputmode="numeric"
-          maxlength="6"
-        )
-        span.PassengerFareEstimator__hint {{ $t('fare.calc.advanced.freewayHelper') }}
-
-  //- 動作 ───────────────────────────────────────────────────
+  //- ── 動作 ─────────────────────────────────────────────────────
   .PassengerFareEstimator__actions
     button.PassengerFareEstimator__btn.is-secondary(type="button" @click="ClickReset")
       | {{ $t('fare.calc.btn.reset') }}
-    button.PassengerFareEstimator__btn.is-primary(type="button" @click="ClickCalculate")
-      | {{ $t('fare.calc.btn.calculate') }}
+    button.PassengerFareEstimator__btn.is-primary(
+      type="button"
+      :disabled="calcing"
+      @click="ClickCalculate"
+    )
+      NuxtIcon.spin(v-if="calcing" name="mdi:loading")
+      span(v-else) {{ $t('fare.calc.btn.calculate') }}
 
-  //- 錯誤 ───────────────────────────────────────────────────
+  //- ── 錯誤 ─────────────────────────────────────────────────────
   .PassengerFareEstimator__error(v-if="error") ⚠ {{ error }}
 
-  //- 結果拆解（只列 > 0 的項目；不顯示「小計」）──────────────
-  //- 起跳費 floor 套用：里程費 < 起跳費 → 顯示「起跳費」單行
-  //- 否則 → 顯示「里程費」單行（chargedDistanceFee 已含起跳，不再雙計）
-  .PassengerFareEstimator__result(v-if="result")
-    .PassengerFareEstimator__result-title {{ $t('fare.calc.result.title') }}
-    .PassengerFareEstimator__line(v-if="result.distanceFee < result.baseFare")
-      span.PassengerFareEstimator__line-key
-        | {{ $t('fare.calc.result.baseFare') }}
-        span.PassengerFareEstimator__line-badge(v-if="result.mountainMul !== 1")
-          | {{ $t('fare.calc.result.mountainBadge', { mul: result.mountainMul }) }}
-      span.PassengerFareEstimator__line-val
-        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
-    .PassengerFareEstimator__line(v-else)
-      span.PassengerFareEstimator__line-key
-        | {{ $t('fare.calc.result.distance') }}
-        span.PassengerFareEstimator__line-badge(v-if="result.mountainMul !== 1")
-          | {{ $t('fare.calc.result.mountainBadge', { mul: result.mountainMul }) }}
-      span.PassengerFareEstimator__line-val
-        | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
-    .PassengerFareEstimator__line(v-if="extrasNetSum > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.extras') }}
-      span.PassengerFareEstimator__line-val +NT$ {{ fmt(extrasNetSum) }}
-    .PassengerFareEstimator__line(v-if="tagSurchargeDisplay > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.tagSurcharge') }}
-      span.PassengerFareEstimator__line-val +NT$ {{ fmt(tagSurchargeDisplay) }}
-    .PassengerFareEstimator__line(v-if="result.crossCountyFee > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.crossCounty') }}
-      span.PassengerFareEstimator__line-val +NT$ {{ fmt(result.crossCountyFee) }}
-    .PassengerFareEstimator__line(v-if="result.freewayToll > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.freeway') }}
-      span.PassengerFareEstimator__line-val +NT$ {{ fmt(result.freewayToll) }}
-    .PassengerFareEstimator__line(v-if="result.surcharge > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.surcharge') }}
-      span.PassengerFareEstimator__line-val +NT$ {{ fmt(result.surcharge) }}
-    .PassengerFareEstimator__line(v-if="result.promoDiscount > 0")
-      span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.promo') }}
-      span.PassengerFareEstimator__line-val −NT$ {{ fmt(result.promoDiscount) }}
-    .PassengerFareEstimator__line.is-final
-      span.PassengerFareEstimator__line-key
-        | {{ $t('fare.calc.result.final', { round: result.rounding }) }}
-      span.PassengerFareEstimator__line-val NT$ {{ fmt(result.final) }}
+  //- ── 結果（5 項精簡）────────────────────────────────────────
+  .PassengerFareEstimator__result(v-if="finalFare !== null")
+    //- 1. 最終車資（無「進位 50 元」字樣）
+    .PassengerFareEstimator__final
+      span.PassengerFareEstimator__final-label {{ $t('fare.calc.result.finalNoRounding') }}
+      span.PassengerFareEstimator__final-val NT$ {{ fmt(finalFare) }}
 
-  //- Disclaimer ─────────────────────────────────────────────
+    //- 明細：distanceKm / freewayKm / extras / 夜間加乘 / 山區命中
+    .PassengerFareEstimator__lines
+      .PassengerFareEstimator__line
+        span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.distanceLabel') }}
+        span.PassengerFareEstimator__line-val {{ fmtKm(distanceKm) }} {{ $t('fare.calc.result.kmUnit') }}
+      .PassengerFareEstimator__line
+        span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.freewayLabel') }}
+        span.PassengerFareEstimator__line-val {{ fmtKm(freewayKm) }} {{ $t('fare.calc.result.kmUnit') }}
+      .PassengerFareEstimator__line(v-if="extrasSum > 0")
+        span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.extrasLabel') }}
+        span.PassengerFareEstimator__line-val +NT$ {{ fmt(extrasSum) }}
+      .PassengerFareEstimator__line(v-if="nightSurcharge > 0")
+        span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.nightSurcharge') }}
+        span.PassengerFareEstimator__line-val +NT$ {{ fmt(nightSurcharge) }}
+      .PassengerFareEstimator__line(v-if="mountainHit")
+        span.PassengerFareEstimator__line-key {{ $t('fare.calc.result.mountainHit') }}
+        span.PassengerFareEstimator__line-val.is-check
+          NuxtIcon(name="mdi:check-circle")
+
+  //- ── Disclaimer ──────────────────────────────────────────────
   p.PassengerFareEstimator__disclaimer {{ $t('fare.calc.disclaimer') }}
 </template>
 
@@ -478,11 +327,76 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   box-shadow: var(--da-glass-shadow);
 }
 
-// ── 欄位 ────────────────────────────────────────────────────
+// ── 行程輸入 ────────────────────────────────────────────────
+.PassengerFareEstimator__inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.PassengerFareEstimator__stopovers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.PassengerFareEstimator__stopover {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.PassengerFareEstimator__stopover-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.PassengerFareEstimator__remove-btn {
+  flex-shrink: 0;
+  margin-top: 18px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--da-gray);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+
+  &:hover { color: var(--da-dark); }
+}
+
+.PassengerFareEstimator__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px dashed var(--da-gray-pale);
+  background: transparent;
+  border-radius: 100px;
+  padding: 8px 16px;
+  color: var(--da-dark);
+  cursor: pointer;
+  font-family: $font-body;
+  font-size: 13px;
+  align-self: flex-start;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--da-off-white);
+    border-color: var(--da-gray);
+  }
+}
+
+// ── 選項區 ──────────────────────────────────────────────────
 .PassengerFareEstimator__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
+  margin-bottom: 18px;
 }
 
 @media (max-width: 479.98px) {
@@ -510,7 +424,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   min-width: 0;
 }
 
-.PassengerFareEstimator__label {
+.PassengerFareEstimator__field-label {
   font-family: $font-condensed;
   font-size: 11px;
   font-weight: 700;
@@ -519,170 +433,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-gray);
 }
 
-.PassengerFareEstimator__hint {
-  font-family: $font-body;
-  font-size: 11px;
-  color: var(--da-gray-light);
-  margin-top: 4px;
-}
-
-// ── 偏好標籤 ────────────────────────────────────────────────
-.PassengerFareEstimator__tags {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.PassengerFareEstimator__tag-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.PassengerFareEstimator__tag-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.PassengerFareEstimator__tag-group-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.PassengerFareEstimator__tag-group-name {
-  font-family: $font-body;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--da-dark);
-}
-
-.PassengerFareEstimator__tag-group-meta {
-  font-family: $font-condensed;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--da-gray-light);
-}
-
-.PassengerFareEstimator__tag-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.PassengerFareEstimator__tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid var(--da-gray-pale);
-  background: var(--da-off-white);
-  color: var(--da-dark);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.PassengerFareEstimator__tag-chip:hover {
-  border-color: var(--da-amber);
-  background: var(--da-amber-pale);
-}
-
-.PassengerFareEstimator__tag-chip.is-selected {
-  border-color: var(--da-amber);
-  background: var(--da-amber-pale);
-  color: var(--da-amber);
-  font-weight: 700;
-}
-
-.PassengerFareEstimator__tag-chip-surcharge {
-  font-family: $font-condensed;
-  font-size: 11px;
-  color: var(--da-amber);
-  letter-spacing: 0.03em;
-}
-
-// ── 進階摺疊 ────────────────────────────────────────────────
-.PassengerFareEstimator__advanced {
-  margin-top: 18px;
-  border-top: 1px dashed var(--da-gray-pale);
-  padding-top: 14px;
-}
-
-.PassengerFareEstimator__advanced-summary {
-  font-family: $font-condensed;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: var(--da-amber);
-  cursor: pointer;
-  padding: 6px 0;
-  list-style: none;
-}
-
-.PassengerFareEstimator__advanced-summary::-webkit-details-marker {
-  display: none;
-}
-
-.PassengerFareEstimator__advanced-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 12px;
-}
-
-.PassengerFareEstimator__cross-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.PassengerFareEstimator__cross-chip {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid var(--da-gray-pale);
-  background: var(--da-off-white);
-  color: var(--da-dark);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.PassengerFareEstimator__cross-chip:hover {
-  border-color: var(--da-amber);
-  background: var(--da-amber-pale);
-}
-
-.PassengerFareEstimator__cross-chip.is-selected {
-  border-color: var(--da-amber);
-  background: var(--da-amber-pale);
-  color: var(--da-amber);
-  font-weight: 700;
-}
-
-.PassengerFareEstimator__checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: $font-body;
-  font-size: 12px;
-  color: var(--da-gray);
-  margin-top: 8px;
-  cursor: pointer;
-}
-
 // ── 動作 ────────────────────────────────────────────────────
 .PassengerFareEstimator__actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-bottom: 12px;
 }
 
 .PassengerFareEstimator__btn {
@@ -693,118 +449,121 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   text-transform: uppercase;
   padding: 10px 22px;
   border-radius: 100px;
-  border: 1px solid transparent;
+  border: 1px solid;
   cursor: pointer;
   transition: all 0.15s;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &.is-primary {
+    background: var(--da-dark);
+    color: var(--da-white);
+    border-color: var(--da-dark);
+
+    &:hover:not(:disabled) { background: var(--da-amber-light, #d4860a); border-color: var(--da-amber-light, #d4860a); }
+  }
+
+  &.is-secondary {
+    background: transparent;
+    color: var(--da-dark);
+    border-color: var(--da-gray-pale);
+
+    &:hover:not(:disabled) { background: var(--da-off-white); }
+  }
+
+  .spin { animation: PassengerFareEstimator-spin 0.8s linear infinite; font-size: 16px; }
 }
 
-.PassengerFareEstimator__btn.is-primary {
-  background: var(--da-amber);
-  color: var(--da-dark);
-}
-
-.PassengerFareEstimator__btn.is-primary:active {
-  transform: scale(0.97);
-}
-
-.PassengerFareEstimator__btn.is-secondary {
-  background: transparent;
-  border-color: var(--da-gray-pale);
-  color: var(--da-gray);
-}
-
-.PassengerFareEstimator__btn.is-secondary:hover {
-  border-color: var(--da-amber);
-  color: var(--da-amber);
+@keyframes PassengerFareEstimator-spin {
+  to { transform: rotate(360deg); }
 }
 
 // ── 錯誤 ────────────────────────────────────────────────────
 .PassengerFareEstimator__error {
+  margin: 8px 0 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(220, 70, 70, 0.1);
+  border: 1px solid rgba(220, 70, 70, 0.3);
+  color: #c0392b;
   font-family: $font-body;
   font-size: 13px;
-  color: #b8500a;
-  background: var(--da-amber-pale);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-top: 14px;
 }
 
 // ── 結果 ────────────────────────────────────────────────────
 .PassengerFareEstimator__result {
-  margin-top: 18px;
-  border: 1px solid var(--da-glass-border);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--da-off-white);
+  margin-top: 6px;
+  padding-top: 18px;
+  border-top: 1px solid var(--da-gray-pale);
 }
 
-.PassengerFareEstimator__result-title {
+.PassengerFareEstimator__final {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.PassengerFareEstimator__final-label {
   font-family: $font-condensed;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--da-amber);
-  background: var(--da-amber-pale);
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--da-glass-border);
+  color: var(--da-gray);
+}
+
+.PassengerFareEstimator__final-val {
+  font-family: $font-display;
+  font-size: 36px;
+  letter-spacing: 0.04em;
+  color: var(--da-amber-light, #d4860a);
+}
+
+.PassengerFareEstimator__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .PassengerFareEstimator__line {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--da-gray-pale);
-}
+  align-items: center;
+  font-family: $font-body;
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--da-gray-pale);
 
-.PassengerFareEstimator__line:last-child {
-  border-bottom: none;
-}
-
-.PassengerFareEstimator__line.is-final {
-  background: var(--da-amber-pale);
-  border-top: 1px solid var(--da-glass-border);
+  &:last-child { border-bottom: none; }
 }
 
 .PassengerFareEstimator__line-key {
-  font-family: $font-body;
-  font-size: 13px;
-  color: var(--da-gray);
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.PassengerFareEstimator__line-badge {
-  font-family: $font-condensed;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--da-amber);
-}
-
-.PassengerFareEstimator__line-val {
-  font-family: $font-condensed;
-  font-size: 15px;
-  font-weight: 700;
   color: var(--da-dark);
 }
 
-.PassengerFareEstimator__line.is-final .PassengerFareEstimator__line-key,
-.PassengerFareEstimator__line.is-final .PassengerFareEstimator__line-val {
-  color: var(--da-amber);
-  font-size: 16px;
+.PassengerFareEstimator__line-val {
+  color: var(--da-dark);
+  font-variant-numeric: tabular-nums;
+
+  &.is-check {
+    display: inline-flex;
+    align-items: center;
+    color: #2ecc71;
+    font-size: 22px;
+  }
 }
 
 // ── Disclaimer ──────────────────────────────────────────────
 .PassengerFareEstimator__disclaimer {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--da-gray);
   font-family: $font-body;
-  font-size: 11px;
-  color: var(--da-gray-light);
-  line-height: 1.7;
-  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.6;
 }
 </style>
