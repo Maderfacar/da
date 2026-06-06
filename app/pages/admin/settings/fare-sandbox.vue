@@ -131,18 +131,20 @@ const breakdownRows = computed(() => {
       { label: '最終車資 NT$', value: b.final, highlight: true },
     ];
   }
-  // fare-v2
+  // fare-v2（視窗 1：jamFee 砍，加 surfaceSurcharge / highwayKm / surfaceKm）
   return [
     { label: '策略', value: `Fare V2 (rules v${b.rulesVersion})` },
     { label: '起跳費', value: b.baseFare },
     { label: '里程費（分段）', value: b.distanceFee },
     { label: '起跳 floor 後', value: b.chargedDistanceFee },
-    { label: '塞車費 jamFee', value: b.jamFee },
     { label: 'variableSubtotal', value: b.variableSubtotal },
     { label: '山區係數', value: b.mountainMul },
     { label: 'variableScaled', value: b.variableScaled },
     { label: '跨縣市補貼', value: b.crossCountyFee },
     { label: '國道通行費', value: b.freewayToll },
+    { label: '高速里程 km', value: b.highwayKm },
+    { label: '平面里程 km', value: b.surfaceKm },
+    { label: '平面道路加成', value: b.surfaceSurcharge },
     { label: '加值服務', value: b.extrasSum },
     { label: '時段加價', value: b.surcharge },
     { label: '時段折抵', value: b.promoDiscount },
@@ -292,9 +294,9 @@ const metricsRows = computed(() => {
             .AdminFareSandbox__hit-val 跨 {{ result.hits.crossCounty.crossings }} 次 · 補貼 NT$ {{ result.hits.crossCounty.fee }}
             .AdminFareSandbox__hit-sub 訪問：{{ result.hits.crossCounty.visited.join(', ') || '—' }}
           .AdminFareSandbox__hit
-            .AdminFareSandbox__hit-name 顛峰
-            .AdminFareSandbox__hit-val(:class="{ 'is-on': result.hits.peak.active }")
-              | {{ result.hits.peak.active ? '✅ 命中' : '❌' }} · jamFee NT$ {{ result.hits.peak.jamFee }}
+            .AdminFareSandbox__hit-name 平面道路加成
+            .AdminFareSandbox__hit-val(:class="{ 'is-on': result.hits.surface.surchargeAmount > 0 }")
+              | 高速 {{ result.hits.surface.highwayKm.toFixed(1) }} km · 平面 {{ result.hits.surface.surfaceKm.toFixed(1) }} km · 加成 NT$ {{ result.hits.surface.surchargeAmount }}
           .AdminFareSandbox__hit
             .AdminFareSandbox__hit-name 時段加價
             .AdminFareSandbox__hit-val(:class="{ 'is-on': result.hits.surcharge.active }")

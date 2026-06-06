@@ -24,11 +24,13 @@
  *     hits: {                                // 命中規則明細
  *       mountain:    { score, multiplier },
  *       crossCounty: { visited, crossings, fee },
- *       peak:        { active, jamFee },
+ *       surface:     { highwayKm, surfaceKm, surchargeAmount },
  *       promo:       { active, discount },
  *       surcharge:   { active, amount },
  *     },
  *   }
+ *
+ * 視窗 1 改動：移除 hits.peak（顛峰塞車費砍除），新增 hits.surface（平面道路加成）。
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
@@ -43,7 +45,7 @@ import { getRouteWithFare, getCharterRouteWithFare } from '@@/utils/fare-calcula
 import { getFleetConfig } from '@@/utils/fleet-config';
 import { getFareRules } from '@@/utils/fare-rules-cache';
 import {
-  computeJamFee,
+  calculateSurfaceSurcharge,
   computeCrossCountyFee,
   computePromoDiscount,
   computeSurcharge,
@@ -214,7 +216,11 @@ export default defineEventHandler(async (event) => {
               multiplier: result.breakdown.mountainMul,
             },
             crossCounty: { visited: result.metrics.countiesVisited, crossings: 0, fee: 0 },
-            peak: { active: false, jamFee: 0 },
+            surface: {
+              highwayKm: result.metrics.highwayKm,
+              surfaceKm: result.metrics.surfaceKm,
+              surchargeAmount: 0,
+            },
             promo: { active: result.breakdown.promoDiscount > 0, discount: result.breakdown.promoDiscount },
             surcharge: { active: result.breakdown.surcharge > 0, amount: result.breakdown.surcharge },
           },
@@ -248,7 +254,7 @@ export default defineEventHandler(async (event) => {
         hits: {
           mountain: { score: 0, multiplier: 1 },
           crossCounty: { visited: [], crossings: 0, fee: 0 },
-          peak: { active: false, jamFee: 0 },
+          surface: { highwayKm: 0, surfaceKm: 0, surchargeAmount: 0 },
           promo: { active: false, discount: 0 },
           surcharge: { active: false, amount: 0 },
         },
@@ -257,11 +263,17 @@ export default defineEventHandler(async (event) => {
 
     // V2 — 重算各 hits（純函式，輕量）
     const { metrics, breakdown } = result;
-    const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam, orderType);
     const crossFee = computeCrossCountyFee(metrics.countiesVisited, rules.crossCounty);
     const promo = computePromoDiscount(pickupTime, rules.promo, orderType);
     const surcharge = computeSurcharge(pickupTime, rules.surcharge, orderType);
     const mountainMul = computeMountainMul(metrics, rules.mountain);
+    const surfaceAmount = calculateSurfaceSurcharge(
+      metrics.highwayKm,
+      metrics.surfaceKm,
+      metrics.distanceKm,
+      rules.surfaceSurcharge,
+      vehicle.surfaceRatePerKm,
+    );
     // 三訊號分數（重新算一次以便 UI 顯示）
     let mountainScore = 0;
     if (metrics.apiSourcesOk.elevation && metrics.elevationDiffM >= rules.mountain.thresholdElevationDiffM) mountainScore++;
@@ -279,7 +291,11 @@ export default defineEventHandler(async (event) => {
           crossings: Math.max(0, metrics.countiesVisited.length - 1),
           fee: crossFee,
         },
-        peak: { active: jamFee > 0, jamFee },
+        surface: {
+          highwayKm: metrics.highwayKm,
+          surfaceKm: metrics.surfaceKm,
+          surchargeAmount: surfaceAmount,
+        },
         promo: { active: promo > 0, discount: promo },
         surcharge: { active: surcharge > 0, amount: surcharge },
       },

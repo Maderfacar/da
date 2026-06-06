@@ -168,6 +168,10 @@ function _buildCountiesVisited(crossCount: number, allInTpeMetro: boolean): stri
 }
 
 function _buildSyntheticMetrics(): RouteMetrics {
+  // 視窗 1：乘客試算機沒有真實 steps，用 user 填的 freewayKm 當 highwayKm 估算。
+  // 沒填即視為平面（保守估算 → surchargeable）；user 可在進階面板覆寫。
+  const highwayKm = Math.max(0, Math.min(input.freewayKm, input.distanceKm));
+  const surfaceKm = Math.max(0, input.distanceKm - highwayKm);
   return {
     distanceKm: input.distanceKm,
     staticDurationSec: 0,
@@ -179,6 +183,8 @@ function _buildSyntheticMetrics(): RouteMetrics {
     sinuosity: input.isMountain ? 1.4 : 1.0,
     freewayKm: input.freewayKm,
     hasTrunk: false,
+    highwayKm,
+    surfaceKm,
     countiesVisited: _buildCountiesVisited(input.crossCountyCount, input.allInTpeMetro),
     straightLineKm: input.distanceKm,
     computedAt: Date.now(),

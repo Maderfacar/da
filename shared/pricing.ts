@@ -44,6 +44,11 @@ export interface FleetVehicle {
   images?: VehicleImages;
   /** Charter Fare V1：包車三檔時長套餐（optional；缺省時 charter 訂單 fallback fare-v2，由編排層處理） */
   charterPlans?: Partial<Record<CharterPlanKey, CharterPlan>>;
+  /**
+   * 平面道路加成費率覆寫（NT$/km）— 留空套全域 fare_rules/v1.surfaceSurcharge.surfaceRatePerKm。
+   * 視窗 1：mpv-vip / van-9 等高佔用車型未來可獨立設較高費率。
+   */
+  surfaceRatePerKm?: number;
 }
 
 export interface VehicleImages {
@@ -146,24 +151,6 @@ export type WeekendJamMode = 'OFF' | 'ALL_DAY' | 'EVENING_ONLY';
 
 export type Weekday = 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
 
-export interface PeakWindow {
-  days: Weekday[];
-  /** 'HH:MM' 24 小時制（台北時區） */
-  start: string;
-  end: string;
-  /** 該時段專屬費率；未設則用 defaultNtdPerMinute */
-  ntdPerMinute?: number;
-  /** 行程類型過濾；未設或空陣列 = 套用全部行程 */
-  orderTypes?: OrderType[];
-}
-
-export interface TrafficJamRule {
-  enabled: boolean;
-  peakWindows: PeakWindow[];
-  weekendMode: WeekendJamMode;
-  defaultNtdPerMinute: number;
-}
-
 export interface PromoWindow {
   days: Weekday[];
   /** 'HH:MM' 24 小時制（台北時區） */
@@ -229,6 +216,32 @@ export interface DistanceTierRule {
   tiers: DistanceTier[];
 }
 
+/**
+ * 平面道路加成（surface surcharge）：依 polyline steps[] 分高速 / 平面，平面里程超過免費門檻部分加價。
+ *
+ * 視窗 1（fare 引擎加平面道路加成 + 砍顛峰塞車費）：
+ * 平面 km 是「實際成本驅動因子」的數值化代理 — 不判定「偏遠地區」，沒有靜態地名清單。
+ *
+ * 公式：
+ *   if (!enabled || totalKm < minTotalKm) → 0
+ *   chargeableKm = max(0, surfaceKm − surfaceFreeKm)
+ *   surcharge = min(surchargeCap, chargeableKm × rate)
+ *   rate = vehicle.surfaceRatePerKm ?? surfaceRatePerKm（全域）
+ */
+export interface SurfaceSurchargeRule {
+  enabled: boolean;
+  /** 免加成門檻（km）— 平面 km 超過此值才開始加價 */
+  surfaceFreeKm: number;
+  /** 總 km 低於此值不觸發（避免市區短單誤傷） */
+  minTotalKm: number;
+  /** 基準費率 NT$/km；fleet_vehicles/{id}.surfaceRatePerKm 可覆寫 */
+  surfaceRatePerKm: number;
+  /** 單筆加成上限 NT$ */
+  surchargeCap: number;
+  /** 高速路型 regex 白名單（i flag）；未命中即視為平面。caller 自行確保合法 regex */
+  highwayPatterns: string[];
+}
+
 export interface FareRules {
   version: number;
   currency: string;
@@ -236,12 +249,13 @@ export interface FareRules {
   rounding: number;
   mountain: MountainRule;
   crossCounty: CrossCountyRule;
-  trafficJam: TrafficJamRule;
   freeway: FreewayRule;
   promo: PromoRule;
   surcharge: SurchargeRule;
   /** 里程分段累進折扣（distanceFee 計算規則）；全車型一致；折扣套在 distanceFee 上 */
   distanceTier: DistanceTierRule;
+  /** 平面道路加成（視窗 1）— 取代視窗 1 砍掉的顛峰塞車費 */
+  surfaceSurcharge: SurfaceSurchargeRule;
   /** Charter Fare V1：包車（orderType='charter'）獨立計費規則；W1 鎖介面，W2 實作 */
   charter: CharterRule;
 }
@@ -358,6 +372,10 @@ export interface RouteMetrics {
   // OSM 道路索引
   freewayKm: number;
   hasTrunk: boolean;
+  /** 視窗 1：依 Routes API steps[] regex 判定高速里程（OSM freewayKm 為 fallback） */
+  highwayKm: number;
+  /** 視窗 1：max(0, distanceKm − highwayKm)；平面道路加成依此值計算 */
+  surfaceKm: number;
   // 縣市 GeoJSON point-in-polygon
   countiesVisited: string[];
   // 直線距離
@@ -380,14 +398,19 @@ export interface FareBreakdownV2 {
   distanceFee: number;
   /** 起跳費 floor 後實際計入小計的里程相關費用 = max(baseFare, distanceFee) */
   chargedDistanceFee: number;
-  jamFee: number;
-  /** chargedDistanceFee + jamFee（套係數前） */
+  /** chargedDistanceFee（套係數前；視窗 1 砍 jamFee 後等於 chargedDistanceFee） */
   variableSubtotal: number;
   mountainMul: number;
   /** variableSubtotal × mountainMul */
   variableScaled: number;
   crossCountyFee: number;
   freewayToll: number;
+  /** 視窗 1：高速里程（informational，UI 顯示） */
+  highwayKm: number;
+  /** 視窗 1：平面里程（informational，UI 顯示） */
+  surfaceKm: number;
+  /** 視窗 1：平面道路加成（不被山區係數放大） */
+  surfaceSurcharge: number;
   extrasSum: number;
   /** 時段固定加價金額（平面加成，不被山區係數連乘） */
   surcharge: number;
@@ -423,15 +446,6 @@ export const DEFAULT_FARE_RULES: FareRules = {
     tieredNtd: [200, 350, 500],
     excludeTpeNtpeTyn: true,
   },
-  trafficJam: {
-    enabled: true,
-    peakWindows: [
-      { days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '07:00', end: '09:30' },
-      { days: ['MON', 'TUE', 'WED', 'THU', 'FRI'], start: '17:00', end: '19:30' },
-    ],
-    weekendMode: 'OFF',
-    defaultNtdPerMinute: 15,
-  },
   freeway: {
     enabled: true,
     freeKm: 20,
@@ -457,6 +471,20 @@ export const DEFAULT_FARE_RULES: FareRules = {
       { fromKm: 0,  discountPct: 0 },
       { fromKm: 10, discountPct: 10 },
       { fromKm: 30, discountPct: 20 },
+    ],
+  },
+  surfaceSurcharge: {
+    enabled: true,
+    surfaceFreeKm: 5,
+    minTotalKm: 20,
+    surfaceRatePerKm: 30,
+    surchargeCap: 1500,
+    highwayPatterns: [
+      '國道[一二三四五六八十]+號?',
+      '國[1-9]',
+      'freeway|expressway',
+      '高速公路|快速道路',
+      '台\\s*(61|62|64|65|66|68|74|76|78|82|84|86|88)',
     ],
   },
   charter: {
@@ -558,43 +586,9 @@ function orderTypeMatches(
   return orderType !== null && windowOrderTypes.includes(orderType);
 }
 
-/** 找出 pickupTime 落在哪個顛峰時段，回傳適用費率（NTD/min）；非顛峰回 null。 */
-function findActivePeakRate(
-  t: Date,
-  rule: TrafficJamRule,
-  orderType: OrderType | null,
-): number | null {
-  const { dayKey, hhmm } = taipeiParts(t);
-  const isWeekend = dayKey === 'SAT' || dayKey === 'SUN';
-  if (isWeekend) {
-    if (rule.weekendMode === 'OFF') return null;
-    if (rule.weekendMode === 'ALL_DAY') return rule.defaultNtdPerMinute;
-    // EVENING_ONLY：僅 17:00-21:00
-    return hhmm >= '17:00' && hhmm <= '21:00' ? rule.defaultNtdPerMinute : null;
-  }
-  const w = rule.peakWindows.find(
-    (pw) =>
-      pw.days.includes(dayKey) &&
-      hhmm >= pw.start &&
-      hhmm <= pw.end &&
-      orderTypeMatches(pw.orderTypes, orderType),
-  );
-  if (!w) return null;
-  return w.ntdPerMinute ?? rule.defaultNtdPerMinute;
-}
-
-/** 顛峰塞車費：顛峰時段內，純塞車分鐘 × 每分鐘費率。 */
-export function computeJamFee(
-  pureJamMinutes: number,
-  pickupTime: Date,
-  rule: TrafficJamRule,
-  orderType: OrderType | null = null,
-): number {
-  if (!rule.enabled || pureJamMinutes <= 0) return 0;
-  const rate = findActivePeakRate(pickupTime, rule, orderType);
-  if (rate === null) return 0;
-  return pureJamMinutes * rate;
-}
+// 視窗 1：computeJamFee / findActivePeakRate / TrafficJamRule / PeakWindow 已砍。
+// 顛峰塞車費（時間維度）被視窗 1「平面道路加成」（calculateSurfaceSurcharge）取代 —
+// 平面 km 是實際成本驅動因子，比時間維度的塞車模擬穩定可預測。
 
 /**
  * 找出 pickupTime 落在哪個優惠時段，回傳適用折扣金額（NTD 固定額）；無匹配回 0。
@@ -718,6 +712,38 @@ export function computeDistanceFee(
     fee += segKm * perKmRate * (1 - pct / 100);
   }
   return fee;
+}
+
+/**
+ * 平面道路加成（視窗 1）：平面 km 超過免費門檻的部分 × rate，上限 surchargeCap。
+ *
+ * 流程：
+ *   1. rule.enabled=false → 0
+ *   2. totalKm < rule.minTotalKm → 0（市區短單不誤傷）
+ *   3. chargeableKm = max(0, surfaceKm − rule.surfaceFreeKm)
+ *   4. rate = vehicleSurfaceRatePerKm ?? rule.surfaceRatePerKm
+ *   5. surcharge = chargeableKm × rate
+ *   6. return min(rule.surchargeCap, surcharge)
+ *
+ * highwayKm 目前僅作 trace 用（呼叫端 informational）；公式只用 surfaceKm。
+ */
+export function calculateSurfaceSurcharge(
+  highwayKm: number,
+  surfaceKm: number,
+  totalKm: number,
+  rule: SurfaceSurchargeRule,
+  vehicleSurfaceRatePerKm?: number,
+): number {
+  void highwayKm;
+  if (!rule.enabled) return 0;
+  if (totalKm < rule.minTotalKm) return 0;
+  const chargeableKm = Math.max(0, surfaceKm - rule.surfaceFreeKm);
+  if (chargeableKm <= 0) return 0;
+  const rate = typeof vehicleSurfaceRatePerKm === 'number' && Number.isFinite(vehicleSurfaceRatePerKm) && vehicleSurfaceRatePerKm > 0
+    ? vehicleSurfaceRatePerKm
+    : rule.surfaceRatePerKm;
+  const surcharge = chargeableKm * rate;
+  return Math.min(rule.surchargeCap, surcharge);
 }
 
 /** 國道通行費：首段免費 + 每 km 費率 + 日上限後折扣（單次接送通常不觸及上限）。 */
@@ -962,21 +988,30 @@ export function calculateCharterFareV2(
 
 /**
  * Fare V2 主計算 — 組合 6 項加總 → FareBreakdownV2。純函式，前後端皆可呼叫。
+ *
+ * 視窗 1 公式（hardcode）：
+ *   raw   = max(baseFare, distanceFee) × mountainMul
+ *         + crossCountyFee + freewayToll + surfaceSurcharge
+ *         + extrasSum + surcharge − promoDiscount
+ *   final = ⌈ raw / rounding ⌉ × rounding，鎖最低 0
+ *
+ * 視窗 1 改動：
+ *   - 砍 jamFee（顛峰塞車費）
+ *   - 加 surfaceSurcharge（平面道路加成，不被山區係數放大）
+ *   - vehicle.surfaceRatePerKm 可覆寫全域 rate
  */
 export function calculateFareV2(
-  vehicle: Pick<FleetVehicle, 'baseFare' | 'perKmRate'>,
+  vehicle: Pick<FleetVehicle, 'baseFare' | 'perKmRate' | 'surfaceRatePerKm'>,
   metrics: RouteMetrics,
   pickupTime: Date,
   extras: ReadonlyArray<Pick<FleetExtra, 'price'>>,
   rules: FareRules,
   orderType: OrderType | null = null,
 ): FareBreakdownV2 {
-  // 1. 基本里程費（分段累進折扣，全車型一致）+ 塞車費
+  // 1. 基本里程費（分段累進折扣，全車型一致）
   const distanceFee = computeDistanceFee(metrics.distanceKm, vehicle.perKmRate, rules.distanceTier);
-  const jamFee = computeJamFee(metrics.pureJamMinutes, pickupTime, rules.trafficJam, orderType);
 
-  // 1b. 起跳費 floor：里程費 < 起跳費 → 以起跳費計；里程費 ≥ 起跳費 → 以里程費計
-  //     等價於 max(baseFare, distanceFee)；baseFare 不再單獨加總（已含在 chargedDistanceFee）
+  // 1b. 起跳費 floor：max(baseFare, distanceFee)；baseFare 不再單獨加總
   const chargedDistanceFee = Math.max(vehicle.baseFare, distanceFee);
 
   // 2. 山區係數
@@ -986,6 +1021,15 @@ export function calculateFareV2(
   const crossCountyFee = computeCrossCountyFee(metrics.countiesVisited, rules.crossCounty);
   const freewayToll = computeFreewayToll(metrics.freewayKm, rules.freeway);
 
+  // 3b. 平面道路加成（視窗 1）— 不被山區係數放大；vehicle.surfaceRatePerKm 可覆寫
+  const surfaceSurcharge = calculateSurfaceSurcharge(
+    metrics.highwayKm,
+    metrics.surfaceKm,
+    metrics.distanceKm,
+    rules.surfaceSurcharge,
+    vehicle.surfaceRatePerKm,
+  );
+
   // 4. 加值服務
   const extrasSum = extras.reduce((sum, e) => sum + e.price, 0);
 
@@ -993,13 +1037,14 @@ export function calculateFareV2(
   const surcharge = computeSurcharge(pickupTime, rules.surcharge, orderType);
   const promoDiscount = computePromoDiscount(pickupTime, rules.promo, orderType);
 
-  // 6. 公式骨架：chargedDistanceFee（已含起跳） + jamFee → 套山區係數 → 加固定費 / 服務 / 時段差
-  const variableSubtotal = chargedDistanceFee + jamFee;
+  // 6. 公式骨架：chargedDistanceFee → 套山區係數 → 加固定費 / 服務 / 時段差 / 平面加成
+  const variableSubtotal = chargedDistanceFee;
   const variableScaled = variableSubtotal * mountainMul;
   const raw =
     variableScaled +
     crossCountyFee +
     freewayToll +
+    surfaceSurcharge +
     extrasSum +
     surcharge -
     promoDiscount;
@@ -1011,12 +1056,14 @@ export function calculateFareV2(
     baseFare: vehicle.baseFare,
     distanceFee,
     chargedDistanceFee,
-    jamFee,
     variableSubtotal,
     mountainMul,
     variableScaled,
     crossCountyFee,
     freewayToll,
+    highwayKm: metrics.highwayKm,
+    surfaceKm: metrics.surfaceKm,
+    surfaceSurcharge,
     extrasSum,
     surcharge,
     promoDiscount,

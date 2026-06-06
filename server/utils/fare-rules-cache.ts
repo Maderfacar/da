@@ -16,9 +16,9 @@ import {
   type FareRules,
   type MountainTier,
   type OrderType,
-  type PeakWindow,
   type PromoWindow,
   type SurchargeWindow,
+  type SurfaceSurchargeRule,
   type Weekday,
   type WeekendJamMode,
 } from '~shared/pricing';
@@ -102,33 +102,6 @@ function validateCharterMountainTiers(raw: unknown): MountainTier[] | string {
   return tiers;
 }
 
-function validatePeakWindows(raw: unknown): PeakWindow[] | string {
-  if (!Array.isArray(raw)) return 'trafficJam.peakWindows 必須是陣列';
-  const windows: PeakWindow[] = [];
-  for (const w of raw) {
-    if (!isObj(w)) return 'peakWindow 必須是物件';
-    if (!Array.isArray(w.days) || w.days.length === 0) return 'peakWindow.days 必須是非空陣列';
-    if (!w.days.every((d) => isStr(d) && VALID_WEEKDAYS.has(d))) return 'peakWindow.days 含無效星期代碼';
-    if (!isStr(w.start) || !HHMM_RE.test(w.start)) return 'peakWindow.start 必須是 HH:MM';
-    if (!isStr(w.end) || !HHMM_RE.test(w.end)) return 'peakWindow.end 必須是 HH:MM';
-    if (w.start >= w.end) return 'peakWindow.start 必須早於 end';
-    if (w.ntdPerMinute !== undefined && !isNonNegNum(w.ntdPerMinute)) {
-      return 'peakWindow.ntdPerMinute 必須 ≥ 0';
-    }
-    const peakOrderTypes = parseOrderTypes(w.orderTypes);
-    if (typeof peakOrderTypes === 'string') return peakOrderTypes;
-    const pw: PeakWindow = {
-      days: w.days as Weekday[],
-      start: w.start,
-      end: w.end,
-    };
-    if (w.ntdPerMinute !== undefined) pw.ntdPerMinute = w.ntdPerMinute as number;
-    if (peakOrderTypes !== undefined) pw.orderTypes = peakOrderTypes;
-    windows.push(pw);
-  }
-  return windows;
-}
-
 function validatePromoWindows(raw: unknown): PromoWindow[] | string {
   if (!Array.isArray(raw)) return 'promo.windows 必須是陣列';
   const windows: PromoWindow[] = [];
@@ -176,6 +149,38 @@ function validateDistanceTiers(raw: unknown): DistanceTier[] | string {
     }
   }
   return tiers;
+}
+
+/**
+ * 視窗 1：驗證平面道路加成規則。完整模式（admin PATCH 後 doc 必有此區）。
+ * 向後相容由 caller 端 default fallback 處理（doc 缺欄位 → DEFAULT_FARE_RULES.surfaceSurcharge）。
+ */
+function validateSurfaceSurchargeRule(raw: unknown): SurfaceSurchargeRule | string {
+  if (!isObj(raw)) return 'surfaceSurcharge 必須是物件';
+  if (!isBool(raw.enabled)) return 'surfaceSurcharge.enabled 必須是 boolean';
+  if (!isNonNegNum(raw.surfaceFreeKm)) return 'surfaceSurcharge.surfaceFreeKm 必須 ≥ 0';
+  if (!isNonNegNum(raw.minTotalKm)) return 'surfaceSurcharge.minTotalKm 必須 ≥ 0';
+  if (!isNonNegNum(raw.surfaceRatePerKm)) return 'surfaceSurcharge.surfaceRatePerKm 必須 ≥ 0';
+  if (!isNonNegNum(raw.surchargeCap)) return 'surfaceSurcharge.surchargeCap 必須 ≥ 0';
+  if (!Array.isArray(raw.highwayPatterns) || !raw.highwayPatterns.every(isStr)) {
+    return 'surfaceSurcharge.highwayPatterns 必須是字串陣列';
+  }
+  // 驗證每條 pattern 是合法 regex；非法即拒（避免 silent fail 與管理員預期不符）
+  for (const p of raw.highwayPatterns) {
+    try {
+      new RegExp(p as string, 'i');
+    } catch {
+      return `surfaceSurcharge.highwayPatterns 含無效 regex：${String(p)}`;
+    }
+  }
+  return {
+    enabled: raw.enabled,
+    surfaceFreeKm: raw.surfaceFreeKm,
+    minTotalKm: raw.minTotalKm,
+    surfaceRatePerKm: raw.surfaceRatePerKm,
+    surchargeCap: raw.surchargeCap,
+    highwayPatterns: raw.highwayPatterns as string[],
+  };
 }
 
 function validateSurchargeWindows(raw: unknown): SurchargeWindow[] | string {
@@ -236,16 +241,8 @@ export function validateFareRules(raw: unknown): ValidateResult {
   }
   if (!isBool(c.excludeTpeNtpeTyn)) return { ok: false, error: 'crossCounty.excludeTpeNtpeTyn 必須是 boolean' };
 
-  // trafficJam
-  const j = raw.trafficJam;
-  if (!isObj(j)) return { ok: false, error: 'trafficJam 缺失' };
-  if (!isBool(j.enabled)) return { ok: false, error: 'trafficJam.enabled 必須是 boolean' };
-  if (!isStr(j.weekendMode) || !VALID_WEEKEND_MODES.has(j.weekendMode)) {
-    return { ok: false, error: 'trafficJam.weekendMode 必須是 OFF / ALL_DAY / EVENING_ONLY' };
-  }
-  if (!isNonNegNum(j.defaultNtdPerMinute)) return { ok: false, error: 'trafficJam.defaultNtdPerMinute 必須 ≥ 0' };
-  const windows = validatePeakWindows(j.peakWindows);
-  if (typeof windows === 'string') return { ok: false, error: windows };
+  // 視窗 1：trafficJam 軟移除 — 不再驗證；舊 doc 含此欄位（即使 enabled=true）也忽略不算 jamFee。
+  // 保留 raw.trafficJam audit trail；engine（calculateFareV2）已移除 computeJamFee 呼叫。
 
   // freeway
   const f = raw.freeway;
@@ -296,6 +293,14 @@ export function validateFareRules(raw: unknown): ValidateResult {
       weekendMode: s.weekendMode as WeekendJamMode,
       defaultSurchargeNtd: s.defaultSurchargeNtd,
     };
+  }
+
+  // surfaceSurcharge（視窗 1，向後相容：舊 fare_rules/v1 doc 無此欄位 → 套預設）
+  let surfaceSurcharge = DEFAULT_FARE_RULES.surfaceSurcharge;
+  if (raw.surfaceSurcharge !== undefined) {
+    const validated = validateSurfaceSurchargeRule(raw.surfaceSurcharge);
+    if (typeof validated === 'string') return { ok: false, error: validated };
+    surfaceSurcharge = validated;
   }
 
   // distanceTier（向後相容：舊 fare_rules/v1 doc 無此欄位 → 套預設，不視為格式錯誤）
@@ -371,12 +376,6 @@ export function validateFareRules(raw: unknown): ValidateResult {
         tieredNtd: c.tieredNtd as number[],
         excludeTpeNtpeTyn: c.excludeTpeNtpeTyn,
       },
-      trafficJam: {
-        enabled: j.enabled,
-        peakWindows: windows,
-        weekendMode: j.weekendMode as WeekendJamMode,
-        defaultNtdPerMinute: j.defaultNtdPerMinute,
-      },
       freeway: {
         enabled: f.enabled,
         freeKm: f.freeKm,
@@ -387,6 +386,7 @@ export function validateFareRules(raw: unknown): ValidateResult {
       promo,
       surcharge,
       distanceTier,
+      surfaceSurcharge,
       charter,
     },
   };

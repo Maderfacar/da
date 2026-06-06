@@ -107,6 +107,9 @@ function _buildSyntheticMetrics(): RouteMetrics {
     elevationDiffM,
     freewayKm: 0,
     hasTrunk: false,
+    // 視窗 1：charter 引擎不算 surfaceSurcharge，但 RouteMetrics 仍需 highway/surface 欄位
+    highwayKm: input.distanceKm,
+    surfaceKm: 0,
     countiesVisited: [],
     straightLineKm: input.distanceKm,
     sinuosity,

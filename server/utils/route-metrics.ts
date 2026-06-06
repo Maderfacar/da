@@ -16,6 +16,7 @@ import type { RouteMetrics } from '~shared/pricing';
 import { decodePolyline, haversineKm, samplePointsByDistanceKm, type LatLng } from '@@/utils/polyline';
 import { nearestRoadClass } from '@@/utils/osm-roads-index';
 import { detectCounties } from '@@/utils/county-detect';
+import { parseRouteSegments, DEFAULT_HIGHWAY_PATTERNS, type RouteStepLite } from '~shared/route-segments';
 
 export class RouteMetricsError extends Error {
   constructor(message: string) {
@@ -39,6 +40,11 @@ export interface RouteMetricsInput {
    * - 失敗 silent skip（returnLegPolyline 留 undefined，呼叫端 detectRoundTrip 回 false）
    */
   fetchReturnLeg?: boolean;
+  /**
+   * 視窗 1：平面道路加成 — 高速路型 regex 白名單覆寫。
+   * 留空套 DEFAULT_HIGHWAY_PATTERNS；通常由 fare-calculator-v2 編排層從 rules.surfaceSurcharge.highwayPatterns 傳入。
+   */
+  highwayPatterns?: ReadonlyArray<string>;
 }
 
 const ROUTES_ENDPOINT = 'https://routes.googleapis.com/directions/v2:computeRoutes';
@@ -67,12 +73,22 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 
+interface RoutesV2Step {
+  distanceMeters?: number;
+  navigationInstruction?: { instructions?: string };
+}
+
+interface RoutesV2Leg {
+  steps?: RoutesV2Step[];
+}
+
 interface RoutesV2Response {
   routes?: Array<{
     distanceMeters?: number;
     duration?: string;
     staticDuration?: string;
     polyline?: { encodedPolyline?: string };
+    legs?: RoutesV2Leg[];
   }>;
 }
 
@@ -85,6 +101,7 @@ async function callRoutesV2(input: RouteMetricsInput): Promise<{
   staticDurationSec: number;
   durationSec: number;
   polylineEncoded: string;
+  steps: RouteStepLite[];
 }> {
   const body: Record<string, unknown> = {
     origin: toWaypoint(input.origin),
@@ -112,7 +129,8 @@ async function callRoutesV2(input: RouteMetricsInput): Promise<{
           'Content-Type': 'application/json',
           'X-Goog-Api-Key': input.apiKey,
           'X-Goog-FieldMask':
-            'routes.distanceMeters,routes.duration,routes.staticDuration,routes.polyline.encodedPolyline',
+            'routes.distanceMeters,routes.duration,routes.staticDuration,routes.polyline.encodedPolyline,' +
+            'routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction.instructions',
         },
         body: JSON.stringify(body),
       },
@@ -132,11 +150,24 @@ async function callRoutesV2(input: RouteMetricsInput): Promise<{
     throw new RouteMetricsError('Routes API 回應缺少必要欄位');
   }
 
+  // 拆所有 legs 的 steps 成扁平 RouteStepLite[]（順序保留）；缺欄位 silent skip
+  const steps: RouteStepLite[] = [];
+  const legs = Array.isArray(route.legs) ? route.legs : [];
+  for (const leg of legs) {
+    const ls = Array.isArray(leg?.steps) ? leg.steps : [];
+    for (const s of ls) {
+      const instructions = s?.navigationInstruction?.instructions ?? '';
+      const meters = typeof s?.distanceMeters === 'number' ? s.distanceMeters : 0;
+      steps.push({ instructions, distanceKm: meters / 1000 });
+    }
+  }
+
   return {
     distanceKm: route.distanceMeters / 1000,
     staticDurationSec: parseFloat(route.staticDuration ?? route.duration ?? '0'),
     durationSec: parseFloat(route.duration ?? route.staticDuration ?? '0'),
     polylineEncoded: route.polyline.encodedPolyline,
+    steps,
   };
 }
 
@@ -227,6 +258,15 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
   const freeFlowKmh =
     route.staticDurationSec > 0 ? route.distanceKm / (route.staticDurationSec / 3600) : 0;
 
+  // 5a. 視窗 1：steps regex 分高速 / 平面；失敗用 OSM freewayKm 回退。
+  //     route.steps 空陣列 → segments.highwayKm=0 → 落回 OSM 數值。
+  const patterns = input.highwayPatterns ?? DEFAULT_HIGHWAY_PATTERNS;
+  const segments = parseRouteSegments(route.steps, patterns);
+  const highwayKm = route.steps.length > 0 && segments.highwayKm > 0
+    ? segments.highwayKm
+    : freewayKm;
+  const surfaceKm = Math.max(0, route.distanceKm - highwayKm);
+
   // 5. Charter Fare V1：取 X→A polyline 供來回判定（失敗 silent skip）
   let returnLegPolyline: string | undefined;
   if (input.fetchReturnLeg && input.waypoints && input.waypoints.length > 0) {
@@ -253,6 +293,8 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
     elevationDiffM: elevationDiff ?? 0,
     freewayKm,
     hasTrunk,
+    highwayKm,
+    surfaceKm,
     countiesVisited,
     straightLineKm,
     sinuosity,

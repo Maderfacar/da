@@ -32,7 +32,7 @@ export interface GetRouteWithFareInput {
   origin: LatLng;
   destination: LatLng;
   waypoints?: LatLng[];
-  vehicle: Pick<FleetVehicle, 'baseFare' | 'perKmRate'>;
+  vehicle: Pick<FleetVehicle, 'baseFare' | 'perKmRate' | 'surfaceRatePerKm'>;
   extras: ReadonlyArray<Pick<FleetExtra, 'price'>>;
   /** 預約上車時間 — 用於 Routes API departureTime 與顛峰塞車費判定 */
   pickupTime: Date;
@@ -100,14 +100,16 @@ async function logFareV2Failure(err: unknown, orderId?: string): Promise<void> {
  */
 export async function getRouteWithFare(input: GetRouteWithFareInput): Promise<FareResult> {
   try {
+    // 視窗 1：先載 rules（為了把 surfaceSurcharge.highwayPatterns 帶進 metrics 算 highwayKm/surfaceKm）
+    const rules = await getFareRules();
     const metrics = await getRouteMetricsV2({
       origin: input.origin,
       destination: input.destination,
       waypoints: input.waypoints,
       departureTime: input.pickupTime,
       apiKey: input.apiKey,
+      highwayPatterns: rules.surfaceSurcharge.highwayPatterns,
     });
-    const rules = await getFareRules();
     const breakdown = calculateFareV2(
       input.vehicle,
       metrics,
@@ -157,6 +159,8 @@ export async function getCharterRouteWithFare(
     }
   }
 
+  // 視窗 1：先載 rules 為了把 surfaceSurcharge.highwayPatterns 帶進 metrics
+  const rules = await getFareRules();
   const metrics = await getRouteMetricsV2({
     origin: input.origin,
     destination: input.destination,
@@ -164,9 +168,8 @@ export async function getCharterRouteWithFare(
     departureTime: input.pickupTime,
     apiKey: input.apiKey,
     fetchReturnLeg: true,
+    highwayPatterns: rules.surfaceSurcharge.highwayPatterns,
   });
-
-  const rules = await getFareRules();
   const X = input.waypoints && input.waypoints.length > 0
     ? input.waypoints[input.waypoints.length - 1]!
     : null;

@@ -28,12 +28,6 @@ export const AIRPORT_CALIBRATION_RULES: FareRules = {
     tieredNtd: [150, 0, 50, 100],
     excludeTpeNtpeTyn: true,
   },
-  trafficJam: {
-    enabled: true,
-    peakWindows: [],
-    weekendMode: 'OFF',
-    defaultNtdPerMinute: 15,
-  },
   freeway: {
     enabled: true,
     freeKm: 0,
@@ -62,6 +56,15 @@ export const AIRPORT_CALIBRATION_RULES: FareRules = {
       { fromKm: 100, discountPct: 80 },
       { fromKm: 160, discountPct: 55 },
     ],
+  },
+  // 視窗 1：校準目標表凍結於「無平面加成」階段；disabled 以保留 target 曲線一致性。
+  surfaceSurcharge: {
+    enabled: false,
+    surfaceFreeKm: 5,
+    minTotalKm: 20,
+    surfaceRatePerKm: 30,
+    surchargeCap: 1500,
+    highwayPatterns: [],
   },
   charter: {
     enabled: true,
@@ -203,6 +206,9 @@ export function calibrationMetrics(distanceKm: number, countiesVisited: string[]
     elevationDiffM: 50,
     freewayKm: 0,
     hasTrunk: false,
+    // 視窗 1：校準場景凍結 highway/surface — 不參與 surcharge（rules.surfaceSurcharge.enabled=false 即可）
+    highwayKm: 0,
+    surfaceKm: 0,
     countiesVisited,
     straightLineKm: distanceKm * 0.9,
     sinuosity: 1.1,

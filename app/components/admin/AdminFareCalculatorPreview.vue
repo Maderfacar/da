@@ -85,6 +85,9 @@ function _buildSyntheticMetrics(): RouteMetrics {
     elevationDiffM: input.elevationDiffM,
     freewayKm: input.freewayKm,
     hasTrunk: false,
+    // 視窗 1：admin 試算機沒有真實 steps，用 freewayKm 當 highwayKm 估算（與乘客估算機一致）。
+    highwayKm: Math.max(0, Math.min(input.freewayKm, input.distanceKm)),
+    surfaceKm: Math.max(0, input.distanceKm - Math.max(0, Math.min(input.freewayKm, input.distanceKm))),
     countiesVisited: _buildCountiesVisited(input.crossCountyCount),
     straightLineKm: input.distanceKm,
     sinuosity: input.sinuosity,

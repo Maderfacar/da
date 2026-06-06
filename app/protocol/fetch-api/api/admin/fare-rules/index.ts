@@ -51,7 +51,8 @@ export interface AdminFareSimulateRes {
   hits: {
     mountain: { score: number; multiplier: number };
     crossCounty: { visited: string[]; crossings: number; fee: number };
-    peak: { active: boolean; jamFee: number };
+    /** 視窗 1：平面道路加成（取代砍除的顛峰塞車費） */
+    surface: { highwayKm: number; surfaceKm: number; surchargeAmount: number };
     promo: { active: boolean; discount: number };
     surcharge: { active: boolean; amount: number };
   };
