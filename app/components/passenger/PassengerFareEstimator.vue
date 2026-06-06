@@ -457,10 +457,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &.is-primary {
     background: var(--da-dark);
-    color: var(--da-white);
+    color: #fff;
     border-color: var(--da-dark);
 
-    &:hover:not(:disabled) { background: var(--da-amber-light, #d4860a); border-color: var(--da-amber-light, #d4860a); }
+    &:hover:not(:disabled) {
+      background: var(--da-amber-light);
+      border-color: var(--da-amber-light);
+      color: #fff;
+    }
   }
 
   &.is-secondary {
