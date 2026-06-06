@@ -52,7 +52,13 @@ export interface AdminFareSimulateRes {
     mountain: { score: number; multiplier: number };
     crossCounty: { visited: string[]; crossings: number; fee: number };
     /** 視窗 1：平面道路加成（取代砍除的顛峰塞車費） */
-    surface: { highwayKm: number; surfaceKm: number; surchargeAmount: number };
+    surface: {
+      highwayKm: number;
+      surfaceKm: number;
+      surchargeAmount: number;
+      /** 視窗 2：每段 step 明細（Routes API 失敗時為空陣列） */
+      breakdown: Array<{ instructions: string; distanceKm: number; isHighway: boolean }>;
+    };
     promo: { active: boolean; discount: number };
     surcharge: { active: boolean; amount: number };
   };

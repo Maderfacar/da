@@ -283,9 +283,9 @@ const fmt = (n: number): string => {
         | 里程費（含起跳）{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
       span.AdminFareCalculatorPreview__line-val
         | NT$ {{ fmt(result.chargedDistanceFee * result.mountainMul) }}
-    .AdminFareCalculatorPreview__line
-      span.AdminFareCalculatorPreview__line-key 顛峰塞車{{ result.mountainMul !== 1 ? `（山區 ×${result.mountainMul}）` : '' }}
-      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.jamFee * result.mountainMul) }}
+    .AdminFareCalculatorPreview__line(v-if="result.surfaceSurcharge > 0")
+      span.AdminFareCalculatorPreview__line-key 平面道路加成（不放大）
+      span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.surfaceSurcharge) }}
     .AdminFareCalculatorPreview__line
       span.AdminFareCalculatorPreview__line-key 跨縣市補貼
       span.AdminFareCalculatorPreview__line-val +NT$ {{ fmt(result.crossCountyFee) }}

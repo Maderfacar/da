@@ -301,6 +301,8 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
     computedAt: Date.now(),
     apiSourcesOk: { routes: true, elevation: elevationOk, osm: osmOk, counties: countiesOk },
     ...(returnLegPolyline ? { returnLegPolyline } : {}),
+    // 視窗 2：sandbox 用；orders/index.post.ts 寫 fareBreakdown 時不會帶到此欄位
+    segmentsBreakdown: segments.breakdown,
   };
 }
 

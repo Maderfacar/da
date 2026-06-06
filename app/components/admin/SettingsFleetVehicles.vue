@@ -48,6 +48,8 @@ interface VehicleFormState {
   capacity: number;
   baseFare: number;
   perKmRate: number;
+  /** 平面道路加成費率覆寫（NT$/km）；0 = 未覆寫，由全域 fare_rules 套用 */
+  surfaceRatePerKm: number;
   icon: string;
   sortOrder: number;
   enabled: boolean;
@@ -197,6 +199,7 @@ function _emptyForm(): VehicleFormState {
     capacity: 4,
     baseFare: 300,
     perKmRate: 25,
+    surfaceRatePerKm: 0,
     icon: 'mdi:car',
     sortOrder: 99,
     enabled: true,
@@ -277,6 +280,7 @@ const ClickOpenEdit = (v: FleetVehicleDto) => {
   form.capacity = v.capacity;
   form.baseFare = v.baseFare;
   form.perKmRate = v.perKmRate;
+  form.surfaceRatePerKm = v.surfaceRatePerKm ?? 0;
   form.icon = v.icon;
   form.sortOrder = v.sortOrder;
   form.enabled = v.enabled;
@@ -315,6 +319,9 @@ const _validate = (): string => {
   if (!Number.isInteger(form.capacity) || form.capacity < 1) return 'capacity 必須是正整數';
   if (!(form.baseFare >= 0)) return 'baseFare 必須 ≥ 0';
   if (!(form.perKmRate >= 0)) return 'perKmRate 必須 ≥ 0';
+  if (!Number.isFinite(form.surfaceRatePerKm) || form.surfaceRatePerKm < 0) {
+    return '平面加成費率覆寫必須 ≥ 0（0 = 不覆寫，套用全域）';
+  }
   if (!form.icon.trim()) return 'icon 必填（例：mdi:car）';
   if (!Number.isInteger(form.sortOrder)) return 'sortOrder 必須整數';
   // 包車套餐欄位驗證：僅 enabled=true 的 plan 強制 4 數值欄位 > 0（admin 沒填會被乘客扣 0 元）
@@ -369,6 +376,8 @@ const ClickSave = async () => {
       capacity: form.capacity,
       baseFare: form.baseFare,
       perKmRate: form.perKmRate,
+      // > 0 才當作覆寫；0 / 負 → null（清除覆寫，server 端 fallback 全域）
+      surfaceRatePerKm: form.surfaceRatePerKm > 0 ? form.surfaceRatePerKm : null,
       icon: form.icon.trim(),
       sortOrder: form.sortOrder,
       enabled: form.enabled,
@@ -400,6 +409,8 @@ const ClickToggleEnabled = async (v: FleetVehicleDto) => {
       capacity: v.capacity,
       baseFare: v.baseFare,
       perKmRate: v.perKmRate,
+      // 保留既有 surfaceRatePerKm 覆寫，避免 toggle enabled 時被清除
+      surfaceRatePerKm: v.surfaceRatePerKm ?? null,
       icon: v.icon,
       sortOrder: v.sortOrder,
       enabled: !v.enabled,
@@ -475,6 +486,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
           span 起跳 NT$ {{ v.baseFare }}
           span ·
           span {{ v.perKmRate }}/km
+          template(v-if="v.surfaceRatePerKm && v.surfaceRatePerKm > 0")
+            span ·
+            span 平面覆寫 {{ v.surfaceRatePerKm }}/km
           template(v-if="v.luggageDescription?.zh")
             span ·
             span {{ v.luggageDescription.zh }}
@@ -615,6 +629,18 @@ const ClickDelete = async (v: FleetVehicleDto) => {
               type="number"
               min="0"
               inputmode="numeric"
+            )
+
+        //- 平面道路加成費率覆寫（視窗 1）— 0/負/空 = 套全域
+        .SettingsFleetVehicles__field-grid
+          .SettingsFleetVehicles__field
+            label.SettingsFleetVehicles__label 平面加成覆寫 (NT$/km，0 = 套全域)
+            input.SettingsFleetVehicles__input(
+              v-model.number="form.surfaceRatePerKm"
+              type="number"
+              min="0"
+              inputmode="numeric"
+              placeholder="留 0 = 套全域 fare_rules 設定"
             )
 
         //- icon + sortOrder + enabled

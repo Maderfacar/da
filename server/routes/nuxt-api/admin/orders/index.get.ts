@@ -86,6 +86,19 @@ export default defineEventHandler(async (event) => {
         estimatedFare: (d.estimatedFare as number) ?? 0,
         estimatedTime: (d.estimatedTime as number) ?? 0,
         distanceKm: (d.distanceKm as number) ?? 0,
+        // 視窗 2：路段分析（fare-v2 訂單才有；舊 v1 / charter 為 null）
+        highwayKm: (() => {
+          const fb = d.fareBreakdown as { highwayKm?: number } | null | undefined;
+          return typeof fb?.highwayKm === 'number' ? fb.highwayKm : null;
+        })(),
+        surfaceKm: (() => {
+          const fb = d.fareBreakdown as { surfaceKm?: number } | null | undefined;
+          return typeof fb?.surfaceKm === 'number' ? fb.surfaceKm : null;
+        })(),
+        surfaceSurcharge: (() => {
+          const fb = d.fareBreakdown as { surfaceSurcharge?: number } | null | undefined;
+          return typeof fb?.surfaceSurcharge === 'number' ? fb.surfaceSurcharge : null;
+        })(),
         extraServices: (d.extraServices as string[] | undefined) ?? [],
         flightNumber: (d.flightNumber as string | undefined) ?? null,
         terminal: (d.terminal as string | undefined) ?? null,

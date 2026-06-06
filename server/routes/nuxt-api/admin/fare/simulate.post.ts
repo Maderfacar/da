@@ -220,6 +220,7 @@ export default defineEventHandler(async (event) => {
               highwayKm: result.metrics.highwayKm,
               surfaceKm: result.metrics.surfaceKm,
               surchargeAmount: 0,
+              breakdown: result.metrics.segmentsBreakdown ?? [],
             },
             promo: { active: result.breakdown.promoDiscount > 0, discount: result.breakdown.promoDiscount },
             surcharge: { active: result.breakdown.surcharge > 0, amount: result.breakdown.surcharge },
@@ -295,6 +296,8 @@ export default defineEventHandler(async (event) => {
           highwayKm: metrics.highwayKm,
           surfaceKm: metrics.surfaceKm,
           surchargeAmount: surfaceAmount,
+          // 視窗 2：每段 step 明細（route-metrics.ts 直接帶回；舊路徑 / Routes API 失敗時為空陣列）
+          breakdown: metrics.segmentsBreakdown ?? [],
         },
         promo: { active: promo > 0, discount: promo },
         surcharge: { active: surcharge > 0, amount: surcharge },

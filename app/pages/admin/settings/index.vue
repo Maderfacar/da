@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AdminEntry, AdminPermission, AdminUser } from '@/protocol/fetch-api/api/admin';
 import { DEFAULT_FARE_RULES } from '~shared/pricing';
-import type { DistanceTier, FareRules, PeakWindow, PromoWindow, SurchargeWindow, MountainTier, Weekday, OrderType } from '~shared/pricing';
+import type { DistanceTier, FareRules, PromoWindow, SurchargeWindow, MountainTier, Weekday, OrderType } from '~shared/pricing';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -303,7 +303,7 @@ const WEEKDAY_OPTIONS: { value: Weekday; label: string }[] = [
   { value: 'SUN', label: '日' },
 ];
 
-const WEEKEND_MODE_OPTIONS: { value: FareRules['trafficJam']['weekendMode']; label: string }[] = [
+const WEEKEND_MODE_OPTIONS: { value: FareRules['surcharge']['weekendMode']; label: string }[] = [
   { value: 'OFF', label: 'OFF（週末不收）' },
   { value: 'ALL_DAY', label: '全天' },
   { value: 'EVENING_ONLY', label: '僅 17-21 時' },
@@ -372,29 +372,29 @@ const ClickRemoveMountainTier = (index: number) => {
   fareRules.value.mountain.tiers.splice(index, 1);
 };
 
+// 平面道路加成 highwayPatterns 編輯：每行一條 regex；即時校驗供模板標紅用
+const ClickAddHighwayPattern = () => {
+  fareRules.value.surfaceSurcharge.highwayPatterns.push('');
+};
+const ClickRemoveHighwayPattern = (index: number) => {
+  fareRules.value.surfaceSurcharge.highwayPatterns.splice(index, 1);
+};
+const HighwayPatternIsInvalid = (p: string): boolean => {
+  if (typeof p !== 'string' || p.trim() === '') return true;
+  try {
+    new RegExp(p, 'i');
+    return false;
+  } catch {
+    return true;
+  }
+};
+
 // Charter Fare V1：charter.mountain.tiers 階梯操作（minScore 限制 0-3 整數，由 server 端 validateCharterMountainTiers 把關）
 const ClickAddCharterMountainTier = () => {
   fareRules.value.charter.mountain.tiers.push({ minScore: 2, multiplier: 1.4 } as MountainTier);
 };
 const ClickRemoveCharterMountainTier = (index: number) => {
   fareRules.value.charter.mountain.tiers.splice(index, 1);
-};
-
-const ClickAddPeakWindow = () => {
-  fareRules.value.trafficJam.peakWindows.push({
-    days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
-    start: '07:00',
-    end: '09:30',
-  } as PeakWindow);
-};
-const ClickRemovePeakWindow = (index: number) => {
-  fareRules.value.trafficJam.peakWindows.splice(index, 1);
-};
-
-const TogglePeakWindowDay = (windowIndex: number, day: Weekday) => {
-  const w = fareRules.value.trafficJam.peakWindows[windowIndex];
-  if (!w) return;
-  w.days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
 };
 
 const ClickAddPromoWindow = () => {
@@ -433,15 +433,13 @@ const ToggleSurchargeWindowDay = (windowIndex: number, day: Weekday) => {
 
 // 時段的行程過濾切換（三個規則共用；不選任何行程 = 套用全部行程）
 const _toggleWindowOrderType = (
-  w: PeakWindow | PromoWindow | SurchargeWindow | undefined,
+  w: PromoWindow | SurchargeWindow | undefined,
   ot: OrderType,
 ) => {
   if (!w) return;
   const cur = w.orderTypes ?? [];
   w.orderTypes = cur.includes(ot) ? cur.filter((o) => o !== ot) : [...cur, ot];
 };
-const TogglePeakWindowOrderType = (i: number, ot: OrderType) =>
-  _toggleWindowOrderType(fareRules.value.trafficJam.peakWindows[i], ot);
 const TogglePromoWindowOrderType = (i: number, ot: OrderType) =>
   _toggleWindowOrderType(fareRules.value.promo.windows[i], ot);
 const ToggleSurchargeWindowOrderType = (i: number, ot: OrderType) =>
@@ -457,7 +455,10 @@ const _validateFareRules = (): string => {
     r.mountain.thresholdFreeFlowKmh,
     ...r.mountain.tiers.flatMap((t) => [t.minScore, t.multiplier]),
     ...r.crossCounty.tieredNtd,
-    r.trafficJam.defaultNtdPerMinute,
+    r.surfaceSurcharge.surfaceFreeKm,
+    r.surfaceSurcharge.minTotalKm,
+    r.surfaceSurcharge.surfaceRatePerKm,
+    r.surfaceSurcharge.surchargeCap,
     r.freeway.freeKm,
     r.freeway.ntdPerKm,
     r.freeway.dailyCapKm,
@@ -491,9 +492,19 @@ const _validateFareRules = (): string => {
       return '里程分段的起始里程必須由小到大且不重覆';
     }
   }
-  for (const w of r.trafficJam.peakWindows) {
-    if (!w.start || !w.end) return '顛峰時段的起訖時間皆必填';
-    if (w.days.length === 0) return '每個顛峰時段至少需選一天';
+  // 平面道路加成 highwayPatterns regex 校驗（前端先擋；server 端 validateSurfaceSurchargeRule 二次把關）
+  if (!Array.isArray(r.surfaceSurcharge.highwayPatterns)) {
+    return '平面加成的高速路型白名單格式錯誤';
+  }
+  for (const p of r.surfaceSurcharge.highwayPatterns) {
+    if (typeof p !== 'string' || p.trim() === '') {
+      return '平面加成的高速路型白名單不可有空字串';
+    }
+    try {
+      new RegExp(p, 'i');
+    } catch {
+      return `平面加成的高速路型白名單含無效 regex：${p}`;
+    }
   }
   for (const w of r.promo.windows) {
     if (!w.start || !w.end) return '優惠時段的起訖時間皆必填';
@@ -911,7 +922,6 @@ const ClickSaveFareRules = async () => {
           input(type="checkbox" v-model="fareRules.crossCounty.excludeTpeNtpeTyn")
           span 北北桃跨界不收
 
-      //- 顛峰塞車費
       //- 時段加價
       .PageAdminSettings__fare-block
         .PageAdminSettings__fare-block-head
@@ -1046,73 +1056,6 @@ const ClickSaveFareRules = async () => {
               inputmode="numeric"
             )
 
-      //- 顛峰塞車費
-      .PageAdminSettings__fare-block
-        .PageAdminSettings__fare-block-head
-          span.PageAdminSettings__fare-block-title 顛峰塞車費
-          label.PageAdminSettings__fare-switch-label
-            input(type="checkbox" v-model="fareRules.trafficJam.enabled")
-            span 啟用
-        .PageAdminSettings__fare-subhead 顛峰時段
-        .PageAdminSettings__fare-window(
-          v-for="(win, i) in fareRules.trafficJam.peakWindows"
-          :key="i"
-        )
-          .PageAdminSettings__fare-window-days
-            button.PageAdminSettings__fare-day(
-              v-for="d in WEEKDAY_OPTIONS"
-              :key="d.value"
-              type="button"
-              :class="{ 'is-on': win.days.includes(d.value) }"
-              @click="TogglePeakWindowDay(i, d.value)"
-            ) {{ d.label }}
-          .PageAdminSettings__fare-window-hint 行程過濾（不選＝套用全部行程）
-          .PageAdminSettings__fare-window-orders
-            button.PageAdminSettings__fare-order(
-              v-for="ot in ORDER_TYPE_OPTIONS"
-              :key="ot.value"
-              type="button"
-              :class="{ 'is-on': (win.orderTypes ?? []).includes(ot.value) }"
-              @click="TogglePeakWindowOrderType(i, ot.value)"
-            ) {{ ot.label }}
-          .PageAdminSettings__fare-window-times
-            .PageAdminSettings__fare-field
-              label.PageAdminSettings__fare-label 起
-              ElInput(v-model="win.start" type="time" lang="en-GB")
-            .PageAdminSettings__fare-field
-              label.PageAdminSettings__fare-label 訖
-              ElInput(v-model="win.end" type="time" lang="en-GB")
-            .PageAdminSettings__fare-field
-              label.PageAdminSettings__fare-label 費率 (元/min，留空用 default)
-              ElInput(
-                v-model.number="win.ntdPerMinute"
-                type="number"
-                inputmode="numeric"
-              )
-            button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
-              @click="ClickRemovePeakWindow(i)"
-            ) 刪除
-        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
-          @click="ClickAddPeakWindow"
-        ) + 新增時段
-        .PageAdminSettings__fare-grid
-          .PageAdminSettings__fare-field
-            label.PageAdminSettings__fare-label 週末模式
-            ElSelect(v-model="fareRules.trafficJam.weekendMode")
-              ElOption(
-                v-for="m in WEEKEND_MODE_OPTIONS"
-                :key="m.value"
-                :label="m.label"
-                :value="m.value"
-              )
-          .PageAdminSettings__fare-field
-            label.PageAdminSettings__fare-label default 費率 (元/min)
-            ElInput(
-              v-model.number="fareRules.trafficJam.defaultNtdPerMinute"
-              type="number"
-              inputmode="numeric"
-            )
-
       //- 國道通行費
       .PageAdminSettings__fare-block
         .PageAdminSettings__fare-block-head
@@ -1149,6 +1092,66 @@ const ClickSaveFareRules = async () => {
               type="number"
               inputmode="numeric"
             )
+
+      //- 平面道路加成（視窗 1：取代砍掉的顛峰塞車費；不被山區係數放大）
+      .PageAdminSettings__fare-block
+        .PageAdminSettings__fare-block-head
+          span.PageAdminSettings__fare-block-title 平面道路加成
+          label.PageAdminSettings__fare-switch-label
+            input(type="checkbox" v-model="fareRules.surfaceSurcharge.enabled")
+            span 啟用
+        .PageAdminSettings__fare-grid
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 免加成門檻 (km)
+            ElInput(
+              v-model.number="fareRules.surfaceSurcharge.surfaceFreeKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 觸發最低總里程 (km)
+            ElInput(
+              v-model.number="fareRules.surfaceSurcharge.minTotalKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 基準費率 (元/km)
+            ElInput(
+              v-model.number="fareRules.surfaceSurcharge.surfaceRatePerKm"
+              type="number"
+              inputmode="numeric"
+            )
+          .PageAdminSettings__fare-field
+            label.PageAdminSettings__fare-label 單筆加成上限 (元)
+            ElInput(
+              v-model.number="fareRules.surfaceSurcharge.surchargeCap"
+              type="number"
+              inputmode="numeric"
+            )
+        .PageAdminSettings__fare-subhead 高速路型白名單（regex，每行一條，i flag）
+        .PageAdminSettings__fare-window-hint 命中即視為高速；未命中視為平面，超出免加成門檻才開始收費
+        .PageAdminSettings__fare-tier(
+          v-for="(p, i) in fareRules.surfaceSurcharge.highwayPatterns"
+          :key="i"
+        )
+          .PageAdminSettings__fare-field.PageAdminSettings__fare-field--wide
+            label.PageAdminSettings__fare-label regex
+            ElInput(
+              v-model="fareRules.surfaceSurcharge.highwayPatterns[i]"
+              :class="{ 'is-invalid': HighwayPatternIsInvalid(p) }"
+              maxlength="200"
+              placeholder="如：國道[一二三四五]+號?"
+            )
+            span.PageAdminSettings__fare-label.is-invalid(
+              v-if="HighwayPatternIsInvalid(p)"
+            ) ⚠ 無效 regex 或空字串
+          button.PageAdminSettings__btn.is-reject.PageAdminSettings__fare-row-del(
+            @click="ClickRemoveHighwayPattern(i)"
+          ) 刪除
+        button.PageAdminSettings__btn.is-toggle.PageAdminSettings__fare-add(
+          @click="ClickAddHighwayPattern"
+        ) + 新增路型
 
       //- ── Charter Fare V1（包車車資 v1，super only）─────────────────────
       .PageAdminSettings__fare-block
@@ -1317,6 +1320,7 @@ $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.35);
+$rose: #f0556d;
 
 .PageAdminSettings {
   padding: 80px 20px 100px;
@@ -1938,6 +1942,10 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 5px;
 }
 
+.PageAdminSettings__fare-field--wide {
+  flex: 3;
+}
+
 .PageAdminSettings__fare-label {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 10px;
@@ -1945,6 +1953,17 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: $muted;
+
+  &.is-invalid {
+    color: $rose;
+    text-transform: none;
+    letter-spacing: 0.04em;
+    font-size: 11px;
+  }
+}
+
+.PageAdminSettings__fare-tier :deep(.el-input.is-invalid .el-input__wrapper) {
+  box-shadow: 0 0 0 1px $rose inset;
 }
 
 .PageAdminSettings__fare-subhead {

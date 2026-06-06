@@ -29,6 +29,8 @@ interface FleetVehicleDto {
   luggageSU?: number;
   baseFare: number;
   perKmRate: number;
+  /** 平面道路加成費率覆寫（NT$/km，視窗 1）；缺省→套全域 fare_rules/v1.surfaceSurcharge.surfaceRatePerKm */
+  surfaceRatePerKm?: number;
   icon: string;
   sortOrder: number;
   enabled: boolean;
@@ -93,6 +95,8 @@ interface CreateVehiclePayload {
   luggageSU?: number;
   baseFare: number;
   perKmRate: number;
+  /** 平面道路加成費率覆寫（NT$/km）；null / undefined / 0 / 負 → 清除覆寫 fallback 全域 */
+  surfaceRatePerKm?: number | null;
   icon: string;
   sortOrder: number;
   enabled: boolean;

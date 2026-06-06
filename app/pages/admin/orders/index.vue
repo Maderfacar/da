@@ -1608,6 +1608,16 @@ onMounted(() => {
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 距離
                 span.PageAdminOrders__section-val {{ selectedOrder.distanceKm }} km
+              //- 視窗 2：路段分析（fare-v2 訂單才會有 highwayKm/surfaceKm；舊單顯示 「—」）
+              .PageAdminOrders__section-row(v-if="selectedOrder.highwayKm != null || selectedOrder.surfaceKm != null")
+                span.PageAdminOrders__section-key 高速里程
+                span.PageAdminOrders__section-val {{ selectedOrder.highwayKm != null ? `${selectedOrder.highwayKm.toFixed(1)} km` : '—' }}
+              .PageAdminOrders__section-row(v-if="selectedOrder.highwayKm != null || selectedOrder.surfaceKm != null")
+                span.PageAdminOrders__section-key 平面里程
+                span.PageAdminOrders__section-val {{ selectedOrder.surfaceKm != null ? `${selectedOrder.surfaceKm.toFixed(1)} km` : '—' }}
+              .PageAdminOrders__section-row(v-if="selectedOrder.surfaceSurcharge != null && selectedOrder.surfaceSurcharge > 0")
+                span.PageAdminOrders__section-key 平面道路加成
+                span.PageAdminOrders__section-val.is-fare +NT$ {{ selectedOrder.surfaceSurcharge.toLocaleString() }}
 
             //- Charter Fare V1 W5：包車 OT 對帳區（charter 訂單才顯示）
             //- 預估 / 實際 / 超時分鐘 / OT 段數 / OT 加收 / 司機應現場收取金額

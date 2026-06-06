@@ -59,6 +59,8 @@ const SetCharterDays = (days: number) => {
 const loading = ref(false);
 const errorMsg = ref('');
 const result = ref<AdminFareSimulateRes | null>(null);
+// 視窗 2：路段明細展開狀態（預設收起；點按鈕展開）
+const showSegmentBreakdown = ref(false);
 
 const ApiSimulate = async () => {
   errorMsg.value = '';
@@ -297,6 +299,25 @@ const metricsRows = computed(() => {
             .AdminFareSandbox__hit-name 平面道路加成
             .AdminFareSandbox__hit-val(:class="{ 'is-on': result.hits.surface.surchargeAmount > 0 }")
               | 高速 {{ result.hits.surface.highwayKm.toFixed(1) }} km · 平面 {{ result.hits.surface.surfaceKm.toFixed(1) }} km · 加成 NT$ {{ result.hits.surface.surchargeAmount }}
+            //- 視窗 2：展開明細（每段 step 的 instructions / distanceKm / isHighway）
+            button.AdminFareSandbox__seg-toggle(
+              v-if="result.hits.surface.breakdown && result.hits.surface.breakdown.length > 0"
+              type="button"
+              @click="showSegmentBreakdown = !showSegmentBreakdown"
+            ) {{ showSegmentBreakdown ? '▼ 收起明細' : `▶ 展開明細（${result.hits.surface.breakdown.length} 段）` }}
+            .AdminFareSandbox__seg-table(v-if="showSegmentBreakdown && result.hits.surface.breakdown.length")
+              .AdminFareSandbox__seg-head
+                span.AdminFareSandbox__seg-cell.is-tag tag
+                span.AdminFareSandbox__seg-cell.is-km km
+                span.AdminFareSandbox__seg-cell.is-instr instructions
+              .AdminFareSandbox__seg-row(
+                v-for="(seg, i) in result.hits.surface.breakdown"
+                :key="i"
+                :class="{ 'is-highway': seg.isHighway }"
+              )
+                span.AdminFareSandbox__seg-cell.is-tag {{ seg.isHighway ? '高速' : '平面' }}
+                span.AdminFareSandbox__seg-cell.is-km {{ seg.distanceKm.toFixed(2) }}
+                span.AdminFareSandbox__seg-cell.is-instr {{ seg.instructions || '—' }}
           .AdminFareSandbox__hit
             .AdminFareSandbox__hit-name 時段加價
             .AdminFareSandbox__hit-val(:class="{ 'is-on': result.hits.surcharge.active }")
@@ -584,5 +605,79 @@ $accent-soft: #e8d5d0;
   color: $muted;
   font-size: 11px;
   margin-top: 2px;
+}
+
+// 視窗 2：路段明細展開
+.AdminFareSandbox__seg-toggle {
+  background: none;
+  border: 1px solid $border;
+  border-radius: 4px;
+  padding: 3px 8px;
+  margin-top: 6px;
+  color: $accent;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 120ms;
+
+  &:hover {
+    background: $accent-soft;
+  }
+}
+
+.AdminFareSandbox__seg-table {
+  margin-top: 6px;
+  border: 1px solid $border;
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.AdminFareSandbox__seg-head {
+  display: grid;
+  grid-template-columns: 50px 60px 1fr;
+  gap: 6px;
+  padding: 6px 8px;
+  background: $cream-bg;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $muted;
+  border-bottom: 1px solid $border;
+}
+
+.AdminFareSandbox__seg-row {
+  display: grid;
+  grid-template-columns: 50px 60px 1fr;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+  &:last-child { border-bottom: none; }
+  &.is-highway {
+    background: rgba(192, 57, 43, 0.04);
+
+    .AdminFareSandbox__seg-cell.is-tag { color: $accent; font-weight: 600; }
+  }
+}
+
+.AdminFareSandbox__seg-cell {
+  &.is-tag {
+    color: $muted;
+    font-weight: 500;
+  }
+  &.is-km {
+    color: $ink;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  &.is-instr {
+    color: $ink;
+    word-break: break-word;
+    line-height: 1.4;
+  }
 }
 </style>

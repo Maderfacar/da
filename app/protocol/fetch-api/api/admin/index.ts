@@ -193,6 +193,10 @@ export interface AdminOrder {
   estimatedFare: number
   estimatedTime: number
   distanceKm: number
+  /** 視窗 2：路段分析快照（fare-v2 訂單才有；charter / 舊 v1 訂單為 null） */
+  highwayKm?: number | null
+  surfaceKm?: number | null
+  surfaceSurcharge?: number | null
   extraServices: string[]
   flightNumber: string | null
   terminal: string | null

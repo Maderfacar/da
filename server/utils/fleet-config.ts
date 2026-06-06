@@ -41,6 +41,8 @@ export interface FleetVehicle {
   baseFare: number;
   /** 每公里費用（TWD） */
   perKmRate: number;
+  /** 平面道路加成費率覆寫（NT$/km，視窗 1）；缺省→套全域 fare_rules/v1.surfaceSurcharge.surfaceRatePerKm */
+  surfaceRatePerKm?: number;
   icon: string;
   sortOrder: number;
   enabled: boolean;
@@ -301,6 +303,15 @@ export const validateVehiclePayload = (
   if (!Number.isInteger(raw.capacity) || (raw.capacity as number) < 1) return { ok: false, error: 'capacity 必須是正整數' };
   if (!isPositiveOrZero(raw.baseFare)) return { ok: false, error: 'baseFare 必須 ≥ 0' };
   if (!isPositiveOrZero(raw.perKmRate)) return { ok: false, error: 'perKmRate 必須 ≥ 0' };
+  // surfaceRatePerKm optional 覆寫：null / undefined / NaN / 0 / 負 → 清除（不寫入欄位）；> 0 → 寫入
+  if (raw.surfaceRatePerKm !== undefined && raw.surfaceRatePerKm !== null) {
+    if (typeof raw.surfaceRatePerKm !== 'number' || !Number.isFinite(raw.surfaceRatePerKm)) {
+      return { ok: false, error: 'surfaceRatePerKm 必須是數字' };
+    }
+    if (raw.surfaceRatePerKm < 0) {
+      return { ok: false, error: 'surfaceRatePerKm 必須 ≥ 0（0 / null = 清除覆寫）' };
+    }
+  }
   if (typeof raw.icon !== 'string') return { ok: false, error: 'icon 必須字串' };
   if (!Number.isInteger(raw.sortOrder)) return { ok: false, error: 'sortOrder 必須整數' };
   if (typeof raw.enabled !== 'boolean') return { ok: false, error: 'enabled 必須 boolean' };
@@ -332,6 +343,10 @@ export const validateVehiclePayload = (
   };
   // luggageSU 為 deprecated optional 欄位；只在 payload 帶非負數時保留（向後相容）
   if (isPositiveOrZero(raw.luggageSU)) data.luggageSU = raw.luggageSU as number;
+  // surfaceRatePerKm：> 0 才寫入，0/null/undefined → 不寫入（fallback 全域）
+  if (typeof raw.surfaceRatePerKm === 'number' && raw.surfaceRatePerKm > 0) {
+    data.surfaceRatePerKm = raw.surfaceRatePerKm;
+  }
   if (tagline) data.tagline = tagline;
   if (luggageDescription) data.luggageDescription = luggageDescription;
   // images optional；null / 全空 → 不寫入；任一非空 URL → 保留

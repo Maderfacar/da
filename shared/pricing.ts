@@ -387,6 +387,9 @@ export interface RouteMetrics {
   /** Charter Fare V1：最後 stopover X → 上車點 A 的 encoded polyline（W2 額外取一次 Routes 計算）。
    *  非 charter 模式或無 stopover 時為 undefined；來回判定（shortestDistanceKmFromPointToPolyline）使用。 */
   returnLegPolyline?: string;
+  /** 視窗 2：路段分析明細（admin sandbox 用；route-metrics.ts 直接帶回，不寫 firestore）。
+   *  每一段 step 的 instructions / distanceKm / isHighway 旗標。 */
+  segmentsBreakdown?: Array<{ instructions: string; distanceKm: number; isHighway: boolean }>;
 }
 
 // ── 車資明細 ────────────────────────────────────────────────────────────────
