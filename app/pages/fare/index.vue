@@ -1,11 +1,13 @@
 <script setup lang="ts">
-// /fare — 路線參考價（/fleet 合併進來；2026-06-07）
+// /fare — 車型介紹（/fleet 合併進來；2026-06-07）
 //
-// 結構順序：
-//   1. VEHICLE LINEUP：車型 swiper（採 booking step 3 同款卡片視覺）+ 該車型 25km 樣本試算（沙盒）
+// 結構順序（2026-06-07 v2）：
+//   1. VEHICLE LINEUP：車型 swiper（採 booking step 3 同款卡片視覺；hero 圖區拉高凸顯車型照片）
 //   2. TRY IT：PassengerFareEstimator（自己算算看；最終價格下方常駐車資說明）
 //   3. PRICING ENGINE：3 卡計費引擎介紹
 //   4. CTA：前往訂車試算
+//
+// 已移除：頁首 hero 區（路線參考價 title）/ 車型 slider 下方 25km 黑底樣本試算沙盒
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Navigation } from 'swiper/modules';
 import type { Swiper as SwiperInstance } from 'swiper/types';
@@ -14,31 +16,19 @@ import 'swiper/css/navigation';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { t, locale } = useI18n();
+const { locale } = useI18n();
 const storeConfig = StoreConfig();
 
 const vehicles = computed(() => storeConfig.EnabledVehicles);
 
-// 預設 active 為第一台啟用車型
+// 預設 active 為第一台啟用車型（控制 vehicle-card 的 is-active class）
 const activeVehicleId = ref<string>('');
 watch(vehicles, (list) => {
   if (!activeVehicleId.value && list.length > 0) activeVehicleId.value = list[0].id;
 }, { immediate: true });
 
-const activeVehicle = computed(() =>
-  storeConfig.GetVehicle(activeVehicleId.value),
-);
-
 const Loc = (label: { zh: string; en: string; ja: string } | undefined) =>
   storeConfig.LabelOf(label, locale.value as 'zh' | 'en' | 'ja');
-
-// ── 沙盒：25 公里樣本試算 ───────────────────────────────────
-const SAMPLE_KM = 25;
-const sampleFare = computed(() => {
-  const cfg = activeVehicle.value;
-  if (!cfg) return 0;
-  return Math.ceil((cfg.baseFare + SAMPLE_KM * cfg.perKmRate) / 50) * 50;
-});
 
 // ── Swiper ──────────────────────────────────────────────────
 const swiperRef = ref<SwiperInstance | null>(null);
@@ -54,24 +44,14 @@ const swiperBreakpoints = {
 };
 
 const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
-const ClickBookActiveVehicle = () => {
-  if (!activeVehicleId.value) return;
-  navigateTo({ path: '/booking', query: { vehicleType: activeVehicleId.value } });
-};
 </script>
 
 <template lang="pug">
 .PageFare
-  .PageFare__watermark FARE
+  .PageFare__watermark FLEET
 
-  //- 頁首
-  .PageFare__header
-    .PageFare__header-label FARE REFERENCE
-    h1.PageFare__header-title {{ $t('fare.title') }}
-    p.PageFare__header-intro {{ $t('fare.intro') }}
-
-  //- ── Section 1：VEHICLE LINEUP — 車型 slider + 沙盒（25km 樣本試算）──
-  section.PageFare__section.is-cream
+  //- ── Section 1：VEHICLE LINEUP — 車型 slider（hero 區拉高凸顯車型照片）──
+  section.PageFare__section.is-cream.is-top
     .PageFare__section-label {{ $t('fare.vehicle.label') }}
     h2.PageFare__section-title {{ $t('fare.vehicle.title') }}
     p.PageFare__section-desc {{ $t('fare.vehicle.desc') }}
@@ -120,35 +100,6 @@ const ClickBookActiveVehicle = () => {
         :aria-label="$t('fare.vehicle.next')"
         @click="ClickSwiperNext"
       ) ›
-
-    //- 沙盒：當前選中車型的 25 公里樣本試算（黑底卡，呈現方式對齊 booking 估價樣式）
-    Transition(name="fare-sandbox-fade" mode="out-in")
-      .PageFare__sandbox(v-if="activeVehicle" :key="activeVehicleId")
-        .PageFare__sandbox-head
-          .PageFare__sandbox-eyebrow {{ $t('fare.vehicle.sampleLabel') }}
-          .PageFare__sandbox-name {{ Loc(activeVehicle.label) }}
-        .PageFare__sandbox-specs
-          .PageFare__sandbox-spec
-            NuxtIcon(name="mdi:account-group")
-            .PageFare__sandbox-spec-val {{ activeVehicle.capacity }} {{ $t('fleet.unit.person') }}
-            .PageFare__sandbox-spec-key {{ $t('fare.vehicle.specCapacity') }}
-          .PageFare__sandbox-spec(v-if="activeVehicle.luggageDescription && Loc(activeVehicle.luggageDescription)")
-            NuxtIcon(name="mdi:bag-suitcase")
-            .PageFare__sandbox-spec-val {{ Loc(activeVehicle.luggageDescription) }}
-            .PageFare__sandbox-spec-key {{ $t('fare.vehicle.specLuggage') }}
-          .PageFare__sandbox-spec
-            NuxtIcon(name="mdi:currency-twd")
-            .PageFare__sandbox-spec-val NT$ {{ activeVehicle.baseFare }}
-            .PageFare__sandbox-spec-key {{ $t('fare.vehicle.specBaseFare') }}
-          .PageFare__sandbox-spec
-            NuxtIcon(name="mdi:map-marker-distance")
-            .PageFare__sandbox-spec-val NT$ {{ activeVehicle.perKmRate }}
-            .PageFare__sandbox-spec-key {{ $t('fare.vehicle.specPerKm') }}
-        .PageFare__sandbox-fare
-          span.PageFare__sandbox-fare-cur NT$
-          strong.PageFare__sandbox-fare-num {{ sampleFare.toLocaleString() }}
-        p.PageFare__sandbox-note {{ $t('fare.vehicle.sampleNote') }}
-        button.PageFare__sandbox-book(type="button" @click="ClickBookActiveVehicle") {{ $t('fare.vehicle.bookBtn') }}
 
   //- ── Section 2：TRY IT — 車資試算（自己算算看；含車資說明在最終價格下方）──
   section.PageFare__section.is-off-white
@@ -214,42 +165,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.04em;
 }
 
-// ── 頁首 ──────────────────────────────────────────────────
-.PageFare__header {
-  padding: 48px 24px 32px;
-}
-
-.PageFare__header-label {
-  font-family: $font-condensed;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--da-amber);
-  margin-bottom: 10px;
-}
-
-.PageFare__header-title {
-  font-family: $font-display;
-  font-size: clamp(48px, 14vw, 64px);
-  line-height: 0.92;
-  color: var(--da-dark);
-}
-
-.PageFare__header-intro {
-  font-family: $font-body;
-  font-size: 14px;
-  font-weight: 300;
-  color: var(--da-gray);
-  margin-top: 12px;
-  line-height: 1.7;
-  max-width: 320px;
-}
-
 // ── 區塊 ──────────────────────────────────────────────────
 .PageFare__section {
   padding: 72px 24px;
   scroll-margin-top: 56px;
+
+  &.is-top { padding-top: 48px; }
 }
 
 .PageFare__section.is-cream {
@@ -351,23 +272,23 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   border: 1.5px solid var(--da-glass-border);
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 14px;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
   overflow: hidden;
-  min-height: 280px;
+  min-height: 360px;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
   }
 
   &.is-active {
     border-color: var(--da-amber);
-    box-shadow: 0 8px 24px rgba(212, 134, 10, 0.18);
+    box-shadow: 0 10px 28px rgba(212, 134, 10, 0.18);
   }
 
   &.is-luxury {
@@ -379,16 +300,17 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
+// 車型 hero — 拉高凸顯照片（180px，photo 滿框 cover）
 .PageFare__vehicle-hero {
   width: 100%;
-  height: 110px;
-  border-radius: 12px;
+  height: 180px;
+  border-radius: 14px;
   background: rgba(0, 0, 0, 0.04);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 
   .is-luxury & { background: rgba(255, 255, 255, 0.05); }
 
@@ -404,10 +326,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   height: 100%;
   object-fit: cover;
   object-position: center;
+  display: block;
 }
 
 .PageFare__vehicle-hero-icon {
-  font-size: 52px;
+  font-size: 72px;
   color: var(--da-amber);
 }
 
@@ -482,137 +405,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-gray);
 
   .is-luxury & { color: rgba(250, 248, 244, 0.65); }
-}
-
-// ── 沙盒：黑底樣本試算卡 ─────────────────────────────────
-.PageFare__sandbox {
-  background: var(--da-dark);
-  color: var(--da-cream);
-  border-radius: 18px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.PageFare__sandbox-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-  padding-bottom: 12px;
-}
-
-.PageFare__sandbox-eyebrow {
-  font-family: $font-condensed;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--da-amber);
-}
-
-.PageFare__sandbox-name {
-  font-family: $font-body;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--da-cream);
-}
-
-.PageFare__sandbox-specs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.PageFare__sandbox-spec {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  grid-template-rows: auto auto;
-  column-gap: 8px;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-  padding: 10px 12px;
-
-  .nuxt-icon {
-    grid-row: 1 / span 2;
-    font-size: 18px;
-    color: var(--da-amber);
-  }
-}
-
-.PageFare__sandbox-spec-val {
-  font-family: $font-condensed;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--da-cream);
-}
-
-.PageFare__sandbox-spec-key {
-  font-family: $font-condensed;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(250, 248, 244, 0.4);
-}
-
-.PageFare__sandbox-fare {
-  margin-top: 6px;
-  font-family: $font-display;
-  font-size: 40px;
-  letter-spacing: 0.04em;
-  color: var(--da-amber-light);
-  line-height: 1.1;
-}
-
-.PageFare__sandbox-fare-cur {
-  font-size: 18px;
-  margin-right: 4px;
-  opacity: 0.7;
-}
-
-.PageFare__sandbox-fare-num {
-  font-weight: 400;
-}
-
-.PageFare__sandbox-note {
-  font-family: $font-body;
-  font-size: 12px;
-  color: rgba(250, 248, 244, 0.45);
-  line-height: 1.55;
-}
-
-.PageFare__sandbox-book {
-  margin-top: 6px;
-  padding: 12px 18px;
-  background: var(--da-amber);
-  color: var(--da-dark);
-  border: none;
-  border-radius: 100px;
-  font-family: $font-condensed;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.1s;
-
-  &:active { transform: scale(0.97); }
-}
-
-.fare-sandbox-fade-enter-active,
-.fare-sandbox-fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.fare-sandbox-fade-enter-from,
-.fare-sandbox-fade-leave-to {
-  opacity: 0;
-  transform: translateY(6px);
 }
 
 // ── PRICING ENGINE 卡 ─────────────────────────────────────

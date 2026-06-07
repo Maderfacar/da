@@ -69,7 +69,7 @@ export default {
     ariaDialog: '主選單',
     // 內容頁入口（乘客端內容擴充）
     service: '服務說明',
-    fare: '路線參考價',
+    fare: '車型介紹',
     faq: '常見問題',
     legal: {
       terms: '會員服務條款',
@@ -792,9 +792,12 @@ export default {
     supportHours: '24 小時服務',
     lineQrLabel: '加 LINE 好友',
     lineQrCaption: '掃描 QR Code 加入官方帳號',
+    lineQrShare: '分享 LINE QR Code',
+    lineQrShareHint: '點擊分享給好友',
+    lineQrCopied: '已複製 LINE 加好友連結',
     links: {
       booking: '立即訂車',
-      fare: '路線參考價',
+      fare: '車型介紹',
       service: '服務說明',
       faq: '常見問題',
       fleet: '車型介紹',

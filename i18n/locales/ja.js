@@ -65,7 +65,7 @@ export default {
     ariaDialog: 'メインメニュー',
     // コンテンツページ入口（乗客向けコンテンツ拡充）
     service: 'サービス案内',
-    fare: '料金の目安',
+    fare: '車種のご紹介',
     faq: 'よくある質問',
     legal: {
       terms: '会員サービス規約',
@@ -774,9 +774,12 @@ export default {
     supportHours: '24時間対応',
     lineQrLabel: 'LINE 友だち追加',
     lineQrCaption: 'QR コードをスキャンして公式アカウントを追加',
+    lineQrShare: 'LINE QR コードを共有',
+    lineQrShareHint: 'タップして友だちに共有',
+    lineQrCopied: 'LINE 友だち追加リンクをコピーしました',
     links: {
       booking: '今すぐ予約',
-      fare: '料金の目安',
+      fare: '車種のご紹介',
       service: 'サービス案内',
       faq: 'よくある質問',
       fleet: '車種のご紹介',

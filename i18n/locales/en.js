@@ -65,7 +65,7 @@ export default {
     ariaDialog: 'Main menu',
     // Content page entries (passenger-facing content expansion)
     service: 'Services',
-    fare: 'Fares',
+    fare: 'Our Fleet',
     faq: 'FAQ',
     legal: {
       terms: 'Terms of Service',
@@ -774,9 +774,12 @@ export default {
     supportHours: '24-hour service',
     lineQrLabel: 'Add LINE Friend',
     lineQrCaption: 'Scan QR code to add our official account',
+    lineQrShare: 'Share LINE QR Code',
+    lineQrShareHint: 'Tap to share with a friend',
+    lineQrCopied: 'LINE add-friend link copied',
     links: {
       booking: 'Book Now',
-      fare: 'Fare Reference',
+      fare: 'Our Fleet',
       service: 'Our Services',
       faq: 'FAQ',
       fleet: 'Our Fleet',
