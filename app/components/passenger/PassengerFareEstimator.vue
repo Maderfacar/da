@@ -310,6 +310,13 @@ const mountainHit = computed<boolean>(() => {
         span.PassengerFareEstimator__line-val.is-check
           NuxtIcon(name="mdi:check-circle")
 
+  //- ── 車資說明（緊接最後價格區，含/不含；常駐顯示）─────────────
+  .PassengerFareEstimator__notes
+    .PassengerFareEstimator__notes-title {{ $t('fare.notes.title') }}
+    ul.PassengerFareEstimator__notes-list
+      li {{ $t('fare.notes.included') }}
+      li {{ $t('fare.notes.excluded') }}
+
   //- ── Disclaimer ──────────────────────────────────────────────
   p.PassengerFareEstimator__disclaimer {{ $t('fare.calc.disclaimer') }}
 </template>
@@ -559,9 +566,66 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
+// ── 車資說明 ─────────────────────────────────────────────────
+.PassengerFareEstimator__notes {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(212, 134, 10, 0.08);
+  border: 1px solid rgba(212, 134, 10, 0.22);
+}
+
+.PassengerFareEstimator__notes-title {
+  font-family: $font-condensed;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--da-amber);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::before {
+    content: '';
+    width: 18px;
+    height: 1.5px;
+    background: var(--da-amber);
+  }
+}
+
+.PassengerFareEstimator__notes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.PassengerFareEstimator__notes-list li {
+  font-family: $font-body;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--da-dark);
+  padding-left: 18px;
+  position: relative;
+}
+
+.PassengerFareEstimator__notes-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 10px;
+  height: 2px;
+  background: var(--da-amber);
+}
+
 // ── Disclaimer ──────────────────────────────────────────────
 .PassengerFareEstimator__disclaimer {
-  margin: 18px 0 0;
+  margin: 14px 0 0;
   padding: 12px 14px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.03);

@@ -13,9 +13,7 @@ const OnQrError = () => {
 const links = [
   { id: 'booking', path: '/booking' },
   { id: 'fare',    path: '/fare' },
-  { id: 'service', path: '/service' },
   { id: 'faq',     path: '/faq' },
-  { id: 'fleet',   path: '/fleet' },
   { id: 'orders',  path: '/orders' },
   { id: 'terms',   path: '/legal/terms' },
   { id: 'privacy', path: '/legal/privacy' },

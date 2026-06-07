@@ -16,7 +16,7 @@
 // SSR 時也 skip — `import.meta.client=false`；確保 server 端不被 12s timeout 卡住。
 const route = useRoute();
 
-const PUBLIC_PREFIXES = ['/fare', '/fleet', '/faq', '/login', '/legal'];
+const PUBLIC_PREFIXES = ['/fare', '/faq', '/login', '/legal'];
 
 const _isPublicRoute = (path: string): boolean => {
   // 嘗試剝去語系前綴（/en/fare、/ja/fleet 等），確保 SWR 公開頁三語均不被 gate

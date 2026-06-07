@@ -38,12 +38,11 @@ const fallbackChar = computed(() => {
   return name.charAt(0).toUpperCase() || '?';
 });
 
-// 歷史訂單 / 個人設定 / 法律文件移至 CommonFooter，drawer 僅留主要功能入口
+// /fleet 合併進 /fare、/service 合併進 /faq；drawer 僅留主要功能入口
+// 歷史訂單 / 個人設定 / 法律文件移至 CommonFooter
 const items = computed(() => [
   { id: 'notifications', path: '/notifications', label: t('drawer.notifications'), badge: props.unreadCount },
   { id: 'booking',       path: '/booking',       label: t('drawer.booking'),       badge: 0 },
-  { id: 'fleet',         path: '/fleet',         label: t('drawer.fleet'),         badge: 0 },
-  { id: 'service',       path: '/service',       label: t('drawer.service'),       badge: 0 },
   { id: 'fare',          path: '/fare',          label: t('drawer.fare'),          badge: 0 },
   { id: 'faq',           path: '/faq',           label: t('drawer.faq'),           badge: 0 },
 ]);

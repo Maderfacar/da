@@ -159,7 +159,6 @@ onUnmounted(() => {
         .PageHome__hero-cta
           button.PageHome__cta-primary(@click="navigateTo('/booking')") {{ $t('home.hero.cta.book') }}
           button.PageHome__cta-secondary(@click="navigateTo('/fare')") {{ $t('home.hero.cta.fare') }}
-          button.PageHome__cta-secondary(@click="navigateTo('/fleet')") {{ $t('home.hero.cta.fleet') }}
 
   //- ── STRIPE ──────────────────────────────────────────────────
   .PageHome__stripe
