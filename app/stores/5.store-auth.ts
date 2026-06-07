@@ -453,7 +453,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     _clearState();
     // authResolved 保持 true（auth 流程仍是「已解析，當前未登入」狀態）
     // 若設為 false 會導致 layout v-if="!authResolved" 顯示 loading，但 plugin 不會再跑而永久卡住
-    navigateTo(redirectTo);
+    // replace 而非 push — 登出後不該按返回鍵回到受保護頁面（middleware 會再踢一次但歷史很亂）
+    navigateTo(redirectTo, { replace: true });
   };
 
   // -------------------------------------------------------------------------------------------------

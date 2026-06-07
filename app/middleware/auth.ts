@@ -25,6 +25,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!authStore.isSignIn) {
     const loginPath = to.path.startsWith('/driver') ? '/driver/auth' : '/login';
-    return navigateTo(loginPath);
+    // 用 replace 而非 push — 避免 reload 期間「閃登入頁 → 跳回原頁」造成歷史堆疊，
+    // 按返回鍵又回到「未授權的原頁」造成 middleware 迴圈
+    return navigateTo(loginPath, { replace: true });
   }
 });

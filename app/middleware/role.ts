@@ -28,7 +28,7 @@ export default defineNuxtRouteMiddleware((to) => {
   // /driver/register：已核准 driver 強制導去 dashboard，其他放行（apply / pending / rejected）
   if (isDriverRegister) {
     if (authStore.roles.includes('driver') && authStore.approved) {
-      return navigateTo('/driver/dashboard');
+      return navigateTo('/driver/dashboard', { replace: true });
     }
     return;
   }
@@ -37,13 +37,13 @@ export default defineNuxtRouteMiddleware((to) => {
     // 已 authResolved 但 roles 為空（line-exchange 失敗 / Firestore rules 阻擋）：
     // - driver path → 導 /driver/auth 讓 watch 處理（純乘客 → register 申請流程）
     // - 其他 path → 放行（後續 auth.ts 已等過 12s，視同未登入）
-    if (isDriverPath) return navigateTo('/driver/auth');
+    if (isDriverPath) return navigateTo('/driver/auth', { replace: true });
     return;
   }
 
   // Admin 路徑：必須 admin role；不符合 → 引回乘客端
   if (isAdminPath && !authStore.roles.includes('admin')) {
-    return navigateTo('/home');
+    return navigateTo('/home', { replace: true });
   }
 
   // Driver 路徑（非 auth / 非 register）：必須 driver role + approved；不符合 → 導向 /driver/auth
@@ -59,6 +59,6 @@ export default defineNuxtRouteMiddleware((to) => {
   //   - driver pending/rejected → watch 跳 /driver/register
   //   - approved driver → watch 跳 /driver/dashboard
   if (isDriverPath && (!authStore.roles.includes('driver') || !authStore.approved)) {
-    return navigateTo('/driver/auth');
+    return navigateTo('/driver/auth', { replace: true });
   }
 });

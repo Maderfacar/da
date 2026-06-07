@@ -32,8 +32,8 @@ const HandleUnauthorized = async () => {
     const authStore = StoreAuth();
     await authStore.SignOut('/');
   } catch {
-    // SSR 或 Pinia 未初始化時 fallback
-    void navigateTo('/');
+    // SSR 或 Pinia 未初始化時 fallback；replace 避免歷史堆疊
+    void navigateTo('/', { replace: true });
   }
 };
 

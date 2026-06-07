@@ -16,7 +16,8 @@ export const StoreSelf = defineStore('StoreSelf', () => {
   const ClearInfo = () => {
     // 清除 token
     SetToken('');
-    navigateTo('/sign-in');
+    // 此樣板原有路徑 '/sign-in' 在本專案不存在，且用 push 會堆 history；統一導 /login 並 replace
+    navigateTo('/login', { replace: true });
   };
 
   /** 登出 */
