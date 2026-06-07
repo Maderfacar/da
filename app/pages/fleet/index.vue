@@ -108,8 +108,6 @@ const sampleFare = computed(() => {
         NuxtIcon.PageFleet__extra-icon(:name="svc.icon")
         span.PageFleet__extra-name {{ Loc(svc.label) }}
         span.PageFleet__extra-price + NT$ {{ svc.price }}
-
-  CommonFooter
 </template>
 
 <style lang="scss" scoped>
@@ -123,11 +121,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: var(--da-cream);
   padding: 76px 24px 0;
   overflow: hidden;
-}
-
-// 對齊 fare：頁尾 CommonFooter，負 margin 破出 24px 水平 padding 達全幅
-.CommonFooter {
-  margin: 48px -24px 0;
 }
 
 .PageFleet__watermark {

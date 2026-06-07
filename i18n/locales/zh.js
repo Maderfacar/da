@@ -364,6 +364,8 @@ export default {
     },
     route: {
       title: '設定路線',
+      safetyNotice: '為了您的上下車安全，請避開紅線、公車停靠區、黃網格區域。並選擇合法的臨停處上下車！',
+      safetyNoticeLabel: '安全提醒',
       pickupLabel: '上車地點 / PICKUP',
       pickupPlaceholder: '請輸入上車地址',
       stopoverLabel: '停靠站 {n} / STOPOVER',
@@ -755,6 +757,8 @@ export default {
     supportLabel: '聯絡我們',
     support: 'LINE 線上客服',
     supportHours: '24 小時服務',
+    lineQrLabel: '加 LINE 好友',
+    lineQrCaption: '掃描 QR Code 加入官方帳號',
     links: {
       booking: '立即訂車',
       fare: '路線參考價',

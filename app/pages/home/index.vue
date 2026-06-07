@@ -256,10 +256,6 @@ onUnmounted(() => {
 
   //- ── 4. 現正優惠（無折扣碼自動隱藏）───────────────────
   PassengerHomePromo
-
-  //- ── Footer ─────────────────────────────────────────────
-  CommonFooter
-
 </template>
 
 

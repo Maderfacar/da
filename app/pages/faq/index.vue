@@ -35,8 +35,6 @@ const ClickSupport = () => {
     button.PageFaq__contact-btn(type="button" @click="ClickSupport")
       | {{ $t('faq.notFound.cta') }}
       span.PageFaq__contact-ext ↗
-
-  CommonFooter
 </template>
 
 <style lang="scss" scoped>

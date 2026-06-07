@@ -43,7 +43,7 @@ pnpm test:e2e     # Playwright E2E 測試（需先手動啟動 pnpm dev）
 | 端 | Layout | 路由 | 說明 |
 |----|--------|------|------|
 | 乘客 | `front-desk` | `/` `/booking` `/orders` `/upcoming` `/fleet` `/profile` | 公開首頁、訂車、訂單、行程、車型、個人 |
-| 司機 | `driver` | `/driver/dashboard` `/driver/pending` `/driver/trip` `/driver/profile` | 儀表板、搶單、任務GPS、個人 |
+| 司機 | `driver` | `/driver/dashboard` `/driver/dispatched` `/driver/trip` `/driver/profile` | 儀表板、搶單、任務GPS、個人 |
 | Admin | `back-desk` | `/admin/orders` `/admin/war-room` `/admin/traffic` `/admin/notifications` `/admin/drivers` `/admin/settings` | 訂單管理、即時地圖、人流、通知、司機、設定 |
 
 > 三端均使用 `middleware: ['auth', 'role']` 守衛，司機端/Admin 均設 `ssr: false`

@@ -1,8 +1,14 @@
 <script setup lang="ts">
-// CommonFooter — 首頁與內容頁共用頁尾
-// 出現範圍：/home /service /fare /faq /fleet（由各頁面自行掛載，不進 layout）
+// CommonFooter — 乘客端共用頁尾
+// 由 front-desk layout 統一掛載，所有 layout: 'front-desk' 頁面皆顯示
 
 const { lineOaAddUrl } = useRuntimeConfig().public;
+
+// QR 圖檔：優先用 PNG（請放置 `public/img/line-qr.png`），讀不到時 fallback 到 SVG placeholder
+const qrSrc = ref('/img/line-qr.png');
+const OnQrError = () => {
+  if (qrSrc.value !== '/img/line-qr.svg') qrSrc.value = '/img/line-qr.svg';
+};
 
 const links = [
   { id: 'booking', path: '/booking' },
@@ -51,6 +57,25 @@ footer.CommonFooter
         span.CommonFooter__support-ext ↗
       .CommonFooter__hours {{ $t('footer.supportHours') }}
 
+    //- LINE 官方帳號 QR Code（每頁顯示，桌機右側、手機底部）
+    .CommonFooter__qr
+      .CommonFooter__col-label {{ $t('footer.lineQrLabel') }}
+      a.CommonFooter__qr-card(
+        :href="lineOaAddUrl || '#'"
+        target="_blank"
+        rel="noopener noreferrer"
+        :aria-label="$t('footer.lineQrLabel')"
+      )
+        img.CommonFooter__qr-img(
+          :src="qrSrc"
+          alt="LINE QR Code"
+          width="120"
+          height="120"
+          loading="lazy"
+          @error="OnQrError"
+        )
+      .CommonFooter__qr-caption {{ $t('footer.lineQrCaption') }}
+
   .CommonFooter__bottom
     span.CommonFooter__copyright {{ $t('footer.copyright') }}
 </template>
@@ -77,9 +102,61 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .CommonFooter__inner {
   padding: 40px 24px 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1.4fr 1fr 1fr auto;
+    gap: 32px;
+    align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 56px 32px 32px;
+  }
+}
+
+.CommonFooter__qr {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.CommonFooter__qr-card {
+  display: inline-flex;
+  padding: 8px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.CommonFooter__qr-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.CommonFooter__qr-img {
+  display: block;
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+}
+
+.CommonFooter__qr-caption {
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: rgba(250, 248, 244, 0.5);
+  max-width: 136px;
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .CommonFooter__qr {
+    align-items: center;
+    text-align: center;
+  }
 }
 
 .CommonFooter__logo {

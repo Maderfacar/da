@@ -84,8 +84,6 @@ definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
     p.PageService__cta-desc {{ $t('service.cta.desc') }}
     button.PageService__cta-btn(type="button" @click="navigateTo('/booking')")
       | {{ $t('service.cta.book') }}
-
-  CommonFooter
 </template>
 
 <style lang="scss" scoped>

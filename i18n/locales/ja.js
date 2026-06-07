@@ -349,6 +349,8 @@ export default {
     },
     route: {
       title: 'ルートを設定',
+      safetyNotice: '安全のため、赤線・バス停・黄色格子区域は避け、必ず合法的な停車エリアで乗降してください！',
+      safetyNoticeLabel: '安全のお知らせ',
       pickupLabel: '乗車地点 / PICKUP',
       pickupPlaceholder: '乗車地点の住所を入力',
       stopoverLabel: '途中停車 {n} / STOPOVER',
@@ -737,6 +739,8 @@ export default {
     supportLabel: 'お問い合わせ',
     support: 'LINE オンラインサポート',
     supportHours: '24時間対応',
+    lineQrLabel: 'LINE 友だち追加',
+    lineQrCaption: 'QR コードをスキャンして公式アカウントを追加',
     links: {
       booking: '今すぐ予約',
       fare: '料金の目安',

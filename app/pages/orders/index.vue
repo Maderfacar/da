@@ -174,8 +174,6 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
   //- Section 5：客服資訊
   PassengerHistorySupport
-
-  CommonFooter
 </template>
 
 <style lang="scss" scoped>
@@ -189,11 +187,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   min-height: 100svh;
   background: var(--da-cream);
   color: var(--da-dark);
-}
-
-// 對齊 fare：頁尾 CommonFooter，負 margin 破出 24px 水平 padding 達全幅
-.CommonFooter {
-  margin: 48px -24px 0;
 }
 
 // ── 頁首（對齊 fare）──────────────────────────────────────────

@@ -192,8 +192,6 @@ onMounted(ApiLoadMe);
         :disabled="!referralCode"
         @click="ClickCopyLink"
       ) {{ $t('referral.share.copyBtn') }}
-
-  CommonFooter
 </template>
 
 <style lang="scss" scoped>
@@ -208,9 +206,6 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
 }
 
-.CommonFooter {
-  margin: 48px -24px 0;
-}
 
 // ── Topbar ────────────────────────────────────────────────
 .PageReferralShare__topbar {

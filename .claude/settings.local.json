@@ -179,7 +179,29 @@
       "Bash(echo \"===EXIT $?\")",
       "Bash(git check-ignore *)",
       "Bash(ls /tmp/claude 2>&1 | head; find / -name \"b3xnrdi0q.output\" 2>/dev/null | head)",
-      "Bash(node scripts/i18n-diff.mjs)"
+      "Bash(node scripts/i18n-diff.mjs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s  /driver/dispatched\\\\n\" \"https://da-line-liff-app.vercel.app/driver/dispatched\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s  /admin/settings/fare-sandbox\\\\n\" \"https://da-line-liff-app.vercel.app/admin/settings/fare-sandbox\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s  /admin/users\\\\n\" \"https://da-line-liff-app.vercel.app/admin/users\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{time_total}s  /admin/line-management\\\\n\" \"https://da-line-liff-app.vercel.app/admin/line-management\")",
+      "Bash(curl -s -o /tmp/login_html.txt -w \"%{http_code}\\\\n\" \"https://da-line-liff-app.vercel.app/login\")",
+      "Bash(grep -E \"^tsx$|^vitest$\")",
+      "Bash(ls /c/Users/awfulone/.claude/projects/C--Users-awfulone-Desktop-Projects-cc-da/memory/ 2>&1 | head -60)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Path server -Include 'fare-sandbox*' -ErrorAction SilentlyContinue | Select-Object FullName\")",
+      "Bash(powershell -Command \"Get-ChildItem -Path server/utils -Filter 'fare*' | Select-Object Name\")",
+      "Bash(git -C \"C:/Users/awfulone/Desktop/Projects/cc_da\" status --porcelain)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\awfulone\\\\Desktop\\\\Projects\\\\cc_da\" -Recurse -Filter \"*.vue\")",
+      "Bash(Select-String -Pattern \"\\(settings|fleet|orders|fare\\)\")",
+      "Bash(Select-Object -First 30)",
+      "PowerShell(grep -i \"\\\\[\")",
+      "Bash(grep -n '$rose\\\\|rose:' C:/Users/awfulone/Desktop/Projects/cc_da/app/assets/scss/colors.scss)",
+      "Bash(grep -rn '$rose\\\\|$amber\\\\|$red\\\\|$danger' C:/Users/awfulone/Desktop/Projects/cc_da/app/assets/scss/)",
+      "Bash(grep -n '$amber\\\\|$muted\\\\|$rose\\\\|$err\\\\|@use\\\\|@import' C:/Users/awfulone/Desktop/Projects/cc_da/app/pages/admin/settings/index.vue)",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Path 'C:\\\\Users\\\\awfulone\\\\Desktop\\\\Projects\\\\cc_da\\\\server\\\\routes\\\\nuxt-api\\\\admin\\\\fleet' -Filter '*.ts' 2>&1 | Select-Object FullName\")",
+      "Bash(powershell -Command \"Remove-Item 'server\\\\routes\\\\nuxt-api\\\\fare\\\\simulate.post.ts' -Force; if \\(-not \\(Test-Path 'server\\\\routes\\\\nuxt-api\\\\fare'\\)\\) { 'gone' }\")",
+      "Bash(powershell -Command \"if \\(Test-Path 'server/routes/nuxt-api/fare/simulate.post.ts'\\) { 'exists' } else { 'gone' }; if \\(Test-Path 'server/routes/nuxt-api/fare'\\) { 'dir-exists' } else { 'dir-gone' }\")",
+      "Bash(powershell -Command \"Remove-Item 'server/routes/nuxt-api/fare' -Recurse -Force\")",
+      "Bash(ls -la /tmp/claude/ 2>&1 || ls -la C:/Users/awfulone/AppData/Local/Temp/claude/ 2>&1 | head -10)"
     ]
   }
 }

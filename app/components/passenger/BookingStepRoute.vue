@@ -177,6 +177,13 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   .PassengerBookingStepRoute__section-label ROUTE PLANNING
   h2.PassengerBookingStepRoute__title {{ $t('booking.route.title') }}
 
+  //- 上下車安全提醒：紅線 / 公車停靠 / 黃網格 — 三語
+  .PassengerBookingStepRoute__safety(role="note")
+    NuxtIcon.PassengerBookingStepRoute__safety-icon(name="mdi:alert-octagon")
+    .PassengerBookingStepRoute__safety-body
+      .PassengerBookingStepRoute__safety-label {{ $t('booking.route.safetyNoticeLabel') }}
+      .PassengerBookingStepRoute__safety-text {{ $t('booking.route.safetyNotice') }}
+
   //- 地圖預覽（Drop Pin 支援）
   ClientOnly
     MapRoutePreview(
@@ -291,6 +298,48 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   color: var(--da-dark);
   letter-spacing: 0.02em;
   margin-top: -8px;
+}
+
+.PassengerBookingStepRoute__safety {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fff4e5 0%, #ffe8d4 100%);
+  border: 1.5px solid #ef6c00;
+  border-left: 4px solid #d84315;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(216, 67, 21, 0.12);
+}
+
+.PassengerBookingStepRoute__safety-icon {
+  flex-shrink: 0;
+  font-size: 22px;
+  color: #d84315;
+  margin-top: 2px;
+}
+
+.PassengerBookingStepRoute__safety-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.PassengerBookingStepRoute__safety-label {
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d84315;
+  margin-bottom: 4px;
+}
+
+.PassengerBookingStepRoute__safety-text {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #4e342e;
+  font-weight: 500;
 }
 
 .PassengerBookingStepRoute__stopover {

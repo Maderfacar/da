@@ -349,6 +349,8 @@ export default {
     },
     route: {
       title: 'Set Route',
+      safetyNotice: 'For your safety, please avoid red lines, bus stops, and yellow-grid zones. Always pick up and drop off at legal parking areas!',
+      safetyNoticeLabel: 'Safety Notice',
       pickupLabel: 'Pickup / PICKUP',
       pickupPlaceholder: 'Enter pickup address',
       stopoverLabel: 'Stop {n} / STOPOVER',
@@ -737,6 +739,8 @@ export default {
     supportLabel: 'Contact Us',
     support: 'LINE Support',
     supportHours: '24-hour service',
+    lineQrLabel: 'Add LINE Friend',
+    lineQrCaption: 'Scan QR code to add our official account',
     links: {
       booking: 'Book Now',
       fare: 'Fare Reference',

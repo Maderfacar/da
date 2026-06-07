@@ -111,6 +111,9 @@ onUnmounted(() => {
   main.LayoutFrontDesk__body(:class="{ 'has-banner': showFriendBanner }")
     slot
 
+  //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
+  CommonFooter
+
   //- ── Drawer ──────────────────────────────────────────────
   ClientOnly
     CommonDrawer(
