@@ -483,10 +483,12 @@ export const DEFAULT_FARE_RULES: FareRules = {
     surfaceRatePerKm: 30,
     surchargeCap: 1500,
     highwayPatterns: [
+      // 視窗 3 hotfix（2026-06-07）：補阿拉伯「國道1號」+ 高架道路；砍死碼 `國[1-9]`
       '國道[一二三四五六八十]+號?',
-      '國[1-9]',
-      'freeway|expressway',
+      '國道\\s?\\d+號?',
       '高速公路|快速道路',
+      '高架(?:道路|橋)?',
+      'freeway|expressway',
       '台\\s*(61|62|64|65|66|68|74|76|78|82|84|86|88)',
     ],
   },

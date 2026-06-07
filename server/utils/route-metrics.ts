@@ -258,13 +258,18 @@ export async function getRouteMetricsV2(input: RouteMetricsInput): Promise<Route
   const freeFlowKmh =
     route.staticDurationSec > 0 ? route.distanceKm / (route.staticDurationSec / 3600) : 0;
 
-  // 5a. 視窗 1：steps regex 分高速 / 平面；失敗用 OSM freewayKm 回退。
-  //     route.steps 空陣列 → segments.highwayKm=0 → 落回 OSM 數值。
+  // 5a. 視窗 1：steps regex 分高速 / 平面；OSM 多管理員不易維護，需 fallback。
+  //
+  // 視窗 3 hotfix（2026-06-07）：原本「steps 命中即偏好 steps」會在 regex 漏判時
+  // 把多數高速段誤判平面（symptom：Google zh-TW 回阿拉伯「國道1號」舊 patterns 不認 →
+  // 高速 2.8km / 平面 39.6km / 平面加成 NT$888 收錯）。改用 MAX(segments, OSM freeway)：
+  //   - 兩源都看過該段 → 取較大者；正常情況兩者接近
+  //   - regex 漏 → OSM 救（如本次 hotfix 場景）
+  //   - OSM 漏（新路 / 偏遠路段不在 OSM 索引）→ steps 救
+  // 兩源都把同段視高速 → MAX 不會雙計，因為兩者各自從不同來源針對同一段地理位置分類
   const patterns = input.highwayPatterns ?? DEFAULT_HIGHWAY_PATTERNS;
   const segments = parseRouteSegments(route.steps, patterns);
-  const highwayKm = route.steps.length > 0 && segments.highwayKm > 0
-    ? segments.highwayKm
-    : freewayKm;
+  const highwayKm = Math.min(route.distanceKm, Math.max(segments.highwayKm, freewayKm));
   const surfaceKm = Math.max(0, route.distanceKm - highwayKm);
 
   // 5. Charter Fare V1：取 X→A polyline 供來回判定（失敗 silent skip）

@@ -31,17 +31,30 @@ export interface RouteSegmentsResult {
  * 預設高速路型白名單 regex（admin 可在 Firestore fare_rules/v1.surfaceSurcharge.highwayPatterns 覆寫）。
  *
  * 涵蓋：
- *  - 國道一/二/三/四/五/六/八/十號（國道帶中文數字 / 阿拉伯數字）
- *  - 國 1 / 國 5 / freeway / expressway / 高速公路 / 快速道路
- *  - 台 61/62/64/65/66/68/74/76/78/82/84/86/88 等明確快速道路省道
+ *  - 國道[一二三四五六八十]+號?（中文數字 — 國道一/二.../十號）
+ *  - 國道\s?\d+號?（阿拉伯數字 — 國道1/3/5號 — Google Routes zh-TW 實際回傳格式）
+ *  - 高速公路 / 快速道路（連續流通用詞）
+ *  - 高架(?:道路|橋)?（**高架路段** — 市區常見的非快速道路高架，e.g. 台1線、重慶北路、新生高架）
+ *  - freeway / expressway（英文 fallback）
+ *  - 台\s*(61|62|...|88)（明確的快速道路省道白名單）
  *
- * 不收：台 2 / 台 9 / 台 11（平面省道）；台北市/縣道則靠未命中自然落 surface。
+ * 不收：台 1 / 台 2 / 台 9 / 台 11（平面省道，至地表時段）；台北市/縣道則靠未命中自然落 surface。
+ *
+ * 限制：文本分類無法偵測「繼續沿 XX 路行駛」這類無路名前綴的延續步驟；
+ * 但進入高架/國道的關鍵 step 通常會帶字，配合 route-metrics.ts 的 MAX(steps, OSM) 邏輯
+ * 即可在 OSM 'motorway' 補足下抓到大部分國道里程。
+ *
+ * 視窗 3 hotfix（2026-06-07）：
+ *   - 補 `國道\s?\d+號?`（原僅中文數字→ Google zh-TW 阿拉伯格式漏判國道整段）
+ *   - 補 `高架(?:道路|橋)?`（台 1 線高架等市區常見高架）
+ *   - 砍 `國[1-9]`（死碼 — Google 從不用「國1」省略道字格式）
  */
 export const DEFAULT_HIGHWAY_PATTERNS: ReadonlyArray<string> = Object.freeze([
   '國道[一二三四五六八十]+號?',
-  '國[1-9]',
-  'freeway|expressway',
+  '國道\\s?\\d+號?',
   '高速公路|快速道路',
+  '高架(?:道路|橋)?',
+  'freeway|expressway',
   '台\\s*(61|62|64|65|66|68|74|76|78|82|84|86|88)',
 ]);
 

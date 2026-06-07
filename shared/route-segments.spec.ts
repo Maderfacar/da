@@ -157,4 +157,78 @@ describe('parseRouteSegments', () => {
     expect(r.highwayKm).toBe(0);
     expect(r.surfaceKm).toBe(7);
   });
+
+  // ── 視窗 3 hotfix（2026-06-07）：阿拉伯數字國道 — Google Routes zh-TW 實際格式 ──
+  it('「上 國道1號 往 基隆」→ highway（阿拉伯數字）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '上 國道1號 往 基隆', distanceKm: 15 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(15);
+    expect(r.surfaceKm).toBe(0);
+  });
+
+  it('「繼續沿國道3號行駛」→ highway（阿拉伯數字，無空格）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '繼續沿國道3號行駛 35 公里', distanceKm: 35 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(35);
+  });
+
+  it('「國道 5 號」→ highway（阿拉伯數字 + 全形空格）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '前進至國道 5 號', distanceKm: 18 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(18);
+  });
+
+  it('混合阿拉伯 + 中文數字 — 各自累加', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '從 台北車站 出發', distanceKm: 1.5 },
+      { instructions: '上 國道1號 往 基隆', distanceKm: 12 },
+      { instructions: '靠右行駛 進入 國道一號 高速公路', distanceKm: 18 },
+      { instructions: '下交流道 進入 中山北路', distanceKm: 2.5 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(30); // 12 + 18
+    expect(r.surfaceKm).toBe(4);  // 1.5 + 2.5
+  });
+
+  // ── 視窗 3 hotfix（2026-06-07）：高架道路（台 1 線等市區常見高架）──
+  it('「進入 重慶北路高架道路」→ highway（高架關鍵字）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '進入 重慶北路高架道路', distanceKm: 3.2 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(3.2);
+    expect(r.surfaceKm).toBe(0);
+  });
+
+  it('「上 新生高架橋」→ highway', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '上 新生高架橋 前進', distanceKm: 1.8 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(1.8);
+  });
+
+  it('「下高架」短段也命中（接受微幅 over-count）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '下高架 靠右行駛', distanceKm: 0.4 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(0.4);
+  });
+
+  // ── 視窗 3 hotfix：砍死碼 `國[1-9]` 不應誤抓 ──
+  it('「中國街3號」→ surface（單字 國 + 數字不該被誤抓為國道）', () => {
+    const steps: RouteStepLite[] = [
+      { instructions: '靠右行駛 進入 中國街3 號', distanceKm: 0.5 },
+    ];
+    const r = parseRouteSegments(steps, PATTERNS);
+    expect(r.highwayKm).toBe(0);
+    expect(r.surfaceKm).toBe(0.5);
+  });
 });
