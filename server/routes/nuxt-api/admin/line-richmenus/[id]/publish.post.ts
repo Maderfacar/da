@@ -1,7 +1,7 @@
 /**
  * POST /nuxt-api/admin/line-richmenus/[id]/publish
  *
- * Publish richmenu（複合動作；P42 改為 lang-aware）：
+ * Publish richmenu（複合動作；P42 改為 lang-aware；2026-06-07 修 immutable bug）：
  *
  * 流程：
  *   1. 驗 isPublishReady（image / chatBarText / areas 都齊）
@@ -9,13 +9,20 @@
  *   3. Firestore tx（P42 改）：
  *      - 把同 channel × 同 lang 既有 active → archived（保留 lineRichMenuId 供 rollback 用）
  *      - 把本 menu status='active'、publishedAt=now、syncStatus='syncing'
- *   4. LINE API 呼叫：
- *      - 若 lineRichMenuId 為 null → POST /richmenu（建立框架）+ POST /content（上傳圖）
- *      - **lang='zh_tw' 才** POST /user/all/richmenu/{id}（設預設給未綁定 / 未知 lang user 看）
+ *   4. LINE API 呼叫（**每次都建新 richmenu**，因 LINE 規格 areas/image immutable）：
+ *      - POST /richmenu（建立框架，拿新 richMenuId）
+ *      - POST /content（上傳圖到新 ID）
+ *      - lang='zh_tw' 才 POST /user/all/richmenu/{newId}（設預設）
+ *      - 任一步失敗 → 回滾刪掉剛建的新 richmenu，狀態 sync_failed
  *   5. P42：對既有 user batch re-bind（users where lang == publishedLang limit 100；超量 throw）
- *   6. 成功：syncStatus='synced' + lineRichMenuId 寫回；失敗：syncStatus='sync_failed' + syncError
+ *   6. 成功 → best-effort 刪舊 prevLineRichMenuId（避免孤兒；失敗也算 publish 成功，可走 cleanup-orphan）
+ *   7. Firestore 寫回新 lineRichMenuId + syncStatus
  *
- * 副作用：audit log `line.richmenu.publish`（含 lang + rebindStats）
+ * 為什麼每次都重建：LINE richmenu 一旦建立，areas / image 都無法 update；
+ *   舊版「reuse 既有 lineRichMenuId 只 setDefault」會導致 areas 改了但 LINE 端不變，
+ *   表現成「user 點 rich menu 跑進舊 URL（一般 in-app browser）而非新 URL（LIFF）」。
+ *
+ * 副作用：audit log `line.richmenu.publish`（含 prevLineRichMenuId / newLineRichMenuId / oldRichmenuDeleted / rebindStats）
  *
  * 權限：canBroadcast
  */
@@ -31,6 +38,7 @@ import {
   uploadRichmenuImage,
   setDefaultRichmenu,
   linkRichmenuToUser,
+  deleteRichmenu,
   LineApiError,
 } from '@@/utils/line-richmenu';
 
@@ -130,36 +138,41 @@ export default defineEventHandler(async (event) => {
       });
     });
 
-    // ── 4. LINE API 呼叫 ────────────────────────────────────
-    let lineRichMenuId = existing.lineRichMenuId;
+    // ── 4. LINE API 呼叫（每次都重建：LINE richmenu areas/image immutable）────
+    // 流程：createRichmenu → uploadImage → setDefault（lang=zh_tw 才設）
+    // 任一步 fail → 刪掉剛建的 createdLineRichMenuId 回滾，避免孤兒。
+    // 成功才把 lineRichMenuId 切到新值，後續 re-bind / Firestore 寫回都用新 ID。
+    const prevLineRichMenuId: string | null = existing.lineRichMenuId ?? null;
+    let lineRichMenuId: string | null = prevLineRichMenuId;
+    let createdLineRichMenuId: string | null = null;
     let syncStatus: 'synced' | 'sync_failed' = 'synced';
     let syncError: string | null = null;
+    let oldRichmenuDeleted = false;
 
     try {
-      if (!lineRichMenuId) {
-        // 建立 LINE richmenu 框架
-        const created = await createRichmenu(existing.channel, {
-          size: existing.imageSize!,
-          selected: existing.selected,
-          name: existing.name.slice(0, 100),
-          chatBarText: existing.chatBarText,
-          areas: existing.areas,
-        });
-        lineRichMenuId = created.richMenuId;
+      const created = await createRichmenu(existing.channel, {
+        size: existing.imageSize!,
+        selected: existing.selected,
+        name: existing.name.slice(0, 100),
+        chatBarText: existing.chatBarText,
+        areas: existing.areas,
+      });
+      createdLineRichMenuId = created.richMenuId;
 
-        // 上傳圖片
-        const [imgBuf] = await storage.bucket().file(existing.imageObjectPath!).download();
-        await uploadRichmenuImage(
-          existing.channel,
-          lineRichMenuId,
-          imgBuf,
-          existing.imageMime!,
-        );
-      }
-      // P42：只在 lang='zh_tw' 才設為全 user default（其他 lang user 透過 PATCH /api/self/lang 或 follow event 個別綁定）
+      const [imgBuf] = await storage.bucket().file(existing.imageObjectPath!).download();
+      await uploadRichmenuImage(
+        existing.channel,
+        createdLineRichMenuId,
+        imgBuf,
+        existing.imageMime!,
+      );
+
+      // P42：只在 lang='zh_tw' 才設為全 user default（其他 lang 走 per-user 綁定）
       if (existing.lang === 'zh_tw') {
-        await setDefaultRichmenu(existing.channel, lineRichMenuId);
+        await setDefaultRichmenu(existing.channel, createdLineRichMenuId);
       }
+
+      lineRichMenuId = createdLineRichMenuId;
     } catch (err) {
       syncStatus = 'sync_failed';
       if (err instanceof LineApiError) {
@@ -168,6 +181,20 @@ export default defineEventHandler(async (event) => {
         syncError = (err as Error).message ?? 'Unknown';
       }
       console.error('[admin/line-richmenus/[id]/publish] LINE sync failed:', err);
+
+      // 回滾：刪掉剛建的孤兒 richmenu（若有建到一半失敗）
+      if (createdLineRichMenuId) {
+        try {
+          await deleteRichmenu(existing.channel, createdLineRichMenuId);
+        } catch (rollbackErr) {
+          console.warn(
+            `[publish] rollback delete failed for ${createdLineRichMenuId}:`,
+            rollbackErr,
+          );
+        }
+        createdLineRichMenuId = null;
+        lineRichMenuId = prevLineRichMenuId; // 保留舊 ID 給 Firestore 寫回
+      }
     }
 
     // ── 5. P42：對既有 user batch re-bind（撈 users where lang == publishedLang）──
@@ -217,7 +244,31 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // ── 6. 寫回最終狀態 ────────────────────────────────────
+    // ── 6. 成功 → best-effort 刪舊 prevLineRichMenuId（避免孤兒）─────
+    // 失敗也算 publish 成功（新 richmenu 已為 default + user 已 re-bind）；
+    // 殘留孤兒可走 admin cleanup-orphan endpoint 清理。
+    if (
+      syncStatus === 'synced'
+      && prevLineRichMenuId
+      && lineRichMenuId
+      && prevLineRichMenuId !== lineRichMenuId
+    ) {
+      try {
+        await deleteRichmenu(existing.channel, prevLineRichMenuId);
+        oldRichmenuDeleted = true;
+      } catch (err) {
+        if (err instanceof LineApiError && err.statusCode === 404) {
+          oldRichmenuDeleted = true; // 已不存在於 LINE 端視同已刪
+        } else {
+          console.warn(
+            `[publish] best-effort delete of prev ${prevLineRichMenuId} failed:`,
+            err,
+          );
+        }
+      }
+    }
+
+    // ── 7. 寫回最終狀態 ────────────────────────────────────
     await ref.update({
       lineRichMenuId,
       syncStatus,
@@ -238,7 +289,9 @@ export default defineEventHandler(async (event) => {
         lang: existing.lang,
         prevActiveId,
         prevActiveLineId,
+        prevLineRichMenuId,
         newLineRichMenuId: lineRichMenuId,
+        oldRichmenuDeleted,
         syncStatus,
         syncError,
         rebindStats,
@@ -247,7 +300,7 @@ export default defineEventHandler(async (event) => {
 
     if (rebindStats.limitExceeded) {
       return {
-        data: { id, syncStatus, lineRichMenuId, prevActiveId, rebindStats },
+        data: { id, syncStatus, lineRichMenuId, prevLineRichMenuId, oldRichmenuDeleted, prevActiveId, rebindStats },
         status: {
           code: 502,
           message: {
@@ -261,7 +314,7 @@ export default defineEventHandler(async (event) => {
 
     if (syncStatus === 'sync_failed') {
       return {
-        data: { id, syncStatus, syncError, lineRichMenuId },
+        data: { id, syncStatus, syncError, lineRichMenuId, prevLineRichMenuId },
         status: {
           code: 502,
           message: {
@@ -277,6 +330,8 @@ export default defineEventHandler(async (event) => {
       id,
       syncStatus,
       lineRichMenuId,
+      prevLineRichMenuId,
+      oldRichmenuDeleted,
       prevActiveId,
       rebindStats,
     });
