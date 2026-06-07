@@ -399,7 +399,14 @@ export default defineEventHandler(async (event) => {
         origin: { lat: body.pickupLocation.lat, lng: body.pickupLocation.lng },
         destination: { lat: body.dropoffLocation.lat, lng: body.dropoffLocation.lng },
         waypoints: validStopovers.map((s) => ({ lat: s.lat, lng: s.lng })),
-        vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
+        // 視窗 3 hotfix（2026-06-07）：原 inline pick 漏 vehicle.surfaceRatePerKm
+        // → 若車型有設覆寫費率，下單時實際寫入訂單的 fare 會用全域 default rate 算錯（成交價錯帳！）。
+        // 跟 /api/maps/route + /admin/fare/simulate 對齊用完整 vehicle 物件。
+        vehicle: {
+          baseFare: vehicle.baseFare,
+          perKmRate: vehicle.perKmRate,
+          surfaceRatePerKm: vehicle.surfaceRatePerKm,
+        },
         extras: selectedExtras.map((e) => ({ price: e.price })),
         pickupTime: parseTaiwanTime(body.pickupDateTime),
         orderType: body.orderType,

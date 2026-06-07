@@ -21,7 +21,12 @@ const originPlace = ref<GooglePlace | null>({ ...TPE_T1 });
 const destinationPlace = ref<GooglePlace | null>(null);
 const stopoverPlaces = ref<Array<GooglePlace | null>>([]);
 const vehicleId = ref('sedan-suv');
-const pickupTime = ref(new Date().toISOString().slice(0, 16)); // datetime-local
+// 視窗 3 hotfix（2026-06-07）：原 input type=datetime-local + lang=en-GB 在 Chromium 仍顯
+// AM/PM（lang 屬性不受瀏覽器尊重）→ 改 ElDatePicker + ElTimeSelect 強制 24h（與 PassengerFareEstimator 同款）。
+const _todayDate = (): string => $dayjs().format('YYYY-MM-DD');
+const _nextHourSlot = (): string => $dayjs().second(0).millisecond(0).add(1, 'hour').format('HH:00');
+const pickupDate = ref(_todayDate());
+const pickupTime = ref(_nextHourSlot());
 const orderType = ref<OrderType>('airport-pickup');
 const selectedExtras = ref<string[]>([]);
 
@@ -75,11 +80,17 @@ const ApiSimulate = async () => {
   }
   loading.value = true;
   try {
+    const pickupIso = `${pickupDate.value}T${pickupTime.value}:00`;
+    const pickupDateObj = new Date(pickupIso);
+    if (Number.isNaN(pickupDateObj.getTime())) {
+      errorMsg.value = '上車時間格式錯誤';
+      return;
+    }
     const body: AdminFareSimulateBody = {
       origin: { lat: originPlace.value.lat, lng: originPlace.value.lng },
       destination: { lat: destinationPlace.value.lat, lng: destinationPlace.value.lng },
       vehicleId: vehicleId.value,
-      pickupTime: new Date(pickupTime.value).toISOString(),
+      pickupTime: pickupDateObj.toISOString(),
       orderType: orderType.value,
       extraIds: [...selectedExtras.value],
     };
@@ -215,7 +226,23 @@ const metricsRows = computed(() => {
 
       .AdminFareSandbox__row
         label.AdminFareSandbox__label 上車時間
-        input.AdminFareSandbox__input(v-model="pickupTime" type="datetime-local" lang="en-GB")
+        .AdminFareSandbox__datetime
+          //- 視窗 3 hotfix：原 input type=datetime-local lang=en-GB 在 Chromium 仍 AM/PM；
+          //- 改 ElDatePicker + ElTimeSelect 強制 24h（dropdown 模式）
+          ElDatePicker.AdminFareSandbox__date(
+            v-model="pickupDate"
+            type="date"
+            format="YYYY/MM/DD"
+            value-format="YYYY-MM-DD"
+            :clearable="false"
+          )
+          ElTimeSelect.AdminFareSandbox__time(
+            v-model="pickupTime"
+            start="00:00"
+            end="23:50"
+            step="00:10"
+            :clearable="false"
+          )
 
       .AdminFareSandbox__row
         label.AdminFareSandbox__label 行程類型
@@ -431,6 +458,20 @@ $accent-soft: #e8d5d0;
   font-size: 14px;
   background: #fff;
   color: $ink;
+}
+
+// 視窗 3：上車時間 ElDatePicker + ElTimeSelect 雙欄
+.AdminFareSandbox__datetime {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  align-items: center;
+}
+
+.AdminFareSandbox__date,
+.AdminFareSandbox__time {
+  flex: 1;
+  min-width: 0;
 }
 
 .AdminFareSandbox__chips {

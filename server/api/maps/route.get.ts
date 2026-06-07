@@ -46,9 +46,12 @@ interface RouteRes {
   returnLegPolyline: string | null;
 }
 
+// TTL 30s 跟 fare-rules-cache 對齊 — 否則 admin 改規則後 estimator/booking 端的
+// LRU cache 最多殘留 5 min 才失效，造成「sandbox 算新規則 / estimator 拿舊 cache」的差異。
+// 視窗 3 hotfix（2026-06-07）：原 5 min 過長。
 const routeCache = new LRUCache<string, RouteRes>({
   max: 500,
-  ttl: 5 * 60 * 1000,
+  ttl: 30 * 1000,
 });
 
 function parseLatLng(raw: string | undefined): LatLng | null {
@@ -182,7 +185,14 @@ export default defineEventHandler(async (event) => {
       origin,
       destination,
       waypoints,
-      vehicle: { baseFare: vehicle.baseFare, perKmRate: vehicle.perKmRate },
+      // 視窗 3 hotfix（2026-06-07）：原 inline pick { baseFare, perKmRate } 漏 forward
+      // vehicle.surfaceRatePerKm；若某車型在 firestore 設了 surfaceRatePerKm override
+      // estimator/booking 端會用全域 default rate，sandbox 用 vehicle override → 兩端不一致。
+      vehicle: {
+        baseFare: vehicle.baseFare,
+        perKmRate: vehicle.perKmRate,
+        surfaceRatePerKm: vehicle.surfaceRatePerKm,
+      },
       extras,
       pickupTime: pickupTime as Date,
       orderType,
