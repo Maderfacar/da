@@ -13,6 +13,14 @@ export type {
   BotReplyListRes,
   BotReplyType,
   PutBotReplyBody,
+  PutBotReplyFollowBody,
+  PutBotReplyTextBody,
+  WelcomeLang,
+  WelcomeLangText,
+  WelcomeMessage,
+  WelcomeMessageFlex,
+  WelcomeMessageText,
+  WelcomeSequence,
 } from './type.d';
 
 /** 列出 4 個 bot reply key（doc 不存在回 hard-coded default 預覽） */

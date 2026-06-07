@@ -21,6 +21,9 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { writeLineEventLog, type EventType, type HandlerResult } from '@@/utils/line-event-log';
 import { writeLineApiError } from '@@/utils/line-api-error-log';
 import { resolveUserLang, bindRichmenuForUser } from '@@/utils/line-richmenu-binding';
+import type { Lang } from '@@/utils/user-lang';
+import type { LineMessage } from '@@/utils/line-push';
+import { migrateBotReplyDoc, buildWelcomeMessages } from '@@/utils/bot-reply-sequence';
 
 export type LineClient = 'passenger' | 'driver';
 
@@ -157,6 +160,46 @@ export function getBotReplyDefault(client: LineClient, type: BotReplyType): stri
 }
 
 /**
+ * 載入 follow 歡迎序列，依 user lang 解出 LINE message array（2026-06-08）。
+ *
+ * 與 loadBotReply 的差異：
+ *   - loadBotReply 回單則 text（給 .text 自動回覆用）
+ *   - 本函式回 message array（給 .follow 用），支援多則 text/flex 混搭、3 語自動選
+ *
+ * 流程：
+ *   1. 讀 bot_replies/{client}.follow doc（不存在 → fallback 包成單則 text）
+ *   2. migrateBotReplyDoc 把舊 single-text 自動轉新 schema
+ *   3. resolveUserLang 抓 user 偏好（新 user 無 doc → 'zh_tw'）
+ *   4. buildWelcomeMessages 依 lang + enabled 篩出 LINE message array（最多 5 則）
+ *
+ * 回空陣列代表「不 reply」（admin 主動停用 / 全部 message disabled / 無內容可建）
+ */
+export async function loadFollowMessages(
+  client: LineClient,
+  lineUid: string | null,
+): Promise<LineMessage[]> {
+  try {
+    const { firebaseServiceAccountJson } = useRuntimeConfig();
+    if (!firebaseServiceAccountJson) {
+      return [{ type: 'text', text: getBotReplyDefault(client, 'follow') }];
+    }
+    const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+
+    const [snap, lang] = await Promise.all([
+      db.collection('bot_replies').doc(`${client}.follow`).get(),
+      lineUid ? resolveUserLang(db, lineUid) : Promise.resolve<Lang>('zh_tw'),
+    ]);
+
+    const fallback = getBotReplyDefault(client, 'follow');
+    const seq = migrateBotReplyDoc(snap.exists ? snap.data() ?? null : null, fallback);
+    return buildWelcomeMessages(seq, lang);
+  } catch (err) {
+    console.warn(`[follow-sequence] load ${client}.follow failed, fallback to single text:`, err);
+    return [{ type: 'text', text: getBotReplyDefault(client, 'follow') }];
+  }
+}
+
+/**
  * 處理 LINE webhook 事件（passenger / driver endpoint 共用此 handler，只差 client）
  *
  * - 驗 x-line-signature 簽名（用對應 channel secret）
@@ -193,12 +236,13 @@ export async function handleLineWebhook(event: H3Event, client: LineClient): Pro
     const replyCtx = { client, targetUid: ev.source.userId ?? null };
 
     if (ev.type === 'follow' && ev.replyToken && accessToken) {
-      const text = await loadBotReply(client, 'follow');
-      if (text === null) {
-        // admin 在 bot_replies 設 enabled=false → 主動停用，不回覆
+      // 2026-06-08：follow event 改 push welcome sequence（多則 text/flex 混搭，依 user lang）
+      const messages = await loadFollowMessages(client, ev.source.userId ?? null);
+      if (messages.length === 0) {
+        // admin 主動停用整段 sequence / 全部 message disabled / 無內容 → 不回覆
         handlerResult = 'ignored';
       } else {
-        await _reply(accessToken, ev.replyToken, [{ type: 'text', text }], replyCtx);
+        await _reply(accessToken, ev.replyToken, messages, replyCtx);
         handlerResult = 'replied';
       }
     } else if (ev.type === 'follow') {

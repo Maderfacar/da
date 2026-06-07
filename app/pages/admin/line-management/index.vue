@@ -808,11 +808,14 @@ onMounted(() => {
       ) {{ c.label }}
 
     //- bot-reply category → BotReplies UI
+    //- 2026-06-08：.follow 類改用 WelcomeSequenceEditor（多則 text/flex 拖拉編輯）；.text 維持單則 textarea
     template(v-if="activeCategory === 'bot-reply'")
       .PageAdminLineManagement__loading(v-if="botRepliesLoading") 載入中...
       template(v-else)
         .PageAdminLineManagement__bot-intro
           | 編輯後 LINE 端會優先用 admin 設定的文案；停用或留空則 fallback 系統預設。
+          br
+          | <strong>follow（加好友）</strong>：可編多則訊息序列（最多 5 則，可拖拉排序）；<strong>text（自動回覆）</strong>：單則文字。
         .PageAdminLineManagement__bot-rows
           .PageAdminLineManagement__bot-row(
             v-for="item in botReplies"
@@ -825,30 +828,43 @@ onMounted(() => {
               span.PageAdminLineManagement__bot-type-label {{ BOT_REPLY_TYPE_LABEL[item.type] }}
               span.PageAdminLineManagement__bot-customized(v-if="item.isCustomized") 已自訂
               span.PageAdminLineManagement__bot-flex
-              label.PageAdminLineManagement__bot-enabled
+              //- text 類才在 head 顯示總體 enabled（follow 的 enabled 在 sequence editor 內）
+              label.PageAdminLineManagement__bot-enabled(v-if="item.type === 'text'")
                 input(type="checkbox" v-model="item.enabled")
                 | &nbsp;啟用
             .PageAdminLineManagement__bot-desc {{ BOT_REPLY_TYPE_DESC[item.type] }}
-            textarea.PageAdminLineManagement__bot-text(
-              v-model="item.text"
-              rows="4"
-              :maxlength="TEXT_MAX"
-              placeholder="輸入要推送的文案（純文字，可含換行 / emoji）"
+
+            //- follow：歡迎序列拖拉編輯器
+            AdminLineManagementWelcomeSequenceEditor(
+              v-if="item.type === 'follow' && item.welcomeSequence"
+              :reply-key="item.replyKey"
+              :initial-sequence="item.welcomeSequence"
+              :default-text="item.defaultText"
+              @saved="ApiLoadBotReplies"
             )
-            .PageAdminLineManagement__bot-foot
-              span.PageAdminLineManagement__bot-meta
-                | {{ item.text.length }} / {{ TEXT_MAX }}
-                template(v-if="item.updatedAt")
-                  | &nbsp; · &nbsp;最後編輯 {{ $dayjs(item.updatedAt).format('YYYY/MM/DD HH:mm') }}
-              span.PageAdminLineManagement__bot-actions
-                button.PageAdminLineManagement__btn.is-toggle(
-                  :disabled="savingBotReplyKey === item.replyKey"
-                  @click="ClickResetBotReply(item)"
-                ) 還原預設
-                button.PageAdminLineManagement__btn.is-approve(
-                  :disabled="savingBotReplyKey === item.replyKey"
-                  @click="ClickSaveBotReply(item)"
-                ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
+
+            //- text：單則文字
+            template(v-else)
+              textarea.PageAdminLineManagement__bot-text(
+                v-model="item.text"
+                rows="4"
+                :maxlength="TEXT_MAX"
+                placeholder="輸入要推送的文案（純文字，可含換行 / emoji）"
+              )
+              .PageAdminLineManagement__bot-foot
+                span.PageAdminLineManagement__bot-meta
+                  | {{ item.text.length }} / {{ TEXT_MAX }}
+                  template(v-if="item.updatedAt")
+                    | &nbsp; · &nbsp;最後編輯 {{ $dayjs(item.updatedAt).format('YYYY/MM/DD HH:mm') }}
+                span.PageAdminLineManagement__bot-actions
+                  button.PageAdminLineManagement__btn.is-toggle(
+                    :disabled="savingBotReplyKey === item.replyKey"
+                    @click="ClickResetBotReply(item)"
+                  ) 還原預設
+                  button.PageAdminLineManagement__btn.is-approve(
+                    :disabled="savingBotReplyKey === item.replyKey"
+                    @click="ClickSaveBotReply(item)"
+                  ) {{ savingBotReplyKey === item.replyKey ? '儲存中...' : '儲存' }}
 
     //- 其他 category → registry templates UI
     template(v-else)
