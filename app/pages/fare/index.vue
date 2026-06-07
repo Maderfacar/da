@@ -74,7 +74,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
       )
         SwiperSlide(v-for="cfg in vehicles" :key="cfg.id")
           .PageFare__vehicle-card(
-            :class="[{ 'is-active': activeVehicleId === cfg.id }, /(business|vip)/.test(cfg.id) ? 'is-luxury' : 'is-standard']"
+            :class="{ 'is-active': activeVehicleId === cfg.id }"
             @click="ClickVehicleCard(cfg.id)"
           )
             //- 主視覺：有 images.exterior 顯示縮圖，否則 fallback mdi icon
@@ -269,6 +269,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-card {
+  // 高度固定統一：所有車型卡同高（不再因 business/vip dark luxury 差異）
   position: relative;
   display: flex;
   flex-direction: column;
@@ -279,7 +280,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
   overflow: hidden;
-  min-height: 360px;
+  height: 380px;
 
   &:hover {
     transform: translateY(-3px);
@@ -289,14 +290,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &.is-active {
     border-color: var(--da-amber);
     box-shadow: 0 10px 28px rgba(212, 134, 10, 0.18);
-  }
-
-  &.is-luxury {
-    background: linear-gradient(165deg, #1a1814 0%, #2a2520 100%);
-    border-color: rgba(212, 134, 10, 0.32);
-    color: var(--da-cream);
-
-    &.is-active { border-color: var(--da-amber); }
   }
 }
 
@@ -312,12 +305,8 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   justify-content: center;
   margin-bottom: 14px;
 
-  .is-luxury & { background: rgba(255, 255, 255, 0.05); }
-
   &.is-icon {
     background: rgba(212, 134, 10, 0.08);
-
-    .is-luxury & { background: rgba(212, 134, 10, 0.14); }
   }
 }
 
@@ -341,8 +330,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
   letter-spacing: 0.01em;
   line-height: 1.2;
-
-  .is-luxury & { color: var(--da-cream); }
 }
 
 .PageFare__vehicle-sub {
@@ -352,8 +339,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-gray);
   text-transform: uppercase;
   margin-top: 2px;
-
-  .is-luxury & { color: var(--da-amber); }
 }
 
 .PageFare__vehicle-specs {
@@ -364,8 +349,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-family: $font-condensed;
   font-size: 12px;
   color: var(--da-gray);
-
-  .is-luxury & { color: rgba(250, 248, 244, 0.7); }
 
   span {
     display: inline-flex;
@@ -384,16 +367,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.04em;
   color: var(--da-dark);
 
-  .is-luxury & { color: var(--da-cream); }
-
   span {
     display: block;
     font-weight: 500;
     font-size: 11px;
     color: var(--da-gray);
     margin-top: 2px;
-
-    .is-luxury & { color: rgba(250, 248, 244, 0.55); }
   }
 }
 
@@ -403,8 +382,6 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-size: 12px;
   line-height: 1.55;
   color: var(--da-gray);
-
-  .is-luxury & { color: rgba(250, 248, 244, 0.65); }
 }
 
 // ── PRICING ENGINE 卡 ─────────────────────────────────────

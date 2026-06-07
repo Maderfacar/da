@@ -177,13 +177,6 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   .PassengerBookingStepRoute__section-label ROUTE PLANNING
   h2.PassengerBookingStepRoute__title {{ $t('booking.route.title') }}
 
-  //- 上下車安全提醒：紅線 / 公車停靠 / 黃網格 — 三語
-  .PassengerBookingStepRoute__safety(role="note")
-    NuxtIcon.PassengerBookingStepRoute__safety-icon(name="mdi:alert-octagon")
-    .PassengerBookingStepRoute__safety-body
-      .PassengerBookingStepRoute__safety-label {{ $t('booking.route.safetyNoticeLabel') }}
-      .PassengerBookingStepRoute__safety-text {{ $t('booking.route.safetyNotice') }}
-
   //- 地圖預覽（Drop Pin 支援）
   ClientOnly
     MapRoutePreview(
@@ -194,6 +187,13 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
       height="220px"
       @pin-placed="OnPinPlaced"
     )
+
+  //- 上下車安全提醒：紅線 / 公車停靠 / 黃網格 — 三語（放在地圖下方，避免遮住地圖視線）
+  .PassengerBookingStepRoute__safety(role="note")
+    NuxtIcon.PassengerBookingStepRoute__safety-icon(name="mdi:alert-octagon")
+    .PassengerBookingStepRoute__safety-body
+      .PassengerBookingStepRoute__safety-label {{ $t('booking.route.safetyNoticeLabel') }}
+      .PassengerBookingStepRoute__safety-text {{ $t('booking.route.safetyNotice') }}
 
   UiGooglePlaceInput(
     ref="pickupInputRef"

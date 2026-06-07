@@ -154,9 +154,16 @@ const isSubmitting = ref(false);
 const isSuccess = ref(false);
 
 // ── 步驟導航 ─────────────────────────────────────────────────────────────────
+const _ScrollToTop = (): void => {
+  if (typeof window === 'undefined') return;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 const GoNext = () => {
   SyncToStore();
   if (currentStep.value < TOTAL_STEPS) currentStep.value++;
+  // 點下一步時把畫面拉回最頂，讓 user 看到步驟條 + 新一步的第一個欄位
+  _ScrollToTop();
 };
 
 const GoBack = () => {

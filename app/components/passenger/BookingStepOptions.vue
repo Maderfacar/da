@@ -410,7 +410,7 @@ const swiperBreakpoints = {
     )
       SwiperSlide(v-for="cfg in vehicles" :key="cfg.id")
         .PassengerBookingStepOptions__vehicle-card(
-          :class="[{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }, /(business|vip)/.test(cfg.id) ? 'is-luxury' : 'is-standard']"
+          :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
           @click="ClickVehicle(cfg)"
         )
           //- 主視覺：有 images.exterior 顯示縮圖，否則 fallback mdi icon
@@ -721,6 +721,7 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-card {
+    // 高度固定統一：所有車型卡同高（避免 business/vip 因 tagline 行數造成差異）
     background: var(--da-glass-bg);
     border: 1.5px solid var(--da-gray-pale);
     border-radius: 14px;
@@ -732,9 +733,8 @@ const swiperBreakpoints = {
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
     position: relative;
-    height: 100%;
+    height: 380px;
     box-sizing: border-box;
-    min-height: 200px;
 
     &.is-active {
       border-color: var(--da-amber);
@@ -747,28 +747,6 @@ const swiperBreakpoints = {
       opacity: 0.45;
       cursor: not-allowed;
       border-color: #ef4444;
-    }
-
-    // ── airport-calibration wave D：商務線 dark luxury accent / 經濟線 cream ───
-    &.is-luxury {
-      background: linear-gradient(180deg, #1c1714 0%, #2a201a 100%);
-      border-color: rgba(212, 175, 55, 0.4); // soft gold
-      color: #f4e9d4;
-
-      .PassengerBookingStepOptions__vehicle-name { color: #f4e9d4; }
-      .PassengerBookingStepOptions__vehicle-sub { color: rgba(244, 233, 212, 0.55); }
-      .PassengerBookingStepOptions__vehicle-specs { color: rgba(244, 233, 212, 0.8); }
-      .PassengerBookingStepOptions__vehicle-fare {
-        color: rgba(244, 233, 212, 0.7);
-        span { color: #d4af37; }
-      }
-      .PassengerBookingStepOptions__vehicle-tagline { color: rgba(244, 233, 212, 0.7); }
-
-      &.is-active {
-        border-color: #d4af37;
-        background: linear-gradient(180deg, #2a201a 0%, #3a2a1a 100%);
-        box-shadow: 0 4px 18px rgba(212, 175, 55, 0.25);
-      }
     }
   }
 
@@ -786,7 +764,6 @@ const swiperBreakpoints = {
 
     &.is-icon {
       background: rgba(0, 0, 0, 0.03);
-      .is-luxury & { background: rgba(255, 255, 255, 0.04); }
     }
   }
 
@@ -800,7 +777,6 @@ const swiperBreakpoints = {
   &__vehicle-hero-icon {
     font-size: 56px;
     opacity: 0.55;
-    .is-luxury & { color: #d4af37; opacity: 0.8; }
   }
 
   &__vehicle-name {
