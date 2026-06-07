@@ -5,6 +5,45 @@ const route = useRoute();
 const { authResolved, isSuper } = storeToRefs(StoreAuth());
 const drawerOpen = ref(false);
 
+// ── Meta：分頁標題 + favicon（區隔三端）─────────────────
+// 規格：titleTemplate = `{頁名} · DA 後台`；i18n 三語自動套。
+const { t: _tMeta } = useI18n();
+const ADMIN_TITLE_MAP: Readonly<Record<string, string>> = {
+  '/admin': 'meta.title.admin.dashboard',
+  '/admin/dashboard': 'meta.title.admin.dashboard',
+  '/admin/orders': 'meta.title.admin.orders',
+  '/admin/war-room': 'meta.title.admin.warRoom',
+  '/admin/traffic': 'meta.title.admin.traffic',
+  '/admin/notifications': 'meta.title.admin.notifications',
+  '/admin/line-management': 'meta.title.admin.lineManagement',
+  '/admin/drivers': 'meta.title.admin.drivers',
+  '/admin/users': 'meta.title.admin.users',
+  '/admin/referral': 'meta.title.admin.referral',
+  '/admin/settings': 'meta.title.admin.settings',
+  '/admin/audit-logs': 'meta.title.admin.auditLogs',
+};
+const _stripLocalePrefix = (p: string): string => {
+  const m = p.match(/^\/(en|ja)(\/.*)?$/);
+  return m ? (m[2] || '/') : p;
+};
+const _currentTitleKey = computed((): string => {
+  const p = _stripLocalePrefix(route.path);
+  const matched = Object.keys(ADMIN_TITLE_MAP)
+    .sort((a, b) => b.length - a.length)
+    .find((k) => p === k || p.startsWith(`${k}/`));
+  return matched ? ADMIN_TITLE_MAP[matched] : '';
+});
+useHead({
+  titleTemplate: (chunk?: string | null): string => {
+    const brand = _tMeta('meta.brand.admin');
+    return chunk ? `${chunk} · ${brand}` : brand;
+  },
+  title: () => (_currentTitleKey.value ? _tMeta(_currentTitleKey.value) : ''),
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicons/admin.svg' },
+  ],
+});
+
 // 桌機（≥ 768px）首屏自動展開 sidebar，但 hamburger 永遠可 toggle
 onMounted(() => {
   if (window.innerWidth >= 768) drawerOpen.value = true;

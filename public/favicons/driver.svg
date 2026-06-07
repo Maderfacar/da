@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Destination Anywhere — 司機端">
+  <rect width="32" height="32" rx="6" fill="#0F0E0C"/>
+  <!-- Van/SUV body: boxy, taller -->
+  <path d="M3 24
+           L3 14
+           Q3 13 4 12.5
+           L6 9.5
+           Q6.6 8.6 7.8 8.6
+           L26 8.6
+           Q27 8.6 27.6 9.4
+           L29 12
+           L29 24
+           Q29 24.8 28.2 24.8
+           L25.6 24.8
+           A2.6 2.6 0 1 0 20.4 24.8
+           L11.6 24.8
+           A2.6 2.6 0 1 0 6.4 24.8
+           L3.8 24.8
+           Q3 24.8 3 24
+           Z"
+        fill="#D4860A"/>
+  <!-- Window strip: 2 panes split by B-pillar -->
+  <path d="M6.4 13.4
+           L7.4 10.6
+           Q7.7 10 8.4 10
+           L15.4 10
+           L15.4 13.4
+           Z"
+        fill="#0F0E0C"/>
+  <path d="M16.4 10
+           L25 10
+           Q25.6 10 25.9 10.6
+           L27 13.4
+           L16.4 13.4
+           Z"
+        fill="#0F0E0C"/>
+  <!-- Roof rack accent line -->
+  <rect x="6.6" y="8" width="19" height="0.8" rx="0.4" fill="#D4860A"/>
+  <!-- Wheels -->
+  <circle cx="9" cy="24.8" r="2.6" fill="#0F0E0C"/>
+  <circle cx="23" cy="24.8" r="2.6" fill="#0F0E0C"/>
+  <circle cx="9" cy="24.8" r="1.2" fill="#D4860A"/>
+  <circle cx="23" cy="24.8" r="1.2" fill="#D4860A"/>
+</svg>

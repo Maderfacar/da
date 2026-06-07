@@ -1106,6 +1106,54 @@ export default {
       driverDeselectedBody: '訂單 {orderId} 已重新進入配對，本次未由您接單',
     },
   },
+  // ── Meta：瀏覽器分頁標題 + favicon 分流（三端區隔）────────
+  meta: {
+    brand: {
+      passenger: 'Destination Anywhere',
+      driver: 'DA 司機端',
+      admin: 'DA 後台',
+    },
+    title: {
+      passenger: {
+        home: '首頁',
+        booking: '訂車',
+        orders: '我的訂單',
+        fleet: '車型介紹',
+        fare: '車資試算',
+        faq: '常見問題',
+        profile: '個人資料',
+        notifications: '最新消息',
+        login: '登入',
+        referral: '推薦好友',
+        legalTerms: '服務條款',
+        legalPrivacy: '隱私權政策',
+      },
+      driver: {
+        auth: '司機驗證',
+        register: '司機申請',
+        dashboard: '儀表板',
+        cost: '營運成本',
+        dispatched: '接單看板',
+        trip: '任務',
+        traffic: '機場人流',
+        announcements: '公告欄',
+        profile: '個人資料',
+      },
+      admin: {
+        dashboard: '儀表板',
+        orders: '訂單管理',
+        warRoom: '即時戰情',
+        traffic: '機場人流',
+        notifications: '通知管理',
+        lineManagement: 'LINE OA 管理',
+        drivers: '司機管理',
+        users: '乘客管理',
+        referral: '推薦獎勵',
+        settings: '系統設定',
+        auditLogs: '操作日誌',
+      },
+    },
+  },
   // ── API 狀態（原有）──────────────────────────────────────
   enum: {
     apiStatus: {

@@ -11,6 +11,48 @@ const authStore = StoreAuth();
 const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
 
+// ── Meta：分頁標題 + favicon（區隔三端）─────────────────
+// 規格：titleTemplate = `{頁名} · {品牌}`；route→key 走最長前綴匹配；
+// 兼容 i18n prefix_except_default（剝 /en /ja 前綴）；i18n 三語自動套。
+const { t: _tMeta } = useI18n();
+const _routeMeta = useRoute();
+const PASSENGER_TITLE_MAP: Readonly<Record<string, string>> = {
+  '/': 'meta.title.passenger.home',
+  '/home': 'meta.title.passenger.home',
+  '/booking': 'meta.title.passenger.booking',
+  '/orders': 'meta.title.passenger.orders',
+  '/fleet': 'meta.title.passenger.fleet',
+  '/fare': 'meta.title.passenger.fare',
+  '/faq': 'meta.title.passenger.faq',
+  '/profile': 'meta.title.passenger.profile',
+  '/notifications': 'meta.title.passenger.notifications',
+  '/login': 'meta.title.passenger.login',
+  '/referral': 'meta.title.passenger.referral',
+  '/legal/terms': 'meta.title.passenger.legalTerms',
+  '/legal/privacy': 'meta.title.passenger.legalPrivacy',
+};
+const _stripLocalePrefix = (p: string): string => {
+  const m = p.match(/^\/(en|ja)(\/.*)?$/);
+  return m ? (m[2] || '/') : p;
+};
+const _currentTitleKey = computed((): string => {
+  const p = _stripLocalePrefix(_routeMeta.path);
+  const matched = Object.keys(PASSENGER_TITLE_MAP)
+    .sort((a, b) => b.length - a.length)
+    .find((k) => p === k || p.startsWith(`${k}/`));
+  return matched ? PASSENGER_TITLE_MAP[matched] : '';
+});
+useHead({
+  titleTemplate: (chunk?: string | null): string => {
+    const brand = _tMeta('meta.brand.passenger');
+    return chunk ? `${chunk} · ${brand}` : brand;
+  },
+  title: () => (_currentTitleKey.value ? _tMeta(_currentTitleKey.value) : ''),
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicons/passenger.svg' },
+  ],
+});
+
 const showFriendBanner = computed(
   () => isSignIn.value && isFriend.value === false,
 );

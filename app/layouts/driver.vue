@@ -14,6 +14,42 @@ const { authResolved } = storeToRefs(StoreAuth());
 const driverGeo = useDriverGeolocation();
 const drawerOpen = ref(false);
 
+// ── Meta：分頁標題 + favicon（區隔三端）─────────────────
+// 規格：titleTemplate = `{頁名} · DA 司機端`；i18n 三語自動套。
+const { t: _tMeta } = useI18n();
+const DRIVER_TITLE_MAP: Readonly<Record<string, string>> = {
+  '/driver/auth': 'meta.title.driver.auth',
+  '/driver/register': 'meta.title.driver.register',
+  '/driver/dashboard': 'meta.title.driver.dashboard',
+  '/driver/cost': 'meta.title.driver.cost',
+  '/driver/dispatched': 'meta.title.driver.dispatched',
+  '/driver/trip': 'meta.title.driver.trip',
+  '/driver/traffic': 'meta.title.driver.traffic',
+  '/driver/announcements': 'meta.title.driver.announcements',
+  '/driver/profile': 'meta.title.driver.profile',
+};
+const _stripLocalePrefix = (p: string): string => {
+  const m = p.match(/^\/(en|ja)(\/.*)?$/);
+  return m ? (m[2] || '/') : p;
+};
+const _currentTitleKey = computed((): string => {
+  const p = _stripLocalePrefix(route.path);
+  const matched = Object.keys(DRIVER_TITLE_MAP)
+    .sort((a, b) => b.length - a.length)
+    .find((k) => p === k || p.startsWith(`${k}/`));
+  return matched ? DRIVER_TITLE_MAP[matched] : '';
+});
+useHead({
+  titleTemplate: (chunk?: string | null): string => {
+    const brand = _tMeta('meta.brand.driver');
+    return chunk ? `${chunk} · ${brand}` : brand;
+  },
+  title: () => (_currentTitleKey.value ? _tMeta(_currentTitleKey.value) : ''),
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicons/driver.svg' },
+  ],
+});
+
 // 桌機（≥ 768px）首屏自動展開 sidebar，但 hamburger 永遠可 toggle
 onMounted(() => {
   if (window.innerWidth >= 768) drawerOpen.value = true;
