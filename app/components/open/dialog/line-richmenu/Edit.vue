@@ -308,6 +308,54 @@ const OnActionTypeChange = (idx: number, type: 'uri' | 'message' | 'postback') =
   if (type === 'postback') a.action = { type: 'postback', data: '' };
 };
 
+// ── LIFF URL 偵測：直連 prod web URL → 建議轉成 LIFF URL ───────
+// 為什麼要做：
+//   - 直連 da-line-liff-app.vercel.app/xxx 在 LINE app 內開啟會走一般 in-app browser
+//     繞過 LIFF context 與 auto-login（store-auth.ts 流程），使用者要重新走 OAuth；
+//     且司機 path 進來 pathname 不在 `?liff.state=` 裡，可能被 default 成乘客 LIFF ID 初始化。
+//   - LIFF URL（liff.line.me/{liffId}/{path}）保證 LIFF SDK 環境、auto-login、channel 正確。
+// 策略：偵測 + 提示 + 一鍵套用，不自動覆寫，不擋儲存（純警告）。
+const KNOWN_DIRECT_HOSTS: readonly string[] = [
+  'da-line-liff-app.vercel.app',
+  // 未來上自定義網域時請補入，例：'app.dest-anywhere.com'
+];
+
+const _runtimeConfig = useRuntimeConfig().public;
+
+const _GetLiffIdForChannel = (channel: 'passenger' | 'driver'): string => {
+  if (channel === 'driver') return String(_runtimeConfig.lineLiffIdDriver ?? '');
+  return String(_runtimeConfig.lineLiffIdPassenger ?? '');
+};
+
+/** 嘗試把 raw URI 轉成 LIFF URL；不適用回 null（已是 LIFF / 非已知 host / 無 LIFF ID 都回 null） */
+const _SuggestLiffUri = (rawUri: string): string | null => {
+  if (!rawUri) return null;
+  let url: URL;
+  try {
+    url = new URL(rawUri);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:') return null;
+  if (url.host === 'liff.line.me') return null; // 已經是 LIFF URL
+  if (!KNOWN_DIRECT_HOSTS.includes(url.host)) return null;
+  const liffId = _GetLiffIdForChannel(props.params.channel);
+  if (!liffId) return null;
+  // 採用 `https://liff.line.me/{liffId}{path}` 形式（pathname '/' 視為空避免重複斜線）
+  // LINE SDK 兩種寫法都吃；採此寫法網址欄看起來自然
+  const path = (url.pathname === '/' ? '' : url.pathname) + url.search + url.hash;
+  return `https://liff.line.me/${liffId}${path}`;
+};
+
+// area-level 一鍵套用 — 直接覆寫該 area 的 action.uri
+const ApplyLiffSuggestion = (idx: number) => {
+  const a = form.areas[idx];
+  if (!a || a.action.type !== 'uri') return;
+  const suggested = _SuggestLiffUri(a.action.uri);
+  if (!suggested) return;
+  a.action.uri = suggested;
+};
+
 // ── 驗證 ─────────────────────────────────────────────────────
 interface ValidationResult { ok: boolean; error?: string }
 const ValidateForm = (): ValidationResult => {
@@ -643,6 +691,17 @@ onMounted(() => {
                   :maxlength="URI_MAX"
                   placeholder="https://... 或 line://..."
                 )
+                //- LIFF URL 偵測：直連 prod web URL → 建議轉換（不擋儲存）
+                .DialogLineRichmenuEdit__liff-hint(v-if="_SuggestLiffUri(a.action.uri)")
+                  .DialogLineRichmenuEdit__liff-hint-msg
+                    | ⚠ 偵測到網站直連 URL — 建議改用 LIFF URL，否則 LINE app 內開啟會繞過 auto-login，
+                    | {{ props.params.channel === 'driver' ? '司機' : '乘客' }}端 deep-link 也可能被誤判
+                  .DialogLineRichmenuEdit__liff-hint-row
+                    code {{ _SuggestLiffUri(a.action.uri) }}
+                    button.DialogLineRichmenuEdit__liff-apply(
+                      type="button"
+                      @click="ApplyLiffSuggestion(idx)"
+                    ) 套用 LIFF URL
 
               //- message input
               template(v-if="a.action.type === 'message'")
@@ -1112,6 +1171,65 @@ $border: rgba(0, 0, 0, 0.1);
     font-size: 12px;
     cursor: pointer;
   }
+}
+
+// ── LIFF URL 偵測提示 ─────────────────────────────────────
+.DialogLineRichmenuEdit__liff-hint {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #fff8e1;
+  border: 1px solid #ffb300;
+  border-left: 3px solid #f57c00;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.DialogLineRichmenuEdit__liff-hint-msg {
+  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #6a4c00;
+}
+
+.DialogLineRichmenuEdit__liff-hint-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex-wrap: wrap;
+
+  code {
+    flex: 1;
+    min-width: 160px;
+    padding: 5px 8px;
+    background: #fff;
+    border: 1px solid #f0d896;
+    border-radius: 3px;
+    word-break: break-all;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    color: #2c1810;
+    line-height: 1.4;
+  }
+}
+
+.DialogLineRichmenuEdit__liff-apply {
+  flex-shrink: 0;
+  padding: 5px 14px;
+  background: #f57c00;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+
+  &:hover { background: #e65100; }
+  &:active { transform: scale(0.96); }
 }
 
 .DialogLineRichmenuEdit__action-label {
