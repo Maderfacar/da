@@ -31,6 +31,7 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { successResponse, badRequestError, forbiddenError, notFoundError, serverError } from '@@/utils/response';
 import { multicastByLevel, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { buildOrderDriverParams, type OrderDataLike } from '@@/utils/template-params';
 import { isDispatchLevel, type DispatchLevel } from '~shared/types/dispatch-visibility';
 
 export default defineEventHandler(async (event) => {
@@ -142,10 +143,13 @@ export default defineEventHandler(async (event) => {
       preferenceChips,
     };
 
+    // 2026-06-08 Phase 2：placeholder params（dispatch.driver-pending title / ctaLabel 替換用）
+    const dispatchParams = buildOrderDriverParams(d as OrderDataLike, null, { orderId });
+
     // fire-and-forget 推播 + audit（Wave 2B+2C：依 finalStartLevel 過濾推送對象）
     void (async () => {
       try {
-        await multicastByLevel(db, payload, getDispatchPushEnv(), finalStartLevel);
+        await multicastByLevel(db, payload, getDispatchPushEnv(), finalStartLevel, dispatchParams);
       } catch (err) {
         console.error('[admin/orders/redispatch] multicast failed:', err);
       }

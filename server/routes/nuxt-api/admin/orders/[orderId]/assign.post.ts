@@ -29,6 +29,11 @@ import {
   getDispatchPushEnv,
 } from '@@/utils/line-dispatch-push';
 import { pushSoftMatchToPassenger } from '@@/utils/line-soft-match-push';
+import {
+  buildOrderDriverParams,
+  type DriverDataLike,
+  type OrderDataLike,
+} from '@@/utils/template-params';
 
 interface PostBody {
   driverId?: string;
@@ -158,6 +163,15 @@ export default defineEventHandler(async (event) => {
         });
     }
 
+    // 2026-06-08 Phase 2：中心化 placeholder 取值 — 把 orderData + driverProfileData 餵 buildOrderDriverParams
+    // 給 dispatch.driver-selected / dispatch.passenger-matched 的 title / ctaLabel placeholder 替換用
+    // driverProfileData 結構與 DriverDataLike 對齊：phone/plateNumber/vehicleModel/displayName/application
+    const dispatchParams = buildOrderDriverParams(
+      orderData as OrderDataLike,
+      driverProfileData as DriverDataLike,
+      { orderId },
+    );
+
     // fire-and-forget：driver push（不論 soft）
     void (async () => {
       try {
@@ -169,7 +183,7 @@ export default defineEventHandler(async (event) => {
           passengerCount,
           adultCount,
           childCount,
-        }, env);
+        }, env, dispatchParams);
       } catch (err) {
         console.error('[admin/orders/assign] driver push failed:', err);
       }
@@ -190,14 +204,14 @@ export default defineEventHandler(async (event) => {
             unmatchedTagNames,
             preferenceCount: matchResult.preferenceCount,
             matchCount: matchResult.matchCount,
-          }, env, passengerLang);
+          }, env, passengerLang, dispatchParams);
         } else {
           await pushOrderAssignedToPassenger(db, passengerLineUid, {
             orderId,
             pickupDateTime,
             driverDisplayName,
             driverId: driverLineUid,
-          }, env, passengerLang);
+          }, env, passengerLang, dispatchParams);
         }
       } catch (err) {
         console.error('[admin/orders/assign] passenger push failed:', err);

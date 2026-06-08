@@ -20,6 +20,7 @@ import { readDriverApplication } from '@@/utils/driver-application';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 import { sendLinePush } from '@@/utils/line-push';
 import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
+import { buildDriverParams, type DriverDataLike } from '@@/utils/template-params';
 import { notifyAdmins } from '@@/utils/notify-admins';
 
 interface ApplyBody {
@@ -250,8 +251,20 @@ export default defineEventHandler(async (event) => {
 
     // 通知司機申請已送出（fire-and-forget；line-push 內部 catch）
     // W4：改走 driver.application-submitted 模板；applicantName 取自 body.driverName
+    // 2026-06-08 Phase 2：改走 buildDriverParams 中心化 helper —
+    // application 子物件視為 DriverDataLike.application；applicantName 仍以 body.driverName 覆寫
     const applyTpl = (await resolveTemplate(db, 'driver.application-submitted')) as TemplateContentText;
+    const applyDriverLike: DriverDataLike = {
+      displayName,
+      application: {
+        driverName: body.driverName,
+        plateNumber: body.plateNumber,
+        vehicleModel: body.vehicleModel.trim(),
+        phone: body.phone,
+      },
+    };
     const applyMsg = buildTemplate(applyTpl, {
+      ...buildDriverParams(applyDriverLike),
       applicantName: body.driverName ?? '',
     }, 'text');
     if (applyMsg) await sendLinePush('driver', body.lineUserId, [applyMsg]);

@@ -34,6 +34,7 @@ import {
   getDispatchPushEnv,
   buildDispatchedOrderSummary,
 } from '@@/utils/line-dispatch-push';
+import { buildOrderDriverParams, type OrderDataLike } from '@@/utils/template-params';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -85,11 +86,14 @@ export default defineEventHandler(async (event) => {
     // 重讀 order 拿最新 payload 推 LINE
     const snap = await db.collection('orders').doc(orderId).get();
     if (snap.exists) {
-      const payload = buildDispatchedOrderSummary(orderId, snap.data() ?? {});
+      const orderData = snap.data() ?? {};
+      const payload = buildDispatchedOrderSummary(orderId, orderData);
       const env = getDispatchPushEnv();
+      // 2026-06-08 Phase 2：placeholder params（dispatch.level-down title / ctaLabel 替換用）
+      const dispatchParams = buildOrderDriverParams(orderData as OrderDataLike, null, { orderId });
       void (async () => {
         try {
-          await multicastLevelDown(db, payload, env, result.newLevel);
+          await multicastLevelDown(db, payload, env, result.newLevel, dispatchParams);
         } catch (err) {
           console.error('[admin/orders/dispatch-level/downgrade] multicast failed:', err);
         }

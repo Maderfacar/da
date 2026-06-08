@@ -685,6 +685,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Phase 1E：取消「已派發但尚未指派」訂單時，通知所有 active bidders（fire-and-forget）
+    // 2026-06-08 Phase 2：帶 buildOrderDriverParams 結果，admin 可在 body 用 {date}/{pickup}/etc
     if (
       body.orderStatus === 'cancelled'
       && prevStatus !== 'cancelled'
@@ -693,9 +694,10 @@ export default defineEventHandler(async (event) => {
     ) {
       const bidderUids = activeBidderLineUids(orderData.bids);
       if (bidderUids.length > 0) {
+        const bidderParams = buildOrderDriverParams(orderData as OrderDataLike, null, { orderId });
         void (async () => {
           try {
-            await pushOrderCancelledToBidders(db, bidderUids, { orderId });
+            await pushOrderCancelledToBidders(db, bidderUids, { orderId }, bidderParams);
           } catch (err) {
             console.error('[orders/patch] cancel bidders push failed:', err);
           }

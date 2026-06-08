@@ -20,6 +20,7 @@ import { writeAuditLog } from '@@/utils/audit-log';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import { dispatchOrder, loadActiveDrivers, DispatchGuardError } from '@@/utils/order-dispatch';
 import { pushOrderDispatchToDrivers, getDispatchPushEnv, type DispatchedOrderSummary } from '@@/utils/line-dispatch-push';
+import { buildOrderDriverParams, type OrderDataLike } from '@@/utils/template-params';
 
 interface GooglePlace {
   address: string;
@@ -238,11 +239,37 @@ export default defineEventHandler(async (event) => {
         preferenceChips: [],
       };
 
+      // 2026-06-08 Phase 2：admin 可在 dispatch.driver-pending 的 title / ctaLabel 用 placeholder
+      // 把 admin body 看成 OrderDataLike 餵 buildOrderDriverParams（無 driver context，傳 null）
+      const dispatchParams = buildOrderDriverParams(
+        {
+          orderType: body.orderType,
+          pickupDateTime: body.pickupDateTime,
+          pickupLocation: body.pickupLocation,
+          dropoffLocation: body.dropoffLocation,
+          stopovers,
+          vehicleType: body.vehicleType,
+          adultCount: finalAdult,
+          childCount: finalChild,
+          passengerCount: finalTotal,
+          luggageItems,
+          estimatedFare: body.estimatedFare,
+          contactName: undefined,
+          contactPhone: body.contactPhone,
+          passengerName,
+          flightNumber: body.flightNumber ?? undefined,
+          terminal: body.terminal ?? undefined,
+          notes: body.notes ?? undefined,
+        } as OrderDataLike,
+        null,
+        { orderId },
+      );
+
       void (async () => {
         try {
           const drivers = await loadActiveDrivers(db);
           const lineUserIds = drivers.map((dv) => dv.lineUserId).filter(Boolean);
-          await pushOrderDispatchToDrivers(db, payload, getDispatchPushEnv(), lineUserIds);
+          await pushOrderDispatchToDrivers(db, payload, getDispatchPushEnv(), lineUserIds, dispatchParams);
         } catch (err) {
           console.error('[admin/orders/post] auto-dispatch multicast failed:', err);
         }

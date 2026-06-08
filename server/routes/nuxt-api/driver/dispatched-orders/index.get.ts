@@ -32,6 +32,7 @@ import {
   getDispatchPushEnv,
   buildDispatchedOrderSummary,
 } from '@@/utils/line-dispatch-push';
+import { buildOrderDriverParams, type OrderDataLike } from '@@/utils/template-params';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { matchRegion } from '~shared/region-match';
 import type { Timestamp, Firestore  } from 'firebase-admin/firestore';
@@ -110,10 +111,13 @@ async function _runLazyDowngrade(
       // 降級成功 → 重讀 order 拿最新 payload + fire-and-forget push & audit
       const fresh = await db.collection('orders').doc(c.orderId).get();
       if (!fresh.exists) continue;
-      const payload = buildDispatchedOrderSummary(c.orderId, fresh.data() ?? {});
+      const freshData = fresh.data() ?? {};
+      const payload = buildDispatchedOrderSummary(c.orderId, freshData);
+      // 2026-06-08 Phase 2：placeholder params（dispatch.level-down title / ctaLabel 替換用）
+      const dispatchParams = buildOrderDriverParams(freshData as OrderDataLike, null, { orderId: c.orderId });
       void (async () => {
         try {
-          await multicastLevelDown(db, payload, env, result.newLevel);
+          await multicastLevelDown(db, payload, env, result.newLevel, dispatchParams);
         } catch (err) {
           console.error('[dispatched-orders] lazy multicastLevelDown failed:', err);
         }

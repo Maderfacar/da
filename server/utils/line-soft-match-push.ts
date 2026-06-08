@@ -17,6 +17,7 @@ import { sendLinePush, type LineMessage } from '@@/utils/line-push';
 import type { Lang } from '@@/utils/user-lang';
 import type { DispatchPushEnv } from '@@/utils/line-dispatch-push';
 import {
+  applyPlaceholders,
   buildTemplate,
   resolveTemplate,
   type TemplateContentFlex,
@@ -250,10 +251,16 @@ export function buildSoftMatchPassengerFlex(
  *
  * title 可由 TemplateContentFlex.title 直接表達；其他 header/btn label 目前仍由
  * SOFT_MATCH_TEXT[lang] 維持既有 i18n（Phase 2 條件區塊編輯器才會擴出個別 label）。
+ *
+ * 2026-06-08 Phase 2：params 給定時對 title 套 placeholder。
  */
-const _softMatchLabelsFromTemplate = (tpl: TemplateContentFlex): SoftMatchCustomLabels => ({
-  title: tpl.title,
-});
+const _softMatchLabelsFromTemplate = (
+  tpl: TemplateContentFlex,
+  params?: Record<string, string>,
+): SoftMatchCustomLabels => {
+  if (!params) return { title: tpl.title };
+  return { title: applyPlaceholders(tpl.title, params) };
+};
 
 /**
  * W4：caller 必須帶 db + lang，內部 resolveTemplate('softmatch.passenger-choose', lang)
@@ -277,6 +284,8 @@ export async function pushSoftMatchToPassenger(
   payload: SoftMatchPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
+  /** 2026-06-08 Phase 2：buildOrderDriverParams 結果；admin 可在 title 用 placeholder */
+  params?: Record<string, string>,
 ): Promise<void> {
   if (!SOFTMATCH_ENABLED) {
     console.info('[line-soft-match-push] softmatch 已停用，跳過 pushSoftMatchToPassenger', { orderId: payload.orderId });
@@ -284,7 +293,7 @@ export async function pushSoftMatchToPassenger(
   }
   if (!passengerLineUid) return;
   const tpl = (await resolveTemplate(db, 'softmatch.passenger-choose', lang)) as TemplateContentFlex;
-  const flex = buildSoftMatchPassengerFlex(payload, env, lang, _softMatchLabelsFromTemplate(tpl));
+  const flex = buildSoftMatchPassengerFlex(payload, env, lang, _softMatchLabelsFromTemplate(tpl, params));
   await sendLinePush('passenger', passengerLineUid, [flex]);
 }
 
@@ -303,6 +312,11 @@ export async function pushPassengerRematch(
   passengerLineUid: string,
   payload: PassengerRematchPayload,
   lang: Lang,
+  /**
+   * 2026-06-08 Phase 2：可選 buildOrderDriverParams 結果；提供時 merge 在 hardcoded
+   * { orderId, date } 之前（caller 給的同名 key 不會覆蓋 caller-known 確定值）。
+   */
+  extraParams?: Record<string, string>,
 ): Promise<void> {
   if (!SOFTMATCH_ENABLED) {
     console.info('[line-soft-match-push] softmatch 已停用，跳過 pushPassengerRematch', { orderId: payload.orderId });
@@ -311,6 +325,7 @@ export async function pushPassengerRematch(
   if (!passengerLineUid) return;
   const tpl = await resolveTemplate(db, 'softmatch.passenger-rematching', lang);
   const params: Record<string, string> = {
+    ...(extraParams ?? {}),
     orderId: _orderIdShort(payload.orderId),
     date: _formatDateTime(payload.pickupDateTime),
   };
@@ -327,6 +342,11 @@ export async function pushDriverDeselected(
   db: Firestore,
   driverLineUserId: string,
   payload: DriverDeselectedPayload,
+  /**
+   * 2026-06-08 Phase 2：可選 buildOrderDriverParams 結果；提供時 merge 在 hardcoded
+   * { orderId } 之前（admin 可在 body 用 {date}/{pickup}/etc 顯示訂單細節）。
+   */
+  extraParams?: Record<string, string>,
 ): Promise<void> {
   if (!SOFTMATCH_ENABLED) {
     console.info('[line-soft-match-push] softmatch 已停用，跳過 pushDriverDeselected', { orderId: payload.orderId });
@@ -335,6 +355,7 @@ export async function pushDriverDeselected(
   if (!driverLineUserId) return;
   const tpl = (await resolveTemplate(db, 'driver.softmatch-rejected')) as TemplateContentText;
   const params: Record<string, string> = {
+    ...(extraParams ?? {}),
     orderId: _orderIdShort(payload.orderId),
   };
   // 模板 placeholder 不含 dateLine；保留 PassengerRematchPayload-like 介面以利 caller 不變

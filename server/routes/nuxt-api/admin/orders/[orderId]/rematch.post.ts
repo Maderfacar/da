@@ -28,6 +28,11 @@ import {
 import { pushDriverDeselected, pushPassengerRematch } from '@@/utils/line-soft-match-push';
 import { buildTagIndex } from '@@/utils/vehicle-profile';
 import { getUserLang } from '@@/utils/user-lang';
+import {
+  buildOrderDriverParams,
+  type DriverDataLike,
+  type OrderDataLike,
+} from '@@/utils/template-params';
 
 interface PostBody {
   reason?: string;
@@ -81,14 +86,16 @@ export default defineEventHandler(async (event) => {
       throw err;
     }
 
-    // 撈最新 order + 原 driver user 資料
-    const [orderSnap, prevDriverSnap] = await Promise.all([
+    // 撈最新 order + 原 driver user / driver profile 資料（driver profile 給 placeholder 用）
+    const [orderSnap, prevDriverSnap, prevDriverProfileSnap] = await Promise.all([
       db.collection('orders').doc(orderId).get(),
       db.collection('users').doc(prevDriverLineUid).get(),
+      db.collection('drivers').doc(prevDriverLineUid).get(),
     ]);
     const orderData = orderSnap.data() ?? {};
     const prevDriverData = prevDriverSnap.exists ? (prevDriverSnap.data() ?? {}) : {};
     const prevDriverLineUserId = (prevDriverData.lineUserId as string | undefined) ?? prevDriverLineUid;
+    const prevDriverProfileData = prevDriverProfileSnap.exists ? (prevDriverProfileSnap.data() ?? {}) : {};
 
     const env = getDispatchPushEnv();
     const passengerLineUid = (orderData.lineUserId as string | undefined) || (orderData.userId as string | undefined) || '';
@@ -109,10 +116,19 @@ export default defineEventHandler(async (event) => {
       .map((id) => tagIdx.get(id)?.nameZh ?? '')
       .filter((s) => s.length > 0);
 
+    // 2026-06-08 Phase 2：中心化 placeholder 取值
+    // - deselect 通知帶原 driver context；其餘 (dispatch multicast / passenger rematch) 不帶 driver
+    const deselectParams = buildOrderDriverParams(
+      orderData as OrderDataLike,
+      prevDriverProfileData as DriverDataLike,
+      { orderId },
+    );
+    const noDriverParams = buildOrderDriverParams(orderData as OrderDataLike, null, { orderId });
+
     // 1. fire-and-forget：deselect 通知原中選 driver
     void (async () => {
       try {
-        await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime });
+        await pushDriverDeselected(db, prevDriverLineUserId, { orderId, pickupDateTime }, deselectParams);
       } catch (err) {
         console.error('[admin/orders/rematch] driver deselect push failed:', err);
       }
@@ -133,7 +149,7 @@ export default defineEventHandler(async (event) => {
           childCount,
           estimatedFare,
           preferenceChips,
-        }, env, lineUserIds);
+        }, env, lineUserIds, noDriverParams);
       } catch (err) {
         console.error('[admin/orders/rematch] dispatch multicast failed:', err);
       }
@@ -144,7 +160,7 @@ export default defineEventHandler(async (event) => {
       try {
         if (!passengerLineUid) return;
         const lang = await getUserLang(db, passengerLineUid);
-        await pushPassengerRematch(db, passengerLineUid, { orderId, pickupDateTime }, lang);
+        await pushPassengerRematch(db, passengerLineUid, { orderId, pickupDateTime }, lang, noDriverParams);
       } catch (err) {
         console.error('[admin/orders/rematch] passenger rematch push failed:', err);
       }

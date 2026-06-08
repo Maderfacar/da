@@ -16,7 +16,13 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush, sendLineMulticast, type LineMessage } from '@@/utils/line-push';
 import type { Lang } from '@@/utils/user-lang';
-import { resolveTemplate, type TemplateContentFlex, type TemplateContentText } from '@@/utils/template-registry';
+import {
+  applyPlaceholders,
+  buildTemplate,
+  resolveTemplate,
+  type TemplateContentFlex,
+  type TemplateContentText,
+} from '@@/utils/template-registry';
 import { loadActiveDrivers } from '@@/utils/order-dispatch';
 import type { DispatchLevel } from '~shared/types/dispatch-visibility';
 
@@ -265,11 +271,22 @@ export function buildDispatchFlex(
  * Template → DispatchCustomLabels：只把 title / ctaButton.label 等可由 TemplateContentFlex
  * 直接表達的欄位傳給 builder；其他 label（orderId/date/pickup/...）目前仍由 builder 維持
  * 既有 hardcoded（Phase 2 條件區塊編輯器才會擴出可編 sub-label）。
+ *
+ * 2026-06-08 Phase 2：params 給定時，對 title / ctaLabel 套 placeholder（admin 可在 title
+ * 編輯處插入 {driverName} 等 chip）。body hardcoded 不在此處替換。
  */
-const _dispatchLabelsFromTemplate = (tpl: TemplateContentFlex): DispatchCustomLabels => ({
-  title: tpl.title,
-  ctaLabel: tpl.ctaButton?.label,
-});
+const _dispatchLabelsFromTemplate = (
+  tpl: TemplateContentFlex,
+  params?: Record<string, string>,
+): DispatchCustomLabels => {
+  if (!params) {
+    return { title: tpl.title, ctaLabel: tpl.ctaButton?.label };
+  }
+  return {
+    title: applyPlaceholders(tpl.title, params),
+    ctaLabel: tpl.ctaButton?.label ? applyPlaceholders(tpl.ctaButton.label, params) : undefined,
+  };
+};
 
 /**
  * 推需求單給所有 active driver（multicast，自動分批）。
@@ -283,11 +300,16 @@ export async function pushOrderDispatchToDrivers(
   payload: DispatchedOrderSummary,
   env: DispatchPushEnv,
   driverLineUserIds: string[],
+  /**
+   * 2026-06-08 Phase 2：admin 可在 title / ctaLabel 用 placeholder（{driverName}、{contactPhone} 等）。
+   * caller 應帶 buildOrderDriverParams(orderData, null, { orderId }) 結果；缺 driver 段位空字串。
+   */
+  params?: Record<string, string>,
 ): Promise<{ sent: number; failed: number; total: number }> {
   const targets = driverLineUserIds.filter((id) => !!id);
   if (targets.length === 0) return { sent: 0, failed: 0, total: 0 };
   const tpl = (await resolveTemplate(db, 'dispatch.driver-pending')) as TemplateContentFlex;
-  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl));
+  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl, params));
   const result = await sendLineMulticast('driver', targets, [flex]);
   return { ...result, total: targets.length };
 }
@@ -349,15 +371,27 @@ export function buildAssignedPassengerFlex(
 
 /**
  * Template → AssignedPassengerCustomLabels：只取 title / ctaButton.label（同 F1 設計）。
+ *
+ * 2026-06-08 Phase 2：params 給定時對 title / ctaLabel 套 placeholder。
  */
-const _assignedPassengerLabelsFromTemplate = (tpl: TemplateContentFlex): AssignedPassengerCustomLabels => ({
-  title: tpl.title,
-  ctaLabel: tpl.ctaButton?.label,
-});
+const _assignedPassengerLabelsFromTemplate = (
+  tpl: TemplateContentFlex,
+  params?: Record<string, string>,
+): AssignedPassengerCustomLabels => {
+  if (!params) {
+    return { title: tpl.title, ctaLabel: tpl.ctaButton?.label };
+  }
+  return {
+    title: applyPlaceholders(tpl.title, params),
+    ctaLabel: tpl.ctaButton?.label ? applyPlaceholders(tpl.ctaButton.label, params) : undefined,
+  };
+};
 
 /**
  * W4：caller 必須帶 db + lang，內部 resolveTemplate('dispatch.passenger-matched', lang)
  * 取多語 admin 編輯版（缺值退 registry default 繁中）後組 customLabels。
+ *
+ * 2026-06-08 Phase 2：可選 params（buildOrderDriverParams）；title / ctaLabel placeholder 替換。
  */
 export async function pushOrderAssignedToPassenger(
   db: Firestore,
@@ -365,10 +399,11 @@ export async function pushOrderAssignedToPassenger(
   payload: AssignedPassengerPayload,
   env: DispatchPushEnv,
   lang: Lang,
+  params?: Record<string, string>,
 ): Promise<void> {
   if (!passengerLineUserId) return;
   const tpl = (await resolveTemplate(db, 'dispatch.passenger-matched', lang)) as TemplateContentFlex;
-  const flex = buildAssignedPassengerFlex(payload, env, lang, _assignedPassengerLabelsFromTemplate(tpl));
+  const flex = buildAssignedPassengerFlex(payload, env, lang, _assignedPassengerLabelsFromTemplate(tpl, params));
   await sendLinePush('passenger', passengerLineUserId, [flex]);
 }
 
@@ -427,25 +462,38 @@ export function buildAssignedDriverFlex(
 
 /**
  * Template → AssignedDriverCustomLabels：只取 title / ctaButton.label（同 F1 設計）。
+ *
+ * 2026-06-08 Phase 2：params 給定時對 title / ctaLabel 套 placeholder。
  */
-const _assignedDriverLabelsFromTemplate = (tpl: TemplateContentFlex): AssignedDriverCustomLabels => ({
-  title: tpl.title,
-  ctaLabel: tpl.ctaButton?.label,
-});
+const _assignedDriverLabelsFromTemplate = (
+  tpl: TemplateContentFlex,
+  params?: Record<string, string>,
+): AssignedDriverCustomLabels => {
+  if (!params) {
+    return { title: tpl.title, ctaLabel: tpl.ctaButton?.label };
+  }
+  return {
+    title: applyPlaceholders(tpl.title, params),
+    ctaLabel: tpl.ctaButton?.label ? applyPlaceholders(tpl.ctaButton.label, params) : undefined,
+  };
+};
 
 /**
  * W4：caller 必須帶 db，內部 resolveTemplate('dispatch.driver-selected') 取 admin 編輯版
  * （single 繁中）後組 customLabels 餵 buildAssignedDriverFlex。
+ *
+ * 2026-06-08 Phase 2：可選 params（buildOrderDriverParams）；title / ctaLabel placeholder 替換。
  */
 export async function pushOrderAssignedToDriver(
   db: Firestore,
   driverLineUserId: string,
   payload: AssignedDriverPayload,
   env: DispatchPushEnv,
+  params?: Record<string, string>,
 ): Promise<void> {
   if (!driverLineUserId) return;
   const tpl = (await resolveTemplate(db, 'dispatch.driver-selected')) as TemplateContentFlex;
-  const flex = buildAssignedDriverFlex(payload, env, _assignedDriverLabelsFromTemplate(tpl));
+  const flex = buildAssignedDriverFlex(payload, env, _assignedDriverLabelsFromTemplate(tpl, params));
   await sendLinePush('driver', driverLineUserId, [flex]);
 }
 
@@ -453,18 +501,27 @@ export async function pushOrderAssignedToDriver(
 /**
  * W4：caller 必須帶 db，內部 resolveTemplate('driver.order-cancelled-bidders') 取 admin 編輯版
  * （Text 模板，placeholder {orderId}），失敗退 registry default 後 multicast。
+ *
+ * 2026-06-08 Phase 2：改走 buildTemplate（共用 _applyPlaceholders）+ 接 params
+ * （buildOrderParams(orderData, { orderId }) 結果）；admin 可在 body 用 {date}/{pickup}/etc。
  */
 export async function pushOrderCancelledToBidders(
   db: Firestore,
   bidderLineUserIds: string[],
   payload: { orderId: string },
+  params?: Record<string, string>,
 ): Promise<{ sent: number; failed: number; total: number }> {
   const targets = bidderLineUserIds.filter((id) => !!id);
   if (targets.length === 0) return { sent: 0, failed: 0, total: 0 };
   const orderShort = _orderIdShort(payload.orderId);
   const tpl = (await resolveTemplate(db, 'driver.order-cancelled-bidders')) as TemplateContentText;
-  const text = tpl.body.replace(/\{orderId\}/g, orderShort);
-  const result = await sendLineMulticast('driver', targets, [{ type: 'text', text }]);
+  // params 給定就用之（已含 orderId 短碼）；沒給 fallback 只塞 orderId 短碼維持原行為
+  const finalParams: Record<string, string> = params
+    ? { ...params, orderId: params.orderId || orderShort }
+    : { orderId: orderShort };
+  const msg = buildTemplate(tpl, finalParams, 'text');
+  if (!msg) return { sent: 0, failed: 0, total: targets.length };
+  const result = await sendLineMulticast('driver', targets, [msg]);
   return { ...result, total: targets.length };
 }
 
@@ -481,10 +538,12 @@ export async function multicastByLevel(
   payload: DispatchedOrderSummary,
   env: DispatchPushEnv,
   minCategory: DispatchLevel,
+  /** 2026-06-08 Phase 2：透傳 params 給 dispatch.driver-pending placeholder 替換 */
+  params?: Record<string, string>,
 ): Promise<{ sent: number; failed: number; total: number }> {
   const drivers = await loadActiveDrivers(db, { minCategory });
   const lineUserIds = drivers.map((d) => d.lineUserId).filter(Boolean);
-  return await pushOrderDispatchToDrivers(db, payload, env, lineUserIds);
+  return await pushOrderDispatchToDrivers(db, payload, env, lineUserIds, params);
 }
 
 /**
@@ -505,12 +564,14 @@ export async function multicastLevelDown(
   payload: DispatchedOrderSummary,
   env: DispatchPushEnv,
   newLevel: DispatchLevel,
+  /** 2026-06-08 Phase 2：透傳 params 給 dispatch.level-down placeholder 替換 */
+  params?: Record<string, string>,
 ): Promise<{ sent: number; failed: number; total: number }> {
   const drivers = await loadActiveDrivers(db, { minCategory: newLevel });
   const lineUserIds = drivers.map((d) => d.lineUserId).filter(Boolean);
   if (lineUserIds.length === 0) return { sent: 0, failed: 0, total: 0 };
   const tpl = (await resolveTemplate(db, 'dispatch.level-down')) as TemplateContentFlex;
-  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl));
+  const flex = buildDispatchFlex(payload, env, _dispatchLabelsFromTemplate(tpl, params));
   const result = await sendLineMulticast('driver', lineUserIds, [flex]);
   return { ...result, total: lineUserIds.length };
 }

@@ -24,6 +24,7 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
 import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
+import { buildDriverParams, type DriverDataLike } from '@@/utils/template-params';
 
 const ALLOWED_DOC_TYPES = ['licenseUrl', 'registrationUrl', 'insuranceUrl', 'goodCitizenUrl'] as const;
 type DocType = typeof ALLOWED_DOC_TYPES[number];
@@ -99,6 +100,9 @@ export default defineEventHandler(async (event) => {
 
     // W4：核准 / 駁回共用 driver.document-review 模板，approved / rejected 各組 reason
     const docReviewTpl = (await resolveTemplate(db, 'driver.document-review')) as TemplateContentText;
+    // 2026-06-08 Phase 2：driver context 帶 buildDriverParams（template 目前只用 result/reason，
+    // 但中心化讓 admin 未來可加 {driverName} 等 placeholder 而不需動 trigger code）
+    const driverParams = buildDriverParams(driverSnap.data() as DriverDataLike);
 
     if (body.decision === 'approve') {
       // 覆蓋 production 欄位、刪 pending entry
@@ -118,6 +122,7 @@ export default defineEventHandler(async (event) => {
 
       // LINE 推給司機（用 driver channel）
       const approvedMsg = buildTemplate(docReviewTpl, {
+        ...driverParams,
         result: '通過',
         reason: `您的「${docLabel}」已通過審核，新版證件已生效。`,
       }, 'text');
@@ -140,6 +145,7 @@ export default defineEventHandler(async (event) => {
       });
 
       const rejectedMsg = buildTemplate(docReviewTpl, {
+        ...driverParams,
         result: '未通過',
         reason: `您的「${docLabel}」未通過審核。\n退回原因：${body.reason!.trim()}\n請重新上傳正確版本。`,
       }, 'text');

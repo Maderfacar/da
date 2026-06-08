@@ -25,6 +25,7 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
 import { buildTemplate, resolveTemplate, type TemplateContentText } from '@@/utils/template-registry';
+import { buildDriverParams, type DriverDataLike } from '@@/utils/template-params';
 import { buildTagIndex, tagIdsToNames } from '@@/utils/vehicle-profile';
 
 interface PostBody {
@@ -101,6 +102,9 @@ export default defineEventHandler(async (event) => {
 
     // W4：核准 / 駁回共用 driver.vehicle-profile-review 模板，approved / rejected 各組 reason
     const vehicleTpl = (await resolveTemplate(db, 'driver.vehicle-profile-review')) as TemplateContentText;
+    // 2026-06-08 Phase 2：driver context 帶 buildDriverParams（template 目前只用 result/reason，
+    // 中心化讓 admin 未來可加 {driverName}/{vehicleModel} 等 placeholder 而不需動 trigger code）
+    const driverParams = buildDriverParams(data as DriverDataLike);
 
     if (body.decision === 'approve') {
       await driverRef.update({
@@ -128,6 +132,7 @@ export default defineEventHandler(async (event) => {
       });
 
       const approvedMsg = buildTemplate(vehicleTpl, {
+        ...driverParams,
         result: '通過',
         reason: '您提交的標籤與照片已通過審核並上線。',
       }, 'text');
@@ -156,6 +161,7 @@ export default defineEventHandler(async (event) => {
       });
 
       const rejectedMsg = buildTemplate(vehicleTpl, {
+        ...driverParams,
         result: '未通過',
         reason: `退回原因：${reason}\n您可至 /driver/profile 修改後重新送審。`,
       }, 'text');

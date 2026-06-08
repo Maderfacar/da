@@ -319,6 +319,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'dropoffAddress', label: '下車點', example: '台北車站', required: true },
       { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: true },
       { key: 'estimatedFare', label: '預估車資', example: '1,800', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder（admin 可在 title / ctaLabel 編輯處選用；body 仍走 hardcoded）
+      { key: 'pickup', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'fare', label: '車資（alias）', example: '1,800', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名（隱私敏感）', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話（隱私敏感）', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名（隱私敏感）', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'driverPhone', label: '司機電話（首發無中選司機，通常空白）', example: '', required: false },
+      { key: 'driverDisplayName', label: '司機顯示名（首發無中選司機，通常空白）', example: '', required: false },
     ],
     defaultContent: {
       title: '📦 新訂單派發',
@@ -345,6 +363,25 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'stopovers', label: '中途停靠站（換行串接，多站時使用）', example: '台北 101、九份老街', required: false },
       { key: 'dropoffAddress', label: '下車點', example: '台北車站', required: true },
       { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder（admin 可在 title / ctaLabel 編輯處選用；body 仍走 hardcoded）
+      { key: 'pickup', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'estimatedFare', label: '預估車資', example: '1,800', required: false },
+      { key: 'fare', label: '車資（alias）', example: '1,800', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名（隱私敏感）', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話（隱私敏感）', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名（隱私敏感）', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'driverPhone', label: '司機電話（中選司機本人，通常 admin 不需顯示）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
     ],
     defaultContent: {
       title: '✅ 您已中選',
@@ -374,6 +411,25 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'vehiclePlate', label: '車牌', example: 'ABC-1234', required: false },
       { key: 'vehicleModel', label: '車輛品牌與型號（司機註冊時填寫）', example: 'Tesla Model S', required: false },
       { key: 'fare', label: '車資', example: '1,800', required: false },
+      // 2026-06-08 Phase 2：擴 placeholder
+      { key: 'driverPhone', label: '司機電話（隱私敏感）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名（alias）', example: 'David', required: false },
+      { key: 'pickup', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話（隱私敏感）', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
     ],
     defaultContent: {
       title: '🎉 配對成功',
@@ -403,6 +459,23 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: true },
       { key: 'estimatedFare', label: '預估車資', example: '1,800', required: true },
       { key: 'newLevel', label: '新開放等級（0/1/2）', example: '1', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder
+      { key: 'pickup', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'fare', label: '車資（alias）', example: '1,800', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名（隱私敏感）', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話（隱私敏感）', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名（隱私敏感）', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'driverPhone', label: '司機電話（降級時無中選司機，通常空白）', example: '', required: false },
+      { key: 'driverDisplayName', label: '司機顯示名（降級時無中選司機，通常空白）', example: '', required: false },
     ],
     defaultContent: {
       title: '📢 新需求單已開放給您',
@@ -438,6 +511,26 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'completedOrders', label: '完成趟數', example: '128', required: false },
       { key: 'matchedList', label: '符合偏好清單', example: '不抽菸、寵物友善', required: false },
       { key: 'unmatchedList', label: '未符合清單', example: '黑色車輛', required: false },
+      // 2026-06-08 Phase 2：擴 placeholder
+      { key: 'pickup', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話（隱私敏感）', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'driverPhone', label: '司機電話（隱私敏感）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
     ],
     defaultContent: {
       title: '⚠️ 配對部分符合',
@@ -460,6 +553,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
       { key: 'date', label: '上車時間', example: '05/15 14:30', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'pickupAddress', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
     ],
     defaultContent: {
       title: '🔄 正在重新為您配對',
@@ -520,6 +631,18 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     requiresSuperLevel: true,
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder（讓 admin 可在文字模板顯示更多訂單細節）
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'pickupAddress', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
     ],
     defaultContent: {
       body: '⚠️ 訂單已取消\n訂單 #{orderId} 已取消，您的喊單已自動撤回。',
@@ -571,6 +694,17 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     requiresSuperLevel: true,
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
+      // 2026-06-08 Phase 2：擴 placeholder（讓司機看到撤回的是哪筆訂單細節）
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'pickupAddress', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
     ],
     defaultContent: {
       body: '🔁 訂單已重新分派\n訂單 #{orderId} 已重新進入配對佇列，本次未繼續由您接單，請查看接單看板有無其他機會。',
@@ -589,6 +723,12 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     requiresSuperLevel: true,
     placeholders: [
       { key: 'applicantName', label: '申請人姓名', example: '王小明', required: false },
+      // 2026-06-08 Phase 2：擴 placeholder（buildDriverParams 注入；申請人 driver 自己的聯絡資料）
+      { key: 'driverPhone', label: '司機電話（申請表單填寫值）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
+      { key: 'driverName', label: '司機姓名（buildDriverParams 提供）', example: '王小明', required: false },
+      { key: 'vehiclePlate', label: '車牌', example: 'ABC-1234', required: false },
+      { key: 'vehicleModel', label: '車輛品牌與型號', example: 'Tesla Model S', required: false },
     ],
     defaultContent: {
       body: '✅ 司機申請已送出\n{applicantName} 您好，您的申請已成功送出，我們將盡快審核您的證件資料。\n審核期間請耐心等候，結果將透過 LINE 通知您。',
@@ -702,6 +842,10 @@ const FLEX_AMBER = '#D4860A';
  *
  * 動機：trigger site 改走 buildOrderDriverParams 後，會把所有可用 key 都帶上（缺值 ''），
  * 舊版「空字串也保留 {key}」會讓 user 訊息看到一堆 `{stopovers}`、`{notes}` 字樣。
+ *
+ * 2026-06-08 Phase 2：export 同名 `applyPlaceholders` 供 dispatch / softmatch hybrid
+ * helper 對「title / ctaLabel」等 admin-editable 標籤做 placeholder 替換（hardcoded Flex
+ * body 部份不參與替換）。內部 caller 繼續用 `_applyPlaceholders`，外部用 `applyPlaceholders`。
  */
 const _applyPlaceholders = (text: string, params: Record<string, string>): string => {
   return text.replace(/\{(\w+)\}/g, (_match, key: string) => {
@@ -709,6 +853,8 @@ const _applyPlaceholders = (text: string, params: Record<string, string>): strin
     return `{${key}}`;
   });
 };
+
+export const applyPlaceholders = _applyPlaceholders;
 
 const _buildActionPayload = (action: TemplateAction, params: Record<string, string>): object | null => {
   if (action.type === 'uri') {
