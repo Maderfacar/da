@@ -112,6 +112,22 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'vehicle', label: '車型分類（乘客建單時自選）', example: '豪華 MPV', required: true },
       { key: 'fare', label: '預估車資', example: '1,800', required: true },
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
+      // 2026-06-08：擴 placeholder（全部由 buildOrderParams 注入；空值由 _applyPlaceholders 渲染為空白）
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'pickupAddress', label: '上車點（dispatch 系列 alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
     ],
     defaultContent: {
       title: '📝 訂單已建立',
@@ -139,6 +155,26 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
       { key: 'stopovers', label: '中途停靠站（換行串接，多站時使用）', example: '台北 101、九份老街', required: false },
       { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      // 2026-06-08：擴 placeholder
+      { key: 'driverPhone', label: '司機電話（隱私敏感，admin 自行決定是否顯示）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'pickupAddress', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'estimatedFare', label: '預估車資（alias）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'passengerCount', label: '總人數', example: '3', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
     ],
     defaultContent: {
       title: '✅ 司機已接單',
@@ -166,6 +202,22 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
       { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
       { key: 'stopovers', label: '中途停靠站（換行串接，多站時使用）', example: '台北 101、九份老街', required: false },
       { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      // 2026-06-08：擴 placeholder
+      { key: 'driverPhone', label: '司機電話（隱私敏感，admin 自行決定是否顯示）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'pickupAddress', label: '上車點（alias）', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoffAddress', label: '下車點（alias）', example: '台北車站', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
     ],
     defaultContent: {
       title: '📍 司機已到達上車點',
@@ -188,6 +240,20 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
       { key: 'fare', label: '車資', example: '1,800', required: false },
+      // 2026-06-08：擴 placeholder
+      { key: 'driverName', label: '司機姓名', example: '王先生', required: false },
+      { key: 'driverPhone', label: '司機電話（隱私敏感）', example: '0987654321', required: false },
+      { key: 'driverDisplayName', label: '司機 LINE 顯示名', example: 'David', required: false },
+      { key: 'vehiclePlate', label: '車牌', example: 'ABC-1234', required: false },
+      { key: 'vehicleModel', label: '車輛品牌/型號', example: 'Tesla Model S', required: false },
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
     ],
     defaultContent: {
       title: '🎉 行程已完成',
@@ -210,6 +276,20 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
       { key: 'cancelReason', label: '取消原因', example: '司機無法配合時段', required: false },
+      // 2026-06-08：擴 placeholder
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'driverName', label: '司機姓名（如已指派）', example: '王先生', required: false },
+      { key: 'driverPhone', label: '司機電話（隱私敏感）', example: '0987654321', required: false },
+      { key: 'vehiclePlate', label: '車牌', example: 'ABC-1234', required: false },
+      { key: 'vehicleModel', label: '車輛品牌/型號', example: 'Tesla Model S', required: false },
     ],
     defaultContent: {
       title: '⚠️ 訂單已取消',
@@ -404,6 +484,24 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
       { key: 'cancelReason', label: '取消原因（含換行；無原因傳空字串）', example: '原因：司機無法配合時段\n', required: false },
+      // 2026-06-08：擴 placeholder（司機可看到取消的是哪筆訂單詳情）
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'fare', label: '車資（含千分位）', example: '1,800', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'adultCount', label: '大人人數', example: '2', required: false },
+      { key: 'childCount', label: '兒童人數', example: '1', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'notes', label: '訂單備註', example: '需嬰兒座椅', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
     ],
     defaultContent: {
       body: '⚠️ 訂單已取消\n訂單 #{orderId} 已被取消。\n{cancelReason}如有疑問請聯絡客服。',
@@ -441,6 +539,20 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateMeta> = {
     placeholders: [
       { key: 'orderId', label: '訂單編號', example: 'ABCD1234', required: true },
       { key: 'fare', label: '車資（含千分位）', example: '1,800', required: true },
+      // 2026-06-08：擴 placeholder（司機可回顧本趟乘客 / 路線）
+      { key: 'date', label: '搭乘時間', example: '2026-05-15 14:30', required: false },
+      { key: 'pickup', label: '上車點', example: '桃園機場第一航廈', required: false },
+      { key: 'dropoff', label: '下車點', example: '台北車站', required: false },
+      { key: 'stopovers', label: '中途停靠站（換行串接）', example: '台北 101', required: false },
+      { key: 'orderType', label: '訂單類型 slug', example: 'airport-pickup', required: false },
+      { key: 'vehicle', label: '車型 slug', example: 'sedan-business', required: false },
+      { key: 'contactName', label: '聯絡人姓名', example: '王小明', required: false },
+      { key: 'contactPhone', label: '聯絡電話', example: '0912345678', required: false },
+      { key: 'passengerName', label: '乘車人姓名', example: '王太太', required: false },
+      { key: 'paxSummary', label: '人數摘要', example: '大人 2 / 兒童 1', required: false },
+      { key: 'flightNumber', label: '航班號', example: 'BR226', required: false },
+      { key: 'terminal', label: '航廈', example: '1', required: false },
+      { key: 'luggageDescription', label: '行李摘要', example: '大 1 件 / 小 2 件', required: false },
     ],
     defaultContent: {
       body: '✅ 訂單已完成\n訂單 #{orderId} 已完成。\n收入 NT$ {fare} 已計入今日統計。\n辛苦了！',
@@ -581,11 +693,20 @@ const MAX_ALT_TEXT = 400;
 const MAX_LABEL = 20;
 const FLEX_AMBER = '#D4860A';
 
-/** 把 `{placeholder}` 替換為 params[key]；缺值保留原字串供 admin 排錯 */
+/**
+ * 把 `{placeholder}` 替換為 params[key]。
+ *
+ * 2026-06-08 修：區分「key 不存在」與「key 存在但空字串」：
+ *   - key in params：用 params[key]（包含空字串）→ 缺資料的位置乾淨輸出空白
+ *   - key 不在 params：保留 `{key}` 字樣 → admin 排錯（typo / 未開放的 placeholder）
+ *
+ * 動機：trigger site 改走 buildOrderDriverParams 後，會把所有可用 key 都帶上（缺值 ''），
+ * 舊版「空字串也保留 {key}」會讓 user 訊息看到一堆 `{stopovers}`、`{notes}` 字樣。
+ */
 const _applyPlaceholders = (text: string, params: Record<string, string>): string => {
   return text.replace(/\{(\w+)\}/g, (_match, key: string) => {
-    const v = params[key];
-    return typeof v === 'string' && v.length > 0 ? v : `{${key}}`;
+    if (key in params) return params[key] ?? '';
+    return `{${key}}`;
   });
 };
 

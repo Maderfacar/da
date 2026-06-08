@@ -10,6 +10,7 @@ import { getFareRules } from '@@/utils/fare-rules-cache';
 import { writeLineApiError } from '@@/utils/line-api-error-log';
 import { getUserLang } from '@@/utils/user-lang';
 import { buildTemplate, resolveTemplate } from '@@/utils/template-registry';
+import { buildOrderParams, type OrderDataLike } from '@@/utils/template-params';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 import { notifyAdmins } from '@@/utils/notify-admins';
 import {
@@ -576,13 +577,12 @@ export default defineEventHandler(async (event) => {
   // P37 Phase 4：原本走 i18n-message helper（依 users/{lineUid}.lang 選語系）
   // Wave 3-A1：優先讀 admin 編輯的模板 → 組 Flex Bubble；模板缺失 → fallback P37 三語 text
   if (lineUserId) {
-    const params = {
-      date: body.pickupDateTime.replace('T', ' ').slice(0, 16),
-      pickup: body.pickupLocation.address,
+    // 2026-06-08：改走 buildOrderParams 中心化 helper，所有可用 placeholder 都注入；
+    // vehicle 覆寫為車型本地化 label（helper 預設回 vehicleType slug，但這邊乘客通知偏好顯示中文名）
+    const params: Record<string, string> = {
+      ...buildOrderParams(body as OrderDataLike, { orderId, fareOverride: estimatedFare }),
       // P23：車型 label 從 fleet config 拿（中文 fallback），admin 改名即時生效
       vehicle: vehicle.label.zh || body.vehicleType,
-      fare: estimatedFare.toLocaleString(),
-      orderId: orderId.slice(0, 8).toUpperCase(),
     };
 
     // fire-and-forget：撈模板 + 推播都不 await，避免阻塞回應

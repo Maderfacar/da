@@ -7,6 +7,11 @@ import { composeStatusTransitionPatch, maybeResetTodayPatch, type DriverStatsDoc
 import { sendLinePush } from '@@/utils/line-push';
 import { getUserLang } from '@@/utils/user-lang';
 import {
+  buildOrderDriverParams,
+  type DriverDataLike,
+  type OrderDataLike,
+} from '@@/utils/template-params';
+import {
   buildTemplate,
   resolveTemplate,
   type TemplateContentText,
@@ -668,11 +673,12 @@ export default defineEventHandler(async (event) => {
 
     // 通知司機訂單已取消（pending 無指派司機則不通知；fire-and-forget）
     // W4：改走 driver.order-cancelled-assigned 模板；cancelReason 預組「原因：...\n」或空字串
+    // 2026-06-08：擴 placeholder — 司機可從訂單細節看出是哪個乘客 / 時段 / 上下車點被取消
     if (body.orderStatus === 'cancelled' && prevStatus !== 'cancelled' && orderAssignedDriver) {
       const driverLineUid = _stripLinePrefix(orderAssignedDriver);
       const tpl = (await resolveTemplate(db, 'driver.order-cancelled-assigned')) as TemplateContentText;
       const msg = buildTemplate(tpl, {
-        orderId: orderId.slice(0, 8).toUpperCase(),
+        ...buildOrderDriverParams(orderData as OrderDataLike, null, { orderId }),
         cancelReason: body.cancelReason ? `原因：${body.cancelReason}\n` : '',
       }, 'text');
       if (msg) await sendLinePush('driver', driverLineUid, [msg]);
@@ -786,10 +792,10 @@ export default defineEventHandler(async (event) => {
 
         // 通知司機訂單已完成 + 收入入帳（fire-and-forget）
         // W4：改走 driver.order-completed-earnings 模板；fare 已帶千分位
+        // 2026-06-08：擴 placeholder — 司機可從訂單細節回顧本趟乘客 / 路線
         const completedTpl = (await resolveTemplate(db, 'driver.order-completed-earnings')) as TemplateContentText;
         const completedMsg = buildTemplate(completedTpl, {
-          orderId: orderId.slice(0, 8).toUpperCase(),
-          fare: fare.toLocaleString(),
+          ...buildOrderDriverParams(orderData as OrderDataLike, null, { orderId, fareOverride: fare }),
         }, 'text');
         if (completedMsg) await sendLinePush('driver', driverLineUid, [completedMsg]);
       }
@@ -887,47 +893,25 @@ export default defineEventHandler(async (event) => {
         void (async () => {
           try {
             const lang = await getUserLang(db, passengerLineUid);
-            const params: Record<string, string> = {
-              orderId: orderId.slice(0, 8).toUpperCase(),
-            };
 
-            // confirmed / arrived_pickup（含司機到點）→ 帶上司機 + 地點資訊
-            if ((newStatus === 'confirmed' || newStatus === 'arrived_pickup') && orderAssignedDriver) {
+            // 抓司機 doc（如已指派；confirmed/arrived_pickup/completed 可帶出司機卡）
+            let driverData: DriverDataLike | null = null;
+            if (orderAssignedDriver) {
               try {
                 const driverLineUid = _stripLinePrefix(orderAssignedDriver);
                 const driverSnap = await db.collection('drivers').doc(driverLineUid).get();
-                if (driverSnap.exists) {
-                  const dd = driverSnap.data() ?? {};
-                  if (typeof dd.driverName === 'string') params.driverName = dd.driverName;
-                  if (typeof dd.plateNumber === 'string') params.vehiclePlate = dd.plateNumber;
-                  // 司機註冊時填的車輛品牌與型號（top-level field；2026-05-12 P27 起放在 driver doc root）
-                  if (typeof dd.vehicleModel === 'string') params.vehicleModel = dd.vehicleModel;
-                  else if (typeof dd.application === 'object' && dd.application !== null) {
-                    const app = dd.application as Record<string, unknown>;
-                    if (typeof app.vehicleModel === 'string') params.vehicleModel = app.vehicleModel;
-                  }
-                }
+                if (driverSnap.exists) driverData = driverSnap.data() as DriverDataLike;
               } catch (err) {
                 console.warn('[orders/patch] driver lookup for push failed:', err);
               }
+            }
 
-              // 地點：上車 / 中途停靠站 / 下車（從 orderData 讀）
-              const pickup = orderData.pickupLocation as { address?: string } | undefined;
-              if (pickup?.address) params.pickup = pickup.address;
-              const dropoff = orderData.dropoffLocation as { address?: string } | undefined;
-              if (dropoff?.address) params.dropoff = dropoff.address;
-              const stops = orderData.stopovers as Array<{ address?: string }> | undefined;
-              if (Array.isArray(stops) && stops.length > 0) {
-                params.stopovers = stops.map((s) => s.address ?? '').filter(Boolean).join('\n');
-              }
-            }
-            if (newStatus === 'completed') {
-              const fareNum = (orderData.estimatedFare as number | undefined) ?? 0;
-              params.fare = fareNum.toLocaleString();
-            }
-            if (newStatus === 'cancelled' && cancelReason) {
-              params.cancelReason = cancelReason;
-            }
+            // 2026-06-08：改走 buildOrderDriverParams 中心化 helper，所有可用 placeholder 都注入
+            // （admin 在 template 用得到 driverPhone / contactPhone / passengerName / flightNumber 等）
+            const params: Record<string, string> = {
+              ...buildOrderDriverParams(orderData as OrderDataLike, driverData, { orderId }),
+              ...(newStatus === 'cancelled' && cancelReason ? { cancelReason } : {}),
+            };
 
             const tpl = await resolveTemplate(db, messageKey, lang);
             const msg = buildTemplate(tpl, params, 'flex');
