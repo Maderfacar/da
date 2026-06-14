@@ -418,20 +418,22 @@ const swiperBreakpoints = {
             img.PassengerBookingStepOptions__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en")
           .PassengerBookingStepOptions__vehicle-hero.is-icon(v-else)
             NuxtIcon.PassengerBookingStepOptions__vehicle-hero-icon(:name="cfg.icon")
-          .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
-          .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
-          .PassengerBookingStepOptions__vehicle-specs
-            span
-              NuxtIcon(name="mdi:account-group")
-              | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
-            span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
-              NuxtIcon(name="mdi:bag-suitcase")
-              | {{ Loc(cfg.luggageDescription) }}
-          .PassengerBookingStepOptions__vehicle-fare
-            | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
-            span + NT${{ cfg.perKmRate }}/km
-          .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
-          .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
+          //- 毛玻璃文字區
+          .PassengerBookingStepOptions__vehicle-body
+            .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
+            .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
+            .PassengerBookingStepOptions__vehicle-specs
+              span
+                NuxtIcon(name="mdi:account-group")
+                | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
+              span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
+                NuxtIcon(name="mdi:bag-suitcase")
+                | {{ Loc(cfg.luggageDescription) }}
+            .PassengerBookingStepOptions__vehicle-fare
+              | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
+              span + NT${{ cfg.perKmRate }}/km
+            .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
+            .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
     button.PassengerBookingStepOptions__slider-nav.is-next(
       type="button"
       :aria-label="$t('booking.nav.next')"
@@ -721,15 +723,12 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-card {
-    // 高度固定統一：所有車型卡同高（避免 business/vip 因 tagline 行數造成差異）
     background: var(--da-glass-bg);
     border: 1.5px solid var(--da-gray-pale);
     border-radius: 14px;
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto auto auto auto;
-    gap: 4px 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     cursor: pointer;
     transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
     position: relative;
@@ -751,13 +750,10 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-hero {
-    grid-column: 1 / 3;
-    grid-row: 1;
-    aspect-ratio: 16 / 9;
-    border-radius: 10px;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.04);
-    margin-bottom: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -779,13 +775,27 @@ const swiperBreakpoints = {
     opacity: 0.55;
   }
 
+  &__vehicle-body {
+    flex-shrink: 0;
+    padding: 14px 18px 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(250, 248, 244, 0.82);
+    border-top: 1px solid rgba(255, 255, 255, 0.7);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    .is-active & {
+      background: rgba(255, 245, 220, 0.88);
+    }
+  }
+
   &__vehicle-name {
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 16px;
     font-weight: 700;
     color: var(--da-dark);
-    grid-column: 1;
-    grid-row: 2;
   }
 
   &__vehicle-sub {
@@ -793,8 +803,6 @@ const swiperBreakpoints = {
     font-size: 11px;
     letter-spacing: 0.1em;
     color: var(--da-gray);
-    grid-column: 1;
-    grid-row: 3;
   }
 
   &__vehicle-specs {
@@ -802,8 +810,6 @@ const swiperBreakpoints = {
     gap: 10px;
     font-size: 13px;
     color: var(--da-gray);
-    grid-column: 2;
-    grid-row: 2 / 4;
     align-items: center;
 
     span {
@@ -816,8 +822,6 @@ const swiperBreakpoints = {
   &__vehicle-fare {
     font-size: 13px;
     color: var(--da-gray);
-    grid-column: 1 / 3;
-    grid-row: 4;
     display: flex;
     gap: 6px;
     align-items: center;
@@ -827,20 +831,14 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-tagline {
-    grid-column: 1 / 3;
-    grid-row: 5;
     font-family: 'Noto Sans TC', sans-serif;
     font-size: 12px;
     color: var(--da-gray);
-    margin-top: 2px;
     line-height: 1.4;
   }
 
   &__vehicle-hint {
-    grid-column: 1 / 3;
-    grid-row: 6;
     font-size: 12px;
-    margin-top: 4px;
     font-family: 'Noto Sans TC', sans-serif;
 
     .is-disabled & { color: #ef4444; }
