@@ -23,9 +23,9 @@ async function ClickLineLogin() {
   liffLoading.value = true;
   try {
     const liff = (await import('@line/liff')).default;
-    // LIFF endpoint URL 為 `/`（P29/P40 path-append 設計），不帶 redirectUri 會被無條件 redirect 回乘客首頁，
-    // 看起來像「按了登入按鈕後又被踢回首頁」（與 /driver/auth 是同一類 bug，commit cff6557 修司機端時漏修乘客端）。
-    // 明確指定 redirectUri 回 /login，讓本頁 watch(roles) 接手後續跳轉（admin → /admin/orders，其餘 → /home）。
+    // liff.init 可能因 W3 timeout 或首次進入未完成；在此確保初始化後再 login
+    // LIFF SDK 已初始化時 init() 立即 resolve（idempotent），不會重複觸發
+    if (!liff.id) await liff.init({ liffId: config.lineLiffIdPassenger });
     liff.login({ redirectUri: `${window.location.origin}/login` });
   } catch {
     liffLoading.value = false;

@@ -288,11 +288,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     try {
       const liff = (await import('@line/liff')).default;
 
-      // W3：5 秒 timeout（原 10s 太寬鬆；失敗路徑配合 B 方案自動恢復提早釋放）
+      // W3：8 秒 timeout（手機慢速網路保留餘裕；login 頁按鈕另有 guard 補 init）
       await Promise.race([
         liff.init({ liffId }),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error('liff.init 逾時')), 5_000)
+          setTimeout(() => reject(new Error('liff.init 逾時')), 8_000)
         ),
       ]);
 
