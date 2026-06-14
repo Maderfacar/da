@@ -106,16 +106,6 @@ onUnmounted(() => {
   ClientOnly
     UiToast
 
-  //- ── Auth Loading ────────────────────────────────────────
-  ClientOnly
-    transition(name="auth-fade")
-      .LayoutFrontDesk__loading(v-if="!authResolved")
-        .LayoutFrontDesk__loading-logo
-          | DEST
-          span ∙
-          | ANYWHERE
-        .LayoutFrontDesk__loading-spinner
-
   //- ── 加好友提醒橫幅 ──────────────────────────────────────
   ClientOnly
     transition(name="banner-slide")
@@ -150,8 +140,13 @@ onUnmounted(() => {
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   //- 加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
+  //- W2：loading 只遮蓋 main 內容區，nav/hamburger/logo 立即可見
   main.LayoutFrontDesk__body(:class="{ 'has-banner': showFriendBanner }")
-    slot
+    ClientOnly
+      transition(name="auth-fade")
+        .LayoutFrontDesk__content-loading(v-if="!authResolved")
+          .LayoutFrontDesk__loading-spinner
+    slot(v-if="authResolved")
 
   //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
   CommonFooter
@@ -216,27 +211,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .banner-slide-enter-from,
 .banner-slide-leave-to    { transform: translateY(-100%); opacity: 0; }
 
-// ── Auth Loading ───────────────────────────────────────────
-.LayoutFrontDesk__loading {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--da-dark);
+// ── Auth Loading（W2：只遮 main 內容，nav 立即可見） ──────────
+.LayoutFrontDesk__content-loading {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-}
-
-.LayoutFrontDesk__loading-logo {
-  font-family: $font-display;
-  font-size: 32px;
-  letter-spacing: 0.08em;
-  color: var(--da-cream);
-  line-height: 1;
-
-  span { color: var(--da-amber); }
+  min-height: calc(100svh - 56px);
 }
 
 .LayoutFrontDesk__loading-spinner {

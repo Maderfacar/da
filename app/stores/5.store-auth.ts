@@ -20,7 +20,20 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
-  const lineProfile = ref<{ displayName: string; pictureUrl: string } | null>(null);
+  // W2：localStorage 快取 lineProfile，回訪用戶重整後立即顯示頭像/名稱
+  const _PROFILE_KEY = 'da_line_profile';
+  const _cachedProfile = (() => {
+    if (typeof localStorage === 'undefined') return null;
+    try { return JSON.parse(localStorage.getItem(_PROFILE_KEY) ?? 'null'); } catch { return null; }
+  })();
+  const lineProfile = ref<{ displayName: string; pictureUrl: string } | null>(_cachedProfile);
+  watch(lineProfile, (val) => {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      if (val) localStorage.setItem(_PROFILE_KEY, JSON.stringify(val));
+      else localStorage.removeItem(_PROFILE_KEY);
+    } catch { /* localStorage 不可用時靜默略過 */ }
+  });
   const idToken = ref('');
   const isFriend = ref<boolean | null>(null); // null = 尚未查詢
   // 推薦獎勵機制 Phase 3：自己的推薦碼（從 users doc 載入；讀失敗則為空，由 /referral/me 補上）
@@ -275,13 +288,27 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     try {
       const liff = (await import('@line/liff')).default;
 
-      // 10 秒 timeout 防止 liff.init() 在 LINE WebView 中 hang 住
+      // W3：5 秒 timeout（原 10s 太寬鬆；失敗路徑配合 B 方案自動恢復提早釋放）
       await Promise.race([
         liff.init({ liffId }),
         new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error('liff.init 逾時')), 10_000)
+          setTimeout(() => reject(new Error('liff.init 逾時')), 5_000)
         ),
       ]);
+
+      // B方案：?force-relogin=1 手動觸發一次性恢復（清 flag + logout + 跳轉乾淨 URL）
+      {
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get('force-relogin') === '1') {
+          sessionStorage.removeItem('liff_recovery_attempted');
+          try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
+          const cleanUrl = window.location.href
+            .replace(/([?&])force-relogin=1(&?)/, (_, q, a) => a ? q : '')
+            .replace(/\?$/, '');
+          location.replace(cleanUrl);
+          return;
+        }
+      }
 
       // LIFF 已登入 → 主動取 profile 寫入 store（避免重整後 Header 頭像/名稱空白）
       if (liff.isLoggedIn()) {
@@ -317,15 +344,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const token = liff.getAccessToken() ?? '';
       lineAccessToken.value = token;
 
-      // 查詢是否已加官方帳號好友
-      try {
-        const friendship = await liff.getFriendship();
-        isFriend.value = friendship.friendFlag;
-      } catch {
-        isFriend.value = null;
-      }
-
+      // W1：getFriendship 移出關鍵路徑，背景執行省 0.3-0.8s
       liffReady.value = true;
+      void (async () => {
+        try {
+          const friendship = await liff.getFriendship();
+          isFriend.value = friendship.friendFlag;
+        } catch {
+          isFriend.value = null;
+        }
+      })();
 
       // 永遠跑 line-exchange 取 server-side roles（即便 Firebase 已有 session）
       // 避免 client-side _LoadRolesFromFirestore 因 Rules 限制讀失敗時 roles 為空
@@ -337,7 +365,19 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         return null;
       });
 
+      // B方案：line-exchange 失敗（token 失效/快取過期）時自動一次性 logout+reload 恢復
+      if (!res && liff.isLoggedIn()) {
+        const RECOVERY_KEY = 'liff_recovery_attempted';
+        if (!sessionStorage.getItem(RECOVERY_KEY)) {
+          sessionStorage.setItem(RECOVERY_KEY, '1');
+          try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
+          location.reload();
+          return;
+        }
+      }
+
       if (res?.data) {
+        sessionStorage.removeItem('liff_recovery_attempted');
         if (res.data.displayName && res.data.pictureUrl) {
           lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
         }
