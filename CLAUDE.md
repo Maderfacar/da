@@ -193,6 +193,15 @@ if (res.status.code !== $enum.apiStatus.success) return false;
 - **共用鍵**：`fleet.extras.*`（額外服務）、`fleet.unit.*`（人/件）可跨頁複用，勿重複定義
 - **翻譯檔結構**：`zh.js`（主檔，240+ 行）為基準，`en.js` / `ja.js` 必須與 `zh.js` 結構完全對齊
 
+## Admin 2FA TOTP（2026-06-16 上線）
+
+- Admin 端強制兩階段驗證；無 backup code，忘失機需 super 至 Firestore 手動清 `admins/{lineUid}.totpSecret` / `totpEnrolledAt` / `totpSecretPending` 後重綁。
+- Secret 用 AES-256-GCM 加密；key = `NUXT_TOTP_ENC_KEY`（64 hex char，prod Vercel env var 必設）。
+- Session token 12h，存 `admin_2fa_sessions/{token}` doc；client 存 `localStorage.da_admin_2fa_session`。
+- 所有 `/nuxt-api/admin/*` 強制帶 `X-Admin-2FA-Session` header（已在 `app/protocol/fetch-api/methods.ts` 自動注入）。
+- Endpoint 集中於 `server/routes/nuxt-api/admin/2fa/{setup,verify-enrollment,verify-login,disable,session-check}`，其中 `setup` / `verify-enrollment` / `verify-login` / `session-check` 為 `getAuthFromEvent` BYPASS 名單（避免 chicken-egg）；`disable` 走正常 gate（super 須先有有效 2FA session）。
+- 詳細決策見 `docs/decision-log.md` 2026/06/16 條目（本地檔，gitignored）。
+
 ## 知識庫
 
 詳細規範與技術知識存放於 `.claude/knowledge/`，按需讀取以減少上下文消耗：

@@ -43,6 +43,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const isFriend = ref<boolean | null>(null); // null = 尚未查詢
   // 推薦獎勵機制 Phase 3：自己的推薦碼（從 users doc 載入；讀失敗則為空，由 /referral/me 補上）
   const referralCode = ref('');
+  // Admin 2FA TOTP（極限版，無 backup code；忘失機需 super 手動 Firestore 清 totpSecret）
+  // admin2faEnrolled：caller 是 admin 且 admins/{lineUid}.totpEnrolledAt 存在
+  // admin2faSessionVerified：localStorage 'da_admin_2fa_session' 經 /2fa/session-check 驗證過
+  const admin2faEnrolled = ref<boolean>(false);
+  const admin2faSessionVerified = ref<boolean>(false);
+  const _ADMIN_2FA_SESSION_KEY = 'da_admin_2fa_session';
 
   // 司機申請狀態（P8）：null = 未申請；rejectedAt 有值 = 已被拒絕等待 admin 解除
   const driverApplication = ref<{
@@ -107,6 +113,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     isFriend.value = null;
     driverApplication.value = null;
     referralCode.value = '';
+    admin2faEnrolled.value = false;
+    admin2faSessionVerified.value = false;
   };
 
   const _normalizeRoles = (raw: unknown): Role[] => {
@@ -184,6 +192,28 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       } catch (err) {
         console.error('[StoreAuth] _LoadRolesFromFirestore unexpected throw:', err);
       }
+      // Admin 2FA：若已綁定 + localStorage 內有 session token → 驗證有效性
+      if (admin2faEnrolled.value && typeof localStorage !== 'undefined') {
+        const storedToken = localStorage.getItem(_ADMIN_2FA_SESSION_KEY) ?? '';
+        if (storedToken) {
+          try {
+            const res = await $fetch<{ status?: { code: number } }>('/nuxt-api/admin/2fa/session-check', {
+              headers: {
+                Authorization: `Bearer ${idToken.value}`,
+                'X-Admin-2FA-Session': storedToken,
+              },
+            });
+            if (res?.status?.code === 200) {
+              admin2faSessionVerified.value = true;
+            } else {
+              try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
+            }
+          } catch {
+            // 401 / 網路錯 → 視為未驗證，clear cache 讓 middleware 導 challenge
+            try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
+          }
+        }
+      }
       _markAuthResolved();
     });
 
@@ -256,6 +286,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
             if (raw === 'super' || raw === 'admin' || raw === 'assistant') {
               level.value = raw;
             }
+            // Admin 2FA：totpEnrolledAt 存在即視為已綁定（值為 Firestore Timestamp / 也可能為 null）
+            admin2faEnrolled.value = !!adminData.totpEnrolledAt;
           }
         } catch {
           // rules 阻擋或 doc 不存在 → level 保持 null
@@ -591,6 +623,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const { getAuth } = await import('firebase/auth');
       await getAuth().signOut();
     } catch { /* Firebase 未初始化時忽略 */ }
+    // 清 admin 2FA session token cache（_clearState 也會 reset flags）
+    if (typeof localStorage !== 'undefined') {
+      try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
+    }
     _clearState();
     // authResolved 保持 true（auth 流程仍是「已解析，當前未登入」狀態）
     // 若設為 false 會導致 layout v-if="!authResolved" 顯示 loading，但 plugin 不會再跑而永久卡住
@@ -602,6 +638,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   return {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication, referralCode,
+    admin2faEnrolled, admin2faSessionVerified,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
   };

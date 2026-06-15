@@ -54,6 +54,11 @@ export type AuditAction =
   | 'admin.remove'
   | 'admin.level_change'
   | 'admin.permissions_override'
+  // Admin 2FA TOTP（極限版，無 backup code；忘失機需 super 手動 Firestore 清 totpSecret）
+  | 'admin.2fa_enroll'
+  | 'admin.2fa_login'
+  | 'admin.2fa_login_fail'
+  | 'admin.2fa_disable'
   // order
   | 'order.assign'
   | 'order.status_change'

@@ -85,6 +85,12 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
               // fallback 樣板原 apiToken（避免破壞既有測試流程）
               options.headers.set('Authorization', `Bearer ${storeSelf.apiToken}`);
             }
+            // Admin 2FA：所有 /nuxt-api/admin/* 帶 X-Admin-2FA-Session header
+            // server require-auth 對已綁 totpEnrolledAt 的 admin 一律強制校驗（2fa 自己幾個端點 BYPASS）
+            if (url.includes('/nuxt-api/admin/') && typeof localStorage !== 'undefined') {
+              const tfa = localStorage.getItem('da_admin_2fa_session') ?? '';
+              if (tfa) options.headers.set('X-Admin-2FA-Session', tfa);
+            }
           } catch {
             if (storeSelf.apiToken) {
               options.headers.set('Authorization', `Bearer ${storeSelf.apiToken}`);

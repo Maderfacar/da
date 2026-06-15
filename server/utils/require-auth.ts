@@ -23,6 +23,7 @@
  */
 import type { H3Event } from 'h3';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
+import { verify2faSession } from '@@/utils/admin-2fa-session';
 
 type Role = 'passenger' | 'driver' | 'admin';
 type AdminLevel = 'super' | 'admin' | 'assistant';
@@ -141,6 +142,7 @@ export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
     // 失敗（doc 不存在或 Firestore 出錯）→ level 為 undefined，後續 hasPermission 一律 false
     let level: AdminLevel | undefined;
     let permissions: AdminPermissions | undefined;
+    let totpEnrolledAt: unknown = null;
     if (roles.includes('admin')) {
       try {
         const adminSnap = await db.collection('admins').doc(lineUid).get();
@@ -151,9 +153,36 @@ export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
           if (rawPerms && typeof rawPerms === 'object') {
             permissions = rawPerms as AdminPermissions;
           }
+          totpEnrolledAt = adminData.totpEnrolledAt ?? null;
         }
       } catch (err) {
         console.error('[getAuthFromEvent] admins doc read failed:', err);
+      }
+    }
+
+    // Admin 2FA TOTP gate：若 admin 已綁定 TOTP，所有 /nuxt-api/admin/* 必須帶 valid X-Admin-2FA-Session
+    // BYPASS：2fa enrollment / login / session-check 自己（avoid chicken-egg）。disable 走正常 gate。
+    if (roles.includes('admin') && totpEnrolledAt) {
+      const reqPath = (event.path ?? '').split('?')[0];
+      const isBypass =
+        reqPath.startsWith('/nuxt-api/admin/2fa/setup')
+        || reqPath.startsWith('/nuxt-api/admin/2fa/verify-enrollment')
+        || reqPath.startsWith('/nuxt-api/admin/2fa/verify-login')
+        || reqPath.startsWith('/nuxt-api/admin/2fa/session-check');
+      if (!isBypass) {
+        const sessionToken = getHeader(event, 'x-admin-2fa-session') ?? '';
+        const session = sessionToken ? await verify2faSession(db, sessionToken).catch(() => null) : null;
+        if (!session || session.adminUid !== lineUid) {
+          return {
+            ok: false,
+            code: 403,
+            message: {
+              zh_tw: '需要兩階段驗證',
+              en: 'TOTP_REQUIRED',
+              ja: '2段階認証が必要です',
+            },
+          };
+        }
       }
     }
 

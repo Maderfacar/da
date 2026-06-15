@@ -46,6 +46,19 @@ export default defineNuxtRouteMiddleware((to) => {
     return navigateTo('/home', { replace: true });
   }
 
+  // Admin 2FA gate：
+  //   - /admin/2fa/* 永遠放行（避免 setup / challenge 自己被擋進無窮迴圈）
+  //   - 未綁定 → /admin/2fa/setup（強制 enrollment）
+  //   - 已綁定但 session 未驗證 → /admin/2fa/challenge?next={path}
+  if (isAdminPath && authStore.roles.includes('admin') && !to.path.startsWith('/admin/2fa')) {
+    if (!authStore.admin2faEnrolled) {
+      return navigateTo('/admin/2fa/setup', { replace: true });
+    }
+    if (!authStore.admin2faSessionVerified) {
+      return navigateTo({ path: '/admin/2fa/challenge', query: { next: to.fullPath } }, { replace: true });
+    }
+  }
+
   // Driver 路徑（非 auth / 非 register）：必須 driver role + approved；不符合 → 導向 /driver/auth
   //
   // 修 bug（原本是 navigateTo('/home')）：

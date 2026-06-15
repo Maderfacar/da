@@ -63,6 +63,7 @@ export default defineNuxtConfig({
     aviationEdgeKey: '',            // NUXT_AVIATION_EDGE_KEY — Aviation Edge 航班時刻表 API（伺服器端）
     tdxClientId: '',                // NUXT_TDX_CLIENT_ID — 運輸部 TDX OAuth client_id（伺服器端）
     tdxClientSecret: '',            // NUXT_TDX_CLIENT_SECRET — 運輸部 TDX OAuth client_secret（伺服器端）
+    totpEncKey: '',                 // NUXT_TOTP_ENC_KEY — 64 hex char AES-256-GCM key（admin 2FA TOTP secret 加密）
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
