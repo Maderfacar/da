@@ -697,18 +697,20 @@ const swiperBreakpoints = {
     top: 50%;
     transform: translateY(-50%);
     z-index: 5;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid var(--da-gray-pale);
     background: var(--da-cream);
     color: var(--da-dark);
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     transition: background 0.15s, border-color 0.15s;
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover {
       background: var(--da-amber-pale);
@@ -716,10 +718,18 @@ const swiperBreakpoints = {
       color: var(--da-amber);
     }
 
-    &.is-prev { left: -10px; }
-    &.is-next { right: -10px; }
+    &:active { transform: translateY(-50%) scale(0.9); }
 
-    @media (min-width: 768px) { display: inline-flex; align-items: center; justify-content: center; }
+    &.is-prev { left: -8px; }
+    &.is-next { right: -8px; }
+
+    @media (min-width: 768px) {
+      width: 36px;
+      height: 36px;
+      font-size: 22px;
+      &.is-prev { left: -10px; }
+      &.is-next { right: -10px; }
+    }
   }
 
   &__vehicle-card {

@@ -82,19 +82,21 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
               img.PageFare__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en")
             .PageFare__vehicle-hero.is-icon(v-else)
               NuxtIcon.PageFare__vehicle-hero-icon(:name="cfg.icon")
-            .PageFare__vehicle-name {{ Loc(cfg.label) }}
-            .PageFare__vehicle-sub {{ cfg.label.en }}
-            .PageFare__vehicle-specs
-              span
-                NuxtIcon(name="mdi:account-group")
-                | {{ cfg.capacity }} {{ $t('fleet.unit.person') }}
-              span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
-                NuxtIcon(name="mdi:bag-suitcase")
-                | {{ Loc(cfg.luggageDescription) }}
-            .PageFare__vehicle-fare
-              | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
-              span + NT${{ cfg.perKmRate }}/km
-            .PageFare__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
+            //- 毛玻璃底欄（對齊 booking step3 vehicle-body）
+            .PageFare__vehicle-body
+              .PageFare__vehicle-name {{ Loc(cfg.label) }}
+              .PageFare__vehicle-sub {{ cfg.label.en }}
+              .PageFare__vehicle-specs
+                span
+                  NuxtIcon(name="mdi:account-group")
+                  | {{ cfg.capacity }} {{ $t('fleet.unit.person') }}
+                span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
+                  NuxtIcon(name="mdi:bag-suitcase")
+                  | {{ Loc(cfg.luggageDescription) }}
+              .PageFare__vehicle-fare
+                | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
+                span + NT${{ cfg.perKmRate }}/km
+              .PageFare__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
       button.PageFare__slider-nav.is-next(
         type="button"
         :aria-label="$t('fare.vehicle.next')"
@@ -269,18 +271,16 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-card {
-  // 高度固定統一：所有車型卡同高（不再因 business/vip dark luxury 差異）
   position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.92);
   border: 1.5px solid var(--da-glass-border);
   border-radius: 20px;
-  padding: 14px;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
   overflow: hidden;
   height: 380px;
+  box-sizing: border-box;
 
   &:hover {
     transform: translateY(-3px);
@@ -293,17 +293,15 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
-// 車型 hero — 拉高凸顯照片（180px，photo 滿框 cover）
+// 車型 hero：撐滿上方剩餘空間（與 booking __vehicle-hero 對齊）
 .PageFare__vehicle-hero {
-  width: 100%;
-  height: 180px;
-  border-radius: 14px;
+  flex: 1;
+  min-height: 0;
   background: rgba(0, 0, 0, 0.04);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
 
   &.is-icon {
     background: rgba(212, 134, 10, 0.08);
@@ -323,9 +321,26 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-amber);
 }
 
+// 毛玻璃底欄：固定高度，文字全在此區（與 booking __vehicle-body 完全對齊）
+.PageFare__vehicle-body {
+  flex-shrink: 0;
+  padding: 14px 18px 16px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(250, 248, 244, 0.82);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  .PageFare__vehicle-card.is-active & {
+    background: rgba(255, 245, 220, 0.88);
+  }
+}
+
 .PageFare__vehicle-name {
   font-family: $font-body;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
   letter-spacing: 0.01em;
@@ -335,52 +350,43 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageFare__vehicle-sub {
   font-family: $font-condensed;
   font-size: 11px;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   color: var(--da-gray);
   text-transform: uppercase;
-  margin-top: 2px;
 }
 
 .PageFare__vehicle-specs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-top: 10px;
+  gap: 6px 10px;
   font-family: $font-condensed;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--da-gray);
 
   span {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
   }
 
   .nuxt-icon { font-size: 14px; color: var(--da-amber); }
 }
 
 .PageFare__vehicle-fare {
-  margin-top: 10px;
   font-family: $font-condensed;
   font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--da-dark);
+  color: var(--da-gray);
+  display: flex;
+  gap: 6px;
+  align-items: center;
 
-  span {
-    display: block;
-    font-weight: 500;
-    font-size: 11px;
-    color: var(--da-gray);
-    margin-top: 2px;
-  }
+  span { color: var(--da-amber); font-size: 12px; }
 }
 
 .PageFare__vehicle-tagline {
-  margin-top: 8px;
   font-family: $font-body;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.4;
   color: var(--da-gray);
 }
 
