@@ -59,6 +59,10 @@ export type AuditAction =
   | 'admin.2fa_login'
   | 'admin.2fa_login_fail'
   | 'admin.2fa_disable'
+  // Admin 敏感操作 PIN（W2：廣播 / 加減 admin role / fare rules 寫入二次驗證）
+  | 'admin.pin_set'
+  | 'admin.pin_verify_ok'
+  | 'admin.pin_verify_fail'
   // order
   | 'order.assign'
   | 'order.status_change'

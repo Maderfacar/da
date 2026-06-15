@@ -6,6 +6,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { checkRateLimit, rateLimitedResponse } from '@@/utils/rate-limit';
+import { requirePinSession } from '@@/utils/require-pin-session';
 
 interface BroadcastBody {
   title: string;
@@ -20,6 +21,9 @@ export default defineEventHandler(async (event) => {
   if (!hasPermission(auth, 'canBroadcast')) {
     return forbiddenError({ zh_tw: '需要廣播權限', en: 'canBroadcast required', ja: 'ブロードキャスト権限が必要です' });
   }
+  // W2：敏感操作 PIN 二次確認
+  const pinOk = await requirePinSession(event, auth);
+  if (pinOk !== true) return authFailResponse(pinOk);
 
   const body = await readBody<BroadcastBody>(event);
 

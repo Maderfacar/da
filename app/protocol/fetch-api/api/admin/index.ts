@@ -438,6 +438,16 @@ export const PatchAdmin = (uid: string, body: {
 }) =>
   methods.patch<{ uid: string; level: AdminLevel }>(`/nuxt-api/admin/admins/${uid}`, body);
 
+// W2：Admin 敏感操作 PIN ----------------------------------------------------
+
+/** 設定 / 變更 PIN — 已設過時 oldPin 必填 */
+export const SetupAdminPin = (body: { newPin: string; oldPin?: string }) =>
+  methods.post<{ ok: boolean }>('/nuxt-api/admin/pin/setup', body as unknown as Record<string, unknown>);
+
+/** 驗證 PIN → mint 5min session token */
+export const VerifyAdminPin = (body: { pin: string }) =>
+  methods.post<{ sessionToken: string }>('/nuxt-api/admin/pin/verify', body as unknown as Record<string, unknown>);
+
 // P26 admin/drivers ---------------------------------------------------------
 
 /** Admin 編輯司機 profile 業務欄位（目前只開放 phone）— 需 canManageDrivers */

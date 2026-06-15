@@ -16,6 +16,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog } from '@@/utils/audit-log';
+import { requirePinSession } from '@@/utils/require-pin-session';
 import {
   validateFareRules,
   invalidateFareRulesCache,
@@ -30,6 +31,9 @@ export default defineEventHandler(async (event) => {
   if (auth.level !== 'super') {
     return forbiddenError({ zh_tw: '需要最高管理員權限', en: 'Super admin required', ja: 'スーパー管理者権限が必要です' });
   }
+  // W2：敏感操作 PIN 二次確認
+  const pinOk = await requirePinSession(event, auth);
+  if (pinOk !== true) return authFailResponse(pinOk);
 
   const body = await readBody<unknown>(event).catch(() => null);
   if (!body) {

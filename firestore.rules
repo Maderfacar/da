@@ -95,6 +95,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── admin_pin_sessions 集合（W2：敏感操作 PIN step-up）─────
+    // doc id = sessionToken（64 hex）；欄位 adminUid + createdAt + expiresAt(5min)
+    // client 全禁讀寫，僅 server admin SDK 透過 server/utils/admin-pin-session.ts mint/verify
+    match /admin_pin_sessions/{token} {
+      allow read, write: if false;
+    }
+
     // ── rate_limits 集合（P31）────────────────────────────────
     // line-exchange / driver-apply / admin-broadcast 限流計數；client 全禁，
     // 僅 server admin SDK 透過 server/utils/rate-limit.ts 讀寫

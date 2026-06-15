@@ -90,6 +90,11 @@ const Fetch = <T>(url: string, option: AnyObject, _showErr = true): Promise<ApiR
             if (url.includes('/nuxt-api/admin/') && typeof localStorage !== 'undefined') {
               const tfa = localStorage.getItem('da_admin_2fa_session') ?? '';
               if (tfa) options.headers.set('X-Admin-2FA-Session', tfa);
+              // W2：敏感操作 PIN session（5min；3 高敏感 endpoint 強制校驗）
+              if (typeof sessionStorage !== 'undefined') {
+                const pin = sessionStorage.getItem('da_admin_pin_session') ?? '';
+                if (pin) options.headers.set('X-Admin-Pin-Session', pin);
+              }
             }
           } catch {
             if (storeSelf.apiToken) {

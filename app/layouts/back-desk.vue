@@ -146,6 +146,10 @@ function ClickNav(path: string) {
   //- ── 頁面內容 ─────────────────────────────────────────────
   main.LayoutBackDesk__body
     slot
+
+  //- ── W2：敏感操作 PIN 提示彈窗（singleton；UseAskForPin 驅動 visible） ───
+  ClientOnly
+    OpenDialogAdminPinPrompt
 </template>
 
 <style lang="scss" scoped>

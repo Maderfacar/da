@@ -142,9 +142,13 @@ watch(activeTab, (tab) => {
 }, { immediate: true });
 
 // ── 管理員白名單操作（P10：addRole / removeRole 語意） ─────────
+// W2：加 / 撤 admin role 屬高敏感，需先過 PIN step-up（sessionStorage 5min cache）
+const { askForPin } = UseAskForPin();
 const ClickAddAdmin = async () => {
   const uid = newAdminUid.value.trim();
   if (!uid) return;
+  const pin = await askForPin();
+  if (!pin) return;
   addingAdmin.value = true;
   // Firestore users/admins/drivers 文件 key 為「不帶 line: 前綴」的純 LINE userId；
   // 容錯使用者貼上帶 line: 前綴的字串（先前誤補前綴會寫進錯誤的幽靈文件）
@@ -165,6 +169,8 @@ const ClickAddAdmin = async () => {
 const ClickRemoveAdmin = async (uid: string) => {
   const ok = await UseAsk('確定移除此管理員嗎？移除後該帳號將失去管理員身分（保留乘客 / 司機身分）。');
   if (!ok) return;
+  const pin = await askForPin();
+  if (!pin) return;
   const res = await $api.PatchAdminUser(uid, { removeRole: 'admin' });
   if (res.status?.code !== 200) {
     ElMessage({ message: res.status?.message?.zh_tw ?? '移除失敗', type: 'error' });
@@ -541,6 +547,9 @@ const ClickSaveFareRules = async () => {
     ElMessage({ message: err, type: 'warning' });
     return;
   }
+  // W2：fare rules 寫入屬高敏感，需先過 PIN step-up
+  const pin = await askForPin();
+  if (!pin) return;
   fareRulesError.value = '';
   fareRulesSaving.value = true;
   try {
@@ -566,6 +575,13 @@ const ClickSaveFareRules = async () => {
   .PageAdminSettings__header
     .PageAdminSettings__header-label SYSTEM SETTINGS
     h1.PageAdminSettings__header-title 系統設定
+
+  //- W2：敏感操作 PIN 入口（永遠可見）
+  .PageAdminSettings__pin-banner
+    .PageAdminSettings__pin-banner-text
+      strong 敏感操作 PIN
+      span 廣播 / 加減 admin role / 車資進階規則 寫入前的二次確認
+    button.PageAdminSettings__pin-banner-btn(@click="$router.push('/admin/settings/pin')") 設定 / 變更
 
   //- 頂層分頁
   .PageAdminSettings__main-tabs
@@ -2092,6 +2108,40 @@ $rose: #f0556d;
     border-color: rgba(255, 200, 0, 0.45);
     color: rgba(255, 215, 50, 1);
   }
+}
+
+.PageAdminSettings__pin-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin: 0 0 16px;
+  background: #fffaeb;
+  border: 1px solid #fedf89;
+  border-radius: 8px;
+}
+.PageAdminSettings__pin-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: #7a4a07;
+  strong {
+    font-size: 14px;
+    color: #492a00;
+  }
+}
+.PageAdminSettings__pin-banner-btn {
+  border: 1px solid #b54708;
+  background: #fff;
+  color: #b54708;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  &:hover { background: #fef3c7; }
 }
 
 .PageAdminSettings__promotions {

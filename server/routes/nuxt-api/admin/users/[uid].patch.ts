@@ -25,6 +25,7 @@ import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
+import { requirePinSession } from '@@/utils/require-pin-session';
 import { isDriverCategory } from '~shared/types/driver-category';
 
 type Role = 'passenger' | 'driver' | 'admin';
@@ -102,6 +103,12 @@ export default defineEventHandler(async (event) => {
   }
   if (requiresManageDrivers && !hasPermission(auth, 'canManageDrivers')) {
     return forbiddenError({ zh_tw: '需要司機管理權限', en: 'canManageDrivers required', ja: 'ドライバー管理権限が必要です' });
+  }
+
+  // W2：admin role 加減屬高敏感，需 PIN 二次確認；driver approve/reject 等不擋
+  if (requiresManageAdmins) {
+    const pinOk = await requirePinSession(event, auth);
+    if (pinOk !== true) return authFailResponse(pinOk);
   }
 
   try {
