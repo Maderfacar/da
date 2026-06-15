@@ -3,6 +3,11 @@
 //
 // P10（2026/05/07 起）：身分模型由單一 role 改為 roles[] 陣列，支援單一使用者同時具
 // passenger / driver / admin 多重身分。approved 仍為單一 boolean，僅代表 driver 核准狀態。
+//
+// Firebase-First 重構（2026/06 起）：
+// 以 Firebase Session 為主軸，LIFF Token 驗證完全移至背景非阻塞執行。
+// liff.login() redirect 僅在「Firebase 與 LIFF 雙重失聯」時才觸發（首次登入）。
+// 重整或 LIFF token 12h 過期時，只要 Firebase session 仍活著就直接放行，不跳轉。
 type Role = 'passenger' | 'driver' | 'admin';
 // P18（2026/05/09 起）：admin 細分三層 level，僅作 admin 端內部權限判斷；roles[] 仍是身分入口的唯一依據。
 type AdminLevel = 'super' | 'admin' | 'assistant';
@@ -70,6 +75,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       _resolveAuthPromise = null;
     }
   };
+
+  // Firebase-First Gate：onAuthStateChanged 的「第一次」回調代表 Firebase SDK 已從
+  // IndexedDB 恢復 session，此時 getAuth().currentUser 才可信。
+  // _InitLiffFlow 在決定是否呼叫 liff.login() 前必須等此 Promise resolve，
+  // 否則 cold start 期間 currentUser 恆為 null，導致不必要的 redirect。
+  let _resolveFirebaseReady!: () => void;
+  const _firebaseReadyPromise = new Promise<void>((r) => { _resolveFirebaseReady = r; });
 
   // -- Computed --------------------------------------------------------------------------------------
 
@@ -149,6 +161,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const auth = getAuth(firebaseApp);
 
     onAuthStateChanged(auth, async (firebaseUser) => {
+      // Firebase SDK 已從 IndexedDB 恢復 session（不論 user 是否存在），通知 _InitLiffFlow 可信任 currentUser
+      _resolveFirebaseReady();
       clearTimeout(safetyTimer); // Firebase 成功回應，取消安全計時器
       // 重要：firebaseUser 為 null 才清空 state；其餘情況保留 user，避免 token 取得
       // 失敗或 Firestore 讀失敗時誤踢使用者（症狀：切換路由觸發 middleware/auth 把人
@@ -252,8 +266,78 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     }
   };
 
+  // ── 背景輔助：靜默刷新 LIFF Profile cache ──────────────────────────────────────────────────────
+  // Firebase session 活著但 LIFF token 可能已過期的場景下使用。
+  // 失敗時靜默略過（localStorage 已有 lineProfile cache 會繼續顯示）。
+  const _RefreshLiffProfileBackground = async (liff: typeof import('@line/liff').default) => {
+    if (!liff.isLoggedIn()) return;
+    try {
+      const profile = await liff.getProfile();
+      lineProfile.value = { displayName: profile.displayName, pictureUrl: profile.pictureUrl ?? '' };
+    } catch { /* 非致命，cache 版本繼續沿用 */ }
+  };
+
+  // ── 背景輔助：LIFF token → line-exchange → 更新 roles / Firebase session ─────────────────────
+  // 此函式為純背景執行，不阻塞頁面渲染。
+  // 兩種場景下呼叫：
+  //   1. Firebase 有 session + LIFF 也有 token → 靜默刷新 roles（避免 roles 舊 session 過期）
+  //   2. Firebase 無 session + LIFF 有 token → 首次換 customToken 建立 Firebase session
+  const _ExchangeLiffTokenBackground = async (
+    liff: typeof import('@line/liff').default,
+    firebaseApp: import('firebase/app').FirebaseApp,
+    clientType: 'passenger' | 'driver',
+  ) => {
+    const token = liff.getAccessToken() ?? '';
+    if (!token) return;
+    lineAccessToken.value = token;
+
+    const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number } }>(
+      '/nuxt-api/auth/line-exchange',
+      { method: 'POST', body: { lineAccessToken: token, clientType } },
+    ).catch((err) => {
+      console.error('[StoreAuth] line-exchange failed:', err);
+      return null;
+    });
+
+    // B方案：line-exchange 失敗（token 失效/快取過期）時自動一次性 logout+reload 恢復
+    if (!res && liff.isLoggedIn()) {
+      const RECOVERY_KEY = 'liff_recovery_attempted';
+      if (!sessionStorage.getItem(RECOVERY_KEY)) {
+        sessionStorage.setItem(RECOVERY_KEY, '1');
+        try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
+        location.reload();
+        return;
+      }
+    }
+
+    if (res?.data) {
+      sessionStorage.removeItem('liff_recovery_attempted');
+      if (res.data.displayName && res.data.pictureUrl) {
+        lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
+      }
+      const parsed = _normalizeRoles(res.data.roles);
+      if (parsed.length > 0) {
+        roles.value = parsed;
+        approved.value = res.data.approved ?? true;
+      }
+
+      const { getAuth, signInWithCustomToken } = await import('firebase/auth');
+      if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
+        await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
+      }
+    }
+  };
+
   const _InitLiffFlow = async (firebaseApp: import('firebase/app').FirebaseApp) => {
     const config = useRuntimeConfig().public;
+
+    // ── 管理端：完全跳過 LIFF ────────────────────────────────────────────────────────────────────
+    // Admin 走純 Firebase Email/Password 驗證，不進 LIFF 環境，不需任何 LINE token。
+    // liff.init() 在純 Web 環境執行會拋錯或掛起，跳過可避免初始化噪音。
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+      liffReady.value = true;
+      return;
+    }
 
     // client liff.init({ liffId }) 必須帶**對應入口的 LIFF ID**：
     //   - 司機從 driver LIFF 進來 → 用 driver LIFF ID
@@ -310,42 +394,59 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         }
       }
 
-      // LIFF 已登入 → 主動取 profile 寫入 store（避免重整後 Header 頭像/名稱空白）
-      if (liff.isLoggedIn()) {
-        try {
-          const profile = await liff.getProfile();
-          lineProfile.value = { displayName: profile.displayName, pictureUrl: profile.pictureUrl ?? '' };
-        } catch { /* 取 profile 失敗時保持原值 */ }
-      }
+      // ── Firebase-First Gate ─────────────────────────────────────────────────────────────────
+      // 等待 Firebase SDK 從 IndexedDB 恢復 session（最多 5 秒 buffer）。
+      // 此步驟是整個 Firebase-First 架構的核心：
+      //   - 舊版直接讀 getAuth().currentUser，在 cold start 時恆為 null → 誤觸 liff.login()
+      //   - 新版等 onAuthStateChanged 第一次回調後才讀 currentUser，確保值可信
+      await Promise.race([
+        _firebaseReadyPromise,
+        new Promise<void>((r) => setTimeout(r, 5_000)),
+      ]);
 
-      // Firebase session 優先於 LIFF（原 P6 修復 commit f35e01f，2026/05/02）
-      // LIFF token 比 Firebase custom token 短；若 Firebase session 仍有效但 LIFF 過期，
-      // 此處不應觸發 liff.login() 把使用者踢去 LINE 登入頁，否則 LIFF 會把使用者送回
-      // endpoint URL（乘客端首頁），看起來像「又陷入 LINE 登入又被導回乘客端」。
-      // 此段邏輯在 P10/P11 重構中曾被誤刪，此處還原。
       const { getAuth } = await import('firebase/auth');
-      if (!liff.isLoggedIn() && getAuth(firebaseApp).currentUser) {
+      const currentUser = getAuth(firebaseApp).currentUser;
+
+      if (currentUser) {
+        // ── Firebase Session 存活：立即放行，LIFF 相關動作移至背景 ─────────────────────────
+        // 使用者在平台的會話有效，不因 LIFF token 過期（12h）而重定向。
+        // 此分支覆蓋「重整 + LIFF token 過期」的最常見閃爍場景。
         liffReady.value = true;
+
+        // 背景：更新 LIFF profile cache（頭像/名稱）
+        void _RefreshLiffProfileBackground(liff);
+
+        // 背景：若 LIFF token 仍有效，靜默刷新 roles（roles 可能因 admin 異動而變）
+        // 若 LIFF token 已過期（liff.isLoggedIn() === false），不 redirect，
+        // 等使用者觸發核心動作（叫車、接單）時再由 GetFreshLiffToken() 引導
+        if (liff.isLoggedIn()) {
+          void _ExchangeLiffTokenBackground(liff, firebaseApp, clientType);
+        }
+
+        // liff.state 路由同步（司機深連結）
+        void _SyncLiffStateRoute();
         return;
       }
 
-      // 沒登入 LIFF 且 Firebase 也無 session → 強制 LINE 登入，redirect 後重新執行
+      // ── 雙失聯：Firebase 無 session 且 LIFF 也未登入 ────────────────────────────────────
+      // 真正的首次進入（或 Firebase + LIFF 雙重過期），需要走 LINE 授權重定向。
+      // LINE 已同意過授權的用戶，此重定向會在背景瞬間完成，不會再顯示授權畫面。
       //
-      // 必須帶 `redirectUri` 回到當前頁：LIFF endpoint URL 為 `/`（P29/P40 path-append 設計），
-      // 不帶 redirectUri 時 LIFF 預設 redirect 回 endpoint `/`（乘客首頁）。
-      // 對 /driver/* 入口而言會看起來像「跳 LINE 一下又被丟回乘客端」、無法登入司機端。
-      // 帶 redirectUri = window.location.href 保留當前路徑（含 query），讓登入完回原頁、
-      // 由原頁的 watch / middleware 接手後續身分跳轉。
+      // 必須帶 redirectUri 回到當前頁：LIFF endpoint URL 為 `/`（P29/P40 path-append 設計），
+      // 不帶 redirectUri 時 LIFF 預設 redirect 回 endpoint `/`（乘客首頁），
+      // 司機端看起來像「跳 LINE 一下又被丟回乘客端」。
       if (!liff.isLoggedIn()) {
         liff.login({ redirectUri: window.location.href });
         return;
       }
 
-      const token = liff.getAccessToken() ?? '';
-      lineAccessToken.value = token;
+      // ── Firebase 無 session 但 LIFF 有 Token ────────────────────────────────────────────
+      // 邊緣情況：Firebase session 剛好在 1h 到期（auto-refresh 失敗），但 LIFF token 尚在。
+      // 用 LIFF token 換 Firebase customToken，重建 Firebase session。
+      lineAccessToken.value = liff.getAccessToken() ?? '';
+      liffReady.value = true;
 
       // W1：getFriendship 移出關鍵路徑，背景執行省 0.3-0.8s
-      liffReady.value = true;
       void (async () => {
         try {
           const friendship = await liff.getFriendship();
@@ -355,88 +456,44 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         }
       })();
 
-      // 永遠跑 line-exchange 取 server-side roles（即便 Firebase 已有 session）
-      // 避免 client-side _LoadRolesFromFirestore 因 Rules 限制讀失敗時 roles 為空
-      const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number } }>(
-        '/nuxt-api/auth/line-exchange',
-        { method: 'POST', body: { lineAccessToken: token, clientType } },
-      ).catch((err) => {
-        console.error('[StoreAuth] line-exchange failed:', err);
-        return null;
-      });
+      await _ExchangeLiffTokenBackground(liff, firebaseApp, clientType);
 
-      // B方案：line-exchange 失敗（token 失效/快取過期）時自動一次性 logout+reload 恢復
-      if (!res && liff.isLoggedIn()) {
-        const RECOVERY_KEY = 'liff_recovery_attempted';
-        if (!sessionStorage.getItem(RECOVERY_KEY)) {
-          sessionStorage.setItem(RECOVERY_KEY, '1');
-          try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
-          location.reload();
-          return;
-        }
-      }
-
-      if (res?.data) {
-        sessionStorage.removeItem('liff_recovery_attempted');
-        if (res.data.displayName && res.data.pictureUrl) {
-          lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
-        }
-        const parsed = _normalizeRoles(res.data.roles);
-        if (parsed.length > 0) {
-          roles.value = parsed;
-          approved.value = res.data.approved ?? true;
-        }
-
-        const { signInWithCustomToken } = await import('firebase/auth');
-        if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
-          await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
-        }
-      }
-
-      // liff.init() 完成後同步目標路由 ──
-      // 司機點 LINE Flex 深連結（/driver/dispatched/xxx）時，LIFF 用 `liff.state` query
-      // 傳遞目標 path；SDK init 後 window.location 不一定已 navigate 到目標，Vue Router
-      // 也仍停在初始 route（多半 `/`）→ 司機卡在乘客端首頁、看不到訂單。
-      // 解析優先序：liff.state query → next query（舊訊息相容）→ 當前非根 pathname。
-      // 守則：目標必須 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const rawTarget = params.get('liff.state') || params.get('next') || '';
-        let target = '';
-        if (rawTarget) {
-          try { target = decodeURIComponent(rawTarget); } catch { target = ''; }
-        } else if (window.location.pathname !== '/') {
-          target = window.location.pathname;
-        }
-        if (target && target.startsWith('/') && !target.includes('//') && !target.includes(':')) {
-          const router = useRouter();
-          if (target !== router.currentRoute.value.fullPath) {
-            await router.replace(target);
-          }
-        }
-      } catch (navErr) {
-        console.warn('[StoreAuth] LIFF path sync failed:', navErr);
-      }
+      void _SyncLiffStateRoute();
     } catch (err) {
       console.error('[StoreAuth] _InitLiffFlow failed:', err);
       liffReady.value = true;
     }
   };
 
+  // ── 路由同步：還原 liff.state 深連結目標 ──────────────────────────────────────────────────────
+  // 司機點 LINE Flex 深連結（/driver/dispatched/xxx）時，LIFF 用 `liff.state` query
+  // 傳遞目標 path；SDK init 後 window.location 不一定已 navigate 到目標，Vue Router
+  // 也仍停在初始 route（多半 `/`）→ 司機卡在乘客端首頁、看不到訂單。
+  // 解析優先序：liff.state query → next query（舊訊息相容）→ 當前非根 pathname。
+  // 守則：目標必須 `/` 開頭、不可含 `//`、不可有 scheme — 避免 open redirect。
+  const _SyncLiffStateRoute = async () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const rawTarget = params.get('liff.state') || params.get('next') || '';
+      let target = '';
+      if (rawTarget) {
+        try { target = decodeURIComponent(rawTarget); } catch { target = ''; }
+      } else if (window.location.pathname !== '/') {
+        target = window.location.pathname;
+      }
+      if (target && target.startsWith('/') && !target.includes('//') && !target.includes(':')) {
+        const router = useRouter();
+        if (target !== router.currentRoute.value.fullPath) {
+          await router.replace(target);
+        }
+      }
+    } catch (navErr) {
+      console.warn('[StoreAuth] LIFF path sync failed:', navErr);
+    }
+  };
+
   // -- Actions ---------------------------------------------------------------------------------------
 
-  /**
-   * 取得最新的 Firebase ID token（自動 refresh）
-   *
-   * 用途：所有需要呼叫受 require-auth 保護的 server endpoint 之前，
-   * client 必須帶 `Authorization: Bearer <freshIdToken>`。
-   *
-   * Firebase ID token TTL 1 小時，`getIdToken()` 內部會在過期前自動 refresh。
-   *
-   * 回傳：
-   *   - 已登入：最新的有效 idToken
-   *   - 未登入 / 取得失敗：空字串（caller 可選擇不帶 header，server 會回 401）
-   */
   /**
    * 等待 InitAuthFlow 完成（authResolved=true）。
    *
@@ -451,11 +508,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
    */
   const WaitForAuthResolved = (): Promise<void> => _ensureAuthResolvedPromise();
 
+  /**
+   * 取得最新的 Firebase ID token（自動 refresh）。
+   * 所有受 require-auth 保護的 server endpoint 呼叫前使用。
+   * Firebase ID token TTL 1 小時，getIdToken() 內部會在過期前自動 refresh。
+   */
   const GetFreshIdToken = async (): Promise<string> => {
     if (typeof window === 'undefined') return idToken.value;
     try {
-      // InitAuthFlow 尚未跑完（或 firebaseApiKey 未設）時 default app 不存在，
-      // 直接呼叫 getAuth() 會 throw `app/no-app`。先檢查 getApps() 避免噪音 log。
       const { getApps } = await import('firebase/app');
       if (getApps().length === 0) return idToken.value;
       const { getAuth } = await import('firebase/auth');
@@ -467,6 +527,47 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     } catch (err) {
       console.error('[StoreAuth] GetFreshIdToken failed:', err);
       return idToken.value;
+    }
+  };
+
+  /**
+   * 取得最新有效的 LIFF Access Token（供核心業務動作使用）。
+   *
+   * 設計意圖（Firebase-First 架構）：
+   *   - 平常的頁面瀏覽與 UI 渲染不需要 LIFF token
+   *   - 只有在用戶執行「核心業務動作」時才需要向後端送 LIFF token 做身分驗證
+   *     乘客端：確認叫車、查詢訂單明細
+   *     司機端：接單、開始行程、抵達
+   *
+   * 回傳：
+   *   - LIFF 登入中：當前有效的 Access Token（字串）
+   *   - LIFF token 已過期：觸發 liff.login() redirect，回傳 null（caller 應中止動作）
+   *   - LIFF 未初始化 / 非 LIFF 環境：回傳 null
+   *
+   * 注意：此函式在 LIFF token 過期時會觸發 redirect，caller 在收到 null 後應立即 return。
+   * redirect 不會再顯示授權畫面（LINE 記住了一次同意），體驗約等同透明。
+   */
+  const GetFreshLiffToken = async (): Promise<string | null> => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const { getApps } = await import('firebase/app');
+      if (getApps().length === 0) return null;
+      const liff = (await import('@line/liff')).default;
+      if (!liff.id) return null; // LIFF 尚未 init（例如 admin 端）
+
+      if (liff.isLoggedIn()) {
+        const token = liff.getAccessToken();
+        lineAccessToken.value = token ?? '';
+        return token;
+      }
+
+      // LIFF token 過期 → 此時用戶明確觸發了核心動作，redirect 是可接受的
+      // LINE 已同意授權的用戶此 redirect 幾乎無感（秒回）
+      liff.login({ redirectUri: window.location.href });
+      return null;
+    } catch (err) {
+      console.error('[StoreAuth] GetFreshLiffToken failed:', err);
+      return null;
     }
   };
 
@@ -502,6 +603,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication, referralCode,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
-    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, WaitForAuthResolved,
+    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
   };
 });

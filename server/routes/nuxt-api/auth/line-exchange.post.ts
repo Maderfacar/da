@@ -59,6 +59,24 @@ export default defineEventHandler(async (event) => {
     }
 
     // ── 1. 驗證 LINE Access Token ────────────────────────────
+    // Step 1a：verify endpoint 驗證 token 合法性 + client_id（防偽造 token 與跨 channel 濫用）
+    // LINE 的 /verify 回傳 { client_id, expires_in }，client_id 必須與本服務的 LIFF Channel 一致。
+    // 此驗證採非對稱方式：token 只有 LINE 發行，server 無法偽造，可抵禦 userId 注入攻擊。
+    const verifyRes = await $fetch<{ client_id: string; expires_in: number }>(
+      'https://api.line.me/oauth2/v2.1/verify',
+      { query: { access_token: body.lineAccessToken } },
+    ).catch(() => null);
+
+    const expectedChannelId = config.lineChannelId as string | undefined;
+    if (!verifyRes?.client_id) {
+      return badRequestError({ zh_tw: 'LINE Token 驗證失敗', en: 'LINE token verification failed', ja: 'LINEトークンの検証に失敗しました' });
+    }
+    // client_id 不符代表 token 來自其他 LINE channel（可能是偽造或測試 token）
+    if (expectedChannelId && verifyRes.client_id !== expectedChannelId) {
+      return badRequestError({ zh_tw: 'LINE Token 來源不符', en: 'LINE token channel mismatch', ja: 'LINEトークンのチャンネルが一致しません' });
+    }
+
+    // Step 1b：userinfo 取得使用者身分（sub / name / picture）
     const lineProfile = await $fetch<LineUserInfo>('https://api.line.me/oauth2/v2.1/userinfo', {
       headers: { Authorization: `Bearer ${body.lineAccessToken}` },
     }).catch(() => null);
