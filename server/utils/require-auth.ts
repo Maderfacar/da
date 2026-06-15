@@ -56,7 +56,7 @@ export interface AuthOk {
 
 export interface AuthFail {
   ok: false;
-  code: 401 | 403 | 500;
+  code: 401 | 403 | 500 | 503;
   message: { zh_tw: string; en: string; ja: string };
 }
 
@@ -93,24 +93,44 @@ export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
 
     // P17 修正：Firestore 為 source of truth，claims 僅作 fallback
     // （admin 在 Firestore 加 'admin' role 後立即生效，不等 1 小時 token refresh）
+    //
+    // 2026-06-15 MEDIUM 2 修：區分「Firestore I/O 失敗」與「user doc 不存在」
+    //   - I/O 失敗（network / quota / outage）→ fail-closed 回 503，避免 RBAC 繞過
+    //   - doc 不存在（新用戶剛 sign-in 尚未寫入 users doc）→ fallback 到 claims（合法狀態）
+    //
+    // 為何 fail-closed：原版「失敗就降級 claims」會在 Firestore outage 時讓「剛被撤 admin
+    // role」的攻擊者繼續以 admin 通過驗證（claims snapshot 還含 admin）。Admin 端拒絕永遠安全。
     let roles: Role[] = [];
     let approved = false;
-    let firestoreOk = false;
+    let firestoreReachable = true;
+    let userDocExists = false;
     try {
       const snap = await db.collection('users').doc(lineUid).get();
+      userDocExists = snap.exists;
       if (snap.exists) {
         const data = snap.data() ?? {};
         approved = (data.approved as boolean) ?? false;
         roles = filterRoles(data.roles);
-        firestoreOk = true;
       }
     } catch (err) {
-      // Firestore 讀失敗不阻擋 auth flow，下面 fallback 到 claims
       console.error('[getAuthFromEvent] Firestore read failed:', err);
+      firestoreReachable = false;
     }
 
-    // Firestore 讀失敗或文件不存在 → fallback 到 custom token claims（舊 token 容錯）
-    if (!firestoreOk || roles.length === 0) {
+    if (!firestoreReachable) {
+      return {
+        ok: false,
+        code: 503,
+        message: {
+          zh_tw: '伺服器暫時無法驗證身分，請稍後再試',
+          en: 'Identity verification temporarily unavailable, please retry',
+          ja: '本人確認が一時的にご利用いただけません。しばらくしてから再度お試しください',
+        },
+      };
+    }
+
+    // Firestore 可達但 doc 不存在 / roles 欄位空 → fallback 到 custom token claims（容錯舊 token + 新 sign-in race）
+    if (!userDocExists || roles.length === 0) {
       const claimRoles = filterRoles((decoded as { roles?: unknown }).roles);
       if (claimRoles.length > 0) {
         roles = claimRoles;

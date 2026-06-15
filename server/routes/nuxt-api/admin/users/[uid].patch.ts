@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
+    const { auth: adminAuth, db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
     const ref = db.collection('users').doc(uid);
     const snap = await ref.get();
 
@@ -237,8 +237,24 @@ export default defineEventHandler(async (event) => {
     }
 
     // P18：removeRole='admin' 同步刪 admins/{uid} doc（super 已在前面 guard 擋住）
+    //
+    // 2026-06-15 MEDIUM 1：撤 admin role 時呼叫 revokeRefreshTokens，把該帳號既有 idToken
+    // 強制失效（1h TTL → 立即）。
+    //
+    // 為何需要：Firestore Rules 信 `request.auth.token.roles`（custom claims snapshot），
+    // 撤銷 admin role 後 client 仍能用舊 idToken 讀 admin-only collection（templates / richmenu /
+    // audit_logs 等）長達 1 小時。revoke 後 client 下次 getIdToken 會被 Firebase 強制 sign-in，
+    // claims 不再含 admin role，Rules 即時生效。
+    // server-side `require-auth` 因為即時讀 Firestore 不受影響（永遠拿最新 roles）。
     if (body!.removeRole === 'admin') {
       await db.collection('admins').doc(uid).delete();
+      try {
+        await adminAuth.revokeRefreshTokens(`line:${uid}`);
+      } catch (err) {
+        // 撤 token 失敗不阻擋主流程（Firestore role 已撤，server-side 已生效）；
+        // 僅 client-side Firestore Rules 的 admin-only read 會延後到 idToken 自然過期才失效
+        console.warn('[admin/users.patch] revokeRefreshTokens failed (non-fatal):', err);
+      }
     }
 
     // P25-2 audit log：依 body 推算 action（一次 PATCH 可能對應多種 action，逐筆寫）
