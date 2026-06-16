@@ -42,10 +42,16 @@ const ResetUnauthorizedCounter = () => {
 };
 
 // 回傳調整
+// 修：null 也是合法的 server 回應（例：GetUpcomingOrder 無單時回 null）。
+// 舊邏輯 `if (r?.data)` 把 null/0/""/false 全當「沒給」→ 偷換成 {}，導致 page 收到 truthy 物件、
+// 配合 dayjs(undefined) 渲染出當下時間 + orderId undefined（home 「即將到來行程」誤顯示日期時間的根因）。
+// 改成「`data` 欄位存在於回應 envelope 就原封傳遞」— 0/null/false/"" 都不再被吃掉。
 const FilterRes = (response: any, errCode = 9999, _showErr = true) => {
   const r = response?._data;
-  const _res = { data: {}, status: { code: errCode, message: { zh_tw: '', en: '', ja: '' } } };
-  if (r?.data) _res.data = r?.data;
+  const _res: { data: any; status: { code: number; message: { zh_tw: string; en: string; ja: string } } } = {
+    data: {}, status: { code: errCode, message: { zh_tw: '', en: '', ja: '' } },
+  };
+  if (r && typeof r === 'object' && 'data' in r) _res.data = r.data;
   if (r?.status) _res.status = r?.status;
   if (_showErr /** code !==0 */) {
     // 全域錯誤 toast 由各頁面自行處理（避免雙 toast）

@@ -20,7 +20,9 @@ const _LocLabel = (loc: GooglePlace | undefined | null): string => {
 };
 
 const nextTripDisplay = computed(() => {
-  if (!nextTrip.value) return null;
+  // 防呆：即使 res.data 回到非 null 但缺 orderId 的空殼物件（FilterRes 已修，這層為 belt-and-suspenders），
+  // 也視為無單，避免 dayjs(undefined) 回到「當下時間」造成假行程卡。
+  if (!nextTrip.value || !nextTrip.value.orderId) return null;
   const o = nextTrip.value;
   const dt = $dayjs(o.pickupDateTime);
   const vehicleCfg = storeConfig.GetVehicle(o.vehicleType);
