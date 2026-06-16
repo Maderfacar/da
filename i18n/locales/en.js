@@ -658,7 +658,7 @@ export default {
     },
     calc: {
       label: 'TRY IT',
-      title: 'Run the Numbers',
+      title: 'Fare Estimator',
       desc: 'Enter pickup, drop-off, and a time — we hit the Google routing engine in real time.',
       field: {
         pickupLocation: 'Pickup location',
@@ -703,7 +703,7 @@ export default {
       excluded: 'Not included: invoice tax, tips.',
     },
     cta: {
-      title: 'Book Your Ride Now',
+      title: 'Need a Ride?',
       desc: '',
       book: 'Book Now',
     },

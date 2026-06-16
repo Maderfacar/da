@@ -658,7 +658,7 @@ export default {
     },
     calc: {
       label: 'TRY IT',
-      title: '試してみる',
+      title: '料金試算',
       desc: '乗車地・降車地と時刻を入力すると、Google ルートエンジンで即時試算します。',
       field: {
         pickupLocation: '乗車地',
@@ -703,7 +703,7 @@ export default {
       excluded: '含まない：発票税金・チップ。',
     },
     cta: {
-      title: 'ご予約はこちらから',
+      title: 'ご予約をご希望ですか？',
       desc: '',
       book: '今すぐ予約',
     },

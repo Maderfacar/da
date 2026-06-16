@@ -676,7 +676,7 @@ export default {
     },
     calc: {
       label: 'TRY IT',
-      title: '自己算算看',
+      title: '車資估算',
       desc: '輸入上下車地點與時段，我們即時對接 Google 路徑試算。',
       field: {
         pickupLocation: '上車地點',
@@ -721,7 +721,7 @@ export default {
       excluded: '不含：發票稅金、小費。',
     },
     cta: {
-      title: '立即預約你的訂車行程',
+      title: '有訂車需求嗎？',
       desc: '',
       book: '立即預約',
     },

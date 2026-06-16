@@ -383,6 +383,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-top: 48px;
 }
 
 .PageFare__engine-card {
