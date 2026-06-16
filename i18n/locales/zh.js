@@ -666,7 +666,7 @@ export default {
     engine: {
       label: 'PRICING ENGINE',
       title: '一條公式，量到底',
-      desc: '估價這件事，值得認真做。我們把車資交給一條結合多組外部訊號的公式，讓每筆預估都更接近你實際會走的那條路。',
+      desc: '估價這件事值得認真做。我們把車資交給一條結合多組外部訊號的公式，讓每筆預估都更接近你實際會走的那條路',
       card1Title: '真實路徑，不是直線距離',
       card1Body: '透過 Google Routes API 取得當下的導航路徑與行車時間，作為里程計算的基底 — 兩點之間的直線只是想像，路是真的。',
       card2Title: '地形與時段同步感知',
@@ -677,7 +677,7 @@ export default {
     calc: {
       label: 'TRY IT',
       title: '自己算算看',
-      desc: '輸入上下車地點與時段，我們即時對接 Google 路徑試算 — 與下單同源，金額一致。',
+      desc: '輸入上下車地點與時段，我們即時對接 Google 路徑試算。',
       field: {
         pickupLocation: '上車地點',
         pickupLocationPlaceholder: '搜尋上車地點',
@@ -721,9 +721,9 @@ export default {
       excluded: '不含：發票稅金、小費。',
     },
     cta: {
-      title: '想知道您的路線多少錢',
-      desc: '到訂車頁輸入起訖點，立即看到精準估算。',
-      book: '前往訂車試算',
+      title: '立即預約你的訂車行程',
+      desc: '',
+      book: '立即預約',
     },
   },
   // ── 常見問題頁 ──────────────────────────────────────────────

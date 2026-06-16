@@ -82,7 +82,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
               img.PageFare__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en")
             .PageFare__vehicle-hero.is-icon(v-else)
               NuxtIcon.PageFare__vehicle-hero-icon(:name="cfg.icon")
-            //- 毛玻璃底欄（對齊 booking step3 vehicle-body）
+            //- 毛玻璃底欄（對齊 booking step3 vehicle-body；移除起跳價 + 每公里費率，價格僅在試算機呈現）
             .PageFare__vehicle-body
               .PageFare__vehicle-name {{ Loc(cfg.label) }}
               .PageFare__vehicle-sub {{ cfg.label.en }}
@@ -93,9 +93,6 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
                 span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
                   NuxtIcon(name="mdi:bag-suitcase")
                   | {{ Loc(cfg.luggageDescription) }}
-              .PageFare__vehicle-fare
-                | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
-                span + NT${{ cfg.perKmRate }}/km
               .PageFare__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
       button.PageFare__slider-nav.is-next(
         type="button"
@@ -103,20 +100,13 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
         @click="ClickSwiperNext"
       ) ›
 
-  //- ── Section 2：TRY IT — 車資試算（自己算算看；含車資說明在最終價格下方）──
+  //- ── Section 2：自己算算看（合併原 engine 段落：公式說明 + 試算機 + 2 張小卡）──
   section.PageFare__section.is-off-white
     .PageFare__section-label {{ $t('fare.calc.label') }}
     h2.PageFare__section-title {{ $t('fare.calc.title') }}
+    p.PageFare__section-desc {{ $t('fare.engine.desc') }}
     p.PageFare__section-desc {{ $t('fare.calc.desc') }}
     PassengerFareEstimator
-
-  .PageFare__stripe
-
-  //- ── Section 3：PRICING ENGINE — 3 卡計價引擎介紹 ──
-  section.PageFare__section.is-cream
-    .PageFare__section-label {{ $t('fare.engine.label') }}
-    h2.PageFare__section-title {{ $t('fare.engine.title') }}
-    p.PageFare__section-desc {{ $t('fare.engine.desc') }}
     .PageFare__engine-grid
       .PageFare__engine-card
         .PageFare__engine-num 01
@@ -126,17 +116,12 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
         .PageFare__engine-num 02
         .PageFare__engine-k {{ $t('fare.engine.card2Title') }}
         p.PageFare__engine-v {{ $t('fare.engine.card2Body') }}
-      .PageFare__engine-card
-        .PageFare__engine-num 03
-        .PageFare__engine-k {{ $t('fare.engine.card3Title') }}
-        p.PageFare__engine-v {{ $t('fare.engine.card3Body') }}
 
   .PageFare__stripe
 
   //- ── 結尾 CTA ──
   section.PageFare__cta
     h2.PageFare__cta-title {{ $t('fare.cta.title') }}
-    p.PageFare__cta-desc {{ $t('fare.cta.desc') }}
     button.PageFare__cta-btn(type="button" @click="navigateTo('/booking')")
       | {{ $t('fare.cta.book') }}
 </template>

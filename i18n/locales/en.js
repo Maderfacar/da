@@ -648,7 +648,7 @@ export default {
     engine: {
       label: 'PRICING ENGINE',
       title: 'One Formula, All the Way Down',
-      desc: 'Pricing deserves careful work. Our fare engine combines multiple external signals into a single formula, so every estimate stays close to the road you will actually drive.',
+      desc: 'Pricing deserves careful work. Our fare engine combines multiple external signals into a single formula, so every estimate stays close to the road you will actually drive',
       card1Title: 'Real Routes, Not Straight Lines',
       card1Body: 'We pull the live navigation route and driving time from the Google Routes API as the base for distance — the line between two points is imagined; the road is real.',
       card2Title: 'Terrain and Time, Sensed Together',
@@ -659,7 +659,7 @@ export default {
     calc: {
       label: 'TRY IT',
       title: 'Run the Numbers',
-      desc: 'Enter pickup, drop-off, and a time — we hit the same Google routing engine as booking, so the result matches.',
+      desc: 'Enter pickup, drop-off, and a time — we hit the Google routing engine in real time.',
       field: {
         pickupLocation: 'Pickup location',
         pickupLocationPlaceholder: 'Search pickup location',
@@ -703,9 +703,9 @@ export default {
       excluded: 'Not included: invoice tax, tips.',
     },
     cta: {
-      title: 'Want to Know Your Route\'s Fare?',
-      desc: 'Enter your origin and destination on the booking page to see a precise estimate instantly.',
-      book: 'Go to Booking Estimate',
+      title: 'Book Your Ride Now',
+      desc: '',
+      book: 'Book Now',
     },
   },
   // FAQ page

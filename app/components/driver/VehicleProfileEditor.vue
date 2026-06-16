@@ -322,6 +322,7 @@ defineExpose({ reloadTags: ApiLoadTags });
     .VehicleProfileEditor__block-head
       .VehicleProfileEditor__block-title 司機能力標籤
       .VehicleProfileEditor__block-sub 變更立即生效，不需審核
+      .VehicleProfileEditor__block-note 外語能力：具備日常溝通應答且不使用翻譯設備／軟體
     template(v-if="loadingTags")
       .VehicleProfileEditor__loading 載入標籤中…
     template(v-else)
@@ -491,6 +492,16 @@ $danger: #f87171;
   font-size: 11px;
   color: $muted;
   flex: 1;
+}
+
+// 較小較淺的補充說明（外語能力 etc.）；獨佔一行排在 block-sub 下方
+.VehicleProfileEditor__block-note {
+  width: 100%;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.25);
+  margin-top: 2px;
 }
 
 .VehicleProfileEditor__badge {
