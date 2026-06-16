@@ -222,6 +222,8 @@ export default {
       time: 'Time',
       vehicle: 'Vehicle',
       passengers: 'Passengers',
+      emptyTitle: 'No trip scheduled',
+      emptySub: 'Once you book, the next ride’s time, vehicle, and driver will appear here.',
       emptyCta: 'Book Now',
       pickup: 'Pickup',
       stopover: 'Stopover',
@@ -634,7 +636,7 @@ export default {
     vehicle: {
       label: 'VEHICLE LINEUP',
       title: 'Choose your vehicle',
-      desc: 'We match the right vehicle to your headcount, luggage, and trip type. Swipe through all classes; a 25 km sample fare is shown below.',
+      desc: 'Swipe through every class and pick the one that fits your headcount, luggage, and trip type.',
       sampleLabel: '25 km sample fare',
       sampleNote: 'Actual fare is computed at booking time based on distance, time of day, and extras.',
       specCapacity: 'Pax',
@@ -652,7 +654,7 @@ export default {
       card1Title: 'Real Routes, Not Straight Lines',
       card1Body: 'We pull the live navigation route and driving time from the Google Routes API as the base for distance — the line between two points is imagined; the road is real.',
       card2Title: 'Terrain and Time, Sensed Together',
-      card2Body: 'Elevation gain, curve density, live free-flow speed, counties crossed, and freeway kilometers all feed the formula. Mountain roads, cross-county trips, and tolls apply automatically — no human dial-turning.',
+      card2Body: 'Elevation gain, curve density, speed, counties crossed, and freeway kilometers all feed the formula. Mountain roads and cross-county trips apply automatically — no human dial-turning.',
       card3Title: 'Tunable in the Backoffice',
       card3Body: 'Rates are designed to be adjusted server-side, with no app release required. Every estimate reflects today’s cost structure — not a number from three years ago.',
     },
@@ -856,6 +858,9 @@ export default {
     minFare: 'Min. fare NT${n}',
     validUntil: 'Until {date}',
     orderTypeAll: 'All trip types',
+    copyCode: 'Copy code',
+    codeCopied: 'Code copied',
+    copyFailed: 'Copy failed, please copy manually',
   },
   // Home page coverage section
   homeCoverage: {

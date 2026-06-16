@@ -60,7 +60,14 @@ export default defineEventHandler(async (event) => {
       .filter((o) => Number.isFinite(Date.parse(o.pickupDateTime)))
       .sort((a, b) => Date.parse(a.pickupDateTime) - Date.parse(b.pickupDateTime));
 
-    const next = orders[0];
+    // 陳舊單防呆：pending 單若 pickupDateTime 已過期超過 6h，視為失聯不顯示為「即將到來」
+    // 進行中狀態（confirmed/en_route/arrived_pickup/in_transit）不受限，因為正在被服務
+    const now = Date.now();
+    const PAST_GRACE_MS = 6 * 60 * 60 * 1000;
+    const next = orders.find((o) => {
+      if (o.orderStatus !== 'pending') return true;
+      return Date.parse(o.pickupDateTime) > now - PAST_GRACE_MS;
+    });
     if (!next) return successResponse(null);
 
     // 司機資訊（confirmed 後才查）— 與 /orders/[orderId].get.ts 邏輯一致

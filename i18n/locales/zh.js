@@ -234,6 +234,8 @@ export default {
       time: '時間',
       vehicle: '車型',
       passengers: '人數',
+      emptyTitle: '尚未安排任何行程',
+      emptySub: '預約後，下一趟旅程的時間、車型、司機資訊會出現在這裡。',
       emptyCta: '立即訂車',
       pickup: '上車',
       stopover: '中途停靠',
@@ -652,7 +654,7 @@ export default {
     vehicle: {
       label: 'VEHICLE LINEUP',
       title: '選擇車型',
-      desc: '我們依您的人數、行李與行程類型，安排最合適的車型。左右滑動瀏覽所有車種，下方提供 25 公里樣本試算供您參考。',
+      desc: '我們依您的人數、行李與行程類型，左右滑動瀏覽所有並選擇最合適的車型。',
       sampleLabel: '25 公里樣本試算',
       sampleNote: '系統會依里程、時段、加值服務即時計算實際車資，以下單系統結果為準。',
       specCapacity: '乘客',
@@ -670,7 +672,7 @@ export default {
       card1Title: '真實路徑，不是直線距離',
       card1Body: '透過 Google Routes API 取得當下的導航路徑與行車時間，作為里程計算的基底 — 兩點之間的直線只是想像，路是真的。',
       card2Title: '地形與時段同步感知',
-      card2Body: '路線的海拔起伏、彎道密度、即時車速、所跨縣市與國道里程，公式會一併納入評估。山路、跨縣、過路費都按訊號自動套用，不靠人為判斷。',
+      card2Body: '路線的海拔起伏、彎道密度、車速、所跨縣市與國道里程，會一併納入評估。山路、跨縣都按訊號自動套用，不靠人為判斷。',
       card3Title: '後台即時調校',
       card3Body: '費率設計為後台可調，不需要等 App 改版。每一筆預估反映的，都是當下的成本結構，而非三年前的數字。',
     },
@@ -875,6 +877,9 @@ export default {
     minFare: '低消 NT${n}',
     validUntil: '至 {date}',
     orderTypeAll: '全行程適用',
+    copyCode: '複製折扣碼',
+    codeCopied: '已複製折扣碼',
+    copyFailed: '複製失敗，請手動複製',
   },
   // ── 首頁服務範圍 ────────────────────────────────────────────
   homeCoverage: {

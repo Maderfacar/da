@@ -4,6 +4,7 @@
 
 const { t } = useI18n();
 const { isSignIn } = storeToRefs(StoreAuth());
+const { showToast } = useToast();
 
 interface PromoCode {
   code: string;
@@ -15,6 +16,7 @@ interface PromoCode {
 
 const codes = ref<PromoCode[]>([]);
 const loaded = ref(false);
+const copiedCode = ref<string>('');
 
 const hasPromo = computed(() => loaded.value && codes.value.length > 0);
 
@@ -42,6 +44,24 @@ const ApiLoadPromo = async () => {
   }
 };
 
+const ClickCopyCode = async (code: string) => {
+  if (!code) return;
+  if (!navigator.clipboard?.writeText) {
+    showToast(t('homePromo.copyFailed'));
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(code);
+    copiedCode.value = code;
+    showToast(t('homePromo.codeCopied'));
+    setTimeout(() => {
+      if (copiedCode.value === code) copiedCode.value = '';
+    }, 2000);
+  } catch {
+    showToast(t('homePromo.copyFailed'));
+  }
+};
+
 watch(isSignIn, () => { ApiLoadPromo(); });
 
 onMounted(() => { ApiLoadPromo(); });
@@ -56,7 +76,15 @@ section.PassengerHomePromo(v-if="hasPromo")
     .PassengerHomePromo__card(v-for="c in codes" :key="c.code")
       .PassengerHomePromo__card-main
         .PassengerHomePromo__code-label {{ $t('homePromo.codeLabel') }}
-        .PassengerHomePromo__code {{ c.code }}
+        .PassengerHomePromo__code-row
+          .PassengerHomePromo__code {{ c.code }}
+          button.PassengerHomePromo__copy-btn(
+            type="button"
+            :class="{ 'is-copied': copiedCode === c.code }"
+            :aria-label="$t('homePromo.copyCode')"
+            @click="ClickCopyCode(c.code)"
+          )
+            NuxtIcon.PassengerHomePromo__copy-icon(:name="copiedCode === c.code ? 'mdi:check' : 'mdi:content-copy'")
       .PassengerHomePromo__card-info
         .PassengerHomePromo__amount {{ $t('homePromo.amount', { n: c.discountAmount.toLocaleString() }) }}
         .PassengerHomePromo__meta(v-if="c.minFare")
@@ -147,11 +175,49 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   color: rgba(255, 255, 255, 0.4);
 }
 
+.PassengerHomePromo__code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .PassengerHomePromo__code {
   font-family: $font-display;
   font-size: 26px;
   letter-spacing: 0.08em;
   color: var(--da-amber-light);
+}
+
+.PassengerHomePromo__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--da-amber-light);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  &:active { transform: scale(0.92); }
+
+  &.is-copied {
+    color: #6ee7a8;
+    border-color: rgba(110, 231, 168, 0.5);
+    background: rgba(110, 231, 168, 0.08);
+  }
+}
+
+.PassengerHomePromo__copy-icon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .PassengerHomePromo__card-info {

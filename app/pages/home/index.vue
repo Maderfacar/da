@@ -231,14 +231,15 @@ onUnmounted(() => {
             span.PageHome__trip-driver-key {{ $t('home.nextTrip.plateNumber') }}
             span.PageHome__trip-driver-plate {{ nextTripDisplay.driver.plateNumber }}
 
-    //- 無單：CTA 卡
-    button.PageHome__next-trip-empty.reveal(
-      v-else-if="nextTripLoaded"
-      type="button"
-      @click="navigateTo('/booking')"
-    )
-      span.PageHome__next-trip-empty-icon ＋
-      span.PageHome__next-trip-empty-text {{ $t('home.nextTrip.emptyCta') }}
+    //- 無單：明確空狀態卡 + CTA
+    .PageHome__next-trip-empty.reveal(v-else-if="nextTripLoaded")
+      .PageHome__next-trip-empty-icon
+        NuxtIcon(name="mdi:calendar-blank-outline")
+      .PageHome__next-trip-empty-title {{ $t('home.nextTrip.emptyTitle') }}
+      .PageHome__next-trip-empty-sub {{ $t('home.nextTrip.emptySub') }}
+      button.PageHome__next-trip-empty-cta(type="button" @click="navigateTo('/booking')")
+        span ＋
+        span {{ $t('home.nextTrip.emptyCta') }}
 
   //- ── 2. 安心接送的理由（合併 Steps + LINE Only 提示）───────
   PassengerHomeFeatures
@@ -867,41 +868,76 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   border-radius: 100px;
 }
 
-// 無單 CTA
+// 無單：明確空狀態卡
 .PageHome__next-trip-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 28px 20px;
+  padding: 36px 24px 32px;
   border-radius: 20px;
-  border: 1.5px dashed rgba(212, 134, 10, 0.45);
-  background: rgba(212, 134, 10, 0.04);
-  color: var(--da-amber);
-  font-family: $font-condensed;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
-
-  &:hover {
-    background: rgba(212, 134, 10, 0.1);
-    border-color: rgba(212, 134, 10, 0.7);
-  }
-  &:active { transform: scale(0.99); }
+  border: 1.5px dashed rgba(26, 24, 20, 0.18);
+  background: rgba(26, 24, 20, 0.02);
+  text-align: center;
 }
 
 .PageHome__next-trip-empty-icon {
-  font-family: $font-display;
-  font-size: 24px;
-  line-height: 1;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(212, 134, 10, 0.1);
+  color: var(--da-amber);
+  font-size: 28px;
+  margin-bottom: 4px;
 }
 
-.PageHome__next-trip-empty-text {
+.PageHome__next-trip-empty-title {
+  font-family: $font-body;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--da-dark);
+  letter-spacing: 0.01em;
+}
+
+.PageHome__next-trip-empty-sub {
+  font-family: $font-body;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--da-gray);
+  line-height: 1.6;
+  max-width: 280px;
+  margin-bottom: 8px;
+}
+
+.PageHome__next-trip-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--da-dark);
+  color: var(--da-cream);
+  border: none;
+  border-radius: 100px;
+  font-family: $font-condensed;
+  font-size: 13px;
+  font-weight: 700;
   letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:hover { opacity: 0.92; }
+  &:active { transform: scale(0.97); }
+
+  span:first-child {
+    font-family: $font-display;
+    font-size: 16px;
+    line-height: 1;
+  }
 }
 
 // ── 預約您的行程 CTA section ──────────────────────────────────────────────────
