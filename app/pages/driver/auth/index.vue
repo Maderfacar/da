@@ -15,36 +15,35 @@ const liffLoading = ref(false);
 //   5. 已登入但 roles 為空（line-exchange 失敗 / Firestore rules 阻擋）→ /driver/register 兜底
 //      （避免 user 卡死在登入畫面循環）
 //
-// 同時 watch authStore.roles，確保 _LoadRolesFromFirestore 完成設值時也會觸發
+// Routing 雙保險（2026-06-16 修新用戶卡 /driver/auth bug）：
+//   - watch immediate：reactive 等 store update
+//   - onMounted async：主動 await WaitForAuthResolved 再判一次，避免 watch 第一次跑時
+//     isSignIn 還是 false（race：page mount 早於 signInWithCustomToken 完成）後續沒重 fire
+const _RouteByRoles = () => {
+  if (!authStore.authResolved || !authStore.isSignIn) return false;
+
+  const hasDriver = authStore.roles.includes('driver');
+  const hasAdmin  = authStore.roles.includes('admin');
+
+  if (hasDriver && authStore.approved) { navigateTo('/driver/dashboard'); return true; }
+  if (hasDriver) { navigateTo('/driver/register'); return true; }
+  if (hasAdmin)  { navigateTo('/admin/orders');    return true; }
+  // 純 passenger / 新使用者 / roles=[] 兜底 — 都帶去 register 申請司機
+  navigateTo('/driver/register');
+  return true;
+};
+
 watch(
   () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
-  () => {
-    // 等 authResolved；未 sign-in → 留在本頁等使用者點 LINE 登入按鈕
-    if (!authStore.authResolved || !authStore.isSignIn) return;
-
-    const hasDriver = authStore.roles.includes('driver');
-    const hasAdmin  = authStore.roles.includes('admin');
-
-    if (hasDriver && authStore.approved) {
-      navigateTo('/driver/dashboard');
-      return;
-    }
-
-    if (hasDriver) {
-      navigateTo('/driver/register');
-      return;
-    }
-
-    if (hasAdmin) {
-      navigateTo('/admin/orders');
-      return;
-    }
-
-    // 純 passenger / 新使用者 / roles=[] 兜底 — 都帶去 register 申請司機
-    navigateTo('/driver/register');
-  },
+  () => { _RouteByRoles(); },
   { immediate: true },
 );
+
+// 主動兜底：page mount 後 await store ready 再判一次（覆蓋 watch race）
+onMounted(async () => {
+  await authStore.WaitForAuthResolved();
+  _RouteByRoles();
+});
 
 async function ClickLineLogin() {
   liffLoading.value = true;
