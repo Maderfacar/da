@@ -759,9 +759,10 @@ const swiperBreakpoints = {
     }
   }
 
+  // 鎖定固定高 220px，body 拿剩餘 160px；不再用 flex:1 避免 tagline/hint v-if 晃動造成圖片高低不一
   &__vehicle-hero {
-    flex: 1;
-    min-height: 0;
+    flex: none;
+    height: 220px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.04);
     display: flex;
@@ -786,7 +787,9 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-body {
-    flex-shrink: 0;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     padding: 14px 18px 16px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);

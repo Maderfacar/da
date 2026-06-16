@@ -293,10 +293,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 }
 
-// 車型 hero：撐滿上方剩餘空間（與 booking __vehicle-hero 對齊）
+// 車型 hero：鎖定固定高 220px，body 拿剩餘 160px（與 booking __vehicle-hero 對齊）
+// 改回固定高的理由：body 內容（tagline v-if）會晃高度導致 flex:1 hero 圖片高低不一
 .PageFare__vehicle-hero {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  height: 220px;
   background: rgba(0, 0, 0, 0.04);
   overflow: hidden;
   display: flex;
@@ -321,9 +322,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-amber);
 }
 
-// 毛玻璃底欄：固定高度，文字全在此區（與 booking __vehicle-body 完全對齊）
+// 毛玻璃底欄：拿 hero 後剩餘 160px；body 內容浮動但區域高度鎖死（與 booking __vehicle-body 完全對齊）
 .PageFare__vehicle-body {
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   padding: 14px 18px 16px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
