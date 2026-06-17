@@ -194,39 +194,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         return;
       }
       user.value = firebaseUser;
-      // getIdToken / Firestore 讀失敗都不應該影響 user 狀態
+      // getIdToken 失敗不應影響 user 狀態
       try {
         idToken.value = await firebaseUser.getIdToken();
       } catch (err) {
         console.error('[StoreAuth] getIdToken failed:', err);
       }
-      try {
-        await _LoadRolesFromFirestore(firebaseApp, firebaseUser.uid);
-      } catch (err) {
-        console.error('[StoreAuth] _LoadRolesFromFirestore unexpected throw:', err);
-      }
-      // Admin 2FA：若已綁定 + localStorage 內有 session token → 驗證有效性
-      if (admin2faEnrolled.value && typeof localStorage !== 'undefined') {
-        const storedToken = localStorage.getItem(_ADMIN_2FA_SESSION_KEY) ?? '';
-        if (storedToken) {
-          try {
-            const res = await $fetch<{ status?: { code: number } }>('/nuxt-api/admin/2fa/session-check', {
-              headers: {
-                Authorization: `Bearer ${idToken.value}`,
-                'X-Admin-2FA-Session': storedToken,
-              },
-            });
-            if (res?.status?.code === 200) {
-              admin2faSessionVerified.value = true;
-            } else {
-              try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
-            }
-          } catch {
-            // 401 / 網路錯 → 視為未驗證，clear cache 讓 middleware 導 challenge
-            try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
-          }
-        }
-      }
+      // W4：移除 eager _LoadRolesFromFirestore + admin 2FA session-check
+      // 這 4 個 IO 改由 middleware/role 在進對應路徑時 lazy load（Ensure* action）
+      // 公開頁進站不再觸發任何 Firestore read / admin POST
       _markAuthResolved();
     });
 
@@ -377,23 +353,6 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   });
 
   const _admin2faSessionLoader = createLazyLoader(_CheckAdmin2faSession);
-
-  // Phase 1 兼容：onAuthStateChanged 仍以此 wrapper 呼叫 eager load（Phase 3 才移除）
-  // 行為等價舊版 _LoadRolesFromFirestore：users → 視 roles 決定 drivers / admins
-  const _LoadRolesFromFirestore = async (
-    firebaseApp: import('firebase/app').FirebaseApp,
-    uid: string,
-  ): Promise<void> => {
-    await _LoadUserDoc(firebaseApp, uid);
-    if (roles.value.includes('driver')) {
-      await _LoadDriverDoc(firebaseApp, uid);
-    } else {
-      driverApplication.value = null;
-    }
-    if (roles.value.includes('admin')) {
-      await _LoadAdminDoc(firebaseApp, uid);
-    }
-  };
 
   // ── 背景輔助：靜默刷新 LIFF Profile cache ──────────────────────────────────────────────────────
   // Firebase session 活著但 LIFF token 可能已過期的場景下使用。

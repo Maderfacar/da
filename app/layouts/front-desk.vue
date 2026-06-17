@@ -11,6 +11,10 @@ const authStore = StoreAuth();
 const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
 
+// W4：受保護頁兜底（roles 未 load 時顯示骨架，5s timeout 後顯示「載入失敗，請重新登入」）
+// layout 為乘客端共用容器，套 guard 即涵蓋 /home /orders 等所有 front-desk page
+const { state: rolesLoadState, ClickReLogin } = UseRolesLoadGuard();
+
 // ── Meta：分頁標題 + favicon（區隔三端）─────────────────
 // 規格：titleTemplate = `{頁名} · {品牌}`；route→key 走最長前綴匹配；
 // 兼容 i18n prefix_except_default（剝 /en /ja 前綴）；i18n 三語自動套。
@@ -146,7 +150,14 @@ onUnmounted(() => {
       transition(name="auth-fade")
         .LayoutFrontDesk__content-loading(v-if="!authResolved")
           .LayoutFrontDesk__loading-spinner
-    slot(v-if="authResolved")
+      //- W4：roles lazy load 失敗 5s 後顯示
+      .LayoutFrontDesk__roles-failed(v-if="authResolved && isSignIn && rolesLoadState === 'failed'")
+        p.LayoutFrontDesk__roles-failed-msg 載入失敗，請重新登入
+        button.LayoutFrontDesk__roles-failed-btn(
+          type="button"
+          @click="ClickReLogin"
+        ) 重新登入
+    slot(v-if="authResolved && !(isSignIn && rolesLoadState === 'failed')")
 
   //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
   CommonFooter
@@ -234,6 +245,41 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .auth-fade-leave-active { transition: opacity 0.4s ease; }
 .auth-fade-leave-to { opacity: 0; }
+
+// ── W4：roles lazy load 失敗兜底 ───────────────────────────
+.LayoutFrontDesk__roles-failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: calc(100svh - 56px);
+  padding: 24px;
+}
+
+.LayoutFrontDesk__roles-failed-msg {
+  font-family: $font-body;
+  font-size: 16px;
+  color: var(--da-gray);
+  margin: 0;
+}
+
+.LayoutFrontDesk__roles-failed-btn {
+  padding: 12px 28px;
+  background: var(--da-amber);
+  color: #fff;
+  border: none;
+  border-radius: 100px;
+  font-family: $font-condensed;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:hover { opacity: 0.9; }
+  &:active { transform: scale(0.96); }
+}
 
 // ── 頂部 Nav ───────────────────────────────────────────────
 .LayoutFrontDesk__top {
