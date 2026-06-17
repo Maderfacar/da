@@ -382,7 +382,7 @@ export default {
       exceedLuggage: '荷物が車種容量を超過',
       warnLuggage: '荷物が車種上限に接近、より大型を推奨',
       // Booking v2 批次 1：車種と希望特徴の間のヒント
-      passengerHint: '特別なご要望は下から選択ください',
+      passengerHint: 'その他のご要望は下から選択ください',
       // 車種未選択時のヒント
       pickVehicleHint: '先に車種を選択してください',
       // Charter Fare V1 W4：日別プランピッカー
@@ -485,20 +485,20 @@ export default {
     },
     // Phase 1D：好み設定タグ（乗客予約 + 注文詳細）
     preferences: {
-      title: '希望する特徴（任意）',
-      hint: '希望する車両特徴を選択してください。マッチング時に優先されます。複数選択時は最も高い加算のみ計上、他はサービスです。',
-      expand: '+ 希望特徴を追加',
-      collapse: '− 希望特徴を閉じる',
+      title: 'お好みの選択（任意）',
+      hint: 'ご希望の車両特徴を選択してください。マッチング時に優先されます。複数選択時は最も高い加算のみ計上、他はサービスです。',
+      expand: '+ お好み選択を追加',
+      collapse: '− お好み選択を閉じる',
       selectedCount: '{count} 項目選択中',
       singleHint: '単一選択',
       multiHint: '複数可',
-      surchargeRow: '希望タグ加算',
+      surchargeRow: 'お好み加算',
       surchargeDetail: '選択した中で最高の加算額のみ計上、他はサービスです。',
-      yourPreferences: 'あなたの希望',
-      noPreferences: '希望設定なし',
+      yourPreferences: 'あなたのお好み',
+      noPreferences: 'お好み設定なし',
       noTagsAvailable: '利用可能なタグなし',
       // Booking v2 批次 1：Step 4 サマリーのチップ列ラベル
-      summary: '希望特徴',
+      summary: 'お好み選択',
     },
   },
   map: {

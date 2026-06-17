@@ -397,7 +397,7 @@ export default {
       exceedLuggage: '行李超出車型容量上限',
       warnLuggage: '行李接近車型上限，建議改選大車',
       // Booking v2 批次 1：車型與期望特徵之間的提示
-      passengerHint: '如有特殊需求請從下方選擇',
+      passengerHint: '如有其它需求請從下方選擇',
       // 未選車型時下一步提示
       pickVehicleHint: '請先選擇車型再進行下一步',
       // Charter Fare V1 W4：每日 plan picker
@@ -500,20 +500,20 @@ export default {
     },
     // Phase 1D：偏好標籤（乘客 booking + 訂單詳情）
     preferences: {
-      title: '期望特徵（選填）',
+      title: '偏好選擇（選填）',
       hint: '勾選想要的車輛特色，配對時會優先考慮；多選只收最高加價，其餘附贈。',
-      expand: '+ 加入期望特徵',
-      collapse: '− 收合期望特徵',
+      expand: '+ 加入偏好選擇',
+      collapse: '− 收合偏好選擇',
       selectedCount: '已選 {count} 項',
       singleHint: '單選',
       multiHint: '可複選',
-      surchargeRow: '喜好標籤加價',
+      surchargeRow: '偏好加價',
       surchargeDetail: '此價格為您勾選標籤中加價最高的一項；其餘附贈。',
       yourPreferences: '您的偏好',
       noPreferences: '無偏好設定',
       noTagsAvailable: '目前無可用標籤',
-      // Booking v2 批次 1：Step 4 摘要顯示「期望特徵」chip 列
-      summary: '期望特徵',
+      // Booking v2 批次 1：Step 4 摘要顯示「偏好選擇」chip 列
+      summary: '偏好選擇',
     },
   },
   // ── 地圖 ──────────────────────────────────────────────────

@@ -1200,6 +1200,8 @@ const ClickSaveFareRules = async () => {
               type="number"
               inputmode="numeric"
             )
+            .PageAdminSettings__fare-hint
+              | 包車訂單若被判定為「回到起點附近」的來回行程，會額外加收這筆費用以涵蓋司機空車回程成本。判定規則見下方「來回判定」區塊。
           .PageAdminSettings__fare-field
             label.PageAdminSettings__fare-label 過夜固定加收（元 / 晚）
             ElInput(
@@ -1207,27 +1209,33 @@ const ClickSaveFareRules = async () => {
               type="number"
               inputmode="numeric"
             )
+            .PageAdminSettings__fare-hint
+              | 包車跨日（凌晨 0-6 點橫跨）每晚加收這筆費用，反映司機過夜成本。
 
       .PageAdminSettings__fare-block
         .PageAdminSettings__fare-block-head
           span.PageAdminSettings__fare-block-title 包車 — 來回判定
-        .PageAdminSettings__fare-subhead
-          | D 到 (X→A polyline) 最短距離 ≤ buffer，或 D 到 A 直線 ≤ overshoot 兩條件 OR 命中 → 視為來回。
+        .PageAdminSettings__fare-block-desc
+          | 終點如果靠近「去程路線」或「起點」，視為來回行程，自動加收上方的來回費。兩個條件任一命中即算來回。
         .PageAdminSettings__fare-grid
           .PageAdminSettings__fare-field
-            label.PageAdminSettings__fare-label buffer (km)
+            label.PageAdminSettings__fare-label 路線寬容 buffer（公里）
             ElInput(
               v-model.number="fareRules.charter.roundTripBufferKm"
               type="number"
               inputmode="numeric"
             )
+            .PageAdminSettings__fare-hint
+              | 終點偏離「去程路線」多少公里以內，仍視為走回頭路。例：填 2 = 終點離去程路線 2 公里內算來回。
           .PageAdminSettings__fare-field
-            label.PageAdminSettings__fare-label overshoot 過頭 (km)
+            label.PageAdminSettings__fare-label 終點偏離 overshoot（公里）
             ElInput(
               v-model.number="fareRules.charter.roundTripOverShootMaxKm"
               type="number"
               inputmode="numeric"
             )
+            .PageAdminSettings__fare-hint
+              | 終點到起點「直線距離」多少公里以內，視為回到原地附近。例：填 3 = 終點離起點 3 公里直線內算來回。
 
       .PageAdminSettings__fare-block
         .PageAdminSettings__fare-block-head
@@ -1990,6 +1998,24 @@ $rose: #f0556d;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
   margin: 14px 0 8px;
+}
+
+.PageAdminSettings__fare-hint {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.55;
+  margin-top: 6px;
+}
+
+.PageAdminSettings__fare-block-desc {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.6;
+  margin: 8px 0 14px;
 }
 
 .PageAdminSettings__fare-tier {

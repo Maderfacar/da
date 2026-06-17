@@ -429,9 +429,7 @@ const swiperBreakpoints = {
               span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
                 NuxtIcon(name="mdi:bag-suitcase")
                 | {{ Loc(cfg.luggageDescription) }}
-            .PassengerBookingStepOptions__vehicle-fare
-              | {{ $t('booking.options.baseFare', { fare: cfg.baseFare }) }}
-              span + NT${{ cfg.perKmRate }}/km
+            //- 起跳價 + 每公里費率移除（對齊 /fare：價格僅在試算機呈現）
             .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
             .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
     button.PassengerBookingStepOptions__slider-nav.is-next(
@@ -830,17 +828,6 @@ const swiperBreakpoints = {
       align-items: center;
       gap: 3px;
     }
-  }
-
-  &__vehicle-fare {
-    font-size: 13px;
-    color: var(--da-gray);
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    font-family: 'Barlow', sans-serif;
-
-    span { color: var(--da-amber); font-size: 12px; }
   }
 
   &__vehicle-tagline {
