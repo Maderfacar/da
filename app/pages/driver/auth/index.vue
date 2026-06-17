@@ -1,45 +1,56 @@
 <script setup lang="ts">
-definePageMeta({ layout: false, ssr: false });
+// PageDriverAuth — 司機端公開登入入口
+//
+// W2：分流邏輯收斂進 middleware/role.ts（共用 shared/utils/auth-target SSOT）。
+// /driver/auth 入口的分流（spec 於 utils 內定義）：
+//   - approved driver → /driver/dashboard
+//   - admin（不含 driver）→ /admin/orders
+//   - 其他（driver pending/rejected、純 passenger、roles=[]）→ /driver/register
+//
+// Page 內保留 watch + onMounted 兜底：覆蓋 plugin InitAuthFlow 完成晚於 middleware 跑的 race；
+// onMounted async await WaitForAuthResolved 是 2026-06-16 修「新用戶卡 /driver/auth」的雙保險，
+// 與 middleware 共用同一個 utils 算 target，邏輯零分歧。
+import { resolveAuthTarget } from '~shared/utils/auth-target';
+import { resolveLiffTarget } from '~shared/utils/liff-target';
+
+definePageMeta({ layout: false, ssr: false, middleware: ['role'] });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
+const route = useRoute();
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
-// P10 多角色導向（直讀 store proxy，避開 storeToRefs computed 的 reactivity 問題）：
-//   1. roles 含 driver 且 approved → /driver/dashboard（核准司機優先進駕駛端）
-//   2. roles 含 driver 但未核准    → /driver/register（含已拒絕狀態，由 register 頁顯示對應訊息）
-//   3. roles 含 admin（無 driver） → /admin/orders
-//   4. 純 passenger / 新使用者     → /driver/register（顯示申請表單）
-//   5. 已登入但 roles 為空（line-exchange 失敗 / Firestore rules 阻擋）→ /driver/register 兜底
-//      （避免 user 卡死在登入畫面循環）
-//
-// Routing 雙保險（2026-06-16 修新用戶卡 /driver/auth bug）：
-//   - watch immediate：reactive 等 store update
-//   - onMounted async：主動 await WaitForAuthResolved 再判一次，避免 watch 第一次跑時
-//     isSignIn 還是 false（race：page mount 早於 signInWithCustomToken 完成）後續沒重 fire
-const _RouteByRoles = () => {
+const _RouteByRoles = (): boolean => {
   if (!authStore.authResolved || !authStore.isSignIn) return false;
-
-  const hasDriver = authStore.roles.includes('driver');
-  const hasAdmin  = authStore.roles.includes('admin');
-
-  if (hasDriver && authStore.approved) { navigateTo('/driver/dashboard'); return true; }
-  if (hasDriver) { navigateTo('/driver/register'); return true; }
-  if (hasAdmin)  { navigateTo('/admin/orders');    return true; }
-  // 純 passenger / 新使用者 / roles=[] 兜底 — 都帶去 register 申請司機
-  navigateTo('/driver/register');
-  return true;
+  const liffTarget = resolveLiffTarget({
+    query: route.query as Record<string, string | string[] | null | undefined>,
+    pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
+  });
+  if (liffTarget && liffTarget !== route.path) {
+    navigateTo(liffTarget, { replace: true });
+    return true;
+  }
+  const target = resolveAuthTarget({
+    entryPath: route.path,
+    isSignIn: authStore.isSignIn,
+    roles: authStore.roles,
+    approved: authStore.approved,
+  });
+  if (target && target !== route.path) {
+    navigateTo(target, { replace: true });
+    return true;
+  }
+  return false;
 };
 
 watch(
-  () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
+  () => [authStore.authResolved, authStore.isSignIn, authStore.roles.join(','), authStore.approved],
   () => { _RouteByRoles(); },
   { immediate: true },
 );
 
-// 主動兜底：page mount 後 await store ready 再判一次（覆蓋 watch race）
 onMounted(async () => {
   await authStore.WaitForAuthResolved();
   _RouteByRoles();

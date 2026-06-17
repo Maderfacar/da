@@ -1,20 +1,42 @@
 <script setup lang="ts">
-definePageMeta({ layout: false });
+// PageLogin — 乘客登入入口
+//
+// W2：分流邏輯收斂進 middleware/role.ts（共用 shared/utils/auth-target SSOT）。
+//   - 未登入 → 顯示 LINE 登入按鈕
+//   - 已登入 → middleware 在 navigation 時把 user replace 到對應端
+//   - watch 兜底 race：authResolved 從 false → true 時 router 無 navigation event，
+//     middleware 不重跑，故 page 內 watch 用同一個 utils 算 target 補一拳（無分歧）。
+import { resolveAuthTarget } from '~shared/utils/auth-target';
+import { resolveLiffTarget } from '~shared/utils/liff-target';
+
+definePageMeta({ layout: false, middleware: ['role'] });
 
 const config = useRuntimeConfig().public;
 const authStore = StoreAuth();
+const route = useRoute();
 const { MockSignIn } = authStore;
 const isTestMode = config.testMode === 'T';
 const liffLoading = ref(false);
 
-// P10：admin 優先導後台；其餘（passenger / driver）一律先進乘客首頁，
-// approved driver 想進司機端可從 /driver/auth 入口或乘客端 Header 切換。
-// 同時 watch roles 變化（_LoadRolesFromFirestore 完成才設值）。
 watch(
-  () => [authStore.isSignIn, authStore.authResolved, authStore.roles.join(',')],
+  () => [authStore.authResolved, authStore.isSignIn, authStore.roles.join(','), authStore.approved],
   () => {
-    if (!authStore.authResolved || !authStore.isSignIn || authStore.roles.length === 0) return;
-    navigateTo(authStore.roles.includes('admin') ? '/admin/orders' : '/home');
+    if (!authStore.authResolved || !authStore.isSignIn) return;
+    const liffTarget = resolveLiffTarget({
+      query: route.query as Record<string, string | string[] | null | undefined>,
+      pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
+    });
+    if (liffTarget && liffTarget !== route.path) {
+      navigateTo(liffTarget, { replace: true });
+      return;
+    }
+    const target = resolveAuthTarget({
+      entryPath: route.path,
+      isSignIn: authStore.isSignIn,
+      roles: authStore.roles,
+      approved: authStore.approved,
+    });
+    if (target && target !== route.path) navigateTo(target, { replace: true });
   },
   { immediate: true },
 );
