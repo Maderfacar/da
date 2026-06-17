@@ -57,6 +57,19 @@ onMounted(async () => {
 });
 
 async function ClickLineLogin() {
+  // W3：LIFF redirect circuit breaker — 連續 3 次未成功登入會被鎖 5min，避免 loop
+  const guard = UseLiffRedirectGuard();
+  if (guard.beforeRedirect() === 'locked') {
+    const mins = Math.ceil(guard.remainingMs() / 60_000);
+    ElMessage({
+      message: mins > 0
+        ? `LINE 登入似乎卡住了，請手動關閉視窗重新開啟，或聯絡客服。（約 ${mins} 分鐘後可再試）`
+        : 'LINE 登入似乎卡住了，請手動關閉視窗重新開啟，或聯絡客服。',
+      type: 'warning',
+      duration: 8000,
+    });
+    return;
+  }
   liffLoading.value = true;
   try {
     const liff = (await import('@line/liff')).default;

@@ -378,6 +378,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const { getAuth, signInWithCustomToken } = await import('firebase/auth');
       if (!getAuth(firebaseApp).currentUser && res.data.customToken) {
         await signInWithCustomToken(getAuth(firebaseApp), res.data.customToken);
+        // W3：成功建立 Firebase session → 清 LIFF redirect circuit breaker 計數
+        // key 須與 app/composables/use-liff-redirect-guard.ts 同步
+        if (typeof sessionStorage !== 'undefined') {
+          try {
+            sessionStorage.removeItem('liff_redirect_count');
+            sessionStorage.removeItem('liff_redirect_lock_until');
+          } catch { /* 隱私模式 / quota 滿時靜默 */ }
+        }
       }
     }
   };
