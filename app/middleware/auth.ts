@@ -11,8 +11,15 @@
 // 此版改 `await store.WaitForAuthResolved()`（plain Promise，不靠 Vue reactivity）：
 // - SSR：直接 return（既有行為，layout v-if loading 撐到 hydration 後再判斷）
 // - client：await 12 秒上限（對齊 InitAuthFlow safetyTimer，逾時也會強制 mark resolved）
+//
+// W1：公開路由（isPublicRoute）直接放行，不等 auth 也不踢 /login。SSOT 由
+// shared/constants/auth-public-routes 統一定義，BootGate 與 PageIndex 共用同一份名單。
+import { isPublicRoute } from '~shared/constants/auth-public-routes';
+
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return;
+
+  if (isPublicRoute(to.path)) return;
 
   const authStore = StoreAuth();
 

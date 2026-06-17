@@ -10,22 +10,17 @@
 // 解法：用 Suspense + 此 BootGate，在 InitAuthFlow 跑完（或 12s safetyTimer）前
 // 不 mount NuxtLayout / NuxtPage，由 app.vue 提供的 CommonBootSplash fallback 撐畫面。
 //
-// 公開頁面（路由前綴在 PUBLIC_PREFIXES）skip await — 那些頁是 SSR + SWR cache，
-// 內容不依賴 auth，client 再去 await 會造成 hydration mismatch（SSR rendered → fallback 閃）。
+// 公開頁面（isPublicRoute）skip await — 那些頁是 SSR + SWR cache，內容不依賴 auth，
+// client 再去 await 會造成 hydration mismatch（SSR rendered → fallback 閃）。
+// 公開路由名單由 shared/constants/auth-public-routes 統一定義（W1 SSOT），
+// 同時被 middleware/auth.ts 與 PageIndex 使用，避免散落漂移。
 //
 // SSR 時也 skip — `import.meta.client=false`；確保 server 端不被 12s timeout 卡住。
+import { isPublicRoute } from '~shared/constants/auth-public-routes';
+
 const route = useRoute();
 
-const PUBLIC_PREFIXES = ['/fare', '/faq', '/login', '/legal'];
-
-const _isPublicRoute = (path: string): boolean => {
-  // 嘗試剝去語系前綴（/en/fare、/ja/fleet 等），確保 SWR 公開頁三語均不被 gate
-  const stripped = path.replace(/^\/(?:en|ja)(?=\/|$)/, '');
-  if (stripped === '' || stripped === '/') return true;
-  return PUBLIC_PREFIXES.some((p) => stripped === p || stripped.startsWith(`${p}/`));
-};
-
-if (import.meta.client && !_isPublicRoute(route.path)) {
+if (import.meta.client && !isPublicRoute(route.path)) {
   const authStore = StoreAuth();
   // race 12s 上限（與 StoreAuth.InitAuthFlow safetyTimer 對齊），避免 LIFF 在 WebView hang 住時永久 splash
   await Promise.race([

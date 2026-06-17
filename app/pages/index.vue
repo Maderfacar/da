@@ -1,9 +1,10 @@
 <script setup lang="ts">
 // PageIndex — 根路徑入口
 //
-// 多角色設計：roles 僅判別「能否進入特定路由」，不搶分流。
-//   - 未登入 → /login
-//   - 已登入 → /home（乘客首頁；想進 driver/admin 端從 layout Header 的切換按鈕進入）
+// W1：對齊 LINE TAXI「背景登入、業務動作才抓資料」模式。
+//   - 未登入 → 留在首頁 hero（不再強推 /login；要登入由 user 點 CTA 或 drawer 觸發）
+//   - 已登入 → 推 /home（乘客首頁；driver/admin 端從 layout Header 切換按鈕進入）
+//   - LIFF OAuth callback：已登入時優先用 liff.state / pathname 解析目標 path（不可推 /home 卡死司機）
 //
 // SSR 關閉以避免 hydration mismatch（Firebase auth state 只在 client 解析）
 definePageMeta({ layout: false, ssr: false });
@@ -42,10 +43,8 @@ watch(
   () => [authStore.authResolved, authStore.isSignIn],
   () => {
     if (!authStore.authResolved) return;
-    if (!authStore.isSignIn) {
-      navigateTo('/login', { replace: true });
-      return;
-    }
+    // W1：未登入不再強推 /login — 讓 user 留在首頁 hero 自己決定要不要登入
+    if (!authStore.isSignIn) return;
     // 已登入：優先檢查 liff.state — 有目標 path 就跳過去（不要推到 /home 卡住司機）
     const liffTarget = _resolveLiffTarget();
     if (liffTarget) {
