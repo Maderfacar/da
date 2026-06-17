@@ -8,6 +8,13 @@
 // 以 Firebase Session 為主軸，LIFF Token 驗證完全移至背景非阻塞執行。
 // liff.login() redirect 僅在「Firebase 與 LIFF 雙重失聯」時才觸發（首次登入）。
 // 重整或 LIFF token 12h 過期時，只要 Firebase session 仍活著就直接放行，不跳轉。
+//
+// W4（2026-06-18）：lazy load 重構
+//   - InitAuthFlow / onAuthStateChanged 不再讀 users / drivers / admins doc，不發 admin 2FA POST
+//   - 改由 middleware/role 在進對應路徑時 await Ensure*（4 個 lazy action）
+//   - 4 個 Ensure* 共用 shared/auth/lazy-loader.ts 純函式 sticky-promise factory
+import { createLazyLoader } from '~shared/auth/lazy-loader';
+
 type Role = 'passenger' | 'driver' | 'admin';
 // P18（2026/05/09 起）：admin 細分三層 level，僅作 admin 端內部權限判斷；roles[] 仍是身分入口的唯一依據。
 type AdminLevel = 'super' | 'admin' | 'assistant';
@@ -115,6 +122,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     referralCode.value = '';
     admin2faEnrolled.value = false;
     admin2faSessionVerified.value = false;
+    // W4：清四個 lazy loader sticky state，避免下一個 user 看到上個 user 的資料
+    // 注意：閉包讀的是 user.value（reactive），ref 已先被 null；下次 ensure() 重新跑 fn 也 noop
+    _userDocLoader?.reset();
+    _driverDocLoader?.reset();
+    _adminDocLoader?.reset();
+    _admin2faSessionLoader?.reset();
   };
 
   const _normalizeRoles = (raw: unknown): Role[] => {
@@ -220,11 +233,20 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     await _InitLiffFlow(firebaseApp);
   };
 
-  const _LoadRolesFromFirestore = async (firebaseApp: import('firebase/app').FirebaseApp, uid: string) => {
+  // W4：把舊 _LoadRolesFromFirestore 拆成三個獨立 helper
+  //   - _LoadUserDoc：users/{lineUid} doc → roles / approved / lineProfile / referralCode
+  //   - _LoadDriverDoc：drivers/{lineUid} doc → driverApplication
+  //   - _LoadAdminDoc：admins/{lineUid} doc → level / admin2faEnrolled
+  // 三個 helper 由 ensure* lazy loader 包用（middleware/role 進對應路徑才 fire）。
+  // Firebase UID 格式為 line:{lineUserId}，Firestore 文件 key 直接使用 LINE UID
+
+  const _LoadUserDoc = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+    uid: string,
+  ): Promise<void> => {
     try {
       const { getFirestore, doc, getDoc } = await import('firebase/firestore');
       const db = getFirestore(firebaseApp);
-      // Firebase UID 格式為 line:{lineUserId}，Firestore 文件 key 直接使用 LINE UID
       const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
       const snap = await getDoc(doc(db, 'users', lineUid));
       if (!snap.exists()) return;
@@ -248,23 +270,27 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
       // 推薦獎勵機制 Phase 3：載入自己的 referralCode
       referralCode.value = typeof data.referralCode === 'string' ? data.referralCode : '';
-      // 補回司機申請狀態（P8）：讀 drivers/{uid}.application（P27 migration 後唯一來源）
-      let appData: Record<string, unknown> | undefined;
-      if (roles.value.includes('driver')) {
-        try {
-          const driverSnap = await getDoc(doc(db, 'drivers', lineUid));
-          if (driverSnap.exists()) {
-            const candidate = driverSnap.data()?.application;
-            if (candidate && typeof candidate === 'object') {
-              appData = candidate as Record<string, unknown>;
-            }
-          }
-        } catch {
-          // Rules 阻擋或 doc 不存在 → appData 保持 undefined，driverApplication 降為 null
-        }
-      }
+    } catch {
+      // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
+    }
+  };
 
-      if (appData) {
+  const _LoadDriverDoc = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+    uid: string,
+  ): Promise<void> => {
+    try {
+      const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+      const db = getFirestore(firebaseApp);
+      const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
+      const driverSnap = await getDoc(doc(db, 'drivers', lineUid));
+      if (!driverSnap.exists()) {
+        driverApplication.value = null;
+        return;
+      }
+      const candidate = driverSnap.data()?.application;
+      if (candidate && typeof candidate === 'object') {
+        const appData = candidate as Record<string, unknown>;
         driverApplication.value = {
           appliedAt: (appData.appliedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.appliedAt as string | null) ?? null,
           reviewedAt: (appData.reviewedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? (appData.reviewedAt as string | null) ?? null,
@@ -274,27 +300,98 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       } else {
         driverApplication.value = null;
       }
+    } catch {
+      // Rules 阻擋或 doc 不存在 → driverApplication 保持 null
+      driverApplication.value = null;
+    }
+  };
 
-      // P18：roles 含 admin → 額外讀 admins/{lineUid} 取 level（client SDK 受 firestore.rules 限制）
+  const _LoadAdminDoc = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+    uid: string,
+  ): Promise<void> => {
+    try {
+      const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+      const db = getFirestore(firebaseApp);
+      const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
+      // P18：admins/{lineUid} 取 level（client SDK 受 firestore.rules 限制）
       // 讀失敗（rules 未部署 / doc 不存在）→ level=null，不影響 admin 入口；僅讓 isSuper 等 UI 隱藏
-      if (roles.value.includes('admin')) {
-        try {
-          const adminSnap = await getDoc(doc(db, 'admins', lineUid));
-          if (adminSnap.exists()) {
-            const adminData = adminSnap.data();
-            const raw = adminData.level;
-            if (raw === 'super' || raw === 'admin' || raw === 'assistant') {
-              level.value = raw;
-            }
-            // Admin 2FA：totpEnrolledAt 存在即視為已綁定（值為 Firestore Timestamp / 也可能為 null）
-            admin2faEnrolled.value = !!adminData.totpEnrolledAt;
-          }
-        } catch {
-          // rules 阻擋或 doc 不存在 → level 保持 null
-        }
+      const adminSnap = await getDoc(doc(db, 'admins', lineUid));
+      if (!adminSnap.exists()) return;
+      const adminData = adminSnap.data();
+      const raw = adminData.level;
+      if (raw === 'super' || raw === 'admin' || raw === 'assistant') {
+        level.value = raw;
+      }
+      // Admin 2FA：totpEnrolledAt 存在即視為已綁定（值為 Firestore Timestamp / 也可能為 null）
+      admin2faEnrolled.value = !!adminData.totpEnrolledAt;
+    } catch {
+      // rules 阻擋或 doc 不存在 → level 保持 null
+    }
+  };
+
+  // W4：把 admin 2FA session-check 包成 lazy fn（factory 包成 loader）
+  const _CheckAdmin2faSession = async (): Promise<void> => {
+    if (typeof localStorage === 'undefined') return;
+    const storedToken = localStorage.getItem(_ADMIN_2FA_SESSION_KEY) ?? '';
+    if (!storedToken) return;
+    try {
+      const res = await $fetch<{ status?: { code: number } }>('/nuxt-api/admin/2fa/session-check', {
+        headers: {
+          Authorization: `Bearer ${idToken.value}`,
+          'X-Admin-2FA-Session': storedToken,
+        },
+      });
+      if (res?.status?.code === 200) {
+        admin2faSessionVerified.value = true;
+      } else {
+        try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
       }
     } catch {
-      // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
+      // 401 / 網路錯 → 視為未驗證，clear cache 讓 middleware 導 challenge
+      try { localStorage.removeItem(_ADMIN_2FA_SESSION_KEY); } catch { /* ignore */ }
+    }
+  };
+
+  // W4：四個 lazy loader — 進對應路徑才 fire；SignOut / user 切換時 reset
+  // 注意：閉包延遲到 ensure() 才取 getApps()[0] 與 user.value，避免 store init 時 firebase 未就緒
+  const _userDocLoader = createLazyLoader(async () => {
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app || !user.value) return;
+    await _LoadUserDoc(app, user.value.uid);
+  });
+
+  const _driverDocLoader = createLazyLoader(async () => {
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app || !user.value) return;
+    await _LoadDriverDoc(app, user.value.uid);
+  });
+
+  const _adminDocLoader = createLazyLoader(async () => {
+    const { getApps } = await import('firebase/app');
+    const app = getApps()[0];
+    if (!app || !user.value) return;
+    await _LoadAdminDoc(app, user.value.uid);
+  });
+
+  const _admin2faSessionLoader = createLazyLoader(_CheckAdmin2faSession);
+
+  // Phase 1 兼容：onAuthStateChanged 仍以此 wrapper 呼叫 eager load（Phase 3 才移除）
+  // 行為等價舊版 _LoadRolesFromFirestore：users → 視 roles 決定 drivers / admins
+  const _LoadRolesFromFirestore = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+    uid: string,
+  ): Promise<void> => {
+    await _LoadUserDoc(firebaseApp, uid);
+    if (roles.value.includes('driver')) {
+      await _LoadDriverDoc(firebaseApp, uid);
+    } else {
+      driverApplication.value = null;
+    }
+    if (roles.value.includes('admin')) {
+      await _LoadAdminDoc(firebaseApp, uid);
     }
   };
 
@@ -672,6 +769,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     navigateTo(redirectTo, { replace: true });
   };
 
+  // W4：lazy load actions（middleware/role 進對應路徑時呼叫）
+  const EnsureUserDocLoaded = (): Promise<void> => _userDocLoader.ensure();
+  const EnsureDriverDocLoaded = (): Promise<void> => _driverDocLoader.ensure();
+  const EnsureAdminDocLoaded = (): Promise<void> => _adminDocLoader.ensure();
+  const EnsureAdmin2faSessionVerified = (): Promise<void> => _admin2faSessionLoader.ensure();
+
   // -------------------------------------------------------------------------------------------------
   return {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
@@ -679,5 +782,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     admin2faEnrolled, admin2faSessionVerified,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
+    // W4：lazy load
+    EnsureUserDocLoaded, EnsureDriverDocLoaded, EnsureAdminDocLoaded, EnsureAdmin2faSessionVerified,
   };
 });
