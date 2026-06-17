@@ -461,14 +461,22 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
 
       // ── 雙失聯：Firebase 無 session 且 LIFF 也未登入 ────────────────────────────────────
-      // 真正的首次進入（或 Firebase + LIFF 雙重過期），需要走 LINE 授權重定向。
-      // LINE 已同意過授權的用戶，此重定向會在背景瞬間完成，不會再顯示授權畫面。
+      // 過去設計：plugin boot 時自動 `liff.login({ redirectUri: window.location.href })`，
+      // 假設 LINE 已授權用戶可秒回。
       //
-      // 必須帶 redirectUri 回到當前頁：LIFF endpoint URL 為 `/`（P29/P40 path-append 設計），
-      // 不帶 redirectUri 時 LIFF 預設 redirect 回 endpoint `/`（乘客首頁），
-      // 司機端看起來像「跳 LINE 一下又被丟回乘客端」。
+      // 2026-06-17 修：對「裝有 LINE app 但未登入 LINE 帳號」/ 純 Safari/Chrome 未授權的全新用戶，
+      // user 在 LINE 登入頁取消 → redirect 回原 URL → plugin 又跑此分支 → 再 liff.login() →
+      // infinite loop。user 連 `/login` 的「LINE 登入按鈕」都看不到。
+      //
+      // 現行：plugin 不自動 redirect，把 LINE 授權動作交還給 `/login` / `/driver/auth` 的
+      // 「LINE 登入按鈕」（ClickLineLogin）— user 看到頁面、自己決定何時授權。
+      //   - 公開頁（/、/fleet、/fare、/faq、/legal）→ 全新用戶可正常瀏覽，不再被踢
+      //   - 受保護頁 → middleware/auth 偵測 isSignIn=false 後 navigateTo('/login')
+      //   - Firebase session 活著的回訪用戶 → 走上面 `if (currentUser)` 分支不受影響
+      //   - 真「雙失聯」回訪用戶（極少：Firebase + LIFF 同時過期）→ middleware 踢 /login
+      //     多按一下按鈕，可接受 trade-off，換來不 loop kill 全新用戶
       if (!liff.isLoggedIn()) {
-        liff.login({ redirectUri: window.location.href });
+        liffReady.value = true;
         return;
       }
 
