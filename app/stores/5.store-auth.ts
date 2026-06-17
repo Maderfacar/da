@@ -323,13 +323,35 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     if (!token) return;
     lineAccessToken.value = token;
 
-    const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number } }>(
+    const res = await $fetch<{ data: { customToken?: string; roles?: Role[]; approved?: boolean; displayName?: string; pictureUrl?: string }; status?: { code: number; message?: { zh_tw?: string } } }>(
       '/nuxt-api/auth/line-exchange',
       { method: 'POST', body: { lineAccessToken: token, clientType } },
     ).catch((err) => {
       console.error('[StoreAuth] line-exchange failed:', err);
       return null;
     });
+
+    // W0 2026-06-18：把 server 回的錯誤訊息顯示給 user
+    // 過去這條 path 完全沉默 —— server 用 badRequestError 等 utility 回傳 HTTP 200 + envelope
+    // status.code=400/401/500，$fetch 不會 throw，res?.data 對空 {} 也是 truthy，前面 if 都過，
+    // 最後在「res.data.customToken 不存在」處安靜失敗，user 看不到任何訊息（Peter case 黑箱根因）。
+    // 抓 status.code !== 200 顯示 ElMessage error toast，附 server 帶的 zh_tw 訊息（如「LINE Token
+    // 來源不符」「建立使用者失敗」），下次同類問題能直接被 user / 客服第一線辨識。
+    //
+    // 注意：不在 W0 擴張 B 方案觸發條件 —— B 方案 reload 會清掉 toast，user 反而看不到錯誤訊息。
+    // B 方案因 server 200 envelope 而從未實際被 fire 的設計 bug 留 W3 一併處理。
+    if (res && res.status?.code != null && res.status.code !== 200) {
+      console.warn('[StoreAuth] line-exchange returned error:', res.status.code, res.status.message?.zh_tw);
+      if (typeof window !== 'undefined') {
+        try {
+          ElMessage({
+            message: `LINE 登入失敗（${res.status.code}）：${res.status.message?.zh_tw ?? '請重試或聯絡客服'}`,
+            type: 'error',
+            duration: 6000,
+          });
+        } catch { /* ElMessage 在 plugin boot 階段尚未 ready 時靜默 */ }
+      }
+    }
 
     // B方案：line-exchange 失敗（token 失效/快取過期）時自動一次性 logout+reload 恢復
     if (!res && liff.isLoggedIn()) {
