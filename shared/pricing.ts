@@ -947,7 +947,11 @@ export function calculateCharterFareV2(
   const mountainScaled = baseLayer * mountainMul;
 
   // 3. 來回 / 過夜 / OT
-  const roundTripFee = isRoundTripFlag ? rules.charter.roundTripFlatFee : 0;
+  // 暫停用（2026-06-17）：來回判定原意為其他業務用途（非加收車資），
+  // 公式內強制 0；isRoundTripFlag 與 rules.charter.roundTripFlatFee schema 保留，
+  // 供未來別用途／重新啟用使用。改回時恢復 `isRoundTripFlag ? rules.charter.roundTripFlatFee : 0`。
+  const roundTripFee = 0;
+  void isRoundTripFlag;
   const nights = Math.max(0, planKeys.length - 1);
   const overnightFee = nights * rules.charter.overnightFlatFee;
   const overtimeBlocks = computeOvertimeBlocks(estimatedEndTime, actualEndTime, rules.charter);

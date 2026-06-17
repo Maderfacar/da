@@ -368,7 +368,8 @@ const estimatedEndDisplay = computed(() => {
     .AdminCharterFareCalculatorPreview__line
       span.AdminCharterFareCalculatorPreview__line-key 山區係數 ×{{ result.mountainMul }}
       span.AdminCharterFareCalculatorPreview__line-val NT$ {{ fmt(result.mountainScaled) }}
-    .AdminCharterFareCalculatorPreview__line
+    //- 來回固定加收暫停用（2026-06-17，公式 line 950）；roundTripFee 強制 0，不渲染避免誤導
+    .AdminCharterFareCalculatorPreview__line(v-if="result.roundTripFee > 0")
       span.AdminCharterFareCalculatorPreview__line-key 來回（C）
       span.AdminCharterFareCalculatorPreview__line-val +NT$ {{ fmt(result.roundTripFee) }}
     .AdminCharterFareCalculatorPreview__line

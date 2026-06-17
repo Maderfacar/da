@@ -1066,18 +1066,18 @@ describe('calculateCharterFareV2', () => {
     expect(b.final).toBe(8600);
   });
 
-  it('10hr plan + 來回加乘 NT$1500', () => {
+  it('10hr plan + 來回判定不再加收（暫停用 2026-06-17）', () => {
     // 10h basePrice=9500, includedKm=200, distance=150 → 無超公里
-    // baseLayer = 9500；isRoundTrip=true → +1500 → raw=11000 → 進位 → 11000
+    // baseLayer = 9500；roundTripFee 強制 0（公式 line 950 暫停用）→ raw=9500 → 進位 → 9500
     const planned = addHours(CHARTER_MON_1200, 10);
     const b = calculateCharterFareV2(
       charterVehicle(), ['10h'], charterMetrics({ distanceKm: 150 }), true,
       CHARTER_MON_1200, planned, null, [], RULES,
     );
     expect(b.baseLayer).toBe(9500);
-    expect(b.roundTripFee).toBe(1500);
-    expect(b.raw).toBe(11000);
-    expect(b.final).toBe(11000);
+    expect(b.roundTripFee).toBe(0);
+    expect(b.raw).toBe(9500);
+    expect(b.final).toBe(9500);
   });
 
   it('多日包 2 天（8hr + 8hr）+ 1 晚過夜費 NT$2000', () => {

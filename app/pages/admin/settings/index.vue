@@ -1194,14 +1194,17 @@ const ClickSaveFareRules = async () => {
               inputmode="numeric"
             )
           .PageAdminSettings__fare-field
-            label.PageAdminSettings__fare-label 來回固定加收（元）
+            label.PageAdminSettings__fare-label
+              | 來回固定加收（元）
+              span.PageAdminSettings__fare-badge.is-paused 暫停用
             ElInput(
               v-model.number="fareRules.charter.roundTripFlatFee"
               type="number"
               inputmode="numeric"
+              disabled
             )
             .PageAdminSettings__fare-hint
-              | 包車訂單若被判定為「回到起點附近」的來回行程，會額外加收這筆費用以涵蓋司機空車回程成本。判定規則見下方「來回判定」區塊。
+              | 已於 2026-06-17 起暫停加收。來回判定改作其他業務用途（非車資計算），此欄位設定值保留以利未來恢復；目前修改不影響實際車資。
           .PageAdminSettings__fare-field
             label.PageAdminSettings__fare-label 過夜固定加收（元 / 晚）
             ElInput(
@@ -1216,7 +1219,7 @@ const ClickSaveFareRules = async () => {
         .PageAdminSettings__fare-block-head
           span.PageAdminSettings__fare-block-title 包車 — 來回判定
         .PageAdminSettings__fare-block-desc
-          | 終點如果靠近「去程路線」或「起點」，視為來回行程，自動加收上方的來回費。兩個條件任一命中即算來回。
+          | 判定行程「終點是否靠近去程路線或起點」。判定結果**目前不影響車資**（來回固定加收已暫停用），但保留作其他業務用途的訊號使用。任一條件命中即視為來回。
         .PageAdminSettings__fare-grid
           .PageAdminSettings__fare-field
             label.PageAdminSettings__fare-label 路線寬容 buffer（公里）
@@ -2016,6 +2019,24 @@ $rose: #f0556d;
   color: rgba(255, 255, 255, 0.62);
   line-height: 1.6;
   margin: 8px 0 14px;
+}
+
+.PageAdminSettings__fare-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 100px;
+
+  &.is-paused {
+    color: rgba(255, 200, 100, 0.95);
+    background: rgba(255, 165, 60, 0.15);
+    border: 1px solid rgba(255, 165, 60, 0.35);
+  }
 }
 
 .PageAdminSettings__fare-tier {
