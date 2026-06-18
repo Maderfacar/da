@@ -166,7 +166,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     }
 
     const { initializeApp, getApps } = await import('firebase/app');
-    const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+    const { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } = await import('firebase/auth');
 
     const firebaseApp = getApps().length
       ? getApps()[0]
@@ -180,6 +180,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         });
 
     const auth = getAuth(firebaseApp);
+
+    // W4-FU 2026-06-18：顯式設 browserLocalPersistence（用 localStorage），跳過 IndexedDB。
+    // 根因：LINE in-app browser 對 Firebase Auth Web SDK 預設的 IndexedDB persistence
+    // 在 cold start 第一次 read 時會 hang 10-30s，導致 onAuthStateChanged 第一次回呼遲到，
+    // BootGate `await WaitForAuthResolved()` 撞到 12s safetyTimer，使用者看到 splash 卡住。
+    // localStorage 是同步 API、in-app browser 可靠；session 仍持久（reload 不丟）。
+    // setPersistence 失敗 → fallback SDK 預設（IndexedDB → localStorage → sessionStorage → inMemory）。
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+    } catch (err) {
+      console.warn('[StoreAuth] setPersistence(browserLocal) failed; fallback to SDK default:', err);
+    }
 
     onAuthStateChanged(auth, async (firebaseUser) => {
       // Firebase SDK 已從 IndexedDB 恢復 session（不論 user 是否存在），通知 _InitLiffFlow 可信任 currentUser
