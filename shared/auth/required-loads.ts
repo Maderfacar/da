@@ -42,13 +42,15 @@ export function resolveRequiredLoads(path: string): RequiredLoads {
   if (stripped === '/driver/auth' || stripped.startsWith('/driver/auth/')) {
     return { user: true, driver: false, admin: false, admin2fa: false };
   }
-
-  if (isPublicRoute(stripped)) return NONE;
-
   // /driver/register — 需 users（檢查 approved driver 該不該跳 dashboard）
+  // W4-FU 2026-06-18：本路徑也加進 isPublicRoute（避免 LINE in-app browser BootGate 卡 splash），
+  // 但 middleware/role 仍須 await EnsureUserDocLoaded 才能分流，因此 special case 必須在
+  // `isPublicRoute(stripped) → NONE` 短路之前判斷。
   if (stripped === '/driver/register' || stripped.startsWith('/driver/register/')) {
     return { user: true, driver: false, admin: false, admin2fa: false };
   }
+
+  if (isPublicRoute(stripped)) return NONE;
 
   // /admin/2fa/* — 只 users（避免 2FA gate 迴圈）
   if (stripped.startsWith('/admin/2fa')) {
