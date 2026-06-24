@@ -38,17 +38,26 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
-// ── Schema.org JSON-LD（W3）───────────────────────────────
+// ── Schema.org JSON-LD（W3，SSR fix 2026-06-25）─────────
 // 三個 schema 並排：Organization（公司基本資訊）+ LocalBusiness（地理 NAP）+
 // TransportationService（服務型別）。給 AI Overview / Perplexity / ChatGPT
 // 等 answer engine 結構化解析，提升被引用機率。
+//
+// SSR fix：原本用 `script: () => [...]` 函式形式 + `children` 欄位，view-source
+// 抓不到 <script type="application/ld+json">。改用同步陣列 + `innerHTML` 欄位，
+// 對齊 Nuxt 官方 JSON-LD 範例（Unhead v1+ 兩種欄位都支援，innerHTML 較保險）。
+// Trade-off：locale 切換時 JSON-LD 不會 reactive 更新；但 SSR 各 locale URL（/en/, /ja/）
+// setup 時 t() 已綁定當下 locale，crawler 看的 initial render 仍是正確語系。
 const _siteConfig = useRuntimeConfig();
 const _siteUrl = (_siteConfig.public.siteUrl as string) || 'https://da-line-liff-app.vercel.app';
+const _orgLd = JSON.stringify(buildOrganizationLd(_siteUrl, t));
+const _localBizLd = JSON.stringify(buildLocalBusinessLd(_siteUrl, t));
+const _transServiceLd = JSON.stringify(buildTransportationServiceLd(_siteUrl, t));
 useHead({
-  script: () => [
-    { type: 'application/ld+json', children: JSON.stringify(buildOrganizationLd(_siteUrl, t)) },
-    { type: 'application/ld+json', children: JSON.stringify(buildLocalBusinessLd(_siteUrl, t)) },
-    { type: 'application/ld+json', children: JSON.stringify(buildTransportationServiceLd(_siteUrl, t)) },
+  script: [
+    { type: 'application/ld+json', innerHTML: _orgLd },
+    { type: 'application/ld+json', innerHTML: _localBizLd },
+    { type: 'application/ld+json', innerHTML: _transServiceLd },
   ],
 });
 

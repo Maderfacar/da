@@ -14,11 +14,13 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
-// W3 AEO：FAQPage JSON-LD（17 題全套，三語自動隨 locale）
+// W3 AEO：FAQPage JSON-LD（17 題全套）
 // 給 Google AI Overview / Perplexity / Bing Copilot 直接拿來當 FAQ rich snippet
+// SSR fix（2026-06-25）：children → innerHTML，函式形式 → 同步陣列（對齊 Nuxt 官方範例）
+const _faqLd = JSON.stringify(buildFaqPageLd(t));
 useHead({
-  script: () => [
-    { type: 'application/ld+json', children: JSON.stringify(buildFaqPageLd(t)) },
+  script: [
+    { type: 'application/ld+json', innerHTML: _faqLd },
   ],
 });
 

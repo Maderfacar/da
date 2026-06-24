@@ -30,11 +30,13 @@ useSeoMeta({
 
 // W3 AEO：Service + PriceSpecification JSON-LD
 // 描述計價結構（基本起跳 + 里程費 + 加成），給 AI 解析「車資怎麼算」
+// SSR fix（2026-06-25）：children → innerHTML，函式形式 → 同步陣列（對齊 Nuxt 官方範例）
 const _siteConfig = useRuntimeConfig();
 const _siteUrl = (_siteConfig.public.siteUrl as string) || 'https://da-line-liff-app.vercel.app';
+const _fareLd = JSON.stringify(buildFareServiceLd(_siteUrl, t));
 useHead({
-  script: () => [
-    { type: 'application/ld+json', children: JSON.stringify(buildFareServiceLd(_siteUrl, t)) },
+  script: [
+    { type: 'application/ld+json', innerHTML: _fareLd },
   ],
 });
 
