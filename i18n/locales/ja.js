@@ -1198,6 +1198,15 @@ export default {
         auditLogs: '操作ログ',
       },
     },
+    // W2 AEO：公開ページ SEO description（per-page useSeoMeta 用）
+    description: {
+      passenger: {
+        faq: 'DEST · ANYWHERE 空港送迎 FAQ：予約フロー、お支払い方法、送迎サービス、便遅延対応、お荷物、キャンセルポリシー、サービス範囲を完全解説。',
+        fare: 'DEST · ANYWHERE 透明な料金体系：基本料金、キロ単価、山道係数、県境追加、高速道路料金を明示。オンライン料金試算、隠れた費用なし。',
+        legalTerms: 'DEST · ANYWHERE 会員サービス規約 — 予約規定、料金精算、責任範囲、キャンセルポリシー。',
+        legalPrivacy: 'DEST · ANYWHERE プライバシーポリシー — 個人情報の収集・利用・保護及び権利説明。',
+      },
+    },
   },
   enum: {
     apiStatus: {

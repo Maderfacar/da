@@ -45,6 +45,7 @@
     "@nuxt/icon": "^2.2.1",
     "@nuxtjs/color-mode": "^4.0.0",
     "@nuxtjs/i18n": "^10.2.4",
+    "@nuxtjs/sitemap": "^8.2.1",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@pinia/nuxt": "^0.11.3",
     "@playwright/test": "^1.59.1",

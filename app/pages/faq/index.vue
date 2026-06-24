@@ -3,6 +3,16 @@
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { lineOaAddUrl } = useRuntimeConfig().public;
+const { t } = useI18n();
+
+// W2 AEO：description / OG / twitter（title 由 front-desk layout titleTemplate 處理）
+useSeoMeta({
+  description: () => t('meta.description.passenger.faq'),
+  ogType: 'website',
+  ogTitle: () => `${t('meta.title.passenger.faq')} · ${t('meta.brand.passenger')}`,
+  ogDescription: () => t('meta.description.passenger.faq'),
+  twitterCard: 'summary_large_image',
+});
 
 const ClickSupport = () => {
   if (lineOaAddUrl && typeof window !== 'undefined') {

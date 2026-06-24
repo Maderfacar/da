@@ -1198,6 +1198,15 @@ export default {
         auditLogs: 'Audit Logs',
       },
     },
+    // W2 AEO: SEO descriptions for public pages (used by per-page useSeoMeta)
+    description: {
+      passenger: {
+        faq: 'DEST · ANYWHERE airport transfer FAQ: booking flow, payment, pickup/dropoff, flight delay handling, luggage, cancellation policy, service coverage — full answers.',
+        fare: 'DEST · ANYWHERE transparent pricing: base fare, per-km rate, mountain surcharge, cross-county fee, expressway toll clearly itemized. Try the live fare estimator, no hidden fees.',
+        legalTerms: 'DEST · ANYWHERE Terms of Service — booking rules, fare settlement, liability, cancellation policy.',
+        legalPrivacy: 'DEST · ANYWHERE Privacy Policy — collection, use, and protection of personal data, plus your rights.',
+      },
+    },
   },
   enum: {
     apiStatus: {

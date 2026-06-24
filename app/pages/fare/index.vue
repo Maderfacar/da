@@ -16,8 +16,17 @@ import 'swiper/css/navigation';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const storeConfig = StoreConfig();
+
+// W2 AEO：description / OG / twitter（title 由 front-desk layout titleTemplate 處理）
+useSeoMeta({
+  description: () => t('meta.description.passenger.fare'),
+  ogType: 'website',
+  ogTitle: () => `${t('meta.title.passenger.fare')} · ${t('meta.brand.passenger')}`,
+  ogDescription: () => t('meta.description.passenger.fare'),
+  twitterCard: 'summary_large_image',
+});
 
 const vehicles = computed(() => storeConfig.EnabledVehicles);
 

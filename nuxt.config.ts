@@ -120,7 +120,44 @@ export default defineNuxtConfig({
   // == Modules ===============================================================================================
   modules: [// Pinia
   '@pinia/nuxt', '@nuxt/eslint', '@nuxt/fonts', '@nuxt/icon', '@nuxtjs/color-mode', // 入場動畫 https://motion.vueuse.org/features/presets
-  '@vueuse/motion/nuxt', '@element-plus/nuxt', '@nuxtjs/i18n', '@nuxtjs/tailwindcss'],
+  '@vueuse/motion/nuxt', '@element-plus/nuxt', '@nuxtjs/i18n', '@nuxtjs/tailwindcss',
+  // W2 AEO：sitemap.xml 自動產生（i18n 整合，三語 hreflang）
+  '@nuxtjs/sitemap'],
+
+  // W2 AEO：站點識別（給 sitemap / canonical / OG URL 用）
+  // env NUXT_PUBLIC_SITE_URL 可覆寫；prod 部署時設為實際 domain
+  site: {
+    url: process.env.NUXT_PUBLIC_SITE_URL || 'https://da-line-liff-app.vercel.app',
+    name: 'DEST · ANYWHERE',
+  },
+
+  // W2 AEO：sitemap.xml 設定
+  // 自動掃所有 pages/ 路由 + 排除認證保護 / 不該索引的路徑
+  // i18n 整合會自動為 zh / en / ja 各產一份 + 互相 hreflang
+  sitemap: {
+    exclude: [
+      // 認證 / 後台 / 個人化路徑：AI 爬蟲拿到 redirect 沒意義且暴露 schema
+      '/admin/**',
+      '/driver/**',
+      '/orders/**',
+      '/notifications/**',
+      '/profile/**',
+      '/booking', '/booking/**',
+      '/home', '/home/**',
+      '/referral/**',
+      '/login',
+      // /vehicles/[driverId] 動態頁：每位 driver URL 之後另接 dynamic source endpoint，這版先不列
+      '/vehicles/**',
+    ],
+    // 公開頁優先級
+    urls: [
+      { loc: '/', changefreq: 'weekly', priority: 1.0 },
+      { loc: '/faq', changefreq: 'monthly', priority: 0.9 },
+      { loc: '/fare', changefreq: 'weekly', priority: 0.9 },
+      { loc: '/legal/terms', changefreq: 'yearly', priority: 0.4 },
+      { loc: '/legal/privacy', changefreq: 'yearly', priority: 0.4 },
+    ],
+  },
 
   // nuxt font ----------------------------------
   // https://nuxt.dev.org.tw/modules/fonts

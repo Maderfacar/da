@@ -1221,6 +1221,15 @@ export default {
         auditLogs: '操作日誌',
       },
     },
+    // W2 AEO：公開頁 SEO description（per-page useSeoMeta 用）
+    description: {
+      passenger: {
+        faq: 'DEST · ANYWHERE 機場接送常見問題：預約流程、付款方式、接送服務、航班延誤處理、行李數量、取消政策、服務範圍等完整解答。',
+        fare: 'DEST · ANYWHERE 透明計價說明：基本起跳費、里程費、山區加成、跨縣市補貼、國道通行費清楚列明。線上試算範例車資，無隱藏費用。',
+        legalTerms: 'DEST · ANYWHERE 會員服務條款 — 預約規範、車資結算、責任歸屬、取消政策等使用者協議。',
+        legalPrivacy: 'DEST · ANYWHERE 隱私權政策 — 個人資料蒐集、利用、保護與權利說明。',
+      },
+    },
   },
   // ── API 狀態（原有）──────────────────────────────────────
   enum: {

@@ -1,2 +1,126 @@
-User-Agent: *
-Disallow:
+# W2 AEO（2026-06-25）— 明示 AI 爬蟲與一般搜尋引擎策略
+
+# ── 一般搜尋爬蟲 ─────────────────────────────────────────────
+# 允許 Googlebot / Bingbot 等爬公開頁，封鎖認證 / 後台 / 個人化路徑
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /booking
+Disallow: /home
+Disallow: /referral/
+Disallow: /login
+Disallow: /vehicles/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# ── AI 爬蟲（明示允許，提升 AI Overview / 答案引擎引用機率）─────
+# OpenAI ChatGPT / search
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# Anthropic Claude
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# Google AI Overview / Gemini（獨立於 Googlebot，須額外明示）
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin/
+Disallow: /driver/
+Disallow: /orders/
+Disallow: /notifications/
+Disallow: /profile/
+Disallow: /referral/
+Disallow: /nuxt-api/
+Disallow: /api/
+
+# ── Sitemap ──────────────────────────────────────────────────
+Sitemap: https://da-line-liff-app.vercel.app/sitemap.xml
