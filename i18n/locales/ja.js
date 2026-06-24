@@ -1207,6 +1207,12 @@ export default {
         legalPrivacy: 'DEST · ANYWHERE プライバシーポリシー — 個人情報の収集・利用・保護及び権利説明。',
       },
     },
+    // W4 AEO：説明的 h1（視覚的に非表示、DOM 内クロウラー用）
+    h1: {
+      passenger: {
+        fare: '料金試算と計算エンジン・桃園空港送迎料金',
+      },
+    },
   },
   enum: {
     apiStatus: {

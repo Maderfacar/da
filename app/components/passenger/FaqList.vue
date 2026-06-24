@@ -2,6 +2,12 @@
 // PassengerFaqList — Information Desk 式問答清單
 // props.itemKeys：要顯示的 faq.items.<key> 清單（順序即顯示順序）
 // 每題可展開 / 收合，預設全收合。
+//
+// W4 AEO（2026-06-25）：div + button + v-show → <details> + <summary> 語意化
+// - 利於 a11y（瀏覽器原生 expanded/collapsed announcement）
+// - SEO/AEO 友善：crawler 看到 details/summary 直接識別為 Q&A 配對
+// - 保留 Vue ownership：openKey 控制 :open（single-open-at-a-time 行為不變）
+// - @click.prevent 阻止瀏覽器原生 toggle，由 Vue 完全管轄狀態
 
 interface Props {
   itemKeys: ReadonlyArray<string>;
@@ -17,21 +23,19 @@ const ClickToggle = (key: string) => {
 
 <template lang="pug">
 .PassengerFaqList
-  .PassengerFaqList__item(
+  details.PassengerFaqList__item(
     v-for="key in props.itemKeys"
     :key="key"
+    :open="openKey === key"
     :class="{ 'is-open': openKey === key }"
   )
-    button.PassengerFaqList__q(
-      type="button"
-      :aria-expanded="openKey === key"
-      @click="ClickToggle(key)"
+    summary.PassengerFaqList__q(
+      @click.prevent="ClickToggle(key)"
     )
       span.PassengerFaqList__q-text {{ $t('faq.items.' + key + '.q') }}
       span.PassengerFaqList__q-mark {{ openKey === key ? '−' : '+' }}
-    transition(name="faq-expand")
-      .PassengerFaqList__a(v-show="openKey === key")
-        p {{ $t('faq.items.' + key + '.a') }}
+    .PassengerFaqList__a
+      p {{ $t('faq.items.' + key + '.a') }}
 </template>
 
 <style lang="scss" scoped>
@@ -68,6 +72,10 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border: none;
   cursor: pointer;
   text-align: left;
+  // 隱藏 <summary> 預設展開三角形
+  list-style: none;
+  &::-webkit-details-marker { display: none; }
+  &::marker { display: none; }
 }
 
 .PassengerFaqList__q-text {
@@ -96,15 +104,5 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 300;
   color: var(--da-gray);
   line-height: 1.75;
-}
-
-.faq-expand-enter-active,
-.faq-expand-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.faq-expand-enter-from,
-.faq-expand-leave-to {
-  opacity: 0;
 }
 </style>

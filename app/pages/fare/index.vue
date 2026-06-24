@@ -67,6 +67,8 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 <template lang="pug">
 .PageFare
+  //- W4 AEO：visually-hidden h1（語意化頂層標題給爬蟲，視覺由 watermark / section h2 主導）
+  h1.sr-only {{ $t('meta.h1.passenger.fare') }}
   .PageFare__watermark FLEET
 
   //- ── Section 1：VEHICLE LINEUP — 車型 slider（hero 區拉高凸顯車型照片）──

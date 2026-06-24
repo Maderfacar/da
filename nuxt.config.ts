@@ -290,6 +290,15 @@ export default defineNuxtConfig({
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'DEST · ANYWHERE — 桃園機場接送・全台機場接送與長途包車' },
         { name: 'twitter:description', content: 'DEST · ANYWHERE 提供桃園、松山、台中、高雄四大機場接送與全台長途包車。' },
+        // W4 AEO：搜尋引擎站點驗證 slot（env 控制，無需改 code）
+        // - GSC: Search Console → 設定 → 驗證所有權 → HTML 標籤 → 複製 content="..." 設 NUXT_PUBLIC_GSC_VERIFICATION
+        // - Bing: Webmaster Tools → 設定 → 驗證 → 設 NUXT_PUBLIC_BING_VERIFICATION
+        ...(process.env.NUXT_PUBLIC_GSC_VERIFICATION
+          ? [{ name: 'google-site-verification', content: process.env.NUXT_PUBLIC_GSC_VERIFICATION }]
+          : []),
+        ...(process.env.NUXT_PUBLIC_BING_VERIFICATION
+          ? [{ name: 'msvalidate.01', content: process.env.NUXT_PUBLIC_BING_VERIFICATION }]
+          : []),
       ],
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: 'any' }

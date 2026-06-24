@@ -1207,6 +1207,12 @@ export default {
         legalPrivacy: 'DEST · ANYWHERE Privacy Policy — collection, use, and protection of personal data, plus your rights.',
       },
     },
+    // W4 AEO: descriptive h1 (visually hidden but in DOM for crawlers)
+    h1: {
+      passenger: {
+        fare: 'Fare Estimator & Pricing Engine · Taoyuan Airport Transfer',
+      },
+    },
   },
   enum: {
     apiStatus: {

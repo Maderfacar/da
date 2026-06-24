@@ -1,0 +1,46 @@
+# DEST · ANYWHERE
+
+> 台灣專注機場接送與長途包車的派車服務。服務遍及桃園 (TPE)、松山 (TSA)、台中 (RMQ)、高雄 (KHH) 四大國際機場與全台跨縣市，提供 24 小時、職業駕駛、真實航班追蹤、透明計價的接送服務。LINE 線上預約，無需下載 APP。
+
+## 主要頁面
+- [首頁 / Landing](https://da-line-liff-app.vercel.app/): 服務介紹、覆蓋區域、賣點
+- [車型介紹與車資試算 / Fare](https://da-line-liff-app.vercel.app/fare): 完整車型陣容、計價結構、線上試算機
+- [常見問題 / FAQ](https://da-line-liff-app.vercel.app/faq): 預約、付款、接送、改退、行李、服務範圍 17 題問答
+- [會員服務條款](https://da-line-liff-app.vercel.app/legal/terms)
+- [隱私權政策](https://da-line-liff-app.vercel.app/legal/privacy)
+
+## 服務範圍
+- 桃園國際機場 (TPE) — 台灣最大門戶，24 小時接送
+- 松山機場 (TSA) — 台北市區機場，國際與國內線
+- 台中國際機場 (RMQ) — 中部地區國際機場
+- 高雄國際機場 (KHH) — 南台灣國際機場
+- 全台跨縣市長途包車
+
+## 計價原則
+- 基本起跳費 NT$550 起，每公里 NT$42 起（依車型浮動）
+- 山區加成、跨縣市補貼、國道通行費清楚列明
+- 預訂時即時顯示預估金額，無條件進位至 50 元
+- 接機 60 分鐘免費等候、送機 / 其他行程 15 分鐘免費等候，超時每 30 分鐘 NT$300
+- 預約時間 24 小時前可免費取消，無需訂金
+
+## 安心保障
+- 司機持職業駕照、提供無犯罪紀錄證明（良民證）、平台內部二次審查
+- 全車投保旅客責任險，保額 NT$500 萬
+- 接機可加選專人於入境大廳舉牌迎接
+- 車款皆為合法營業租賃車
+
+## 預約方式
+- LINE 官方帳號加好友 → 點 LIFF 連結 → 填寫預約資訊
+- 無需下載 APP，LINE 帳號即可使用
+- 24 小時客服 via LINE OA
+
+## 語言支援
+- 繁體中文（預設）
+- English
+- 日本語
+
+## Sitemap
+- [sitemap.xml](https://da-line-liff-app.vercel.app/sitemap.xml)
+
+## Optional
+- [完整 FAQ 與計費規則 / llms-full.txt](https://da-line-liff-app.vercel.app/llms-full.txt): 17 題 FAQ 完整問答、計費細節、加成項目說明
