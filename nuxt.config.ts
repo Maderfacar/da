@@ -84,6 +84,9 @@ export default defineNuxtConfig({
       customerServiceHours: '',     // NUXT_PUBLIC_CUSTOMER_SERVICE_HOURS — 服務時段（e.g. 平日 09:00-21:00）
       // Google Maps（Browser Key，限制 HTTP Referrer）
       googleMapsBrowserKey: '',
+      // W3 AEO：站點 URL（給 JSON-LD @id / og:url / canonical 用）
+      // 與 site.url 同源；env NUXT_PUBLIC_SITE_URL 可覆寫
+      siteUrl: '',
     }
   },
 

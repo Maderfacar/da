@@ -14,6 +14,14 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
+// W3 AEO：FAQPage JSON-LD（17 題全套，三語自動隨 locale）
+// 給 Google AI Overview / Perplexity / Bing Copilot 直接拿來當 FAQ rich snippet
+useHead({
+  script: () => [
+    { type: 'application/ld+json', children: JSON.stringify(buildFaqPageLd(t)) },
+  ],
+});
+
 const ClickSupport = () => {
   if (lineOaAddUrl && typeof window !== 'undefined') {
     window.open(lineOaAddUrl, '_blank', 'noopener,noreferrer');

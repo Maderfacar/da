@@ -38,6 +38,20 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
+// ── Schema.org JSON-LD（W3）───────────────────────────────
+// 三個 schema 並排：Organization（公司基本資訊）+ LocalBusiness（地理 NAP）+
+// TransportationService（服務型別）。給 AI Overview / Perplexity / ChatGPT
+// 等 answer engine 結構化解析，提升被引用機率。
+const _siteConfig = useRuntimeConfig();
+const _siteUrl = (_siteConfig.public.siteUrl as string) || 'https://da-line-liff-app.vercel.app';
+useHead({
+  script: () => [
+    { type: 'application/ld+json', children: JSON.stringify(buildOrganizationLd(_siteUrl, t)) },
+    { type: 'application/ld+json', children: JSON.stringify(buildLocalBusinessLd(_siteUrl, t)) },
+    { type: 'application/ld+json', children: JSON.stringify(buildTransportationServiceLd(_siteUrl, t)) },
+  ],
+});
+
 // ── 已登入者 client-side redirect（既有行為，未動）──────────
 // 為何 page 內仍保留 watch？
 //   race：URL=/ 進站，plugin/auth.client 的 InitAuthFlow 跑完前 middleware 先跑、

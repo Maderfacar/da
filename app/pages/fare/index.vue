@@ -28,6 +28,16 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
+// W3 AEO：Service + PriceSpecification JSON-LD
+// 描述計價結構（基本起跳 + 里程費 + 加成），給 AI 解析「車資怎麼算」
+const _siteConfig = useRuntimeConfig();
+const _siteUrl = (_siteConfig.public.siteUrl as string) || 'https://da-line-liff-app.vercel.app';
+useHead({
+  script: () => [
+    { type: 'application/ld+json', children: JSON.stringify(buildFareServiceLd(_siteUrl, t)) },
+  ],
+});
+
 const vehicles = computed(() => storeConfig.EnabledVehicles);
 
 // 預設 active 為第一台啟用車型（控制 vehicle-card 的 is-active class）
