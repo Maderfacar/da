@@ -229,10 +229,27 @@ export default defineNuxtConfig({
         version, // 版本號
         'created-at': dayjs().format('YYYY-MM-DD HH:mm:ss'), // 建立時間
       },
+      // W1 AEO：全站 baseline meta（fallback）
+      // - title / description fallback：未呼叫 useSeoMeta 的頁面用此作 fallback
+      //   （front-desk / driver / back-desk 各 layout 自有 titleTemplate；此處純兜底）
+      // - OG / twitter：給社群與 AI 爬蟲擷取摘要用；per-page 可覆寫
+      title: 'DEST · ANYWHERE — 桃園機場接送・全台機場接送與長途包車',
       meta: [
         /** 去除擾人自動偵測 */
         { name: 'format-detection', content: 'telephone=no,email=no,adress=no' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' } // 禁止縮放
+        { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' }, // 禁止縮放
+        // W1 AEO baseline
+        { name: 'description', content: 'DEST · ANYWHERE 提供桃園、松山、台中、高雄四大機場接送與全台長途包車。透明計價、真實航班追蹤、24 小時服務，職業駕駛全程保障。' },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:site_name', content: 'DEST · ANYWHERE' },
+        { property: 'og:title', content: 'DEST · ANYWHERE — 桃園機場接送・全台機場接送與長途包車' },
+        { property: 'og:description', content: 'DEST · ANYWHERE 提供桃園、松山、台中、高雄四大機場接送與全台長途包車。透明計價、真實航班追蹤、24 小時服務，職業駕駛全程保障。' },
+        { property: 'og:locale', content: 'zh_TW' },
+        { property: 'og:locale:alternate', content: 'en' },
+        { property: 'og:locale:alternate', content: 'ja' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: 'DEST · ANYWHERE — 桃園機場接送・全台機場接送與長途包車' },
+        { name: 'twitter:description', content: 'DEST · ANYWHERE 提供桃園、松山、台中、高雄四大機場接送與全台長途包車。' },
       ],
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: 'any' }

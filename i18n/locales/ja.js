@@ -197,6 +197,67 @@ export default {
       copyFailed: 'コピーに失敗しました。手動でコピーしてください',
     },
   },
+  // マーケティング Landing (`/`) — W1 AEO
+  landing: {
+    meta: {
+      title: '桃園空港送迎・台湾全土チャーター｜DEST · ANYWHERE',
+      description: 'DEST · ANYWHERE は桃園・松山・台中・高雄の主要 4 空港送迎と、台湾全土の長距離チャーターサービスを提供しています。透明な料金、リアルタイム便追跡、24 時間対応、職業ドライバーが安心をお届け。LINE で予約、アプリ不要。',
+      ogImageAlt: 'DEST · ANYWHERE — 台湾の空港送迎専門サービス',
+    },
+    hero: {
+      tag: 'AIRPORT TRANSFER · TAIWAN',
+      titleA: 'DESTINATION',
+      titleB: 'ANYWHERE',
+      subtitle: '桃園・松山・台中・高雄 — 主要 4 国際空港送迎。台湾全土チャーター対応。専属ドライバー、便と旅程を完全管理。',
+      ctaPrimary: '今すぐ予約',
+      ctaSecondary: '料金試算',
+    },
+    overview: {
+      label: 'SERVICE OVERVIEW',
+      heading: 'お客様を安全にお届けすることが、私たちの唯一の目的地。',
+      p1: 'DEST · ANYWHERE は空港送迎と長距離送迎に特化した配車サービスです。台湾全土をカバー。ご予約から目的地到着まで、すべての行程を丁寧にお手配いたします。',
+      p2: '専属ドライバー、便と旅程の完全管理 — 空港送迎をシンプルに。',
+    },
+    coverage: {
+      label: 'NATIONWIDE COVERAGE',
+      title: '4 大空港・台湾全土',
+      desc: '主要 4 国際空港の送迎と、県をまたぐ長距離チャーターに対応。',
+      airports: {
+        tpe: { code: 'TPE', name: '桃園国際空港', desc: '台湾最大のゲートウェイ、24 時間送迎' },
+        tsa: { code: 'TSA', name: '松山空港', desc: '台北市内空港、国際線と国内線' },
+        rmq: { code: 'RMQ', name: '台中国際空港', desc: '中部地域の国際空港送迎' },
+        khh: { code: 'KHH', name: '高雄国際空港', desc: '南台湾の国際空港送迎' },
+      },
+    },
+    features: {
+      label: 'WHY CHOOSE US',
+      title: '選ばれる理由',
+      items: {
+        flight: {
+          title: 'リアル便追跡',
+          body: '到着便にお迎え時刻を自動同期。着陸即お迎え、お待たせしません。',
+        },
+        transparent: {
+          title: '透明な料金',
+          body: '基本料金とキロ単価を明示。予約時に見積額をリアルタイム表示、隠れた費用なし。',
+        },
+        service: {
+          title: '24 時間対応',
+          body: '24 時間体制でお迎え。深夜の赤目便も安心。',
+        },
+        professional: {
+          title: '職業ドライバー保障',
+          body: 'プロドライバー、無犯罪証明書、プラットフォーム内二次審査。乗客賠償責任保険 500 万元加入済み。',
+        },
+      },
+    },
+    cta: {
+      label: 'BOOK YOUR TRIP',
+      title: '出発の準備はできましたか？',
+      desc: 'LINE で予約、アプリ不要。専属ドライバーが時間通りにお迎えに上がります。',
+      btn: '今すぐ予約',
+    },
+  },
   home: {
     hero: {
       tag: '✈ プロフェッショナル空港送迎',

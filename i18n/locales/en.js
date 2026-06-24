@@ -197,6 +197,67 @@ export default {
       copyFailed: 'Copy failed, please copy manually',
     },
   },
+  // Marketing landing (`/`) — W1 AEO
+  landing: {
+    meta: {
+      title: 'Taoyuan Airport Transfer · Taiwan Charter Service | DEST · ANYWHERE',
+      description: 'DEST · ANYWHERE provides airport transfer for Taoyuan (TPE), Songshan (TSA), Taichung (RMQ), and Kaohsiung (KHH) airports, plus nationwide long-distance charter service in Taiwan. Transparent pricing, real-time flight tracking, 24/7 service, licensed drivers, fully insured. Book via LINE — no app required.',
+      ogImageAlt: 'DEST · ANYWHERE — Dedicated airport transfer in Taiwan',
+    },
+    hero: {
+      tag: 'AIRPORT TRANSFER · TAIWAN',
+      titleA: 'DESTINATION',
+      titleB: 'ANYWHERE',
+      subtitle: 'Taoyuan · Songshan · Taichung · Kaohsiung — four international airports covered. Nationwide charter service. Dedicated driver, full flight tracking.',
+      ctaPrimary: 'Book Transfer Now',
+      ctaSecondary: 'Estimate Fare',
+    },
+    overview: {
+      label: 'SERVICE OVERVIEW',
+      heading: 'Getting you there safely is our only destination.',
+      p1: 'DEST · ANYWHERE is a dispatch service focused on airport and long-distance transfers across Taiwan. From the moment your booking is confirmed to your safe arrival, every step is handled with care.',
+      p2: 'Dedicated driver, full flight and itinerary tracking — we make airport transfer simple.',
+    },
+    coverage: {
+      label: 'NATIONWIDE COVERAGE',
+      title: 'Four Airports · Taiwan-Wide',
+      desc: 'Airport transfer for all four major international airports, plus long-distance cross-county charter service.',
+      airports: {
+        tpe: { code: 'TPE', name: 'Taoyuan International', desc: 'Taiwan’s main gateway, 24-hour transfer' },
+        tsa: { code: 'TSA', name: 'Songshan Airport', desc: 'Taipei city airport, intl. & domestic' },
+        rmq: { code: 'RMQ', name: 'Taichung International', desc: 'Central Taiwan intl. airport transfer' },
+        khh: { code: 'KHH', name: 'Kaohsiung International', desc: 'South Taiwan intl. airport transfer' },
+      },
+    },
+    features: {
+      label: 'WHY CHOOSE US',
+      title: 'Reasons to Travel With Us',
+      items: {
+        flight: {
+          title: 'Real Flight Tracking',
+          body: 'Pickup time syncs to your actual landing — no waiting around.',
+        },
+        transparent: {
+          title: 'Transparent Pricing',
+          body: 'Base fare and per-km rate clearly shown. Quote at booking, no hidden fees.',
+        },
+        service: {
+          title: '24/7 Service',
+          body: 'Round-the-clock service — even red-eye flights are covered.',
+        },
+        professional: {
+          title: 'Licensed Drivers',
+          body: 'Commercial driver’s license, background-check certificate, internal review. NT$5M passenger liability insurance.',
+        },
+      },
+    },
+    cta: {
+      label: 'BOOK YOUR TRIP',
+      title: 'Ready to go?',
+      desc: 'Book through LINE — no app needed. Your dedicated driver will be ready on time.',
+      btn: 'Book Now',
+    },
+  },
   home: {
     hero: {
       tag: '✈ Professional Airport Transfer',

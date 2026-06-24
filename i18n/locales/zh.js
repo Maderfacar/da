@@ -208,6 +208,69 @@ export default {
       copyFailed: '複製失敗，請手動複製',
     },
   },
+  // ── 行銷 Landing (`/`) — W1 AEO ────────────────────────────
+  // 公開行銷首頁專用文案。SEO/AEO meta、hero、覆蓋區域、CTA。
+  // 與 home:* 區隔：home 是已登入後乘客主頁；landing 是未登入訪客落地頁。
+  landing: {
+    meta: {
+      title: '桃園機場接送・全台機場接送與長途包車｜DEST · ANYWHERE',
+      description: 'DEST · ANYWHERE 提供桃園、松山、台中、高雄四大機場接送與全台長途包車。透明計價、真實航班追蹤、24 小時服務，職業駕駛全程保障。LINE 線上預約，無需下載 APP。',
+      ogImageAlt: 'DEST · ANYWHERE — 專注機場接送的派車服務',
+    },
+    hero: {
+      tag: 'AIRPORT TRANSFER · TAIWAN',
+      titleA: 'DESTINATION',
+      titleB: 'ANYWHERE',
+      subtitle: '桃園・松山・台中・高雄 — 四大機場接送，全台長途包車。專人專車，全程掌握航班與行程。',
+      ctaPrimary: '立即預約接送',
+      ctaSecondary: '車資試算',
+    },
+    overview: {
+      label: 'SERVICE OVERVIEW',
+      heading: '把您安全送達，是我們唯一的目的地。',
+      p1: 'DEST · ANYWHERE 是專注機場與長途接送的派車服務，服務遍及全台。從預約完成的那一刻起，到您安全抵達目的地，每一段路都由我們妥善安排。',
+      p2: '專人專車、全程掌握航班與行程，把接送這件事變得單純。',
+    },
+    coverage: {
+      label: 'NATIONWIDE COVERAGE',
+      title: '四大機場・全台接送',
+      desc: '提供以下四大國際機場接送機，並支援跨縣市長途包車。',
+      airports: {
+        tpe: { code: 'TPE', name: '桃園國際機場', desc: '台灣最大門戶機場，24 小時接送' },
+        tsa: { code: 'TSA', name: '松山機場', desc: '台北市區機場，國際與國內線' },
+        rmq: { code: 'RMQ', name: '台中國際機場', desc: '中部地區國際機場接送' },
+        khh: { code: 'KHH', name: '高雄國際機場', desc: '南台灣國際機場接送' },
+      },
+    },
+    features: {
+      label: 'WHY CHOOSE US',
+      title: '安心接送的理由',
+      items: {
+        flight: {
+          title: '真實航班追蹤',
+          body: '接機行程自動對時您的航班，落地即接，不必苦等。',
+        },
+        transparent: {
+          title: '透明計價',
+          body: '起跳費與里程費清楚列明，預估金額即時顯示，無隱藏費用。',
+        },
+        service: {
+          title: '24 小時服務',
+          body: '全天候接送，深夜紅眼航班也安心。',
+        },
+        professional: {
+          title: '職業駕駛保障',
+          body: '司機持職業駕照、提供良民證、通過平台二次審查。全車投保旅客責任險 500 萬元。',
+        },
+      },
+    },
+    cta: {
+      label: 'BOOK YOUR TRIP',
+      title: '準備好出發了嗎？',
+      desc: '透過 LINE 線上預約，無需下載 APP。專屬司機將準時候駕。',
+      btn: '立即預約',
+    },
+  },
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
     hero: {
