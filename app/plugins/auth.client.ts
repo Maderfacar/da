@@ -11,9 +11,26 @@ export default defineNuxtPlugin(() => {
     (window as unknown as { __authStore: ReturnType<typeof StoreAuth> }).__authStore = authStore;
   }
 
-  if (testMode === 'T') {
-    // 本地開發模式：直接 mock passenger 角色，跳過 LIFF / Firebase
-    authStore.MockSignIn(['passenger']);
+  // E2E bypass：Playwright fixture 用 addInitScript 預塞 window.__E2E_MODE__ = true
+  // 同時可指定 window.__E2E_ROLES__ + __E2E_PATCH__；走與 testMode='T' 同一道既有 mock 閘
+  // 風險共用：不增加新的「prod 後門」面，env 在 prod 必須未設或不為 'T'，window flag 在 prod 也無人注入
+  type E2EPatch = { approved?: boolean; admin2faEnrolled?: boolean; admin2faSessionVerified?: boolean };
+  const e2eWindow = window as unknown as {
+    __E2E_MODE__?: boolean;
+    __E2E_ROLES__?: ('passenger' | 'driver' | 'admin')[];
+    __E2E_PATCH__?: E2EPatch;
+  };
+  const isMockMode = testMode === 'T' || e2eWindow.__E2E_MODE__ === true;
+
+  if (isMockMode) {
+    // 本地開發 / E2E：直接 mock 角色，跳過 LIFF / Firebase
+    authStore.MockSignIn(e2eWindow.__E2E_ROLES__ ?? ['passenger']);
+    const patch = e2eWindow.__E2E_PATCH__;
+    if (patch) {
+      if (patch.approved !== undefined) authStore.approved = patch.approved;
+      if (patch.admin2faEnrolled !== undefined) authStore.admin2faEnrolled = patch.admin2faEnrolled;
+      if (patch.admin2faSessionVerified !== undefined) authStore.admin2faSessionVerified = patch.admin2faSessionVerified;
+    }
     return;
   }
 
