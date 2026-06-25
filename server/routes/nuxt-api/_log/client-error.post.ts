@@ -9,6 +9,7 @@
 
 import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit, getClientIp } from '@@/utils/rate-limit';
+import { clipString, isMetadataTooLarge } from '~shared/error-log/resolvers';
 
 type Severity = 'error' | 'warn' | 'info';
 type Category = 'auth' | 'api' | 'unhandled' | 'navigation' | 'middleware' | 'lifecycle' | 'feature';
@@ -51,8 +52,7 @@ const MAX_LINE_UID_LEN = 64;
 const MAX_ROLES = 5;
 const MAX_METADATA_BYTES = 5 * 1024;
 
-const _clip = (v: unknown, max: number): string =>
-  typeof v === 'string' ? v.slice(0, max) : '';
+const _clip = clipString;
 
 export default defineEventHandler(async (event) => {
   // Phase 1.5：IP rate limit 60/min（fail-open）
@@ -92,15 +92,10 @@ export default defineEventHandler(async (event) => {
   const end: EndKind = ctx.end && VALID_ENDS.has(ctx.end) ? ctx.end : 'passenger';
 
   // Phase 1.5：metadata 整包 stringify > 5KB 拒收
-  let metadataSafe: Record<string, unknown> | undefined;
-  if (body.metadata && typeof body.metadata === 'object') {
-    try {
-      const serialized = JSON.stringify(body.metadata);
-      if (serialized && serialized.length <= MAX_METADATA_BYTES) {
-        metadataSafe = body.metadata;
-      }
-    } catch { /* circular / unserializable → drop metadata */ }
-  }
+  const metadataSafe: Record<string, unknown> | undefined =
+    body.metadata && typeof body.metadata === 'object' && !isMetadataTooLarge(body.metadata, MAX_METADATA_BYTES)
+      ? body.metadata
+      : undefined;
 
   try {
     const config = useRuntimeConfig();

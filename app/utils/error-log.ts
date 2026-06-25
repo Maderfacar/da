@@ -7,10 +7,10 @@
 // 任何個別頁面 / 元件不需手動 log；框架層 5 道收集器自動繼承覆蓋。
 //
 // 業務手動 log 入口：logFeature（自由欄位 metadata）。
+import { resolveEnd, generateSessionId, type EndKind } from '~shared/error-log/resolvers';
 
 type Severity = 'error' | 'warn' | 'info';
 type Category = 'auth' | 'api' | 'unhandled' | 'navigation' | 'middleware' | 'lifecycle' | 'feature';
-type EndKind = 'passenger' | 'driver' | 'admin';
 
 export interface ErrorLogPayload {
   event: string;
@@ -44,21 +44,15 @@ const _ensureSessionId = (): string => {
     if (typeof sessionStorage !== 'undefined') {
       let v = sessionStorage.getItem(SESSION_KEY);
       if (!v) {
-        v = Math.random().toString(36).slice(2, 9);
+        v = generateSessionId();
         sessionStorage.setItem(SESSION_KEY, v);
       }
       _sid = v;
       return _sid;
     }
   } catch { /* 隱私模式 / quota 滿時 fall through */ }
-  _sid = Math.random().toString(36).slice(2, 9);
+  _sid = generateSessionId();
   return _sid;
-};
-
-const _resolveEnd = (path: string): EndKind => {
-  if (path.startsWith('/admin')) return 'admin';
-  if (path.startsWith('/driver')) return 'driver';
-  return 'passenger';
 };
 
 const _safeIsInLiff = (): boolean | undefined => {
@@ -103,7 +97,7 @@ const _buildContext = (): ErrorLogContext => {
     userAgent,
     isInLiffClient: _safeIsInLiff(),
     roles,
-    end: _resolveEnd(path),
+    end: resolveEnd(path),
     appVersion: _safeAppVersion(),
     sessionId: _ensureSessionId(),
   };
