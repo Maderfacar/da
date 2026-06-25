@@ -14,13 +14,15 @@ import type { Swiper as SwiperInstance } from 'swiper/types';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
+// 2026-06-25 SSR fix v2：layout front-desk → marketing（見 faq/index.vue 同樣註記）
+definePageMeta({ layout: 'marketing', middleware: ['auth', 'role'] });
 
 const { locale, t } = useI18n();
 const storeConfig = StoreConfig();
 
-// W2 AEO：description / OG / twitter（title 由 front-desk layout titleTemplate 處理）
+// W2 AEO + SSR fix v2：description / OG / twitter + title（marketing layout 無 titleTemplate）
 useSeoMeta({
+  title: () => `${t('meta.title.passenger.fare')} · ${t('meta.brand.passenger')}`,
   description: () => t('meta.description.passenger.fare'),
   ogType: 'website',
   ogTitle: () => `${t('meta.title.passenger.fare')} · ${t('meta.brand.passenger')}`,

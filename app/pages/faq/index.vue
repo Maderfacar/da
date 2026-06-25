@@ -1,12 +1,21 @@
 <script setup lang="ts">
 // /faq — 服務說明 + 安心保障 + FAQ + 客服（/service 合併進來；2026-06-07）
-definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
+//
+// 2026-06-25 SSR fix v2：layout 從 'front-desk' → 'marketing'。
+// 原因：front-desk layout 的 `slot v-if="authResolved"` 在 SSR 時 authResolved=false
+// → page 整個沒被 instantiate → useHead/useSeoMeta 在 page setup 沒跑 → JSON-LD/description
+// 都沒進 SSR HTML。AI 爬蟲拿到的是 layout 殼，沒 page 內容。
+// marketing layout（W1 建）不 gate slot，公開頁 SSR 正常。
+// middleware: ['auth', 'role'] 維持不變（/faq 在 PUBLIC_ROUTE_PREFIXES，auth.ts 會自動 skip）。
+definePageMeta({ layout: 'marketing', middleware: ['auth', 'role'] });
 
 const { lineOaAddUrl } = useRuntimeConfig().public;
 const { t } = useI18n();
 
-// W2 AEO：description / OG / twitter（title 由 front-desk layout titleTemplate 處理）
+// W2 AEO + SSR fix v2：description / OG / twitter + title（marketing layout 無 titleTemplate，
+// page 自己組完整 title「常見問題 · Destination Anywhere」）
 useSeoMeta({
+  title: () => `${t('meta.title.passenger.faq')} · ${t('meta.brand.passenger')}`,
   description: () => t('meta.description.passenger.faq'),
   ogType: 'website',
   ogTitle: () => `${t('meta.title.passenger.faq')} · ${t('meta.brand.passenger')}`,
