@@ -194,6 +194,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── client_error_logs 集合（2026-06-26）─────────────────────
+    // Client-side 錯誤 / navigation / middleware redirect / unhandled JS log
+    // - admin client 可讀（未來 Diagnostics 擴展可顯示）
+    // - 寫入透過 server admin SDK（/nuxt-api/_log/client-error）— endpoint 不擋 auth
+    // - 第一版不設 TTL；後續視 data 量決定（navigation log 量大可能要設）
+    match /client_error_logs/{logId} {
+      allow read: if request.auth != null && (
+        'roles' in request.auth.token && 'admin' in request.auth.token.roles
+      );
+      allow write: if false;
+    }
+
     // ── fare_rules 集合（Fare V2）──────────────────────────────
     // 車資進階規則（單一 doc fare_rules/v1）；client 全禁讀寫。
     // admin 經 /nuxt-api/admin/fare-rules（super only）讀寫；估價經 server admin SDK 讀取。
