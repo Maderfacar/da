@@ -15,6 +15,7 @@
 // W1：公開路由（isPublicRoute）直接放行，不等 auth 也不踢 /login。SSOT 由
 // shared/constants/auth-public-routes 統一定義，BootGate 與 PageIndex 共用同一份名單。
 import { isPublicRoute } from '~shared/constants/auth-public-routes';
+import { logMiddleware } from '~/utils/error-log';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return;
@@ -24,14 +25,29 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
 
   if (!authStore.authResolved) {
+    const t0 = Date.now();
     await Promise.race([
       authStore.WaitForAuthResolved(),
       new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
     ]);
+    const waited = Date.now() - t0;
+    if (waited >= 12_000) {
+      logMiddleware({
+        event: 'middleware.auth.wait-timeout',
+        severity: 'warn',
+        message: `WaitForAuthResolved 12s timeout @ ${to.path}`,
+        metadata: { path: to.path, waited },
+      });
+    }
   }
 
   if (!authStore.isSignIn) {
     const loginPath = to.path.startsWith('/driver') ? '/driver/auth' : '/login';
+    logMiddleware({
+      event: 'middleware.redirect.unauth',
+      message: `${to.path} → ${loginPath}`,
+      metadata: { from: to.path, to: loginPath, reason: 'not-signed-in' },
+    });
     // 用 replace 而非 push — 避免 reload 期間「閃登入頁 → 跳回原頁」造成歷史堆疊，
     // 按返回鍵又回到「未授權的原頁」造成 middleware 迴圈
     return navigateTo(loginPath, { replace: true });

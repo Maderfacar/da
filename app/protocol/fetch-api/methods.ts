@@ -8,6 +8,7 @@
 //   核心 state machine 抽到 shared/auth/unauthorized-policy.ts（純函式，獨立可測）。
 //   L2（onRequest 前等 WaitForAuthResolved）保留 — 從根本避免 LIFF/Firebase race 造成的偽 401。
 import { createUnauthorizedPolicy } from '~shared/auth/unauthorized-policy';
+import { logApi } from '~/utils/error-log';
 
 const _policy = createUnauthorizedPolicy({
   refreshToken: async () => {
@@ -134,6 +135,19 @@ const _DoFetch = async <T>(
           if (response?.status === 401) {
             (_res as { _wasUnauthorized?: true })._wasUnauthorized = true;
           }
+          // 框架層 fire-and-forget 收集器：4xx/5xx 一律進 log（401 含在內，retry 結果在 catch 內另記）
+          logApi({
+            event: response?.status === 401 ? 'api.401' : `api.${response?.status ?? 'unknown'}`,
+            severity: response && response.status >= 500 ? 'error' : 'warn',
+            message: `${url} → HTTP ${response?.status ?? 'unknown'}`,
+            metadata: {
+              url,
+              method: (option?.method as string | undefined) ?? 'unknown',
+              status: response?.status,
+              statusText: response?.statusText,
+              code: _res.status?.code,
+            },
+          });
           return Promise.reject(_res);
         }
       }
@@ -150,9 +164,19 @@ const _DoFetch = async <T>(
         }
         // 'signed-out'：policy 已觸發 SignOut→/login
         // 'noop'：另一條 path 已在 SignOut 中
+        logApi({
+          event: 'api.401.refresh-failed',
+          message: `${url} 401 → refresh ${decision}`,
+          metadata: { url, decision },
+        });
       } else {
         // 已是 retry 仍 401 → SignOut（policy 內判斷）
         await _policy.handle(true);
+        logApi({
+          event: 'api.401.retry-failed',
+          message: `${url} retry 仍 401 → signed-out`,
+          metadata: { url },
+        });
       }
     }
     throw envelope;

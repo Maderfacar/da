@@ -27,6 +27,7 @@
 import { isLoginEntry, resolveAuthTarget } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
 import { resolveRequiredLoads } from '~shared/auth/required-loads';
+import { logMiddleware } from '~/utils/error-log';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
@@ -55,6 +56,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
       pathname: import.meta.client ? window.location.pathname : undefined,
     });
     if (liffTarget && liffTarget !== to.path) {
+      logMiddleware({
+        event: 'middleware.redirect.liff-target',
+        message: `${to.path} → ${liffTarget}`,
+        metadata: { from: to.path, to: liffTarget, reason: 'liff-state-target' },
+      });
       return navigateTo(liffTarget, { replace: true });
     }
     const target = resolveAuthTarget({
@@ -64,6 +70,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
       approved: authStore.approved,
     });
     if (target && target !== to.path) {
+      logMiddleware({
+        event: 'middleware.redirect.auth-target',
+        message: `${to.path} → ${target}`,
+        metadata: { from: to.path, to: target, reason: 'login-entry-resolve', roles: authStore.roles },
+      });
       return navigateTo(target, { replace: true });
     }
     return;
@@ -75,6 +86,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // /driver/register：已核准 driver 強制導去 dashboard，其他放行
   if (isDriverRegister) {
     if (authStore.roles.includes('driver') && authStore.approved) {
+      logMiddleware({
+        event: 'middleware.redirect.driver-approved',
+        message: `${to.path} → /driver/dashboard`,
+        metadata: { from: to.path, to: '/driver/dashboard', reason: 'approved-driver-on-register' },
+      });
       return navigateTo('/driver/dashboard', { replace: true });
     }
     return;
@@ -87,14 +103,29 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return;
     }
     if (!authStore.roles.includes('admin')) {
+      logMiddleware({
+        event: 'middleware.redirect.admin-denied',
+        message: `${to.path} → /home`,
+        metadata: { from: to.path, to: '/home', reason: 'not-admin', roles: authStore.roles },
+      });
       return navigateTo('/home', { replace: true });
     }
     // /admin/2fa/* 永遠放行（避免 setup / challenge 自己被擋進無窮迴圈）
     if (!to.path.startsWith('/admin/2fa')) {
       if (!authStore.admin2faEnrolled) {
+        logMiddleware({
+          event: 'middleware.redirect.admin-2fa-setup',
+          message: `${to.path} → /admin/2fa/setup`,
+          metadata: { from: to.path, to: '/admin/2fa/setup', reason: 'not-enrolled' },
+        });
         return navigateTo('/admin/2fa/setup', { replace: true });
       }
       if (!authStore.admin2faSessionVerified) {
+        logMiddleware({
+          event: 'middleware.redirect.admin-2fa-challenge',
+          message: `${to.path} → /admin/2fa/challenge`,
+          metadata: { from: to.path, to: '/admin/2fa/challenge', reason: 'session-unverified' },
+        });
         return navigateTo({ path: '/admin/2fa/challenge', query: { next: to.fullPath } }, { replace: true });
       }
     }
@@ -104,9 +135,23 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // === Driver 路徑（非 auth / 非 register）===
   if (isDriverPath) {
     if (authStore.roles.length === 0) {
+      logMiddleware({
+        event: 'middleware.redirect.driver-no-roles',
+        message: `${to.path} → /driver/auth`,
+        metadata: { from: to.path, to: '/driver/auth', reason: 'roles-empty' },
+      });
       return navigateTo('/driver/auth', { replace: true });
     }
     if (!authStore.roles.includes('driver') || !authStore.approved) {
+      logMiddleware({
+        event: 'middleware.redirect.driver-denied',
+        message: `${to.path} → /driver/auth`,
+        metadata: {
+          from: to.path, to: '/driver/auth',
+          reason: !authStore.roles.includes('driver') ? 'not-driver' : 'not-approved',
+          roles: authStore.roles, approved: authStore.approved,
+        },
+      });
       return navigateTo('/driver/auth', { replace: true });
     }
     return;

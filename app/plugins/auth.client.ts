@@ -3,6 +3,8 @@
 //
 // Debug：開發者可在 DevTools Console 透過 window.__authStore 即時讀取
 // roles / lineProfile / approved 等狀態，便於排查 auth 流程問題（無 console log 噪音）。
+import { logAuth } from '~/utils/error-log';
+
 export default defineNuxtPlugin(() => {
   const { testMode } = useRuntimeConfig().public;
   const authStore = StoreAuth();
@@ -34,5 +36,12 @@ export default defineNuxtPlugin(() => {
     return;
   }
 
-  authStore.InitAuthFlow();
+  void Promise.resolve(authStore.InitAuthFlow()).catch((err: unknown) => {
+    const e = err instanceof Error ? err : new Error(String(err));
+    logAuth({
+      event: 'auth.init.failed',
+      message: e.message,
+      stack: e.stack,
+    });
+  });
 });

@@ -14,6 +14,7 @@
 //   - 改由 middleware/role 在進對應路徑時 await Ensure*（4 個 lazy action）
 //   - 4 個 Ensure* 共用 shared/auth/lazy-loader.ts 純函式 sticky-promise factory
 import { createLazyLoader } from '~shared/auth/lazy-loader';
+import { logAuth } from '~/utils/error-log';
 
 type Role = 'passenger' | 'driver' | 'admin';
 // P18（2026/05/09 起）：admin 細分三層 level，僅作 admin 端內部權限判斷；roles[] 仍是身分入口的唯一依據。
@@ -155,6 +156,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     const safetyTimer = setTimeout(() => {
       if (!authResolved.value) {
         console.warn('[StoreAuth] 初始化逾時 (12s)，強制解除 loading');
+        logAuth({
+          event: 'auth.init.timeout',
+          severity: 'warn',
+          message: 'InitAuthFlow 12s safetyTimer triggered',
+        });
         _markAuthResolved();
       }
     }, 12_000);
@@ -211,6 +217,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         idToken.value = await firebaseUser.getIdToken();
       } catch (err) {
         console.error('[StoreAuth] getIdToken failed:', err);
+        const e = err instanceof Error ? err : new Error(String(err));
+        logAuth({
+          event: 'auth.get-id-token.failed',
+          message: e.message,
+          stack: e.stack,
+        });
       }
       // W4：移除 eager _LoadRolesFromFirestore + admin 2FA session-check
       // 這 4 個 IO 改由 middleware/role 在進對應路徑時 lazy load（Ensure* action）
@@ -258,8 +270,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
       // 推薦獎勵機制 Phase 3：載入自己的 referralCode
       referralCode.value = typeof data.referralCode === 'string' ? data.referralCode : '';
-    } catch {
+    } catch (err) {
       // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
+      const e = err instanceof Error ? err : new Error(String(err));
+      logAuth({
+        event: 'auth.ensure-doc.failed',
+        severity: 'warn',
+        message: `_LoadUserDoc: ${e.message}`,
+        stack: e.stack,
+        metadata: { docKind: 'user' },
+      });
     }
   };
 
@@ -288,9 +308,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       } else {
         driverApplication.value = null;
       }
-    } catch {
+    } catch (err) {
       // Rules 阻擋或 doc 不存在 → driverApplication 保持 null
       driverApplication.value = null;
+      const e = err instanceof Error ? err : new Error(String(err));
+      logAuth({
+        event: 'auth.ensure-doc.failed',
+        severity: 'warn',
+        message: `_LoadDriverDoc: ${e.message}`,
+        stack: e.stack,
+        metadata: { docKind: 'driver' },
+      });
     }
   };
 
@@ -313,8 +341,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
       // Admin 2FA：totpEnrolledAt 存在即視為已綁定（值為 Firestore Timestamp / 也可能為 null）
       admin2faEnrolled.value = !!adminData.totpEnrolledAt;
-    } catch {
+    } catch (err) {
       // rules 阻擋或 doc 不存在 → level 保持 null
+      const e = err instanceof Error ? err : new Error(String(err));
+      logAuth({
+        event: 'auth.ensure-doc.failed',
+        severity: 'warn',
+        message: `_LoadAdminDoc: ${e.message}`,
+        stack: e.stack,
+        metadata: { docKind: 'admin' },
+      });
     }
   };
 
@@ -410,6 +446,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     // B 方案因 server 200 envelope 而從未實際被 fire 的設計 bug 留 W3 一併處理。
     if (res && res.status?.code != null && res.status.code !== 200) {
       console.warn('[StoreAuth] line-exchange returned error:', res.status.code, res.status.message?.zh_tw);
+      logAuth({
+        event: 'auth.line-exchange.bad-status',
+        message: `code=${res.status.code}: ${res.status.message?.zh_tw ?? ''}`,
+        metadata: {
+          code: res.status.code,
+          messageZh: res.status.message?.zh_tw,
+          clientType,
+        },
+      });
       if (typeof window !== 'undefined') {
         try {
           ElMessage({
@@ -426,6 +471,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const RECOVERY_KEY = 'liff_recovery_attempted';
       if (!sessionStorage.getItem(RECOVERY_KEY)) {
         sessionStorage.setItem(RECOVERY_KEY, '1');
+        logAuth({
+          event: 'auth.liff.recovery-reload',
+          severity: 'warn',
+          message: 'line-exchange null → liff.logout + location.reload',
+          metadata: { clientType },
+        });
         try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
         location.reload();
         return;
@@ -599,6 +650,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       void _SyncLiffStateRoute();
     } catch (err) {
       console.error('[StoreAuth] _InitLiffFlow failed:', err);
+      const e = err instanceof Error ? err : new Error(String(err));
+      logAuth({
+        event: 'auth.liff.init.failed',
+        message: e.message,
+        stack: e.stack,
+        metadata: { liffId, clientType },
+      });
       liffReady.value = true;
     }
   };

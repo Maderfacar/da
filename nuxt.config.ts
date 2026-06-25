@@ -87,6 +87,8 @@ export default defineNuxtConfig({
       // W3 AEO：站點 URL（給 JSON-LD @id / og:url / canonical 用）
       // 與 site.url 同源；env NUXT_PUBLIC_SITE_URL 可覆寫
       siteUrl: '',
+      // Client error log：app build commit sha；Vercel 可用 NUXT_PUBLIC_APP_VERSION=$VERCEL_GIT_COMMIT_SHA
+      appVersion: '',
     }
   },
 

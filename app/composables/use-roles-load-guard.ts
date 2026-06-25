@@ -13,6 +13,8 @@
 //   - app/layouts/front-desk.vue
 //   - app/pages/profile/index.vue
 //   - app/pages/orders/index.vue
+import { logLifecycle } from '~/utils/error-log';
+
 const ROLES_LOAD_TIMEOUT_MS = 5_000;
 
 export const UseRolesLoadGuard = () => {
@@ -32,7 +34,14 @@ export const UseRolesLoadGuard = () => {
   let timer: ReturnType<typeof setTimeout> | null = null;
   if (state.value === 'loading') {
     timer = setTimeout(() => {
-      if (state.value === 'loading') state.value = 'failed';
+      if (state.value === 'loading') {
+        state.value = 'failed';
+        logLifecycle({
+          event: 'lifecycle.roles-load.timeout',
+          severity: 'warn',
+          message: 'UseRolesLoadGuard 5s timeout — roles=[]',
+        });
+      }
     }, ROLES_LOAD_TIMEOUT_MS);
   }
 
