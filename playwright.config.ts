@@ -29,5 +29,16 @@ export default defineConfig({
       use: { ...devices['iPhone 14'] },      // 390×844, Safari Mobile
     },
   ],
-  // Do NOT start the dev server here — we start it manually
+  // CI 時自動起 dev server；本地維持手動（避免每次跑 e2e 都 reload dev）
+  // CI workflow 內已預先寫好 minimal .env.dev（NUXT_PUBLIC_TEST_MODE=T）
+  webServer: process.env.CI
+    ? {
+        command: 'pnpm dev',
+        url: 'http://localhost:3000',
+        timeout: 120_000,
+        reuseExistingServer: false,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      }
+    : undefined,
 });
