@@ -47,6 +47,29 @@ export default defineEventHandler(async (event) => {
     }
 
     const v = bodyCheck.value;
+
+    // referral-welcome / referral-reward 為系統鑄碼，admin 後台不可改其 source/ownerUid
+    const existingSource = snap.data()?.source;
+    if (existingSource === 'referral-welcome' || existingSource === 'referral-reward') {
+      return badRequestError({
+        zh_tw: '推薦系統鑄造的折扣碼不可由 admin 編輯',
+        en: 'Referral-minted codes cannot be edited via admin',
+        ja: '紹介システムが鋳造した割引コードは管理画面では編集できません',
+      });
+    }
+
+    // source='driver-referral' 時驗證 ownerUid 對應的 user 確實是 driver
+    if (v.source === 'driver-referral' && v.ownerUid) {
+      const userSnap = await db.collection('users').doc(v.ownerUid).get();
+      if (!userSnap.exists) {
+        return badRequestError({ zh_tw: '歸屬司機不存在', en: 'Owner driver not found', ja: '所属ドライバーが存在しません' });
+      }
+      const roles = userSnap.data()?.roles;
+      if (!Array.isArray(roles) || !roles.includes('driver')) {
+        return badRequestError({ zh_tw: '指定使用者不是司機', en: 'Specified user is not a driver', ja: '指定されたユーザーはドライバーではありません' });
+      }
+    }
+
     await ref.set({
       discountAmount: v.discountAmount,
       validFrom: v.validFromMs !== null ? Timestamp.fromMillis(v.validFromMs) : null,
@@ -56,6 +79,8 @@ export default defineEventHandler(async (event) => {
       minFare: v.minFare,
       allowedOrderTypes: v.allowedOrderTypes,
       enabled: v.enabled,
+      source: v.source,
+      ownerUid: v.ownerUid,
       updatedBy: auth.lineUid,
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -66,7 +91,7 @@ export default defineEventHandler(async (event) => {
       action: 'discount_code.update',
       targetType: 'discount_code',
       targetId: codeCheck.value,
-      payload: { discountAmount: v.discountAmount, enabled: v.enabled },
+      payload: { discountAmount: v.discountAmount, enabled: v.enabled, source: v.source, ownerUid: v.ownerUid },
     });
 
     return successResponse<PutRes>({ code: codeCheck.value });

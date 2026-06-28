@@ -25,8 +25,9 @@ export const DISCOUNT_CODE_REGEX = /^[A-Z0-9]{3,32}$/;
  *   - `admin`：admin 後台手動建立（既有碼，預設）
  *   - `referral-welcome`：推薦機制鑄造的歡迎碼
  *   - `referral-reward`：推薦機制鑄造的推薦獎勵碼
+ *   - `driver-referral`：admin 手動建立、歸屬某位司機；用於把乘客來源歸到司機名下
  */
-export type DiscountCodeSource = 'admin' | 'referral-welcome' | 'referral-reward';
+export type DiscountCodeSource = 'admin' | 'referral-welcome' | 'referral-reward' | 'driver-referral';
 
 /** 合法的行程類型值集合（取自 ORDER_TYPES） */
 const ORDER_TYPE_VALUES = new Set<string>(ORDER_TYPES.map((t) => t.value));
@@ -96,7 +97,9 @@ export function toDiscountCodeDto(data: Partial<DiscountCodeDoc> & { code: strin
     createdAt: tsToIso(data.createdAt),
     updatedBy: typeof data.updatedBy === 'string' ? data.updatedBy : '',
     updatedAt: tsToIso(data.updatedAt),
-    source: data.source === 'referral-welcome' || data.source === 'referral-reward' ? data.source : 'admin',
+    source: data.source === 'referral-welcome' || data.source === 'referral-reward' || data.source === 'driver-referral'
+      ? data.source
+      : 'admin',
     ownerUid: typeof data.ownerUid === 'string' ? data.ownerUid : null,
   };
 }
@@ -113,6 +116,15 @@ export interface DiscountCodeInput {
   minFare: number | null;
   allowedOrderTypes: string[] | null;
   enabled: boolean;
+  /**
+   * admin 後台可指定來源：
+   *   - 'admin'（預設）：一般折扣碼
+   *   - 'driver-referral'：歸屬司機的推薦碼，ownerUid 必填且為該司機 lineUid
+   * 'referral-welcome' / 'referral-reward' 為系統鑄碼，admin 後台不接受
+   */
+  source: 'admin' | 'driver-referral';
+  /** source='driver-referral' 時必為非空字串（司機 lineUid）；其他來源為 null */
+  ownerUid: string | null;
 }
 
 type ValidateResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -186,6 +198,22 @@ export function validateDiscountCodeBody(raw: Record<string, unknown>): Validate
     allowedOrderTypes = raw.allowedOrderTypes.length > 0 ? (raw.allowedOrderTypes as string[]) : null;
   }
 
+  // source / ownerUid（driver-referral 歸屬碼用）
+  let source: 'admin' | 'driver-referral' = 'admin';
+  let ownerUid: string | null = null;
+  if (raw.source !== undefined && raw.source !== null && raw.source !== '') {
+    if (raw.source !== 'admin' && raw.source !== 'driver-referral') {
+      return { ok: false, error: 'source 僅接受 admin 或 driver-referral' };
+    }
+    source = raw.source;
+  }
+  if (source === 'driver-referral') {
+    if (typeof raw.ownerUid !== 'string' || raw.ownerUid.trim() === '') {
+      return { ok: false, error: '司機歸屬碼必須指定歸屬司機（ownerUid）' };
+    }
+    ownerUid = raw.ownerUid.trim();
+  }
+
   return {
     ok: true,
     value: {
@@ -197,6 +225,8 @@ export function validateDiscountCodeBody(raw: Record<string, unknown>): Validate
       minFare: minFare.value,
       allowedOrderTypes,
       enabled: raw.enabled === undefined ? true : raw.enabled === true,
+      source,
+      ownerUid,
     },
   };
 }

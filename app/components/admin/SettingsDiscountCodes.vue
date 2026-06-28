@@ -2,8 +2,11 @@
 // 折扣碼管理（admin/settings 內 PROMOTIONS section）
 //
 // 列表 + 建立 / 編輯表單（同頁切換）。停用 = enabled:false，不提供刪除。
+// 司機歸屬碼：source='driver-referral' + ownerUid=司機 lineUid，乘客輸入該碼後
+// admin/orders 列表可看到「來源司機」做歸屬追蹤。
 import { ORDER_TYPES } from '~shared/pricing';
 import type { DiscountCodeDto } from '@/protocol/fetch-api/api/admin/discount-code';
+import type { AdminUser } from '@/protocol/fetch-api/api/admin';
 
 interface FormState {
   code: string;
@@ -15,6 +18,10 @@ interface FormState {
   minFare: number | null;
   allowedOrderTypes: string[];
   enabled: boolean;
+  /** '' = 一般 admin 碼；'driver-referral' = 歸屬司機 */
+  source: '' | 'driver-referral';
+  /** source='driver-referral' 時必填 */
+  ownerUid: string;
 }
 
 const CODE_MAX = 32;
@@ -29,15 +36,23 @@ const emptyForm = (): FormState => ({
   minFare: null,
   allowedOrderTypes: [],
   enabled: true,
+  source: '',
+  ownerUid: '',
 });
 
 const list = ref<DiscountCodeDto[]>([]);
+const drivers = ref<AdminUser[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 // mode：'list' 列表 / 'create' 新建 / 'edit' 編輯（editingCode 為被編輯的碼）
 const mode = ref<'list' | 'create' | 'edit'>('list');
 const editingCode = ref('');
 const form = reactive<FormState>(emptyForm());
+
+const DriverNameOf = (uid: string | null) => {
+  if (!uid) return null;
+  return drivers.value.find((d) => d.uid === uid)?.displayName ?? `UID:${uid.slice(0, 6)}`;
+};
 
 const ApiLoad = async () => {
   loading.value = true;
@@ -53,6 +68,15 @@ const ApiLoad = async () => {
   }
 };
 
+const ApiLoadDrivers = async () => {
+  const res = await $api.GetAdminUsers({ role: 'driver', approved: true });
+  if (res.status?.code !== $enum.apiStatus.success) {
+    drivers.value = [];
+    return;
+  }
+  drivers.value = Array.isArray(res.data) ? (res.data as AdminUser[]) : [];
+};
+
 const _IsoToDateInput = (iso: string | null): string => (iso ? iso.slice(0, 10) : '');
 
 const ClickCreate = () => {
@@ -62,6 +86,11 @@ const ClickCreate = () => {
 };
 
 const ClickEdit = (d: DiscountCodeDto) => {
+  // referral-welcome / referral-reward 為系統鑄碼，server 拒絕 admin 修改 — UI 也擋
+  if (d.source === 'referral-welcome' || d.source === 'referral-reward') {
+    ElMessage({ message: '推薦系統鑄造的折扣碼不可由 admin 編輯', type: 'warning' });
+    return;
+  }
   Object.assign(form, {
     code: d.code,
     discountAmount: d.discountAmount,
@@ -72,6 +101,8 @@ const ClickEdit = (d: DiscountCodeDto) => {
     minFare: d.minFare,
     allowedOrderTypes: d.allowedOrderTypes ?? [],
     enabled: d.enabled,
+    source: d.source === 'driver-referral' ? 'driver-referral' : '',
+    ownerUid: d.ownerUid ?? '',
   });
   editingCode.value = d.code;
   mode.value = 'edit';
@@ -82,6 +113,11 @@ const ClickCancel = () => {
 };
 
 const ClickToggleEnabled = async (d: DiscountCodeDto) => {
+  // 系統鑄碼不可由 admin 切換
+  if (d.source === 'referral-welcome' || d.source === 'referral-reward') {
+    ElMessage({ message: '推薦系統鑄造的折扣碼不可由 admin 編輯', type: 'warning' });
+    return;
+  }
   const ok = await UseAsk(d.enabled ? `確定停用折扣碼「${d.code}」？` : `確定啟用折扣碼「${d.code}」？`);
   if (!ok) return;
   const res = await $api.UpdateDiscountCode(d.code, {
@@ -93,6 +129,8 @@ const ClickToggleEnabled = async (d: DiscountCodeDto) => {
     minFare: d.minFare,
     allowedOrderTypes: d.allowedOrderTypes,
     enabled: !d.enabled,
+    source: d.source === 'driver-referral' ? 'driver-referral' : 'admin',
+    ownerUid: d.ownerUid,
   });
   if (res.status?.code !== $enum.apiStatus.success) {
     ElMessage({ message: res.status?.message?.zh_tw ?? '更新失敗', type: 'error' });
@@ -109,6 +147,7 @@ const _ValidateForm = (): string => {
   if (!form.discountAmount || form.discountAmount <= 0) return '折抵金額必須大於 0';
   if (!form.validUntil) return '到期日為必填';
   if (form.validFrom && form.validFrom > form.validUntil) return '生效日不可晚於到期日';
+  if (form.source === 'driver-referral' && !form.ownerUid) return '司機歸屬碼必須選擇歸屬司機';
   return '';
 };
 
@@ -130,6 +169,8 @@ const ClickSave = async () => {
       minFare: form.minFare,
       allowedOrderTypes: form.allowedOrderTypes.length > 0 ? form.allowedOrderTypes : null,
       enabled: form.enabled,
+      source: (form.source === 'driver-referral' ? 'driver-referral' : 'admin') as 'admin' | 'driver-referral',
+      ownerUid: form.source === 'driver-referral' ? form.ownerUid : null,
     };
     const res = mode.value === 'create'
       ? await $api.CreateDiscountCode({ code: form.code.trim().toUpperCase(), ...body })
@@ -149,8 +190,17 @@ const ClickSave = async () => {
 const FormatDate = (iso: string | null) => (iso ? $dayjs(iso).format('YYYY-MM-DD') : '—');
 const RedemptionLabel = (d: DiscountCodeDto) =>
   `${d.redemptionCount} / ${d.maxRedemptions ?? '∞'}`;
+const SourceLabel = (d: DiscountCodeDto): string | null => {
+  if (d.source === 'driver-referral') return `司機：${DriverNameOf(d.ownerUid) ?? '—'}`;
+  if (d.source === 'referral-welcome') return '推薦歡迎碼';
+  if (d.source === 'referral-reward') return '推薦獎勵碼';
+  return null;
+};
 
-onMounted(() => { void ApiLoad(); });
+onMounted(() => {
+  void ApiLoad();
+  void ApiLoadDrivers();
+});
 </script>
 
 <template lang="pug">
@@ -172,7 +222,12 @@ onMounted(() => { void ApiLoad(); });
           :class="{ 'is-disabled': !d.enabled }"
         )
           .SettingsDiscountCodes__item-main
-            .SettingsDiscountCodes__item-code {{ d.code }}
+            .SettingsDiscountCodes__item-code
+              | {{ d.code }}
+              span.SettingsDiscountCodes__source-tag(
+                v-if="SourceLabel(d)"
+                :class="{ 'is-driver': d.source === 'driver-referral' }"
+              ) {{ SourceLabel(d) }}
             .SettingsDiscountCodes__item-meta
               span 折抵 NT${{ d.discountAmount }}
               span · {{ FormatDate(d.validFrom) }} ~ {{ FormatDate(d.validUntil) }}
@@ -216,6 +271,33 @@ onMounted(() => { void ApiLoad(); });
       .SettingsDiscountCodes__field
         label.SettingsDiscountCodes__label 最低車資門檻（留空＝無門檻）
         ElInput(v-model.number="form.minFare" type="number" inputmode="numeric" maxlength="9")
+
+    //- 司機歸屬碼：勾了之後乘客輸入此碼建單，admin/orders 列表可看到來源司機
+    .SettingsDiscountCodes__field
+      label.SettingsDiscountCodes__switch
+        input(
+          type="checkbox"
+          :checked="form.source === 'driver-referral'"
+          @change="(e) => { form.source = (e.target as HTMLInputElement).checked ? 'driver-referral' : ''; if (form.source === '') form.ownerUid = ''; }"
+        )
+        span 標記為司機歸屬碼（追蹤來源司機）
+
+    .SettingsDiscountCodes__field(v-if="form.source === 'driver-referral'")
+      label.SettingsDiscountCodes__label 歸屬司機
+      ElSelect(
+        v-model="form.ownerUid"
+        placeholder="請選擇司機"
+        filterable
+        clearable
+        value-on-clear=""
+        style="width: 100%"
+      )
+        ElOption(
+          v-for="d in drivers"
+          :key="d.uid"
+          :label="d.displayName || `UID:${d.uid.slice(0, 6)}`"
+          :value="d.uid"
+        )
 
     .SettingsDiscountCodes__field
       label.SettingsDiscountCodes__label 適用行程類型（不選＝全部適用）
@@ -287,6 +369,28 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 18px;
   letter-spacing: 0.06em;
   color: $amber;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.SettingsDiscountCodes__source-tag {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  padding: 2px 9px;
+}
+
+.SettingsDiscountCodes__source-tag.is-driver {
+  color: #fcd34d;
+  background: rgba(252, 211, 77, 0.1);
+  border-color: rgba(252, 211, 77, 0.35);
 }
 
 .SettingsDiscountCodes__item-meta {

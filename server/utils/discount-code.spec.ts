@@ -74,6 +74,40 @@ describe('validateDiscountCodeBody', () => {
   it('allowedOrderTypes 含非字串元素回 error', () => {
     expect(validateDiscountCodeBody({ ...base, allowedOrderTypes: [1, 'charter'] }).ok).toBe(false);
   });
+
+  it('source 預設為 admin，ownerUid 為 null', () => {
+    const r = validateDiscountCodeBody({ ...base });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.source).toBe('admin');
+      expect(r.value.ownerUid).toBeNull();
+    }
+  });
+
+  it('source=driver-referral 但無 ownerUid 回 error', () => {
+    const r = validateDiscountCodeBody({ ...base, source: 'driver-referral' });
+    expect(r.ok).toBe(false);
+  });
+
+  it('source=driver-referral + ownerUid 通過並 trim', () => {
+    const r = validateDiscountCodeBody({ ...base, source: 'driver-referral', ownerUid: '  Udriver123  ' });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.source).toBe('driver-referral');
+      expect(r.value.ownerUid).toBe('Udriver123');
+    }
+  });
+
+  it('source 為非法值回 error', () => {
+    expect(validateDiscountCodeBody({ ...base, source: 'referral-welcome' }).ok).toBe(false);
+    expect(validateDiscountCodeBody({ ...base, source: 'bogus' }).ok).toBe(false);
+  });
+
+  it('source=admin 顯式指定亦合法', () => {
+    const r = validateDiscountCodeBody({ ...base, source: 'admin' });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.source).toBe('admin');
+  });
 });
 
 describe('toDiscountCodeDto', () => {
@@ -122,6 +156,16 @@ describe('toDiscountCodeDto', () => {
     });
     expect(dto.source).toBe('referral-welcome');
     expect(dto.ownerUid).toBe('Uxxxx');
+  });
+
+  it('保留 driver-referral 來源與司機 ownerUid', () => {
+    const dto = toDiscountCodeDto({
+      code: 'JOHNREF',
+      source: 'driver-referral',
+      ownerUid: 'Udriver123',
+    });
+    expect(dto.source).toBe('driver-referral');
+    expect(dto.ownerUid).toBe('Udriver123');
   });
 
   it('非法 source 值回退為 admin', () => {

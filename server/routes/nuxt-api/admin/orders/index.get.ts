@@ -107,6 +107,9 @@ export default defineEventHandler(async (event) => {
         assignedDriverId: (d.assignedDriverId as string) ?? '',
         cancelReason: (d.cancelReason as string | undefined) ?? null,
         createdAt: d.createdAt?.toMillis?.() ?? 0,
+        // 折扣碼 snapshot（用於 admin/orders 列表反查 discount_codes.ownerUid 顯示來源司機）
+        discountCode: (d.discountCode as string | null | undefined) ?? null,
+        discountAmount: typeof d.discountAmount === 'number' ? (d.discountAmount as number) : 0,
         // 訂單 doc 自帶的乘客欄位（admin 手動建立的 guest 訂單會有；乘客自助下單無）
         storedPassengerName: (d.passengerName as string | undefined) ?? '',
         contactPhone: (d.contactPhone as string | undefined) ?? null,
@@ -183,6 +186,28 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    // 折扣碼歸屬司機反查：batch 讀 discount_codes/{code} 取 source/ownerUid，
+    // 若為 driver-referral 則 referralDriverId = ownerUid（admin/orders 列表會 join drivers 顯示名稱）
+    const discountCodes = Array.from(new Set(
+      baseOrders.map((o) => o.discountCode).filter((c): c is string => !!c),
+    ));
+    const referralDriverByCode = new Map<string, string>();
+    if (discountCodes.length > 0) {
+      try {
+        const refs = discountCodes.map((c) => db.collection('discount_codes').doc(c));
+        const snaps = await db.getAll(...refs);
+        snaps.forEach((s) => {
+          if (!s.exists) return;
+          const data = s.data() ?? {};
+          if (data.source === 'driver-referral' && typeof data.ownerUid === 'string' && data.ownerUid) {
+            referralDriverByCode.set(s.id, data.ownerUid);
+          }
+        });
+      } catch (err) {
+        console.error('[admin/orders] discount_codes batch read failed:', err);
+      }
+    }
+
     // 乘客名：訂單 doc 自帶（手動訂單）優先，否則回退 users/{userId}.displayName
     // 乘客電話：訂單 doc 的 contactPhone（乘客下單 / 手動訂單皆會寫入）
     const orders = baseOrders.map((o) => {
@@ -191,6 +216,7 @@ export default defineEventHandler(async (event) => {
         ...rest,
         passengerName: storedPassengerName || (userMap.get(o.userId)?.displayName ?? ''),
         passengerPhone: contactPhone,
+        referralDriverId: o.discountCode ? (referralDriverByCode.get(o.discountCode) ?? null) : null,
       };
     });
 

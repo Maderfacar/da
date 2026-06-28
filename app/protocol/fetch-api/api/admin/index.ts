@@ -243,6 +243,15 @@ export interface AdminOrder {
    * 型別與 app/protocol/fetch-api/api/order/type.d.ts::OrderCharter 對齊。
    */
   charter?: OrderCharter | null
+  /** 訂單建立時套用的折扣碼字串（無折扣為 null） */
+  discountCode?: string | null
+  /** 折扣金額 NT$（無折扣為 0） */
+  discountAmount?: number
+  /**
+   * 若訂單套用的折扣碼為司機歸屬碼（discount_codes.source='driver-referral'），
+   * 此欄為司機 lineUid；可 join drivers 顯示名稱做歸屬追蹤。其他情況為 null。
+   */
+  referralDriverId?: string | null
 }
 
 export interface PatchAdminOrderBody {

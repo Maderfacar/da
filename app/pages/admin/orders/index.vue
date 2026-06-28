@@ -226,6 +226,12 @@ const DriverNameOf = (uid: string) => {
   return drivers.value.find((d) => d.uid === cleanUid)?.displayName ?? `UID:${cleanUid.slice(0, 6)}`;
 };
 
+/** 折扣碼歸屬司機名（由 server batch join 後 referralDriverId 直接給 lineUid，前端只負責 join displayName） */
+const ReferralDriverNameOf = (referralDriverId: string | null | undefined) => {
+  if (!referralDriverId) return null;
+  return drivers.value.find((d) => d.uid === referralDriverId)?.displayName ?? `UID:${referralDriverId.slice(0, 6)}`;
+};
+
 // A2 醜點系統 Phase 1：載 passenger 集合（uglyCount / blacklisted）供列表紅旗 + modal 顯示
 const passengers = ref<AdminUser[]>([]);
 const ApiLoadPassengers = async () => {
@@ -1309,6 +1315,11 @@ onMounted(() => {
       )
         .PageAdminOrders__cell.is-id(data-label="訂單")
           span.PageAdminOrders__order-id \#{{ o.orderId.slice(0, 8).toUpperCase() }}
+          //- 折扣碼司機歸屬：乘客輸入了 driver-referral 折扣碼時顯示「來源：張司機」
+          span.PageAdminOrders__referral-chip(
+            v-if="ReferralDriverNameOf(o.referralDriverId)"
+            :title="`折扣碼 ${o.discountCode} 歸屬此司機`"
+          ) 來源：{{ ReferralDriverNameOf(o.referralDriverId) }}
         .PageAdminOrders__cell.is-type(data-label="行程")
           span.PageAdminOrders__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
         .PageAdminOrders__cell.is-time(data-label="用車時間") {{ $dayjs(o.pickupDateTime).format('MM/DD HH:mm') }}
@@ -2226,6 +2237,21 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 12px;
   color: $muted;
   letter-spacing: 0.05em;
+}
+
+.PageAdminOrders__referral-chip {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #fcd34d;
+  background: rgba(252, 211, 77, 0.12);
+  border: 1px solid rgba(252, 211, 77, 0.35);
+  border-radius: 100px;
+  padding: 2px 8px;
+  cursor: help;
 }
 
 .PageAdminOrders__type-badge {

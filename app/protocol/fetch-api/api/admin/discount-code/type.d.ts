@@ -1,5 +1,13 @@
 // Admin 折扣碼 types（對齊 server/utils/discount-code.ts DiscountCodeDto）
 
+/**
+ * 折扣碼來源：
+ *   - admin：admin 後台手動建立（一般碼）
+ *   - referral-welcome / referral-reward：推薦系統鑄造（admin 不可編輯）
+ *   - driver-referral：歸屬某司機的推薦碼（admin 建立、ownerUid 為司機 lineUid）
+ */
+export type DiscountCodeSource = 'admin' | 'referral-welcome' | 'referral-reward' | 'driver-referral';
+
 export interface DiscountCodeDto {
   code: string;
   discountAmount: number;
@@ -15,6 +23,9 @@ export interface DiscountCodeDto {
   createdAt: string | null;
   updatedBy: string;
   updatedAt: string | null;
+  source: DiscountCodeSource;
+  /** source='driver-referral' 時為司機 lineUid；其他來源為 null */
+  ownerUid: string | null;
 }
 
 export interface DiscountCodeListRes {
@@ -33,6 +44,10 @@ export interface DiscountCodeWriteBody {
   minFare?: number | null;
   allowedOrderTypes?: string[] | null;
   enabled?: boolean;
+  /** admin 後台僅可建立 'admin' / 'driver-referral'；不填預設 'admin' */
+  source?: 'admin' | 'driver-referral';
+  /** source='driver-referral' 時必填司機 lineUid */
+  ownerUid?: string | null;
 }
 
 export interface CreateDiscountCodeBody extends DiscountCodeWriteBody {

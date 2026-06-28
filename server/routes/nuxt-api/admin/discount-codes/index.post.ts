@@ -40,13 +40,27 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
+
+    const v = bodyCheck.value;
+
+    // source='driver-referral' 時驗證 ownerUid 對應的 user 確實是 driver
+    if (v.source === 'driver-referral' && v.ownerUid) {
+      const userSnap = await db.collection('users').doc(v.ownerUid).get();
+      if (!userSnap.exists) {
+        return badRequestError({ zh_tw: '歸屬司機不存在', en: 'Owner driver not found', ja: '所属ドライバーが存在しません' });
+      }
+      const roles = userSnap.data()?.roles;
+      if (!Array.isArray(roles) || !roles.includes('driver')) {
+        return badRequestError({ zh_tw: '指定使用者不是司機', en: 'Specified user is not a driver', ja: '指定されたユーザーはドライバーではありません' });
+      }
+    }
+
     const ref = db.collection('discount_codes').doc(codeCheck.value);
     const existing = await ref.get();
     if (existing.exists) {
       return badRequestError({ zh_tw: '折扣碼已存在', en: 'Discount code already exists', ja: '割引コードは既に存在します' });
     }
 
-    const v = bodyCheck.value;
     await ref.set({
       code: codeCheck.value,
       discountAmount: v.discountAmount,
@@ -58,6 +72,8 @@ export default defineEventHandler(async (event) => {
       allowedOrderTypes: v.allowedOrderTypes,
       enabled: v.enabled,
       redemptionCount: 0,
+      source: v.source,
+      ownerUid: v.ownerUid,
       createdBy: auth.lineUid,
       createdAt: FieldValue.serverTimestamp(),
       updatedBy: auth.lineUid,
@@ -70,7 +86,7 @@ export default defineEventHandler(async (event) => {
       action: 'discount_code.create',
       targetType: 'discount_code',
       targetId: codeCheck.value,
-      payload: { discountAmount: v.discountAmount, enabled: v.enabled },
+      payload: { discountAmount: v.discountAmount, enabled: v.enabled, source: v.source, ownerUid: v.ownerUid },
     });
 
     return successResponse<PostRes>({ code: codeCheck.value });
