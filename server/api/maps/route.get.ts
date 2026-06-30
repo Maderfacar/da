@@ -12,7 +12,7 @@
 
 import { LRUCache } from 'lru-cache';
 import { boundsFromPolyline, type LatLng, type LatLngBounds } from '@@/utils/polyline';
-import { getSimpleRoute } from '@@/utils/route-metrics';
+import { getSimpleRoute, getRouteMetricsV2 } from '@@/utils/route-metrics';
 import { getRouteWithFare } from '@@/utils/fare-calculator-v2';
 import { getFareRules, getFareRulesEpoch } from '@@/utils/fare-rules-cache';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
@@ -120,10 +120,51 @@ export default defineEventHandler(async (event) => {
 
   // ── 純幾何模式 ─────────────────────────────────────────────────────────────
   if (!fareMode) {
+    // Charter Fare V1（2026-06-30 修）：orderType=charter 走完整 RouteMetrics（含 elevation/OSM/counties），
+    // 讓 client 端 calculateCharterFareV2 拿到真實山區訊號 — 與接送機 fareMode 一致，
+    // 修掉「booking 預估山區=1.0、扣款時 server 重算 ×1.4~1.6 跳價」的 UX 地雷。
+    if (orderType === 'charter') {
+      try {
+        const rules = await getFareRules();
+        const m = await getRouteMetricsV2({
+          origin,
+          destination,
+          waypoints,
+          apiKey: googleMapsApiKey,
+          fetchReturnLeg: waypoints.length > 0,
+          highwayPatterns: rules.surfaceSurcharge.highwayPatterns,
+        });
+        const returnLegPolyline = m.returnLegPolyline ?? null;
+        const X = waypoints.length > 0 ? waypoints[waypoints.length - 1]! : null;
+        const isRoundTrip = X
+          ? detectRoundTrip(origin, X, destination, returnLegPolyline, rules.charter)
+          : null;
+        const data: RouteRes = {
+          polyline: m.polylineEncoded,
+          bounds: boundsFromPolyline(m.polylineEncoded),
+          distance_km: round1(m.distanceKm),
+          duration_minutes: Math.round(m.durationSec / 60),
+          fareVersion: null,
+          fareTotal: null,
+          fareBreakdown: null,
+          routeMetrics: m,
+          static_duration_minutes: Math.round(m.staticDurationSec / 60),
+          pure_jam_minutes: Math.round(m.pureJamMinutes),
+          isRoundTrip,
+          returnLegPolyline,
+        };
+        routeCache.set(cacheKey, data);
+        return { data, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } };
+      } catch (err) {
+        console.error('[maps/route] charter metrics mode failed, falling back to simple route:', err);
+        // 降級到 simple route：山區訊號退回缺省（client 仍會算出基本價，較舊行為無差）
+      }
+    }
+
     try {
       const route = await getSimpleRoute({ origin, destination, waypoints, apiKey: googleMapsApiKey });
 
-      // Charter Fare V1：orderType=charter + 有 stopover → 額外取 X→A polyline + 算 isRoundTrip
+      // 非 charter / charter 完整 metrics 失敗降級：保留舊純幾何邏輯。
       let isRoundTrip: boolean | null = null;
       let returnLegPolyline: string | null = null;
       if (orderType === 'charter' && waypoints.length > 0) {

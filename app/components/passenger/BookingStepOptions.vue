@@ -6,7 +6,6 @@ import {
   type OrderType,
   type CharterPlanKey,
   type CharterFareBreakdownV2,
-  type RouteMetrics,
 } from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
@@ -159,30 +158,11 @@ const canGoNext = computed(
 
 const luggageTypes = computed(() => storeConfig.luggageTypes);
 
-// ── 車資試算（Fare V2：明細由 server 計算；charter 走純幾何 + client charter 引擎）─
+// ── 車資試算（Fare V2：明細由 server 計算；charter 走 server 完整 RouteMetrics + client charter 引擎）─
 const fareResult = ref<MapsRouteRes | null>(null);
 const fareLoading = ref(false);
 const charterResult = ref<CharterFareBreakdownV2 | null>(null);
 let _fareTimer: ReturnType<typeof setTimeout> | null = null;
-
-// charter 估價：純幾何模式取 isRoundTrip + distanceKm → client calculateCharterFareV2（mountain 訊號取不到一律 1.0；下訂時 server 編排會用真實 Routes API 重算）
-const _BuildCharterMetrics = (distanceKm: number): RouteMetrics => ({
-  distanceKm,
-  staticDurationSec: 0,
-  durationSec: 0,
-  pureJamMinutes: 0,
-  freeFlowKmh: 80,
-  polylineEncoded: '',
-  elevationDiffM: 0,
-  freewayKm: 0,
-  hasTrunk: false,
-  countiesVisited: [],
-  straightLineKm: distanceKm,
-  sinuosity: 1.0,
-  computedAt: Date.now(),
-  // 預估階段不打 elevation / OSM / counties → 三 source 全 false（mountain 訊號 0 分 → 山區係數 1.0）
-  apiSourcesOk: { routes: true, elevation: false, osm: false, counties: false },
-});
 
 const ApiFetchCharterFare = async () => {
   charterResult.value = null;
@@ -210,7 +190,8 @@ const ApiFetchCharterFare = async () => {
 
   fareLoading.value = true;
   const validWps = props.stopovers.filter((s) => s.lat !== 0);
-  // 純幾何模式：不帶 vehicleType / pickupTime，但帶 orderType=charter（server 會回 isRoundTrip + returnLegPolyline）
+  // 2026-06-30 修：charter 也走完整 RouteMetrics（server 端 orderType=charter 會回 elevation/OSM/counties +
+  // isRoundTrip + returnLegPolyline）— 預估山區係數 = 真實值，避免「乘客看到 8000、扣款 13000」UX 地雷。
   const res = await $api.GetMapsRoute({
     origin: `${props.pickupLocation.lat},${props.pickupLocation.lng}`,
     destination: `${props.dropoffLocation.lat},${props.dropoffLocation.lng}`,
@@ -218,7 +199,7 @@ const ApiFetchCharterFare = async () => {
     orderType: 'charter',
   });
   fareLoading.value = false;
-  if (res.status.code !== 200 || !res.data) {
+  if (res.status.code !== 200 || !res.data || !res.data.routeMetrics) {
     emit('charterCalc', null);
     return;
   }
@@ -233,7 +214,7 @@ const ApiFetchCharterFare = async () => {
     const breakdown = calculateCharterFareV2(
       fleetVehicle,
       planKeys,
-      _BuildCharterMetrics(res.data.distance_km),
+      res.data.routeMetrics,
       res.data.isRoundTrip ?? false,
       pickup,
       estimatedEnd,
