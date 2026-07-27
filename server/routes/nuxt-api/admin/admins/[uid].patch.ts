@@ -29,6 +29,7 @@ const VALID_PERMISSIONS: Permission[] = [
   'canBroadcast',
   'canViewFinance',
   'canManageFleet',
+  'canManageFareRules',
 ];
 
 interface PatchAdminBody {

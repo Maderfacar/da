@@ -26,15 +26,19 @@ export type Permission =
   | 'canManageOrders'
   | 'canBroadcast'
   | 'canViewFinance'
-  | 'canManageFleet';
+  | 'canManageFleet'
+  | 'canManageFareRules';
 
 type AdminLevel = NonNullable<AuthOk['level']>;
 
 /**
  * level → 預設權限對應表
  * - super：全部
- * - admin：除 canManageAdmins 外全部
+ * - admin：除 canManageAdmins、canManageFareRules 外全部
  * - assistant：僅 canManageOrders、canBroadcast
+ *
+ * canManageFareRules（車資進階規則）：預設僅 super；admin/assistant 需靠
+ * admins.permissions override 逐一勾選開通（決策 2026-07-28）。
  */
 export const LEVEL_TABLE: Record<AdminLevel, ReadonlySet<Permission>> = {
   super: new Set<Permission>([
@@ -44,6 +48,7 @@ export const LEVEL_TABLE: Record<AdminLevel, ReadonlySet<Permission>> = {
     'canBroadcast',
     'canViewFinance',
     'canManageFleet',
+    'canManageFareRules',
   ]),
   admin: new Set<Permission>([
     'canManageDrivers',

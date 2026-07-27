@@ -9,11 +9,11 @@ const authStore = StoreAuth();
 
 // ── 頂層分頁 ───────────────────────────────────────────────────
 type MainTab = 'access' | 'fleet' | 'tags' | 'fare' | 'promotions' | 'legal' | 'integrations' | 'system';
-const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean }> = [
+const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean; needFarePerm?: boolean }> = [
   { key: 'access',       label: '存取控制' },
   { key: 'fleet',        label: '車型 / 行李 / 加值服務' },
   { key: 'tags',         label: '車輛標籤' },
-  { key: 'fare',         label: '車資進階規則', superOnly: true },
+  { key: 'fare',         label: '車資進階規則', needFarePerm: true },
   { key: 'promotions',   label: '折扣碼' },
   { key: 'legal',        label: '文件管理' },
   { key: 'integrations', label: 'LINE Bot / 地圖' },
@@ -21,7 +21,10 @@ const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean }> = [
 ];
 const mainTab = ref<MainTab>('access');
 const visibleMainTabs = computed(() =>
-  MAIN_TABS.filter((t) => !t.superOnly || authStore.isSuper),
+  MAIN_TABS.filter((t) =>
+    (!t.superOnly || authStore.isSuper)
+    && (!t.needFarePerm || authStore.canManageFareRules),
+  ),
 );
 
 // ── 系統設定（只讀展示）────────────────────────────────────────
@@ -205,11 +208,13 @@ const PERMISSION_LIST: { key: AdminPermission; label: string; hint: string }[] =
   { key: 'canBroadcast',     label: 'LINE 廣播',     hint: '發送訊息給乘客 / 司機' },
   { key: 'canViewFinance',   label: '檢視金流',     hint: '帳務 / 司機薪資資訊' },
   { key: 'canManageFleet',   label: '管理車隊設定', hint: '車型 / 行李 / 加值服務' },
+  { key: 'canManageFareRules', label: '管理車資規則', hint: '編輯車資進階規則（預設僅 super）' },
 ];
 
 // level 對應 LEVEL_TABLE（與 server require-permission.ts 對齊）
+// canManageFareRules 預設僅 super；admin/assistant 需靠 override 勾選開通
 const LEVEL_DEFAULTS: Record<'super' | 'admin' | 'assistant', ReadonlySet<AdminPermission>> = {
-  super: new Set(['canManageAdmins', 'canManageDrivers', 'canManageOrders', 'canBroadcast', 'canViewFinance', 'canManageFleet']),
+  super: new Set(['canManageAdmins', 'canManageDrivers', 'canManageOrders', 'canBroadcast', 'canViewFinance', 'canManageFleet', 'canManageFareRules']),
   admin: new Set(['canManageDrivers', 'canManageOrders', 'canBroadcast', 'canViewFinance', 'canManageFleet']),
   assistant: new Set(['canManageOrders', 'canBroadcast']),
 };
@@ -334,7 +339,7 @@ const fareRulesUpdatedBy = ref<string | null>(null);
 const fareRulesUpdatedAt = ref<string | null>(null);
 
 const ApiLoadFareRules = async () => {
-  if (!authStore.isSuper) return;
+  if (!authStore.canManageFareRules) return;
   fareRulesLoading.value = true;
   fareRulesError.value = '';
   try {
@@ -775,8 +780,8 @@ const ClickSaveFareRules = async () => {
       span.PageAdminSettings__section-title 車輛標籤
     AdminSettingsTags
 
-  //- 車資進階規則 v1（Fare V2，僅 super 可見）
-  .PageAdminSettings__section(v-show="authStore.isSuper && mainTab === 'fare'")
+  //- 車資進階規則 v1（Fare V2，需 canManageFareRules 權限）
+  .PageAdminSettings__section(v-show="authStore.canManageFareRules && mainTab === 'fare'")
     .PageAdminSettings__section-head
       span.PageAdminSettings__section-label FARE RULES
       span.PageAdminSettings__section-title 車資進階規則

@@ -417,7 +417,8 @@ export type AdminPermission =
   | 'canManageOrders'
   | 'canBroadcast'
   | 'canViewFinance'
-  | 'canManageFleet';
+  | 'canManageFleet'
+  | 'canManageFareRules';
 
 export interface AdminEntry {
   uid: string

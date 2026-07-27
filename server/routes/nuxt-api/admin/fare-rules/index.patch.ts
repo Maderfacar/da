@@ -10,11 +10,12 @@
  *   - invalidate in-memory cache（下次估價立即生效）
  *   - audit log: fare_rules.update with { before, after }
  *
- * 權限：super level admin only。
+ * 權限：canManageFareRules（預設僅 super；admin/assistant 可經 permissions override 開通）+ PIN step-up。
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog } from '@@/utils/audit-log';
 import { requirePinSession } from '@@/utils/require-pin-session';
 import {
@@ -28,8 +29,8 @@ import type { FareRulesRes } from './index.get';
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
-  if (auth.level !== 'super') {
-    return forbiddenError({ zh_tw: '需要最高管理員權限', en: 'Super admin required', ja: 'スーパー管理者権限が必要です' });
+  if (!hasPermission(auth, 'canManageFareRules')) {
+    return forbiddenError({ zh_tw: '需要車資規則管理權限', en: 'canManageFareRules required', ja: '料金ルール管理権限が必要です' });
   }
   // W2：敏感操作 PIN 二次確認
   const pinOk = await requirePinSession(event, auth);

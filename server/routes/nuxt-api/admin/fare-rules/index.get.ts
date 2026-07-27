@@ -4,10 +4,11 @@
  * 取得 Fare V2 車資進階規則（fare_rules/v1）。doc 不存在或格式錯 → 回 DEFAULT_FARE_RULES
  * 並標記 isDefault=true，讓 admin UI 一打開就有完整可編輯欄位。
  *
- * 權限：super level admin only。
+ * 權限：canManageFareRules（預設僅 super；admin/assistant 可經 permissions override 開通）。
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+import { hasPermission } from '@@/utils/require-permission';
 import {
   validateFareRules,
   FARE_RULES_COLLECTION,
@@ -26,8 +27,8 @@ export interface FareRulesRes {
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
   if (!auth.ok) return authFailResponse(auth);
-  if (auth.level !== 'super') {
-    return forbiddenError({ zh_tw: '需要最高管理員權限', en: 'Super admin required', ja: 'スーパー管理者権限が必要です' });
+  if (!hasPermission(auth, 'canManageFareRules')) {
+    return forbiddenError({ zh_tw: '需要車資規則管理權限', en: 'canManageFareRules required', ja: '料金ルール管理権限が必要です' });
   }
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();

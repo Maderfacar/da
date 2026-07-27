@@ -30,6 +30,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // P18：admin 細粒度權限（讀失敗或非 admin → null）；client SDK 受 firestore.rules 限制
   // 部署 rules 前讀失敗會降級 null，但不影響 admin 入口（roles 仍是依據）。
   const level = ref<AdminLevel | null>(null);
+  // P34 / 車資權限：admins.permissions 細粒度 override（讀失敗或未設 → 空物件）
+  const adminPermissions = ref<Partial<Record<string, boolean>>>({});
   const authResolved = ref(false);
   const liffReady = ref(false);
   const lineAccessToken = ref('');
@@ -106,6 +108,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const isApprovedDriver = computed(() => isDriver.value && approved.value);
   // P18：最高管理員（僅 super 可看到「設定 level」「撤銷管理員」按鈕）
   const isSuper = computed(() => isAdmin.value && level.value === 'super');
+  // 車資進階規則權限：override 優先；否則預設僅 super（與 server LEVEL_TABLE 對齊，決策 2026-07-28）
+  const canManageFareRules = computed(() => {
+    if (!isAdmin.value) return false;
+    const override = adminPermissions.value?.canManageFareRules;
+    if (typeof override === 'boolean') return override;
+    return level.value === 'super';
+  });
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
@@ -114,6 +123,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     roles.value = [];
     approved.value = true;
     level.value = null;
+    adminPermissions.value = {};
     idToken.value = '';
     lineAccessToken.value = '';
     lineProfile.value = null;
@@ -338,6 +348,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const raw = adminData.level;
       if (raw === 'super' || raw === 'admin' || raw === 'assistant') {
         level.value = raw;
+      }
+      // 車資權限等細粒度 override（P34）；讀不到 → 保持空物件走 level 預設
+      const rawPerms = adminData.permissions;
+      if (rawPerms && typeof rawPerms === 'object') {
+        adminPermissions.value = rawPerms as Partial<Record<string, boolean>>;
       }
       // Admin 2FA：totpEnrolledAt 存在即視為已綁定（值為 Firestore Timestamp / 也可能為 null）
       admin2faEnrolled.value = !!adminData.totpEnrolledAt;
@@ -809,7 +824,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication, referralCode,
     admin2faEnrolled, admin2faSessionVerified,
-    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, idToken,
+    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
     // W4：lazy load
     EnsureUserDocLoaded, EnsureDriverDocLoaded, EnsureAdminDocLoaded, EnsureAdmin2faSessionVerified,
