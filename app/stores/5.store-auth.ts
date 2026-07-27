@@ -280,6 +280,29 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
       // 推薦獎勵機制 Phase 3：載入自己的 referralCode
       referralCode.value = typeof data.referralCode === 'string' ? data.referralCode : '';
+
+      // W1：persistent claims 一致性 — 若 Firestore roles 與目前 ID token claims.roles 不一致，
+      // 或 users.claimsUpdatedAt 比手上 token 新（admin 剛改過角色）→ 強制刷新一次 token，
+      // 讓 firestore.rules 立即拿到新角色（免重登、免重啟 LINE）。
+      // _LoadUserDoc 由 sticky loader 包住，一個 session 只跑一次 → 最多刷新一次。
+      try {
+        const { getAuth } = await import('firebase/auth');
+        const current = getAuth(firebaseApp).currentUser;
+        if (current) {
+          const tokenRes = await current.getIdTokenResult();
+          const claimRoles = Array.isArray(tokenRes.claims.roles) ? (tokenRes.claims.roles as string[]) : [];
+          const sortedClaim = [...claimRoles].sort().join(',');
+          const sortedFs = [...roles.value].sort().join(',');
+          const claimsUpdatedAt = (data.claimsUpdatedAt as { toDate?: () => Date } | undefined)?.toDate?.();
+          const tokenIssuedAt = tokenRes.issuedAtTime ? new Date(tokenRes.issuedAtTime) : null;
+          const claimsStale = !!(claimsUpdatedAt && tokenIssuedAt && claimsUpdatedAt.getTime() > tokenIssuedAt.getTime());
+          if (sortedClaim !== sortedFs || claimsStale) {
+            idToken.value = await current.getIdToken(true);
+          }
+        }
+      } catch (refreshErr) {
+        console.warn('[StoreAuth] claims refresh check failed (non-fatal):', refreshErr);
+      }
     } catch (err) {
       // Firestore 讀失敗（多半是 client Rules 限制）— 不影響 server-side line-exchange 已寫入的 roles
       const e = err instanceof Error ? err : new Error(String(err));

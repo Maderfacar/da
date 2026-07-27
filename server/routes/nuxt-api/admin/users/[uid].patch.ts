@@ -26,6 +26,7 @@ import { hasPermission } from '@@/utils/require-permission';
 import { writeAuditLog, type AuditAction } from '@@/utils/audit-log';
 import { sendLinePush } from '@@/utils/line-push';
 import { requirePinSession } from '@@/utils/require-pin-session';
+import { syncUserClaims } from '@@/utils/sync-user-claims';
 import { isDriverCategory } from '~shared/types/driver-category';
 
 type Role = 'passenger' | 'driver' | 'admin';
@@ -167,6 +168,9 @@ export default defineEventHandler(async (event) => {
         });
       }
 
+      // W1：同步 persistent claims，讓新加的角色即時生效（client getIdToken(true) 刷新即可）
+      await syncUserClaims(adminAuth, db, uid, { roles: initialRoles });
+
       return successResponse({ uid, ...newData });
     }
 
@@ -262,6 +266,13 @@ export default defineEventHandler(async (event) => {
         // 僅 client-side Firestore Rules 的 admin-only read 會延後到 idToken 自然過期才失效
         console.warn('[admin/users.patch] revokeRefreshTokens failed (non-fatal):', err);
       }
+    }
+
+    // W1：roles 有變動 → 同步 persistent claims（讀更新後的 roles）。
+    // 加角色：client getIdToken(true) 刷新即生效，免重登。
+    // 撤 admin：上方 revokeRefreshTokens 已強制失效；此處把持久 claims 也降權，二者並行更穩。
+    if (body!.addRole !== undefined || body!.removeRole !== undefined) {
+      await syncUserClaims(adminAuth, db, uid);
     }
 
     // P25-2 audit log：依 body 推算 action（一次 PATCH 可能對應多種 action，逐筆寫）

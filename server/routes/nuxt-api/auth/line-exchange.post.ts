@@ -10,6 +10,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
 import { DEFAULT_REFERRAL_USER_FIELDS, generateUniqueReferralCode } from '@@/utils/referral';
+import { syncUserClaims } from '@@/utils/sync-user-claims';
 
 interface LineUserInfo {
   sub: string
@@ -215,7 +216,12 @@ export default defineEventHandler(async (event) => {
       console.error('[line-exchange] Firestore read failed (non-fatal):', err);
     }
 
-    // ── 5. 建立 Firebase Custom Token ────────────────────────
+    // ── 5. 同步 persistent custom claims（W1）─────────────────
+    // firestore.rules 依 token.roles；設持久 claims 讓 client getIdToken(true) 刷新即生效，
+    // 免等 1h TTL、免重登。非致命（user 剛在 §3 建立，理應存在；失敗只 warn 不阻擋登入）。
+    await syncUserClaims(auth, db, lineProfile.sub, { roles });
+
+    // ── 6. 建立 Firebase Custom Token ────────────────────────
     let customToken: string;
     try {
       customToken = await auth.createCustomToken(uid, { roles });
