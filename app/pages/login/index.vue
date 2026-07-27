@@ -6,8 +6,9 @@
 //   - 已登入 → middleware 在 navigation 時把 user replace 到對應端
 //   - watch 兜底 race：authResolved 從 false → true 時 router 無 navigation event，
 //     middleware 不重跑，故 page 內 watch 用同一個 utils 算 target 補一拳（無分歧）。
-import { resolveAuthTarget } from '~shared/utils/auth-target';
+import { resolveDestination } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
+import { stripDeepLinkParams } from '~shared/auth/deep-link';
 
 definePageMeta({ layout: false, middleware: ['role'] });
 
@@ -26,17 +27,16 @@ watch(
       query: route.query as Record<string, string | string[] | null | undefined>,
       pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
     });
-    if (liffTarget && liffTarget !== route.path) {
-      navigateTo(liffTarget, { replace: true });
-      return;
-    }
-    const target = resolveAuthTarget({
+    // W2：與 middleware/role 共用 resolveDestination（授權校驗）+ 消費深連結，邏輯零分歧
+    const dest = resolveDestination({
       entryPath: route.path,
       isSignIn: authStore.isSignIn,
       roles: authStore.roles,
       approved: authStore.approved,
+      liffTarget,
     });
-    if (target && target !== route.path) navigateTo(target, { replace: true });
+    if (liffTarget) stripDeepLinkParams();
+    if (dest && dest !== route.path) navigateTo(dest, { replace: true });
   },
   { immediate: true },
 );

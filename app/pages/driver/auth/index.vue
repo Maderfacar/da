@@ -10,8 +10,9 @@
 // Page 內保留 watch + onMounted 兜底：覆蓋 plugin InitAuthFlow 完成晚於 middleware 跑的 race；
 // onMounted async await WaitForAuthResolved 是 2026-06-16 修「新用戶卡 /driver/auth」的雙保險，
 // 與 middleware 共用同一個 utils 算 target，邏輯零分歧。
-import { resolveAuthTarget } from '~shared/utils/auth-target';
+import { resolveDestination } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
+import { stripDeepLinkParams } from '~shared/auth/deep-link';
 
 definePageMeta({ layout: false, ssr: false, middleware: ['role'] });
 
@@ -28,18 +29,17 @@ const _RouteByRoles = (): boolean => {
     query: route.query as Record<string, string | string[] | null | undefined>,
     pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
   });
-  if (liffTarget && liffTarget !== route.path) {
-    navigateTo(liffTarget, { replace: true });
-    return true;
-  }
-  const target = resolveAuthTarget({
+  // W2：與 middleware/role 共用 resolveDestination（授權校驗）+ 消費深連結，邏輯零分歧
+  const dest = resolveDestination({
     entryPath: route.path,
     isSignIn: authStore.isSignIn,
     roles: authStore.roles,
     approved: authStore.approved,
+    liffTarget,
   });
-  if (target && target !== route.path) {
-    navigateTo(target, { replace: true });
+  if (liffTarget) stripDeepLinkParams();
+  if (dest && dest !== route.path) {
+    navigateTo(dest, { replace: true });
     return true;
   }
   return false;

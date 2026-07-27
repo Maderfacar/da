@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveAuthTarget, isLoginEntry } from './auth-target';
+import { resolveAuthTarget, isLoginEntry, isPathAuthorized, resolveDestination } from './auth-target';
 
 describe('isLoginEntry', () => {
   it('treats root, /login, /driver/auth as login entries', () => {
@@ -94,5 +94,74 @@ describe('resolveAuthTarget — non-login paths', () => {
       roles: ['admin'],
       approved: false,
     })).toBe('');
+  });
+});
+
+// ── W2：深連結授權校驗 ────────────────────────────────────────
+describe('isPathAuthorized', () => {
+  it('/driver/auth、/driver/register 公開入口 → 任何已登入者可進', () => {
+    expect(isPathAuthorized('/driver/auth', [], false)).toBe(true);
+    expect(isPathAuthorized('/driver/register', ['passenger'], false)).toBe(true);
+  });
+
+  it('/driver/* 保護頁 → 需 driver 且 approved', () => {
+    expect(isPathAuthorized('/driver/trip', ['passenger', 'driver'], true)).toBe(true);
+    expect(isPathAuthorized('/driver/trip', ['passenger', 'driver'], false)).toBe(false); // 未核准
+    expect(isPathAuthorized('/driver/trip', ['passenger'], true)).toBe(false); // 非司機
+  });
+
+  it('/admin/* → 需 admin；/admin/2fa 永遠放行', () => {
+    expect(isPathAuthorized('/admin/orders', ['passenger', 'admin'], false)).toBe(true);
+    expect(isPathAuthorized('/admin/orders', ['passenger'], false)).toBe(false);
+    expect(isPathAuthorized('/admin/2fa/setup', ['passenger'], false)).toBe(true);
+  });
+
+  it('乘客頁 → 任何已登入者可進', () => {
+    expect(isPathAuthorized('/orders', ['passenger'], false)).toBe(true);
+    expect(isPathAuthorized('/home', ['passenger'], false)).toBe(true);
+  });
+});
+
+describe('resolveDestination — 深連結授權後導向（迴圈修復核心）', () => {
+  it('passenger 帶 /driver/trip 深連結 → 不進司機頁，落 /driver/register（不對踢）', () => {
+    expect(resolveDestination({
+      entryPath: '/driver/auth', isSignIn: true, roles: ['passenger'], approved: false,
+      liffTarget: '/driver/trip',
+    })).toBe('/driver/register');
+  });
+
+  it('approved driver 帶 /driver/trip 深連結 → 授權通過，進 /driver/trip', () => {
+    expect(resolveDestination({
+      entryPath: '/driver/auth', isSignIn: true, roles: ['passenger', 'driver'], approved: true,
+      liffTarget: '/driver/trip',
+    })).toBe('/driver/trip');
+  });
+
+  it('passenger 帶乘客頁深連結 /orders → 授權通過，進 /orders', () => {
+    expect(resolveDestination({
+      entryPath: '/login', isSignIn: true, roles: ['passenger'], approved: false,
+      liffTarget: '/orders',
+    })).toBe('/orders');
+  });
+
+  it('無深連結 → 走 resolveAuthTarget 授權落點', () => {
+    expect(resolveDestination({
+      entryPath: '/login', isSignIn: true, roles: ['passenger'], approved: false,
+      liffTarget: '',
+    })).toBe('/home');
+  });
+
+  it('未登入 → 空字串（顯示登入按鈕）', () => {
+    expect(resolveDestination({
+      entryPath: '/login', isSignIn: false, roles: [], approved: false,
+      liffTarget: '/driver/trip',
+    })).toBe('');
+  });
+
+  it('非 admin 帶 /admin/* 深連結 → 不進，落乘客授權落點', () => {
+    expect(resolveDestination({
+      entryPath: '/login', isSignIn: true, roles: ['passenger'], approved: false,
+      liffTarget: '/admin/orders',
+    })).toBe('/home');
   });
 });

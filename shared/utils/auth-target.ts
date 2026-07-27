@@ -37,6 +37,58 @@ export function isLoginEntry(path: string): boolean {
   return _isPassengerEntry(path) || _isDriverAuthEntry(path);
 }
 
+/**
+ * 判斷已登入 user 是否有權進入 target path（W2：login-entry 深連結授權校驗）。
+ *
+ * 用途：LIFF 深連結 `liff.state` 把目標塞進 URL，但 SDK 不驗身分。若目標是 `/driver/*`
+ * 或 `/admin/*` 而 user 無對應角色，過去 role.ts 會盲目導過去 → 被守衛彈回 → 無限迴圈。
+ * 導向前先用本函式校驗，未授權就不進，改走 resolveAuthTarget 的授權落點。
+ *
+ * 規則（與 middleware/role guard 對齊）：
+ *   - /driver/auth、/driver/register：公開司機入口，任何已登入者可進
+ *   - 其餘 /driver/*：需 driver role 且 approved
+ *   - /admin/2fa/*：永遠放行（避免自鎖）
+ *   - 其餘 /admin/*：需 admin role
+ *   - 其他（乘客頁）：任何已登入者可進
+ */
+export function isPathAuthorized(path: string, roles: readonly string[], approved: boolean): boolean {
+  if (_isDriverAuthEntry(path)) return true;
+  if (path === '/driver/register' || path.startsWith('/driver/register/')) return true;
+  if (path.startsWith('/driver')) return roles.includes('driver') && approved;
+  if (path.startsWith('/admin/2fa')) return true;
+  if (path.startsWith('/admin')) return roles.includes('admin');
+  return true;
+}
+
+export interface DestinationInput extends AuthTargetInput {
+  /** LIFF 深連結解析出的目標 path（resolveLiffTarget 的結果）；無則空字串 */
+  liffTarget: string;
+}
+
+/**
+ * login-entry 的最終導向目的地（W2 單一 SSOT，middleware/role 與登入頁共用）。
+ *
+ * 邏輯：
+ *   1. 未登入 → 空字串（顯示登入按鈕）
+ *   2. 有深連結目標且「該 user 有權進入」→ 用深連結目標（正常司機/乘客深連結）
+ *   3. 否則 → resolveAuthTarget 的授權落點（未授權深連結會落 register/home，不進去對踢）
+ */
+export function resolveDestination(input: DestinationInput): string {
+  if (!input.isSignIn) return '';
+
+  const { liffTarget, entryPath, roles, approved } = input;
+  if (liffTarget && liffTarget !== entryPath && isPathAuthorized(liffTarget, roles, approved)) {
+    return liffTarget;
+  }
+
+  return resolveAuthTarget({
+    entryPath,
+    isSignIn: input.isSignIn,
+    roles,
+    approved,
+  });
+}
+
 export function resolveAuthTarget(input: AuthTargetInput): string {
   if (!input.isSignIn) return '';
 

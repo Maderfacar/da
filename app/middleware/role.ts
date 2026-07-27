@@ -24,13 +24,46 @@
 //                      已核准 driver 強制導去 /driver/dashboard
 //
 // Ensure* 內部 sticky promise，重複進站 0 額外 Firestore read。
-import { isLoginEntry, resolveAuthTarget } from '~shared/utils/auth-target';
+import { isLoginEntry, resolveDestination } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
 import { resolveRequiredLoads } from '~shared/auth/required-loads';
+import { stripDeepLinkParams } from '~shared/auth/deep-link';
+import { noteRedirect, resetBreaker } from '~shared/auth/redirect-breaker';
 import { logMiddleware } from '~/utils/error-log';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
+
+  // W2：所有 middleware 導向都過斷路器 —— 短時間內連續導向超過門檻即中止，
+  // 讓當前頁渲染，避免任何邏輯 bug 造成無限登入迴圈（終極保險）。
+  const guardedRedirect = (
+    target: string,
+    logEvent: string,
+    logMessage: string,
+    metadata: Record<string, unknown>,
+  ) => {
+    if (!noteRedirect()) {
+      logMiddleware({
+        event: 'middleware.redirect.loop-broken',
+        severity: 'error',
+        message: `斷路器觸發，中止導向 @ ${to.path} → ${target}`,
+        metadata: { ...metadata, breaker: true, intendedTo: target },
+      });
+      resetBreaker();
+      if (import.meta.client) {
+        try {
+          ElMessage({
+            message: '登入流程發生異常，請關閉視窗重新開啟，或聯絡客服。',
+            type: 'error',
+            duration: 8000,
+          });
+        } catch { /* ElMessage 尚未 ready 時略過 */ }
+      }
+      return undefined; // 不導向 → 讓當前頁渲染，斷開重導風暴
+    }
+    logMiddleware({ event: logEvent, message: logMessage, metadata });
+    return navigateTo(target, { replace: true });
+  };
 
   if (!authStore.authResolved) return; // auth.ts middleware 已等過 12s
   if (!authStore.isSignIn) return; // auth.ts middleware 已踢到 /login
@@ -50,33 +83,30 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isDriverRegister = to.path.startsWith('/driver/register');
 
   // === W2 / W4：login-entry 分流（/、/login、/driver/auth）===
+  // W2 單一 SSOT：resolveDestination 先做「深連結授權校驗」——
+  // 深連結目標若該 user 無權進入（如 passenger 帶 /driver/trip），不再盲目導過去對踢，
+  // 改走 resolveAuthTarget 授權落點（register/home）；並把深連結 query 從 URL 剝掉，消費一次。
   if (isLoginEntry(to.path)) {
     const liffTarget = resolveLiffTarget({
       query: to.query as Record<string, string | string[] | null | undefined>,
       pathname: import.meta.client ? window.location.pathname : undefined,
     });
-    if (liffTarget && liffTarget !== to.path) {
-      logMiddleware({
-        event: 'middleware.redirect.liff-target',
-        message: `${to.path} → ${liffTarget}`,
-        metadata: { from: to.path, to: liffTarget, reason: 'liff-state-target' },
-      });
-      return navigateTo(liffTarget, { replace: true });
-    }
-    const target = resolveAuthTarget({
+    const dest = resolveDestination({
       entryPath: to.path,
       isSignIn: authStore.isSignIn,
       roles: authStore.roles,
       approved: authStore.approved,
+      liffTarget,
     });
-    if (target && target !== to.path) {
-      logMiddleware({
-        event: 'middleware.redirect.auth-target',
-        message: `${to.path} → ${target}`,
-        metadata: { from: to.path, to: target, reason: 'login-entry-resolve', roles: authStore.roles },
+    // 深連結已被消費（無論採用與否）→ 從 URL 剝掉，避免殘留 query 反覆觸發導向
+    if (liffTarget) stripDeepLinkParams();
+
+    if (dest && dest !== to.path) {
+      return guardedRedirect(dest, 'middleware.redirect.login-entry', `${to.path} → ${dest}`, {
+        from: to.path, to: dest, liffTarget: liffTarget || null, roles: authStore.roles,
       });
-      return navigateTo(target, { replace: true });
     }
+    resetBreaker();
     return;
   }
 
@@ -86,13 +116,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // /driver/register：已核准 driver 強制導去 dashboard，其他放行
   if (isDriverRegister) {
     if (authStore.roles.includes('driver') && authStore.approved) {
-      logMiddleware({
-        event: 'middleware.redirect.driver-approved',
-        message: `${to.path} → /driver/dashboard`,
-        metadata: { from: to.path, to: '/driver/dashboard', reason: 'approved-driver-on-register' },
+      return guardedRedirect('/driver/dashboard', 'middleware.redirect.driver-approved', `${to.path} → /driver/dashboard`, {
+        from: to.path, to: '/driver/dashboard', reason: 'approved-driver-on-register',
       });
-      return navigateTo('/driver/dashboard', { replace: true });
     }
+    resetBreaker();
     return;
   }
 
@@ -103,22 +131,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return;
     }
     if (!authStore.roles.includes('admin')) {
-      logMiddleware({
-        event: 'middleware.redirect.admin-denied',
-        message: `${to.path} → /home`,
-        metadata: { from: to.path, to: '/home', reason: 'not-admin', roles: authStore.roles },
+      return guardedRedirect('/home', 'middleware.redirect.admin-denied', `${to.path} → /home`, {
+        from: to.path, to: '/home', reason: 'not-admin', roles: authStore.roles,
       });
-      return navigateTo('/home', { replace: true });
     }
     // /admin/2fa/* 永遠放行（避免 setup / challenge 自己被擋進無窮迴圈）
     if (!to.path.startsWith('/admin/2fa')) {
       if (!authStore.admin2faEnrolled) {
-        logMiddleware({
-          event: 'middleware.redirect.admin-2fa-setup',
-          message: `${to.path} → /admin/2fa/setup`,
-          metadata: { from: to.path, to: '/admin/2fa/setup', reason: 'not-enrolled' },
+        return guardedRedirect('/admin/2fa/setup', 'middleware.redirect.admin-2fa-setup', `${to.path} → /admin/2fa/setup`, {
+          from: to.path, to: '/admin/2fa/setup', reason: 'not-enrolled',
         });
-        return navigateTo('/admin/2fa/setup', { replace: true });
       }
       if (!authStore.admin2faSessionVerified) {
         logMiddleware({
@@ -129,33 +151,28 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return navigateTo({ path: '/admin/2fa/challenge', query: { next: to.fullPath } }, { replace: true });
       }
     }
+    resetBreaker();
     return;
   }
 
   // === Driver 路徑（非 auth / 非 register）===
   if (isDriverPath) {
     if (authStore.roles.length === 0) {
-      logMiddleware({
-        event: 'middleware.redirect.driver-no-roles',
-        message: `${to.path} → /driver/auth`,
-        metadata: { from: to.path, to: '/driver/auth', reason: 'roles-empty' },
+      return guardedRedirect('/driver/auth', 'middleware.redirect.driver-no-roles', `${to.path} → /driver/auth`, {
+        from: to.path, to: '/driver/auth', reason: 'roles-empty',
       });
-      return navigateTo('/driver/auth', { replace: true });
     }
     if (!authStore.roles.includes('driver') || !authStore.approved) {
-      logMiddleware({
-        event: 'middleware.redirect.driver-denied',
-        message: `${to.path} → /driver/auth`,
-        metadata: {
-          from: to.path, to: '/driver/auth',
-          reason: !authStore.roles.includes('driver') ? 'not-driver' : 'not-approved',
-          roles: authStore.roles, approved: authStore.approved,
-        },
+      return guardedRedirect('/driver/auth', 'middleware.redirect.driver-denied', `${to.path} → /driver/auth`, {
+        from: to.path, to: '/driver/auth',
+        reason: !authStore.roles.includes('driver') ? 'not-driver' : 'not-approved',
+        roles: authStore.roles, approved: authStore.approved,
       });
-      return navigateTo('/driver/auth', { replace: true });
     }
+    resetBreaker();
     return;
   }
 
   // 其他受保護頁 — Ensure* 已 await 完成；無額外 redirect 規則
+  resetBreaker();
 });
