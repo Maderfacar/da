@@ -64,6 +64,9 @@ export default defineNuxtConfig({
     tdxClientId: '',                // NUXT_TDX_CLIENT_ID — 運輸部 TDX OAuth client_id（伺服器端）
     tdxClientSecret: '',            // NUXT_TDX_CLIENT_SECRET — 運輸部 TDX OAuth client_secret（伺服器端）
     totpEncKey: '',                 // NUXT_TOTP_ENC_KEY — 64 hex char AES-256-GCM key（admin 2FA TOTP secret 加密）
+    // Vercel Cron 保護：設 CRON_SECRET（無 NUXT_ 前綴，因 Vercel Cron 自動以此值注入
+    // Authorization: Bearer 標頭）；未設則 cron 清理端點放行（out-of-box 可跑，建議設）。
+    cronSecret: process.env.CRON_SECRET || '',
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
