@@ -4,6 +4,10 @@ import methods from '@/protocol/fetch-api/methods';
 export const GetFleetConfig = () =>
   methods.get<GetFleetConfigRes>('/nuxt-api/config/fleet', {});
 
+/** 乘客端季節主題：取得當前生效主題（公開端點，無需 auth） */
+export const GetSiteTheme = () =>
+  methods.get<GetSiteThemeRes>('/nuxt-api/config/theme', {});
+
 /** P23：admin 新增車型 / 行李類型 / 加值服務 */
 export const CreateFleetVehicle = (body: CreateVehiclePayload) =>
   methods.post<FleetVehicleDto>('/nuxt-api/admin/config/vehicles', body as unknown as Record<string, unknown>);

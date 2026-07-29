@@ -213,6 +213,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── site_themes / site_config 集合（乘客端季節主題）──────────
+    // - read 公開（乘客端主題經 server admin SDK 讀取；公開讀作為未來直讀 fallback，無機密）
+    // - 寫入一律走 server admin SDK（W2 admin 切換端點，含 audit log + admin 權限檢）
+    match /site_themes/{themeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /site_config/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // ── discount_codes 集合（折扣碼陽春版）─────────────────────
     // 折扣碼為機密資料；client 全面禁止讀寫，僅 server admin SDK
     // 透過 /nuxt-api/admin/discount-codes（CRUD）與 /nuxt-api/discount-codes/validate 存取。

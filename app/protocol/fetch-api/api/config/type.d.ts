@@ -84,6 +84,25 @@ interface GetFleetConfigRes {
   fareRules: Record<string, unknown>;
 }
 
+// ===== 乘客端季節主題（site-theme）=====
+// 與 shared/site-theme.ts::ResolvedTheme 對齊；tokens 為 --da-* → hex 的完整 map。
+
+interface SiteThemeHeroDto {
+  /** Hero 背景圖 URL（缺省 → 首頁維持純色 hero） */
+  bgImage?: string;
+  stripeYellow: string;
+  stripeDark: string;
+  tagColor: string;
+}
+
+interface GetSiteThemeRes {
+  activeThemeId: string;
+  name: I18nLabelDto;
+  /** --da-* token（不含 -- 前綴）→ hex 值，完整 record */
+  tokens: Record<string, string>;
+  hero: SiteThemeHeroDto;
+}
+
 // ===== Admin CRUD payload =====
 type FleetResource = 'vehicles' | 'luggage-types' | 'extras';
 

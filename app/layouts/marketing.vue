@@ -14,13 +14,16 @@
 //
 // 適用頁面：純行銷 / 公開 landing page，目前僅 `/`（pages/index.vue）使用。
 
+// 季節主題：SSR 解析生效主題並注入 [data-da-theme]（FOUC-free；只作用乘客端）
+useSiteThemeInject();
+
 const drawerOpen = ref(false);
 const ClickHamburger = () => { drawerOpen.value = true; };
 const ClickLogo = () => navigateTo('/');
 </script>
 
 <template lang="pug">
-.LayoutMarketing
+.LayoutMarketing(data-da-theme)
   //- ── 固定頂部 Nav（SSR 友善：hamburger / logo / langSwitcher 都可 SSR）──────
   nav.LayoutMarketing__top
     .LayoutMarketing__nav-left

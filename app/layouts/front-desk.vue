@@ -11,6 +11,9 @@ const authStore = StoreAuth();
 const { authResolved, isFriend, isSignIn } = storeToRefs(authStore);
 const { lineOaAddUrl } = useRuntimeConfig().public;
 
+// 季節主題：SSR 解析生效主題並注入 [data-da-theme]（FOUC-free；只作用乘客端）
+useSiteThemeInject();
+
 // W4：受保護頁兜底（roles 未 load 時顯示骨架，5s timeout 後顯示「載入失敗，請重新登入」）
 // layout 為乘客端共用容器，套 guard 即涵蓋 /home /orders 等所有 front-desk page
 const { state: rolesLoadState, ClickReLogin } = UseRolesLoadGuard();
@@ -106,7 +109,7 @@ onUnmounted(() => {
 </script>
 
 <template lang="pug">
-.LayoutFrontDesk
+.LayoutFrontDesk(data-da-theme)
   ClientOnly
     UiToast
 
