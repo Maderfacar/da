@@ -797,7 +797,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
       // LIFF token 過期 → 此時用戶明確觸發了核心動作，redirect 是可接受的
       // LINE 已同意授權的用戶此 redirect 幾乎無感（秒回）
-      liff.login({ redirectUri: window.location.href });
+      //
+      // W3：redirectUri 必須是 LINE Login channel「callback 白名單內的固定路徑」。
+      // 過去用 window.location.href（任意 path+query）→ 永遠不在白名單 →
+      // `redirect_uri does not match`（PC 外部瀏覽器必中）。收斂為端別固定路徑：
+      //   司機端 → /driver/auth；其餘（乘客端）→ /login
+      // 這樣全 app 送出的 redirectUri 僅有這兩個固定值，白名單好維護。
+      const origin = window.location.origin;
+      const isDriverCtx = window.location.pathname.startsWith('/driver');
+      liff.login({ redirectUri: isDriverCtx ? `${origin}/driver/auth` : `${origin}/login` });
       return null;
     } catch (err) {
       console.error('[StoreAuth] GetFreshLiffToken failed:', err);
