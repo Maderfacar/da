@@ -79,9 +79,13 @@ export const isHexColor = (v: unknown): v is string =>
   typeof v === 'string' && HEX_COLOR_RE.test(v);
 
 // Hero 圖網址白名單：站內 /themes/... 靜態資源，或 https 絕對網址；副檔名限影像格式。
-// 阻擋含引號 / 括號 / 分號的字串，避免注入到 CSS url() 破壞 style 區塊。
+// 阻擋含引號 / 括號 / 分號 / 空白的字串，避免注入到 CSS url() 破壞 style 區塊。
+//   - https 規則允許副檔名後帶查詢字串（?...），以放行 Firebase Storage 的
+//     signed URL（`...hero.webp?X-Goog-Signature=...`）與公開 URL；查詢字元僅限
+//     [\w\-.%=&]（不含 " ' ( ) ; 空白 \），維持 CSS url() 注入安全。
+//   - svg 刻意不列入白名單（SVG 可內嵌 script，僅開放 webp/jpg/png/avif）。
 const SAFE_LOCAL_IMG_RE = /^\/[\w\-./]+\.(?:webp|jpe?g|png|avif)$/i;
-const SAFE_HTTPS_IMG_RE = /^https:\/\/[\w\-./%?=&]+\.(?:webp|jpe?g|png|avif)$/i;
+const SAFE_HTTPS_IMG_RE = /^https:\/\/[\w\-./%]+\.(?:webp|jpe?g|png|avif)(?:\?[\w\-.%=&]*)?$/i;
 
 /** Hero 背景圖網址是否安全可注入 url()。 */
 export const isSafeThemeImageUrl = (v: unknown): v is string =>

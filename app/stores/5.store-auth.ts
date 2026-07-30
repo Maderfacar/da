@@ -115,6 +115,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     if (typeof override === 'boolean') return override;
     return level.value === 'super';
   });
+  // 乘客端季節主題管理權限：override 優先；否則預設僅 super（與 server LEVEL_TABLE 對齊）
+  const canManageThemes = computed(() => {
+    if (!isAdmin.value) return false;
+    const override = adminPermissions.value?.canManageThemes;
+    if (typeof override === 'boolean') return override;
+    return level.value === 'super';
+  });
 
   // -- Helpers ---------------------------------------------------------------------------------------
 
@@ -855,7 +862,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication, referralCode,
     admin2faEnrolled, admin2faSessionVerified,
-    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, idToken,
+    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, canManageThemes, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
     // W4：lazy load
     EnsureUserDocLoaded, EnsureDriverDocLoaded, EnsureAdminDocLoaded, EnsureAdmin2faSessionVerified,

@@ -132,9 +132,13 @@ export type AuditAction =
   | 'fare_rules.update'
   // 折扣碼（陽春版）
   | 'discount_code.create'
-  | 'discount_code.update';
+  | 'discount_code.update'
+  // 乘客端季節主題（W2：admin 切換 / 啟用停用 / Hero 主圖）
+  | 'site_theme.switch'         // 切換生效主題
+  | 'site_theme.enabled'        // 啟用 / 停用主題
+  | 'site_theme.hero_update';   // 設定 / 清除 Hero 主圖
 
-export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page' | 'fare_rules' | 'discount_code';
+export type AuditTargetType = 'driver' | 'admin' | 'order' | 'broadcast' | 'announcement' | 'fleet' | 'migration' | 'notification_template' | 'line_richmenu' | 'bot_reply' | 'user' | 'legal_page' | 'fare_rules' | 'discount_code' | 'site_theme';
 
 interface WriteAuditLogInput {
   event: H3Event;

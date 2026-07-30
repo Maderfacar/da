@@ -33,10 +33,26 @@ describe('isSafeThemeImageUrl', () => {
     expect(isSafeThemeImageUrl('https://cdn.example.com/a/hero.jpg')).toBe(true);
   });
 
+  it('接受 Firebase Storage 公開 URL 與 signed URL（副檔名後帶查詢字串）', () => {
+    // 公開 URL（無 query）
+    expect(
+      isSafeThemeImageUrl('https://storage.googleapis.com/da.appspot.com/site-themes/uid/hero-123.webp'),
+    ).toBe(true);
+    // signed URL（副檔名後接 X-Goog-* 查詢字串）
+    expect(
+      isSafeThemeImageUrl(
+        'https://storage.googleapis.com/da.appspot.com/site-themes/uid/hero-123.webp?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Signature=deadbeef01',
+      ),
+    ).toBe(true);
+  });
+
   it('拒絕含引號/括號/分號等注入字元與非影像', () => {
     expect(isSafeThemeImageUrl('/themes/x.webp");}body{display:none')).toBe(false);
+    // https 帶查詢字串仍須阻擋注入字元（括號 / 引號 / 分號）
+    expect(isSafeThemeImageUrl('https://evil.com/a.webp?x=1");}html{background:red')).toBe(false);
     expect(isSafeThemeImageUrl('javascript:alert(1)')).toBe(false);
     expect(isSafeThemeImageUrl('/themes/x.svg')).toBe(false);
+    expect(isSafeThemeImageUrl('https://evil.com/a.svg')).toBe(false);
     expect(isSafeThemeImageUrl('http://insecure.com/a.png')).toBe(false);
     expect(isSafeThemeImageUrl(undefined)).toBe(false);
   });

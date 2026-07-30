@@ -103,6 +103,39 @@ interface GetSiteThemeRes {
   hero: SiteThemeHeroDto;
 }
 
+// ===== Admin 季節主題管理（W2）=====
+// 與 shared/site-theme.ts::SiteTheme 對齊；admin list 回傳原始 doc（含 disabled）。
+
+interface AdminSiteThemeHeroDto {
+  bgImage?: string;
+  stripeYellow?: string;
+  stripeDark?: string;
+  tagColor?: string;
+}
+
+interface AdminSiteThemeDto {
+  id: string;
+  name: I18nLabelDto;
+  /** --da-* token（不含 -- 前綴）→ hex 覆寫（Partial；缺項 fallback default） */
+  tokens: Record<string, string>;
+  hero: AdminSiteThemeHeroDto;
+  enabled: boolean;
+  sortOrder: number;
+  isDefault: boolean;
+}
+
+interface GetAdminThemesRes {
+  themes: AdminSiteThemeDto[];
+  activeThemeId: string;
+}
+
+interface UploadHeroImageRes {
+  url: string;
+  objectPath: string;
+  sizeBytes: number;
+  mime: string;
+}
+
 // ===== Admin CRUD payload =====
 type FleetResource = 'vehicles' | 'luggage-types' | 'extras';
 

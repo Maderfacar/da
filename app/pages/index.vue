@@ -191,7 +191,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageLanding__hero-bg {
   position: absolute;
   inset: 0;
-  background: var(--da-cream);
+  // 季節主題：有 hero 主圖時鋪圖（--da-hero-bg=url(...)），否則維持純色 cream（default 主題現況）
+  background-color: var(--da-cream);
+  background-image: var(--da-hero-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   z-index: 0;
 }
 
@@ -199,11 +204,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 220px;
+  // 斜紋亮色綁季節主題 hero 變數（缺省回退現行黃）
   background: repeating-linear-gradient(
     -45deg,
-    rgba(245, 200, 66, 0.12) 0px, rgba(245, 200, 66, 0.12) 20px,
+    var(--da-hero-stripe-yellow, #F5C842) 0px, var(--da-hero-stripe-yellow, #F5C842) 20px,
     transparent 20px, transparent 40px
   );
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
 }
@@ -221,7 +228,8 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--da-amber);
+  // 季節主題 hero tag 強調色（缺省回退 amber）
+  color: var(--da-hero-tag, var(--da-amber));
   margin: 0 0 18px;
 }
 
@@ -291,10 +299,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 斜紋分隔 ────────────────────────────────────────────────
 .PageLanding__stripe {
   height: 12px;
+  // 季節主題斜紋分隔（hero 專屬變數；缺省回退現行黃 / 深）
   background: repeating-linear-gradient(
     -45deg,
-    var(--da-stripe-yellow, #F5C842) 0px, var(--da-stripe-yellow, #F5C842) 12px,
-    var(--da-stripe-dark, #1A1814) 12px, var(--da-stripe-dark, #1A1814) 24px
+    var(--da-hero-stripe-yellow, #F5C842) 0px, var(--da-hero-stripe-yellow, #F5C842) 12px,
+    var(--da-hero-stripe-dark, #1A1814) 12px, var(--da-hero-stripe-dark, #1A1814) 24px
   );
   opacity: 0.85;
 }

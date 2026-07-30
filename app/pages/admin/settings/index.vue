@@ -8,14 +8,15 @@ definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false }
 const authStore = StoreAuth();
 
 // ── 頂層分頁 ───────────────────────────────────────────────────
-type MainTab = 'access' | 'fleet' | 'tags' | 'fare' | 'promotions' | 'legal' | 'integrations' | 'system';
-const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean; needFarePerm?: boolean }> = [
+type MainTab = 'access' | 'fleet' | 'tags' | 'fare' | 'promotions' | 'legal' | 'themes' | 'integrations' | 'system';
+const MAIN_TABS: Array<{ key: MainTab; label: string; superOnly?: boolean; needFarePerm?: boolean; needThemePerm?: boolean }> = [
   { key: 'access',       label: '存取控制' },
   { key: 'fleet',        label: '車型 / 行李 / 加值服務' },
   { key: 'tags',         label: '車輛標籤' },
   { key: 'fare',         label: '車資進階規則', needFarePerm: true },
   { key: 'promotions',   label: '折扣碼' },
   { key: 'legal',        label: '文件管理' },
+  { key: 'themes',       label: '季節主題', needThemePerm: true },
   { key: 'integrations', label: 'LINE Bot / 地圖' },
   { key: 'system',       label: '系統' },
 ];
@@ -23,7 +24,8 @@ const mainTab = ref<MainTab>('access');
 const visibleMainTabs = computed(() =>
   MAIN_TABS.filter((t) =>
     (!t.superOnly || authStore.isSuper)
-    && (!t.needFarePerm || authStore.canManageFareRules),
+    && (!t.needFarePerm || authStore.canManageFareRules)
+    && (!t.needThemePerm || authStore.canManageThemes),
   ),
 );
 
@@ -1310,6 +1312,13 @@ const ClickSaveFareRules = async () => {
       span.PageAdminSettings__section-label LEGAL DOCUMENTS
       span.PageAdminSettings__section-title 文件管理（會員條款 / 隱私政策）
     AdminSettingsLegalDocuments
+
+  //- 季節主題（乘客端換膚；需 canManageThemes / 預設僅 super）
+  .PageAdminSettings__section(v-show="authStore.canManageThemes && mainTab === 'themes'")
+    .PageAdminSettings__section-head
+      span.PageAdminSettings__section-label SEASONAL THEME
+      span.PageAdminSettings__section-title 季節主題（乘客端換膚）
+    AdminSettingsSeasonalThemes
 
   //- 整合服務（LINE Bot / 地圖，只讀）
   template(v-if="mainTab === 'integrations'")

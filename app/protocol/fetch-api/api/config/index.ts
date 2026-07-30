@@ -44,3 +44,25 @@ export const UploadAdminFleetVehicleImage = (file: File, slot: VehicleImageSlotD
     '/nuxt-api/admin/config/upload-vehicle-image',
     { file, slot },
   );
+
+// ===== Admin 季節主題管理（W2，canManageThemes / 預設僅 super）=====
+
+/** 列出全部季節主題包（含 disabled）+ 目前生效指標 */
+export const GetAdminThemes = () =>
+  methods.get<GetAdminThemesRes>('/nuxt-api/admin/config/themes', {});
+
+/** 切換乘客端生效主題（目標須 enabled，否則 400） */
+export const PutActiveTheme = (activeThemeId: string) =>
+  methods.put<{ activeThemeId: string }>('/nuxt-api/admin/config/themes/active', { activeThemeId });
+
+/** 啟用 / 停用主題（default 主題不可停用） */
+export const PatchThemeEnabled = (id: string, enabled: boolean) =>
+  methods.patch<{ id: string; enabled: boolean }>(`/nuxt-api/admin/config/themes/${id}/enabled`, { enabled });
+
+/** 設定 / 清除主題 Hero 主圖（bgImage=null 清除） */
+export const PatchThemeHero = (id: string, bgImage: string | null) =>
+  methods.patch<{ id: string; bgImage: string | null }>(`/nuxt-api/admin/config/themes/${id}/hero`, { bgImage });
+
+/** 上傳 Hero 主圖到 Storage，回傳可注入的網址（前端接著呼叫 PatchThemeHero 持久化） */
+export const UploadThemeHeroImage = (file: File, themeId: string) =>
+  methods.formData<UploadHeroImageRes>('/nuxt-api/admin/config/themes/upload-hero-image', { file, themeId });

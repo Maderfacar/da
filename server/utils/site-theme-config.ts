@@ -75,6 +75,53 @@ export const getActiveThemeId = async (db: Firestore): Promise<string> => {
   return data?.activeThemeId ?? DEFAULT_ACTIVE_THEME_ID;
 };
 
+/** 讀單一主題 doc；不存在回 null（供 admin 端點 guard 用）。 */
+export const getSiteThemeById = async (
+  db: Firestore,
+  id: string,
+): Promise<SiteTheme | null> => {
+  const snap = await db.collection(SITE_THEMES_COLLECTION).doc(id).get();
+  if (!snap.exists) return null;
+  return { id: snap.id, ...snap.data() } as SiteTheme;
+};
+
+/** 切換生效主題指標（admin）。呼叫端須先確認目標 enabled。 */
+export const setActiveTheme = async (db: Firestore, activeThemeId: string): Promise<void> => {
+  await db
+    .collection(SITE_CONFIG_COLLECTION)
+    .doc(ACTIVE_THEME_DOC_ID)
+    .set({ activeThemeId } satisfies ActiveThemePointer, { merge: true });
+};
+
+/** 啟用 / 停用主題（admin）。 */
+export const setThemeEnabled = async (
+  db: Firestore,
+  id: string,
+  enabled: boolean,
+): Promise<void> => {
+  await db.collection(SITE_THEMES_COLLECTION).doc(id).set({ enabled }, { merge: true });
+};
+
+/**
+ * 設定 / 清除主題 Hero 主圖（admin）。
+ *   - bgImage 為字串 → 寫入 hero.bgImage
+ *   - bgImage 為 null → 以 FieldValue.delete() 清除該欄位（回退純色 hero）
+ */
+export const setThemeHeroImage = async (
+  db: Firestore,
+  id: string,
+  bgImage: string | null,
+): Promise<void> => {
+  const { FieldValue } = await import('firebase-admin/firestore');
+  await db
+    .collection(SITE_THEMES_COLLECTION)
+    .doc(id)
+    .set(
+      { hero: { bgImage: bgImage === null ? FieldValue.delete() : bgImage } },
+      { merge: true },
+    );
+};
+
 // ── In-memory 快取 ───────────────────────────────────────────────────────────
 let cached: ResolvedTheme | null = null;
 let cachedAt = 0;
