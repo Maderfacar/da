@@ -309,9 +309,22 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       user.value = firebaseUser;
       // getIdToken 失敗不應影響 user 狀態
       try {
-        idToken.value = await firebaseUser.getIdToken();
+        // P0-1 claims-first hydration（2026-07-31）：roles 已由後端寫進 Firebase custom claims，
+        // token 本身就帶著 → 拿 token 的同時直接讀 claims.roles，立即 hydrate roles，
+        // 不必等 middleware/role 的 Firestore read 或背景 line-exchange。
+        // 這是消滅「session 活著但 roles 空窗（畫面顯示訪客、被誤判登出）」的核心修法。
+        // Firestore users doc / line-exchange 仍會跑，作為事後校正（roles 有異動時覆蓋）。
+        const tokenRes = await firebaseUser.getIdTokenResult();
+        idToken.value = tokenRes.token;
+        if (roles.value.length === 0) {
+          const claimRoles = _normalizeRoles(tokenRes.claims.roles);
+          if (claimRoles.length > 0) {
+            roles.value = claimRoles;
+            _noteRolesArrived('id-token-claims'); // 埋點：記 claims 來源
+          }
+        }
       } catch (err) {
-        console.error('[StoreAuth] getIdToken failed:', err);
+        console.error('[StoreAuth] getIdTokenResult failed:', err);
         const e = err instanceof Error ? err : new Error(String(err));
         logAuth({
           event: 'auth.get-id-token.failed',
@@ -516,25 +529,28 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const _userDocLoader = createLazyLoader(async () => {
     const { getApps } = await import('firebase/app');
     const app = getApps()[0];
-    if (!app || !user.value) return;
+    if (!app || !user.value) return false; // F2：前置未就緒 → 不標 loaded，下次重試
     await _LoadUserDoc(app, user.value.uid);
   });
 
   const _driverDocLoader = createLazyLoader(async () => {
     const { getApps } = await import('firebase/app');
     const app = getApps()[0];
-    if (!app || !user.value) return;
+    if (!app || !user.value) return false; // F2
     await _LoadDriverDoc(app, user.value.uid);
   });
 
   const _adminDocLoader = createLazyLoader(async () => {
     const { getApps } = await import('firebase/app');
     const app = getApps()[0];
-    if (!app || !user.value) return;
+    if (!app || !user.value) return false; // F2
     await _LoadAdminDoc(app, user.value.uid);
   });
 
-  const _admin2faSessionLoader = createLazyLoader(_CheckAdmin2faSession);
+  const _admin2faSessionLoader = createLazyLoader(async () => {
+    await _CheckAdmin2faSession();
+    return true; // 完成即 sticky（無前置條件可缺）
+  });
 
   // ── 背景輔助：靜默刷新 LIFF Profile cache ──────────────────────────────────────────────────────
   // Firebase session 活著但 LIFF token 可能已過期的場景下使用。

@@ -68,4 +68,36 @@ describe('lazy-loader', () => {
     await expect(loader.ensure()).rejects.toThrow();
     expect(loader.isLoaded()).toBe(false);
   });
+
+  it('F2：fn 回 false（前置未就緒）→ 不標 loaded，下次 ensure 重發', async () => {
+    const fn = vi
+      .fn<() => Promise<boolean | undefined>>()
+      .mockResolvedValueOnce(false) // 第一次前置未就緒
+      .mockResolvedValueOnce(undefined); // 第二次就緒
+    const loader = createLazyLoader(fn);
+
+    await loader.ensure();
+    expect(loader.isLoaded()).toBe(false); // 回 false 不算完成
+    await loader.ensure();
+    expect(fn).toHaveBeenCalledTimes(2); // 有重發
+    expect(loader.isLoaded()).toBe(true);
+  });
+
+  it('F2：fn 回 false 不會 resolve 成 loaded（連續 false 持續可重試）', async () => {
+    const fn = vi.fn<() => Promise<boolean | undefined>>().mockResolvedValue(false);
+    const loader = createLazyLoader(fn);
+    await loader.ensure();
+    await loader.ensure();
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(loader.isLoaded()).toBe(false);
+  });
+
+  it('fn 回 true → 視為成功並 sticky', async () => {
+    const fn = vi.fn<() => Promise<boolean | undefined>>().mockResolvedValue(true);
+    const loader = createLazyLoader(fn);
+    await loader.ensure();
+    await loader.ensure();
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(loader.isLoaded()).toBe(true);
+  });
 });

@@ -49,4 +49,44 @@ export default defineNuxtPlugin((nuxtApp) => {
     // 保留 console.error 讓開發者在 DevTools 看到原始堆疊
     console.error('[Vue errorHandler]', err, info);
   };
+
+  // 4. Chunk load 失敗自癒（P1，2026-07-31）
+  //    新版部署後，仍開著舊 HTML 的分頁參照到已被清掉的 JS chunk → dynamic import 失敗 →
+  //    白畫面 / 功能壞（例：07-24 `Importing a module script failed`）。偵測到就「一次性硬重載」
+  //    拉回新版自癒。sessionStorage 旗標防重載迴圈；app 穩定運行 10s 後清旗標，讓下次部署仍可自癒。
+  const CHUNK_RELOAD_KEY = 'da_chunk_reloaded';
+  const _reloadOnceForChunk = (source: string, message: string): void => {
+    logUnhandled({
+      event: 'app.chunk-error',
+      severity: 'warn',
+      message: `${source}: ${message}`,
+      metadata: { source },
+    });
+    try {
+      if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) return; // 已重載過 → 不再重載，避免迴圈
+      sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    } catch { /* 隱私模式：仍嘗試重載一次 */ }
+    // 稍延遲讓 fire-and-forget log 有機會送出，再硬重載
+    setTimeout(() => { try { location.reload(); } catch { /* ignore */ } }, 200);
+  };
+
+  // Nuxt route chunk / dynamic import 失敗
+  nuxtApp.hook('app:chunkError', ({ error }) => {
+    const e = error instanceof Error ? error : new Error(String(error));
+    _reloadOnceForChunk('app:chunkError', e.message);
+  });
+
+  // Vite preload 失敗（初次載入 / 手動 dynamic import 皆會 fire）
+  window.addEventListener('vite:preloadError', (ev) => {
+    const message = (ev as unknown as { payload?: { message?: string } }).payload?.message
+      ?? 'vite preload error';
+    _reloadOnceForChunk('vite:preloadError', message);
+  });
+
+  // app 穩定運行 10s 後清旗標（避免「shell 起得來但某路由 chunk 永久 404」時無限重載）
+  nuxtApp.hook('app:mounted', () => {
+    setTimeout(() => {
+      try { sessionStorage.removeItem(CHUNK_RELOAD_KEY); } catch { /* ignore */ }
+    }, 10_000);
+  });
 });

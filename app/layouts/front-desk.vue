@@ -18,6 +18,21 @@ useSiteThemeInject();
 // layout 為乘客端共用容器，套 guard 即涵蓋 /home /orders 等所有 front-desk page
 const { state: rolesLoadState, ClickReLogin } = UseRolesLoadGuard();
 
+// F1 修（2026-07-31）：登入者 roles 未就緒時顯示 spinner，不秀「訪客樣」header 讓人誤判登出。
+// - spinner：auth 未解析，或「已登入但 roles 還在載」
+// - failed ：已登入但 5s 仍載不到 roles（維持既有重新登入兜底）
+// - content：auth 已解析且（訪客／或 roles 已就緒）→ 正常渲染頁面
+// 訪客（未登入，如 /login）不受影響，authResolved 後立即渲染。
+const showSpinner = computed(
+  () => !authResolved.value || (isSignIn.value && rolesLoadState.value === 'loading'),
+);
+const showRolesFailed = computed(
+  () => authResolved.value && isSignIn.value && rolesLoadState.value === 'failed',
+);
+const showContent = computed(
+  () => authResolved.value && (!isSignIn.value || rolesLoadState.value === 'ready'),
+);
+
 // ── Meta：分頁標題 + favicon（區隔三端）─────────────────
 // 規格：titleTemplate = `{頁名} · {品牌}`；route→key 走最長前綴匹配；
 // 兼容 i18n prefix_except_default（剝 /en /ja 前綴）；i18n 三語自動套。
@@ -151,16 +166,17 @@ onUnmounted(() => {
   main.LayoutFrontDesk__body(:class="{ 'has-banner': showFriendBanner }")
     ClientOnly
       transition(name="auth-fade")
-        .LayoutFrontDesk__content-loading(v-if="!authResolved")
+        //- F1：auth 未解析 或「已登入但 roles 還在載」→ spinner（不秀訪客樣 header）
+        .LayoutFrontDesk__content-loading(v-if="showSpinner")
           .LayoutFrontDesk__loading-spinner
       //- W4：roles lazy load 失敗 5s 後顯示
-      .LayoutFrontDesk__roles-failed(v-if="authResolved && isSignIn && rolesLoadState === 'failed'")
+      .LayoutFrontDesk__roles-failed(v-if="showRolesFailed")
         p.LayoutFrontDesk__roles-failed-msg 載入失敗，請重新登入
         button.LayoutFrontDesk__roles-failed-btn(
           type="button"
           @click="ClickReLogin"
         ) 重新登入
-    slot(v-if="authResolved && !(isSignIn && rolesLoadState === 'failed')")
+    slot(v-if="showContent")
 
   //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
   CommonFooter
