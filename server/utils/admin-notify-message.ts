@@ -13,7 +13,8 @@ import type { Lang } from '@@/utils/user-lang';
 export type AdminNotifyKey =
   | 'adminNotify.orderCreated'
   | 'adminNotify.orderStatusChanged'
-  | 'adminNotify.driverApplied';
+  | 'adminNotify.driverApplied'
+  | 'adminNotify.authHealthAlert';
 
 const VALID_LANGS: Lang[] = ['zh_tw', 'en', 'ja'];
 
@@ -25,6 +26,12 @@ export interface AdminNotifyParams {
   toStatus?: string;
   driverName?: string;
   vehicleType?: string;
+  // ── 認證健康告警（P2-1）：各監控事件近視窗筆數 ──
+  authHealthWindowH?: number;
+  authHealthRolesSlow?: number;
+  authHealthUserdocMissing?: number;
+  authHealthChunkError?: number;
+  authHealthLineExchangeBadStatus?: number;
 }
 
 // ── 訂單狀態三語名稱（orders/[orderId].patch.ts 的 7 個狀態）─────────
@@ -77,6 +84,22 @@ const MESSAGES: Record<AdminNotifyKey, Record<Lang, Builder>> = {
     zh_tw: (p) => `🧑‍✈️ 司機申請待審：${p.driverName}｜${p.vehicleType}`,
     en:    (p) => `🧑‍✈️ Driver application pending: ${p.driverName} | ${p.vehicleType}`,
     ja:    (p) => `🧑‍✈️ ドライバー申請（審査待ち）：${p.driverName}｜${p.vehicleType}`,
+  },
+  // 認證健康告警（P2-1）：cron 掃 client_error_logs 超門檻時發此訊息。
+  // 數值為維運內部指標，不經 sanitizeText（皆為 cron 計算的整數）。
+  'adminNotify.authHealthAlert': {
+    zh_tw: (p) =>
+      `⚠️ 認證健康告警（近 ${p.authHealthWindowH ?? 24}h）\n`
+      + `roles 慢：${p.authHealthRolesSlow ?? 0}｜userdoc 缺：${p.authHealthUserdocMissing ?? 0}｜`
+      + `chunk 錯：${p.authHealthChunkError ?? 0}｜LINE 換發異常：${p.authHealthLineExchangeBadStatus ?? 0}`,
+    en: (p) =>
+      `⚠️ Auth health alert (last ${p.authHealthWindowH ?? 24}h)\n`
+      + `roles slow: ${p.authHealthRolesSlow ?? 0} | userdoc missing: ${p.authHealthUserdocMissing ?? 0} | `
+      + `chunk errors: ${p.authHealthChunkError ?? 0} | LINE exchange bad: ${p.authHealthLineExchangeBadStatus ?? 0}`,
+    ja: (p) =>
+      `⚠️ 認証ヘルス警告（直近 ${p.authHealthWindowH ?? 24}h）\n`
+      + `roles 遅延：${p.authHealthRolesSlow ?? 0}｜userdoc 欠落：${p.authHealthUserdocMissing ?? 0}｜`
+      + `chunk エラー：${p.authHealthChunkError ?? 0}｜LINE 交換異常：${p.authHealthLineExchangeBadStatus ?? 0}`,
   },
 };
 

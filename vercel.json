@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/cleanup-error-logs",
       "schedule": "23 18 * * *"
+    },
+    {
+      "path": "/api/cron/alert-auth-health",
+      "schedule": "0 * * * *"
     }
   ]
 }
