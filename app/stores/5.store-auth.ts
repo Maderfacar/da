@@ -99,6 +99,81 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   let _resolveFirebaseReady!: () => void;
   const _firebaseReadyPromise = new Promise<void>((r) => { _resolveFirebaseReady = r; });
 
+  // ── 登入 hydration 埋點（2026-07-31，只加紀錄、不改登入行為）──────────────────────────
+  // 背景：曾發生「Firebase session 活著、authResolved=true，但 roles 遲到／沒到」→ 畫面秀
+  // 訪客樣被誤判登出，且全程無任何 log。以下 beacon 補上這條盲區的時間軸，皆 fire-and-forget，
+  // 不影響任何登入判斷。事件：
+  //   auth.resolved.snapshot（info）— authResolved 當下的 roles/profile 快照 + 距啟動耗時
+  //   auth.roles.arrived   （info）— roles 在空窗後才到位，記延遲毫秒與來源
+  //   auth.roles.slow      （warn）— authResolved 後 2.5s roles 仍為空（＝畫面顯示訪客的空窗）
+  let _authStartedAt = 0;
+  let _resolveBeaconSent = false;   // auth.resolved.snapshot 已送
+  let _rolesEmptyAtResolve = false; // resolve 當下 roles 為空（代表存在空窗）
+  let _rolesArrivedNoted = false;   // roles 到位／逾時 已記一次
+  let _rolesSlowTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const _msSinceStart = (): number => (_authStartedAt ? Date.now() - _authStartedAt : -1);
+
+  const _resetHydrationBeacon = (): void => {
+    _resolveBeaconSent = false;
+    _rolesEmptyAtResolve = false;
+    _rolesArrivedNoted = false;
+    if (_rolesSlowTimer) { clearTimeout(_rolesSlowTimer); _rolesSlowTimer = null; }
+  };
+
+  // roles 真正被填入時呼叫（line-exchange / user-doc 兩個來源各一）。
+  // 只有在「resolve 當下 roles 為空」時才記延遲，避免正常快路徑噪音。
+  const _noteRolesArrived = (source: string): void => {
+    if (_rolesArrivedNoted) return;
+    _rolesArrivedNoted = true;
+    if (_rolesSlowTimer) { clearTimeout(_rolesSlowTimer); _rolesSlowTimer = null; }
+    if (_resolveBeaconSent && _rolesEmptyAtResolve) {
+      logAuth({
+        event: 'auth.roles.arrived',
+        severity: 'info',
+        message: `roles 到位（來源 ${source}），距啟動 ${_msSinceStart()}ms`,
+        metadata: { source, elapsedMs: _msSinceStart(), roles: [...roles.value] },
+      });
+    }
+  };
+
+  // authResolved 且有登入 user 時呼叫一次：記當下快照；若 roles 未到則掛 2.5s 慢速警報。
+  const _beaconAuthHydration = (source: string): void => {
+    if (_resolveBeaconSent) return;
+    _resolveBeaconSent = true;
+    _rolesEmptyAtResolve = roles.value.length === 0;
+
+    logAuth({
+      event: 'auth.resolved.snapshot',
+      severity: 'info',
+      message: `authResolved（${source}）；當下 roles=${roles.value.length}、profile=${!!lineProfile.value}`,
+      metadata: {
+        source,
+        elapsedMs: _msSinceStart(),
+        rolesAtResolve: [...roles.value],
+        hasRoles: roles.value.length > 0,
+        hasProfile: !!lineProfile.value,
+      },
+    });
+
+    if (!_rolesEmptyAtResolve) {
+      _rolesArrivedNoted = true; // 已就緒，無需再等到位
+      return;
+    }
+
+    // roles 還沒到 → 2.5s 後仍為空就示警（正是「畫面秀訪客、使用者誤判登出」的空窗）
+    _rolesSlowTimer = setTimeout(() => {
+      if (!_rolesArrivedNoted && roles.value.length === 0) {
+        logAuth({
+          event: 'auth.roles.slow',
+          severity: 'warn',
+          message: 'authResolved 後 2.5s，roles 仍為空（畫面可能顯示訪客樣）',
+          metadata: { source, elapsedMs: _msSinceStart() },
+        });
+      }
+    }, 2_500);
+  };
+
   // -- Computed --------------------------------------------------------------------------------------
 
   const isSignIn = computed(() => !!user.value);
@@ -146,6 +221,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     _driverDocLoader?.reset();
     _adminDocLoader?.reset();
     _admin2faSessionLoader?.reset();
+    // 埋點：重置 hydration beacon（同一 JS session 內重新登入也能再量一次）
+    _resetHydrationBeacon();
   };
 
   const _normalizeRoles = (raw: unknown): Role[] => {
@@ -167,6 +244,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   const InitAuthFlow = async () => {
     const config = useRuntimeConfig().public;
+    _authStartedAt = Date.now(); // 埋點：hydration 計時起點
 
     // 安全超時：Firebase / LIFF 若在 12 秒內未回應，強制解除 loading 遮罩
     // 確保 LINE WebView 網路受限或 SDK hang 住時，使用者不會永久卡在轉圈圈
@@ -245,6 +323,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // 這 4 個 IO 改由 middleware/role 在進對應路徑時 lazy load（Ensure* action）
       // 公開頁進站不再觸發任何 Firestore read / admin POST
       _markAuthResolved();
+      _beaconAuthHydration('firebase-restore'); // 埋點：記 authResolved 當下 roles 是否已到
     });
 
     await _InitLiffFlow(firebaseApp);
@@ -266,7 +345,16 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const db = getFirestore(firebaseApp);
       const lineUid = uid.startsWith('line:') ? uid.slice(5) : uid;
       const snap = await getDoc(doc(db, 'users', lineUid));
-      if (!snap.exists()) return;
+      if (!snap.exists()) {
+        // 埋點：users doc 不存在是原本的靜默洞（roles 不會被設、也不報錯）
+        logAuth({
+          event: 'auth.userdoc.missing',
+          severity: 'warn',
+          message: `users/${lineUid} 不存在，roles 未由 user-doc 補上`,
+          metadata: { lineUid },
+        });
+        return;
+      }
       const data = snap.data();
       // 兼容舊 schema：若 roles 為空但有舊 role 欄位，自動 fallback 到單一 role
       const parsed = _normalizeRoles(data.roles);
@@ -278,6 +366,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       } else {
         roles.value = ['passenger'];
       }
+      _noteRolesArrived('user-doc'); // 埋點
       approved.value = (data.approved as boolean) ?? false;
       // 補回 LINE profile（避免重新整理後因 Firebase session 命中跳過 LIFF 導致 lineProfile=null）
       const displayName = data.displayName as string | undefined;
@@ -536,6 +625,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const parsed = _normalizeRoles(res.data.roles);
       if (parsed.length > 0) {
         roles.value = parsed;
+        _noteRolesArrived('line-exchange'); // 埋點
         approved.value = res.data.approved ?? true;
       }
 
