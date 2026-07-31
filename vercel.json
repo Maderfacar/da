@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron/alert-auth-health",
-      "schedule": "0 * * * *"
+      "schedule": "0 1 * * *"
     }
   ]
 }

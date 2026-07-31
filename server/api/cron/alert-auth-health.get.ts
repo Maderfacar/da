@@ -6,7 +6,9 @@
 // 即由 notifyAdmins 推 LINE 給具 canManageOrders 的 admin（per-admin lang）。
 // 沒超門檻回 successResponse 不發訊息（免噪音）。
 //
-// 排程：vercel.json crons（每小時 "0 * * * *"）。
+// 排程：vercel.json crons（每日一次 "0 1 * * *" = 台灣早上 9 點）。
+//       Vercel Hobby 方案 cron 每天僅能觸發一次、且上限 2 條，故用每日；每日剛好對到
+//       一個完整 24h 窗口，比每小時重複掃同段時間更乾淨（不重複告警）。
 //
 // 保護：與 cleanup-error-logs 同範式 —— 有設 CRON_SECRET 才驗 Authorization: Bearer <secret>
 //       （Vercel Cron 觸發時自動注入）。端點唯讀 + 只在越界時推播，即使被觸發風險亦低。
