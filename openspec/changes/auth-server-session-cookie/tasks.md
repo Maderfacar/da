@@ -64,6 +64,7 @@
 - [x] **P3.4** 前端「需要重登」入口改導 `/nuxt-api/auth/line/start`（login/driver-auth 兩頁 `ClickLineLogin` 取代 client `liff.login()`）；`GetFreshLiffToken()` 舊 `liff.login()` 分支保留到驗收通過（P3.6 清）
 - [ ] **P3.5** e2e / 手測：PC 外部瀏覽器 + 換機 + 全新用戶 + LINE in-app 開連結，乘客/司機各驗皆不再 `redirect_uri does not match` — 留 Brain AI prod 實測
 - [x] **P3.6**（清理 wave，2026-08-15）：✅ **移除 `GetFreshLiffToken()`**（徹查零呼叫端＝純死碼，含最後一條 client `liff.login()` 死鏈；app 內已零 `liff.login()` 呼叫）+ 修 2 處 comment rot。**刻意保留**（非殘留、仍有價值/仍在用）：methods.ts Bearer 注入（401→refresh→retry 機制依賴 `GetFreshIdToken`，cookie-first 下為合法刷新路徑）、`line-exchange` + `_ExchangeLiffTokenBackground`（LIFF 深連結/in-app 進站建 client session 仍走，不觸發 liff.login）、require-auth 的 Bearer fallback（防禦網）。**交 Brain**：舊 4 條 client callback URL 現可安全從 LINE console 刪（app 已無 client liff.login 送這些 redirect）
+- [x] **P3.6-FU** 觀測統一（2026-08-15）：server OAuth callback 成敗改**寫進 `client_error_logs`**（`writeAuthErrorLog` helper，schema 對齊 `_log/client-error`、依 timestamp 走既有 retention cron；event `auth.line-login.callback.ok`/`.fail`，metadata.stage = state/token/verify/provision/session/cookie）。原 console.log 保留（Vercel）。登入問題不再分散兩處，統一用 firebase-admin 查詢腳本查 client_error_logs（+4 unit tests）
 - [x] **P3.7** 終局檢查 lint / build / test 全綠 → commit + push origin main；prod 三端 + PC 驗收留 Brain AI，通過後提醒 rotate Channel secret
 
 ## 驗收標準（Definition of Done）

@@ -13,6 +13,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { createSessionCookie } from '@@/utils/session-cookie';
 import { provisionLineUser } from '@@/utils/line-user-provision';
+import { writeAuthErrorLog } from '@@/utils/server-auth-log';
 import {
   consumeLoginState,
   sanitizeTarget,
@@ -62,10 +63,35 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, '/login?login_error=server', 302);
   }
 
+  // 登入成敗寫 client_error_logs（category='auth'），與 client 埋點同一 collection 統一查詢。
+  // caller 算好 path/UA/appVersion 傳入（helper 純寫入、可測）；每個 return 前 await 一次
+  // （serverless 送 302 後可能凍結，不 await 會遺失寫入）。
+  const reqPath = (event.path ?? '').split('?')[0];
+  const userAgent = getHeader(event, 'user-agent') ?? '';
+  const appVersion = String((config.public as { appVersion?: string }).appVersion ?? '');
+  const authLog = (
+    outcome: 'ok' | 'fail',
+    severity: 'error' | 'warn' | 'info',
+    message: string,
+    end: LoginClientType,
+    extra?: { lineUserId?: string | null; metadata?: Record<string, unknown> },
+  ): Promise<void> => writeAuthErrorLog(db, {
+    event: `auth.line-login.callback.${outcome}`,
+    severity,
+    message,
+    end,
+    path: reqPath,
+    userAgent,
+    appVersion,
+    lineUserId: extra?.lineUserId ?? null,
+    metadata: extra?.metadata,
+  });
+
   // ── 1. 驗 state（一次性消費，防 CSRF / replay）─────────────────────────
   const statePayload = await consumeLoginState(db, state);
   if (!statePayload) {
     console.warn('[line-login.callback] fail: invalid/expired/replayed state');
+    await authLog('fail', 'warn', 'invalid/expired/replayed state', 'passenger', { metadata: { stage: 'state' } });
     return sendRedirect(event, '/login?login_error=state', 302);
   }
   const { clientType, nonce } = statePayload;
@@ -89,6 +115,7 @@ export default defineEventHandler(async (event) => {
     return null;
   });
   if (!tokenRes?.id_token) {
+    await authLog('fail', 'warn', 'LINE token exchange failed', clientType, { metadata: { stage: 'token' } });
     return sendRedirect(event, `${loginPage}?login_error=token`, 302);
   }
 
@@ -110,6 +137,7 @@ export default defineEventHandler(async (event) => {
   });
   if (!verified?.sub || verified.iss !== 'https://access.line.me' || verified.aud !== channelId) {
     console.warn('[line-login.callback] fail: id_token payload invalid');
+    await authLog('fail', 'warn', 'id_token verify failed / payload invalid', clientType, { metadata: { stage: 'verify' } });
     return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
   }
 
@@ -121,6 +149,10 @@ export default defineEventHandler(async (event) => {
   });
   if (!provisioned.ok) {
     console.error('[line-login.callback] fail: provision', provisioned.reason);
+    await authLog('fail', 'error', `provision failed: ${provisioned.reason}`, clientType, {
+      lineUserId: verified.sub,
+      metadata: { stage: 'provision', reason: provisioned.reason },
+    });
     return sendRedirect(event, `${loginPage}?login_error=provision`, 302);
   }
 
@@ -133,6 +165,10 @@ export default defineEventHandler(async (event) => {
     return null;
   });
   if (!signInRes?.idToken) {
+    await authLog('fail', 'error', 'signInWithCustomToken failed (no idToken)', clientType, {
+      lineUserId: provisioned.lineUserId,
+      metadata: { stage: 'session' },
+    });
     return sendRedirect(event, `${loginPage}?login_error=session`, 302);
   }
 
@@ -140,9 +176,17 @@ export default defineEventHandler(async (event) => {
   const seeded = await createSessionCookie(event, signInRes.idToken);
   if (!seeded) {
     console.error('[line-login.callback] fail: createSessionCookie');
+    await authLog('fail', 'error', 'createSessionCookie failed', clientType, {
+      lineUserId: provisioned.lineUserId,
+      metadata: { stage: 'cookie' },
+    });
     return sendRedirect(event, `${loginPage}?login_error=session`, 302);
   }
 
   console.log(`[line-login.callback] ok clientType=${clientType} lineUid=${provisioned.lineUserId} → ${target}`);
+  await authLog('ok', 'info', 'login ok', clientType, {
+    lineUserId: provisioned.lineUserId,
+    metadata: { target, roles: provisioned.roles },
+  });
   return sendRedirect(event, target, 302);
 });
