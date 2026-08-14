@@ -42,14 +42,19 @@
 
 ## Phase 2：司機 + Admin 切換（疊合 2FA / PIN）
 
-- [ ] **P2.1** 司機登入流程（`app/pages/driver/auth/*` + store）成功後種 cookie；開機走 `session-check`
-- [ ] **P2.2** admin 登入流程種 cookie；確認 **2FA gate 在 cookie 路徑仍擋** `/nuxt-api/admin/*`（`resolveIdentity` 內既有邏輯）
-- [ ] **P2.3** 確認 PIN step-up（[require-pin-session.ts](../../../server/utils/require-pin-session.ts)）與 base cookie 疊合無衝突
-- [ ] **P2.4** 收斂 `ssr:false` 端 client race：driver/admin 開機一律 server `session-check` 為準
-- [ ] **P2.5**（可選）把 `admin_2fa_sessions` token 也 cookie 化（`da_2fa`）統一管理 — 評估後決定是否納入本階段
-- [ ] **P2.6** e2e：driver role-gate、admin 2FA gate 在 cookie 路徑全綠；admin/driver 雙身分走各端不被 2FA 誤擋
-- [ ] **P2.7** 終局檢查 → commit + push；prod 三端驗收
-- [ ] **P2.8** 寫 P3 handoff prompt
+> ★核心坑採 **A 方案**（2026-08-15）：擴充 `session-check` 於開機一把回
+> `roles+approved+level+permissions+admin2faEnrolled+driverApplication`，store 一次載齊 gate 欄位。
+> cookie-only 裝置（`user.value=null`）不再依賴 client Firestore SDK 即可正確 gate。
+> 因此 auth.ts 拿掉「admin/driver 仍等 Firebase」過渡限制、role.ts 拿掉「!authResolved return」保護。
+
+- [x] **P2.1** 司機登入流程種 cookie：由 `onAuthStateChanged → _SeedSessionCookie` 單一 seed 點涵蓋（司機 LIFF→customToken→signInWithCustomToken 亦觸發此分支）；開機走 `session-check`（bootstrap）— **免改登入頁**
+- [x] **P2.2** admin 登入流程種 cookie（admin 亦走 LINE 取得 admin role，同 seed 點）；2FA gate 在 cookie 路徑仍擋 `/nuxt-api/admin/*`（`resolveIdentity` 內既有邏輯，`lineUid` 改由 cookie 解析、X-Admin-2FA-Session header 不變）
+- [x] **P2.3** PIN step-up（[require-pin-session.ts](../../../server/utils/require-pin-session.ts)）與 base cookie 疊合無衝突：`requirePinSession(event, auth)` 的 `auth.lineUid` 由 `getAuthFromEvent`（cookie 或 Bearer）解析，PIN token 仍獨立 header 驗證，兩道正交
+- [x] **P2.4** 收斂 `ssr:false` 端 client race：driver/admin 開機一律以 server `session-check`（bootstrap）為準 — auth.ts 移除 needsFirebase 等待、role.ts 移除 authResolved 前置
+- [ ] **P2.5**（可選，**本階段不做**）把 `admin_2fa_sessions` token cookie 化（`da_2fa`）：評估結論 → 2FA session 存 localStorage 意即「清儲存＝需重做 2FA」屬合理安全行為，base cookie 已根治「看似登出」；延後不影響 DoD
+- [ ] **P2.6** e2e：driver role-gate、admin 2FA gate 在 cookie 路徑全綠；admin/driver 雙身分走各端不被 2FA 誤擋 — 留 Brain AI prod 實測（同 P1.7 慣例）
+- [x] **P2.7** 終局檢查 lint / build / test 全綠 → commit + push（prod 三端驗收留 Brain AI）
+- [x] **P2.8** 寫 P3 handoff prompt
 
 ## Phase 3：入口硬化 — LINE Login server callback
 

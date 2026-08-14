@@ -69,8 +69,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo(target, { replace: true });
   };
 
-  if (!authStore.authResolved) return; // auth.ts middleware 已等過 12s
-  if (!authStore.isSignIn) return; // auth.ts middleware 已踢到 /login
+  if (!authStore.isSignIn) return; // auth.ts middleware 已踢未登入者到 /login
+  // 認證根治 P2（2026-08-15）：移除舊「!authResolved return」保護。該保護屬 Firebase-only 時代
+  // ——避免用半熟的 Firebase 派生資料 gate。現 cookie 路徑開機即由 session bootstrap 載齊
+  // roles/approved/level/admin2faEnrolled/driverApplication，資料完整可直接 gate；Firebase 路徑
+  // （無 cookie）則由下方 Ensure*（client SDK）補讀，auth.ts 已為其等過 authResolved 才放行至此。
+  // isSignIn=true 必有 gate 基礎：cookie（bootstrap 已載）或 Firebase user（authResolved 已真）。
 
   // W4：依路徑並發 await 所需 doc loads（sticky promise dedup）
   const needs = resolveRequiredLoads(to.path);

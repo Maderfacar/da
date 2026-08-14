@@ -539,6 +539,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     if (!storedToken) return;
     try {
       const res = await $fetch<{ status?: { code: number } }>('/nuxt-api/admin/2fa/session-check', {
+        // 認證根治 P2：帶 da_session cookie 認證（cookie-only 裝置 idToken 為空，改由 cookie 過 gate）；
+        // Bearer 保留為過渡 fallback（有 Firebase user 時）。X-Admin-2FA-Session 仍是 2FA session 憑證。
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${idToken.value}`,
           'X-Admin-2FA-Session': storedToken,
@@ -937,16 +940,35 @@ export const StoreAuth = defineStore('StoreAuth', () => {
    */
   const WaitForAuthResolved = (): Promise<void> => _ensureAuthResolvedPromise();
 
-  // ── 認證根治 P1：server cookie 開機權威登入判斷 ──────────────────────────────────────────────
+  // ── 認證根治 P1/P2：server cookie 開機權威登入判斷 + 三端 gate 欄位一把載齊 ────────────────────
   // 開機打一次 GET /nuxt-api/auth/session-check（帶 da_session cookie），以 server 回的
   // signedIn/roles/approved/level 為第一真相。命中 → isSignIn 立即為真，middleware 免等 Firebase
   // 12s hydration race。未命中（無 cookie / 尚未種）→ 不動任何 state，fallback 走 Firebase 派生。
   // sticky promise：一個 JS 生命週期只打一次（SignOut 會重置以允許重登後再查）。
+  //
+  // P2（2026-08-15，A 方案）：額外接收 permissions / admin2faEnrolled / driverApplication，
+  // 於此一把設齊 admin/driver gate 所需的全部欄位。核心動機：cookie-only 裝置（localStorage/
+  // IndexedDB 被清、但 httpOnly cookie 在）Firebase user=null → client SDK lazy loader 讀不到
+  // level/2fa/driverApplication，會誤導 admin 去 /admin/2fa/setup、誤判 driver 未核准。改由 server
+  // cookie 權威來源直接載入後，middleware/role 即可在 cookie 路徑正確 gate，不再依賴 Firebase user。
   const _RunSessionCheck = async (): Promise<void> => {
     if (typeof window === 'undefined') return;
     try {
       const res = await $fetch<{
-        data?: { signedIn?: boolean; roles?: unknown; approved?: boolean; level?: AdminLevel | null };
+        data?: {
+          signedIn?: boolean;
+          roles?: unknown;
+          approved?: boolean;
+          level?: AdminLevel | null;
+          permissions?: Partial<Record<string, boolean>>;
+          admin2faEnrolled?: boolean;
+          driverApplication?: {
+            appliedAt: string | null;
+            reviewedAt: string | null;
+            rejectedAt: string | null;
+            rejectReason: string | null;
+          } | null;
+        };
       }>('/nuxt-api/auth/session-check', { credentials: 'include', timeout: 8000 }).catch(() => null);
       const data = res?.data;
       if (!data?.signedIn) return; // 未命中 → 保持沉默，交由 Firebase 派生路徑
@@ -959,6 +981,17 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       if (typeof data.approved === 'boolean') approved.value = data.approved;
       if (data.level === 'super' || data.level === 'admin' || data.level === 'assistant') {
         level.value = data.level;
+      }
+      // P2：admin/driver gate 欄位（cookie 權威來源）
+      if (data.permissions && typeof data.permissions === 'object') {
+        adminPermissions.value = data.permissions;
+      }
+      if (typeof data.admin2faEnrolled === 'boolean') {
+        admin2faEnrolled.value = data.admin2faEnrolled;
+      }
+      // server 恆回 driverApplication 欄位（driver 為物件、其餘為 null）；undefined 表舊 server 相容 → 不動
+      if (data.driverApplication !== undefined) {
+        driverApplication.value = data.driverApplication;
       }
     } catch (err) {
       // 網路 / 逾時 → 靜默，fallback Firebase 派生（不阻斷開機）

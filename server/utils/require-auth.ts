@@ -55,6 +55,12 @@ export interface AuthOk {
   level?: AdminLevel;
   /** P18：admin 細粒度權限 overrides；非 admin 或未設定為 undefined */
   permissions?: AdminPermissions;
+  /**
+   * 認證根治 P2：admin 是否已綁定 2FA（admins/{lineUid}.totpEnrolledAt 存在）。
+   * resolveIdentity 讀 admins doc 時本就取得 totpEnrolledAt，順手 surface 供 session bootstrap
+   * 一把載齊 gate 欄位（cookie-only 裝置 client SDK 讀不到時的權威來源）。非 admin 恆 false。
+   */
+  admin2faEnrolled?: boolean;
 }
 
 export interface AuthFail {
@@ -187,7 +193,7 @@ export async function resolveIdentity(event: H3Event, decoded: DecodedIdToken): 
     }
   }
 
-  return { ok: true, uid: decoded.uid, lineUid, roles, approved, level, permissions };
+  return { ok: true, uid: decoded.uid, lineUid, roles, approved, level, permissions, admin2faEnrolled: !!totpEnrolledAt };
 }
 
 export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {
