@@ -643,7 +643,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // 認證根治 P1（2026-08-14）：移除舊「B 方案」— line-exchange 傳輸失敗時 liff.logout()+reload。
   // 舊法是毒藥：它把「唯一能鑄 Firebase session 的 LIFF token」也砍掉，且 logout 觸發動態
   // redirect_uri 迴圈（redirect_uri does not match 死鏈）。改為有上限退避重試（3 次，0.5/1/2s），
-  // 全程保留 LIFF 登入；連續失敗則放棄，待下次核心動作（GetFreshLiffToken）或開機重試。
+  // 全程保留 LIFF 登入；連續失敗則放棄，待下次開機（_InitLiffFlow）重試。
   const _EXCHANGE_MAX_RETRY = 3;
   const _EXCHANGE_BACKOFF_MS = [500, 1000, 2000];
   const _ExchangeLiffTokenBackground = async (
@@ -834,8 +834,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         void _RefreshLiffProfileBackground(liff);
 
         // 背景：若 LIFF token 仍有效，靜默刷新 roles（roles 可能因 admin 異動而變）
-        // 若 LIFF token 已過期（liff.isLoggedIn() === false），不 redirect，
-        // 等使用者觸發核心動作（叫車、接單）時再由 GetFreshLiffToken() 引導
+        // 若 LIFF token 已過期（liff.isLoggedIn() === false），不 redirect（P3.6 後不再有
+        // client liff.login() 死鏈）；需要重登時走 server OAuth /nuxt-api/auth/line/start
         if (liff.isLoggedIn()) {
           void _ExchangeLiffTokenBackground(liff, firebaseApp, clientType);
         }
@@ -1028,54 +1028,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     }
   };
 
-  /**
-   * 取得最新有效的 LIFF Access Token（供核心業務動作使用）。
-   *
-   * 設計意圖（Firebase-First 架構）：
-   *   - 平常的頁面瀏覽與 UI 渲染不需要 LIFF token
-   *   - 只有在用戶執行「核心業務動作」時才需要向後端送 LIFF token 做身分驗證
-   *     乘客端：確認叫車、查詢訂單明細
-   *     司機端：接單、開始行程、抵達
-   *
-   * 回傳：
-   *   - LIFF 登入中：當前有效的 Access Token（字串）
-   *   - LIFF token 已過期：觸發 liff.login() redirect，回傳 null（caller 應中止動作）
-   *   - LIFF 未初始化 / 非 LIFF 環境：回傳 null
-   *
-   * 注意：此函式在 LIFF token 過期時會觸發 redirect，caller 在收到 null 後應立即 return。
-   * redirect 不會再顯示授權畫面（LINE 記住了一次同意），體驗約等同透明。
-   */
-  const GetFreshLiffToken = async (): Promise<string | null> => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const { getApps } = await import('firebase/app');
-      if (getApps().length === 0) return null;
-      const liff = (await import('@line/liff')).default;
-      if (!liff.id) return null; // LIFF 尚未 init（例如 admin 端）
-
-      if (liff.isLoggedIn()) {
-        const token = liff.getAccessToken();
-        lineAccessToken.value = token ?? '';
-        return token;
-      }
-
-      // LIFF token 過期 → 此時用戶明確觸發了核心動作，redirect 是可接受的
-      // LINE 已同意授權的用戶此 redirect 幾乎無感（秒回）
-      //
-      // W3：redirectUri 必須是 LINE Login channel「callback 白名單內的固定路徑」。
-      // 過去用 window.location.href（任意 path+query）→ 永遠不在白名單 →
-      // `redirect_uri does not match`（PC 外部瀏覽器必中）。收斂為端別固定路徑：
-      //   司機端 → /driver/auth；其餘（乘客端）→ /login
-      // 這樣全 app 送出的 redirectUri 僅有這兩個固定值，白名單好維護。
-      const origin = window.location.origin;
-      const isDriverCtx = window.location.pathname.startsWith('/driver');
-      liff.login({ redirectUri: isDriverCtx ? `${origin}/driver/auth` : `${origin}/login` });
-      return null;
-    } catch (err) {
-      console.error('[StoreAuth] GetFreshLiffToken failed:', err);
-      return null;
-    }
-  };
+  // 認證根治 P3.6（2026-08-15）：舊 GetFreshLiffToken() 已移除。
+  // 該函式在 LIFF token 過期時會 liff.login({ redirectUri: 端別固定路徑 }) —— 是最後一條 client
+  // liff.login() 死鏈殘留。P0~P3 後 API 認證全走 da_session httpOnly cookie，核心業務動作（叫車/
+  // 接單）不再需要 LIFF access token 換 Bearer，故此函式已無任何呼叫端（純死碼），整支刪除。
+  // LIFF 深連結 / in-app 進站建 client Firebase session 仍由 _InitLiffFlow → _ExchangeLiffTokenBackground
+  // 負責（用既有 LIFF token 換發，不觸發 liff.login()）；需要重登一律走 server OAuth /nuxt-api/auth/line/start。
 
   /** 測試模式：直接設定身分（TestMode 用，不走 Firebase） */
   const MockSignIn = (_roles: Role[]) => {
@@ -1129,7 +1087,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     driverApplication, referralCode,
     admin2faEnrolled, admin2faSessionVerified,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, canManageThemes, idToken,
-    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
+    InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, WaitForAuthResolved,
     // 認證根治 P1：server cookie 開機權威登入判斷
     EnsureSessionChecked,
     // W4：lazy load
