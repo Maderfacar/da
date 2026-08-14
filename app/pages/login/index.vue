@@ -41,30 +41,15 @@ watch(
   { immediate: true },
 );
 
-async function ClickLineLogin() {
-  // W3：LIFF redirect circuit breaker — 連續 3 次未成功登入會被鎖 5min，避免 loop
-  const guard = UseLiffRedirectGuard();
-  if (guard.beforeRedirect() === 'locked') {
-    const mins = Math.ceil(guard.remainingMs() / 60_000);
-    ElMessage({
-      message: mins > 0
-        ? `LINE 登入似乎卡住了，請手動關閉視窗重新開啟，或聯絡客服。（約 ${mins} 分鐘後可再試）`
-        : 'LINE 登入似乎卡住了，請手動關閉視窗重新開啟，或聯絡客服。',
-      type: 'warning',
-      duration: 8000,
-    });
-    return;
-  }
+function ClickLineLogin() {
+  // 認證根治 P3：改走 server-side LINE Login OAuth（固定 redirect_uri），取代 client liff.login()。
+  // 舊 liff.login() 的 redirect_uri = 端點根 + 動態 ?liff.state=，永遠無法白名單化 →
+  // PC / 外部瀏覽器必中 redirect_uri does not match。server OAuth 只認一條固定 callback，根治死鏈。
   liffLoading.value = true;
-  try {
-    const liff = (await import('@line/liff')).default;
-    // liff.init 可能因 W3 timeout 或首次進入未完成；在此確保初始化後再 login
-    // LIFF SDK 已初始化時 init() 立即 resolve（idempotent），不會重複觸發
-    if (!liff.id) await liff.init({ liffId: config.lineLiffIdPassenger });
-    liff.login({ redirectUri: `${window.location.origin}/login` });
-  } catch {
-    liffLoading.value = false;
-  }
+  const params = new URLSearchParams({ clientType: 'passenger' });
+  const next = typeof route.query.next === 'string' ? route.query.next : '';
+  if (next) params.set('target', next);
+  window.location.href = `/nuxt-api/auth/line/start?${params.toString()}`;
 }
 
 function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {

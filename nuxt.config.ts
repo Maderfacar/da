@@ -58,6 +58,9 @@ export default defineNuxtConfig({
     lineChannelAccessTokenPassenger: '',  // NUXT_LINE_CHANNEL_ACCESS_TOKEN_PASSENGER
     lineChannelSecretDriver: '',          // NUXT_LINE_CHANNEL_SECRET_DRIVER
     lineChannelAccessTokenDriver: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN_DRIVER
+    // 認證根治 P3：LINE Login channel（server-side OAuth authorization code flow，乘客+司機共用）
+    lineLoginChannelId: '',               // NUXT_LINE_LOGIN_CHANNEL_ID — OAuth client_id
+    lineLoginChannelSecret: '',           // NUXT_LINE_LOGIN_CHANNEL_SECRET — server only（勿硬編）
     internalApiKey: '',             // NUXT_INTERNAL_API_KEY — n8n 內部 API 認證
     cwaApiKey: '',                  // NUXT_CWA_API_KEY — 中央氣象署開放資料平台（伺服器端）
     aviationEdgeKey: '',            // NUXT_AVIATION_EDGE_KEY — Aviation Edge 航班時刻表 API（伺服器端）

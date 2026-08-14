@@ -58,13 +58,13 @@
 
 ## Phase 3：入口硬化 — LINE Login server callback
 
-- [ ] **P3.1** `server/routes/nuxt-api/auth/line/start.get.ts`：產 `state`（target + CSRF nonce，存短期 Firestore / signed）→ 302 LINE authorize，`redirect_uri` = 固定 callback
-- [ ] **P3.2** `server/routes/nuxt-api/auth/line/callback.get.ts`：驗 state → code 換 LINE token（server）→ 驗 id_token/取 userId → 沿用 line-exchange user 建置 → `createCustomToken` → 換 idToken → `createSession` → 302 導回 target
-- [ ] **P3.3** LINE console：登記固定 callback（passenger + driver 各一條）— **交 Brain 設定**（Claude 不碰 LINE console）
-- [ ] **P3.4** 前端「需要重登」入口改導 `line/start`（取代 client `liff.login()`）；保留舊 `liff.login()` 路徑並列到驗收通過
-- [ ] **P3.5** e2e / 手測：PC 外部瀏覽器 + 換機 + 全新用戶登入皆不再 `redirect_uri does not match`
-- [ ] **P3.6**（驗收後另 wave）清理 `GetFreshLiffToken()` redirect 分支 + Bearer 注入殘留 + 舊 liff.login 入口
-- [ ] **P3.7** 終局檢查 → commit + push；prod 三端 + PC 驗收
+- [x] **P3.1** `server/routes/nuxt-api/auth/line/start.get.ts`：產 `state`（target + clientType + nonce，存 `line_login_states/{state}` Firestore + TTL 10min）→ 302 LINE authorize，`redirect_uri` = 固定 callback（`lineLoginRedirectUri` 共用）
+- [x] **P3.2** `server/routes/nuxt-api/auth/line/callback.get.ts`：驗 state（一次性消費，防 CSRF/replay）→ code 換 LINE token（server 帶 secret）→ verify id_token（簽名+aud+iss+nonce）取 sub/name/picture → `provisionLineUser`（與 line-exchange 抽共用 helper 單一真相）→ `createCustomToken` → Firebase REST signInWithCustomToken 換 idToken → `createSessionCookie` → 302 導回 target
+- [x] **P3.3** LINE console：登記固定 callback（單一 `/nuxt-api/auth/line/callback`）— **Brain 已完成**（舊 4 條 client callback 過渡期保留，P3.6 清）
+- [x] **P3.4** 前端「需要重登」入口改導 `/nuxt-api/auth/line/start`（login/driver-auth 兩頁 `ClickLineLogin` 取代 client `liff.login()`）；`GetFreshLiffToken()` 舊 `liff.login()` 分支保留到驗收通過（P3.6 清）
+- [ ] **P3.5** e2e / 手測：PC 外部瀏覽器 + 換機 + 全新用戶 + LINE in-app 開連結，乘客/司機各驗皆不再 `redirect_uri does not match` — 留 Brain AI prod 實測
+- [ ] **P3.6**（驗收後另 wave）清理 `GetFreshLiffToken()` redirect 分支 + Bearer 注入殘留 + 舊 liff.login 入口 + 舊 4 條 client callback（交 Brain console 刪）+（若 callback 完全取代）line-exchange
+- [x] **P3.7** 終局檢查 lint / build / test 全綠 → commit + push origin main；prod 三端 + PC 驗收留 Brain AI，通過後提醒 rotate Channel secret
 
 ## 驗收標準（Definition of Done）
 

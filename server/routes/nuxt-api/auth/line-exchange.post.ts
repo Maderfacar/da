@@ -7,10 +7,8 @@
 //   2. 同步 Firebase Auth ↔ Firestore 文件時禁用 .set() 直接覆寫
 //      → 必須 merge: true 或先 .get() 檢查存在性
 //   3. handler 整體 wrap try-catch，避免 unhandled exception 讓 Nitro 回 HTTP 500
-import { FieldValue } from 'firebase-admin/firestore';
 import { checkRateLimit, getClientIp, rateLimitedResponse } from '@@/utils/rate-limit';
-import { DEFAULT_REFERRAL_USER_FIELDS, generateUniqueReferralCode } from '@@/utils/referral';
-import { syncUserClaims } from '@@/utils/sync-user-claims';
+import { provisionLineUser } from '@@/utils/line-user-provision';
 
 interface LineUserInfo {
   sub: string
@@ -96,147 +94,28 @@ export default defineEventHandler(async (event) => {
       return serverError({ zh_tw: 'Firebase 初始化失敗', en: 'Firebase initialization failed', ja: 'Firebase初期化に失敗しました' });
     }
 
-    const uid = `line:${lineProfile.sub}`;
-
-    // ── 3. 取得或建立 Firebase 使用者 ─────────────────────────
-    // P10：新使用者一律建為 ['passenger']，由 admin 加入額外 role
-    // 既有使用者：每次登入同步刷新 displayName / pictureUrl（不覆蓋 roles / approved）
-    // P27：driverApplication 已搬至 drivers/{uid}.application，users doc 不再含此欄位
-    let isNewUser = false;
-    try {
-      await auth.getUser(uid);
-    } catch {
-      isNewUser = true;
-    }
-
-    if (isNewUser) {
-      try {
-        await auth.createUser({
-          uid,
-          displayName: lineProfile.name,
-          photoURL: lineProfile.picture,
-        });
-        // 重要：用 merge: true 避免覆寫既有 Firestore 文件中的手動設定（admin 預先設好的
-        // roles / approved）。Firebase Auth user 可能因前次失敗而從未建成功，但 Firestore
-        // 文件已存在，直接 .set() 會把使用者已有的 roles / approved 全清掉。
-        // P27：driverApplication 已搬至 drivers/{uid}.application，users doc 不再含此欄位
-        const docRef = db.collection('users').doc(lineProfile.sub);
-        const existingSnap = await docRef.get();
-        // 推薦機制：建立 user doc 時產生唯一 referralCode。
-        // 產生失敗不可阻擋登入（§4 lazy backfill 會於下次登入補寫）。
-        let referralCode: string | null = null;
-        try {
-          referralCode = await generateUniqueReferralCode(db);
-        } catch (err) {
-          console.warn('[line-exchange] referralCode 產生失敗（非致命，將於下次登入補寫）:', err);
-        }
-        if (existingSnap.exists) {
-          await docRef.set({
-            lineUserId: lineProfile.sub,
-            displayName: lineProfile.name,
-            pictureUrl: lineProfile.picture,
-            // Wave 1 P5：每次 LINE 登入交換時刷新 lastSeenAt（serverTimestamp 由 Firestore 寫入）
-            lastSeenAt: FieldValue.serverTimestamp(),
-            // referralCode 僅在既有 doc 尚未有時補寫，避免覆寫
-            ...(referralCode && !existingSnap.data()?.referralCode ? { referralCode } : {}),
-          }, { merge: true });
-        } else {
-          await docRef.set({
-            roles: ['passenger'],
-            approved: true,
-            lineUserId: lineProfile.sub,
-            displayName: lineProfile.name,
-            pictureUrl: lineProfile.picture,
-            createdAt: new Date(),
-            // Wave 1 P5：新使用者建立時亦寫入 lastSeenAt（與 createdAt 同時）
-            lastSeenAt: FieldValue.serverTimestamp(),
-            // 推薦機制欄位（referredBy / welcomeRewardClaimed 寫入點在 Phase 2，此處僅落預設）
-            referredBy: DEFAULT_REFERRAL_USER_FIELDS.referredBy,
-            welcomeRewardClaimed: DEFAULT_REFERRAL_USER_FIELDS.welcomeRewardClaimed,
-            ...(referralCode ? { referralCode } : {}),
-          });
-        }
-      } catch (err) {
-        console.error('[line-exchange] createUser/set failed:', err);
+    // ── 3~6. 使用者建置（取得/建立 user → 角色核准 → 同步 claims → 簽發 custom token）─────────
+    // 抽為 provisionLineUser 共用 helper，與 P3 server OAuth callback 單一真相（勿再複製一份）。
+    // P10：新使用者一律建為 ['passenger']；P27：driverApplication 已搬至 drivers/{uid}.application。
+    const provisioned = await provisionLineUser(auth, db, {
+      sub: lineProfile.sub,
+      name: lineProfile.name,
+      picture: lineProfile.picture,
+    });
+    if (!provisioned.ok) {
+      if (provisioned.reason === 'createUser') {
         return serverError({ zh_tw: '建立使用者失敗', en: 'Failed to create user', ja: 'ユーザー作成に失敗しました' });
       }
-    } else {
-      // 既有使用者：merge 寫入最新 displayName / pictureUrl
-      // Wave 1 P5：每次登入刷新 lastSeenAt（serverTimestamp）以利後續使用者活躍度分析
-      try {
-        await db.collection('users').doc(lineProfile.sub).set({
-          displayName: lineProfile.name,
-          pictureUrl: lineProfile.picture,
-          lastSeenAt: FieldValue.serverTimestamp(),
-        }, { merge: true });
-      } catch (err) {
-        // 同步失敗不阻擋登入流程，但要 log（避免 displayName / pictureUrl 永遠不更新無人發現）
-        console.warn('[line-exchange] existing user displayName/pictureUrl sync failed (non-fatal):', err);
-      }
-    }
-
-    // ── 4. 取得 Firestore 角色與核准狀態 ──────────────────────
-    type Role = 'passenger' | 'driver' | 'admin';
-    // 容錯：若使用者在 Firebase Console 誤把 roles 存成 string 型別，嘗試 parse
-    const parseRoles = (raw: unknown): Role[] => {
-      let arr: unknown[] = [];
-      if (Array.isArray(raw)) {
-        arr = raw;
-      } else if (typeof raw === 'string') {
-        arr = raw.replace(/[[\]'"\s]/g, '').split(',');
-      }
-      return arr.filter((r): r is Role => r === 'passenger' || r === 'driver' || r === 'admin');
-    };
-    let roles: Role[] = ['passenger'];
-    let approved = true;
-    try {
-      const userDoc = await db.collection('users').doc(lineProfile.sub).get();
-      if (userDoc.exists) {
-        const data = userDoc.data();
-        const parsed = parseRoles(data?.roles);
-        if (parsed.length > 0) {
-          roles = parsed;
-        } else if (typeof data?.role === 'string') {
-          const legacy = parseRoles([data.role]);
-          if (legacy.length > 0) roles = legacy;
-        }
-        approved = (data?.approved as boolean) ?? true;
-
-        // 推薦機制：既有使用者缺 referralCode 時 lazy backfill（非致命）
-        if (!data?.referralCode) {
-          try {
-            const code = await generateUniqueReferralCode(db);
-            await db.collection('users').doc(lineProfile.sub).set({ referralCode: code }, { merge: true });
-          } catch (err) {
-            console.warn('[line-exchange] referralCode lazy backfill 失敗（非致命）:', err);
-          }
-        }
-      }
-    } catch (err) {
-      console.error('[line-exchange] Firestore read failed (non-fatal):', err);
-    }
-
-    // ── 5. 同步 persistent custom claims（W1）─────────────────
-    // firestore.rules 依 token.roles；設持久 claims 讓 client getIdToken(true) 刷新即生效，
-    // 免等 1h TTL、免重登。非致命（user 剛在 §3 建立，理應存在；失敗只 warn 不阻擋登入）。
-    await syncUserClaims(auth, db, lineProfile.sub, { roles });
-
-    // ── 6. 建立 Firebase Custom Token ────────────────────────
-    let customToken: string;
-    try {
-      customToken = await auth.createCustomToken(uid, { roles });
-    } catch (err) {
-      console.error('[line-exchange] createCustomToken failed:', err);
       return serverError({ zh_tw: '無法建立登入憑證', en: 'Failed to create custom token', ja: 'カスタムトークンの生成に失敗しました' });
     }
 
     return successResponse({
-      customToken,
-      roles,
-      approved,
-      lineUserId: lineProfile.sub,
-      displayName: lineProfile.name,
-      pictureUrl: lineProfile.picture,
+      customToken: provisioned.customToken,
+      roles: provisioned.roles,
+      approved: provisioned.approved,
+      lineUserId: provisioned.lineUserId,
+      displayName: provisioned.displayName,
+      pictureUrl: provisioned.pictureUrl,
     });
   } catch (err) {
     // 兜底：任何 unhandled exception 都回 serverError，避免 Nitro 回 HTTP 500
