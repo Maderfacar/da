@@ -170,11 +170,14 @@ export default defineNuxtConfig({
   // nuxt font ----------------------------------
   // https://nuxt.dev.org.tw/modules/fonts
   fonts: {
+    // provider 用 bunny（Bunny Fonts，Google Fonts 隱私友善鏡像）而非 google：
+    // @nuxt/fonts 於 build 時下載字體自架，原走 fonts.gstatic.com 會時不時對 CJK woff2 回 404
+    // → build fail → Vercel 部署掛。bunny 同一批字體、視覺不變，拔掉對 gstatic 的建置期依賴。
     families: [
-      { name: 'Bebas Neue', provider: 'google', weights: [400] },
-      { name: 'Barlow', provider: 'google', weights: [300, 400, 500, 700, 900] },
-      { name: 'Barlow Condensed', provider: 'google', weights: [400, 700, 900] },
-      { name: 'Noto Sans TC', provider: 'google', weights: [300, 400, 700, 900] },
+      { name: 'Bebas Neue', provider: 'bunny', weights: [400] },
+      { name: 'Barlow', provider: 'bunny', weights: [300, 400, 500, 700, 900] },
+      { name: 'Barlow Condensed', provider: 'bunny', weights: [400, 700, 900] },
+      { name: 'Noto Sans TC', provider: 'bunny', weights: [300, 400, 700, 900] },
     ]
   },
 
