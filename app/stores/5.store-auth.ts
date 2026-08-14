@@ -60,6 +60,18 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const admin2faSessionVerified = ref<boolean>(false);
   const _ADMIN_2FA_SESSION_KEY = 'da_admin_2fa_session';
 
+  // ── 認證根治 P1（2026-08-14）：server httpOnly session cookie（da_session）─────────────────
+  // 登入真相從前端 Firebase session（LINE in-app webview 儲存不可靠）移到 server 簽發的 cookie。
+  //   - _sessionSignedIn：server /session-check 回 signedIn=true（或本機 seed 成功）→ cookie 有效
+  //   - isSignIn 改為「Firebase user 存在 或 cookie session 有效」二者其一即視為已登入，
+  //     使「localStorage 被清但 cookie 在」的裝置不再被誤判登出。
+  //   - EnsureSessionChecked()：開機打一次 /session-check（sticky promise），以 server 真相
+  //     設 roles/approved/level，取代前端等 Firebase hydration 的 12s race。
+  const _sessionSignedIn = ref<boolean>(false);
+  let _mockMode = false;                                 // MockSignIn（TestMode / E2E）時略過 session-check
+  let _sessionCheckPromise: Promise<void> | null = null; // EnsureSessionChecked sticky
+  let _sessionCookieSeeded = false;                      // 同一 JS 生命週期避免重複 seed
+
   // 司機申請狀態（P8）：null = 未申請；rejectedAt 有值 = 已被拒絕等待 admin 解除
   const driverApplication = ref<{
     appliedAt: string | null;
@@ -176,7 +188,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // -- Computed --------------------------------------------------------------------------------------
 
-  const isSignIn = computed(() => !!user.value);
+  // 認證根治 P1：Firebase user 存在 或 server cookie session 有效 → 視為已登入。
+  // 後者覆蓋「localStorage/IndexedDB 被清、但 httpOnly cookie 仍在」的裝置（不再誤判登出）。
+  const isSignIn = computed(() => !!user.value || _sessionSignedIn.value);
   const isAdmin = computed(() => roles.value.includes('admin'));
   const isDriver = computed(() => roles.value.includes('driver'));
   const isPassenger = computed(() => roles.value.includes('passenger'));
@@ -215,6 +229,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     referralCode.value = '';
     admin2faEnrolled.value = false;
     admin2faSessionVerified.value = false;
+    // 認證根治 P1：清 cookie session 真相（僅在「確定登出／無 cookie」時呼叫；
+    // onAuthStateChanged(null) 若偵測 cookie 仍有效會走 guard 分支不呼叫本函式）
+    _sessionSignedIn.value = false;
+    _sessionCookieSeeded = false;
     // W4：清四個 lazy loader sticky state，避免下一個 user 看到上個 user 的資料
     // 注意：閉包讀的是 user.value（reactive），ref 已先被 null；下次 ensure() 重新跑 fn 也 noop
     _userDocLoader?.reset();
@@ -302,6 +320,15 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // 失敗或 Firestore 讀失敗時誤踢使用者（症狀：切換路由觸發 middleware/auth 把人
       // 導去 /driver/auth，看似「再觸發 LINE 登入」）
       if (!firebaseUser) {
+        // 認證根治 P1：Firebase SDK 無 session，但若 server cookie session 仍有效
+        // （典型：localStorage/IndexedDB 被清，但 httpOnly cookie 還在）→ 只清 Firebase
+        // 派生狀態（user/idToken），保留 cookie 建立的登入真相，避免誤判登出。
+        if (_sessionSignedIn.value) {
+          user.value = null;
+          idToken.value = '';
+          _markAuthResolved();
+          return;
+        }
         _clearState();
         _markAuthResolved();
         return;
@@ -332,6 +359,10 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           stack: e.stack,
         });
       }
+      // 認證根治 P1：Firebase session 就緒（復原 或 signInWithCustomToken 新建都會觸發此分支）
+      // → 立即以 idToken 種 server httpOnly session cookie（cookie-first）。單一 seed 點涵蓋所有
+      // Firebase 登入來源；LIFF token 過期（>12h）但 Firebase session 仍在的回訪用戶也能種到 cookie。
+      void _SeedSessionCookie(firebaseApp);
       // W4：移除 eager _LoadRolesFromFirestore + admin 2FA session-check
       // 這 4 個 IO 改由 middleware/role 在進對應路徑時 lazy load（Ensure* action）
       // 公開頁進站不再觸發任何 Firestore read / admin POST
@@ -563,15 +594,60 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     } catch { /* 非致命，cache 版本繼續沿用 */ }
   };
 
+  // ── 認證根治 P1：以剛驗過的 Firebase ID token 換 server httpOnly session cookie ──────────────
+  // 由 onAuthStateChanged(user) 分支呼叫（涵蓋 Firebase session 復原 + signInWithCustomToken 新建）。
+  // 種植成功後 API 靠 cookie，不再需要保住前端 session；失敗僅記 log，不影響既有 Bearer 路徑。
+  // 同一 JS 生命週期只 seed 一次（_sessionCookieSeeded），跨 reload 自然重種（順帶滑動 14d 效期）。
+  const _SeedSessionCookie = async (
+    firebaseApp: import('firebase/app').FirebaseApp,
+  ): Promise<void> => {
+    if (_sessionCookieSeeded || _mockMode) return;
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const current = getAuth(firebaseApp).currentUser;
+      if (!current) return;
+      const freshIdToken = await current.getIdToken();
+      if (!freshIdToken) return;
+      const res = await $fetch<{ status?: { code?: number } }>('/nuxt-api/auth/session-login', {
+        method: 'POST',
+        body: { idToken: freshIdToken },
+        credentials: 'include',
+      }).catch((err) => {
+        console.warn('[StoreAuth] session-login seed failed (non-fatal):', err);
+        return null;
+      });
+      if (res?.status?.code === 200) {
+        _sessionCookieSeeded = true;
+        _sessionSignedIn.value = true;
+        logAuth({
+          event: 'auth.session-cookie.seeded',
+          severity: 'info',
+          message: 'da_session cookie 種植成功（cookie-first）',
+        });
+      }
+    } catch (err) {
+      // Firebase 未就緒 / 網路錯 → 靜默；下次開機或核心動作會再種
+      console.warn('[StoreAuth] _SeedSessionCookie unexpected error (non-fatal):', err);
+    }
+  };
+
   // ── 背景輔助：LIFF token → line-exchange → 更新 roles / Firebase session ─────────────────────
   // 此函式為純背景執行，不阻塞頁面渲染。
   // 兩種場景下呼叫：
   //   1. Firebase 有 session + LIFF 也有 token → 靜默刷新 roles（避免 roles 舊 session 過期）
   //   2. Firebase 無 session + LIFF 有 token → 首次換 customToken 建立 Firebase session
+  //
+  // 認證根治 P1（2026-08-14）：移除舊「B 方案」— line-exchange 傳輸失敗時 liff.logout()+reload。
+  // 舊法是毒藥：它把「唯一能鑄 Firebase session 的 LIFF token」也砍掉，且 logout 觸發動態
+  // redirect_uri 迴圈（redirect_uri does not match 死鏈）。改為有上限退避重試（3 次，0.5/1/2s），
+  // 全程保留 LIFF 登入；連續失敗則放棄，待下次核心動作（GetFreshLiffToken）或開機重試。
+  const _EXCHANGE_MAX_RETRY = 3;
+  const _EXCHANGE_BACKOFF_MS = [500, 1000, 2000];
   const _ExchangeLiffTokenBackground = async (
     liff: typeof import('@line/liff').default,
     firebaseApp: import('firebase/app').FirebaseApp,
     clientType: 'passenger' | 'driver',
+    attempt = 0,
   ) => {
     const token = liff.getAccessToken() ?? '';
     if (!token) return;
@@ -616,25 +692,31 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       }
     }
 
-    // B方案：line-exchange 失敗（token 失效/快取過期）時自動一次性 logout+reload 恢復
+    // 認證根治 P1：line-exchange 傳輸失敗（res null，網路/快取 hiccup）→ 有上限退避重試。
+    // 全程保留 LIFF 登入（不 logout、不 reload），避免砍掉唯一能鑄 session 的 LIFF token
+    // 以及觸發動態 redirect_uri 迴圈。連續 3 次仍失敗則放棄，待下次核心動作或開機重試。
     if (!res && liff.isLoggedIn()) {
-      const RECOVERY_KEY = 'liff_recovery_attempted';
-      if (!sessionStorage.getItem(RECOVERY_KEY)) {
-        sessionStorage.setItem(RECOVERY_KEY, '1');
+      if (attempt < _EXCHANGE_MAX_RETRY) {
+        const delay = _EXCHANGE_BACKOFF_MS[attempt] ?? 2000;
         logAuth({
-          event: 'auth.liff.recovery-reload',
+          event: 'auth.line-exchange.retry',
           severity: 'warn',
-          message: 'line-exchange null → liff.logout + location.reload',
-          metadata: { clientType },
+          message: `line-exchange 傳輸失敗，第 ${attempt + 1} 次退避重試（${delay}ms）`,
+          metadata: { attempt: attempt + 1, delay, clientType },
         });
-        try { liff.logout(); } catch { /* LINE SDK 未初始化時略過 */ }
-        location.reload();
-        return;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return _ExchangeLiffTokenBackground(liff, firebaseApp, clientType, attempt + 1);
       }
+      logAuth({
+        event: 'auth.line-exchange.retry-exhausted',
+        severity: 'error',
+        message: `line-exchange 連續 ${_EXCHANGE_MAX_RETRY} 次傳輸失敗，保留 LIFF 登入待下次重試`,
+        metadata: { clientType },
+      });
+      return;
     }
 
     if (res?.data) {
-      sessionStorage.removeItem('liff_recovery_attempted');
       if (res.data.displayName && res.data.pictureUrl) {
         lineProfile.value = { displayName: res.data.displayName, pictureUrl: res.data.pictureUrl };
       }
@@ -855,6 +937,42 @@ export const StoreAuth = defineStore('StoreAuth', () => {
    */
   const WaitForAuthResolved = (): Promise<void> => _ensureAuthResolvedPromise();
 
+  // ── 認證根治 P1：server cookie 開機權威登入判斷 ──────────────────────────────────────────────
+  // 開機打一次 GET /nuxt-api/auth/session-check（帶 da_session cookie），以 server 回的
+  // signedIn/roles/approved/level 為第一真相。命中 → isSignIn 立即為真，middleware 免等 Firebase
+  // 12s hydration race。未命中（無 cookie / 尚未種）→ 不動任何 state，fallback 走 Firebase 派生。
+  // sticky promise：一個 JS 生命週期只打一次（SignOut 會重置以允許重登後再查）。
+  const _RunSessionCheck = async (): Promise<void> => {
+    if (typeof window === 'undefined') return;
+    try {
+      const res = await $fetch<{
+        data?: { signedIn?: boolean; roles?: unknown; approved?: boolean; level?: AdminLevel | null };
+      }>('/nuxt-api/auth/session-check', { credentials: 'include', timeout: 8000 }).catch(() => null);
+      const data = res?.data;
+      if (!data?.signedIn) return; // 未命中 → 保持沉默，交由 Firebase 派生路徑
+      _sessionSignedIn.value = true;
+      const parsed = _normalizeRoles(data.roles);
+      if (parsed.length > 0) {
+        roles.value = parsed;
+        _noteRolesArrived('session-check'); // 埋點
+      }
+      if (typeof data.approved === 'boolean') approved.value = data.approved;
+      if (data.level === 'super' || data.level === 'admin' || data.level === 'assistant') {
+        level.value = data.level;
+      }
+    } catch (err) {
+      // 網路 / 逾時 → 靜默，fallback Firebase 派生（不阻斷開機）
+      console.warn('[StoreAuth] session-check failed (non-fatal):', err);
+    }
+  };
+
+  const EnsureSessionChecked = (): Promise<void> => {
+    if (_mockMode) return Promise.resolve();       // TestMode / E2E：跳過真實 session-check
+    if (_sessionCheckPromise) return _sessionCheckPromise;
+    _sessionCheckPromise = _RunSessionCheck();
+    return _sessionCheckPromise;
+  };
+
   /**
    * 取得最新的 Firebase ID token（自動 refresh）。
    * 所有受 require-auth 保護的 server endpoint 呼叫前使用。
@@ -928,6 +1046,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   /** 測試模式：直接設定身分（TestMode 用，不走 Firebase） */
   const MockSignIn = (_roles: Role[]) => {
+    _mockMode = true; // 認證根治 P1：EnsureSessionChecked 對 mock 直接 resolve，不打真實 session-check
     user.value = { uid: `mock-${_roles.join('-')}` } as import('firebase/auth').User;
     roles.value = _roles.length > 0 ? _roles : ['passenger'];
     approved.value = true; // 測試模式視為已核准
@@ -942,6 +1061,14 @@ export const StoreAuth = defineStore('StoreAuth', () => {
    *   - 其他主動觸發（譬如管理端登出按鈕）使用預設值
    */
   const SignOut = async (redirectTo: string = '/') => {
+    // 認證根治 P1：先清 server session cookie，否則下次開機 session-check 仍回 signedIn → 看似沒登出。
+    // 網路失敗不阻斷登出流程（cookie 過期後自然失效；本機仍走下方 _clearState）。
+    if (typeof window !== 'undefined') {
+      try {
+        await $fetch('/nuxt-api/auth/session-logout', { method: 'POST', credentials: 'include' });
+      } catch { /* 網路失敗略過；cookie 到期自然失效 */ }
+    }
+    _sessionCheckPromise = null; // 允許重登後重新 session-check
     try {
       const { getAuth } = await import('firebase/auth');
       await getAuth().signOut();
@@ -970,6 +1097,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     admin2faEnrolled, admin2faSessionVerified,
     isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, canManageThemes, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, GetFreshLiffToken, WaitForAuthResolved,
+    // 認證根治 P1：server cookie 開機權威登入判斷
+    EnsureSessionChecked,
     // W4：lazy load
     EnsureUserDocLoaded, EnsureDriverDocLoaded, EnsureAdminDocLoaded, EnsureAdmin2faSessionVerified,
   };

@@ -24,7 +24,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const authStore = StoreAuth();
 
-  if (!authStore.authResolved) {
+  // 認證根治 P1（2026-08-14）：server cookie session-check 為登入真相第一來源（sticky，只打一次）。
+  // cookie 命中 → isSignIn 立即為真，免等 Firebase 前端 hydration 的 12s race（本次事件死鏈根治）。
+  await authStore.EnsureSessionChecked();
+
+  // fallback：cookie 未命中時仍等 Firebase 派生登入。
+  //   - 乘客路徑：cookie 命中即可放行（isSignIn 已真）→ 不必等 Firebase，開機更快。
+  //   - admin / driver 路徑：2FA / approved 等 gate（middleware/role）仍靠 Firebase user + lazy
+  //     loader，故即使 cookie 命中也等 Firebase authResolved，確保 role.ts 有 user 可 gate（P2 前不放寬）。
+  const needsFirebase = to.path.startsWith('/admin') || to.path.startsWith('/driver');
+  if ((needsFirebase || !authStore.isSignIn) && !authStore.authResolved) {
     const t0 = Date.now();
     await Promise.race([
       authStore.WaitForAuthResolved(),

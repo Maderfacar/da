@@ -29,16 +29,16 @@
 
 ## Phase 1：乘客端切換
 
-- [ ] **P1.1** `app/stores/5.store-auth.ts`：`_ExchangeLiffTokenBackground` 成功後 `getIdToken` → 打 `session-login`（`credentials:'include'`）種 cookie
-- [ ] **P1.2** 移除 B 方案 `liff.logout()+reload`（[5.store-auth.ts:619-632](../../../app/stores/5.store-auth.ts)），改**有上限退避重試**（3 次 0.5/1/2s，保留 LIFF 登入）
-- [ ] **P1.3** `store-auth` 加 `EnsureSessionChecked()`：開機打一次 `session-check`，以 server `signedIn` 設 `isSignIn`/`roles`（sticky promise，避免重打）
-- [ ] **P1.4** `app/middleware/auth.ts`：以 `EnsureSessionChecked()` 的 server 真相取代 12s `WaitForAuthResolved` race（公開路由仍 skip）
-- [ ] **P1.5** `app/middleware/role.ts`：roles 來源改吃 session-check 結果（與 server 一致）
-- [ ] **P1.6** `app/protocol/fetch-api/methods.ts`：全請求 `credentials:'include'`；Bearer 注入降為過渡 fallback（cookie 在時可不打 idToken）
-- [ ] **P1.7** e2e（Playwright）：乘客冷開 → 種 cookie → reload 不閃 `/login`；清 localStorage 後 cookie 仍認；模擬 line-exchange 傳輸失敗 → 重試成功、不 logout、不迴圈
-- [ ] **P1.8** 終局檢查 lint / build / test 全綠 → commit + push
-- [ ] **P1.9** prod 驗證：乘客換機 / 登出後重登不再迴圈；DevTools 見 `da_session` HttpOnly cookie；reload 保持登入
-- [ ] **P1.10** 寫 P2 handoff prompt
+- [x] **P1.1** `app/stores/5.store-auth.ts`：`_SeedSessionCookie` 於 `onAuthStateChanged(user)` 種 cookie（單一 seed 點，涵蓋 session 復原 + `signInWithCustomToken` 新建；LIFF token 過期但 Firebase session 在的回訪用戶也種得到）
+- [x] **P1.2** 移除 B 方案 `liff.logout()+reload`，改**有上限退避重試**（3 次 0.5/1/2s，全程保留 LIFF 登入）
+- [x] **P1.3** `store-auth` 加 `EnsureSessionChecked()`：開機打一次 `session-check`（sticky），以 server `signedIn` 設 `_sessionSignedIn`/`roles`/`approved`/`level`；`isSignIn` 改為「Firebase user 或 cookie session」二擇一
+- [x] **P1.4** `app/middleware/auth.ts`：先 `EnsureSessionChecked()`；乘客路徑 cookie 命中即放行免等 Firebase，admin/driver 仍等 `WaitForAuthResolved`（2FA/approved gate 靠 Firebase user，P2 前不放寬）
+- [x] **P1.5** `app/middleware/role.ts`：頂部 `await EnsureSessionChecked()` 使 roles/approved 與 server（Firestore 即時 SSOT）一致
+- [x] **P1.6** `app/protocol/fetch-api/methods.ts`：全請求 `credentials:'include'`（含 xhrFileUpload `withCredentials`）；Bearer 保留為過渡 fallback
+- [ ] **P1.7** e2e（Playwright）：乘客冷開 → 種 cookie → reload 不閃 `/login`；清 localStorage 後 cookie 仍認；模擬 line-exchange 傳輸失敗 → 重試成功、不 logout、不迴圈 — 留 Brain AI prod 實測
+- [x] **P1.8** 終局檢查 lint / build / test 全綠 → commit + push
+- [ ] **P1.9** prod 驗證：乘客換機 / 登出後重登不再迴圈；DevTools 見 `da_session` HttpOnly cookie；reload 保持登入 — 留 Brain AI
+- [x] **P1.10** 寫 P2 handoff prompt
 
 ## Phase 2：司機 + Admin 切換（疊合 2FA / PIN）
 

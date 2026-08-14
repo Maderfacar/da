@@ -76,6 +76,11 @@ const _DoFetch = async <T>(
     return await $fetch(
       `${url}?t=${Date.now()}`, // 加入 [?t] 避免 api 快取
       {
+        // 認證根治 P1（2026-08-14）：帶上 da_session httpOnly cookie（cookie-first）。
+        // server require-auth 優先認 cookie、Bearer 為過渡 fallback；cookie 在時即使 idToken 取不到
+        // （例：localStorage 被清、Firebase SDK 無 session）API 仍可認證。
+        credentials: 'include',
+
         // 參數
         ...option,
 
@@ -216,6 +221,7 @@ export default {
       const storeSelf = StoreSelf();
       return new Promise((resolve) => {
         const xhr = new XMLHttpRequest();
+        xhr.withCredentials = true; // 認證根治 P1：帶 da_session cookie
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable && e.total > 0) progressObj['upload'] = Math.floor((e.loaded / e.total) * 100);
         });

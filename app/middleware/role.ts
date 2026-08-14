@@ -34,6 +34,10 @@ import { logMiddleware } from '~/utils/error-log';
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
 
+  // 認證根治 P1：先確保 server cookie session-check 已跑（sticky，auth.ts 多半已觸發 → 這裡 no-op），
+  // 讓 roles / approved 來源與 server 一致（Firestore 即時 SSOT），避免只靠 Firebase claims 舊值 gate。
+  await authStore.EnsureSessionChecked();
+
   // W2：所有 middleware 導向都過斷路器 —— 短時間內連續導向超過門檻即中止，
   // 讓當前頁渲染，避免任何邏輯 bug 造成無限登入迴圈（終極保險）。
   const guardedRedirect = (
