@@ -102,6 +102,45 @@ export async function createLoginState(
   return { state, nonce };
 }
 
+// line_login_states 清理：consume 成功會即刻刪 doc，但「按了登入卻沒走完 callback」
+// （關視窗 / 授權頁取消 / 網路斷）的 doc 會殘留至過期後仍在，無上限累積。以下 janitor
+// 依 expiresAt 批次刪除過期 doc，冪等、單次有上限（避免 serverless timeout，剩餘留隔日）。
+// ⚠️ 併進既有每日 cron（cleanup-error-logs）呼叫，不新增 Vercel cron 條目（Hobby 方案上限 2 個）。
+const STATE_CLEANUP_BATCH = 400;         // Firestore WriteBatch 上限 500，留餘裕
+const STATE_CLEANUP_MAX_BATCHES = 10;    // 單次最多刪 ~4k，剩餘隔日續清
+
+export interface PurgeLoginStatesResult {
+  deleted: number;
+  batches: number;
+  /** 達單次批次上限、仍有殘餘 → 隔日 cron 續清 */
+  hasMore: boolean;
+}
+
+/** 批次刪除已過期的 line_login_states doc（依 expiresAt）。冪等、不 throw 由 caller 決定。 */
+export async function purgeExpiredLoginStates(
+  db: Firestore,
+  now: Date = new Date(),
+): Promise<PurgeLoginStatesResult> {
+  const col = db.collection(STATE_COLLECTION);
+  const cutoff = Timestamp.fromDate(now);
+  let deleted = 0;
+  let batches = 0;
+  for (; batches < STATE_CLEANUP_MAX_BATCHES; batches++) {
+    const snap = await col
+      .where('expiresAt', '<', cutoff)
+      .orderBy('expiresAt', 'asc')
+      .limit(STATE_CLEANUP_BATCH)
+      .get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+    deleted += snap.size;
+    if (snap.size < STATE_CLEANUP_BATCH) break; // 最後一批
+  }
+  return { deleted, batches, hasMore: batches >= STATE_CLEANUP_MAX_BATCHES };
+}
+
 /**
  * 消費 state：transaction 讀取即刪除（一次性，防 replay），並檢查未過期。
  * 回 payload 或 null（不存在 / 已消費 / 已過期 / 交易失敗）。

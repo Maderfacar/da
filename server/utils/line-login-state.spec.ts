@@ -5,6 +5,7 @@ import {
   lineLoginRedirectUri,
   createLoginState,
   consumeLoginState,
+  purgeExpiredLoginStates,
   LINE_CALLBACK_PATH,
   LINE_PROD_ORIGIN,
   LOGIN_STATE_TTL_MS,
@@ -137,5 +138,50 @@ describe('createLoginState / consumeLoginState', () => {
     doc.expiresAt = { toMillis: () => past };
     expect(await consumeLoginState(db, state)).toBeNull();
     expect(store.has(state)).toBe(false); // 過期也一次性刪除
+  });
+});
+
+// ── purgeExpiredLoginStates：批次刪過期 doc（fake query builder）─────
+function makeCleanupDb(expiredIds: string[]) {
+  const remaining = new Set(expiredIds);
+  const deleted: string[] = [];
+  const db = {
+    collection: () => ({
+      where: () => ({
+        orderBy: () => ({
+          limit: (n: number) => ({
+            get: async () => {
+              const ids = [...remaining].slice(0, n);
+              return {
+                empty: ids.length === 0,
+                size: ids.length,
+                docs: ids.map((id) => ({ ref: { __id: id } })),
+              };
+            },
+          }),
+        }),
+      }),
+    }),
+    batch: () => ({
+      delete: (ref: { __id: string }) => { deleted.push(ref.__id); },
+      commit: async () => { deleted.forEach((id) => remaining.delete(id)); },
+    }),
+  };
+  return { db: db as never, deleted, remaining };
+}
+
+describe('purgeExpiredLoginStates', () => {
+  it('刪除所有過期 doc，回總數', async () => {
+    const { db, remaining } = makeCleanupDb(['a', 'b', 'c']);
+    const res = await purgeExpiredLoginStates(db);
+    expect(res.deleted).toBe(3);
+    expect(res.hasMore).toBe(false);
+    expect(remaining.size).toBe(0);
+  });
+
+  it('無過期 doc → deleted 0、不 hasMore', async () => {
+    const { db } = makeCleanupDb([]);
+    const res = await purgeExpiredLoginStates(db);
+    expect(res).toEqual({ deleted: 0, batches: 0, hasMore: false });
   });
 });

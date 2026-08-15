@@ -1,15 +1,20 @@
-// GET /api/cron/cleanup-error-logs — Vercel Cron 每日清理 client_error_logs
+// GET /api/cron/cleanup-error-logs — Vercel Cron 每日 janitor
 //
-// 刪除 timestamp 早於保留邊界（現在 - 7 天）的舊 log，分批 commit，單次執行上限避免
-// serverless timeout；剩餘留隔日 cron 續清（冪等）。
+// 每日清理兩類會無上限成長的 collection：
+//   1. client_error_logs：刪 timestamp 早於保留邊界（現在 - 7 天）的舊 log
+//   2. line_login_states：刪已過期的 server OAuth 登入 state（consume 成功即刪，但「按了
+//      登入卻沒走完 callback」的殘留 doc 會累積）— 認證根治 P3.6-FU2
+// 兩者皆分批 commit、單次執行上限避免 serverless timeout，剩餘留隔日續清（冪等）。
+//
+// ⚠️ line_login_states 清理刻意併進本 cron 呼叫、不新增 vercel.json cron 條目：
+//    Vercel Hobby 方案 cron 上限 2 個，本專案已有 cleanup-error-logs + alert-auth-health 兩個。
 //
 // 排程：vercel.json crons（每日一次）。
-//
 // 保護：若設環境變數 CRON_SECRET，要求 Authorization: Bearer <CRON_SECRET>
 //       （Vercel Cron 於觸發時會自動以該值注入此標頭）。未設則放行（out-of-box 可跑）。
-//       端點行為本身有界且冪等（只刪 >7 天的 log），即使被觸發風險亦低。
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getErrorLogRetentionCutoff, ERROR_LOG_RETENTION_DAYS } from '@@/utils/error-log-retention';
+import { purgeExpiredLoginStates } from '@@/utils/line-login-state';
 
 const COLLECTION = 'client_error_logs';
 const BATCH_SIZE = 400;          // Firestore WriteBatch 上限 500，留餘裕
@@ -52,6 +57,14 @@ export default defineEventHandler(async (event) => {
       if (snap.size < BATCH_SIZE) break; // 最後一批
     }
 
+    // 順帶清過期 line_login_states（併進本 janitor，見檔頭；失敗不影響 error-log 清理結果）
+    let loginStates = { deleted: 0, batches: 0, hasMore: false };
+    try {
+      loginStates = await purgeExpiredLoginStates(db);
+    } catch (err) {
+      console.error('[cron/cleanup-error-logs] purgeExpiredLoginStates failed (non-fatal):', err);
+    }
+
     return successResponse({
       ok: true,
       deleted,
@@ -59,6 +72,7 @@ export default defineEventHandler(async (event) => {
       retentionDays: ERROR_LOG_RETENTION_DAYS,
       cutoff: cutoff.toISOString(),
       hasMore: batches >= MAX_BATCHES_PER_RUN, // 達單次上限，仍有殘餘，隔日續清
+      loginStates, // { deleted, batches, hasMore } — 過期登入 state 清理結果
     });
   } catch (err) {
     console.error('[cron/cleanup-error-logs] failed:', err);
