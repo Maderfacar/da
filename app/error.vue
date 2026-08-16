@@ -7,10 +7,31 @@
 //
 // 用 useRequestURL().pathname 取錯誤發生時的原 URL（SSR + CSR 皆可靠），
 // useRoute() 在 error.vue 內某些情境下會回 fallback route，不適合判斷。
+// 2026-08-17：錯誤頁本身就是最後、也最可靠的一道收集器。
+// error-handler.client.ts 的三道（window.onerror / unhandledrejection / vueApp.errorHandler）
+// 攔不到 route middleware、plugin、setup() 拋出的錯誤 —— Nuxt 直接接住並渲染本頁，
+// 所以現場只看得到全螢幕 500、log 一片空白（司機 OA 進站閃 500 即屬此類）。
+// 本頁拿得到完整 error 物件，在此補記一筆，把這塊盲區徹底補上。
+import { logUnhandled } from '~/utils/error-log';
+
 type Props = {
-  error: { statusCode: number, statusMessage: string }
+  error: { statusCode: number, statusMessage: string, message?: string, stack?: string }
 }
 const props = defineProps<Props>();
+
+onMounted(() => {
+  logUnhandled({
+    event: 'app.error-page',
+    severity: 'error',
+    message: `[${props.error?.statusCode}] ${props.error?.message || props.error?.statusMessage || '(無訊息)'}`,
+    stack: props.error?.stack,
+    metadata: {
+      statusCode: props.error?.statusCode,
+      statusMessage: props.error?.statusMessage,
+      href: typeof window === 'undefined' ? '' : window.location.href.slice(0, 500),
+    },
+  });
+});
 
 const requestUrl = useRequestURL();
 const isDriverPath = requestUrl.pathname.startsWith('/driver');

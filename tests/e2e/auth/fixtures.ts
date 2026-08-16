@@ -13,7 +13,10 @@ export type Identity =
   | 'driverPending'
   | 'adminNo2fa'
   | 'adminEnrolledNoSession'
-  | 'adminWith2fa';
+  | 'adminWith2fa'
+  // 2026-08-17：司機 OA 進站閃 500 的回報者身分 —— passenger + driver + admin 三合一。
+  // 既有 6 種身分全是單一角色，完全涵蓋不到多重身分的分流路徑（正是出事的那條）。
+  | 'multiRoleDriverAdmin';
 
 type IdentityPayload = {
   roles: ('passenger' | 'driver' | 'admin')[];
@@ -53,6 +56,11 @@ const IDENTITIES: Readonly<Record<Identity, IdentityPayload>> = {
     patch: { approved: true, admin2faEnrolled: true, admin2faSessionVerified: true },
     localStorage: { da_admin_2fa_session: 'e2e-mock-2fa-session-token' },
   },
+  multiRoleDriverAdmin: {
+    roles: ['passenger', 'driver', 'admin'],
+    patch: { approved: true, admin2faEnrolled: true, admin2faSessionVerified: true },
+    localStorage: { da_admin_2fa_session: 'e2e-mock-2fa-session-token' },
+  },
 };
 
 // API mock 路由表 — 大部分 endpoint 對 e2e 來說只要回 envelope code=200 即可
@@ -66,6 +74,38 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
   '/nuxt-api/orders/upcoming': () => ({
     data: null,
     status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  // 季節主題：必須回「結構完整」的 ResolvedTheme。
+  // 用萬用的 { data: {} } 會讓 buildThemeCss 取 tokens[key] / hero.stripeYellow 時炸掉，
+  // 整個乘客 / 行銷 layout 變 500 —— 那是 fixture 造成的假陽性，會蓋掉真正要找的錯誤。
+  // 內容對齊 prod GET /nuxt-api/config/theme 的實際回應。
+  '/nuxt-api/config/theme': () => ({
+    data: {
+      activeThemeId: 'default',
+      name: { zh: '經典（預設）', en: 'Classic (Default)', ja: 'クラシック（既定）' },
+      tokens: {
+        'da-cream': '#F5F2EC', 'da-off-white': '#FAF8F4', 'da-amber': '#D4860A',
+        'da-amber-light': '#F0A830', 'da-amber-pale': '#FDF3DC', 'da-dark': '#1A1814',
+        'da-dark-mid': '#2E2B25', 'da-gray': '#6B6560', 'da-gray-light': '#B8B3AC',
+        'da-gray-pale': '#E8E4DC', 'da-stripe-yellow': '#F5C842', 'da-stripe-dark': '#2A2620',
+      },
+      hero: { stripeYellow: '#F5C842', stripeDark: '#2A2620', tagColor: '#D4860A' },
+    },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  // 回陣列的列表端點：萬用 { data: {} } 會讓頁面的 orders.value.filter(...) 炸掉，
+  // 同樣是 fixture 造成的假陽性。凡 consumer 預期陣列者一律回 []。
+  '/nuxt-api/driver/dispatched-orders': () => ({
+    data: [], status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  '/nuxt-api/orders/assigned': () => ({
+    data: [], status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  '/nuxt-api/orders/history': () => ({
+    data: [], status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  '/nuxt-api/driver/announcements': () => ({
+    data: [], status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   }),
   '/nuxt-api/admin/2fa/session-check': (identity) => ({
     data: {},

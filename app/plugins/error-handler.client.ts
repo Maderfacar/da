@@ -50,6 +50,24 @@ export default defineNuxtPlugin((nuxtApp) => {
     console.error('[Vue errorHandler]', err, info);
   };
 
+  // 3.5. Nuxt 自身的錯誤鉤子（2026-08-17）
+  //      上面三道攔不到 route middleware / plugin / setup() 拋出的錯誤 —— Nuxt 會直接接住
+  //      並渲染 error.vue，現場只看得到全螢幕 500、log 全空（司機 OA 進站閃 500 即屬此類）。
+  //      app:error 是這條路徑上最早、最泛用的攔截點；error.vue 內另有一道兜底。
+  nuxtApp.hook('app:error', (err: unknown) => {
+    const e = err instanceof Error ? err : new Error(String(err));
+    logUnhandled({
+      event: 'app.error-hook',
+      message: e.message,
+      stack: e.stack,
+      metadata: {
+        statusCode: (err as { statusCode?: number } | null)?.statusCode ?? null,
+        href: typeof window === 'undefined' ? '' : window.location.href.slice(0, 500),
+      },
+    });
+    console.error('[Nuxt app:error]', err);
+  });
+
   // 4. Chunk load 失敗自癒（P1，2026-07-31）
   //    新版部署後，仍開著舊 HTML 的分頁參照到已被清掉的 JS chunk → dynamic import 失敗 →
   //    白畫面 / 功能壞（例：07-24 `Importing a module script failed`）。偵測到就「一次性硬重載」
