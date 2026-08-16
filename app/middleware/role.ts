@@ -37,7 +37,22 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 認證根治 P1：先確保 server cookie session-check 已跑（sticky，auth.ts 多半已觸發 → 這裡 no-op），
   // 讓 roles / approved 來源與 server 一致（Firestore 即時 SSOT），避免只靠 Firebase claims 舊值 gate。
-  await authStore.EnsureSessionChecked();
+  //
+  // 2026-08-17：middleware 內未捕捉的 reject 會被 Nuxt 轉成全螢幕錯誤頁（statusCode 500），
+  // 且 error-handler.client.ts 的三道收集器（window.onerror / unhandledrejection /
+  // vueApp.errorHandler）**都蓋不到 middleware**，所以現場只看得到 500、log 一片空白。
+  // 司機 OA 進站時 LIFF 會整頁重載一次 + liff.init 重試，是這類暫時性失敗的高風險時刻。
+  // 改為：失敗就記錄並放行讓頁面渲染（gate 仍由下方 roles 判斷，安全性不變）。
+  try {
+    await authStore.EnsureSessionChecked();
+  } catch (err) {
+    logMiddleware({
+      event: 'middleware.ensure.session-check.failed',
+      severity: 'error',
+      message: `EnsureSessionChecked 失敗 @ ${to.path}：${err instanceof Error ? err.message : String(err)}`,
+      metadata: { path: to.path },
+    });
+  }
 
   // W2：所有 middleware 導向都過斷路器 —— 短時間內連續導向超過門檻即中止，
   // 讓當前頁渲染，避免任何邏輯 bug 造成無限登入迴圈（終極保險）。
@@ -84,7 +99,26 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (needs.driver) ensures.push(authStore.EnsureDriverDocLoaded());
   if (needs.admin) ensures.push(authStore.EnsureAdminDocLoaded());
   if (needs.admin2fa) ensures.push(authStore.EnsureAdmin2faSessionVerified());
-  if (ensures.length > 0) await Promise.all(ensures);
+  // allSettled 而非 all：單一 doc 讀取失敗不該讓整頁變成 500（理由同上方 session-check）。
+  // 失敗時該欄位維持預設值，下方 roles/approved gate 照常運作；lazy-loader 本身也會重試。
+  if (ensures.length > 0) {
+    const results = await Promise.allSettled(ensures);
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failures.length > 0) {
+      logMiddleware({
+        event: 'middleware.ensure.docs.failed',
+        severity: 'error',
+        message: `${failures.length}/${results.length} 個 Ensure* 失敗 @ ${to.path}`,
+        metadata: {
+          path: to.path,
+          needs,
+          reasons: failures.map((f) =>
+            f.reason instanceof Error ? f.reason.message : String(f.reason)
+          ),
+        },
+      });
+    }
+  }
 
   const isAdminPath = to.path.startsWith('/admin');
   const isDriverPath = to.path.startsWith('/driver');

@@ -26,7 +26,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 認證根治 P1（2026-08-14）：server cookie session-check 為登入真相第一來源（sticky，只打一次）。
   // cookie 命中 → isSignIn 立即為真，免等 Firebase 前端 hydration 的 12s race（本次事件死鏈根治）。
-  await authStore.EnsureSessionChecked();
+  // 2026-08-17：同 middleware/role —— middleware 內未捕捉的 reject 會被 Nuxt 轉成全螢幕
+  // 500 錯誤頁，且 error-handler.client.ts 三道收集器都蓋不到，現場只看得到 500、log 全空。
+  // 失敗改為記錄並往下走（未登入仍會被下方 isSignIn 判斷踢去登入頁，安全性不變）。
+  try {
+    await authStore.EnsureSessionChecked();
+  } catch (err) {
+    logMiddleware({
+      event: 'middleware.ensure.session-check.failed',
+      severity: 'error',
+      message: `EnsureSessionChecked 失敗 @ ${to.path}：${err instanceof Error ? err.message : String(err)}`,
+      metadata: { path: to.path, from: 'middleware/auth' },
+    });
+  }
 
   // 認證根治 P2（2026-08-15）：cookie 命中即為登入真相，三端一致免等 Firebase。
   //   - admin/driver 的 gate 欄位（roles/approved/level/admin2faEnrolled/driverApplication）已由
