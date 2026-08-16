@@ -171,7 +171,7 @@ onMounted(ApiLoadOrder);
         :disabled="submitting"
         type="button"
         @click="ClickBid"
-      ) {{ submitting ? '處理中...' : (myBidStatus === 'withdrawn' ? '重新喊單' : '我要接這單') }}
+      ) {{ submitting ? '處理中...' : (myBidStatus === 'withdrawn' ? '重新喊單' : '我要喊這單（競標）') }}
       button.PageDriverDispatchedDetail__action.is-danger(
         v-else
         :disabled="submitting"

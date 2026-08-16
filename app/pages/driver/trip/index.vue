@@ -318,8 +318,8 @@ onUnmounted(() => {
     //- 空狀態
     .PageDriverTrip__empty(v-else-if="!orders.length")
       .PageDriverTrip__empty-icon 📭
-      p 目前沒有指派任務
-      small 請至「搶單」頁查看可接訂單
+      p 目前沒有已指派的任務
+      small 在「接單看板」喊單後，需管理員指派才會進入此列表
 
     //- 任務列表（簡略卡片）
     template(v-else)

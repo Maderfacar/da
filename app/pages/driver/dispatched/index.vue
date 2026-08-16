@@ -129,6 +129,8 @@ onMounted(ApiLoadOrders);
         )
 
     template(v-else)
+      .PageDriverDispatched__bid-note
+        | 喊單＝競標報名，需等管理員指派；被指派後才會出現在「任務」。
       .PageDriverDispatched__empty(v-if="!myBids.length")
         .PageDriverDispatched__empty-icon 🙋
         p 您目前未對任何訂單喊單
@@ -266,6 +268,18 @@ $amber: #d4860a;
 .PageDriverDispatched__empty-icon {
   font-size: 40px;
   line-height: 1;
+}
+
+.PageDriverDispatched__bid-note {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba($amber, 0.08);
+  border: 1px solid rgba($amber, 0.2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
 }
 
 .PageDriverDispatched__list {
