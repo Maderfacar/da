@@ -165,3 +165,40 @@ describe('resolveDestination — 深連結授權後導向（迴圈修復核心�
     })).toBe('/home');
   });
 });
+
+// 2026-08-17 迴歸：司機 OA 進站的多重身分者被丟去 admin
+// prod client_error_logs 實測：roles=[passenger,admin,driver] / path=/ / liffTarget=null → /admin/orders
+describe('resolveAuthTarget — entryEnd 入口端別優先', () => {
+  const multiRole = {
+    entryPath: '/',
+    isSignIn: true,
+    roles: ['passenger', 'admin', 'driver'],
+    approved: true,
+  } as const;
+
+  it('司機 OA 進站的 admin+driver → 司機端，不被 admin 優先蓋掉', () => {
+    expect(resolveAuthTarget({ ...multiRole, entryEnd: 'driver' })).toBe('/driver/dashboard');
+  });
+
+  it('乘客 OA 進站的 admin+driver → 維持 admin 優先（既有行為不變）', () => {
+    expect(resolveAuthTarget({ ...multiRole, entryEnd: 'passenger' })).toBe('/admin/orders');
+  });
+
+  it('無 entryEnd → 維持既有 admin 優先（不影響桌機直接開站）', () => {
+    expect(resolveAuthTarget({ ...multiRole })).toBe('/admin/orders');
+  });
+
+  it('司機 OA 進站但 driver 未核准 → 不硬導司機端，仍回 admin', () => {
+    expect(resolveAuthTarget({ ...multiRole, approved: false, entryEnd: 'driver' })).toBe('/admin/orders');
+  });
+
+  it('司機 OA 進站的純 admin（無 driver 角色）→ 仍回 admin', () => {
+    expect(resolveAuthTarget({
+      entryPath: '/', isSignIn: true, roles: ['passenger', 'admin'], approved: false, entryEnd: 'driver',
+    })).toBe('/admin/orders');
+  });
+
+  it('entryEnd 透過 resolveDestination 傳遞下去', () => {
+    expect(resolveDestination({ ...multiRole, liffTarget: '', entryEnd: 'driver' })).toBe('/driver/dashboard');
+  });
+});

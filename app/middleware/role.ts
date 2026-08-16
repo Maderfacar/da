@@ -28,6 +28,7 @@ import { isLoginEntry, resolveDestination } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
 import { resolveRequiredLoads } from '~shared/auth/required-loads';
 import { stripDeepLinkParams } from '~shared/auth/deep-link';
+import { clearEntryIntent, readEntryIntent, rememberEntryIntent } from '~shared/auth/entry-intent';
 import { noteRedirect, resetBreaker } from '~shared/auth/redirect-breaker';
 import { logMiddleware } from '~/utils/error-log';
 
@@ -99,24 +100,45 @@ export default defineNuxtRouteMiddleware(async (to) => {
       query: to.query as Record<string, string | string[] | null | undefined>,
       pathname: import.meta.client ? window.location.pathname : undefined,
     });
+    // 2026-08-17：深連結一出現就記進 entry-intent。URL 稍後會被 stripDeepLinkParams 剝乾淨，
+    // 但 LIFF SDK init 完成後 middleware 會在 `/` 再解析一次；沒有這份意圖，第二輪就會落回
+    // 角色預設，把司機 OA 進來的多重身分者丟去 /admin/orders（prod log 實測）。
+    if (liffTarget) rememberEntryIntent(liffTarget);
+    const intent = readEntryIntent();
+    // 本輪 URL 沒有深連結時，沿用前一輪記下的目標與端別
+    const effectiveTarget = liffTarget || intent?.target || '';
     const dest = resolveDestination({
       entryPath: to.path,
       isSignIn: authStore.isSignIn,
       roles: authStore.roles,
       approved: authStore.approved,
-      liffTarget,
+      liffTarget: effectiveTarget,
+      entryEnd: intent?.end,
     });
     // 深連結已被消費（無論採用與否）→ 從 URL 剝掉，避免殘留 query 反覆觸發導向
     if (liffTarget) stripDeepLinkParams();
 
     if (dest && dest !== to.path) {
       return guardedRedirect(dest, 'middleware.redirect.login-entry', `${to.path} → ${dest}`, {
-        from: to.path, to: dest, liffTarget: liffTarget || null, roles: authStore.roles,
+        from: to.path,
+        to: dest,
+        liffTarget: liffTarget || null,
+        intentTarget: intent?.target ?? null,
+        entryEnd: intent?.end ?? null,
+        roles: authStore.roles,
       });
     }
     resetBreaker();
     return;
   }
+
+  // 真正「落地」才清進站意圖：僅在不再導向、頁面確定要渲染時呼叫。
+  // ⚠️ 不可在守衛彈開之前清 —— 若 driver doc 尚未載齊而被彈去 /driver/auth，
+  // 意圖沒了就會走 `hasAdmin && !hasDriver → /admin/orders`，正是本次要修的症狀。
+  const settle = () => {
+    clearEntryIntent();
+    resetBreaker();
+  };
 
   // /driver/auth 未登入放行（上方已處理已登入分流）
   if (isDriverAuth) return;
@@ -128,7 +150,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         from: to.path, to: '/driver/dashboard', reason: 'approved-driver-on-register',
       });
     }
-    resetBreaker();
+    settle();
     return;
   }
 
@@ -159,7 +181,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         return navigateTo({ path: '/admin/2fa/challenge', query: { next: to.fullPath } }, { replace: true });
       }
     }
-    resetBreaker();
+    settle();
     return;
   }
 
@@ -177,10 +199,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
         roles: authStore.roles, approved: authStore.approved,
       });
     }
-    resetBreaker();
+    settle();
     return;
   }
 
   // 其他受保護頁 — Ensure* 已 await 完成；無額外 redirect 規則
-  resetBreaker();
+  settle();
 });

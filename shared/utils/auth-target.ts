@@ -23,6 +23,14 @@ export interface AuthTargetInput {
   isSignIn: boolean;
   roles: readonly string[];
   approved: boolean;
+  /**
+   * 進站端別（司機 OA / 乘客 OA）。有值時優先於「多重身分 admin 優先」的預設。
+   *
+   * 為何需要：`/` 只說明「落在哪個 path」，說明不了「從哪個 OA 進來」。多重身分者
+   * （admin + approved driver）從司機 OA 的 richmenu 進站也會落在 `/`，若只看 path
+   * 就會被 admin 優先規則丟去 /admin/orders。來源見 shared/auth/entry-intent.ts。
+   */
+  entryEnd?: 'driver' | 'passenger';
 }
 
 function _isDriverAuthEntry(path: string): boolean {
@@ -86,6 +94,7 @@ export function resolveDestination(input: DestinationInput): string {
     isSignIn: input.isSignIn,
     roles,
     approved,
+    entryEnd: input.entryEnd,
   });
 }
 
@@ -104,6 +113,8 @@ export function resolveAuthTarget(input: AuthTargetInput): string {
 
   if (_isPassengerEntry(input.entryPath)) {
     if (input.roles.length === 0) return '/login';
+    // 入口端別優先於角色優先序：從司機 OA 進來的多重身分者應落司機端，不該被 admin 優先蓋掉
+    if (input.entryEnd === 'driver' && driverApproved) return '/driver/dashboard';
     if (hasAdmin) return '/admin/orders';
     if (driverApproved) return '/driver/dashboard';
     return '/home';

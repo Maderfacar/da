@@ -19,6 +19,7 @@
 
 import { resolveAuthTarget } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
+import { readEntryIntent, rememberEntryIntent } from '~shared/auth/entry-intent';
 
 definePageMeta({ layout: 'marketing', middleware: ['role'] });
 
@@ -72,12 +73,17 @@ watch(
   () => {
     if (!authStore.authResolved || !authStore.isSignIn) return;
     // 優先序 1：LIFF OAuth callback 目標
+    // 2026-08-17：URL 被 stripDeepLinkParams 剝掉後改讀 entry-intent，
+    // 否則此兜底 watch 會在 LIFF init 完成後把正確目標蓋成角色預設
     const liffTarget = resolveLiffTarget({
       query: route.query as Record<string, string | string[] | null | undefined>,
       pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
     });
-    if (liffTarget && liffTarget !== route.path) {
-      navigateTo(liffTarget, { replace: true });
+    if (liffTarget) rememberEntryIntent(liffTarget);
+    const intent = readEntryIntent();
+    const effectiveTarget = liffTarget || intent?.target || '';
+    if (effectiveTarget && effectiveTarget !== route.path) {
+      navigateTo(effectiveTarget, { replace: true });
       return;
     }
     // 優先序 2：依角色算目標（與 middleware/role.ts 共用 utils）
@@ -86,6 +92,7 @@ watch(
       isSignIn: authStore.isSignIn,
       roles: authStore.roles,
       approved: authStore.approved,
+      entryEnd: intent?.end,
     });
     if (target && target !== route.path) {
       navigateTo(target, { replace: true });

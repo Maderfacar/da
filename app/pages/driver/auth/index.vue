@@ -13,6 +13,7 @@
 import { resolveDestination } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
 import { stripDeepLinkParams } from '~shared/auth/deep-link';
+import { readEntryIntent, rememberEntryIntent } from '~shared/auth/entry-intent';
 
 definePageMeta({ layout: false, ssr: false, middleware: ['role'] });
 
@@ -30,12 +31,16 @@ const _RouteByRoles = (): boolean => {
     pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
   });
   // W2：與 middleware/role 共用 resolveDestination（授權校驗）+ 消費深連結，邏輯零分歧
+  // 2026-08-17：同步沿用 entry-intent，避免此兜底 watch 在 URL 被剝乾淨後落回角色預設
+  if (liffTarget) rememberEntryIntent(liffTarget);
+  const intent = readEntryIntent();
   const dest = resolveDestination({
     entryPath: route.path,
     isSignIn: authStore.isSignIn,
     roles: authStore.roles,
     approved: authStore.approved,
-    liffTarget,
+    liffTarget: liffTarget || intent?.target || '',
+    entryEnd: intent?.end,
   });
   if (liffTarget) stripDeepLinkParams();
   if (dest && dest !== route.path) {
