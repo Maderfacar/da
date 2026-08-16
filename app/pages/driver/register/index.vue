@@ -39,10 +39,10 @@ const mode = computed<RegisterMode>(() => {
 });
 
 // 取得使用者的 LINE userId（用於上傳路徑與 apply 寫入文件 ID）
-const lineUserId = computed(() => {
-  const uid = authStore.user?.uid ?? '';
-  return uid.startsWith('line:') ? uid.slice(5) : uid;
-});
+// 認證根治 P3 後：server OAuth 登入只種 da_session cookie、不建 client Firebase session，
+// authStore.user 恆為 null → 舊寫法 uid='' 會讓證件上傳誤判「尚未取得 LINE 身分」卡住註冊。
+// 改走 store 的 currentLineUid（Firebase user 優先、cookie session lineUid 補位）。
+const lineUserId = computed(() => authStore.currentLineUid);
 
 // ── 申請表單欄位 ───────────────────────────────────────────────────
 const driverName = ref('');
@@ -81,7 +81,12 @@ const ApiLoadTags = async () => {
   } catch { /* silent — apply 流程容錯 */ }
 };
 
-onMounted(() => { void ApiLoadTags(); });
+onMounted(() => {
+  // 本頁 definePageMeta 未掛 auth middleware，cookie-only / server OAuth 登入者的 lineUid
+  // 只能靠 session-check 取得 → 主動確保跑過一次（sticky，若 middleware 已跑則為 noop）。
+  void authStore.EnsureSessionChecked();
+  void ApiLoadTags();
+});
 
 const submitting = ref(false);
 const submitError = ref('');

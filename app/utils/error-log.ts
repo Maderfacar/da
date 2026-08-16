@@ -66,9 +66,10 @@ const _safeIsInLiff = (): boolean | undefined => {
 const _safeReadAuth = (): { lineUserId?: string; roles: string[] } => {
   try {
     const w = window as unknown as {
-      __authStore?: { user?: { uid?: string }; roles?: string[] };
+      __authStore?: { user?: { uid?: string }; currentLineUid?: string; roles?: string[] };
     };
-    const uid = w.__authStore?.user?.uid ?? '';
+    // currentLineUid：Firebase user 優先、cookie session lineUid 補位（server OAuth 登入 user=null 時仍有值）
+    const uid = w.__authStore?.currentLineUid || w.__authStore?.user?.uid || '';
     const lineUserId = uid.startsWith('line:') ? uid.slice(5) : (uid || undefined);
     const roles = Array.isArray(w.__authStore?.roles) ? [...w.__authStore!.roles!] : [];
     return { lineUserId, roles };

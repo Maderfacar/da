@@ -32,11 +32,8 @@ import type { DriverCostSettings } from '@/protocol/fetch-api/api/driver';
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
-const { user } = storeToRefs(authStore);
-const lineUid = computed(() => {
-  const uid = user.value?.uid ?? '';
-  return uid.startsWith('line:') ? uid.slice(5) : uid;
-});
+// 認證根治 P3 後：server OAuth 登入 user=null，改走 currentLineUid（user 優先、cookie session lineUid 補位）
+const lineUid = computed(() => authStore.currentLineUid);
 
 // ── 輸入欄位（P30：預設 0，等 driver 輸入後存到帳號）─────────────
 // 每月固定

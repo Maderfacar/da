@@ -72,6 +72,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   let _sessionCheckPromise: Promise<void> | null = null; // EnsureSessionChecked sticky
   let _sessionCookieSeeded = false;                      // 同一 JS 生命週期避免重複 seed
 
+  // 認證根治 P3 後遺補強：跨登入路徑可靠的 LINE userId 來源。
+  //   - Firebase-session 路徑（LIFF in-app）：由 onAuthStateChanged 從 firebaseUser.uid 取得。
+  //   - cookie-only / server OAuth 路徑：client 端「不」建 Firebase session（callback 只種 da_session
+  //     cookie 就 302 導回）→ user=null，僅能由 /session-check 回的 lineUid 補上。
+  // 修「新司機走 server OAuth 登入後，/driver/register 證件上傳誤判『尚未取得 LINE 身分』卡註冊」根因。
+  const sessionLineUid = ref('');
+
   // 司機申請狀態（P8）：null = 未申請；rejectedAt 有值 = 已被拒絕等待 admin 解除
   const driverApplication = ref<{
     appliedAt: string | null;
@@ -191,6 +198,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   // 認證根治 P1：Firebase user 存在 或 server cookie session 有效 → 視為已登入。
   // 後者覆蓋「localStorage/IndexedDB 被清、但 httpOnly cookie 仍在」的裝置（不再誤判登出）。
   const isSignIn = computed(() => !!user.value || _sessionSignedIn.value);
+  // 可靠的 LINE userId（去 'line:' prefix）：Firebase user 優先，退回 cookie session 的 lineUid。
+  // 供需要身分的頁面（如司機申請證件上傳）取用，取代單靠 authStore.user?.uid（server OAuth 登入時為 null）。
+  const currentLineUid = computed(() => {
+    const uid = user.value?.uid ?? '';
+    const fromUser = uid.startsWith('line:') ? uid.slice(5) : uid;
+    return fromUser || sessionLineUid.value;
+  });
   const isAdmin = computed(() => roles.value.includes('admin'));
   const isDriver = computed(() => roles.value.includes('driver'));
   const isPassenger = computed(() => roles.value.includes('passenger'));
@@ -233,6 +247,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     // onAuthStateChanged(null) 若偵測 cookie 仍有效會走 guard 分支不呼叫本函式）
     _sessionSignedIn.value = false;
     _sessionCookieSeeded = false;
+    sessionLineUid.value = '';
     // W4：清四個 lazy loader sticky state，避免下一個 user 看到上個 user 的資料
     // 注意：閉包讀的是 user.value（reactive），ref 已先被 null；下次 ensure() 重新跑 fn 也 noop
     _userDocLoader?.reset();
@@ -334,6 +349,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         return;
       }
       user.value = firebaseUser;
+      // 記下 lineUid（去 prefix）作為 currentLineUid 的來源之一；即使日後 user 被清（cookie-only
+      // 分支）仍能保住身分。
+      {
+        const _lu = firebaseUser.uid.startsWith('line:') ? firebaseUser.uid.slice(5) : firebaseUser.uid;
+        if (_lu) sessionLineUid.value = _lu;
+      }
       // getIdToken 失敗不應影響 user 狀態
       try {
         // P0-1 claims-first hydration（2026-07-31）：roles 已由後端寫進 Firebase custom claims，
@@ -957,6 +978,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const res = await $fetch<{
         data?: {
           signedIn?: boolean;
+          lineUid?: string;
           roles?: unknown;
           approved?: boolean;
           level?: AdminLevel | null;
@@ -973,6 +995,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const data = res?.data;
       if (!data?.signedIn) return; // 未命中 → 保持沉默，交由 Firebase 派生路徑
       _sessionSignedIn.value = true;
+      // cookie-only / server OAuth 路徑（user=null）唯一能取得 lineUid 的來源 → 補進 currentLineUid
+      if (typeof data.lineUid === 'string' && data.lineUid) sessionLineUid.value = data.lineUid;
       const parsed = _normalizeRoles(data.roles);
       if (parsed.length > 0) {
         roles.value = parsed;
@@ -1086,7 +1110,7 @@ export const StoreAuth = defineStore('StoreAuth', () => {
     user, roles, approved, level, authResolved, liffReady, lineAccessToken, lineProfile, isFriend,
     driverApplication, referralCode,
     admin2faEnrolled, admin2faSessionVerified,
-    isSignIn, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, canManageThemes, idToken,
+    isSignIn, currentLineUid, isAdmin, isDriver, isPassenger, isApprovedDriver, isSuper, canManageFareRules, canManageThemes, idToken,
     InitAuthFlow, MockSignIn, SignOut, GetFreshIdToken, WaitForAuthResolved,
     // 認證根治 P1：server cookie 開機權威登入判斷
     EnsureSessionChecked,

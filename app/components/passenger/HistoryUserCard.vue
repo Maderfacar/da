@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // PassengerHistoryUserCard — 歷史訂單頁的使用者頭像卡（原 /profile 頂部卡片）
 const authStore = StoreAuth();
-const { lineProfile, user, isFriend, isSignIn } = storeToRefs(authStore);
+const { lineProfile, isFriend, isSignIn } = storeToRefs(authStore);
+// 認證根治 P3 後：server OAuth 登入 user=null，改走 currentLineUid（避免 UID 顯示 undefined）
+const currentLineUid = computed(() => authStore.currentLineUid);
 const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 </script>
 
@@ -13,7 +15,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   )
   .PassengerHistoryUserCard__info
     .PassengerHistoryUserCard__name {{ lineProfile.displayName }}
-    .PassengerHistoryUserCard__uid UID: {{ user?.uid }}
+    .PassengerHistoryUserCard__uid UID: {{ currentLineUid }}
 
   //- LINE 好友狀態
   .PassengerHistoryUserCard__friend(v-if="isFriend !== null")

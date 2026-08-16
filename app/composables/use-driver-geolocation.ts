@@ -62,7 +62,8 @@ function _distanceMeters(a: CurrentPos, b: CurrentPos): number {
 async function _DoUpload(pos: CurrentPos): Promise<void> {
   if (_uploading) return; // 避免併發
   const authStore = StoreAuth();
-  const uid = authStore.user?.uid;
+  // 認證根治 P3 後：server OAuth 登入 user=null，改走 currentLineUid（user 優先、cookie session lineUid 補位）
+  const uid = authStore.currentLineUid;
   if (!uid) {
     console.warn('[useDriverGeolocation] skip upload: no auth uid yet');
     return;

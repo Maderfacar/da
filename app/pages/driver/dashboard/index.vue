@@ -3,10 +3,8 @@ definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
 const driverName = computed(() => authStore.lineProfile?.displayName ?? '司機');
-const lineUid = computed(() => {
-  const uid = authStore.user?.uid ?? '';
-  return uid.startsWith('line:') ? uid.slice(5) : uid;
-});
+// 認證根治 P3 後：server OAuth 登入 user=null，改走 currentLineUid（user 優先、cookie session lineUid 補位）
+const lineUid = computed(() => authStore.currentLineUid);
 const now = computed(() => $dayjs().format('YYYY / MM / DD'));
 
 const tripsToday = ref(0);
@@ -30,7 +28,7 @@ const ClickDismissOaCta = () => {
 };
 
 const ApiLoadStats = async () => {
-  const uid = authStore.user?.uid;
+  const uid = authStore.currentLineUid;
   if (!uid) return;
   const res = await $api.GetDriverStats(uid);
   if (res.status.code === 200 && res.data) {

@@ -10,12 +10,12 @@ import type { VehicleCapacityDto } from '@/protocol/fetch-api/api/driver';
 definePageMeta({ layout: 'driver', middleware: ['auth', 'role'], ssr: false });
 
 const authStore = StoreAuth();
-const { user, lineProfile } = storeToRefs(authStore);
+const { lineProfile } = storeToRefs(authStore);
 
 const displayName = computed(() => lineProfile.value?.displayName ?? '司機');
 const pictureUrl  = computed(() => lineProfile.value?.pictureUrl ?? '');
-const uid         = computed(() => user.value?.uid ?? '');
-const lineUid     = computed(() => uid.value.startsWith('line:') ? uid.value.slice(5) : uid.value);
+// 認證根治 P3 後：server OAuth 登入 user=null，改走 currentLineUid（user 優先、cookie session lineUid 補位）
+const lineUid     = computed(() => authStore.currentLineUid);
 
 const totalTrips  = ref(0);
 const joinedDate  = ref('—');

@@ -27,8 +27,8 @@ const _LoadStatus = async () => {
     if (!getApps().length) { loading.value = false; return; }
     const { getFirestore, doc, getDoc } = await import('firebase/firestore');
     const db = getFirestore();
-    // user.uid 形如 'line:Uxxx'；admins doc key 不含前綴
-    const uid = (authStore.user?.uid ?? '').replace(/^line:/, '');
+    // currentLineUid 已去 'line:' prefix；admins doc key 不含前綴（cookie-only admin 裝置 user 可能為 null）
+    const uid = authStore.currentLineUid;
     if (!uid) { loading.value = false; return; }
     const snap = await getDoc(doc(db, 'admins', uid));
     hasExistingPin.value = !!snap.data()?.pinSetAt;

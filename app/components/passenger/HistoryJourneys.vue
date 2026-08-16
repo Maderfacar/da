@@ -2,13 +2,15 @@
 // PassengerHistoryJourneys — 歷史訂單頁「我的旅程」累積統計（原 /profile P35 section）
 import type { PassengerStats } from '@/protocol/fetch-api/api/passenger';
 
-const { user, isSignIn } = storeToRefs(StoreAuth());
+const { isSignIn } = storeToRefs(StoreAuth());
 
 const stats = ref<PassengerStats | null>(null);
 const statsLoading = ref(false);
 
 const ApiLoadStats = async () => {
-  if (!user.value?.uid) return;
+  // GetPassengerStats() 由 server 從 session（cookie / Bearer）解身分，不需 client 帶 uid；
+  // 認證根治 P3 後 user 可能為 null（server OAuth 登入），故只用 isSignIn 當閘，不再卡 user.uid。
+  if (!isSignIn.value) return;
   statsLoading.value = true;
   try {
     const res = await $api.GetPassengerStats();
