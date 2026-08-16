@@ -122,6 +122,10 @@ export interface GooglePlaceLite {
   lng: number
   placeId?: string
   displayName?: string
+  /** 縣市過濾 / 列表顯示用：administrative_area_level_1 中文名（舊訂單無此欄位） */
+  city?: string
+  /** 縣市過濾 / 列表顯示用：administrative_area_level_2 / level_3 中文名（舊訂單無此欄位） */
+  district?: string
 }
 
 export interface AdminOrderLuggageItem {

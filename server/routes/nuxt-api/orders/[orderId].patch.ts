@@ -42,6 +42,9 @@ interface GooglePlaceLite {
   lng: number;
   placeId?: string;
   displayName?: string;
+  /** 縣市過濾用 — admin 端改用 UiGooglePlaceInput 後選點會一併帶入；舊訂單為 undefined */
+  city?: string;
+  district?: string;
 }
 
 interface PatchOrderBody {

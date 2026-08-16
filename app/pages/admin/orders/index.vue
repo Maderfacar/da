@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch, OrderRecalcPreviewRes, OrderRecalcWarning, DispatchLevel } from '@/protocol/fetch-api/api/admin';
+import type { AdminOrder, AdminOrderLuggageItem, AdminUser, AdminBidWithMatch, GooglePlaceLite, OrderRecalcPreviewRes, OrderRecalcWarning, DispatchLevel } from '@/protocol/fetch-api/api/admin';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
+import type { GooglePlace as MapsGooglePlace } from '@/protocol/fetch-api/api/maps';
 import { ORDER_TYPES } from '~shared/pricing';
+import { formatPlaceName, formatRegion } from '~shared/location-label';
 
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
@@ -24,6 +26,10 @@ const LuggageSummary = (items: AdminOrderLuggageItem[] | undefined) =>
   (items ?? []).map((i) => `${LUGGAGE_TYPE_LABEL(i.typeId)} × ${i.count}`).join('、') || '—';
 const LuggageTotalSU = (items: AdminOrderLuggageItem[] | undefined) =>
   (items ?? []).reduce((sum, i) => sum + (storeConfig.GetLuggageType(i.typeId)?.su ?? 0) * i.count, 0);
+
+// 列表上車地址：拆「縣市行政區」與「地點名稱」兩段（舊訂單無 city/district 時由 address 解析）
+const RegionOf = (loc: GooglePlaceLite | undefined) => formatRegion(loc);
+const PlaceOf = (loc: GooglePlaceLite | undefined) => formatPlaceName(loc);
 
 const STATUS_LABEL: Record<string, string> = {
   pending:        '待確認',
@@ -359,12 +365,76 @@ const ClickCancelEdit = () => {
   editTagIds.value = [];
 };
 
-// 停靠站操作
+// ── 停靠站操作 ───────────────────────────────────────────────────────────
+// 空白列以 lat === 0 表示「尚未選點」，UiGooglePlaceInput 要收到 null 才會顯示 placeholder
+const EMPTY_STOPOVER = (): GooglePlace => ({ address: '', lat: 0, lng: 0 } as GooglePlace);
+
 const ClickAddStopover = () => {
-  editForm.stopovers.push({ address: '', lat: 0, lng: 0 } as GooglePlace);
+  editForm.stopovers.push(EMPTY_STOPOVER());
 };
 const ClickRemoveStopover = (idx: number) => {
   editForm.stopovers.splice(idx, 1);
+};
+
+/** 訂單 GooglePlace（displayName optional）→ UiGooglePlaceInput 的 GooglePlace（displayName 必填） */
+const AsPlaceInput = (loc: GooglePlace | null | undefined): MapsGooglePlace | null => {
+  if (!loc?.address || loc.lat === 0) return null;
+  return { ...loc, displayName: loc.displayName || loc.address } as MapsGooglePlace;
+};
+
+const UpdateStopover = (idx: number, place: MapsGooglePlace | null) => {
+  editForm.stopovers[idx] = place ? (place as GooglePlace) : EMPTY_STOPOVER();
+};
+
+const ClickMoveStopover = (idx: number, delta: number) => {
+  const target = idx + delta;
+  if (target < 0 || target >= editForm.stopovers.length) return;
+  const arr = [...editForm.stopovers];
+  const [moved] = arr.splice(idx, 1);
+  arr.splice(target, 0, moved!);
+  editForm.stopovers = arr;
+};
+
+// 拖曳排序（與乘客端 BookingStepRoute 同一套 HTML5 DnD 行為；行動裝置另有 ▲▼ 按鈕）
+const stopoverDragIndex = ref<number | null>(null);
+const stopoverDragOverIndex = ref<number | null>(null);
+
+const HandleStopoverDragStart = (idx: number, e: DragEvent) => {
+  // 只允許從 drag handle 拖；點 input / 刪除鈕不該觸發整列拖移
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest?.('.PageAdminOrders__stopover-handle')) {
+    e.preventDefault();
+    return;
+  }
+  stopoverDragIndex.value = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+};
+
+const HandleStopoverDragOver = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  if (stopoverDragOverIndex.value !== idx) stopoverDragOverIndex.value = idx;
+};
+
+const HandleStopoverDragLeave = (idx: number) => {
+  if (stopoverDragOverIndex.value === idx) stopoverDragOverIndex.value = null;
+};
+
+const HandleStopoverDrop = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  const from = stopoverDragIndex.value;
+  stopoverDragIndex.value = null;
+  stopoverDragOverIndex.value = null;
+  if (from === null || from === idx) return;
+  ClickMoveStopover(from, idx - from);
+};
+
+const HandleStopoverDragEnd = () => {
+  stopoverDragIndex.value = null;
+  stopoverDragOverIndex.value = null;
 };
 
 // 額外服務 toggle
@@ -1302,6 +1372,8 @@ onMounted(() => {
         span 訂單
         span 行程類型
         span 用車時間
+        span 客人
+        span 上車地址
         span 司機
         span 車型
         span 費用
@@ -1322,7 +1394,16 @@ onMounted(() => {
           ) 來源：{{ ReferralDriverNameOf(o.referralDriverId) }}
         .PageAdminOrders__cell.is-type(data-label="行程")
           span.PageAdminOrders__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
+          //- 航班編號：接送機訂單才有，直接掛在行程類型下方（含航廈）
+          span.PageAdminOrders__flight-chip(v-if="o.flightNumber")
+            | ✈ {{ o.flightNumber }}{{ o.terminal ? ` · ${o.terminal}` : '' }}
         .PageAdminOrders__cell.is-time(data-label="用車時間") {{ $dayjs(o.pickupDateTime).format('MM/DD HH:mm') }}
+        .PageAdminOrders__cell.is-passenger(data-label="客人")
+          span.PageAdminOrders__passenger-name(v-if="o.passengerName") {{ o.passengerName }}
+          span.PageAdminOrders__unassigned(v-else) —
+        .PageAdminOrders__cell.is-pickup(data-label="上車地址")
+          span.PageAdminOrders__pickup-region(v-if="RegionOf(o.pickupLocation)") {{ RegionOf(o.pickupLocation) }}
+          span.PageAdminOrders__pickup-place {{ PlaceOf(o.pickupLocation) }}
         .PageAdminOrders__cell.is-driver(data-label="司機")
           span(v-if="DriverNameOf(o.assignedDriverId)") {{ DriverNameOf(o.assignedDriverId) }}
           span.PageAdminOrders__unassigned(v-else) 未分派
@@ -1690,25 +1771,69 @@ onMounted(() => {
               label.PageAdminOrders__edit-label 用車日期 / 時間
               input.PageAdminOrders__edit-input(type="datetime-local" lang="en-GB" v-model="editForm.pickupDateTime")
 
-            //- 上車點
+            //- 上車點（與乘客端同一顆 UiGooglePlaceInput：輸入即出 Google 建議選項）
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 上車點
-              PassengerBookingLocationInput(v-model="editForm.pickupLocation" placeholder="搜尋上車地點")
+              UiGooglePlaceInput(
+                theme="dark"
+                :model-value="AsPlaceInput(editForm.pickupLocation)"
+                placeholder="搜尋上車地點"
+                @update:model-value="editForm.pickupLocation = $event"
+              )
 
-            //- 停靠站
+            //- 停靠站（可拖曳 / ▲▼ 調整順序）
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 停靠站
               .PageAdminOrders__stopover-list
-                .PageAdminOrders__stopover-item(v-for="(_stop, i) in editForm.stopovers" :key="i")
+                .PageAdminOrders__stopover-item(
+                  v-for="(_stop, i) in editForm.stopovers"
+                  :key="i"
+                  :class="{ 'is-dragging': stopoverDragIndex === i, 'is-drop-target': stopoverDragOverIndex === i && stopoverDragIndex !== i }"
+                  draggable="true"
+                  @dragstart="HandleStopoverDragStart(i, $event)"
+                  @dragover="HandleStopoverDragOver(i, $event)"
+                  @dragleave="HandleStopoverDragLeave(i)"
+                  @drop="HandleStopoverDrop(i, $event)"
+                  @dragend="HandleStopoverDragEnd"
+                )
+                  button.PageAdminOrders__stopover-handle(
+                    type="button"
+                    title="拖曳調整順序"
+                    aria-label="拖曳調整順序"
+                  )
+                    NuxtIcon(name="mdi:drag-vertical")
                   .PageAdminOrders__stopover-num 停靠 {{ i + 1 }}
-                  PassengerBookingLocationInput(v-model="editForm.stopovers[i]" placeholder="搜尋停靠地點")
+                  UiGooglePlaceInput(
+                    theme="dark"
+                    :model-value="AsPlaceInput(editForm.stopovers[i])"
+                    placeholder="搜尋停靠地點"
+                    @update:model-value="UpdateStopover(i, $event)"
+                  )
+                  .PageAdminOrders__stopover-move
+                    button.PageAdminOrders__stopover-move-btn(
+                      type="button"
+                      title="上移"
+                      :disabled="i === 0"
+                      @click="ClickMoveStopover(i, -1)"
+                    ) ▲
+                    button.PageAdminOrders__stopover-move-btn(
+                      type="button"
+                      title="下移"
+                      :disabled="i === editForm.stopovers.length - 1"
+                      @click="ClickMoveStopover(i, 1)"
+                    ) ▼
                   button.PageAdminOrders__stopover-remove(@click="ClickRemoveStopover(i)" type="button") ×
               button.PageAdminOrders__stopover-add(@click="ClickAddStopover" type="button") + 新增停靠站
 
             //- 下車點
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 下車點
-              PassengerBookingLocationInput(v-model="editForm.dropoffLocation" placeholder="搜尋下車地點")
+              UiGooglePlaceInput(
+                theme="dark"
+                :model-value="AsPlaceInput(editForm.dropoffLocation)"
+                placeholder="搜尋下車地點"
+                @update:model-value="editForm.dropoffLocation = $event"
+              )
 
             //- 車型 / 人數 / 行李（同列 grid）
             .PageAdminOrders__edit-grid
@@ -2102,14 +2227,17 @@ $muted: rgba(255, 255, 255, 0.35);
   display: grid;
   // Wave 1A：擴大 action column 容納「📤 發布需求單」/ 「🔁 重新發佈 ×N」按鈕
   // Wave 2D FU：action column 改 minmax + flex-wrap，容納等級 select + 主按鈕 + 立即降級/全開放
-  grid-template-columns: 100px 80px 100px 90px 60px 90px 80px minmax(280px, 1fr);
+  // 客人 / 上車地址欄位加入後 column 數 8 → 10，整列加寬並靠 table overflow-x 橫向捲動
+  grid-template-columns:
+    110px 104px 108px 96px minmax(190px, 1.3fr)
+    88px 72px 92px 92px minmax(250px, 1fr);
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-radius: 12px;
   background: $surface;
   border: 1px solid $border;
-  min-width: 960px;
+  min-width: 1280px;
   transition: background 0.15s, border-color 0.15s;
 
   &.is-clickable {
@@ -2129,7 +2257,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
     span {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.15em;
       color: $muted;
@@ -2140,14 +2268,64 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__cell {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   color: $text;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  &.is-time { color: rgba(255, 255, 255, 0.6); }
+  &.is-time { color: rgba(255, 255, 255, 0.85); font-weight: 700; }
   &.is-fare { font-weight: 700; color: $amber; }
+  // 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
+  &.is-type,
+  &.is-passenger,
+  &.is-pickup {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: flex-start;
+  }
+}
+
+.PageAdminOrders__passenger-name {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.PageAdminOrders__pickup-region {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: $muted;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.PageAdminOrders__pickup-place {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.PageAdminOrders__flight-chip {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  color: #93c5fd;
+  white-space: nowrap;
 }
 
 @media (max-width: 767.98px) {
@@ -2163,11 +2341,13 @@ $muted: rgba(255, 255, 255, 0.35);
   .PageAdminOrders__row {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      'id      status'
-      'time    time'
-      'driver  fare'
-      'type    vehicle'
-      'action  action';
+      'id        status'
+      'time      time'
+      'pickup    pickup'
+      'passenger fare'
+      'driver    vehicle'
+      'type      type'
+      'action    action';
     min-width: 0;
     padding: 14px 14px 12px;
     gap: 8px 12px;
@@ -2180,13 +2360,13 @@ $muted: rgba(255, 255, 255, 0.35);
     flex-direction: column;
     gap: 2px;
     min-width: 0;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .PageAdminOrders__cell::before {
     content: attr(data-label);
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -2210,9 +2390,17 @@ $muted: rgba(255, 255, 255, 0.35);
   .PageAdminOrders__cell.is-time::before { color: $muted; }
 
   .PageAdminOrders__cell.is-driver { grid-area: driver; }
-  .PageAdminOrders__cell.is-fare { grid-area: fare; align-items: flex-end; font-size: 16px; }
-  .PageAdminOrders__cell.is-type { grid-area: type; }
+  .PageAdminOrders__cell.is-fare { grid-area: fare; align-items: flex-end; font-size: 17px; }
+  .PageAdminOrders__cell.is-type { grid-area: type; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .PageAdminOrders__cell.is-type::before { flex-basis: 100%; }
   .PageAdminOrders__cell.is-vehicle { grid-area: vehicle; align-items: flex-end; }
+  .PageAdminOrders__cell.is-passenger { grid-area: passenger; }
+  .PageAdminOrders__cell.is-pickup {
+    grid-area: pickup;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .PageAdminOrders__pickup-place { white-space: normal; }
 
   // Wave 1A：手機版讓 action 跨兩欄獨佔一行（含發布 / 重發按鈕），chevron 仍隱藏
   .PageAdminOrders__cell.is-action {
@@ -2234,8 +2422,9 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__order-id {
-  font-size: 12px;
-  color: $muted;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
   letter-spacing: 0.05em;
 }
 
@@ -2256,9 +2445,9 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__type-badge {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 100px;
   background: rgba($amber, 0.12);
   border: 1px solid rgba($amber, 0.25);
@@ -2266,16 +2455,16 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__unassigned {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
 }
 
 .PageAdminOrders__status {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 100px;
 
   &.is-pending   { background: rgba(255, 200, 0, 0.12); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
@@ -2857,9 +3046,53 @@ select option:disabled {
 
 .PageAdminOrders__stopover-item {
   display: grid;
-  grid-template-columns: 60px 1fr 32px;
+  grid-template-columns: 22px 60px 1fr 26px 32px;
   align-items: center;
   gap: 8px;
+  border-radius: 10px;
+  transition: opacity 0.15s, box-shadow 0.15s;
+
+  &.is-dragging { opacity: 0.45; }
+  &.is-drop-target { box-shadow: 0 -2px 0 0 #64c8ff; }
+}
+
+.PageAdminOrders__stopover-handle {
+  width: 22px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  transition: color 0.15s;
+
+  &:hover { color: #64c8ff; }
+  &:active { cursor: grabbing; }
+}
+
+.PageAdminOrders__stopover-move {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.PageAdminOrders__stopover-move-btn {
+  width: 26px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid rgba(100, 200, 255, 0.25);
+  background: rgba(100, 200, 255, 0.06);
+  color: #64c8ff;
+  border-radius: 5px;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+
+  &:hover:not(:disabled) { background: rgba(100, 200, 255, 0.16); }
+  &:disabled { opacity: 0.25; cursor: not-allowed; }
 }
 
 .PageAdminOrders__stopover-num {
@@ -2905,6 +3138,23 @@ select option:disabled {
   transition: background 0.15s;
 
   &:hover { background: rgba(100, 200, 255, 0.1); }
+}
+
+// 窄螢幕：地址輸入框獨佔第二行，避免與序號 / 排序鈕互相擠壓
+@media (max-width: 479.98px) {
+  .PageAdminOrders__stopover-item {
+    grid-template-columns: 22px 1fr 26px 32px;
+    grid-template-areas:
+      'handle num   move remove'
+      'input  input input input';
+    gap: 6px 8px;
+  }
+
+  .PageAdminOrders__stopover-handle { grid-area: handle; }
+  .PageAdminOrders__stopover-num { grid-area: num; justify-self: start; }
+  .PageAdminOrders__stopover-item > .UiGooglePlaceInput { grid-area: input; }
+  .PageAdminOrders__stopover-move { grid-area: move; }
+  .PageAdminOrders__stopover-remove { grid-area: remove; }
 }
 
 .PageAdminOrders__extras-pick {

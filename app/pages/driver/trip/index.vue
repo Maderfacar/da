@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ORDER_TYPES } from '~shared/pricing';
+import { formatPlaceName, formatRegion } from '~shared/location-label';
 import { checkTimeGate, formatRemaining } from '~shared/trip-time-gate';
 
 // P19：driver/trip 改為列表 + modal 詳情設計
@@ -39,6 +40,10 @@ const LuggageSummary = (items: Array<{ typeId: string; count: number }> | undefi
   (items ?? []).map((i) => `${storeConfig.GetLuggageType(i.typeId)?.label.zh ?? i.typeId} × ${i.count}`).join('、') || '—';
 const LuggageTotalSU = (items: Array<{ typeId: string; count: number }> | undefined) =>
   (items ?? []).reduce((sum, i) => sum + (storeConfig.GetLuggageType(i.typeId)?.su ?? 0) * i.count, 0);
+
+// 列表卡片的地址：只顯示路名 / 地標名時看不出縣市 → 拆「縣市行政區」與「地點名稱」兩段顯示
+const RegionOf = (loc: GooglePlace | undefined) => formatRegion(loc);
+const PlaceOf = (loc: GooglePlace | undefined) => formatPlaceName(loc);
 
 const orders = ref<AssignedOrder[]>([]);
 const loading = ref(false);
@@ -339,9 +344,16 @@ onUnmounted(() => {
               span.PageDriverTrip__type-badge {{ ORDER_TYPE_LABEL[order.orderType] ?? order.orderType }}
               span.PageDriverTrip__id \#{{ order.orderId.slice(-6).toUpperCase() }}
             .PageDriverTrip__card-route
-              span.PageDriverTrip__route-from {{ order.pickupLocation?.displayName?.split(',')[0] || order.pickupLocation?.address }}
-              span.PageDriverTrip__route-arrow →
-              span.PageDriverTrip__route-to {{ order.dropoffLocation?.displayName?.split(',')[0] || order.dropoffLocation?.address }}
+              .PageDriverTrip__route-line
+                span.PageDriverTrip__route-dot.is-from
+                .PageDriverTrip__route-text
+                  span.PageDriverTrip__route-region(v-if="RegionOf(order.pickupLocation)") {{ RegionOf(order.pickupLocation) }}
+                  span.PageDriverTrip__route-place {{ PlaceOf(order.pickupLocation) }}
+              .PageDriverTrip__route-line
+                span.PageDriverTrip__route-dot.is-to
+                .PageDriverTrip__route-text
+                  span.PageDriverTrip__route-region(v-if="RegionOf(order.dropoffLocation)") {{ RegionOf(order.dropoffLocation) }}
+                  span.PageDriverTrip__route-place {{ PlaceOf(order.dropoffLocation) }}
             .PageDriverTrip__card-foot
               span.PageDriverTrip__status-badge(:class="`is-${order.orderStatus}`") {{ STATUS_LABEL[order.orderStatus] }}
               //- Phase 1F：confirmation pending → 顯示等待乘客確認 chip
@@ -371,9 +383,16 @@ onUnmounted(() => {
             span.PageDriverTrip__type-badge {{ ORDER_TYPE_LABEL[o.orderType] ?? o.orderType }}
             span.PageDriverTrip__id \#{{ o.orderId.slice(-6).toUpperCase() }}
           .PageDriverTrip__card-route
-            span.PageDriverTrip__route-from {{ o.pickupLocation?.displayName?.split(',')[0] || o.pickupLocation?.address }}
-            span.PageDriverTrip__route-arrow →
-            span.PageDriverTrip__route-to {{ o.dropoffLocation?.displayName?.split(',')[0] || o.dropoffLocation?.address }}
+            .PageDriverTrip__route-line
+              span.PageDriverTrip__route-dot.is-from
+              .PageDriverTrip__route-text
+                span.PageDriverTrip__route-region(v-if="RegionOf(o.pickupLocation)") {{ RegionOf(o.pickupLocation) }}
+                span.PageDriverTrip__route-place {{ PlaceOf(o.pickupLocation) }}
+            .PageDriverTrip__route-line
+              span.PageDriverTrip__route-dot.is-to
+              .PageDriverTrip__route-text
+                span.PageDriverTrip__route-region(v-if="RegionOf(o.dropoffLocation)") {{ RegionOf(o.dropoffLocation) }}
+                span.PageDriverTrip__route-place {{ PlaceOf(o.dropoffLocation) }}
           .PageDriverTrip__card-foot
             span.PageDriverTrip__history-badge(:class="`is-${o.orderStatus}`") {{ HISTORY_STATUS_LABEL[o.orderStatus] ?? o.orderStatus }}
             span.PageDriverTrip__card-fare NT$ {{ o.estimatedFare.toLocaleString() }}
@@ -654,7 +673,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__card-time {
   flex-shrink: 0;
-  width: 60px;
+  width: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -664,12 +683,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding-right: 12px;
 }
 
+// 日期與時間同字級（司機在車上快速掃視，日期不能比時間小）
 .PageDriverTrip__card-date {
-  font-family: $font-condensed;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.5);
+  font-family: $font-display;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .PageDriverTrip__card-clock {
@@ -704,24 +723,59 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   letter-spacing: 0.08em;
 }
 
+// 上 / 下車各佔一行：縣市行政區在前、地點名稱在後，避免橫排被截斷看不出地區
 .PageDriverTrip__card-route {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 }
 
-.PageDriverTrip__route-from, .PageDriverTrip__route-to {
+.PageDriverTrip__route-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.PageDriverTrip__route-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  align-self: center;
+
+  &.is-from { background: $amber; }
+  &.is-to { background: #4ade80; }
+}
+
+.PageDriverTrip__route-text {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.PageDriverTrip__route-arrow { color: rgba($amber, 0.7); flex-shrink: 0; }
+.PageDriverTrip__route-region {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.PageDriverTrip__route-place {
+  min-width: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .PageDriverTrip__card-foot {
   display: flex;

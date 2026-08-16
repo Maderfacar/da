@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ORDER_TYPES } from '~shared/pricing';
 import type { AdminOrderLuggageItem, CreateAdminOrderBody } from '@/protocol/fetch-api/api/admin';
+import type { GooglePlace as MapsGooglePlace } from '@/protocol/fetch-api/api/maps';
 
 interface Props {
   modelValue: boolean;
@@ -77,12 +78,75 @@ const ClickClose = () => {
   emit('update:modelValue', false);
 };
 
-// 停靠站
+// ── 停靠站 ───────────────────────────────────────────────────────────────
+// 空白列以 lat === 0 表示「尚未選點」，UiGooglePlaceInput 要收到 null 才會顯示 placeholder
+const EMPTY_STOPOVER = (): GooglePlace => ({ address: '', lat: 0, lng: 0 } as GooglePlace);
+
 const ClickAddStopover = () => {
-  form.stopovers.push({ address: '', lat: 0, lng: 0 } as GooglePlace);
+  form.stopovers.push(EMPTY_STOPOVER());
 };
 const ClickRemoveStopover = (idx: number) => {
   form.stopovers.splice(idx, 1);
+};
+
+/** 訂單 GooglePlace（displayName optional）→ UiGooglePlaceInput 的 GooglePlace（displayName 必填） */
+const AsPlaceInput = (loc: GooglePlace | null | undefined): MapsGooglePlace | null => {
+  if (!loc?.address || loc.lat === 0) return null;
+  return { ...loc, displayName: loc.displayName || loc.address } as MapsGooglePlace;
+};
+
+const UpdateStopover = (idx: number, place: MapsGooglePlace | null) => {
+  form.stopovers[idx] = place ? (place as GooglePlace) : EMPTY_STOPOVER();
+};
+
+const ClickMoveStopover = (idx: number, delta: number) => {
+  const target = idx + delta;
+  if (target < 0 || target >= form.stopovers.length) return;
+  const arr = [...form.stopovers];
+  const [moved] = arr.splice(idx, 1);
+  arr.splice(target, 0, moved!);
+  form.stopovers = arr;
+};
+
+// 拖曳排序（與乘客端 BookingStepRoute 同一套 HTML5 DnD 行為；行動裝置另有 ▲▼ 按鈕）
+const stopoverDragIndex = ref<number | null>(null);
+const stopoverDragOverIndex = ref<number | null>(null);
+
+const HandleStopoverDragStart = (idx: number, e: DragEvent) => {
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest?.('.AdminOrdersCreateModal__stopover-handle')) {
+    e.preventDefault();
+    return;
+  }
+  stopoverDragIndex.value = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+};
+
+const HandleStopoverDragOver = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  if (stopoverDragOverIndex.value !== idx) stopoverDragOverIndex.value = idx;
+};
+
+const HandleStopoverDragLeave = (idx: number) => {
+  if (stopoverDragOverIndex.value === idx) stopoverDragOverIndex.value = null;
+};
+
+const HandleStopoverDrop = (idx: number, e: DragEvent) => {
+  e.preventDefault();
+  const from = stopoverDragIndex.value;
+  stopoverDragIndex.value = null;
+  stopoverDragOverIndex.value = null;
+  if (from === null || from === idx) return;
+  ClickMoveStopover(from, idx - from);
+};
+
+const HandleStopoverDragEnd = () => {
+  stopoverDragIndex.value = null;
+  stopoverDragOverIndex.value = null;
 };
 
 // 額外服務 toggle
@@ -193,25 +257,69 @@ Transition(name="fade")
           label.AdminOrdersCreateModal__label 用車日期 / 時間
           input.AdminOrdersCreateModal__input(type="datetime-local" lang="en-GB" v-model="form.pickupDateTime")
 
-        //- 上車點
+        //- 上車點（與乘客端同一顆 UiGooglePlaceInput）
         .AdminOrdersCreateModal__field
           label.AdminOrdersCreateModal__label 上車點
-          PassengerBookingLocationInput(v-model="form.pickupLocation" placeholder="搜尋上車地點")
+          UiGooglePlaceInput(
+            theme="dark"
+            :model-value="AsPlaceInput(form.pickupLocation)"
+            placeholder="搜尋上車地點"
+            @update:model-value="form.pickupLocation = $event"
+          )
 
-        //- 停靠站
+        //- 停靠站（可拖曳 / ▲▼ 調整順序）
         .AdminOrdersCreateModal__field
           label.AdminOrdersCreateModal__label 停靠站
           .AdminOrdersCreateModal__stopover-list
-            .AdminOrdersCreateModal__stopover-item(v-for="(_s, i) in form.stopovers" :key="i")
+            .AdminOrdersCreateModal__stopover-item(
+              v-for="(_s, i) in form.stopovers"
+              :key="i"
+              :class="{ 'is-dragging': stopoverDragIndex === i, 'is-drop-target': stopoverDragOverIndex === i && stopoverDragIndex !== i }"
+              draggable="true"
+              @dragstart="HandleStopoverDragStart(i, $event)"
+              @dragover="HandleStopoverDragOver(i, $event)"
+              @dragleave="HandleStopoverDragLeave(i)"
+              @drop="HandleStopoverDrop(i, $event)"
+              @dragend="HandleStopoverDragEnd"
+            )
+              button.AdminOrdersCreateModal__stopover-handle(
+                type="button"
+                title="拖曳調整順序"
+                aria-label="拖曳調整順序"
+              )
+                NuxtIcon(name="mdi:drag-vertical")
               .AdminOrdersCreateModal__stopover-num 停靠 {{ i + 1 }}
-              PassengerBookingLocationInput(v-model="form.stopovers[i]" placeholder="搜尋停靠地點")
+              UiGooglePlaceInput(
+                theme="dark"
+                :model-value="AsPlaceInput(form.stopovers[i])"
+                placeholder="搜尋停靠地點"
+                @update:model-value="UpdateStopover(i, $event)"
+              )
+              .AdminOrdersCreateModal__stopover-move
+                button.AdminOrdersCreateModal__stopover-move-btn(
+                  type="button"
+                  title="上移"
+                  :disabled="i === 0"
+                  @click="ClickMoveStopover(i, -1)"
+                ) ▲
+                button.AdminOrdersCreateModal__stopover-move-btn(
+                  type="button"
+                  title="下移"
+                  :disabled="i === form.stopovers.length - 1"
+                  @click="ClickMoveStopover(i, 1)"
+                ) ▼
               button.AdminOrdersCreateModal__stopover-remove(type="button" @click="ClickRemoveStopover(i)") ×
           button.AdminOrdersCreateModal__stopover-add(type="button" @click="ClickAddStopover") + 新增停靠站
 
         //- 下車點
         .AdminOrdersCreateModal__field
           label.AdminOrdersCreateModal__label 下車點
-          PassengerBookingLocationInput(v-model="form.dropoffLocation" placeholder="搜尋下車地點")
+          UiGooglePlaceInput(
+            theme="dark"
+            :model-value="AsPlaceInput(form.dropoffLocation)"
+            placeholder="搜尋下車地點"
+            @update:model-value="form.dropoffLocation = $event"
+          )
 
         //- 車型 / 人數
         .AdminOrdersCreateModal__grid
@@ -454,9 +562,70 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .AdminOrdersCreateModal__stopover-item {
   display: grid;
-  grid-template-columns: 60px 1fr 32px;
+  grid-template-columns: 22px 60px 1fr 26px 32px;
   align-items: center;
   gap: 8px;
+  border-radius: 10px;
+  transition: opacity 0.15s, box-shadow 0.15s;
+
+  &.is-dragging { opacity: 0.45; }
+  &.is-drop-target { box-shadow: 0 -2px 0 0 #64c8ff; }
+}
+
+.AdminOrdersCreateModal__stopover-handle {
+  width: 22px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  transition: color 0.15s;
+
+  &:hover { color: #64c8ff; }
+  &:active { cursor: grabbing; }
+}
+
+.AdminOrdersCreateModal__stopover-move {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.AdminOrdersCreateModal__stopover-move-btn {
+  width: 26px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid rgba(100, 200, 255, 0.25);
+  background: rgba(100, 200, 255, 0.06);
+  color: #64c8ff;
+  border-radius: 5px;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+
+  &:hover:not(:disabled) { background: rgba(100, 200, 255, 0.16); }
+  &:disabled { opacity: 0.25; cursor: not-allowed; }
+}
+
+// 窄螢幕：地址輸入框獨佔第二行
+@media (max-width: 479.98px) {
+  .AdminOrdersCreateModal__stopover-item {
+    grid-template-columns: 22px 1fr 26px 32px;
+    grid-template-areas:
+      'handle num   move remove'
+      'input  input input input';
+    gap: 6px 8px;
+  }
+
+  .AdminOrdersCreateModal__stopover-handle { grid-area: handle; }
+  .AdminOrdersCreateModal__stopover-num { grid-area: num; justify-self: start; }
+  .AdminOrdersCreateModal__stopover-item > .UiGooglePlaceInput { grid-area: input; }
+  .AdminOrdersCreateModal__stopover-move { grid-area: move; }
+  .AdminOrdersCreateModal__stopover-remove { grid-area: remove; }
 }
 
 .AdminOrdersCreateModal__stopover-num {
