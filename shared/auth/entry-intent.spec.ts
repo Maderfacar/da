@@ -7,6 +7,7 @@ import {
   isEntryIntentFresh,
   makeEntryIntent,
   readEntryIntent,
+  rememberEntryEnd,
   rememberEntryIntent,
 } from './entry-intent';
 
@@ -99,5 +100,39 @@ describe('remember / read / clear（第二輪解析沿用）', () => {
     rememberEntryIntent('/booking', 1100);
 
     expect(readEntryIntent(1200)?.target).toBe('/booking');
+  });
+});
+
+// 2026-08-17：司機 OA 進站時 pathname 仍是 `/`、深連結尚未出現，
+// 唯一可信的端別訊號是「實際成功 liff.init 的 LIFF ID」。
+describe('rememberEntryEnd（只記端別、不帶目標）', () => {
+  it('記下端別，target 為空字串', () => {
+    rememberEntryEnd('driver', 1000);
+
+    const intent = readEntryIntent(1500);
+    expect(intent?.end).toBe('driver');
+    expect(intent?.target).toBe('');
+  });
+
+  it('不覆蓋已帶深連結目標的意圖（深連結較精確，不可降級）', () => {
+    rememberEntryIntent('/driver/trip', 1000);
+    rememberEntryEnd('passenger', 1100);
+
+    const intent = readEntryIntent(1200);
+    expect(intent?.target).toBe('/driver/trip');
+    expect(intent?.end).toBe('driver');
+  });
+
+  it('已有的純端別意圖可被後來的深連結升級', () => {
+    rememberEntryEnd('driver', 1000);
+    rememberEntryIntent('/driver/dispatched', 1100);
+
+    expect(readEntryIntent(1200)?.target).toBe('/driver/dispatched');
+  });
+
+  it('過期的端別意圖不會生效', () => {
+    rememberEntryEnd('driver', 1000);
+
+    expect(readEntryIntent(1000 + ENTRY_INTENT_TTL_MS)).toBeNull();
   });
 });

@@ -14,6 +14,7 @@
 //   - 改由 middleware/role 在進對應路徑時 await Ensure*（4 個 lazy action）
 //   - 4 個 Ensure* 共用 shared/auth/lazy-loader.ts 純函式 sticky-promise factory
 import { createLazyLoader } from '~shared/auth/lazy-loader';
+import { rememberEntryEnd } from '~shared/auth/entry-intent';
 import { logAuth } from '~/utils/error-log';
 
 type Role = 'passenger' | 'driver' | 'admin';
@@ -799,24 +800,66 @@ export const StoreAuth = defineStore('StoreAuth', () => {
         return rawPath;
       }
     };
-    const isDriverEntry = _resolveEntryPath().startsWith('/driver');
-    const liffId = isDriverEntry
-      ? (config.lineLiffIdDriver || config.lineLiffIdPassenger)
-      : (config.lineLiffIdPassenger || config.lineLiffIdDriver);
-    const clientType: 'passenger' | 'driver' = isDriverEntry ? 'driver' : 'passenger';
+    // 2026-08-17：pathname 猜端別只當「先試哪個」的順序，不再當定論。
+    //
+    // 為何：司機 OA richmenu 開 driver LIFF 時，pathname 仍是 `/`、liff.state 也還沒出現
+    // → 猜成乘客端 → liff.init 帶乘客 LIFF ID 進 driver LIFF browser
+    // → prod log 實錄 `Invalid LIFF ID`（liffId=2009509209-5TaNYcF5 / clientType=passenger）
+    // → SDK 整個不可用 → _SyncLiffStateRoute 沒機會還原深連結 → liffTarget 恆 null
+    // → 落回角色預設，多重身分者被丟去 /admin/orders。
+    //
+    // 改為：猜錯就換另一個 ID 重試。**成功 init 的那個 LIFF ID 才是真正的進站端別** ——
+    // 這比猜 pathname 可靠，也是唯一能在深連結出現前就取得的可信訊號。
+    const guessDriverEntry = _resolveEntryPath().startsWith('/driver');
+    const driverLiffId = config.lineLiffIdDriver;
+    const passengerLiffId = config.lineLiffIdPassenger;
+    const liffCandidates = (guessDriverEntry
+      ? [driverLiffId, passengerLiffId]
+      : [passengerLiffId, driverLiffId]
+    ).filter((id, i, arr): id is string => Boolean(id) && arr.indexOf(id) === i);
 
-    if (!liffId) { liffReady.value = true; return; }
+    if (liffCandidates.length === 0) { liffReady.value = true; return; }
+
+    // 迴圈內會被實際成功的 ID 覆寫；候選全敗時保留首選供錯誤日誌標示
+    let liffId = liffCandidates[0]!;
+    let clientType: 'passenger' | 'driver' = guessDriverEntry ? 'driver' : 'passenger';
 
     try {
       const liff = (await import('@line/liff')).default;
 
       // W3：8 秒 timeout（手機慢速網路保留餘裕；login 頁按鈕另有 guard 補 init）
-      await Promise.race([
-        liff.init({ liffId }),
-        new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error('liff.init 逾時')), 8_000)
-        ),
-      ]);
+      // 逾時不重試（是網路慢不是 ID 錯，重試只會再等 8 秒）；只有 ID 不匹配才換下一個候選。
+      let initError: unknown = null;
+      let initialized = false;
+      for (const candidate of liffCandidates) {
+        try {
+          await Promise.race([
+            liff.init({ liffId: candidate }),
+            new Promise<void>((_, reject) =>
+              setTimeout(() => reject(new Error('liff.init 逾時')), 8_000)
+            ),
+          ]);
+          liffId = candidate;
+          clientType = candidate === driverLiffId ? 'driver' : 'passenger';
+          initialized = true;
+          break;
+        } catch (err) {
+          initError = err;
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('逾時')) break; // 逾時 → 不再試下一個
+          logAuth({
+            event: 'auth.liff.init.retry',
+            severity: 'warn',
+            message: `liff.init 失敗，改試下一個 LIFF ID：${msg}`,
+            metadata: { triedLiffId: candidate, guessDriverEntry },
+          });
+        }
+      }
+      if (!initialized) throw initError instanceof Error ? initError : new Error(String(initError));
+
+      // 實際成功的 LIFF ID = 可信的進站端別。記進 entry-intent，讓分流在深連結
+      // 尚未出現時也知道「人是從司機 OA 進來的」，不會被 admin 優先規則蓋掉。
+      rememberEntryEnd(clientType);
 
       // B方案：?force-relogin=1 手動觸發一次性恢復（清 flag + logout + 跳轉乾淨 URL）
       {

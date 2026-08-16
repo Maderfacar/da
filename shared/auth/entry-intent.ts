@@ -23,9 +23,12 @@
 export type EntryEnd = 'driver' | 'passenger';
 
 export interface EntryIntent {
-  /** 深連結目標 path（呼叫端須已用 resolveLiffTarget 淨化） */
+  /**
+   * 深連結目標 path（呼叫端須已用 resolveLiffTarget 淨化）。
+   * 空字串＝只知端別、還沒有目標（來源：實際成功 init 的 LIFF ID）。
+   */
   target: string;
-  /** 由目標推導的入口端別 */
+  /** 入口端別：由目標推導，或由成功 init 的 LIFF ID 直接得知 */
   end: EntryEnd;
   /** 建立時間（epoch ms） */
   at: number;
@@ -59,10 +62,7 @@ export function isEntryIntentFresh(intent: EntryIntent | null, now: number = Dat
 // ── client 端儲存（記憶體為主、sessionStorage 為輔）─────────────────────────
 let _memoryIntent: EntryIntent | null = null;
 
-/** 記住這次進站的深連結意圖（stripDeepLinkParams 之前 / 之後呼叫皆可）。 */
-export function rememberEntryIntent(target: string, now: number = Date.now()): void {
-  const intent = makeEntryIntent(target, now);
-  if (!intent) return;
+function _write(intent: EntryIntent): void {
   _memoryIntent = intent;
   if (typeof window === 'undefined') return;
   try {
@@ -70,6 +70,25 @@ export function rememberEntryIntent(target: string, now: number = Date.now()): v
   } catch {
     // LINE webview 儲存不可靠 → 記憶體那份已足夠涵蓋同一次頁面載入的第二輪解析
   }
+}
+
+/** 記住這次進站的深連結意圖（stripDeepLinkParams 之前 / 之後呼叫皆可）。 */
+export function rememberEntryIntent(target: string, now: number = Date.now()): void {
+  const intent = makeEntryIntent(target, now);
+  if (!intent) return;
+  _write(intent);
+}
+
+/**
+ * 只記端別、不帶目標。來源是**實際成功 liff.init 的 LIFF ID**——
+ * 司機 OA 進站時 pathname 仍是 `/`、深連結也還沒出現，這是當下唯一可信的端別訊號。
+ *
+ * 不覆蓋既有「已帶目標」的意圖：深連結資訊比端別精確，不可被降級。
+ */
+export function rememberEntryEnd(end: EntryEnd, now: number = Date.now()): void {
+  const existing = readEntryIntent(now);
+  if (existing?.target) return;
+  _write({ target: '', end, at: now });
 }
 
 /** 讀取仍在有效期內的意圖；過期或不存在回 null（過期會順手清掉）。 */
@@ -80,8 +99,12 @@ export function readEntryIntent(now: number = Date.now()): EntryIntent | null {
       const raw = window.sessionStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<EntryIntent>;
-        if (typeof parsed?.target === 'string' && typeof parsed?.at === 'number') {
-          intent = makeEntryIntent(parsed.target, parsed.at);
+        const okEnd = parsed?.end === 'driver' || parsed?.end === 'passenger';
+        if (typeof parsed?.at === 'number' && typeof parsed?.target === 'string' && okEnd) {
+          // target 空＝只知端別；有值則須為站內相對路徑（防 open redirect）
+          intent = parsed.target
+            ? makeEntryIntent(parsed.target, parsed.at)
+            : { target: '', end: parsed.end, at: parsed.at };
         }
       }
     } catch {
