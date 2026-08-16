@@ -384,30 +384,8 @@ interface PatchOrderParams {
 }
 
 // ===== Maps =====
-interface AutocompleteParams {
-  input: string;
-  sessiontoken?: string;
-}
-
-interface PlacePrediction {
-  placeId: string;
-  description: string;
-  mainText: string;
-  secondaryText: string;
-}
-
-interface GeocodeParams {
-  placeId: string;
-  sessiontoken?: string;
-}
-
-interface GeocodeRes {
-  lat: number;
-  lng: number;
-  address: string;
-  placeId: string;
-}
-
+// 地址搜尋 / placeId 解析的型別不在這裡：乘客與 admin 端一律走 api/maps 模組的
+// GetMapsAutocomplete / GetMapsPlaceDetails（型別見 api/maps/type.d.ts）。
 interface DistanceParams {
   origin: string;
   destination: string;
