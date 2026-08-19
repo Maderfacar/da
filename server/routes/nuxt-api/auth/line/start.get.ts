@@ -14,6 +14,7 @@ import {
   normalizeClientType,
   lineLoginRedirectUri,
 } from '@@/utils/line-login-state';
+import { configStr } from '@@/utils/runtime-config';
 
 const LINE_AUTHORIZE_URL = 'https://access.line.me/oauth2/v2.1/authorize';
 
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const clientType = normalizeClientType(q.clientType);
   const loginPage = clientType === 'driver' ? '/driver/auth' : '/login';
 
-  const channelId = config.lineLoginChannelId as string;
+  const channelId = configStr(config.lineLoginChannelId); // 見 @@/utils/runtime-config（destr 型別陷阱）
   if (!channelId || !config.firebaseServiceAccountJson) {
     console.error('[line-login.start] server config incomplete (channelId / firebase admin)');
     return sendRedirect(event, `${loginPage}?login_error=config`, 302);

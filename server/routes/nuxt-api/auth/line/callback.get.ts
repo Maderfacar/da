@@ -14,6 +14,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { createSessionCookie } from '@@/utils/session-cookie';
 import { provisionLineUser } from '@@/utils/line-user-provision';
 import { writeAuthErrorLog } from '@@/utils/server-auth-log';
+import { configStr } from '@@/utils/runtime-config';
 import {
   consumeLoginState,
   sanitizeTarget,
@@ -46,9 +47,11 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, '/login?login_error=badreq', 302);
   }
 
-  const channelId = config.lineLoginChannelId as string;
-  const channelSecret = config.lineLoginChannelSecret as string;
-  const apiKey = config.public.firebaseApiKey as string;
+  // ⚠️ 一律經 configStr 讀：Nitro 注入 env 會過 destr，純數字的 channel id 會變成 number，
+  // 拿去跟 LINE 回傳的字串 aud 比對會永遠不相等（見 @@/utils/runtime-config）。
+  const channelId = configStr(config.lineLoginChannelId);
+  const channelSecret = configStr(config.lineLoginChannelSecret);
+  const apiKey = configStr(config.public.firebaseApiKey);
   if (!channelId || !channelSecret || !apiKey || !config.firebaseServiceAccountJson) {
     console.error('[line-login.callback] fail: server config incomplete');
     return sendRedirect(event, '/login?login_error=config', 302);
@@ -135,9 +138,28 @@ export default defineEventHandler(async (event) => {
     console.error('[line-login.callback] fail: id_token verify', err?.data ?? err);
     return null;
   });
-  if (!verified?.sub || verified.iss !== 'https://access.line.me' || verified.aud !== channelId) {
+  // 失敗原因拆開記錄：verify 端點打不通 vs payload 不符是完全不同的故障，
+  // 混成同一條訊息會讓排查只能靠讀原始碼猜（2026-08-19 事故的次要成本）。
+  // 只記布林/型別，不寫入 id_token 或 aud 值本身（避免 log 落敏感資料）。
+  if (!verified) {
+    await authLog('fail', 'warn', 'id_token verify request failed', clientType, {
+      metadata: { stage: 'verify', reason: 'request-failed' },
+    });
+    return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
+  }
+  if (!verified.sub || verified.iss !== 'https://access.line.me' || verified.aud !== channelId) {
     console.warn('[line-login.callback] fail: id_token payload invalid');
-    await authLog('fail', 'warn', 'id_token verify failed / payload invalid', clientType, { metadata: { stage: 'verify' } });
+    await authLog('fail', 'warn', 'id_token verify failed / payload invalid', clientType, {
+      metadata: {
+        stage: 'verify',
+        reason: 'payload-mismatch',
+        hasSub: Boolean(verified.sub),
+        issOk: verified.iss === 'https://access.line.me',
+        audMatch: verified.aud === channelId,
+        audType: typeof verified.aud,
+        channelIdType: typeof channelId,
+      },
+    });
     return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
   }
 
