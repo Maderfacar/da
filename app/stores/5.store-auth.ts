@@ -15,6 +15,7 @@
 //   - 4 個 Ensure* 共用 shared/auth/lazy-loader.ts 純函式 sticky-promise factory
 import { createLazyLoader } from '~shared/auth/lazy-loader';
 import { rememberEntryEnd } from '~shared/auth/entry-intent';
+import { configStr } from '~shared/config-str';
 import { logAuth } from '~/utils/error-log';
 
 type Role = 'passenger' | 'driver' | 'admin';
@@ -310,7 +311,9 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           authDomain: config.firebaseAuthDomain,
           projectId: config.firebaseProjectId,
           storageBucket: config.firebaseStorageBucket,
-          messagingSenderId: config.firebaseMessagingSenderId,
+          // configStr：sender id 是純數字，Nitro 注入時會被 destr 轉成 number，
+          // 但 Firebase 的 FirebaseOptions 要求 string（見 ~shared/config-str）
+          messagingSenderId: configStr(config.firebaseMessagingSenderId),
           appId: config.firebaseAppId,
         });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { configStr } from './runtime-config';
+import { configStr } from './config-str';
 
 describe('configStr', () => {
   it('純數字 env（被 destr 轉成 number）還原為字串', () => {

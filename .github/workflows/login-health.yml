@@ -50,3 +50,32 @@ jobs:
             echo "::error::端點回報未授權 — CRON_SECRET 與 Vercel 環境變數不符"
             exit 1
           fi
+
+      # 設定漂移偵測（config-contract-gate Phase C）：build gate 只在部署前跑，
+      # 部署後有人改動 Vercel 環境變數就沒人知道。這一步每小時對 prod 實況重驗一次。
+      - name: 檢查設定契約（prod 實況）
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: https://da-line-liff-app.vercel.app/nuxt-api/_health/config
+        run: |
+          body=$(curl --silent --show-error --fail-with-body \
+            --max-time 60 \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            "$ENDPOINT") || {
+            echo "::error::設定健檢端點呼叫失敗"
+            echo "$body"
+            exit 1
+          }
+
+          echo "$body"
+
+          if echo "$body" | grep -q '"code":401'; then
+            echo "::error::設定健檢回報未授權 — CRON_SECRET 不符"
+            exit 1
+          fi
+
+          # 回應只含設定名稱與問題種類，不含值，可安全印在 Actions log
+          if echo "$body" | grep -q '"ok":false'; then
+            echo "::error::prod 設定有 error 級問題 —— 見上方 issues（level=error 者）"
+            exit 1
+          fi
