@@ -132,7 +132,14 @@ function main() {
     }
   }
 
-  const issues = skip ? [] : validateEnvValues(env);
+  // 「必要項缺失」只在 **production build** 硬擋 —— 那才是真正會上線的那一次建置。
+  //   - Vercel Preview：環境變數常只勾 Production，硬擋會擋掉不需要那些值的預覽部署
+  //   - 本機：.env.dev 合理地不會有 prod 專屬機密（P29 OA 推播金鑰等），
+  //     開發者不該因為筆電上沒有 prod token 而無法 build
+  // 格式錯誤與 destr 靜態掃描**不受此影響**，任何環境都硬擋（它們不依賴環境差異）。
+  const vercelEnv = process.env.VERCEL_ENV;
+  const strictRequired = vercelEnv === 'production';
+  const issues = skip ? [] : validateEnvValues(env, undefined, { strictRequired });
   const violations = scanDestrHazards();
   const { error, warn } = summarizeIssues(issues);
   const failed = error > 0 || violations.length > 0;
@@ -142,7 +149,10 @@ function main() {
     process.exit(failed ? 1 : 0);
   }
 
-  console.log(`[env-contract] 契約 ${ENV_CONTRACTS.length} 項｜來源 ${source}`);
+  const mode = strictRequired
+    ? '嚴格（production build：必要項缺失即擋）'
+    : `寬鬆（${vercelEnv ? `VERCEL_ENV=${vercelEnv}` : '非 Vercel 環境'}：必要項缺失只警告）`;
+  console.log(`[env-contract] 契約 ${ENV_CONTRACTS.length} 項｜來源 ${source}｜模式 ${mode}`);
 
   for (const i of issues) {
     const tag = i.level === 'error' ? '✖ 錯誤' : '⚠ 警告';

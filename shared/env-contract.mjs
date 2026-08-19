@@ -18,9 +18,13 @@
  *   - `secret`      憑證類，格式不拘但不可為空
  *   - `text`        自由文字
  *
- * **importance 的定線**：只有「缺了站台本來就是壞的」才是 `required`（硬擋部署）。
- * `.env.dev` 只有 23 個 key、缺 P29 雙 channel 那組，**不是 prod 的可靠鏡像**，
- * 因此無法查證的項目一律 `recommended`（警告不擋），待健檢端點回報 prod 實況後再升級。
+ * **importance 的定線**：導入時只有「缺了站台本來就是壞的」是 `required`，其餘因無法查證
+ * prod 狀態而暫列 `recommended`（`.env.dev` 只有 23 個 key，不是 prod 的可靠鏡像）。
+ * 2026-08-20 健檢端點回報 prod 缺項為 0，**依實證**把那批升級為 `required`——缺任一項
+ * 都代表 prod 有東西被拿掉，理應擋下部署。`optional` 缺失時不回報，故無從查證，維持原狀。
+ *
+ * ⚠️ Vercel Preview 環境的變數常只勾 Production，故 build gate 在非 production build 會把
+ * 「必要項缺失」降級為警告（`validateEnvValues` 的 `strictRequired` 選項）。
  */
 
 /**
@@ -134,75 +138,77 @@ export const ENV_CONTRACTS = [
     note: 'admin 2FA secret 的 AES-256-GCM 金鑰；缺失或長度錯則後台全鎖',
   },
 
-  // ── 無法查證 prod 狀態：警告不擋，待健檢端點回報後再升級（見 design.md）────
+  // ── 2026-08-20 健檢端點回報 prod 全數存在（missing=0）→ 由 recommended 升級為 required。
+  //    升級依據是實證而非推測；缺任一項都代表 prod 有東西被拿掉，理應擋下部署。
+  //    ⚠️ 非 production 環境（Vercel Preview）由 build gate 自動降級為警告，見 check-env-contract.mjs。
   {
     env: 'NUXT_LINE_CHANNEL_ID',
     path: 'lineChannelId',
     kind: 'numeric-id',
-    importance: 'recommended',
+    importance: 'required',
     note: 'LIFF token 的跨 channel 防護；未設則該防護短路失效（承諾 2 Phase D）',
   },
   {
     env: 'NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
     path: 'public.firebaseMessagingSenderId',
     kind: 'numeric-id',
-    importance: 'recommended',
+    importance: 'required',
     note: '純數字，同屬 destr 型別陷阱高危群',
   },
   {
     env: 'NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
     path: 'public.firebaseStorageBucket',
     kind: 'text',
-    importance: 'recommended',
+    importance: 'required',
     note: '缺失則檔案上傳走預設 bucket',
   },
   {
     env: 'NUXT_LINE_CHANNEL_ACCESS_TOKEN_PASSENGER',
     path: 'lineChannelAccessTokenPassenger',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: 'P29 乘客 OA 推播；缺失則乘客收不到 LINE 通知',
   },
   {
     env: 'NUXT_LINE_CHANNEL_SECRET_PASSENGER',
     path: 'lineChannelSecretPassenger',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: 'P29 乘客 OA webhook 簽章驗證',
   },
   {
     env: 'NUXT_LINE_CHANNEL_ACCESS_TOKEN_DRIVER',
     path: 'lineChannelAccessTokenDriver',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: 'P29 司機 OA 推播；缺失則司機收不到派單通知',
   },
   {
     env: 'NUXT_LINE_CHANNEL_SECRET_DRIVER',
     path: 'lineChannelSecretDriver',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: 'P29 司機 OA webhook 簽章驗證',
   },
   {
     env: 'CRON_SECRET',
     path: 'cronSecret',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: '未設則 cron 與健檢端點無保護；GitHub Actions 排程也需要同一值',
   },
   {
     env: 'NUXT_PUBLIC_SITE_URL',
     path: 'public.siteUrl',
     kind: 'url',
-    importance: 'recommended',
+    importance: 'required',
     note: '登入 redirect_uri 與 SEO canonical 的來源；錯了會導致 redirect_uri 不符',
   },
   {
     env: 'NUXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY',
     path: 'public.googleMapsBrowserKey',
     kind: 'secret',
-    importance: 'recommended',
+    importance: 'required',
     note: '缺失則前端地圖不顯示',
   },
   {
@@ -271,7 +277,10 @@ export function configKeyOf(path) {
  * @param {ReadonlyArray<EnvContract>} [contracts]
  * @returns {EnvIssue[]}
  */
-export function validateEnvValues(env, contracts = ENV_CONTRACTS) {
+export function validateEnvValues(env, contracts = ENV_CONTRACTS, opts = {}) {
+  // strictRequired=false：必要項缺失降級為警告。用於 Vercel Preview —— 環境變數常只勾
+  // Production，若在 preview build 硬擋會擋掉本來就不需要那些值的預覽部署。
+  const strictRequired = opts.strictRequired !== false;
   /** @type {EnvIssue[]} */
   const issues = [];
 
@@ -284,7 +293,7 @@ export function validateEnvValues(env, contracts = ENV_CONTRACTS) {
       issues.push({
         env: c.env,
         path: c.path,
-        level: c.importance === 'required' ? 'error' : 'warn',
+        level: c.importance === 'required' && strictRequired ? 'error' : 'warn',
         problem: 'missing',
         detail: c.note,
       });

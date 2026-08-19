@@ -40,9 +40,11 @@
 
 ## 驗收（Brain AI）
 
-- [ ] **V.1** 手動觸發 GitHub Actions → 看健檢端點回報的 prod 設定實況
-- [ ] **V.2** 依 V.1 結果，把確認存在於 prod 的項目由「警告」升級為「硬擋」（一行 importance 改動）
-- [ ] **V.3** 確認 `NUXT_LINE_CHANNEL_ID` 是否已設（承諾 2 Phase D 的跨 channel 檢查需要它才會生效）
+- [x] **V.1** ✅ 已完成：workflow 手動觸發 success（9s），健檢回報 error=0 / warn=3（全為 type-hazard）
+- [x] **V.2** ✅ 已完成：健檢端點回報 prod 缺項 = 0 → 10 項 `recommended` 全數升級為 `required`（共 21 項）。
+  同時把「必要項缺失」的硬擋範圍收斂為**僅 production build**（Vercel Preview 與本機降級為警告，
+  因 .env.dev 合理地不含 prod 專屬機密）；格式錯誤與 destr 靜態掃描不受影響，任何環境都硬擋。
+- [x] **V.3** ✅ 已完成：Brain AI 已設定，跨 channel 檢查進入觀測模式運作中
 
 ## 留待後續
 

@@ -62,12 +62,21 @@ describe('validateEnvValues', () => {
     });
   });
 
-  it('非核心缺失 → warn（不擋部署）', () => {
+  it('strictRequired=false 時必要項缺失降級為 warn（Vercel Preview / 本機）', () => {
     const env = validEnv();
     delete env.NUXT_LINE_CHANNEL_ID;
-    const issues = validateEnvValues(env);
-    expect(issues).toHaveLength(1);
-    expect(issues[0]).toMatchObject({ level: 'warn', problem: 'missing' });
+    const strict = validateEnvValues(env);
+    expect(strict[0]).toMatchObject({ level: 'error', problem: 'missing' });
+
+    const lenient = validateEnvValues(env, undefined, { strictRequired: false });
+    expect(lenient[0]).toMatchObject({ level: 'warn', problem: 'missing' });
+  });
+
+  it('strictRequired=false 不影響格式錯誤 —— 格式錯與環境無關，任何情境都是 error', () => {
+    const env = validEnv();
+    env.NUXT_LINE_LOGIN_CHANNEL_ID = 'not-a-number';
+    const lenient = validateEnvValues(env, undefined, { strictRequired: false });
+    expect(lenient[0]).toMatchObject({ level: 'error', problem: 'format' });
   });
 
   it('optional 缺失完全不回報', () => {
@@ -88,7 +97,7 @@ describe('validateEnvValues', () => {
     });
   });
 
-  it('值存在但格式錯一律 error，即使該項只是 recommended', () => {
+  it('值存在但格式錯一律 error（與 importance 無關）', () => {
     const env = validEnv();
     env.NUXT_PUBLIC_SITE_URL = 'not-a-url';
     expect(validateEnvValues(env)[0]).toMatchObject({ level: 'error', problem: 'format' });
