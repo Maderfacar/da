@@ -1050,6 +1050,12 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       const data = res?.data;
       if (!data?.signedIn) return; // 未命中 → 保持沉默，交由 Firebase 派生路徑
       _sessionSignedIn.value = true;
+      // server 已權威回答「已登入」→ 立刻解除開機閘門，不必再等 Firebase onAuthStateChanged。
+      // 本端點的存在目的就是「取代前端等 Firebase hydration（最多 12s）的 race」（見其檔頭），
+      // 但先前只取回真相、沒有解除閘門 —— 於是 Firebase 慢回應時仍會撞滿 12s safetyTimer
+      // （2026-08-20 prod 實測：/driver/trip 25 分鐘內 3 次 auth.init.timeout）。
+      // 登入判斷所需的 roles / approved / level 全部來自本次回應，不缺任何東西。
+      _markAuthResolved();
       // cookie-only / server OAuth 路徑（user=null）唯一能取得 lineUid 的來源 → 補進 currentLineUid
       if (typeof data.lineUid === 'string' && data.lineUid) sessionLineUid.value = data.lineUid;
       const parsed = _normalizeRoles(data.roles);

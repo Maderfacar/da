@@ -8,6 +8,7 @@
 //   核心 state machine 抽到 shared/auth/unauthorized-policy.ts（純函式，獨立可測）。
 //   L2（onRequest 前等 WaitForAuthResolved）保留 — 從根本避免 LIFF/Firebase race 造成的偽 401。
 import { createUnauthorizedPolicy } from '~shared/auth/unauthorized-policy';
+import { toApiEnvelope } from '~shared/api-envelope';
 import { logApi } from '~/utils/error-log';
 
 const _policy = createUnauthorizedPolicy({
@@ -193,27 +194,27 @@ const _DoFetch = async <T>(
 export default {
   /** 取得  */
   get: <T>(url: string, query: AnyObject = {}, _showErr = true) =>
-    Fetch<T>(url, { method: 'get', query }, _showErr).catch((err) => err),
+    Fetch<T>(url, { method: 'get', query }, _showErr).catch(toApiEnvelope),
 
   /** 建立 */
   post: <T>(url: string, body: AnyObject = {}, _showErr = true) =>
-    Fetch<T>(url, { method: 'post', body }, _showErr).catch((err) => err),
+    Fetch<T>(url, { method: 'post', body }, _showErr).catch(toApiEnvelope),
 
   /** 局部更新 */
   patch: <T>(url: string, body: AnyObject = {}, _showErr = true) =>
-    Fetch<T>(url, { method: 'patch', body }, _showErr).catch((err) => err),
+    Fetch<T>(url, { method: 'patch', body }, _showErr).catch(toApiEnvelope),
 
   /** 更新 */
   put: <T>(url: string, body: AnyObject = {}, _showErr = true) =>
-    Fetch<T>(url, { method: 'put', body }, _showErr).catch((err) => err),
+    Fetch<T>(url, { method: 'put', body }, _showErr).catch(toApiEnvelope),
 
   /** 刪除 */
   delete: <T>(url: string, query: AnyObject = {}, _showErr = true) =>
-    Fetch<T>(url, { method: 'delete', query }, _showErr).catch((err) => err),
+    Fetch<T>(url, { method: 'delete', query }, _showErr).catch(toApiEnvelope),
 
   /** 檔案上傳下載 */
   formData: <T>(url: string, body: AnyObject = {}, _showErr = true, method: 'post' | 'patch' | 'put' | 'get' = 'post') =>
-    Fetch(url, { method, body: $tool.JsonToFormData(body) }, _showErr).catch((err) => err) as Promise<ApiRes<T>>,
+    Fetch(url, { method, body: $tool.JsonToFormData(body) }, _showErr).catch(toApiEnvelope) as Promise<ApiRes<T>>,
 
   /** 檔案上傳(進度條) */
   xhrFileUpload: <T>(url: string, body: AnyObject = {}, progressObj: FileProgress, _showErr = true): Promise<ApiRes<T>> => {

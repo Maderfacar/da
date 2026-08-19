@@ -2,6 +2,8 @@
 /** API 狀態 */
 const apiStatus = {
   none: '',
+  /** 傳輸層失敗（請求未到達 server；由 ~shared/api-envelope 正規化產生） */
+  networkError: 0,
   /** 成功 */
   success: 200,
   /** 失敗 */
