@@ -44,14 +44,18 @@ function resolveWindowHours(raw: unknown): number {
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
 
-  // 保護：有設 secret 才驗（Vercel Cron 自動注入 Bearer <CRON_SECRET>）
+  // 保護：有設 secret 才驗（Vercel Cron 自動注入 Bearer <CRON_SECRET>）。
+  //
+  // ⚠️ 這裡刻意「未設 secret 時仍執行」而非 fail-closed：Vercel Cron 在未設 CRON_SECRET 時
+  // 不會帶 Authorization，改成 fail-closed 會把每日告警整個關掉 —— 那是唯一還在運作的偵測。
+  // 但**回應內容**要分開處理：本端點回傳登入成功率、未知事件名等營運遙測，未授權者不該看到。
+  // 因此未授權時照常執行與推播，只回最小資訊（見下方 detailed 判斷）。
   const secret = (config as { cronSecret?: string }).cronSecret;
-  if (secret) {
-    const authz = getHeader(event, 'authorization') ?? '';
-    if (authz !== `Bearer ${secret}`) {
-      return { data: {}, status: { code: 401, message: { zh_tw: '未授權', en: 'Unauthorized', ja: '未承認' } } };
-    }
+  const authz = getHeader(event, 'authorization') ?? '';
+  if (secret && authz !== `Bearer ${secret}`) {
+    return { data: {}, status: { code: 401, message: { zh_tw: '未授權', en: 'Unauthorized', ja: '未承認' } } };
   }
+  const detailed = Boolean(secret); // 有設 secret 且通過驗證才給明細
 
   if (!config.firebaseServiceAccountJson) return serverError();
 
@@ -99,6 +103,15 @@ export default defineEventHandler(async (event) => {
       await notifyAdmins(db, 'adminNotify.loginHealthAlert', {
         loginHealthWindowH: windowHours,
         loginHealthSummary: loginSummary,
+      });
+    }
+
+    // 未授權（prod 未設 CRON_SECRET）時只回最小資訊：工作照跑、告警照發，但不外洩遙測明細
+    if (!detailed) {
+      return successResponse({
+        ok: true,
+        notified: breached || loginBreached,
+        detail: 'omitted (CRON_SECRET 未設定)',
       });
     }
 

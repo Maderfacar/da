@@ -74,6 +74,12 @@ jobs:
             exit 1
           fi
 
+          # fail-closed：端點在未設 CRON_SECRET 時拒絕輸出（見端點註解）
+          if echo "$body" | grep -q '"code":503'; then
+            echo "::error::prod 未設定 CRON_SECRET —— 健檢端點與所有 cron 端點目前皆無保護，請於 Vercel 環境變數設定"
+            exit 1
+          fi
+
           # 回應只含設定名稱與問題種類，不含值，可安全印在 Actions log
           if echo "$body" | grep -q '"ok":false'; then
             echo "::error::prod 設定有 error 級問題 —— 見上方 issues（level=error 者）"

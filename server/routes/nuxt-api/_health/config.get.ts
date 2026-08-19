@@ -20,12 +20,27 @@ import {
 export default defineEventHandler((event) => {
   const config = useRuntimeConfig();
 
+  // ⚠️ fail-closed：沒設 CRON_SECRET 就拒絕輸出，而不是「沒設就放行」。
+  // 2026-08-20 首次部署後實測發現 prod 根本沒設 CRON_SECRET，導致本端點對外完全公開。
+  // 它雖不含設定值，但會揭露「哪些保護沒設好」（例如 CRON_SECRET 未設 = cron 端點無保護），
+  // 這是可直接利用的偵察情報。診斷端點的預設必須是關的。
   const secret = (config as { cronSecret?: string }).cronSecret;
-  if (secret) {
-    const authz = getHeader(event, 'authorization') ?? '';
-    if (authz !== `Bearer ${secret}`) {
-      return { data: {}, status: { code: 401, message: { zh_tw: '未授權', en: 'Unauthorized', ja: '未承認' } } };
-    }
+  if (!secret) {
+    return {
+      data: {},
+      status: {
+        code: 503,
+        message: {
+          zh_tw: '健檢端點未設定保護（CRON_SECRET），拒絕輸出',
+          en: 'Health endpoint protection not configured (CRON_SECRET); refusing to report',
+          ja: 'ヘルスエンドポイントの保護が未設定（CRON_SECRET）のため出力しません',
+        },
+      },
+    };
+  }
+  const authz = getHeader(event, 'authorization') ?? '';
+  if (authz !== `Bearer ${secret}`) {
+    return { data: {}, status: { code: 401, message: { zh_tw: '未授權', en: 'Unauthorized', ja: '未承認' } } };
   }
 
   // 1) 環境變數層：缺失與格式
