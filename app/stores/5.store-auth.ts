@@ -585,6 +585,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
 
   // W4：四個 lazy loader — 進對應路徑才 fire；SignOut / user 切換時 reset
   // 注意：閉包延遲到 ensure() 才取 getApps()[0] 與 user.value，避免 store init 時 firebase 未就緒
+  //
+  // ⚠️ cookie-only 路徑（P3 server OAuth 登入）client 端 user 恆為 null，且沒有 Firebase 身分
+  // 就無法通過 firestore.rules 讀 doc —— 因此以下 loader 在該路徑**必然全部 no-op**，這是
+  // 架構使然、不是 bug。所有「gate 必需」與「畫面必需」的欄位一律以 /auth/session-check 為
+  // 權威來源（roles / approved / level / permissions / admin2faEnrolled / driverApplication /
+  // displayName / pictureUrl）。新增任何欄位時請一併加進 session-check，否則 cookie-only
+  // 裝置上會靜默空白 —— 2026-08-20 的頭像空白就是漏了 displayName / pictureUrl。
   const _userDocLoader = createLazyLoader(async () => {
     const { getApps } = await import('firebase/app');
     const app = getApps()[0];
@@ -1030,6 +1037,8 @@ export const StoreAuth = defineStore('StoreAuth', () => {
           level?: AdminLevel | null;
           permissions?: Partial<Record<string, boolean>>;
           admin2faEnrolled?: boolean;
+          displayName?: string;
+          pictureUrl?: string;
           driverApplication?: {
             appliedAt: string | null;
             reviewedAt: string | null;
@@ -1055,6 +1064,11 @@ export const StoreAuth = defineStore('StoreAuth', () => {
       // P2：admin/driver gate 欄位（cookie 權威來源）
       if (data.permissions && typeof data.permissions === 'object') {
         adminPermissions.value = data.permissions;
+      }
+      // lineProfile：cookie-only 路徑（user=null）時 _userDocLoader 因缺 Firebase user 直接 return，
+      // _LoadUserDoc 永遠不跑 → 頭像與名稱空白。session-check 是這條路徑唯一的 profile 來源。
+      if (data.displayName && data.pictureUrl) {
+        lineProfile.value = { displayName: data.displayName, pictureUrl: data.pictureUrl };
       }
       if (typeof data.admin2faEnrolled === 'boolean') {
         admin2faEnrolled.value = data.admin2faEnrolled;

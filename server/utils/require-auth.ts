@@ -61,6 +61,14 @@ export interface AuthOk {
    * 一把載齊 gate 欄位（cookie-only 裝置 client SDK 讀不到時的權威來源）。非 admin 恆 false。
    */
   admin2faEnrolled?: boolean;
+  /**
+   * LINE 顯示名稱與頭像。resolveIdentity 讀 users doc 時本就取得，順手 surface
+   * ——與 admin2faEnrolled 同一理由：cookie-only 裝置（server OAuth 後 client user=null）
+   * 的 client Firestore SDK 讀不到 users doc，session bootstrap 是唯一權威來源。
+   * 缺此欄位會導致三端登入後頭像與名稱空白（2026-08-20 實測）。
+   */
+  displayName?: string;
+  pictureUrl?: string;
 }
 
 export interface AuthFail {
@@ -110,6 +118,8 @@ export async function resolveIdentity(event: H3Event, decoded: DecodedIdToken): 
   let approved = false;
   let firestoreReachable = true;
   let userDocExists = false;
+  let displayName: string | undefined;
+  let pictureUrl: string | undefined;
   try {
     const snap = await db.collection('users').doc(lineUid).get();
     userDocExists = snap.exists;
@@ -117,6 +127,9 @@ export async function resolveIdentity(event: H3Event, decoded: DecodedIdToken): 
       const data = snap.data() ?? {};
       approved = (data.approved as boolean) ?? false;
       roles = filterRoles(data.roles);
+      // 同一份 snapshot 順手取用，不多一次 read
+      if (typeof data.displayName === 'string') displayName = data.displayName;
+      if (typeof data.pictureUrl === 'string') pictureUrl = data.pictureUrl;
     }
   } catch (err) {
     console.error('[resolveIdentity] Firestore read failed:', err);
@@ -193,7 +206,10 @@ export async function resolveIdentity(event: H3Event, decoded: DecodedIdToken): 
     }
   }
 
-  return { ok: true, uid: decoded.uid, lineUid, roles, approved, level, permissions, admin2faEnrolled: !!totpEnrolledAt };
+  return {
+    ok: true, uid: decoded.uid, lineUid, roles, approved, level, permissions,
+    admin2faEnrolled: !!totpEnrolledAt, displayName, pictureUrl,
+  };
 }
 
 export async function getAuthFromEvent(event: H3Event): Promise<AuthResult> {

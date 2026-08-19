@@ -65,6 +65,11 @@ export default defineEventHandler(async (event) => {
     level: result.level ?? null,
     permissions: result.permissions ?? {},
     admin2faEnrolled: result.admin2faEnrolled ?? false,
+    // LINE 顯示名稱與頭像：cookie-only 裝置（server OAuth 後 client user=null）的 client
+    // Firestore SDK 讀不到 users doc，本端點是唯一權威來源。缺這兩欄會讓三端登入後
+    // 頭像與名稱空白（2026-08-20 實測；無痕視窗因無 localStorage 快取而特別明顯）。
+    displayName: result.displayName ?? '',
+    pictureUrl: result.pictureUrl ?? '',
     driverApplication,
   });
 });
