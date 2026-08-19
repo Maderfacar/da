@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     firebaseServiceAccountJson: '', // NUXT_FIREBASE_SERVICE_ACCOUNT_JSON — server only
     firebaseStorageBucket: '',      // NUXT_FIREBASE_STORAGE_BUCKET — server only（覆寫預設 ${project_id}.appspot.com）
     googleMapsApiKey: '',           // NUXT_GOOGLE_MAPS_API_KEY — server only (BFF)
+    lineChannelId: '',              // NUXT_LINE_CHANNEL_ID — LIFF access token 的來源 channel（跨 channel 防護用）
     lineChannelSecret: '',          // NUXT_LINE_CHANNEL_SECRET — legacy（P29 後 deprecated，僅作 fallback）
     lineChannelAccessToken: '',     // NUXT_LINE_CHANNEL_ACCESS_TOKEN — legacy（P29 後 deprecated，僅作 fallback）
     // P29 多 OA：passenger / driver 各自獨立 channel

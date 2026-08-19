@@ -1,0 +1,188 @@
+/**
+ * 登入健康判定 — 純函式（login-health-observability Phase B）
+ *
+ * 取代「列舉幾種錯誤、數筆數」的判定方式，改為兩條規則：
+ *
+ *   1. **分路徑成功率**：ok ÷ (ok + fail)，依 metadata.route 分組。
+ *      2026-08-19 事故 5 天只有 11 次嘗試、100% 失敗，卻打不到任何一個「錯誤筆數 >= 3~5」的門檻
+ *      —— 低流量路徑徹底壞掉在筆數型監控下是結構性隱形的，而新上線的入口恰好流量最低。
+ *      因此改判成功率，並刻意把 critical 門檻壓到「3 次嘗試全滅」。
+ *
+ *   2. **deny-by-default 未知事件**：維護「已知良性事件」清單，非清單內的 error/warn 事件一律告警。
+ *      現況 auth-health-alert.ts 是反過來的（列舉要告警的四個事件名，其餘 default: break 略過），
+ *      所以後來新增的埋點永遠不會觸發告警。方向一翻，漏列一項的後果就從「漏叫」變成「多叫一次」，
+ *      而多叫一次就會被補進清單 —— 系統會自我收斂。
+ *
+ * 兩條規則與既有 auth-health-alert 的四項規則並存，任一越界即告警。
+ */
+
+/** 判定所需的 log 形狀（只取用得到的欄位，方便單測餵假資料）。 */
+export interface LoginHealthLogEntry {
+  event?: string | null;
+  severity?: string | null;
+  message?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface RouteTally {
+  ok: number;
+  fail: number;
+  attempts: number;
+  /** attempts 為 0 時為 null（沒人用 ≠ 壞掉，不可判定） */
+  successRate: number | null;
+}
+
+export type LoginTally = Record<string, RouteTally>;
+
+export const LOGIN_EVENT_OK = 'auth.login.ok';
+export const LOGIN_EVENT_FAIL = 'auth.login.fail';
+
+/** 3 次嘗試全滅即 critical —— 低流量路徑必須能觸發，這是本次事故被漏掉的直接原因。 */
+export const CRITICAL_MIN_ATTEMPTS = 3;
+/** 部分失敗的觀察門檻：樣本夠多才判，避免少量偶發誤報。 */
+export const WARN_MIN_ATTEMPTS = 10;
+export const WARN_RATE_THRESHOLD = 0.5;
+
+/**
+ * 依 metadata.route 分組統計登入成敗。
+ * 無 route 或 route 非字串的紀錄一律歸入 `unknown` —— 不丟棄，否則新入口忘了標 route 會靜默消失。
+ */
+export function tallyLoginOutcomes(logs: ReadonlyArray<LoginHealthLogEntry>): LoginTally {
+  const tally: LoginTally = {};
+  const bump = (route: string, key: 'ok' | 'fail'): void => {
+    const row = tally[route] ?? { ok: 0, fail: 0, attempts: 0, successRate: null };
+    row[key] += 1;
+    row.attempts = row.ok + row.fail;
+    row.successRate = row.attempts > 0 ? row.ok / row.attempts : null;
+    tally[route] = row;
+  };
+
+  for (const log of logs) {
+    if (log?.event !== LOGIN_EVENT_OK && log?.event !== LOGIN_EVENT_FAIL) continue;
+    const rawRoute = log.metadata?.route;
+    const route = typeof rawRoute === 'string' && rawRoute ? rawRoute : 'unknown';
+    bump(route, log.event === LOGIN_EVENT_OK ? 'ok' : 'fail');
+  }
+  return tally;
+}
+
+export interface LoginHealthBreach {
+  route: string;
+  level: 'critical' | 'warn';
+  ok: number;
+  fail: number;
+  attempts: number;
+  successRate: number;
+}
+
+/**
+ * 依成功率判定各路徑健康。
+ * - attempts >= 3 且 successRate === 0 → critical
+ * - attempts >= 10 且 successRate < 0.5 → warn
+ * - attempts === 0 → 不判定（沒人用不等於壞掉，避免半夜誤報）
+ */
+export function evaluateLoginSuccessRate(tally: LoginTally): LoginHealthBreach[] {
+  const breaches: LoginHealthBreach[] = [];
+  for (const [route, row] of Object.entries(tally)) {
+    if (row.attempts === 0 || row.successRate === null) continue;
+    const shared = { route, ok: row.ok, fail: row.fail, attempts: row.attempts, successRate: row.successRate };
+    if (row.attempts >= CRITICAL_MIN_ATTEMPTS && row.successRate === 0) {
+      breaches.push({ ...shared, level: 'critical' });
+      continue;
+    }
+    if (row.attempts >= WARN_MIN_ATTEMPTS && row.successRate < WARN_RATE_THRESHOLD) {
+      breaches.push({ ...shared, level: 'warn' });
+    }
+  }
+  return breaches;
+}
+
+/**
+ * 已知良性事件（deny-by-default 的反向清單）。
+ *
+ * 收錄兩種：① 正常運作時的高頻事件；② 已被其他規則涵蓋的事件（避免同一件事叫兩次）。
+ * **漏列一項只會多叫一次告警，不會少叫** —— 這正是相對現況白名單的關鍵差異。
+ * 收到誤報時把事件名補進來即可，不要反過來改成列舉需告警的事件。
+ */
+export const KNOWN_BENIGN_EVENTS: ReadonlySet<string> = new Set([
+  // 正常導向與狀態還原（部分歷史埋點的 severity 是 error，但屬正常決策而非故障）
+  'route.navigate',
+  'auth.resolved.snapshot',
+  'auth.session-cookie.seeded',
+  'auth.liff.init.retry', // 換下一個 LIFF ID 重試，會自癒；真正失敗有 auth.liff.init.failed
+  // 已被登入成功率規則涵蓋
+  'auth.login.fail',
+  // 已被 auth-health-alert 四項規則涵蓋
+  'auth.roles.slow',
+  'auth.userdoc.missing',
+  'app.chunk-error',
+  'auth.line-exchange.bad-status',
+]);
+
+/**
+ * 良性事件前綴：導向決策本身不是故障（真正的登入失敗由成功率規則涵蓋），
+ * 但歷史埋點把 middleware.redirect.* 記為 severity=error，不排除會每天誤報。
+ */
+export const KNOWN_BENIGN_PREFIXES: readonly string[] = ['middleware.redirect.'];
+
+export interface UnknownEventReport {
+  event: string;
+  count: number;
+  sampleMessage: string;
+}
+
+/** 事件是否已知良性（精確比對 + 前綴比對）。 */
+export function isBenignEvent(event: string): boolean {
+  if (KNOWN_BENIGN_EVENTS.has(event)) return true;
+  return KNOWN_BENIGN_PREFIXES.some((prefix) => event.startsWith(prefix));
+}
+
+/**
+ * 找出所有「不在良性清單內」的 error / warn 事件型別。
+ * 回傳依筆數由多到少排序，附一則樣本訊息供判讀。
+ */
+export function detectUnknownEvents(logs: ReadonlyArray<LoginHealthLogEntry>): UnknownEventReport[] {
+  const acc = new Map<string, UnknownEventReport>();
+  for (const log of logs) {
+    const severity = log?.severity;
+    if (severity !== 'error' && severity !== 'warn') continue;
+    const event = typeof log.event === 'string' ? log.event : '';
+    if (!event || isBenignEvent(event)) continue;
+    const existing = acc.get(event);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    acc.set(event, { event, count: 1, sampleMessage: String(log.message ?? '').slice(0, 200) });
+  }
+  return [...acc.values()].sort((a, b) => b.count - a.count);
+}
+
+/**
+ * 把越界項目組成一段可讀摘要（放進 LINE 告警訊息）。
+ * 純函式：路徑名與數字是技術識別碼，不做語系化；語系化的抬頭由 admin-notify-message 負責。
+ * 回空字串代表沒有任何越界 —— caller 應據此判斷不發訊息。
+ */
+export function buildLoginHealthSummary(
+  breaches: ReadonlyArray<LoginHealthBreach>,
+  unknownEvents: ReadonlyArray<UnknownEventReport>,
+  maxUnknownListed = 5,
+): string {
+  const lines: string[] = [];
+
+  for (const b of breaches) {
+    const pct = Math.round(b.successRate * 100);
+    const mark = b.level === 'critical' ? '🔴' : '🟠';
+    lines.push(`${mark} ${b.route} 成功率 ${pct}%（${b.ok}/${b.attempts}）`);
+  }
+
+  if (unknownEvents.length > 0) {
+    const listed = unknownEvents.slice(0, maxUnknownListed);
+    lines.push(`❓ 未知錯誤事件 ${unknownEvents.length} 種：`);
+    for (const u of listed) lines.push(`  · ${u.event} ×${u.count}`);
+    const rest = unknownEvents.length - listed.length;
+    if (rest > 0) lines.push(`  · …另 ${rest} 種`);
+  }
+
+  return lines.join('\n');
+}

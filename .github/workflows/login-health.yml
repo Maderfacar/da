@@ -1,0 +1,52 @@
+name: Login Health Check
+
+# 為什麼需要這條 workflow：
+#   Vercel Hobby 方案 cron 上限 2 條且已用滿（cleanup-error-logs / alert-auth-health），
+#   而每日一次的偵測頻率不足以達成本變更的驗收標準（故障當天就要告警）。
+#   因此改由 GitHub Actions 每小時打同一支端點（免費、無條數限制），視窗取 3h。
+#
+# 端點本身冪等且唯讀：只在越界時推播 LINE，未越界不發訊息，重複觸發不會產生副作用。
+# 視窗重疊（每小時掃 3h）會造成同一故障重複告警 —— 這是刻意的：本階段寧可多叫。
+
+on:
+  schedule:
+    - cron: '7 * * * *' # 每小時第 7 分（避開整點的 GitHub Actions 尖峰排隊）
+  workflow_dispatch: # 允許手動觸發，供驗收使用
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 呼叫登入健康檢查端點
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: https://da-line-liff-app.vercel.app/api/cron/alert-auth-health?hours=3
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::缺少 CRON_SECRET secret — 端點會回 401，偵測形同關閉。請於 repo Settings → Secrets 設定（值與 Vercel 環境變數相同）。"
+            exit 1
+          fi
+
+          response=$(curl --silent --show-error --fail-with-body \
+            --max-time 60 \
+            --write-out '\n%{http_code}' \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            "$ENDPOINT") || {
+            echo "::error::端點呼叫失敗"
+            echo "$response"
+            exit 1
+          }
+
+          status=$(echo "$response" | tail -n 1)
+          body=$(echo "$response" | sed '$d')
+          echo "HTTP $status"
+          echo "$body"
+
+          # 端點回 200 但 envelope 內含 401（未授權）時同樣視為失敗，避免靜默失效
+          if echo "$body" | grep -q '"code":401'; then
+            echo "::error::端點回報未授權 — CRON_SECRET 與 Vercel 環境變數不符"
+            exit 1
+          fi

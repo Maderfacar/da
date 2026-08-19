@@ -13,7 +13,7 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { createSessionCookie } from '@@/utils/session-cookie';
 import { provisionLineUser } from '@@/utils/line-user-provision';
-import { writeAuthErrorLog } from '@@/utils/server-auth-log';
+import { writeLoginOutcome } from '@@/utils/login-outcome';
 import { configStr } from '@@/utils/runtime-config';
 import {
   consumeLoginState,
@@ -72,21 +72,24 @@ export default defineEventHandler(async (event) => {
   const reqPath = (event.path ?? '').split('?')[0];
   const userAgent = getHeader(event, 'user-agent') ?? '';
   const appVersion = String((config.public as { appVersion?: string }).appVersion ?? '');
+  // 統一寫 auth.login.ok / auth.login.fail（route='browser-oauth'）—— 與 line-exchange 同一組事件，
+  // 成功率才算得出來（見 @@/utils/login-outcome）。severity 由 outcome 決定，caller 不再自行指定。
   const authLog = (
     outcome: 'ok' | 'fail',
-    severity: 'error' | 'warn' | 'info',
     message: string,
     end: LoginClientType,
-    extra?: { lineUserId?: string | null; metadata?: Record<string, unknown> },
-  ): Promise<void> => writeAuthErrorLog(db, {
-    event: `auth.line-login.callback.${outcome}`,
-    severity,
-    message,
+    extra?: { lineUserId?: string | null; stage?: string; reason?: string; metadata?: Record<string, unknown> },
+  ): Promise<void> => writeLoginOutcome(db, {
+    outcome,
+    route: 'browser-oauth',
     end,
+    message,
     path: reqPath,
     userAgent,
     appVersion,
     lineUserId: extra?.lineUserId ?? null,
+    stage: extra?.stage,
+    reason: extra?.reason,
     metadata: extra?.metadata,
   });
 
@@ -94,7 +97,7 @@ export default defineEventHandler(async (event) => {
   const statePayload = await consumeLoginState(db, state);
   if (!statePayload) {
     console.warn('[line-login.callback] fail: invalid/expired/replayed state');
-    await authLog('fail', 'warn', 'invalid/expired/replayed state', 'passenger', { metadata: { stage: 'state' } });
+    await authLog('fail', 'invalid/expired/replayed state', 'passenger', { stage: 'state' });
     return sendRedirect(event, '/login?login_error=state', 302);
   }
   const { clientType, nonce } = statePayload;
@@ -118,7 +121,7 @@ export default defineEventHandler(async (event) => {
     return null;
   });
   if (!tokenRes?.id_token) {
-    await authLog('fail', 'warn', 'LINE token exchange failed', clientType, { metadata: { stage: 'token' } });
+    await authLog('fail', 'LINE token exchange failed', clientType, { stage: 'token' });
     return sendRedirect(event, `${loginPage}?login_error=token`, 302);
   }
 
@@ -142,17 +145,18 @@ export default defineEventHandler(async (event) => {
   // 混成同一條訊息會讓排查只能靠讀原始碼猜（2026-08-19 事故的次要成本）。
   // 只記布林/型別，不寫入 id_token 或 aud 值本身（避免 log 落敏感資料）。
   if (!verified) {
-    await authLog('fail', 'warn', 'id_token verify request failed', clientType, {
-      metadata: { stage: 'verify', reason: 'request-failed' },
+    await authLog('fail', 'id_token verify request failed', clientType, {
+      stage: 'verify',
+      reason: 'request-failed',
     });
     return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
   }
   if (!verified.sub || verified.iss !== 'https://access.line.me' || verified.aud !== channelId) {
     console.warn('[line-login.callback] fail: id_token payload invalid');
-    await authLog('fail', 'warn', 'id_token verify failed / payload invalid', clientType, {
+    await authLog('fail', 'id_token verify failed / payload invalid', clientType, {
+      stage: 'verify',
+      reason: 'payload-mismatch',
       metadata: {
-        stage: 'verify',
-        reason: 'payload-mismatch',
         hasSub: Boolean(verified.sub),
         issOk: verified.iss === 'https://access.line.me',
         audMatch: verified.aud === channelId,
@@ -171,9 +175,10 @@ export default defineEventHandler(async (event) => {
   });
   if (!provisioned.ok) {
     console.error('[line-login.callback] fail: provision', provisioned.reason);
-    await authLog('fail', 'error', `provision failed: ${provisioned.reason}`, clientType, {
+    await authLog('fail', `provision failed: ${provisioned.reason}`, clientType, {
       lineUserId: verified.sub,
-      metadata: { stage: 'provision', reason: provisioned.reason },
+      stage: 'provision',
+      reason: provisioned.reason,
     });
     return sendRedirect(event, `${loginPage}?login_error=provision`, 302);
   }
@@ -187,9 +192,9 @@ export default defineEventHandler(async (event) => {
     return null;
   });
   if (!signInRes?.idToken) {
-    await authLog('fail', 'error', 'signInWithCustomToken failed (no idToken)', clientType, {
+    await authLog('fail', 'signInWithCustomToken failed (no idToken)', clientType, {
       lineUserId: provisioned.lineUserId,
-      metadata: { stage: 'session' },
+      stage: 'session',
     });
     return sendRedirect(event, `${loginPage}?login_error=session`, 302);
   }
@@ -198,15 +203,15 @@ export default defineEventHandler(async (event) => {
   const seeded = await createSessionCookie(event, signInRes.idToken);
   if (!seeded) {
     console.error('[line-login.callback] fail: createSessionCookie');
-    await authLog('fail', 'error', 'createSessionCookie failed', clientType, {
+    await authLog('fail', 'createSessionCookie failed', clientType, {
       lineUserId: provisioned.lineUserId,
-      metadata: { stage: 'cookie' },
+      stage: 'cookie',
     });
     return sendRedirect(event, `${loginPage}?login_error=session`, 302);
   }
 
   console.log(`[line-login.callback] ok clientType=${clientType} lineUid=${provisioned.lineUserId} → ${target}`);
-  await authLog('ok', 'info', 'login ok', clientType, {
+  await authLog('ok', 'login ok', clientType, {
     lineUserId: provisioned.lineUserId,
     metadata: { target, roles: provisioned.roles },
   });

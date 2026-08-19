@@ -14,7 +14,8 @@ export type AdminNotifyKey =
   | 'adminNotify.orderCreated'
   | 'adminNotify.orderStatusChanged'
   | 'adminNotify.driverApplied'
-  | 'adminNotify.authHealthAlert';
+  | 'adminNotify.authHealthAlert'
+  | 'adminNotify.loginHealthAlert';
 
 const VALID_LANGS: Lang[] = ['zh_tw', 'en', 'ja'];
 
@@ -32,6 +33,10 @@ export interface AdminNotifyParams {
   authHealthUserdocMissing?: number;
   authHealthChunkError?: number;
   authHealthLineExchangeBadStatus?: number;
+  // ── 登入健康告警（login-health-observability）：成功率越界 + 未知錯誤事件摘要 ──
+  loginHealthWindowH?: number;
+  /** 已由 buildLoginHealthSummary 組好的多行摘要（技術識別碼，不語系化） */
+  loginHealthSummary?: string;
 }
 
 // ── 訂單狀態三語名稱（orders/[orderId].patch.ts 的 7 個狀態）─────────
@@ -100,6 +105,13 @@ const MESSAGES: Record<AdminNotifyKey, Record<Lang, Builder>> = {
       `⚠️ 認証ヘルス警告（直近 ${p.authHealthWindowH ?? 24}h）\n`
       + `roles 遅延：${p.authHealthRolesSlow ?? 0}｜userdoc 欠落：${p.authHealthUserdocMissing ?? 0}｜`
       + `chunk エラー：${p.authHealthChunkError ?? 0}｜LINE 交換異常：${p.authHealthLineExchangeBadStatus ?? 0}`,
+  },
+  // 登入健康告警（login-health-observability）：成功率為 0 或出現未知錯誤事件時發此訊息。
+  // summary 由 buildLoginHealthSummary 組好（路徑名與整數，非使用者輸入，不經 sanitizeText）。
+  'adminNotify.loginHealthAlert': {
+    zh_tw: (p) => `🚨 登入健康告警（近 ${p.loginHealthWindowH ?? 24}h）\n${p.loginHealthSummary ?? ''}`,
+    en:    (p) => `🚨 Login health alert (last ${p.loginHealthWindowH ?? 24}h)\n${p.loginHealthSummary ?? ''}`,
+    ja:    (p) => `🚨 ログインヘルス警告（直近 ${p.loginHealthWindowH ?? 24}h）\n${p.loginHealthSummary ?? ''}`,
   },
 };
 

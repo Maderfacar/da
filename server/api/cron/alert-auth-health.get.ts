@@ -20,10 +20,26 @@ import {
   AUTH_HEALTH_THRESHOLDS,
   AUTH_HEALTH_WINDOW_HOURS,
 } from '@@/utils/auth-health-alert';
+import {
+  tallyLoginOutcomes,
+  evaluateLoginSuccessRate,
+  detectUnknownEvents,
+  buildLoginHealthSummary,
+  type LoginHealthLogEntry,
+} from '@@/utils/login-health';
 
 const COLLECTION = 'client_error_logs';
-const LOOKBACK_MS = AUTH_HEALTH_WINDOW_HOURS * 60 * 60 * 1000;
 const MAX_DOCS = 5000; // 安全上限（常態約數十筆/日，遠低於此）避免 timeout
+
+/**
+ * 統計視窗（小時）。Vercel 每日 cron 用預設 24；GitHub Actions 每小時排程帶 ?hours=3
+ * （重疊容忍重複告警 —— 本端點寧可多叫，不做去重）。
+ */
+function resolveWindowHours(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return AUTH_HEALTH_WINDOW_HOURS;
+  return Math.min(n, AUTH_HEALTH_WINDOW_HOURS);
+}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -41,7 +57,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { db } = useFirebaseAdmin(config.firebaseServiceAccountJson);
-    const cutoff = new Date(Date.now() - LOOKBACK_MS);
+    const windowHours = resolveWindowHours(getQuery(event).hours);
+    const cutoff = new Date(Date.now() - windowHours * 60 * 60 * 1000);
 
     // server admin SDK 支援 Timestamp 比較：where('timestamp','>=', Date) 自動轉 Timestamp。
     // 單一欄位不等式 + orderBy 同欄位，用自動索引，免建複合索引；事件歸類在記憶體做。
@@ -51,30 +68,53 @@ export default defineEventHandler(async (event) => {
       .limit(MAX_DOCS)
       .get();
 
-    const events = snap.docs.map((d) => (d.data() as { event?: string }).event);
-    const counts = tallyAuthHealthEvents(events);
+    const docs = snap.docs.map((d) => d.data() as LoginHealthLogEntry & { event?: string });
+
+    // ── 規則組 1（既有）：四個具名事件的筆數門檻 ───────────────────────
+    const counts = tallyAuthHealthEvents(docs.map((d) => d.event));
     const { breached, breaches } = evaluateAuthHealth(counts);
 
+    // ── 規則組 2（新）：分路徑登入成功率 ─────────────────────────────
+    // 低流量路徑 100% 失敗打不到任何筆數門檻，這是 2026-08-19 事故躲了 5 天的直接原因。
+    const loginTally = tallyLoginOutcomes(docs);
+    const loginBreaches = evaluateLoginSuccessRate(loginTally);
+
+    // ── 規則組 3（新）：deny-by-default 未知錯誤事件 ──────────────────
+    const unknownEvents = detectUnknownEvents(docs);
+
+    const loginSummary = buildLoginHealthSummary(loginBreaches, unknownEvents);
+    const loginBreached = loginSummary.length > 0;
+
+    // await（非 fire-and-forget）：serverless 於回應後凍結，需等推播完成
     if (breached) {
-      // await（非 fire-and-forget）：serverless 於回應後凍結，需等推播完成
       await notifyAdmins(db, 'adminNotify.authHealthAlert', {
-        authHealthWindowH: AUTH_HEALTH_WINDOW_HOURS,
+        authHealthWindowH: windowHours,
         authHealthRolesSlow: counts.rolesSlow,
         authHealthUserdocMissing: counts.userdocMissing,
         authHealthChunkError: counts.chunkError,
         authHealthLineExchangeBadStatus: counts.lineExchangeBadStatus,
       });
     }
+    if (loginBreached) {
+      await notifyAdmins(db, 'adminNotify.loginHealthAlert', {
+        loginHealthWindowH: windowHours,
+        loginHealthSummary: loginSummary,
+      });
+    }
 
     return successResponse({
       ok: true,
       scanned: snap.size,
-      windowHours: AUTH_HEALTH_WINDOW_HOURS,
+      windowHours,
       counts,
       thresholds: AUTH_HEALTH_THRESHOLDS,
       breached,
       breaches,
-      notified: breached,
+      loginTally,
+      loginBreaches,
+      unknownEvents,
+      loginBreached,
+      notified: breached || loginBreached,
       cutoff: cutoff.toISOString(),
     });
   } catch (err) {
