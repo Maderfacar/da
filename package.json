@@ -27,6 +27,7 @@
     "cheerio": "^1.2.0",
     "firebase": "^12.12.1",
     "firebase-admin": "^13.8.0",
+    "jose": "^6.2.9",
     "lru-cache": "^11.3.6",
     "nuxt": "^4.4.2",
     "otplib": "^13.4.1",
