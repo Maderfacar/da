@@ -39,7 +39,7 @@
 - [x] **C.2** 告警訊息組裝（純函式 + 測試）— 分段列出越界項目、路徑成功率、未知事件名與筆數
 - [x] **C.3** `.github/workflows/login-health.yml`（新）— `schedule: cron` 每小時 + `workflow_dispatch`，帶 `CRON_SECRET` 打 `?hours=3`
 - [x] **C.4** lint / test / build 全綠 → commit + push
-- [ ] **C.5** ⚠️ **需 Brain AI 操作**：GitHub repo 設定 `CRON_SECRET` secret（值與 Vercel 環境變數相同）
+- [x] **C.5** ✅ 2026-08-20 完成：Brain AI 已於 Vercel + GitHub 兩邊設定同值。手動觸發 workflow **success（9s）**，步驟一取得完整遙測 → 證明兩邊 secret 一致（不一致會回 401）。
 
 ## Phase D：地雷修復（跨 channel 檢查，觀測模式）
 
@@ -48,15 +48,19 @@
 - [x] **D.3** `LOGIN_CHANNEL_ENFORCE = false` 常數 + 註解說明翻開條件與步驟
 - [x] **D.4** 單元測試（相符放行、不符觀測模式放行並記錄、enforce 模式擋下）
 - [x] **D.5** lint / test / build 全綠 → commit + push
-- [ ] **D.6** ⚠️ **需 Brain AI 操作**：Vercel 環境變數設 `NUXT_LINE_CHANNEL_ID=2009509209`。**未設定則檢查仍然是關的**（空字串短路），本 Phase 等同只做了型別修正
+- [x] **D.6** ✅ 2026-08-20 完成：健檢端點確認 prod 已設定（回報為 type-hazard 而非 missing）→ 跨 channel 檢查已進入觀測模式實際運作。
 
 ## 驗收（Brain AI）
 
-- [ ] **V.1** 手機瀏覽器實機登入一次 → prod log 出現 `auth.login.ok`（`route='browser-oauth'`）
-- [ ] **V.2** LINE 內建瀏覽器登入一次 → 出現 `auth.login.ok`（`route='liff'`）
-- [ ] **V.3** 手動觸發 GitHub Actions workflow → 無越界時不發訊息、有越界時收到 LINE 告警
+- [x] **V.1** ✅ 2026-08-20 05:22:03 實測：`auth.login.ok` `{route:'browser-oauth', roles:[passenger,admin,driver]}`
+- [x] **V.2** ✅ 2026-08-20 11:41:28 實測：`auth.login.ok` `{route:'liff', roles:[passenger,driver], approved:true}`
+- [x] **V.3** ✅ 2026-08-20 實測：手動觸發 success；未越界時 `notified:false` 不發訊息。06:36 與 09:48 兩次真實告警皆正確送達 LINE。
 - [ ] **V.4** 觀察數日 `auth.login.channel-mismatch` 是否為 0 → 若是，翻 `LOGIN_CHANNEL_ENFORCE = true`
-- [ ] **V.5** deny-by-default 噪音評估 → 依實際告警內容補 `KNOWN_BENIGN_EVENTS`
+- [ ] **V.5** deny-by-default 噪音評估（進行中）
+  - [x] 06:36 首次告警 3 種事件逐一判讀：2 種是真 bug（已修於 775135d），1 種是真訊號
+  - [x] **三種都未加入 `KNOWN_BENIGN_EVENTS`** —— 讓告警安靜的正確方式是修好問題
+  - [x] 09:48 第二次告警驗證修復有效：`window.unhandledrejection` 與 `auth.init.timeout` 皆歸零
+  - [ ] `auth.liff.init.failed` 續觀察數日，判定是可容忍的自癒雜訊，還是需修的功能降級
 
 ## 留待後續（不在本變更）
 
