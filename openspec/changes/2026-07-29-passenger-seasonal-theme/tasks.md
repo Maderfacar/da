@@ -27,22 +27,27 @@
 - [ ] **W1.13** 驗證 prod：`curl /nuxt-api/config/theme` 回 200 + default resolved；乘客首頁 view-source 有 `#da-theme-vars` style；admin/driver 端外觀不變
 - [ ] **W1.14** 寫 W2 handoff prompt（單塊 code block，無嵌套 fence）給 Brain AI
 
-## W2：Admin 換季 UI + Hero 主視覺（L2，下一視窗）
+## W2：Admin 換季 UI + Hero 主視覺（L2）✅ 上 prod 2026-07-30（commit 884043b）
 
-- [ ] **W2.1** admin endpoints（`server/routes/nuxt-api/admin/config/themes/`）
-  - [ ] `index.get.ts` — list 全部主題（super gate）
-  - [ ] `active.put.ts` — 切換 activeThemeId（super gate + guard「不可設為 disabled 主題」）+ audit log `site_theme.switch`
-  - [ ] `[id]/enabled.patch.ts` — 啟用/停用
-- [ ] **W2.2** `app/protocol/fetch-api/api/` — 加 admin theme 三支 method
-- [ ] **W2.3** Hero 主圖：Claude 做 3–4 套 `public/themes/{id}/hero.webp`（WebP，壓縮，標明尺寸），seed 的 `hero.bgImage` 指向
-- [ ] **W2.4** `app/pages/index.vue`（改）— hero-bg / stripe / tag 綁 `var(--da-hero-*)`，缺省 fallback 現值（default 主題維持純色 hero）
-- [ ] **W2.5** `/admin/settings`（改）— 加「季節主題」section：主題卡（name 三語 + swatch + hero 縮圖 + enabled toggle）+ radio 切生效 + 「套用」
-- [ ] **W2.6** i18n 三語 key（admin settings 主題區文案 + 各主題 name 若走 i18n）
-- [ ] **W2.7** 測試：切換 active 更新 pointer / 停用主題不能設 active(400) / hero fallback 正確
-- [ ] **W2.8** 終局檢查 `pnpm lint:fix && pnpm build && pnpm test` 全綠 + rules 若動再 deploy
-- [ ] **W2.9** git commit + push origin main
-- [ ] **W2.10** 驗證 prod：admin 切換聖誕 → 乘客首頁換色 + 換 Hero 主圖；admin/driver 端不變；切回 default 復原
-- [ ] **W2.11** 交付 Brain AI 逐套視覺驗收清單（3–4 套 × 首頁/booking/orders/fleet 抽查）
+> 決策變更：Brain 拍板 Hero 圖來源＝**後台上傳圖檔**（非 Claude committed SVG/webp）。
+> 故 W2.3 由「commit public assets」改為「Storage 上傳端點 + admin 上傳 UI」；同時解掉 seed doc backfill 問題（上傳直接寫既有 doc 的 hero.bgImage）。
+
+- [x] **W2.1** admin endpoints（`server/routes/nuxt-api/admin/config/themes/`）
+  - [x] `index.get.ts` — list 全部主題（canManageThemes 預設僅 super）
+  - [x] `active.put.ts` — 切換 activeThemeId（guard「不可設為 disabled 主題」400）+ audit `site_theme.switch` + invalidate 快取
+  - [x] `[id]/enabled.patch.ts` — 啟用/停用（default 不可停用 400）+ audit `site_theme.enabled`
+  - [x] `[id]/hero.patch.ts` — 設定/清除 hero.bgImage（過 isSafeThemeImageUrl）+ audit `site_theme.hero_update`
+  - [x] `upload-hero-image.post.ts` — Storage 上傳（makePublic 優先→失敗 fallback 1yr signed URL）
+- [x] **W2.2** `app/protocol/fetch-api/api/config/` — 加 GetAdminThemes / PutActiveTheme / PatchThemeEnabled / PatchThemeHero / UploadThemeHeroImage + DTO
+- [x] **W2.3**（改）Hero 主圖後台上傳：`upload-hero-image` 端點 + admin 卡片上傳 UI（取代原「Claude 做 public/themes 圖」）
+- [x] **W2.4** `app/pages/index.vue` — hero-bg / stripe / runway / tag 綁 `var(--da-hero-*)`，缺省 fallback 現值（default 純色 hero）
+- [x] **W2.5** `/admin/settings` — 加「季節主題」tab + `AdminSettingsSeasonalThemes` 子元件（主題卡 + swatch + hero 縮圖上傳 + enabled toggle + 設為生效）
+- [x] **W2.6**（依既有 admin 頁慣例走繁中硬編，非 i18n；主題 name 三語來自 Firestore data model）
+- [x] **W2.7** 測試：resolveTheme disabled/缺項/非法 hex/bgImage fallback + isSafeThemeImageUrl signed URL 白名單（HTTP handler 測試非本專案慣例，未加）
+- [x] **W2.8** 終局檢查 lint / build（×2 exit 0）/ 695 tests 全綠 + firestore rules deployed
+- [x] **W2.9** git commit + push origin main（884043b）
+- [x] **W2.10** prod 端點驗證：公開 GET 200 + default；4 新 admin 端點 gated 401 envelope（無洩漏）確認部署上線 — 視覺切換驗收留 Brain（需 2FA）
+- [ ] **W2.11** 交付 Brain AI 逐套視覺驗收清單（見下方 handoff；需 admin 2FA 登入上傳 + 切換）
 
 ## 不在本變更（後續可選 wave）
 

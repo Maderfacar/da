@@ -24,6 +24,19 @@ if (!verified?.sub || verified.iss !== 'https://access.line.me' || verified.aud 
 
 用 `jose` 在本地驗證 id_token，取代「呼叫 verify 端點 + 自己比對 aud/iss」。
 
+> ⚠️ **本節提案當下的認定已被 prod 實證推翻，刻意保留原文以存錯誤紀錄。**
+> 下表「僅 `ES256`」與程式碼片段的 `algorithms: ['ES256']` 是第一版（74b1ce5）的寫法，
+> 上線後瀏覽器登入 100% 失敗，已回滾（f2a15f7）並重做（aadc288）。
+>
+> **實際規格**（LINE 官方文件 `verify-id-token`，非 discovery）：web login → `HS256`（channel
+> secret 驗）；native / LIFF → `ES256`（JWKS 公鑰驗）。discovery 宣告的
+> `id_token_signing_alg_values_supported: ['ES256']` 講的是後者。
+> 2026-08-22 05:05 prod 實測 `auth.login.ok {route:'browser-oauth', alg:'HS256'}` 確認。
+>
+> **教訓**：「查證過」不等於「查證了對的來源」——查了文件怎麼描述，卻從未解開一枚真實 token
+> 的 header。最終版依 token 實際 `alg` 選金鑰，不賭單一假設。正確敘述見
+> `specs/oidc-verify/spec.md` 的「依 token 實際演算法選用金鑰」。
+
 已查證的 LINE OIDC 事實（取自 discovery 與 JWKS，非推測）：
 
 | 項目 | 值 |

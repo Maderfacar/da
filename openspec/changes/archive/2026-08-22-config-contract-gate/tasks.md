@@ -63,8 +63,19 @@
 - [x] 另一個副產物：`_health/config` 未設 secret 回 **503**、設了但憑證錯回 **401**
   ⇒ 無憑證 curl 的回應碼即可判斷 secret 有沒有設，不必知道值。
 
-> **archive 前提未變**：「設定寫錯擋下部署」至今只在模擬中驗證過，尚未在真實 Vercel
-> production build 觸發。上述皆為「gate 通過」的證據，不是「gate 會擋」的證據。
+## 遺留哨（archive 時仍未關閉，刻意留下）
+
+> **「設定寫錯擋下部署」的能力至今只在模擬中驗證過，從未在真實 Vercel production build
+> 觸發過。** 上面所有證據都是「gate 通過」的證據，不是「gate 會擋」的證據——這兩件事不同，
+> 而本專案正是因為「以為在防守、其實沒跑」吃過大虧（`config.lineChannelId` 永遠 undefined、
+> allow-list 告警的偵測值永遠是 0）。
+>
+> 2026-08-22 archive 時已知此項未關閉，仍決定 archive：實作與驗收皆完成，剩下的是一個
+> **只能等真實觸發才能驗證的能力**，沒有理由讓 change 無限期掛著。
+>
+> **下次若有機會自然觸發（例如新增一個必要設定卻忘了在 Vercel 設），請確認部署確實被擋下。**
+> 若屆時發現沒擋下，回頭查 `scripts/check-env-contract.mjs` 是否真的串在 `pnpm build` 上、
+> 以及 `VERCEL_ENV=production` 的判斷是否成立（硬擋範圍已收斂為僅 production）。
 
 ## 留待後續
 

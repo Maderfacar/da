@@ -70,7 +70,9 @@ discovery 宣告的 ES256 講的是後者，不是我們。
 
 - [x] **V.0** ✅ 02:57:09 `auth.login.ok route=browser-oauth` —— 回滾版恢復登入，基準線確認
 - [x] **V.1** ✅ 05:05:04 無痕實機登入成功
-- [ ] **V.2** LINE 內（LIFF）開一次，確認未受影響
+- [x] **V.2** ✅ 2026-08-22 07:43 實機：乘客與司機 LIFF 各開一次，`auth.login.ok {route:'liff'}` 兩筆，
+  無 `login.fail` / 無 `line-exchange.bad-status`。另查證 `line-exchange.post.ts` 完全未引用
+  `verifyLineIdToken` ⇒ LIFF 走 access token，結構上不經本變更的驗簽路徑。
 - [x] **V.3** ✅ `auth.login.ok` `{route:'browser-oauth', alg:'HS256'}` —— 三重確認：
   新版確實在跑（舊版無此欄位）、LINE web login 確實用 HS256、依 alg 選金鑰走對分支
 
@@ -81,6 +83,18 @@ discovery 宣告的 ES256 講的是後者，不是我們。
 
 → 通則：**關鍵路徑的「成功」也要留下可辨識的痕跡**，不能只在失敗時才記，
 否則「有沒有生效」永遠只能用推論的。而今晚已經證明推論會出事兩次。
+
+## 上線後修正：spec 曾寫死錯誤的演算法假設（2026-08-22 archive 前修）
+
+archive 前發現 `specs/oidc-verify/spec.md` 仍寫著「驗證 SHALL 限定簽章演算法為 `ES256`」——
+那是第一版（74b1ce5）炸掉的那個假設，回滾重做後沒有回頭改 spec。**若照原樣同步進 main specs，
+等於把導致事故的錯誤認定寫成專案的長期規格。**
+
+已修正：改為「限定於明確白名單」，並新增 Requirement「依 token 實際演算法選用金鑰」
+（HS256 web login / ES256 LIFF），另補「失敗與成功皆須留下實際演算法」的場景。
+`proposal.md` 的錯誤事實表刻意保留原文並加註推翻說明——錯誤紀錄本身有價值，但不能沒有標記。
+
+→ 通則：**回滾重做時，被推翻的假設可能還留在 spec / 文件 / 測試裡**。程式改了不等於認定改了。
 
 ## 回滾
 
