@@ -45,7 +45,7 @@
 
 - [x] **D.1** `nuxt.config.ts`（改）— runtimeConfig 補宣告 `lineChannelId: ''`（`NUXT_LINE_CHANNEL_ID`）
 - [x] **D.2** `auth/line-exchange.post.ts`（改）— `configStr(config.lineChannelId)` 讀取；不符時寫 `auth.login.channel-mismatch`（`severity='error'`）**但放行**
-- [x] **D.3** `LOGIN_CHANNEL_ENFORCE = false` 常數 + 註解說明翻開條件與步驟
+- [x] **D.3** `LOGIN_CHANNEL_ENFORCE` 常數 + 註解說明翻開條件與步驟（2026-08-22 已翻為 `true`，見 V.4）
 - [x] **D.4** 單元測試（相符放行、不符觀測模式放行並記錄、enforce 模式擋下）
 - [x] **D.5** lint / test / build 全綠 → commit + push
 - [x] **D.6** ✅ 2026-08-20 完成：健檢端點確認 prod 已設定（回報為 type-hazard 而非 missing）→ 跨 channel 檢查已進入觀測模式實際運作。
@@ -55,12 +55,30 @@
 - [x] **V.1** ✅ 2026-08-20 05:22:03 實測：`auth.login.ok` `{route:'browser-oauth', roles:[passenger,admin,driver]}`
 - [x] **V.2** ✅ 2026-08-20 11:41:28 實測：`auth.login.ok` `{route:'liff', roles:[passenger,driver], approved:true}`
 - [x] **V.3** ✅ 2026-08-20 實測：手動觸發 success；未越界時 `notified:false` 不發訊息。06:36 與 09:48 兩次真實告警皆正確送達 LINE。
-- [ ] **V.4** 觀察數日 `auth.login.channel-mismatch` 是否為 0 → 若是，翻 `LOGIN_CHANNEL_ENFORCE = true`
+- [x] **V.4** ✅ 2026-08-22 已翻 `LOGIN_CHANNEL_ENFORCE = true`（commit **129adb5**）。依據三項，缺一不可：
+  - [x] **① 先證明防護真的在跑**（最關鍵、最容易漏）：`expectedChannelId` 為空時整道檢查靜默短路，
+        **「0 筆不符」與「防護根本沒跑」無法區分** —— 即 4ce6071 與 allow-list 告警的同一形狀。
+        證據：健檢回報 `NUXT_LINE_CHANNEL_ID` 為 **type-hazard**，而 type-hazard 只在
+        「值存在且被 destr 轉成 number」時產生 ⇒ 值必然存在 ⇒ 短路條件已解除。
+  - [x] **② 實測 0 不符**：防護生效（≤ 2026-08-19T23:33Z，由 workflow 歷史 run 回推）後
+        3 次 LIFF 登入，`auth.login.channel-mismatch` 全窗 0 筆。
+  - [x] **③ 結構上必然相符（不依賴樣本數）**：兩個 LIFF ID `2009509209-5TaNYcF5` /
+        `2009509209-2hGUMoYt` 的前綴即 Login channel id，與 `NUXT_LINE_CHANNEL_ID` 同值
+        ⇒ `/verify` 回傳的 client_id 必為該值。三項中唯一不怕流量稀疏的依據。
+  - [x] 殘餘缺口已點名並確認有人守：設定被清掉 → 靜默短路，但該 env 在契約中為 `required`，
+        缺失即 error → production build 擋下 + 每小時漂移偵測轉紅。已寫進呼叫點註解。
 - [ ] **V.5** deny-by-default 噪音評估（進行中）
   - [x] 06:36 首次告警 3 種事件逐一判讀：2 種是真 bug（已修於 775135d），1 種是真訊號
   - [x] **三種都未加入 `KNOWN_BENIGN_EVENTS`** —— 讓告警安靜的正確方式是修好問題
   - [x] 09:48 第二次告警驗證修復有效：`window.unhandledrejection` 與 `auth.init.timeout` 皆歸零
-  - [ ] `auth.liff.init.failed` 續觀察數日，判定是可容忍的自癒雜訊，還是需修的功能降級
+  - [ ] `auth.liff.init.failed` 續觀察 —— **2026-08-22 盤點：零復發但樣本不足，維持觀察、不入良性清單**。
+        44 筆全部 ≤ 2026-08-19T23:45Z。易誤判處：之後確實有 LIFF 流量，且 **LIFF 登入成功本身
+        即證明 `liff.init` 成功**（line-exchange 需要 LIFF access token）⇒ 是 3/3 成功而非 0 流量。
+        但 n=3 撐不起「已修」的結論。
+  - [x] `auth.init.timeout` **判定已修（2026-08-22）**：20 筆全部早於 775135d 上線
+        （2026-08-19T22:55Z），且同場景已重放 —— 08-20T03:41Z 司機自 LIFF 進
+        `/driver/dispatched` → `/dashboard` → `/trip`，零 timeout；最後一筆 timeout 的
+        context 正是同一使用者、同一路徑。不是「沒流量所以沒告警」。
 
 ## 留待後續（不在本變更）
 

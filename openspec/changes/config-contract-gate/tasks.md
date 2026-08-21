@@ -46,6 +46,26 @@
   因 .env.dev 合理地不含 prod 專屬機密）；格式錯誤與 destr 靜態掃描不受影響，任何環境都硬擋。
 - [x] **V.3** ✅ 已完成：Brain AI 已設定，跨 channel 檢查進入觀測模式運作中
 
+## 2026-08-22 持續驗證
+
+- [x] prod 設定實況仍為 `ok:true` / error 0 / warn 3（三個 destr type-hazard，讀取端均已走
+  `configStr`，屬設計預期）。曾缺的 `CRON_SECRET` / `NUXT_LINE_CHANNEL_ID` /
+  `NUXT_PUBLIC_SITE_URL` 全部已設。
+- [x] 每小時漂移偵測連續 46 次綠（僅 08-19 最早 3 次紅＝設 secret 之前）。
+- [x] **查法（可複用，不需 CRON_SECRET）**：健檢端點要 Bearer，但 workflow 第二步會把完整回應
+  印進 Actions log（回應刻意不含值，可安全外印）：
+  `gh run view <id> --log | grep -o '{"data".*}' | tail -1`。
+  逐一回翻不同時間的 run，還能**回推某個環境變數是何時被設進去的** —— 本次即靠此把跨 channel
+  防護的生效起點釘在 ≤ 2026-08-19T23:33Z。
+- [x] **type-hazard 的第二個用途（本次才發現）**：它同時是「該值存在」的證明（只有值存在且被
+  destr 轉型才會產生），因此可用來證明「設定為空就靜默短路」型的防護確實在執行。
+  `login-health-observability` 的 V.4 即以此為翻開強制模式的第一依據。
+- [x] 另一個副產物：`_health/config` 未設 secret 回 **503**、設了但憑證錯回 **401**
+  ⇒ 無憑證 curl 的回應碼即可判斷 secret 有沒有設，不必知道值。
+
+> **archive 前提未變**：「設定寫錯擋下部署」至今只在模擬中驗證過，尚未在真實 Vercel
+> production build 觸發。上述皆為「gate 通過」的證據，不是「gate 會擋」的證據。
+
 ## 留待後續
 
-- 承諾 3：登入驗證改用標準 OIDC 函式庫，縮小手寫面積
+- 承諾 3：登入驗證改用標準 OIDC 函式庫，縮小手寫面積 —— ✅ 已完成（change `oidc-standard-verify`）
