@@ -117,8 +117,12 @@ export default defineEventHandler(async (event) => {
     //
     // ⚠️ 這道檢查原本讀 config.lineChannelId，而該欄位未宣告於 runtimeConfig → 永遠 undefined
     // → `expectedChannelId &&` 直接短路 → **自上線起一次都沒執行過**（2026-08-20 查證）。
-    // 現已補上宣告，但先以觀測模式導入：不符只記錄不擋。直接 enforce 若實際值與預期不符，
-    // 會把 LIFF 主登入路徑整條砍掉。翻開步驟見 LOGIN_CHANNEL_ENFORCE 的說明。
+    // 補上宣告後先以觀測模式導入；2026-08-22 確認防護確實在執行且 0 不符後翻為強制模式，
+    // 判斷依據見 LOGIN_CHANNEL_ENFORCE 的說明。
+    //
+    // ⚠️ 殘餘缺口：`expectedChannelId` 為空時整道檢查仍會靜默短路（設定被清掉 = 防護消失
+    // 且無聲）。不在此處重複防守，是因為 `NUXT_LINE_CHANNEL_ID` 在 env 契約中為 required，
+    // 缺失即 error → production build 擋下、每小時設定漂移 workflow 轉紅。
     if (expectedChannelId && verifyRes.client_id !== expectedChannelId) {
       const { db: mismatchDb } = useFirebaseAdmin(config.firebaseServiceAccountJson);
       await writeChannelMismatch(mismatchDb, {

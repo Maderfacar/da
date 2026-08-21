@@ -105,7 +105,8 @@ describe('buildChannelMismatchLog', () => {
     expect(log.lineUserId).toBeNull();
   });
 
-  it('導入初期為觀測模式（翻 true 前必須先確認 prod 無不符紀錄）', () => {
-    expect(LOGIN_CHANNEL_ENFORCE).toBe(false);
+  // 這條是刻意的絆線：旗標與其依據必須一起改動，不容許有人只翻旗標而不留下憑什麼翻。
+  it('已翻為強制模式（依據見 LOGIN_CHANNEL_ENFORCE 註解：防護已證實在執行 + prod 0 不符 + 結構必然相符）', () => {
+    expect(LOGIN_CHANNEL_ENFORCE).toBe(true);
   });
 });

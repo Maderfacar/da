@@ -30,18 +30,32 @@ export const LOGIN_EVENT_CHANNEL_MISMATCH = 'auth.login.channel-mismatch';
 /**
  * 跨 channel 檢查是否「擋下」不符的 token。
  *
- * 現況 false（觀測模式）：不符只記錄 `auth.login.channel-mismatch` 並放行。
+ * 現況 true（強制模式）：client_id 與本服務 channel 不符即擋下並記 fail。
  *
- * 為什麼不直接擋：這道防護原本讀取未宣告於 runtimeConfig 的欄位、永遠 undefined，
- * **自上線起一次都沒執行過**。若補上宣告就直接 enforce，而實際 client_id 與預期不符，
- * 會把 LIFF 主登入路徑整條砍掉（三端最大宗入口）。
+ * 導入歷程：這道防護原本讀取未宣告於 runtimeConfig 的欄位、永遠 undefined，
+ * **自上線起一次都沒執行過**。補上宣告後刻意先以觀測模式導入（不符只記錄不擋），
+ * 因為若實際 client_id 與預期不符就直接 enforce，會把 LIFF 主登入路徑整條砍掉
+ * （三端最大宗入口）。
  *
- * 翻開條件：prod 觀察數日，確認 `auth.login.channel-mismatch` 筆數為 0（代表實際值相符）
- * → 改為 true 並上版。不符的話會先被 deny-by-default 未知事件規則告警，不會靜默。
+ * **2026-08-22 翻為 true，依據三項（缺一不可）**：
+ * 1. **防護確實在執行** —— `GET /nuxt-api/_health/config` 回報 `NUXT_LINE_CHANNEL_ID`
+ *    為 type-hazard，而 type-hazard 只在「值存在且被 destr 轉成 number」時才會產生
+ *    → 該值在 prod 有設 → line-exchange 的 `expectedChannelId &&` 不再短路。
+ *    **少了這一項，「0 筆不符」與「防護根本沒跑」無法區分** —— 那正是 4ce6071 的形狀，
+ *    也是本專案偵測值長年為 0 的病根。
+ * 2. **實測 0 不符** —— 防護生效（≤ 2026-08-19T23:33Z，由每小時 workflow 的設定健檢
+ *    歷史回推）之後的 3 次 LIFF 登入，`auth.login.channel-mismatch` 全窗 0 筆。
+ * 3. **結構上必然相符** —— 兩個 LIFF ID（`2009509209-5TaNYcF5` 乘客 /
+ *    `2009509209-2hGUMoYt` 司機）的前綴即 Login channel id，與 `NUXT_LINE_CHANNEL_ID`
+ *    同值，故 LINE `/verify` 回傳的 client_id 必為該值。**此項不依賴樣本數**，
+ *    是三項中唯一不會因流量稀疏而失效的依據。
+ *
+ * 翻開後這道防護開始自證存活：不符即擋下並留 `reason:'channel-mismatch'` 的 fail 紀錄，
+ * 不必再靠人工翻 Actions log 才能確認它有沒有在跑。
  *
  * 刻意用程式碼常數而非環境變數：多一個未經驗證的環境變數，正是 4ce6071 那顆事故的來源。
  */
-export const LOGIN_CHANNEL_ENFORCE = false;
+export const LOGIN_CHANNEL_ENFORCE = true;
 
 export interface LoginOutcomeInput {
   outcome: 'ok' | 'fail';
