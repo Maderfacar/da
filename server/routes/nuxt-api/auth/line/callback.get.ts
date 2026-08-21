@@ -14,7 +14,6 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { createSessionCookie } from '@@/utils/session-cookie';
 import { provisionLineUser } from '@@/utils/line-user-provision';
 import { writeLoginOutcome } from '@@/utils/login-outcome';
-import { verifyLineIdToken } from '@@/utils/line-id-token';
 import { configStr } from '@@/utils/runtime-config';
 import {
   consumeLoginState,
@@ -24,6 +23,7 @@ import {
 } from '@@/utils/line-login-state';
 
 const LINE_TOKEN_URL = 'https://api.line.me/oauth2/v2.1/token';
+const LINE_VERIFY_URL = 'https://api.line.me/oauth2/v2.1/verify';
 const FIREBASE_SIGNIN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken';
 const FORM_HEADERS = { 'content-type': 'application/x-www-form-urlencoded' } as const;
 
@@ -125,19 +125,44 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, `${loginPage}?login_error=token`, 302);
   }
 
-  // ── 3. 驗 id_token（jose 本地驗簽：簽章 + aud + iss + exp，另比對 nonce）──────
-  // 承諾 3：aud / iss 的比對交給標準函式庫，本檔不再自己寫 —— 2026-08-19 的炸點
-  // 正是自己寫的那行比對（見 @@/utils/line-id-token）。
-  const verified = await verifyLineIdToken({
-    idToken: tokenRes.id_token,
-    channelId,
-    nonce,
+  // ── 3. 驗 id_token（LINE verify：簽名 + aud + iss + exp + nonce）──────────
+  const verified = await $fetch<{ sub?: string; name?: string; picture?: string; iss?: string; aud?: string }>(
+    LINE_VERIFY_URL,
+    {
+      method: 'POST',
+      headers: FORM_HEADERS,
+      body: new URLSearchParams({
+        id_token: tokenRes.id_token,
+        client_id: channelId,
+        nonce,
+      }).toString(),
+    },
+  ).catch((err) => {
+    console.error('[line-login.callback] fail: id_token verify', err?.data ?? err);
+    return null;
   });
-  if (!verified.ok) {
-    console.warn(`[line-login.callback] fail: id_token verify (${verified.reason})`);
-    await authLog('fail', `id_token 驗證失敗：${verified.detail}`, clientType, {
+  // 失敗原因拆開記錄：verify 端點打不通 vs payload 不符是完全不同的故障，
+  // 混成同一條訊息會讓排查只能靠讀原始碼猜（2026-08-19 事故的次要成本）。
+  // 只記布林/型別，不寫入 id_token 或 aud 值本身（避免 log 落敏感資料）。
+  if (!verified) {
+    await authLog('fail', 'id_token verify request failed', clientType, {
       stage: 'verify',
-      reason: verified.reason, // fetch / signature / claims / nonce / internal
+      reason: 'request-failed',
+    });
+    return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
+  }
+  if (!verified.sub || verified.iss !== 'https://access.line.me' || verified.aud !== channelId) {
+    console.warn('[line-login.callback] fail: id_token payload invalid');
+    await authLog('fail', 'id_token verify failed / payload invalid', clientType, {
+      stage: 'verify',
+      reason: 'payload-mismatch',
+      metadata: {
+        hasSub: Boolean(verified.sub),
+        issOk: verified.iss === 'https://access.line.me',
+        audMatch: verified.aud === channelId,
+        audType: typeof verified.aud,
+        channelIdType: typeof channelId,
+      },
     });
     return sendRedirect(event, `${loginPage}?login_error=verify`, 302);
   }
@@ -145,8 +170,8 @@ export default defineEventHandler(async (event) => {
   // ── 4. 沿用 line-exchange user 建置 → custom token ────────────────────
   const provisioned = await provisionLineUser(auth, db, {
     sub: verified.sub,
-    name: verified.name,     // verifyLineIdToken 保證為字串（缺失時回 ''）
-    picture: verified.picture,
+    name: verified.name ?? '',
+    picture: verified.picture ?? '',
   });
   if (!provisioned.ok) {
     console.error('[line-login.callback] fail: provision', provisioned.reason);
