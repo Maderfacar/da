@@ -194,7 +194,10 @@ export default defineEventHandler(async (event) => {
   console.log(`[line-login.callback] ok clientType=${clientType} lineUid=${provisioned.lineUserId} → ${target}`);
   await authLog('ok', 'login ok', clientType, {
     lineUserId: provisioned.lineUserId,
-    metadata: { target, roles: provisioned.roles },
+    // alg：實際用來驗簽的演算法（web login 應為 HS256）。
+    // 記在成功路徑而不只記在失敗路徑 —— 否則無從得知「正常時走的是哪條路」，
+    // 也就無法在部署後確認新版是否真的生效（2026-08-22 就因此無法自證）。
+    metadata: { target, roles: provisioned.roles, alg: verified.alg },
   });
   return sendRedirect(event, target, 302);
 });
