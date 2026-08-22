@@ -265,7 +265,10 @@ const ClickSubmit = async () => {
   });
   isSubmitting.value = false;
 
-  const isOk = (code: number) => code === $enum.apiStatus.success || code === 0;
+  // ⚠️ 不可把 code 0 當成功：0 = apiStatus.networkError（傳輸層失敗，訂單從未送達 server）。
+  // 舊寫法把它算成功 → 使用者看到「訂單已成立」、草稿被清空，但系統裡根本沒有這張訂單。
+  // 與 8.store-config.ts 同源的贅碼：server 的 successResponse 一律回 200，從不回 0。
+  const isOk = (code: number) => code === $enum.apiStatus.success;
   if (!isOk(res.status.code)) {
     // 不可靜默吞掉：把伺服器錯誤原因（訂單上限 / 折扣碼失效 / 車資門檻等）顯示給使用者
     const langKey = ({ zh: 'zh_tw', en: 'en', ja: 'ja' } as const)[locale.value as 'zh' | 'en' | 'ja'] ?? 'zh_tw';

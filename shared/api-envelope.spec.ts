@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { toApiEnvelope, isApiEnvelope, API_NETWORK_ERROR_CODE } from './api-envelope';
 
 const SUCCESS = 200;
@@ -55,5 +57,54 @@ describe('toApiEnvelope', () => {
     for (const lang of ['zh_tw', 'en', 'ja'] as const) {
       expect(msg[lang].length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ── 靜態掃描：沒有呼叫點可以把 networkError(0) 當成功 ─────────────────────────
+//
+// 為什麼需要這道：「|| code === 0」這種贅碼在 2026-05-11 寫下時是無害的
+// （server 的 successResponse 一律回 200，從不回 0，那條分支永遠不成立）。
+// 775135d 引入 networkError = 0 之後，同一行程式碼的**意思變成「把斷線當成功」**，
+// 而 networkError envelope 的 data 恆為 null → 呼叫端接著讀 data.xxx 就爆。
+//
+// 2026-08-22 prod 同時中了兩處：
+//   - 8.store-config.ts → null is not an object (evaluating 'm.vehicles')
+//   - booking/index.vue → 更糟：訂單送出失敗卻顯示「已成立」並清掉草稿
+//
+// 這一類（既有贅碼因新語意而活化）在本專案反覆出現，靠人工複查擋不住，故以掃描釘死。
+// 只掃 app/：envelope 是 client 端 $api 呼叫慣例，風險全在呼叫點；
+const SCAN_ROOTS = ['app'];
+const SCAN_EXT = ['.ts', '.vue'];
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) {
+      walk(p, out);
+      continue;
+    }
+    if (SCAN_EXT.some((e) => p.endsWith(e)) && !p.endsWith('.spec.ts')) out.push(p);
+  }
+  return out;
+}
+
+describe('networkError(0) 不得被當成功', () => {
+  it('0 必然不等於 success（否則所有 !== success 防呆全失效）', () => {
+    expect(API_NETWORK_ERROR_CODE).not.toBe(SUCCESS);
+  });
+
+  it('原始碼中沒有任何地方拿 status.code 與 0 比對相等', () => {
+    const offenders: string[] = [];
+    for (const root of SCAN_ROOTS) {
+      for (const file of walk(root)) {
+        readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, i) => {
+          if (line.trimStart().startsWith('//')) return; // 註解不算
+          if (!/code\s*===?\s*0(?![\w.])/.test(line)) return; // 尾端否定環視排除 0x7f 之類字元碼
+          offenders.push(file + ':' + (i + 1) + '  ' + line.trim());
+        });
+      }
+    }
+    const hint = '把 networkError(0) 當成功的呼叫點（0 = 請求從未到達 server，data 恆為 null）:\n';
+    expect(offenders, hint + offenders.join('\n')).toEqual([]);
   });
 });

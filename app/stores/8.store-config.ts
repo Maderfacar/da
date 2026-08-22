@@ -31,7 +31,13 @@ export const StoreConfig = defineStore('StoreConfig', () => {
     isLoading.value = true;
     try {
       const res = await $api.GetFleetConfig();
-      if (res.status.code === $enum.apiStatus.success || res.status.code === 0) {
+      // ⚠️ 不可把 code 0 當成功：0 = apiStatus.networkError（傳輸層失敗，請求從未到達 server），
+      // 由 shared/api-envelope.ts 的 toApiEnvelope 產生，且該 envelope 的 data 恆為 null。
+      // 舊寫法「|| code === 0」是 2026-05-11 留下的贅碼（server 的 successResponse 一律回 200，
+      // 從不回 0）；775135d 引入 networkError 後它變成「把斷線當成功」→ 下一行讀 data.vehicles
+      // 直接爆 unhandled rejection。2026-08-22 prod 實測：
+      // null is not an object (evaluating 'm.vehicles')。
+      if (res.status.code === $enum.apiStatus.success && res.data) {
         const data = res.data as GetFleetConfigRes;
         vehicles.value = (data.vehicles ?? []) as FleetVehicle[];
         luggageTypes.value = (data.luggageTypes ?? []) as FleetLuggageType[];
