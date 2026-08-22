@@ -50,7 +50,18 @@ const ClickArea = () => {
 
 const ApiUpload = async (file: File) => {
   if (!props.lineUserId) {
-    errorMsg.value = '尚未取得 LINE 身分';
+    // 訊息用使用者聽得懂的話：這是「你還沒登入」，不是系統故障。
+    // 舊文案「尚未取得 LINE 身分」讓使用者以為系統壞了，只能反覆重整。
+    errorMsg.value = '請先登入 LINE 帳號';
+    // 埋點：本分支原本完全無紀錄（只是一個 local ref）→ 2026-08-22 那次事件在 log 中
+    // 完全隱形，是靠其他事件的 lineUserId 欄位剛好與此同源才反推出來的。
+    // 關鍵路徑的失敗必須自己留痕，不能靠巧合。
+    logAuth({
+      event: 'driver.register.upload-blocked',
+      severity: 'warn',
+      message: '證件上傳被擋：尚無 LINE 身分（未登入）',
+      metadata: { docType: props.docType },
+    });
     return;
   }
   if (file.size > 5 * 1024 * 1024) {

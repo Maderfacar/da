@@ -15,6 +15,17 @@ const authStore = StoreAuth();
 const lineProfile = computed(() => authStore.lineProfile);
 const driverApplication = computed(() => authStore.driverApplication);
 const authResolved = computed(() => authStore.authResolved);
+const isSignIn = computed(() => authStore.isSignIn);
+
+// 未登入時的登入入口。本頁刻意不掛 auth middleware（還不是司機的人也要進得來），
+// 但證件上傳需要 LINE 身分 —— 沒有這顆按鈕，未登入者會一路填完表單，直到按上傳才撞牆。
+// 2026-08-22 實際發生：某司機在本頁停留 34 分鐘、重整三次，全程未登入（roles=[] / uid 空），
+// 最後是誤入有 auth 守衛的 /driver/dispatched 被導去 /driver/auth 才登入成功。
+// target 帶回本頁 → 登入後原地返回，不必自己找路（sanitizeTarget 允許任何同站絕對路徑）。
+const ClickLineLogin = () => {
+  const params = new URLSearchParams({ clientType: 'driver', target: '/driver/register' });
+  window.location.href = `/nuxt-api/auth/line/start?${params.toString()}`;
+};
 
 type RegisterMode = 'apply' | 'pending' | 'rejected';
 
@@ -192,6 +203,15 @@ onUnmounted(() => {
     //- ── 認證初始化中 ─────────────────────────────────────
     template(v-if="!authResolved")
       p.PageDriverRegister__loading 載入中...
+
+    //- ── 未登入：先登入才能上傳證件 ────────────────────────
+    //- 必須排在 mode 判斷之前 —— 未登入時 mode 會落在 'apply'，
+    //- 使用者就會看到一份填得完、卻送不出去的表單。
+    template(v-else-if="!isSignIn")
+      h2.PageDriverRegister__heading 申請成為司機
+      p.PageDriverRegister__desc 請先用 LINE 登入，才能上傳證件並送出申請。
+      button.PageDriverRegister__submit-btn(type="button" @click="ClickLineLogin")
+        | 使用 LINE 登入（司機）
 
     //- ── 模式 1：申請表單 ─────────────────────────────────
     template(v-else-if="mode === 'apply'")
