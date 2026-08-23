@@ -8,6 +8,8 @@ import {
   LOGIN_EVENT_OK,
   LOGIN_EVENT_FAIL,
   CRITICAL_MIN_ATTEMPTS,
+  formatTaipei,
+  toLogDate,
 } from './login-health';
 
 const ok = (route: string) => ({ event: LOGIN_EVENT_OK, severity: 'info', metadata: { route } });
@@ -106,7 +108,7 @@ describe('detectUnknownEvents（deny-by-default）', () => {
       { event: 'auth.brand.new.failure', severity: 'error', message: '前所未見的錯誤' },
     ]);
     expect(found).toEqual([
-      { event: 'auth.brand.new.failure', count: 1, sampleMessage: '前所未見的錯誤' },
+      { event: 'auth.brand.new.failure', count: 1, sampleMessage: '前所未見的錯誤', firstAt: null, lastAt: null },
     ]);
   });
 
@@ -198,5 +200,127 @@ describe('buildLoginHealthSummary', () => {
       [{ event: 'x.y', count: 1, sampleMessage: '' }],
     );
     expect(summary.split('\n').length).toBeGreaterThan(1);
+  });
+});
+
+// ── 台北時間與「同一批重複報」辨識（2026-08-23） ─────────────────────
+//
+// 為什麼加這段：告警訊息原本只有事件名與筆數，沒有任何時間，導致視窗重疊造成的
+// 重複告警與真正的新事件在收訊端長得一模一樣（人只能靠人工比對筆數猜）。
+// 判別靠的是「最新一筆時間有沒有往前推進」，所以那個時間必須出現在訊息裡。
+
+describe('formatTaipei', () => {
+  it('UTC 轉台北（+8），輸出 MM/DD HH:mm', () => {
+    expect(formatTaipei('2026-08-23T08:53:50.000Z')).toBe('08/23 16:53');
+  });
+
+  it('跨日：UTC 深夜為台北隔日清晨', () => {
+    expect(formatTaipei('2026-08-23T17:30:00.000Z')).toBe('08/24 01:30');
+  });
+
+  it('可只輸出時分', () => {
+    expect(formatTaipei('2026-08-23T08:53:50.000Z', false)).toBe('16:53');
+  });
+
+  it('無法解析時回空字串，不拋錯', () => {
+    expect(formatTaipei(undefined)).toBe('');
+    expect(formatTaipei('not a date')).toBe('');
+  });
+});
+
+describe('toLogDate', () => {
+  it('支援 Firestore Timestamp（具 toDate 方法的物件）', () => {
+    const iso = '2026-08-23T08:53:50.000Z';
+    const fsTimestamp = { toDate: () => new Date(iso) };
+    expect(toLogDate(fsTimestamp)?.toISOString()).toBe(iso);
+  });
+
+  it('支援 Date / ISO 字串 / epoch 毫秒', () => {
+    const iso = '2026-08-23T08:53:50.000Z';
+    expect(toLogDate(new Date(iso))?.toISOString()).toBe(iso);
+    expect(toLogDate(iso)?.toISOString()).toBe(iso);
+    expect(toLogDate(Date.parse(iso))?.toISOString()).toBe(iso);
+  });
+
+  it('無效輸入回 null', () => {
+    expect(toLogDate(null)).toBeNull();
+    expect(toLogDate({})).toBeNull();
+    expect(toLogDate('nope')).toBeNull();
+  });
+});
+
+describe('detectUnknownEvents 的時間範圍', () => {
+  const at = (iso: string) => ({
+    event: 'auth.liff.init.failed', severity: 'error', message: 'boom', timestamp: iso,
+  });
+
+  it('記錄最早與最新一筆（輸入亂序也要正確，不可取頭尾筆）', () => {
+    const found = detectUnknownEvents([
+      at('2026-08-23T08:53:50.000Z'),
+      at('2026-08-22T23:14:43.000Z'),
+      at('2026-08-23T02:00:00.000Z'),
+    ]);
+    expect(found[0]?.firstAt).toBe('2026-08-22T23:14:43.000Z');
+    expect(found[0]?.lastAt).toBe('2026-08-23T08:53:50.000Z');
+  });
+
+  it('沒有 timestamp 欄位時為 null，其餘欄位照常', () => {
+    const found = detectUnknownEvents([{ event: 'x.y', severity: 'error', message: 'm' }]);
+    expect(found[0]).toEqual({
+      event: 'x.y', count: 1, sampleMessage: 'm', firstAt: null, lastAt: null,
+    });
+  });
+});
+
+describe('buildLoginHealthSummary 的時間顯示（辨識重複告警）', () => {
+  const evt = (firstAt: string, lastAt: string) => ([{
+    event: 'auth.liff.init.failed', count: 2, sampleMessage: 'x', firstAt, lastAt,
+  }]);
+
+  it('列出事件的最新發生時間（台北），這是判斷「同一批 vs 新事件」的依據', () => {
+    const summary = buildLoginHealthSummary([], evt('2026-08-23T07:14:43.000Z', '2026-08-23T08:53:50.000Z'));
+    expect(summary).toContain('15:14');
+    expect(summary).toContain('16:53');
+  });
+
+  it('最早與最新同一分鐘時只印一個時間，不重複囉嗦', () => {
+    const summary = buildLoginHealthSummary([], evt('2026-08-23T08:53:50.000Z', '2026-08-23T08:53:52.000Z'));
+    expect(summary).toContain('08/23 16:53');
+    expect(summary).not.toContain('→');
+  });
+
+  it('同一批重複報：兩次告警的最新時間相同 → 訊息內容逐字相同', () => {
+    const a = buildLoginHealthSummary([], evt('2026-08-23T07:14:43.000Z', '2026-08-23T08:53:50.000Z'));
+    const b = buildLoginHealthSummary([], evt('2026-08-23T07:14:43.000Z', '2026-08-23T08:53:50.000Z'));
+    expect(a).toBe(b);
+  });
+
+  it('有新事件進來：最新時間推進 → 訊息不同（人可一眼看出）', () => {
+    const before = buildLoginHealthSummary([], evt('2026-08-23T07:14:43.000Z', '2026-08-23T08:53:50.000Z'));
+    const after = buildLoginHealthSummary([], evt('2026-08-23T07:14:43.000Z', '2026-08-23T10:20:00.000Z'));
+    expect(after).not.toBe(before);
+    expect(after).toContain('18:20');
+  });
+
+  it('沒有時間資料時退化為原本的樣子，不印空白時間', () => {
+    const summary = buildLoginHealthSummary([], [
+      { event: 'x.y', count: 1, sampleMessage: '', firstAt: null, lastAt: null },
+    ]);
+    expect(summary).toContain('x.y ×1');
+    expect(summary).not.toContain('⏱');
+  });
+
+  it('帶入掃描區間時於結尾標示（台北）', () => {
+    const summary = buildLoginHealthSummary(
+      [], evt('2026-08-23T08:53:50.000Z', '2026-08-23T08:53:52.000Z'), 5,
+      { from: '2026-08-23T08:32:00.000Z', to: '2026-08-23T11:32:00.000Z' },
+    );
+    expect(summary).toContain('16:32');
+    expect(summary).toContain('19:32');
+    expect(summary).toContain('台北');
+  });
+
+  it('沒有任何越界時，即使帶入區間也不產生訊息', () => {
+    expect(buildLoginHealthSummary([], [], 5, { from: new Date(), to: new Date() })).toBe('');
   });
 });

@@ -25,6 +25,7 @@ import {
   evaluateLoginSuccessRate,
   detectUnknownEvents,
   buildLoginHealthSummary,
+  formatTaipei,
   type LoginHealthLogEntry,
 } from '@@/utils/login-health';
 
@@ -86,7 +87,13 @@ export default defineEventHandler(async (event) => {
     // ── 規則組 3（新）：deny-by-default 未知錯誤事件 ──────────────────
     const unknownEvents = detectUnknownEvents(docs);
 
-    const loginSummary = buildLoginHealthSummary(loginBreaches, unknownEvents);
+    // 帶入掃描區間：告警訊息要能讓收訊者分辨「同一批重複報」與「又壞一次」，
+    // 而視窗重疊是重複報的來源，所以視窗本身也要寫在訊息裡（見 buildLoginHealthSummary 註解）。
+    const scannedAt = new Date();
+    const loginSummary = buildLoginHealthSummary(loginBreaches, unknownEvents, 5, {
+      from: cutoff,
+      to: scannedAt,
+    });
     const loginBreached = loginSummary.length > 0;
 
     // await（非 fire-and-forget）：serverless 於回應後凍結，需等推播完成
@@ -129,6 +136,9 @@ export default defineEventHandler(async (event) => {
       loginBreached,
       notified: breached || loginBreached,
       cutoff: cutoff.toISOString(),
+      // 台北時間版本：這份 JSON 會被 GitHub Actions 印進 log 供人事後回翻，
+      // UTC 與台灣時間差 8 小時，逐次心算是判讀時最容易出錯的一步。
+      windowTaipei: `${formatTaipei(cutoff)}–${formatTaipei(scannedAt)}`,
     });
   } catch (err) {
     console.error('[cron/alert-auth-health] failed:', err);

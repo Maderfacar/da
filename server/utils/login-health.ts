@@ -22,6 +22,50 @@ export interface LoginHealthLogEntry {
   severity?: string | null;
   message?: string | null;
   metadata?: Record<string, unknown> | null;
+  /** Firestore Timestamp / Date / ISO 字串 / epoch 毫秒皆可（由 toLogDate 正規化） */
+  timestamp?: unknown;
+}
+
+/**
+ * 把 log 的 timestamp 正規化為 Date。無法解析一律回 null（不猜、不用「現在」頂替
+ * —— 用現在頂替會讓一筆沒有時間的舊紀錄看起來像剛剛才發生，比沒有時間更糟）。
+ */
+export function toLogDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === '') return null;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  // Firestore Timestamp：admin SDK 回傳的物件帶 toDate()
+  const maybe = value as { toDate?: unknown };
+  if (typeof maybe.toDate === 'function') {
+    const d = (maybe as { toDate: () => unknown }).toDate();
+    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+/**
+ * 台北時區固定 UTC+8 —— 台灣自 1979 年起不再實施日光節約時間，故直接位移即可，
+ * 不依賴 Intl/ICU（serverless runtime 的 ICU 完整度不保證，時區資料缺失時
+ * Intl 會靜默回退成 UTC，那正是「看起來有換算、其實沒換」的無聲錯誤）。
+ */
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+/**
+ * 格式化為台北時間字串。
+ * @param value 任何 toLogDate 能解析的值
+ * @param withDate true（預設）→ `MM/DD HH:mm`；false → `HH:mm`
+ * @returns 無法解析時回空字串（caller 據此省略時間欄位）
+ */
+export function formatTaipei(value: unknown, withDate = true): string {
+  const d = toLogDate(value);
+  if (!d) return '';
+  const t = new Date(d.getTime() + TAIPEI_OFFSET_MS);
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  const hm = `${pad(t.getUTCHours())}:${pad(t.getUTCMinutes())}`;
+  return withDate ? `${pad(t.getUTCMonth() + 1)}/${pad(t.getUTCDate())} ${hm}` : hm;
 }
 
 export interface RouteTally {
@@ -129,6 +173,9 @@ export interface UnknownEventReport {
   event: string;
   count: number;
   sampleMessage: string;
+  /** 該事件最早 / 最新一筆的發生時間（ISO）。log 無 timestamp 時為 null。 */
+  firstAt: string | null;
+  lastAt: string | null;
 }
 
 /** 事件是否已知良性（精確比對 + 前綴比對）。 */
@@ -148,12 +195,24 @@ export function detectUnknownEvents(logs: ReadonlyArray<LoginHealthLogEntry>): U
     if (severity !== 'error' && severity !== 'warn') continue;
     const event = typeof log.event === 'string' ? log.event : '';
     if (!event || isBenignEvent(event)) continue;
+    const at = toLogDate(log.timestamp);
     const existing = acc.get(event);
     if (existing) {
       existing.count += 1;
+      // 明確取 min/max，不假設輸入已排序 —— caller 換個 orderBy 就會靜默取錯頭尾
+      if (at) {
+        if (!existing.firstAt || at.toISOString() < existing.firstAt) existing.firstAt = at.toISOString();
+        if (!existing.lastAt || at.toISOString() > existing.lastAt) existing.lastAt = at.toISOString();
+      }
       continue;
     }
-    acc.set(event, { event, count: 1, sampleMessage: String(log.message ?? '').slice(0, 200) });
+    acc.set(event, {
+      event,
+      count: 1,
+      sampleMessage: String(log.message ?? '').slice(0, 200),
+      firstAt: at ? at.toISOString() : null,
+      lastAt: at ? at.toISOString() : null,
+    });
   }
   return [...acc.values()].sort((a, b) => b.count - a.count);
 }
@@ -162,11 +221,19 @@ export function detectUnknownEvents(logs: ReadonlyArray<LoginHealthLogEntry>): U
  * 把越界項目組成一段可讀摘要（放進 LINE 告警訊息）。
  * 純函式：路徑名與數字是技術識別碼，不做語系化；語系化的抬頭由 admin-notify-message 負責。
  * 回空字串代表沒有任何越界 —— caller 應據此判斷不發訊息。
+ *
+ * **時間為什麼一定要印**：掃描視窗刻意重疊（每小時掃 3h），同一批事件會連報約三次。
+ * 訊息若只有事件名與筆數，「重複報」與「又壞一次」在收訊端完全無法分辨 —— 收訊者
+ * 只能靠記憶比對筆數，而筆數會因舊事件滾出視窗而下降，看起來反而像新的一批。
+ * 印出「最新一筆發生時間」後，判別規則變成單純一句話：**時間沒往前推進就是同一批**。
+ *
+ * @param window 掃描區間（選填），顯示於結尾，讓人知道這則告警涵蓋哪段時間
  */
 export function buildLoginHealthSummary(
   breaches: ReadonlyArray<LoginHealthBreach>,
   unknownEvents: ReadonlyArray<UnknownEventReport>,
   maxUnknownListed = 5,
+  window?: { from?: unknown; to?: unknown },
 ): string {
   const lines: string[] = [];
 
@@ -179,10 +246,41 @@ export function buildLoginHealthSummary(
   if (unknownEvents.length > 0) {
     const listed = unknownEvents.slice(0, maxUnknownListed);
     lines.push(`❓ 未知錯誤事件 ${unknownEvents.length} 種：`);
-    for (const u of listed) lines.push(`  · ${u.event} ×${u.count}`);
+    for (const u of listed) {
+      lines.push(`  · ${u.event} ×${u.count}`);
+      const timeLine = formatEventTimeRange(u);
+      if (timeLine) lines.push(`    ${timeLine}`);
+    }
     const rest = unknownEvents.length - listed.length;
     if (rest > 0) lines.push(`  · …另 ${rest} 種`);
   }
 
+  if (lines.length === 0) return '';
+
+  const windowLine = formatWindow(window);
+  if (windowLine) lines.push(windowLine);
+
   return lines.join('\n');
+}
+
+/**
+ * 單一事件的時間範圍行。最早與最新落在同一分鐘時只印一個時間
+ * （多數告警是同一次故障的連續數筆，印成「16:53 → 16:53」只是雜訊）。
+ */
+function formatEventTimeRange(u: UnknownEventReport): string {
+  const first = formatTaipei(u.firstAt);
+  const last = formatTaipei(u.lastAt);
+  if (!last) return '';
+  if (!first || first === last) return `⏱ ${last}`;
+  return `⏱ ${first} → ${last}`;
+}
+
+/** 掃描區間行。同一天時省略第二個日期。 */
+function formatWindow(window?: { from?: unknown; to?: unknown }): string {
+  if (!window) return '';
+  const from = formatTaipei(window.from);
+  const to = formatTaipei(window.to);
+  if (!from || !to) return '';
+  const sameDay = from.slice(0, 5) === to.slice(0, 5);
+  return `🕐 掃描區間 ${from}–${sameDay ? to.slice(6) : to}（台北）`;
 }
