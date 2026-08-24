@@ -254,6 +254,13 @@ export const ENV_CONTRACTS = [
     note: '備援信寄件者；缺失則用 Resend 測試網域',
   },
   {
+    env: 'NUXT_ADMIN_EMAIL_TO',
+    path: 'adminEmailTo',
+    kind: 'string',
+    importance: 'optional',
+    note: 'admin 通知收件者（逗號分隔可多位）；與 admins/{uid}.email 合併，兩者皆空則通知消失',
+  },
+  {
     env: 'NUXT_CWA_API_KEY',
     path: 'cwaApiKey',
     kind: 'secret',

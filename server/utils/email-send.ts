@@ -21,7 +21,11 @@ export interface SendEmailResult {
   reason?: 'no-key' | 'error';
 }
 
-export async function sendEmail(subject: string, text: string): Promise<SendEmailResult> {
+/**
+ * 寄一封信。
+ * @param to 收件人（可多位；Resend 單次上限 50 位）。未指定則用環境變數 / 內建預設。
+ */
+export async function sendEmail(subject: string, text: string, to?: ReadonlyArray<string>): Promise<SendEmailResult> {
   const config = useRuntimeConfig() as {
     resendApiKey?: string;
     alertEmailTo?: string;
@@ -39,7 +43,9 @@ export async function sendEmail(subject: string, text: string): Promise<SendEmai
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: {
         from: config.alertEmailFrom || process.env.NUXT_ALERT_EMAIL_FROM || DEFAULT_FROM,
-        to: [config.alertEmailTo || process.env.NUXT_ALERT_EMAIL_TO || DEFAULT_TO],
+        to: to && to.length > 0
+          ? [...to]
+          : [config.alertEmailTo || process.env.NUXT_ALERT_EMAIL_TO || DEFAULT_TO],
         subject,
         text,
       },

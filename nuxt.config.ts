@@ -76,6 +76,9 @@ export default defineNuxtConfig({
     resendApiKey: '',               // NUXT_RESEND_API_KEY — Resend HTTP API key
     alertEmailTo: '',               // NUXT_ALERT_EMAIL_TO — 收件者（未設用程式內預設）
     alertEmailFrom: '',             // NUXT_ALERT_EMAIL_FROM — 寄件者（未設用 Resend 測試網域）
+    // admin 通知（訂單、司機審核、系統告警）走 email，不再吃 LINE 額度。
+    // 逗號分隔可多位；亦可改在 admins/{uid}.email 逐位設定，兩者會合併去重。
+    adminEmailTo: '',               // NUXT_ADMIN_EMAIL_TO
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）
