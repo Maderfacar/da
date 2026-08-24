@@ -71,6 +71,11 @@ export default defineNuxtConfig({
     // Vercel Cron 保護：設 CRON_SECRET（無 NUXT_ 前綴，因 Vercel Cron 自動以此值注入
     // Authorization: Bearer 標頭）；未設則 cron 清理端點放行（out-of-box 可跑，建議設）。
     cronSecret: process.env.CRON_SECRET || '',
+    // 2026-08-25 email 備援：LINE 推播失敗（含每月額度用罄的 429）時改寄 email。
+    // 未設 resendApiKey 等於備援沒開 —— 那是靜默的，故 email-send.ts 會 warn。
+    resendApiKey: '',               // NUXT_RESEND_API_KEY — Resend HTTP API key
+    alertEmailTo: '',               // NUXT_ALERT_EMAIL_TO — 收件者（未設用程式內預設）
+    alertEmailFrom: '',             // NUXT_ALERT_EMAIL_FROM — 寄件者（未設用 Resend 測試網域）
     public: {
       testMode: '',
       // Firebase 客戶端設定（對應 .env.dev 的 NUXT_PUBLIC_FIREBASE_* 前綴）

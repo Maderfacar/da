@@ -233,6 +233,27 @@ export const ENV_CONTRACTS = [
     note: 'n8n 內部 API 認證',
   },
   {
+    env: 'NUXT_RESEND_API_KEY',
+    path: 'resendApiKey',
+    kind: 'secret',
+    importance: 'optional',
+    note: 'LINE 推播失敗時的 email 備援；缺失則備援不啟用（推播失敗只留 log）',
+  },
+  {
+    env: 'NUXT_ALERT_EMAIL_TO',
+    path: 'alertEmailTo',
+    kind: 'string',
+    importance: 'optional',
+    note: '備援信收件者；缺失則用程式內預設',
+  },
+  {
+    env: 'NUXT_ALERT_EMAIL_FROM',
+    path: 'alertEmailFrom',
+    kind: 'string',
+    importance: 'optional',
+    note: '備援信寄件者；缺失則用 Resend 測試網域',
+  },
+  {
     env: 'NUXT_CWA_API_KEY',
     path: 'cwaApiKey',
     kind: 'secret',

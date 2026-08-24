@@ -12,6 +12,7 @@
  */
 import { getLineChannel, type LineClient } from '@@/utils/line-channel';
 import { writeLineApiError } from '@@/utils/line-api-error-log';
+import { notifyPushFailureByEmail } from '@@/utils/push-failure-email';
 
 export type LineMessage =
   | { type: 'text'; text: string }
@@ -65,6 +66,15 @@ export async function sendLinePush(
       errorMessage: e?.message ?? 'push failed',
       errorDetails: e?.data ?? null,
       context: { targetUid: to },
+    });
+    // 2026-08-25：email 備援。推播失敗原本只寫進 log，沒有任何人會知道 ——
+    // 2026-08-24 額度打爆時，客人的訂單通知靜默消失了一整晚。
+    await notifyPushFailureByEmail({
+      channel: client,
+      targetUid: to,
+      statusCode: e?.statusCode ?? 0,
+      errorDetails: e?.data ?? null,
+      messages,
     });
   }
 }
