@@ -24,6 +24,22 @@ import type { Lang } from '@@/utils/user-lang';
 
 const VALID_LANGS = ['zh_tw', 'en', 'ja'];
 
+/**
+ * 一次通知的結果。
+ *
+ * **為什麼要有回傳值**：呼叫端（告警去重）必須能分辨「發出去了」與「決定要發但沒發成」。
+ * 這支原本回 void 並吞掉所有失敗，於是 alert-auth-health 只能憑「決定要發」就寫入去重狀態
+ * —— email 管道未設定時，一批告警會被記成「已通知」而抑制 24 小時，收訊者從頭到尾沒看到，
+ * 管道修好後也不會補發。
+ *
+ * 仍然**永不 throw**：業務呼叫端（訂單、司機申請）照舊可以忽略回傳值。
+ */
+export interface AdminNotifyResult {
+  delivered: boolean;
+  /** 未送達原因：無收件人 / 未設 API key / 寄送失敗 */
+  reason?: 'no-recipients' | 'no-key' | 'error';
+}
+
 export interface NotifyAdminsOptions {
   /**
    * 收件對象。預設具 canManageOrders 的 admin（業務通知）。
@@ -60,7 +76,7 @@ export async function notifyAdmins(
   key: AdminNotifyKey,
   params: AdminNotifyParams,
   options: NotifyAdminsOptions = {},
-): Promise<void> {
+): Promise<AdminNotifyResult> {
   try {
     const fromAdmins = await loadAdminEmails(db, options.audience);
     const fromEnv = parseEmailList(
@@ -71,18 +87,35 @@ export async function notifyAdmins(
     if (recipients.length === 0) {
       // 大聲一點：沒有收件人等於通知完全消失，而這件事沒有任何其他徵兆
       console.warn(`[notify-admins] ${key} 無 email 收件人 —— 請設 NUXT_ADMIN_EMAIL_TO 或補 admins/{uid}.email`);
-      return;
+      return { delivered: false, reason: 'no-recipients' };
     }
 
-    await Promise.allSettled(
+    const settled = await Promise.allSettled(
       groupByLang(recipients).map(async (group) => {
         const text = getAdminNotifyText(key, group.lang, params);
         // 主旨取內文第一行：LINE 訊息本來就沒有主旨，第一行是最接近標題的東西
         const subject = `[DA] ${text.split('\n')[0]?.slice(0, 78) || key}`;
-        await sendEmail(subject, text, group.emails);
+        return sendEmail(subject, text, group.emails);
       }),
     );
+
+    // 一組語系一封信。任一封沒寄出就不算送達 —— 呼叫端據此決定要不要重試。
+    let reason: AdminNotifyResult['reason'] | undefined;
+    for (const r of settled) {
+      if (r.status === 'rejected') {
+        console.error(`[notify-admins] ${key} 寄送拋錯:`, r.reason);
+        reason = reason ?? 'error';
+        continue;
+      }
+      if (!r.value.sent) reason = reason ?? (r.value.reason === 'no-key' ? 'no-key' : 'error');
+    }
+    if (reason) {
+      console.warn(`[notify-admins] ${key} 未送達（${reason}）`);
+      return { delivered: false, reason };
+    }
+    return { delivered: true };
   } catch (err) {
     console.error('[notify-admins] 通知失敗（silent）:', err);
+    return { delivered: false, reason: 'error' };
   }
 }

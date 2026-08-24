@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildAlertFingerprint, decideAlertDispatch, ALERT_REMINDER_MS } from './alert-dedup';
+import {
+  buildAlertFingerprint,
+  decideAlertDispatch,
+  summarizeNotifyResults,
+  shouldPersistDispatch,
+  ALERT_REMINDER_MS,
+} from './alert-dedup';
 
 const t = (iso: string) => new Date(iso).getTime();
 
@@ -90,5 +96,52 @@ describe('decideAlertDispatch', () => {
   it('未來時間戳（時鐘飄移）→ 發送，不可因此永久抑制', () => {
     const prev = { fingerprint: FP, lastSentAt: now + 999999 };
     expect(decideAlertDispatch(prev, FP, now).send).toBe(true);
+  });
+});
+
+describe('summarizeNotifyResults', () => {
+  it('沒有任何嘗試 → 未送達，理由 not-attempted（與「試了但失敗」要能分辨）', () => {
+    expect(summarizeNotifyResults([])).toEqual({ delivered: false, reason: 'not-attempted' });
+  });
+
+  it('全部送達 → delivered', () => {
+    expect(summarizeNotifyResults([{ delivered: true }, { delivered: true }])).toEqual({ delivered: true });
+  });
+
+  it('任一封未送達 → 未送達，並帶出第一個失敗原因', () => {
+    expect(summarizeNotifyResults([{ delivered: true }, { delivered: false, reason: 'no-key' }]))
+      .toEqual({ delivered: false, reason: 'no-key' });
+  });
+
+  it('失敗但沒給理由 → 補 error，不留 undefined 讓 log 看起來像成功', () => {
+    expect(summarizeNotifyResults([{ delivered: false }])).toEqual({ delivered: false, reason: 'error' });
+  });
+});
+
+describe('shouldPersistDispatch', () => {
+  it('這輪不推播 → 不記狀態', () => {
+    expect(shouldPersistDispatch(false, [])).toBe(false);
+  });
+
+  it('推播成功 → 記狀態（24h 內同一批才會被正確抑制）', () => {
+    expect(shouldPersistDispatch(true, [{ delivered: true }])).toBe(true);
+  });
+
+  it('email 管道未設定（no-key）→ 不記狀態，下一輪要再試', () => {
+    // 這條是本函式存在的理由：記了狀態等於把一批沒人看到的告警吞掉 24 小時，
+    // 且管道修好之後仍然收不到。
+    expect(shouldPersistDispatch(true, [{ delivered: false, reason: 'no-key' }])).toBe(false);
+  });
+
+  it('無收件人 → 不記狀態', () => {
+    expect(shouldPersistDispatch(true, [{ delivered: false, reason: 'no-recipients' }])).toBe(false);
+  });
+
+  it('兩封只成功一封 → 不記狀態（另一封下輪要補）', () => {
+    expect(shouldPersistDispatch(true, [{ delivered: true }, { delivered: false, reason: 'error' }])).toBe(false);
+  });
+
+  it('決定要推播卻一封都沒發出 → 不記狀態', () => {
+    expect(shouldPersistDispatch(true, [])).toBe(false);
   });
 });

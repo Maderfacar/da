@@ -13,7 +13,7 @@
 // 保護：與 cleanup-error-logs 同範式 —— 有設 CRON_SECRET 才驗 Authorization: Bearer <secret>
 //       （Vercel Cron 觸發時自動注入）。端點唯讀 + 只在越界時推播，即使被觸發風險亦低。
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
-import { notifyAdmins } from '@@/utils/notify-admins';
+import { notifyAdmins, type AdminNotifyResult } from '@@/utils/notify-admins';
 import {
   tallyAuthHealthEvents,
   evaluateAuthHealth,
@@ -31,6 +31,8 @@ import {
 import {
   buildAlertFingerprint,
   decideAlertDispatch,
+  summarizeNotifyResults,
+  shouldPersistDispatch,
   type AlertDispatchState,
 } from '@@/utils/alert-dedup';
 
@@ -123,23 +125,27 @@ export default defineEventHandler(async (event) => {
 
     // await（非 fire-and-forget）：serverless 於回應後凍結，需等推播完成
     // audience: 'super' —— 系統告警只送 super，把每月額度留給客人與司機通知
+    const attempts: AdminNotifyResult[] = [];
     if (breached && shouldNotify) {
-      await notifyAdmins(db, 'adminNotify.authHealthAlert', {
+      attempts.push(await notifyAdmins(db, 'adminNotify.authHealthAlert', {
         authHealthWindowH: windowHours,
         authHealthRolesSlow: counts.rolesSlow,
         authHealthUserdocMissing: counts.userdocMissing,
         authHealthChunkError: counts.chunkError,
         authHealthLineExchangeBadStatus: counts.lineExchangeBadStatus,
-      }, { audience: 'super' });
+      }, { audience: 'super' }));
     }
     if (loginBreached && shouldNotify) {
-      await notifyAdmins(db, 'adminNotify.loginHealthAlert', {
+      attempts.push(await notifyAdmins(db, 'adminNotify.loginHealthAlert', {
         loginHealthWindowH: windowHours,
         loginHealthSummary: loginSummary,
-      }, { audience: 'super' });
+      }, { audience: 'super' }));
     }
-    // 只有真的推播出去才更新狀態 —— 若推播失敗仍更新，下次就會被當成「已通知」而抑制
-    if (shouldNotify) {
+    const delivery = summarizeNotifyResults(attempts);
+    // 只有**真的送達**才更新狀態 —— 記了狀態等於同一批 24 小時內不再發。
+    // 2026-08-25 admin 通知改走 email 後，「決定要發」與「發出去了」不再是同一件事
+    // （管道未設定時只留一行 warn），因此這裡必須看 notifyAdmins 的回報，不能看 shouldNotify。
+    if (shouldPersistDispatch(shouldNotify, attempts)) {
       try {
         await stateRef.set({ fingerprint, lastSentAt: scannedAt.getTime() });
       } catch (err) {
@@ -173,6 +179,14 @@ export default defineEventHandler(async (event) => {
       // 「沒事」與「有事但沒推播」，否則又會變成無法區分的 0
       suppressed: anyBreached && !dispatch.send,
       dispatchReason: dispatch.reason,
+      // notified 只代表「決定要發」。送達與否要看這兩個 ——
+      // email 管道未設定時 delivered=false / deliveryReason='no-key'，
+      // 這是 Actions log 上唯一能看出「告警其實沒送出去」的地方。
+      delivered: delivery.delivered,
+      deliveryReason: delivery.reason,
+      // 沒有告警的那些輪次不會有 delivery 可看，管道是否就緒仍要能一眼判斷：
+      // 只回報「有沒有設」，不回報值（與設定健檢同一原則）。
+      alertChannel: { emailConfigured: Boolean(config.resendApiKey || process.env.NUXT_RESEND_API_KEY) },
       fingerprint,
       cutoff: cutoff.toISOString(),
       // 台北時間版本：這份 JSON 會被 GitHub Actions 印進 log 供人事後回翻，

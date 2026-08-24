@@ -79,3 +79,45 @@ export function decideAlertDispatch(
   if (now - last >= reminderMs) return { send: true, reason: 'reminder' };
   return { send: false, reason: 'duplicate' };
 }
+
+/**
+ * 一次推播嘗試的結果。刻意用最小結構型別（不 import notify-admins）——
+ * 那支帶 Nuxt 全域（useRuntimeConfig），單元測試載不起來。
+ */
+export interface NotifyAttempt {
+  delivered: boolean;
+  reason?: string;
+}
+
+export interface DeliverySummary {
+  delivered: boolean;
+  /** 未送達的原因，供 Actions log 一眼判讀（'not-attempted' = 這輪沒要發） */
+  reason?: string;
+}
+
+/** 彙整一輪的推播結果。任一封沒送達即視為未送達 —— 見 shouldPersistDispatch。 */
+export function summarizeNotifyResults(results: ReadonlyArray<NotifyAttempt>): DeliverySummary {
+  if (results.length === 0) return { delivered: false, reason: 'not-attempted' };
+  const failed = results.find((r) => !r.delivered);
+  if (failed) return { delivered: false, reason: failed.reason ?? 'error' };
+  return { delivered: true };
+}
+
+/**
+ * 決定要不要把這次推播記進去重狀態。
+ *
+ * **為什麼不能只看「有沒有決定要發」**：去重狀態一旦寫入，同指紋 24 小時內都會被
+ * 抑制。若推播其實失敗（例如 email 管道未設定），卻仍記為「已通知」，那批告警就
+ * 在收訊者從未看到的情況下被吞掉 —— 而且等管道修好後仍然收不到，因為已被抑制。
+ * 2026-08-25 admin 通知改走 email 後 notifyAdmins 不再讓呼叫端知道成敗，
+ * 端點原本的註解（「只有真的推播出去才更新狀態」）就此與實作脫節。
+ *
+ * 沒送達 → 不記狀態 → 下一輪再試。與本檔一貫原則相同：寧可多叫，不可靜音。
+ */
+export function shouldPersistDispatch(
+  shouldNotify: boolean,
+  results: ReadonlyArray<NotifyAttempt>,
+): boolean {
+  if (!shouldNotify) return false;
+  return summarizeNotifyResults(results).delivered;
+}
