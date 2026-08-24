@@ -12,20 +12,20 @@ const t = (iso: string) => new Date(iso).getTime();
 describe('buildAlertFingerprint', () => {
   it('同一批事件（種類與最新時間都相同）指紋相同，筆數變動不影響', () => {
     // 筆數會因舊事件滾出視窗而下降（3 → 2），那不是新故障，指紋不可因此改變
-    const a = buildAlertFingerprint([], [
+    const a = buildAlertFingerprint([], [], [
       { event: 'auth.liff.init.failed', count: 3, sampleMessage: 'x', firstAt: '2026-08-23T07:14:43Z', lastAt: '2026-08-23T08:53:52Z' },
     ]);
-    const b = buildAlertFingerprint([], [
+    const b = buildAlertFingerprint([], [], [
       { event: 'auth.liff.init.failed', count: 2, sampleMessage: 'x', firstAt: '2026-08-23T08:53:50Z', lastAt: '2026-08-23T08:53:52Z' },
     ]);
     expect(a).toBe(b);
   });
 
   it('最新時間推進（真的又壞一次）→ 指紋不同', () => {
-    const a = buildAlertFingerprint([], [
+    const a = buildAlertFingerprint([], [], [
       { event: 'auth.liff.init.failed', count: 2, sampleMessage: 'x', firstAt: null, lastAt: '2026-08-23T08:53:52Z' },
     ]);
-    const b = buildAlertFingerprint([], [
+    const b = buildAlertFingerprint([], [], [
       { event: 'auth.liff.init.failed', count: 2, sampleMessage: 'x', firstAt: null, lastAt: '2026-08-23T12:40:00Z' },
     ]);
     expect(a).not.toBe(b);
@@ -33,8 +33,8 @@ describe('buildAlertFingerprint', () => {
 
   it('出現新事件種類 → 指紋不同（新面孔一定要叫）', () => {
     const base = [{ event: 'auth.liff.init.failed', count: 2, sampleMessage: 'x', firstAt: null, lastAt: '2026-08-23T08:53:52Z' }];
-    const a = buildAlertFingerprint([], base);
-    const b = buildAlertFingerprint([], [...base,
+    const a = buildAlertFingerprint([], [], base);
+    const b = buildAlertFingerprint([], [], [...base,
       { event: 'window.unhandledrejection', count: 1, sampleMessage: 'y', firstAt: null, lastAt: '2026-08-23T08:53:52Z' }]);
     expect(a).not.toBe(b);
   });
@@ -42,12 +42,12 @@ describe('buildAlertFingerprint', () => {
   it('事件順序不同但內容相同 → 指紋相同（排序由筆數決定，會隨視窗變動）', () => {
     const e1 = { event: 'a.x', count: 1, sampleMessage: '', firstAt: null, lastAt: '2026-08-23T01:00:00Z' };
     const e2 = { event: 'b.y', count: 5, sampleMessage: '', firstAt: null, lastAt: '2026-08-23T02:00:00Z' };
-    expect(buildAlertFingerprint([], [e1, e2])).toBe(buildAlertFingerprint([], [e2, e1]));
+    expect(buildAlertFingerprint([], [], [e1, e2])).toBe(buildAlertFingerprint([], [], [e2, e1]));
   });
 
   it('成功率越界也納入指紋（路徑與等級變化要能叫）', () => {
-    const a = buildAlertFingerprint([{ route: 'liff', level: 'critical', ok: 0, fail: 3, attempts: 3, successRate: 0 }], []);
-    const b = buildAlertFingerprint([{ route: 'browser-oauth', level: 'critical', ok: 0, fail: 3, attempts: 3, successRate: 0 }], []);
+    const a = buildAlertFingerprint([], [{ route: 'liff', level: 'critical', ok: 0, fail: 3, attempts: 3, successRate: 0 }], []);
+    const b = buildAlertFingerprint([], [{ route: 'browser-oauth', level: 'critical', ok: 0, fail: 3, attempts: 3, successRate: 0 }], []);
     expect(a).not.toBe(b);
   });
 });
@@ -143,5 +143,29 @@ describe('shouldPersistDispatch', () => {
 
   it('決定要推播卻一封都沒發出 → 不記狀態', () => {
     expect(shouldPersistDispatch(true, [])).toBe(false);
+  });
+});
+
+describe('buildAlertFingerprint — authHealth 越界也要進指紋', () => {
+  it('只有 authHealth 越界的兩種不同故障，指紋不可相同', () => {
+    // 缺這一項時兩者都是 e[]r[] —— 前一天的 chunk 告警會把今天的 rolesSlow
+    // （使用者誤判登出的主因事件）當成重複而抑制掉。
+    const chunk = buildAlertFingerprint(['chunkError'], [], []);
+    const roles = buildAlertFingerprint(['rolesSlow'], [], []);
+    expect(chunk).not.toBe(roles);
+  });
+
+  it('同一組越界項目、順序不同 → 指紋相同', () => {
+    expect(buildAlertFingerprint(['chunkError', 'rolesSlow'], [], []))
+      .toBe(buildAlertFingerprint(['rolesSlow', 'chunkError'], [], []));
+  });
+
+  it('新增一項越界 → 指紋不同（多壞一種一定要叫）', () => {
+    expect(buildAlertFingerprint(['chunkError'], [], []))
+      .not.toBe(buildAlertFingerprint(['chunkError', 'userdocMissing'], [], []));
+  });
+
+  it('沒有任何越界 → 與有越界的指紋不同', () => {
+    expect(buildAlertFingerprint([], [], [])).not.toBe(buildAlertFingerprint(['chunkError'], [], []));
   });
 });

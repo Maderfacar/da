@@ -113,7 +113,9 @@ export default defineEventHandler(async (event) => {
     // 視窗重疊會讓同一批事件連報三到四次。過去這被當成「吵」，實際代價是
     // LINE 每月推播額度（按收件人計），2026-08-24 因此被打爆連累客人通知。
     // 掃描維持每小時（早點發現），但推播只在內容真的改變時發出。
-    const fingerprint = buildAlertFingerprint(loginBreaches, unknownEvents);
+    // authHealth 越界種類也要進指紋，否則「chunk 錯誤」與「roles 慢」共用 e[]r[]，
+    // 後者會被前一天的告警當成重複而抑制（兩者是完全不同的故障）。
+    const fingerprint = buildAlertFingerprint(breaches.map((b) => b.key), loginBreaches, unknownEvents);
     const stateRef = db.doc(STATE_DOC);
     let prevState: AlertDispatchState | null = null;
     try {

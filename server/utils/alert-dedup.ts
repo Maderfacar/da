@@ -39,8 +39,11 @@ export interface AlertDispatchDecision {
  *
  * 事件先依名稱排序：detectUnknownEvents 的輸出依筆數排序，而筆數會變動，
  * 直接串接會讓順序影響指紋。
+ *
+ * @param authBreachKeys authHealth 四項中越界的 key（如 ['chunkError']）
  */
 export function buildAlertFingerprint(
+  authBreachKeys: ReadonlyArray<string>,
   breaches: ReadonlyArray<LoginHealthBreach>,
   unknownEvents: ReadonlyArray<UnknownEventReport>,
 ): string {
@@ -52,7 +55,11 @@ export function buildAlertFingerprint(
     .map((b) => `${b.route}:${b.level}`)
     .sort()
     .join(',');
-  return `e[${events}]r[${rates}]`;
+  // authHealth 四項的越界**種類**（不含筆數，理由同上）。
+  // 漏掉這段時，「chunk 錯誤越界」與「roles 慢越界」的指紋都是 e[]r[] ——
+  // 前一天的告警會把隔天完全不同的故障當成重複抑制掉。
+  const auth = [...authBreachKeys].sort().join(',');
+  return `a[${auth}]e[${events}]r[${rates}]`;
 }
 
 /**
