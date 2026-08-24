@@ -82,10 +82,14 @@ export default defineEventHandler(async (event) => {
       .limit(MAX_DOCS)
       .get();
 
-    const docs = snap.docs.map((d) => d.data() as LoginHealthLogEntry & { event?: string });
+    const docs = snap.docs.map((d) => d.data() as LoginHealthLogEntry & {
+      event?: string;
+      context?: { sessionId?: string | null } | null;
+    });
 
     // ── 規則組 1（既有）：四個具名事件的筆數門檻 ───────────────────────
-    const counts = tallyAuthHealthEvents(docs.map((d) => d.event));
+    // 傳整份 doc（而非只有 event 名）：chunkError 需要 context.sessionId 才能按事故去重
+    const counts = tallyAuthHealthEvents(docs);
     const { breached, breaches } = evaluateAuthHealth(counts);
 
     // ── 規則組 2（新）：分路徑登入成功率 ─────────────────────────────

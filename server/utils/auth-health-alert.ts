@@ -46,21 +46,47 @@ const EMPTY_COUNTS: AuthHealthCounts = {
   lineExchangeBadStatus: 0,
 };
 
+/** 計數所需的最小欄位：事件名，以及去重用的 sessionId。 */
+export interface AuthHealthTallyEntry {
+  event?: string | null;
+  context?: { sessionId?: string | null } | null;
+}
+
 /**
- * 將一批 log 的 event 字串歸類計數。未知 / 空 event 一律略過。
- * @param events client_error_logs 各 doc 的 `event` 欄位（可能 undefined）
+ * 將一批 log 歸類計數。未知 / 空 event 一律略過。
+ *
+ * **chunkError 按 session 去重，其餘三項照筆數。**
+ * 2026-08-25 prod 實例：一次部署讓單一分頁在 6 秒內寫入 19 筆 chunk 錯誤 ——
+ * 兩個收集器（`vite:preloadError` / `app:chunkError`）各記一次，再乘上頁面上多個
+ * lazy 元件。實際受影響的是 1 個人、1 次事故，且 P1 自癒立刻重載成功。
+ * 門檻 3 對這種形狀毫無鑑別力：它量到的是 log 筆數，不是受影響人數。
+ * 去重後語意變成「幾個 session 撞到」，門檻 3 才等於「三個人受影響」。
+ * 真正的大規模事故（多人各撞一次）不會因此被漏掉。
+ *
+ * 其餘三項維持筆數：沒有「一次事故產生大量筆數」的證據，不臆測著改。
+ * 缺 sessionId 的 chunk 錯誤無法去重 → 各自獨立計數（寧可多叫，不可靜音）。
  */
-export function tallyAuthHealthEvents(events: ReadonlyArray<string | undefined | null>): AuthHealthCounts {
+export function tallyAuthHealthEvents(entries: ReadonlyArray<AuthHealthTallyEntry>): AuthHealthCounts {
   const counts: AuthHealthCounts = { ...EMPTY_COUNTS };
-  for (const e of events) {
-    switch (e) {
+  const chunkSessions = new Set<string>();
+  let chunkWithoutSession = 0;
+
+  for (const entry of entries) {
+    switch (entry?.event) {
       case AUTH_HEALTH_EVENTS.rolesSlow: counts.rolesSlow++; break;
       case AUTH_HEALTH_EVENTS.userdocMissing: counts.userdocMissing++; break;
-      case AUTH_HEALTH_EVENTS.chunkError: counts.chunkError++; break;
+      case AUTH_HEALTH_EVENTS.chunkError: {
+        const sid = entry.context?.sessionId;
+        if (typeof sid === 'string' && sid !== '') chunkSessions.add(sid);
+        else chunkWithoutSession++;
+        break;
+      }
       case AUTH_HEALTH_EVENTS.lineExchangeBadStatus: counts.lineExchangeBadStatus++; break;
       default: break; // 非監控事件略過
     }
   }
+
+  counts.chunkError = chunkSessions.size + chunkWithoutSession;
   return counts;
 }
 
