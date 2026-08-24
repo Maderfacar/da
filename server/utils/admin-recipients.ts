@@ -46,3 +46,16 @@ export async function getAdminRecipients(db: Firestore, perm: Permission): Promi
     .filter((d) => adminDocHasPermission(d.data() as AdminDocData, perm))
     .map((d) => d.id);
 }
+
+/**
+ * 回傳所有 level=super 的 admin lineUid。
+ *
+ * 用於**系統告警**（非業務通知）：告警與客人的訂單通知共用同一個 LINE OA 的
+ * 每月推播額度，而額度是按收件人計算的 —— 發給 3 個 admin 就扣 3 則。
+ * 2026-08-24 額度被打爆後決定：系統告警只送 super，把額度留給客人與司機。
+ * 業務通知（訂單、司機審核）維持原本的權限規則，不受此影響。
+ */
+export async function getSuperAdminRecipients(db: Firestore): Promise<string[]> {
+  const snap = await db.collection('admins').get();
+  return snap.docs.filter((d) => (d.data() as AdminDocData).level === 'super').map((d) => d.id);
+}

@@ -28,9 +28,16 @@ import {
   formatTaipei,
   type LoginHealthLogEntry,
 } from '@@/utils/login-health';
+import {
+  buildAlertFingerprint,
+  decideAlertDispatch,
+  type AlertDispatchState,
+} from '@@/utils/alert-dedup';
 
 const COLLECTION = 'client_error_logs';
 const MAX_DOCS = 5000; // 安全上限（常態約數十筆/日，遠低於此）避免 timeout
+/** 去重狀態存放處：記錄上次推播的內容指紋與時間 */
+const STATE_DOC = 'system_state/alert-auth-health';
 
 /**
  * 統計視窗（小時）。Vercel 每日 cron 用預設 24；GitHub Actions 每小時排程帶 ?hours=3
@@ -96,28 +103,55 @@ export default defineEventHandler(async (event) => {
     });
     const loginBreached = loginSummary.length > 0;
 
+    // ── 去重：同一批不重複推播 ───────────────────────────────────
+    // 視窗重疊會讓同一批事件連報三到四次。過去這被當成「吵」，實際代價是
+    // LINE 每月推播額度（按收件人計），2026-08-24 因此被打爆連累客人通知。
+    // 掃描維持每小時（早點發現），但推播只在內容真的改變時發出。
+    const fingerprint = buildAlertFingerprint(loginBreaches, unknownEvents);
+    const stateRef = db.doc(STATE_DOC);
+    let prevState: AlertDispatchState | null = null;
+    try {
+      const snapState = await stateRef.get();
+      prevState = snapState.exists ? (snapState.data() as AlertDispatchState) : null;
+    } catch (err) {
+      // 讀不到狀態一律當作沒有紀錄 → 照常推播。寧可多叫，不可因基礎設施故障而靜音
+      console.error('[cron/alert-auth-health] 讀取去重狀態失敗，改為照常推播:', err);
+    }
+    const anyBreached = breached || loginBreached;
+    const dispatch = decideAlertDispatch(prevState, fingerprint, scannedAt.getTime());
+    const shouldNotify = anyBreached && dispatch.send;
+
     // await（非 fire-and-forget）：serverless 於回應後凍結，需等推播完成
-    if (breached) {
+    // audience: 'super' —— 系統告警只送 super，把每月額度留給客人與司機通知
+    if (breached && shouldNotify) {
       await notifyAdmins(db, 'adminNotify.authHealthAlert', {
         authHealthWindowH: windowHours,
         authHealthRolesSlow: counts.rolesSlow,
         authHealthUserdocMissing: counts.userdocMissing,
         authHealthChunkError: counts.chunkError,
         authHealthLineExchangeBadStatus: counts.lineExchangeBadStatus,
-      });
+      }, { audience: 'super' });
     }
-    if (loginBreached) {
+    if (loginBreached && shouldNotify) {
       await notifyAdmins(db, 'adminNotify.loginHealthAlert', {
         loginHealthWindowH: windowHours,
         loginHealthSummary: loginSummary,
-      });
+      }, { audience: 'super' });
+    }
+    // 只有真的推播出去才更新狀態 —— 若推播失敗仍更新，下次就會被當成「已通知」而抑制
+    if (shouldNotify) {
+      try {
+        await stateRef.set({ fingerprint, lastSentAt: scannedAt.getTime() });
+      } catch (err) {
+        console.error('[cron/alert-auth-health] 寫入去重狀態失敗:', err);
+      }
     }
 
     // 未授權（prod 未設 CRON_SECRET）時只回最小資訊：工作照跑、告警照發，但不外洩遙測明細
     if (!detailed) {
       return successResponse({
         ok: true,
-        notified: breached || loginBreached,
+        notified: shouldNotify,
         detail: 'omitted (CRON_SECRET 未設定)',
       });
     }
@@ -134,7 +168,12 @@ export default defineEventHandler(async (event) => {
       loginBreaches,
       unknownEvents,
       loginBreached,
-      notified: breached || loginBreached,
+      notified: shouldNotify,
+      // 有越界但被去重抑制時 notified=false —— 這兩個欄位讓 Actions log 能分辨
+      // 「沒事」與「有事但沒推播」，否則又會變成無法區分的 0
+      suppressed: anyBreached && !dispatch.send,
+      dispatchReason: dispatch.reason,
+      fingerprint,
       cutoff: cutoff.toISOString(),
       // 台北時間版本：這份 JSON 會被 GitHub Actions 印進 log 供人事後回翻，
       // UTC 與台灣時間差 8 小時，逐次心算是判讀時最容易出錯的一步。

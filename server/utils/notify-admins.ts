@@ -11,16 +11,28 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush } from '@@/utils/line-push';
 import { getUserLang } from '@@/utils/user-lang';
-import { getAdminRecipients } from '@@/utils/admin-recipients';
+import { getAdminRecipients, getSuperAdminRecipients } from '@@/utils/admin-recipients';
 import { getAdminNotifyText, type AdminNotifyKey, type AdminNotifyParams } from '@@/utils/admin-notify-message';
 
-/** 推播指定通知給所有具 canManageOrders 的 admin（passenger OA，per-admin lang） */
+export interface NotifyAdminsOptions {
+  /**
+   * 收件對象。預設具 canManageOrders 的 admin（業務通知）。
+   * 'super' 僅送 level=super —— 系統告警專用，理由見 getSuperAdminRecipients 註解
+   * （每月推播額度按收件人計，告警不該與客人通知搶同一份預算）。
+   */
+  audience?: 'canManageOrders' | 'super';
+}
+
+/** 推播指定通知給 admin（passenger OA，per-admin lang） */
 export async function notifyAdmins(
   db: Firestore,
   key: AdminNotifyKey,
   params: AdminNotifyParams,
+  options: NotifyAdminsOptions = {},
 ): Promise<void> {
-  const recipients = await getAdminRecipients(db, 'canManageOrders');
+  const recipients = options.audience === 'super'
+    ? await getSuperAdminRecipients(db)
+    : await getAdminRecipients(db, 'canManageOrders');
   await Promise.allSettled(
     recipients.map(async (uid) => {
       const lang = await getUserLang(db, uid);
