@@ -1,5 +1,17 @@
-/* 要記得去scss/_colors.scss 添加 */
+/* 色彩真相來源 —— 精品調（縞黑 · 骨白 · 古銅）
+ *
+ * 這裡是全站 12 個 --da-* token 的定義處，也是唯一一處。
+ * 語意別名（--ink / --accent / --surface-* 等）在 _design-tokens.css，值一律指回這裡。
+ *
+ * ⚠ 改這裡的色值，必須同步另外三處，否則乘客端會被舊色蓋回去：
+ *   1. shared/site-theme.ts 的 DEFAULT_TOKENS
+ *   2. prod Firestore site_themes/*.tokens（跑 pnpm migrate:site-themes）
+ *   3. tests/e2e/auth/fixtures.ts 的 /nuxt-api/config/theme mock
+ * 原因：乘客 layout 掛 [data-da-theme]，色值來自主題引擎注入而非這裡的 :root。
+ * admin / driver 不掛該屬性，改這裡就會變 —— 所以「admin 變了」不等於成功。
+ */
 :root {
+  /* ── 樣板遺留（W0b 收斂，現況全站僅 20 處使用）────────────── */
   --demo: #0baf2c;
   --primary: #354d7b;
   --secondary: #00ADA9;
@@ -10,49 +22,32 @@
   --bg: #FDF9F2;
   --white: #fff;
 
-  /* ── DestinationAnywhere 設計系統色彩 (美式復古機場風) ── */
-  --da-cream: #F5F2EC;
-  --da-off-white: #FAF8F4;
-  --da-amber: #D4860A;
-  --da-amber-light: #F0A830;
-  --da-amber-pale: #FDF3DC;
-  --da-dark: #1A1814;
-  --da-dark-mid: #2E2B25;
-  --da-gray: #6B6560;
-  --da-gray-light: #B8B3AC;
-  --da-gray-pale: #E8E4DC;
-  --da-stripe-yellow: #F5C842;
-  --da-stripe-dark: #2A2620;
-  --da-glass-bg: rgba(250, 248, 244, 0.72);
-  --da-glass-border: rgba(212, 134, 10, 0.18);
-  --da-glass-shadow: 0 8px 40px rgba(26, 24, 20, 0.08), 0 2px 8px rgba(26, 24, 20, 0.04);
+  /* ── DestinationAnywhere 設計系統色彩（精品調）──────────────
+   * 括號內為 WCAG 對比實測值，對照底色為 --da-off-white 瓷白。
+   */
+  --da-cream: #EAE7E0;         /* 骨白 · 頁面底 */
+  --da-off-white: #F5F3EE;     /* 瓷白 · 卡片表面 */
+  --da-amber: #7E6330;         /* 古銅 · 主色（5.10:1，過 AA） */
+  --da-amber-light: #C9A961;   /* 亮銅 · 深底上使用（於縞黑 7.81:1） */
+  --da-amber-pale: #F0E8D6;    /* 極淡底 */
+  --da-dark: #1A1917;          /* 縞黑 · 主文字／品牌面（於骨白 14.23:1） */
+  --da-dark-mid: #26241F;      /* 深色面上的第二層 */
+  --da-gray: #6D6A62;          /* 次要文字（4.87:1，過 AA） */
+  --da-gray-light: #868073;    /* 三級文字（3.54:1）—— 舊值 #B8B3AC 僅 1.96:1，順手修正 */
+  --da-gray-pale: #D6D1C7;     /* 髮絲線 */
+  --da-stripe-yellow: #B79A5E; /* 斜紋退場前的過渡值：暗金取代亮黃 */
+  --da-stripe-dark: #26241F;
+
+  /* ── 玻璃層 ──────────────────────────────────────────────
+   * 這三個是 rgba，刻意不列入主題引擎白名單（避免字串注入），因此換季時不會變。
+   * 但底色與主色換了，這裡不跟著換的話，86 處玻璃卡會殘留琥珀色邊框。
+   * 值 = 瓷白 / 古銅 / 縞黑 的 rgba 形式。
+   */
+  --da-glass-bg: rgba(245, 243, 238, 0.72);
+  --da-glass-border: rgba(126, 99, 48, 0.20);
+  --da-glass-shadow: 0 8px 40px rgba(26, 25, 23, 0.08), 0 2px 8px rgba(26, 25, 23, 0.04);
 }
 
-:root.dark {
-  --demo: #810b0b;
-  --primary: #354d7b;
-  --secondary: #00ADA9;
-  --tertiary: #EB8B2D;
-  --gray: #808080;
-  --err: #EE5151;
-  --font: #454545;
-  --bg: #FDF9F2;
-  --white: #fff;
-
-  /* DA dark mode — 目前維持淺色，後續可擴充 */
-  --da-cream: #F5F2EC;
-  --da-off-white: #FAF8F4;
-  --da-amber: #D4860A;
-  --da-amber-light: #F0A830;
-  --da-amber-pale: #FDF3DC;
-  --da-dark: #1A1814;
-  --da-dark-mid: #2E2B25;
-  --da-gray: #6B6560;
-  --da-gray-light: #B8B3AC;
-  --da-gray-pale: #E8E4DC;
-  --da-stripe-yellow: #F5C842;
-  --da-stripe-dark: #2A2620;
-  --da-glass-bg: rgba(250, 248, 244, 0.72);
-  --da-glass-border: rgba(212, 134, 10, 0.18);
-  --da-glass-shadow: 0 8px 40px rgba(26, 24, 20, 0.08), 0 2px 8px rgba(26, 24, 20, 0.04);
-}
+/* :root.dark 已移除 —— 其內容原本與 :root 一字不差（連註解都寫「目前維持淺色」），
+ * 是死碼，卻因為 @nuxtjs/color-mode 掛著而讓人誤以為有深色模式。
+ * 要做深色模式請另開變更，不要復活這段。 */

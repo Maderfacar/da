@@ -88,12 +88,12 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
       // prod Firestore site_themes）。不同步的話，乘客端 e2e 與視覺基線會拍到舊色，
       // 而 admin/driver 拍到新色 —— 是 fixture 造成的假象，不是真的破圖。
       tokens: {
-        'da-cream': '#F5F2EC', 'da-off-white': '#FAF8F4', 'da-amber': '#D4860A',
-        'da-amber-light': '#F0A830', 'da-amber-pale': '#FDF3DC', 'da-dark': '#1A1814',
-        'da-dark-mid': '#2E2B25', 'da-gray': '#6B6560', 'da-gray-light': '#B8B3AC',
-        'da-gray-pale': '#E8E4DC', 'da-stripe-yellow': '#F5C842', 'da-stripe-dark': '#2A2620',
+        'da-cream': '#EAE7E0', 'da-off-white': '#F5F3EE', 'da-amber': '#7E6330',
+        'da-amber-light': '#C9A961', 'da-amber-pale': '#F0E8D6', 'da-dark': '#1A1917',
+        'da-dark-mid': '#26241F', 'da-gray': '#6D6A62', 'da-gray-light': '#868073',
+        'da-gray-pale': '#D6D1C7', 'da-stripe-yellow': '#B79A5E', 'da-stripe-dark': '#26241F',
       },
-      hero: { stripeYellow: '#F5C842', stripeDark: '#2A2620', tagColor: '#D4860A' },
+      hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7E6330' },
     },
     status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   }),

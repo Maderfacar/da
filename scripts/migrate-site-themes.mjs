@@ -49,7 +49,7 @@ const TARGET = {
       'da-dark': '#1A1917',           // 縞黑（對骨白 14.0:1）
       'da-dark-mid': '#26241F',
       'da-gray': '#6D6A62',           // 次要文字（4.88:1，過 AA）
-      'da-gray-light': '#A6A198',     // 三級文字／佔位（2.35:1，僅限裝飾性用途）
+      'da-gray-light': '#868073',     // 三級文字（3.54:1）—— 舊值 #B8B3AC 僅 1.96:1，順手修正
       'da-gray-pale': '#D6D1C7',      // 髮絲線
       'da-stripe-yellow': '#B79A5E',  // 斜紋退場前的過渡值：暗金取代亮黃
       'da-stripe-dark': '#26241F',

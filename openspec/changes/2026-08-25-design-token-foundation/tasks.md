@@ -14,7 +14,7 @@
   - [x] 加入 `fonts.families` 後 `pnpm build` exit 0（基準 payload：39.9 MB / gzip 9.77 MB）
   - [x] **關卡實際擋下一件事**：字族寫在 CSS 變數裡時 `@nuxt/fonts@0.14.0` 掃不到 →
         不產生 `@font-face`、靜默 fallback。解法 `fonts.experimental.processCSSVariables: true`（見 design.md D7b）
-  - [ ] 開啟該選項後重跑 build，確認產物含 Cormorant / Jost 的 `@font-face`
+  - [x] 開啟後重跑 build：Cormorant 40 個 `@font-face`、Jost 24 個；字檔 98 → 162 個（1.5M → 2.4M）
 
 ### 視覺基線（必須在改色之前）
 
@@ -24,8 +24,14 @@
   - [x] 司機 `/driver/dashboard` `/driver/trip`
   - [x] Admin `/admin/orders` `/admin/dashboard` `/admin/settings`
   - [x] 處理不穩定源：停用動畫（注入 `*{animation:none!important;transition:none!important}`）、mock 時間字串、需登入頁走 `NUXT_PUBLIC_TEST_MODE`
-- [ ] **W0.3** 跑一次產生基線 → 目視確認截圖是「現況舊色且完整」→ **commit 基線**
-  - [ ] flaky 且本視窗穩不下來的頁 → 移出清單並在 tasks.md 記錄原因
+- [x] **W0.3** 產生基線 33 張（11 頁 × 3 project），乾淨比對 33/33 綠 → 已 commit（f326683）
+  - [x] 改對 **production build** 拍而非 dev server：dev 的 vite-node IPC crash 讓 /admin/* 回 500
+        （prod build 同路徑 200）。整輪 2.7 分 → 45 秒
+  - [x] 加拍照前健全性檢查：第一版 10 張「全過」卻拍到 500 頁 / boot splash
+  - [x] 司機端預先授權定位（否則整張只剩「需要位置權限」彈窗）
+  - [x] 擋掉第三方請求（GTM/Clarity/Maps）；WebKit 對它們一律回 SSL error
+  - [x] 路由修正：無 `/vehicles` 列表頁 → 改 `/home`；`/admin/settings` 呼叫 20+ API
+        無法用萬用 mock → 改 `/admin/drivers` + `/admin/audit-logs`
 
 ### token 層
 
@@ -44,18 +50,19 @@
 
 ### 色票換裝（**四處**同步，缺一乘客端會被蓋回舊色）
 
-- [ ] **W0.7** `_theme-colors.css`（改）
-  - [ ] 12 個 `--da-*` 換精品調值（對照 design.md D1）
-  - [ ] `--da-gray-light` 用 `#868073` 而非 `#A6A198`（對比度；見 design.md D7c）
-  - [ ] `--da-glass-*` 三個 rgba 一併改為古銅／縞黑基底，否則 86 處玻璃卡會殘留琥珀邊
-  - [ ] **移除 `:root.dark` 整段死碼**
-  - [ ] 刪掉檔頭「要記得去 scss/_colors.scss 添加」誤導註解
-- [ ] **W0.7b** `tests/e2e/auth/fixtures.ts`（改）— `/nuxt-api/config/theme` mock 的 12 色同步
-  - [ ] **必須在視覺基線拍完之後才改**，否則乘客端基線是新舊混合（W0a 實作時差點犯）
-- [ ] **W0.8** `shared/site-theme.ts`（改）
-  - [ ] `DEFAULT_TOKENS` 同步為新 12 色
-  - [ ] `christmas` / `lunar-new-year` / `summer` 三包色值依新底色重新校準
-  - [ ] `shared/site-theme.spec.ts` 既有測試須續綠
+- [x] **W0.7** `_theme-colors.css`（改）
+  - [x] 12 個 `--da-*` 換精品調值（對照 design.md D1）
+  - [x] `--da-gray-light` 用 `#868073` 而非 `#A6A198`（對比度；見 design.md D7c）
+  - [x] `--da-glass-*` 三個 rgba 一併改為古銅／縞黑基底，否則 86 處玻璃卡會殘留琥珀邊
+  - [x] **移除 `:root.dark` 整段死碼**
+  - [x] 刪掉檔頭「要記得去 scss/_colors.scss 添加」誤導註解
+- [x] **W0.7b** `tests/e2e/auth/fixtures.ts`（改）— `/nuxt-api/config/theme` mock 的 12 色同步
+  - [x] **必須在視覺基線拍完之後才改**，否則乘客端基線是新舊混合（W0a 實作時差點犯）
+- [x] **W0.8** `shared/site-theme.ts`（改）
+  - [x] `DEFAULT_TOKENS` 同步為新 12 色
+  - [x] 三個節日包依新底色重新校準（聖誕深酒紅 8.52:1 / 春節深紅 7.56:1 / 夏日深松綠 6.55:1）
+  - [x] `shared/site-theme.spec.ts`：3 個斷言把舊色碼寫死（`toBe('#D4860A')`），換色即紅。
+        但它們要測的是 fallback 行為而非特定色碼 → 改成從 seed 推導，日後換色票不再誤報
 - [x] **W0.9a** `scripts/migrate-site-themes.mjs`（新）+ `pnpm migrate:site-themes`
   - [x] 照既有 `.mjs` + `--dry` + 從 `.env.dev` 讀 service account 的慣例
   - [x] 出手前 hex 自檢（非法值會被 `resolveTheme()` 靜默忽略）

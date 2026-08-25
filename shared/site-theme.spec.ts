@@ -86,13 +86,20 @@ describe('DEFAULT_SITE_THEMES', () => {
   });
 });
 
+// 從 seed 推導期望值，而不是把色碼寫死。
+// 原本三個斷言直接寫 '#D4860A' / '#2E2B25'，換色票時全數失敗 —— 但它們要測的是
+// 「fallback 有沒有生效」，不是「主色剛好是哪個色碼」。改成推導後，色票再換也不會誤報。
+const DEFAULT_THEME = DEFAULT_SITE_THEMES.find((t) => t.isDefault)!;
+const CHRISTMAS = DEFAULT_SITE_THEMES.find((t) => t.id === 'christmas')!;
+
 describe('resolveTheme', () => {
   it('default 疊 active：未覆寫的 key 取 default 值', () => {
     const resolved = resolveTheme(DEFAULT_SITE_THEMES, 'christmas');
     // christmas 未覆寫 da-dark-mid → 取 default
-    expect(resolved.tokens['da-dark-mid']).toBe('#2E2B25');
+    expect(CHRISTMAS.tokens['da-dark-mid'], 'christmas 不該覆寫 da-dark-mid，否則本測試失去意義').toBeUndefined();
+    expect(resolved.tokens['da-dark-mid']).toBe(DEFAULT_THEME.tokens['da-dark-mid']);
     // christmas 有覆寫 da-amber
-    expect(resolved.tokens['da-amber']).toBe('#C1121F');
+    expect(resolved.tokens['da-amber']).toBe(CHRISTMAS.tokens['da-amber']);
     expect(resolved.activeThemeId).toBe('christmas');
   });
 
@@ -106,7 +113,7 @@ describe('resolveTheme', () => {
   it('active 不存在 → fallback default', () => {
     const resolved = resolveTheme(DEFAULT_SITE_THEMES, 'no-such-theme');
     expect(resolved.activeThemeId).toBe('default');
-    expect(resolved.tokens['da-amber']).toBe('#D4860A');
+    expect(resolved.tokens['da-amber']).toBe(DEFAULT_THEME.tokens['da-amber']);
   });
 
   it('active 存在但 enabled=false → fallback default', () => {
@@ -131,7 +138,7 @@ describe('resolveTheme', () => {
       },
     ];
     const resolved = resolveTheme(themes, 'broken');
-    expect(resolved.tokens['da-amber']).toBe('#D4860A'); // 回退 default
+    expect(resolved.tokens['da-amber']).toBe(DEFAULT_THEME.tokens['da-amber']); // 回退 default
   });
 
   it('hero 缺項回退對應 token', () => {

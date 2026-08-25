@@ -92,24 +92,30 @@ export const isSafeThemeImageUrl = (v: unknown): v is string =>
   typeof v === 'string' && (SAFE_LOCAL_IMG_RE.test(v) || SAFE_HTTPS_IMG_RE.test(v));
 
 // ── 預設調色盤（== _theme-colors.css 的 --da-*）────────────────────────────────
+// ⚠ 必須與 app/assets/styles/css-class/_theme-colors.css 的 --da-* 逐字一致。
+// 這裡是乘客端實際吃到的值（經 resolveTheme 注入 [data-da-theme]）；不同步的話，
+// admin/driver 會變色而乘客端被舊色蓋回去 —— 而且「admin 變了」看起來像成功。
+// 另兩個同步點：prod Firestore site_themes（跑 pnpm migrate:site-themes）、
+// tests/e2e/auth/fixtures.ts 的 /nuxt-api/config/theme mock。
 const DEFAULT_TOKENS: Record<DaTokenKey, string> = {
-  'da-cream': '#F5F2EC',
-  'da-off-white': '#FAF8F4',
-  'da-amber': '#D4860A',
-  'da-amber-light': '#F0A830',
-  'da-amber-pale': '#FDF3DC',
-  'da-dark': '#1A1814',
-  'da-dark-mid': '#2E2B25',
-  'da-gray': '#6B6560',
-  'da-gray-light': '#B8B3AC',
-  'da-gray-pale': '#E8E4DC',
-  'da-stripe-yellow': '#F5C842',
-  'da-stripe-dark': '#2A2620',
+  'da-cream': '#EAE7E0',
+  'da-off-white': '#F5F3EE',
+  'da-amber': '#7E6330',
+  'da-amber-light': '#C9A961',
+  'da-amber-pale': '#F0E8D6',
+  'da-dark': '#1A1917',
+  'da-dark-mid': '#26241F',
+  'da-gray': '#6D6A62',
+  'da-gray-light': '#868073',
+  'da-gray-pale': '#D6D1C7',
+  'da-stripe-yellow': '#B79A5E',
+  'da-stripe-dark': '#26241F',
 };
 
 // ── Seed 主題包（Claude 定色，Brain 審）──────────────────────────────────────
-// default 攜帶完整 tokens 作為合併底層；節日包只覆寫需變動的 key，文字色（da-dark）
-// 一律保留深色確保對比可讀。Hero 圖 W2 補（bgImage 先留空 → 首頁維持純色）。
+// default 攜帶完整 tokens 作為合併底層；節日包只覆寫需變動的 key。色值已於 2026-08-25
+// 依精品調底色（骨白 #EAE7E0）重新校準 —— 舊值是配著米白 + 琥珀定的，換底後會失衡。
+// 文字色（da-dark）一律保留深色確保對比可讀。
 export const DEFAULT_SITE_THEMES: SiteTheme[] = [
   {
     id: 'default',
@@ -124,15 +130,15 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
     id: 'christmas',
     name: { zh: '聖誕限定', en: 'Christmas', ja: 'クリスマス' },
     tokens: {
-      'da-amber': '#C1121F',
-      'da-amber-light': '#E63946',
-      'da-amber-pale': '#FBE6E6',
-      'da-cream': '#F4F1EA',
-      'da-off-white': '#F7F5F0',
-      'da-stripe-yellow': '#1E6B3A',
-      'da-stripe-dark': '#9B1C1C',
+      'da-amber': '#7A2B2B',        // 深酒紅（對其 off-white 8.52:1）
+      'da-amber-light': '#B5553F',
+      'da-amber-pale': '#F3E3DE',
+      'da-cream': '#E9E6DF',
+      'da-off-white': '#F5F2ED',
+      'da-stripe-yellow': '#2E4F3C', // 深常綠
+      'da-stripe-dark': '#6E2020',
     },
-    hero: { stripeYellow: '#1E6B3A', stripeDark: '#9B1C1C', tagColor: '#C1121F' },
+    hero: { stripeYellow: '#2E4F3C', stripeDark: '#6E2020', tagColor: '#7A2B2B' },
     enabled: true,
     sortOrder: 1,
     isDefault: false,
@@ -141,15 +147,15 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
     id: 'lunar-new-year',
     name: { zh: '農曆春節', en: 'Lunar New Year', ja: '旧正月' },
     tokens: {
-      'da-amber': '#D4AF37',
-      'da-amber-light': '#E8C860',
-      'da-amber-pale': '#FBF3D9',
-      'da-cream': '#F7ECEA',
-      'da-off-white': '#FDF6F4',
-      'da-stripe-yellow': '#E8C860',
-      'da-stripe-dark': '#A4161A',
+      'da-amber': '#8C2B2B',        // 深紅（對其 off-white 7.56:1）
+      'da-amber-light': '#C9A961',  // 金
+      'da-amber-pale': '#F5E9DC',
+      'da-cream': '#EDE6DE',
+      'da-off-white': '#F7F2EC',
+      'da-stripe-yellow': '#B08D4A',
+      'da-stripe-dark': '#7A1F1F',
     },
-    hero: { stripeYellow: '#E8C860', stripeDark: '#A4161A', tagColor: '#C0392B' },
+    hero: { stripeYellow: '#B08D4A', stripeDark: '#7A1F1F', tagColor: '#8C2B2B' },
     enabled: true,
     sortOrder: 2,
     isDefault: false,
@@ -158,16 +164,16 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
     id: 'summer',
     name: { zh: '夏日海洋', en: 'Summer', ja: 'サマー' },
     tokens: {
-      'da-amber': '#E9724C',
-      'da-amber-light': '#F4A261',
-      'da-amber-pale': '#FCEBDD',
-      'da-cream': '#EAF6F5',
-      'da-off-white': '#F2FAF9',
-      'da-dark': '#22333B',
-      'da-stripe-yellow': '#2A9D8F',
-      'da-stripe-dark': '#264653',
+      'da-amber': '#2F6156',        // 深松綠（對其 off-white 6.55:1）
+      'da-amber-light': '#5E9C8C',
+      'da-amber-pale': '#E2EEEA',
+      'da-cream': '#E7ECEA',
+      'da-off-white': '#F3F7F5',
+      'da-dark': '#17201D',
+      'da-stripe-yellow': '#3E7F70',
+      'da-stripe-dark': '#1E3A34',
     },
-    hero: { stripeYellow: '#2A9D8F', stripeDark: '#264653', tagColor: '#2A9D8F' },
+    hero: { stripeYellow: '#3E7F70', stripeDark: '#1E3A34', tagColor: '#2F6156' },
     enabled: true,
     sortOrder: 3,
     isDefault: false,
