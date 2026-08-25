@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:auth": "playwright test tests/e2e/auth/",
     "migrate:driver-app": "node scripts/migrate-driver-application-to-drivers.mjs",
-    "migrate:dispatch-visibility": "node scripts/backfill-dispatch-visibility.mjs"
+    "migrate:dispatch-visibility": "node scripts/backfill-dispatch-visibility.mjs",
+    "migrate:site-themes": "node scripts/migrate-site-themes.mjs"
   },
   "dependencies": {
     "@line/liff": "^2.28.0",

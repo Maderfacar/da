@@ -1,4 +1,5 @@
 @import './_init.css';
 @import './_theme-colors.css';
+@import './_design-tokens.css';
 @import './_vue-transition.css';
 @import './element-plus/index.css'

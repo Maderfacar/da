@@ -185,11 +185,26 @@ export default defineNuxtConfig({
     // provider 用 bunny（Bunny Fonts，Google Fonts 隱私友善鏡像）而非 google：
     // @nuxt/fonts 於 build 時下載字體自架，原走 fonts.gstatic.com 會時不時對 CJK woff2 回 404
     // → build fail → Vercel 部署掛。bunny 同一批字體、視覺不變，拔掉對 gstatic 的建置期依賴。
+    //
+    // processCSSVariables：字族改由 CSS 變數（--ff-display 等）持有後，@nuxt/fonts
+    // 預設只掃 `font-family:` 屬性，看不到寫在 custom property 裡的字體名 →
+    // 不會產生 @font-face、不會下載，畫面靜默 fallback。實測確認（W0.1）。
+    experimental: {
+      processCSSVariables: true,
+    },
     families: [
+      // 精品調字族（--ff-display / --ff-ui，見 _design-tokens.css）
+      // 中文不加襯線：拉丁展示字走 Cormorant、中文標題落回 Noto Sans TC 700
+      // （Noto Serif TC 是完整 CJK 字重，payload 代價不值得）
+      { name: 'Cormorant Garamond', provider: 'bunny', weights: [300, 400, 500, 600] },
+      { name: 'Jost', provider: 'bunny', weights: [300, 400, 500, 600] },
+      // Noto Sans TC 字重 W0a 不動（維持「只有顏色變」以利截圖歸因）；
+      // W0b 再依實際使用調整（現況：600 用了 56 處卻未載，900 僅 error.vue 1 處）
+      { name: 'Noto Sans TC', provider: 'bunny', weights: [300, 400, 700, 900] },
+      // 舊字族：W0b 字體換裝完成、確認零引用後移除
       { name: 'Bebas Neue', provider: 'bunny', weights: [400] },
       { name: 'Barlow', provider: 'bunny', weights: [300, 400, 500, 700, 900] },
       { name: 'Barlow Condensed', provider: 'bunny', weights: [400, 700, 900] },
-      { name: 'Noto Sans TC', provider: 'bunny', weights: [300, 400, 700, 900] },
     ]
   },
 
@@ -372,6 +387,7 @@ export default defineNuxtConfig({
           additionalData: `
             @use '@/assets/styles/scss-tool/config.scss' as *;
             @use '@/assets/styles/scss-tool/colors.scss' as *;
+            @use '@/assets/styles/scss-tool/tokens.scss' as *;
             @use '@/assets/styles/scss-tool/fn.scss' as *;
             @use '@/assets/styles/scss-tool/mixin.scss' as *;
             @use '@/assets/styles/scss-tool/font-size.scss' as *;

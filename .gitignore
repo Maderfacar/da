@@ -53,3 +53,6 @@ test-results/
 
 # Fare V2 geo build intermediates（OSM pbf / 原始 GeoJSON 快取，不 commit）
 scripts/.geo-build/
+
+# Playwright HTML 報告（本機產物，不 commit；test-results/ 見上方）
+playwright-report/

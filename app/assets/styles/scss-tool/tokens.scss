@@ -1,0 +1,64 @@
+// ==========================================================================
+// Design Tokens — SCSS 別名層
+// openspec/changes/2026-08-25-design-token-foundation
+//
+// 真相來源是 css-class/_design-tokens.css。這裡**只做轉指，不得自帶字面值**。
+// 存在理由：全站 26,593 行 SCSS 已習慣 `$var` 語法，提供別名可漸進遷移，
+// 不必為了用 token 而先改寫語法。
+//
+// 限制：值為 `var(--x)` 的 SCSS 變數不能餵給 SCSS 色彩函式（lighten / darken）
+//       或參與 SCSS 數學運算。需要那些的地方請直接用 CSS 的 color-mix() / calc()。
+// ==========================================================================
+
+// ── 表面 ─────────────────────────────────────────────────
+$surface-ground: var(--surface-ground);
+$surface-raised: var(--surface-raised);
+$surface-sunk:   var(--surface-sunk);
+$hairline:       var(--hairline);
+
+// ── 文字 ─────────────────────────────────────────────────
+$ink:      var(--ink);
+$ink-2:    var(--ink-2);
+$ink-soft: var(--ink-soft);
+$ink-mute: var(--ink-mute);
+
+// ── 主色 ─────────────────────────────────────────────────
+$accent:      var(--accent);
+$accent-lit:  var(--accent-lit);
+$accent-wash: var(--accent-wash);
+
+// ── 字族 ─────────────────────────────────────────────────
+// 取代散在 46 個檔的本地 $font-display / $font-condensed / $font-body 宣告
+$ff-display: var(--ff-display);
+$ff-ui:      var(--ff-ui);
+$ff-label:   var(--ff-label);
+$ff-data:    var(--ff-data);
+
+// ── 圓角 ─────────────────────────────────────────────────
+$r-pill:  var(--r-pill);
+$r-round: var(--r-round);
+$r-tile:  var(--r-tile);
+$r-card:  var(--r-card);
+$r-sm:    var(--r-sm);
+
+// ── 陰影 ─────────────────────────────────────────────────
+$shadow-none: var(--shadow-none);
+$shadow-soft: var(--shadow-soft);
+$shadow-lift: var(--shadow-lift);
+
+// ── z-index ──────────────────────────────────────────────
+$z-base:    var(--z-base);
+$z-sticky:  var(--z-sticky);
+$z-header:  var(--z-header);
+$z-overlay: var(--z-overlay);
+$z-modal:   var(--z-modal);
+$z-toast:   var(--z-toast);
+
+// ── 動效 ─────────────────────────────────────────────────
+$dur-fast: var(--dur-fast);
+$dur-base: var(--dur-base);
+$dur-slow: var(--dur-slow);
+$ease-out: var(--ease-out);
+
+// ── 觸控 ─────────────────────────────────────────────────
+$tap: var(--tap);

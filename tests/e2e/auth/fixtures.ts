@@ -83,6 +83,10 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
     data: {
       activeThemeId: 'default',
       name: { zh: '經典（預設）', en: 'Classic (Default)', ja: 'クラシック（既定）' },
+      // 色值必須與 shared/site-theme.ts 的 DEFAULT_TOKENS 一致。
+      // 這是色票的**第四個同步點**（另三個：_theme-colors.css / shared/site-theme.ts /
+      // prod Firestore site_themes）。不同步的話，乘客端 e2e 與視覺基線會拍到舊色，
+      // 而 admin/driver 拍到新色 —— 是 fixture 造成的假象，不是真的破圖。
       tokens: {
         'da-cream': '#F5F2EC', 'da-off-white': '#FAF8F4', 'da-amber': '#D4860A',
         'da-amber-light': '#F0A830', 'da-amber-pale': '#FDF3DC', 'da-dark': '#1A1814',
@@ -106,6 +110,19 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
   }),
   '/nuxt-api/driver/announcements': () => ({
     data: [], status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  // Admin 總覽：頁面直接讀 summary.orderCounts.pendingConfirm，萬用 { data: {} } 會炸
+  // （TypeError: Cannot read properties of undefined）。形狀對齊
+  // app/protocol/fetch-api/api/admin/dashboard/type.d.ts 的 DashboardSummaryRes。
+  '/nuxt-api/admin/dashboard/summary': () => ({
+    data: {
+      passengers: { count: 0, list: [] },
+      drivers: { count: 0, list: [] },
+      orderCounts: { pendingConfirm: 0, inProgress: 0 },
+      discountCodes: [],
+      generatedAt: '2026-01-01T00:00:00.000Z',
+    },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   }),
   '/nuxt-api/admin/2fa/session-check': (identity) => ({
     data: {},
