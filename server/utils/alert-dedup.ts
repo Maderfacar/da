@@ -128,3 +128,17 @@ export function shouldPersistDispatch(
   if (!shouldNotify) return false;
   return summarizeNotifyResults(results).delivered;
 }
+
+/**
+ * 去重狀態的存放路徑，**依掃描視窗長度分開**。
+ *
+ * 為什麼不能共用一份：同一批事件在 3h 視窗與 24h 視窗下涵蓋的筆數不同，
+ * 指紋必然不同。共用一份狀態時，每日 cron（24h）寫入的指紋會讓下一次每小時
+ * workflow（3h）判定為「內容有變」而發送，反之亦然 —— 兩個排程互相把對方的
+ * 去重狀態刷掉，降頻形同失效。2026-08-25 的實例：09:05 每日告警之後，
+ * 09:48 立刻又收到一封 3h 版。
+ */
+export function alertStateDocPath(windowHours: number): string {
+  const h = Number.isFinite(windowHours) && windowHours > 0 ? Math.round(windowHours) : 3;
+  return `system_state/alert-auth-health-${h}h`;
+}

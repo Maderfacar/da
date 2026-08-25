@@ -4,6 +4,7 @@ import {
   decideAlertDispatch,
   summarizeNotifyResults,
   shouldPersistDispatch,
+  alertStateDocPath,
   ALERT_REMINDER_MS,
 } from './alert-dedup';
 
@@ -167,5 +168,22 @@ describe('buildAlertFingerprint — authHealth 越界也要進指紋', () => {
 
   it('沒有任何越界 → 與有越界的指紋不同', () => {
     expect(buildAlertFingerprint([], [], [])).not.toBe(buildAlertFingerprint(['chunkError'], [], []));
+  });
+});
+
+describe('alertStateDocPath', () => {
+  it('不同視窗長度用不同狀態 doc（否則兩個排程互相刷掉對方的去重）', () => {
+    expect(alertStateDocPath(3)).not.toBe(alertStateDocPath(24));
+  });
+
+  it('同一視窗長度路徑穩定', () => {
+    expect(alertStateDocPath(3)).toBe(alertStateDocPath(3));
+    expect(alertStateDocPath(3)).toBe('system_state/alert-auth-health-3h');
+  });
+
+  it('非法值退回 3h，不產生 NaN 路徑', () => {
+    expect(alertStateDocPath(Number.NaN)).toBe('system_state/alert-auth-health-3h');
+    expect(alertStateDocPath(0)).toBe('system_state/alert-auth-health-3h');
+    expect(alertStateDocPath(-5)).toBe('system_state/alert-auth-health-3h');
   });
 });

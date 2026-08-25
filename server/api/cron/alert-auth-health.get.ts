@@ -33,13 +33,14 @@ import {
   decideAlertDispatch,
   summarizeNotifyResults,
   shouldPersistDispatch,
+  alertStateDocPath,
   type AlertDispatchState,
 } from '@@/utils/alert-dedup';
 
 const COLLECTION = 'client_error_logs';
 const MAX_DOCS = 5000; // 安全上限（常態約數十筆/日，遠低於此）避免 timeout
-/** 去重狀態存放處：記錄上次推播的內容指紋與時間 */
-const STATE_DOC = 'system_state/alert-auth-health';
+// 去重狀態存放處由 alertStateDocPath() 依視窗長度決定（3h / 24h 各一份）。
+// 舊的 system_state/alert-auth-health 不再使用，留著無害。
 
 /**
  * 統計視窗（小時）。Vercel 每日 cron 用預設 24；GitHub Actions 每小時排程帶 ?hours=3
@@ -116,7 +117,7 @@ export default defineEventHandler(async (event) => {
     // authHealth 越界種類也要進指紋，否則「chunk 錯誤」與「roles 慢」共用 e[]r[]，
     // 後者會被前一天的告警當成重複而抑制（兩者是完全不同的故障）。
     const fingerprint = buildAlertFingerprint(breaches.map((b) => b.key), loginBreaches, unknownEvents);
-    const stateRef = db.doc(STATE_DOC);
+    const stateRef = db.doc(alertStateDocPath(windowHours));
     let prevState: AlertDispatchState | null = null;
     try {
       const snapState = await stateRef.get();
