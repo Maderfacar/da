@@ -190,7 +190,7 @@ $amber: #d4860a;
   min-width: 0;
 }
 .PageDriverDashboard__oa-cta-text strong {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -208,7 +208,7 @@ $amber: #d4860a;
   background: #06c755;
   color: #fff;
   border-radius: 100px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -238,7 +238,7 @@ $amber: #d4860a;
   margin-bottom: 32px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -251,7 +251,7 @@ $amber: #d4860a;
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 40px;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -259,7 +259,7 @@ $amber: #d4860a;
   }
 
   &-name {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 18px;
     font-weight: 700;
     color: $amber;
@@ -267,7 +267,7 @@ $amber: #d4860a;
   }
 
   &-date {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.15em;
     color: rgba(255, 255, 255, 0.3);
@@ -296,7 +296,7 @@ $amber: #d4860a;
 }
 
 .PageDriverDashboard__status-text {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.8);
@@ -304,7 +304,7 @@ $amber: #d4860a;
 }
 
 .PageDriverDashboard__status-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -341,7 +341,7 @@ $amber: #d4860a;
   padding: 14px 12px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -350,14 +350,14 @@ $amber: #d4860a;
   }
 
   &-val {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 24px;
     color: #fff;
     line-height: 1;
   }
 
   &-unit {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     color: rgba(255, 255, 255, 0.3);
     margin-top: 2px;
@@ -399,14 +399,14 @@ $amber: #d4860a;
     gap: 2px;
 
     span {
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: var(--ff-display);
       font-size: 20px;
       color: #fff;
       letter-spacing: 0.05em;
     }
 
     small {
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--ff-label);
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.15em;
@@ -430,7 +430,7 @@ $amber: #d4860a;
   margin-top: 20px;
 
   p {
-    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: rgba(255, 255, 255, 0.35);
     line-height: 1.8;

@@ -16,7 +16,7 @@
 //   - Firestore field 改名：oilPerKm → oilMonthly、tollPerKm → tollMonthly
 //   - load 向下兼容：先讀新欄位，找不到再讀舊欄位 × 預估每月里程（舊值 × 25 工作日 × 250 公里），
 //     或乾脆 fallback 為 0 讓 driver 重新輸入（採後者，避免錯誤推估）
-//   - 樣式改為深色 + amber + Barlow Condensed，對齊 driver/dashboard / driver/profile 設計
+//   - 樣式改為深色 + amber + 標籤字（--ff-label），對齊 driver/dashboard / driver/profile 設計
 //
 // 計算邏輯（P33 後）：
 //   monthlyFixed = 車貸 + 保險 + 保養 + 停車 + 勞健保
@@ -318,7 +318,7 @@ $amber: #d4860a;
   margin-bottom: 28px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -331,7 +331,7 @@ $amber: #d4860a;
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 40px;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -339,7 +339,7 @@ $amber: #d4860a;
   }
 
   &-sub {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.45);
@@ -357,7 +357,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__section-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -366,7 +366,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__heading {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.05em;
   color: #fff;
@@ -374,7 +374,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__heading-sub {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.35);
@@ -410,7 +410,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__stat-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -418,7 +418,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__stat-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 28px;
   color: #fff;
   line-height: 1;
@@ -429,7 +429,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__stat-unit {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.45);
@@ -464,7 +464,7 @@ $amber: #d4860a;
   min-width: 0;
 
   span {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -472,7 +472,7 @@ $amber: #d4860a;
   }
 
   small {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     letter-spacing: 0.15em;
     color: rgba(255, 255, 255, 0.3);
@@ -486,7 +486,7 @@ $amber: #d4860a;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.3);
   color: #fff;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -511,7 +511,7 @@ $amber: #d4860a;
   align-items: center;
   padding: 11px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
 
   &:last-child { border-bottom: none; }
@@ -561,7 +561,7 @@ $amber: #d4860a;
   border: 1.5px solid rgba($amber, 0.6);
   background: rgba($amber, 0.15);
   color: #f5c842;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -574,7 +574,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__save-hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.35);

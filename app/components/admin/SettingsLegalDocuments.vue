@@ -177,7 +177,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__tab {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -207,7 +207,7 @@ $muted: rgba(255, 255, 255, 0.5);
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
 }
@@ -230,7 +230,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -243,7 +243,7 @@ $muted: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.04);
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   outline: none;
   &:focus { border-color: rgba(212, 134, 10, 0.55); }
@@ -258,7 +258,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   letter-spacing: 0.04em;
@@ -273,7 +273,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -292,7 +292,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__public-hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
 }

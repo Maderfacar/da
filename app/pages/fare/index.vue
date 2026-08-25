@@ -152,9 +152,6 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageFare {
   background: var(--da-off-white);
@@ -168,7 +165,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageFare__watermark {
   position: fixed;
   top: 80px; right: -10px;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 100px;
   color: var(--da-dark);
   opacity: 0.04;
@@ -194,7 +191,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__section-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -213,7 +210,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__section-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -228,7 +225,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 420px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 // ── 分隔線 ────────────────────────────────────────────────
@@ -264,7 +261,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(255, 255, 255, 0.92);
   color: var(--da-dark);
   font-size: 22px;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   line-height: 1;
   cursor: pointer;
   display: flex;
@@ -352,7 +349,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
@@ -361,7 +358,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--da-gray);
@@ -372,7 +369,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   color: var(--da-gray);
 
@@ -386,7 +383,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-fare {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   color: var(--da-gray);
   display: flex;
@@ -397,7 +394,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__vehicle-tagline {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.4;
   color: var(--da-gray);
@@ -421,7 +418,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__engine-num {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 14px;
   letter-spacing: 0.2em;
   color: var(--da-amber);
@@ -429,7 +426,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__engine-k {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 18px;
   font-weight: 700;
   color: var(--da-dark);
@@ -439,7 +436,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__engine-v {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
@@ -456,14 +453,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFare__cta-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   color: var(--da-cream);
   letter-spacing: 0.04em;
 }
 
 .PageFare__cta-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(250,248,244,0.6);
   margin: 8px 0 20px;
@@ -476,7 +473,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 14px 28px;
   background: var(--da-amber);
   color: var(--da-dark);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;

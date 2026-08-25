@@ -198,13 +198,12 @@ export default defineNuxtConfig({
       // （Noto Serif TC 是完整 CJK 字重，payload 代價不值得）
       { name: 'Cormorant Garamond', provider: 'bunny', weights: [300, 400, 500, 600] },
       { name: 'Jost', provider: 'bunny', weights: [300, 400, 500, 600] },
-      // Noto Sans TC 字重 W0a 不動（維持「只有顏色變」以利截圖歸因）；
-      // W0b 再依實際使用調整（現況：600 用了 56 處卻未載，900 僅 error.vue 1 處）
+      // 中文字重不動（CJK 子集是 payload 大頭，加一個字重就是幾百 KB）。
+      // 已知缺口：站上有 56 處對中文用 font-weight 600、未載 → 瀏覽器合成偽粗體。
+      // 要不要補 500/600 留給後續階段，先量 payload 再決定。
       { name: 'Noto Sans TC', provider: 'bunny', weights: [300, 400, 700, 900] },
-      // 舊字族：W0b 字體換裝完成、確認零引用後移除
-      { name: 'Bebas Neue', provider: 'bunny', weights: [400] },
-      { name: 'Barlow', provider: 'bunny', weights: [300, 400, 500, 700, 900] },
-      { name: 'Barlow Condensed', provider: 'bunny', weights: [400, 700, 900] },
+      // Bebas Neue / Barlow / Barlow Condensed 已於 W0b 全站零引用後移除。
+      // 別加回來 —— 字族只能從 _design-tokens.css 的 --ff-* 進來。
     ]
   },
 
@@ -386,7 +385,6 @@ export default defineNuxtConfig({
           silenceDeprecations: ['legacy-js-api'],
           additionalData: `
             @use '@/assets/styles/scss-tool/config.scss' as *;
-            @use '@/assets/styles/scss-tool/colors.scss' as *;
             @use '@/assets/styles/scss-tool/tokens.scss' as *;
             @use '@/assets/styles/scss-tool/fn.scss' as *;
             @use '@/assets/styles/scss-tool/mixin.scss' as *;

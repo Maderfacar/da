@@ -512,7 +512,7 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: stretch;
   justify-content: center;
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
 }
 
 .OpenDialogAnnouncementEdit__mask {
@@ -547,7 +547,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .OpenDialogAnnouncementEdit__headerLabel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -559,7 +559,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .OpenDialogAnnouncementEdit__headerTitle {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.04em;
   margin: 0;
@@ -579,7 +579,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid $border;
   background: $surface;
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -617,7 +617,7 @@ $muted: rgba(255, 255, 255, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.16em;
   color: $muted;
@@ -660,7 +660,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit__label {
   display: block;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -690,7 +690,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit__counter {
   text-align: right;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: $muted;
   margin-top: 4px;
@@ -717,7 +717,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .OpenDialogAnnouncementEdit__coverSubHint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: $muted;
   letter-spacing: 0.08em;
@@ -746,7 +746,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: none;
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -774,7 +774,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid $border;
   background: $surface;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -834,7 +834,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid transparent;
   background: $surface;
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

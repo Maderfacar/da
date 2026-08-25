@@ -592,7 +592,7 @@ $danger: #f87171;
   margin-bottom: 24px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -605,7 +605,7 @@ $danger: #f87171;
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
@@ -642,7 +642,7 @@ $danger: #f87171;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 22px;
   font-weight: 700;
   color: $amber;
@@ -651,7 +651,7 @@ $danger: #f87171;
 .PageDriverProfile__hero-info { flex: 1; min-width: 0; }
 
 .PageDriverProfile__name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
   color: #fff;
@@ -659,7 +659,7 @@ $danger: #f87171;
 }
 
 .PageDriverProfile__uid {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   margin-top: 2px;
@@ -686,7 +686,7 @@ $danger: #f87171;
   padding: 12px 14px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -695,7 +695,7 @@ $danger: #f87171;
   }
 
   &-val {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 20px;
     color: #fff;
     line-height: 1;
@@ -710,7 +710,7 @@ $danger: #f87171;
   margin-bottom: 14px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -733,13 +733,13 @@ $danger: #f87171;
   &:last-child { border-bottom: none; }
 
   &-key {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     color: $muted;
   }
 
   &-val {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.8);
@@ -758,7 +758,7 @@ $danger: #f87171;
   border: 1px solid rgba($amber, 0.4);
   background: rgba($amber, 0.08);
   color: $amber;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -779,7 +779,7 @@ $danger: #f87171;
   }
   :deep(.el-input__inner) {
     color: #fff;
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
   }
 }
 
@@ -787,7 +787,7 @@ $danger: #f87171;
 .PageDriverProfile__row-cancel {
   padding: 6px 10px;
   border-radius: 8px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -837,7 +837,7 @@ $danger: #f87171;
 }
 
 .PageDriverProfile__doc-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -863,13 +863,13 @@ $danger: #f87171;
 }
 
 .PageDriverProfile__doc-pdf {
-  font-family: 'Barlow', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: rgba(255, 255, 255, 0.65);
 }
 
 .PageDriverProfile__doc-empty {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: $muted;
@@ -887,7 +887,7 @@ $danger: #f87171;
   }
 
   &-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -897,7 +897,7 @@ $danger: #f87171;
   &.is-rejected &-title { color: $danger; }
 
   &-sub {
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 10px;
     color: rgba(255, 255, 255, 0.55);
     margin-top: 2px;
@@ -910,7 +910,7 @@ $danger: #f87171;
   border: 1px solid rgba($amber, 0.4);
   background: rgba($amber, 0.08);
   color: $amber;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;

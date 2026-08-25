@@ -1374,7 +1374,7 @@ $rose: #f0556d;
   margin-bottom: 24px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -1387,7 +1387,7 @@ $rose: #f0556d;
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
@@ -1403,7 +1403,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__main-tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1442,7 +1442,7 @@ $rose: #f0556d;
   }
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -1454,7 +1454,7 @@ $rose: #f0556d;
   }
 
   &-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.7);
@@ -1471,7 +1471,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1495,7 +1495,7 @@ $rose: #f0556d;
 
 // ── 使用者清單 ────────────────────────────────────────────────────
 .PageAdminSettings__sub-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1534,7 +1534,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__user-name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
@@ -1546,7 +1546,7 @@ $rose: #f0556d;
 
 // P18：admin level 徽章
 .PageAdminSettings__level-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1588,7 +1588,7 @@ $rose: #f0556d;
 
 // ── 按鈕 ────────────────────────────────────────────────────────
 .PageAdminSettings__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1645,7 +1645,7 @@ $rose: #f0556d;
 
 // P34：細粒度權限 override 徽章 + 展開區
 .PageAdminSettings__perm-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1675,7 +1675,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__perm-head-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -1683,7 +1683,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__perm-head-hint {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   flex: 1;
@@ -1739,7 +1739,7 @@ $rose: #f0556d;
 .PageAdminSettings__perm-name {
   grid-column: 2;
   grid-row: 1;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
@@ -1748,7 +1748,7 @@ $rose: #f0556d;
 .PageAdminSettings__perm-hint {
   grid-column: 2;
   grid-row: 2;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.35);
   margin-top: 1px;
@@ -1770,7 +1770,7 @@ $rose: #f0556d;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   padding: 7px 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: #fff;
 
@@ -1781,14 +1781,14 @@ $rose: #f0556d;
 // ── 其他狀態 ─────────────────────────────────────────────────────
 .PageAdminSettings__loading {
   padding: 20px 16px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
 }
 
 .PageAdminSettings__empty {
   padding: 20px 16px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   text-align: center;
@@ -1804,7 +1804,7 @@ $rose: #f0556d;
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 24px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
   line-height: 1.6;
@@ -1839,7 +1839,7 @@ $rose: #f0556d;
   }
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
@@ -1851,7 +1851,7 @@ $rose: #f0556d;
   }
 
   &-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.7);
@@ -1876,7 +1876,7 @@ $rose: #f0556d;
   &-info { flex: 1; min-width: 0; }
 
   &-key {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.75);
@@ -1884,13 +1884,13 @@ $rose: #f0556d;
   }
 
   &-hint {
-    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: $muted;
   }
 
   &-val {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     color: rgba(255, 255, 255, 0.4);
     flex-shrink: 0;
@@ -1912,7 +1912,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-meta {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   padding: 10px 16px 0;
@@ -1933,7 +1933,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-block-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1944,7 +1944,7 @@ $rose: #f0556d;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
@@ -1988,7 +1988,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2008,7 +2008,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-subhead {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2018,7 +2018,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
@@ -2027,7 +2027,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-block-desc {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.62);
@@ -2040,7 +2040,7 @@ $rose: #f0556d;
   align-items: center;
   margin-left: 8px;
   padding: 2px 8px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -2091,7 +2091,7 @@ $rose: #f0556d;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.6);
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -2105,7 +2105,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-window-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   margin-bottom: 5px;
@@ -2125,7 +2125,7 @@ $rose: #f0556d;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(255, 255, 255, 0.6);
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -2151,7 +2151,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-error {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 200, 0, 0.85);
   background: rgba(255, 200, 0, 0.08);

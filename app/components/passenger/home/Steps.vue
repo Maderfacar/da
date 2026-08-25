@@ -30,9 +30,6 @@ section.PassengerHomeSteps
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomeSteps {
   padding: 72px 24px;
@@ -40,7 +37,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeSteps__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -60,7 +57,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeSteps__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -75,7 +72,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 .PassengerHomeSteps__list {
@@ -98,7 +95,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeSteps__no {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 44px;
   line-height: 1;
   color: var(--da-amber);
@@ -117,7 +114,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeSteps__step-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
   color: var(--da-dark);
@@ -126,7 +123,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeSteps__step-body {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
   color: var(--da-gray);

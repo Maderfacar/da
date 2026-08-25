@@ -70,7 +70,7 @@
 
 .el-form-item__label {
   font-size: var(--el-font-size-small) !important;
-  color: var(--gray-300) !important;
+  color: var(--ink-soft) !important;
 }
 
 .el-form-item--label-top .el-form-item__label {
@@ -105,7 +105,3 @@
   z-index: 90000 !important;
 }
 
-/* ----- 自定義按鈕 ----- */
-/* .el-button--aa {
-  background-color: var(--tertiary-600) !important;
-} */

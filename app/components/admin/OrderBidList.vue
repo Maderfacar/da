@@ -86,7 +86,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__empty {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   padding: 16px 0;
@@ -124,7 +124,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   color: $text;
@@ -134,7 +134,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__withdraw-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   padding: 2px 6px;
@@ -149,7 +149,7 @@ $muted: rgba(255, 255, 255, 0.45);
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
 }
@@ -172,7 +172,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__tag {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   padding: 2px 8px;
   border-radius: 100px;
@@ -182,13 +182,13 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__time {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: $muted;
 }
 
 .AdminOrderBidList__assign {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

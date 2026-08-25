@@ -17,7 +17,7 @@ teleport(to="body")
   z-index: 300;
   background: var(--da-dark);
   color: var(--da-cream);
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;

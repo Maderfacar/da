@@ -245,7 +245,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.5);
@@ -256,7 +256,7 @@ $border: rgba(255, 255, 255, 0.08);
 .SettingsSeasonalThemes__loading,
 .SettingsSeasonalThemes__empty {
   padding: 24px 16px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   text-align: center;
@@ -301,14 +301,14 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__card-zh {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.92);
 }
 
 .SettingsSeasonalThemes__card-id {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -327,7 +327,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -353,7 +353,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__card-sub {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: $muted;
@@ -380,7 +380,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__swatch-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.04em;
   color: $muted;
@@ -416,7 +416,7 @@ $border: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.3);
@@ -430,7 +430,7 @@ $border: rgba(255, 255, 255, 0.08);
   justify-content: center;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
 }
@@ -448,7 +448,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsSeasonalThemes__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;

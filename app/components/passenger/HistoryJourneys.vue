@@ -66,9 +66,6 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHistoryJourneys {
   background: var(--da-glass-bg);
@@ -82,7 +79,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -91,7 +88,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -99,7 +96,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__loading {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--da-gray);
@@ -130,7 +127,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__stat-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -138,7 +135,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__stat-val {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 24px;
   line-height: 1;
   color: var(--da-dark);
@@ -146,13 +143,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryJourneys__stat-unit {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: var(--da-gray);
 }
 
 .PassengerHistoryJourneys__hint {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--da-gray);

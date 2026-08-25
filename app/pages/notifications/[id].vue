@@ -106,9 +106,6 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 // Wave 3-P1：cream theme 對齊 booking 家族
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotificationDetail {
   min-height: 100svh;
@@ -130,7 +127,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--da-dark);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -176,7 +173,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageNotificationDetail__emptyIcon { font-size: 48px; margin-bottom: 16px; }
 
 .PageNotificationDetail__emptyText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: var(--da-gray);
 }
@@ -199,7 +196,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageNotificationDetail__title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 22px;
   font-weight: 700;
   color: var(--da-dark);
@@ -210,7 +207,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotificationDetail__time {
   display: block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--da-gray-light);
@@ -218,7 +215,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageNotificationDetail__body {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   color: var(--da-dark);
   line-height: 1.75;
@@ -256,7 +253,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border-radius: 100px;
   background: var(--da-amber);
   color: #fff;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;

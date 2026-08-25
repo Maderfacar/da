@@ -16,7 +16,7 @@ span.UiBadge(:class="`is-${variant}`")
 <style lang="scss" scoped>
 .UiBadge {
   display: inline-block;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -46,7 +46,7 @@ span.UiBadge(:class="`is-${variant}`")
 
 .UiBadge.is-error {
   background: rgba(238, 81, 81, 0.1);
-  color: var(--err);
+  color: var(--danger);
   border: 1px solid rgba(238, 81, 81, 0.25);
 }
 

@@ -338,7 +338,7 @@ $muted: rgba(255, 255, 255, 0.5);
   padding: 32px;
   text-align: center;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
 }
 
@@ -365,7 +365,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__item-code {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 18px;
   letter-spacing: 0.06em;
   color: $amber;
@@ -376,7 +376,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__source-tag {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
@@ -397,7 +397,7 @@ $muted: rgba(255, 255, 255, 0.5);
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   margin-top: 2px;
@@ -410,7 +410,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -432,7 +432,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__form-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -452,7 +452,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -469,7 +469,7 @@ $muted: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
@@ -479,7 +479,7 @@ $muted: rgba(255, 255, 255, 0.5);
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
@@ -492,7 +492,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

@@ -796,7 +796,7 @@ ElDialogPlus.OpenDialogImageSelect(
       @include fs(28px);
       border-radius: 10px;
       background-color: #fff ;
-      color: $primary;
+      color: var(--accent);
       opacity: 0.7;
     }
   }
@@ -820,7 +820,7 @@ ElDialogPlus.OpenDialogImageSelect(
     @include center;
     @include fs(28px);
     border-radius: 10px;
-    background: $primary;
+    background: var(--accent);
     color: white;
     opacity: 0.7;
   }
@@ -831,7 +831,7 @@ ElDialogPlus.OpenDialogImageSelect(
     @include center;
     @include fs(16px, bold);
     border-radius: 8px;
-    background: $primary;
+    background: var(--accent);
     color: white;
     opacity: 0.7;
     &[disabled="true"] {

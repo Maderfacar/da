@@ -60,7 +60,7 @@ teleport(to="body")
 }
 
 .UiModal__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 28px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -68,7 +68,7 @@ teleport(to="body")
 }
 
 .UiModal__body {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: var(--da-gray);
   line-height: 1.8;

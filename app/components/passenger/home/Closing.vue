@@ -26,9 +26,6 @@ section.PassengerHomeClosing
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomeClosing {
   padding: 72px 24px;
@@ -36,7 +33,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeClosing__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -56,7 +53,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeClosing__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -71,7 +68,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 .PassengerHomeClosing__actions {
@@ -86,7 +83,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   padding: 18px;
   background: var(--da-dark);
   color: var(--da-cream);
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.12em;
   border: none;
@@ -103,7 +100,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   padding: 16px;
   background: transparent;
   color: var(--da-dark);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.1em;

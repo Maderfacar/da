@@ -790,7 +790,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 .DialogLineRichmenuEdit__title {
   flex: 1;
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   display: flex;
@@ -799,7 +799,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__chan {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -818,7 +818,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 // P42：lang badge（與 chan badge 並列）
 .DialogLineRichmenuEdit__lang {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -871,7 +871,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__section-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -886,7 +886,7 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 4px;
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     color: rgba(0, 0, 0, 0.7);
@@ -897,7 +897,7 @@ $border: rgba(0, 0, 0, 0.1);
     padding: 8px 12px;
     border: 1px solid $border;
     border-radius: 8px;
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     width: 100%;
     background: white;
@@ -922,7 +922,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   letter-spacing: 0.05em;
@@ -968,7 +968,7 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 40px;
   text-align: center;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
 }
 
@@ -993,7 +993,7 @@ $border: rgba(0, 0, 0, 0.1);
     position: absolute;
     top: 2px;
     left: 4px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     color: white;
@@ -1071,7 +1071,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 // P44a：多選 hint banner
 .DialogLineRichmenuEdit__multi-hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1125,7 +1125,7 @@ $border: rgba(0, 0, 0, 0.1);
   margin-bottom: 10px;
 
   .idx {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -1144,7 +1144,7 @@ $border: rgba(0, 0, 0, 0.1);
     gap: 2px;
 
     label {
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--ff-label);
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -1155,7 +1155,7 @@ $border: rgba(0, 0, 0, 0.1);
       padding: 5px 8px;
       border: 1px solid $border;
       border-radius: 6px;
-      font-family: monospace;
+      font-family: var(--ff-mono);
       font-size: 12px;
     }
   }
@@ -1167,7 +1167,7 @@ $border: rgba(0, 0, 0, 0.1);
   margin-bottom: 8px;
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     cursor: pointer;
   }
@@ -1187,7 +1187,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__liff-hint-msg {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11.5px;
   line-height: 1.55;
   color: #6a4c00;
@@ -1208,7 +1208,7 @@ $border: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
     word-break: break-all;
     font-size: 11px;
-    font-family: 'JetBrains Mono', Menlo, Consolas, monospace;
+    font-family: var(--ff-mono);
     color: #2c1810;
     line-height: 1.4;
   }
@@ -1221,7 +1221,7 @@ $border: rgba(0, 0, 0, 0.1);
   color: #fff;
   border: none;
   border-radius: 4px;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -1236,7 +1236,7 @@ $border: rgba(0, 0, 0, 0.1);
   margin-top: 8px;
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     color: $muted;
     letter-spacing: 0.1em;
@@ -1256,7 +1256,7 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 6px 10px;
   border: 1px solid $border;
   border-radius: 6px;
-  font-family: 'Barlow', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
 }
 
@@ -1276,7 +1276,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 .DialogLineRichmenuEdit__warn {
   margin-top: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: #d4860a;
   background: rgba(212, 134, 10, 0.08);
@@ -1296,7 +1296,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

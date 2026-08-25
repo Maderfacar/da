@@ -110,7 +110,7 @@ $fs:      28px;
   display:         flex;
   align-items:     center;
   justify-content: center;
-  font-family:     'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size:       $fs;
   color:           var(--da-amber-light, #fbbf24);
   letter-spacing:  0.04em;

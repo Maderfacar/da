@@ -494,7 +494,7 @@ const swiperBreakpoints = {
   gap: 16px;
 
   &__section-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -515,7 +515,7 @@ const swiperBreakpoints = {
   }
 
   &__title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 28px;
     color: var(--da-dark);
     letter-spacing: 0.02em;
@@ -548,14 +548,14 @@ const swiperBreakpoints = {
   }
 
   &__counter-label {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
     color: var(--da-dark);
     font-weight: 500;
   }
 
   &__counter-hint {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.05em;
     color: var(--da-gray-light);
@@ -587,7 +587,7 @@ const swiperBreakpoints = {
     }
 
     span {
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: var(--ff-display);
       font-size: 28px;
       color: var(--da-dark);
       min-width: 24px;
@@ -622,7 +622,7 @@ const swiperBreakpoints = {
   }
 
   &__luggage-name {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     color: var(--da-dark);
     line-height: 1.3;
@@ -652,7 +652,7 @@ const swiperBreakpoints = {
     }
 
     span {
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: var(--ff-display);
       font-size: 22px;
       color: var(--da-dark);
       min-width: 20px;
@@ -784,14 +784,14 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-name {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 16px;
     font-weight: 700;
     color: var(--da-dark);
   }
 
   &__vehicle-sub {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.1em;
     color: var(--da-gray);
@@ -812,7 +812,7 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-tagline {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
     line-height: 1.4;
@@ -820,7 +820,7 @@ const swiperBreakpoints = {
 
   &__vehicle-hint {
     font-size: 12px;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
 
     .is-disabled & { color: #ef4444; }
     .is-warn & { color: #d97706; }
@@ -844,7 +844,7 @@ const swiperBreakpoints = {
   }
 
   &__charter-plan-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -853,7 +853,7 @@ const swiperBreakpoints = {
   }
 
   &__charter-hint {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: var(--da-gray);
     margin: 6px 0 0;
@@ -881,7 +881,7 @@ const swiperBreakpoints = {
     color: var(--da-dark);
     text-align: center;
     transition: border-color 0.2s, background 0.2s;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
 
     .nuxt-icon { font-size: 24px; color: var(--da-gray-light); }
 
@@ -896,7 +896,7 @@ const swiperBreakpoints = {
   &__extra-price {
     font-size: 11px;
     color: var(--da-amber);
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
   }
 
   // ── 期望特徵 可摺疊卡片（承襲 PassengerFaqList 的 cream theme collapsible 風格）
@@ -939,7 +939,7 @@ const swiperBreakpoints = {
   }
 
   &__expectations-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 22px;
     color: var(--da-dark);
     letter-spacing: 0.02em;
@@ -948,7 +948,7 @@ const swiperBreakpoints = {
   }
 
   &__expectations-hint {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
     line-height: 1.45;
@@ -961,7 +961,7 @@ const swiperBreakpoints = {
     border: 1.5px solid var(--da-amber);
     background: var(--da-cream);
     color: var(--da-amber);
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 22px;
     line-height: 1;
     display: flex;
@@ -989,7 +989,7 @@ const swiperBreakpoints = {
   // 未選車型時的下一步提示
   &__next-hint {
     margin: 0 0 -6px;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: #ef4444;
     text-align: center;

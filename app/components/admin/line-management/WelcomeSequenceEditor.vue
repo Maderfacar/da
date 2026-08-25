@@ -389,7 +389,7 @@ const ClickSave = async (): Promise<void> => {
 }
 
 .WelcomeSequenceEditor__count {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.15em;
   color: var(--da-gray, #6b6a68);
@@ -473,14 +473,14 @@ const ClickSave = async (): Promise<void> => {
 }
 
 .WelcomeSequenceEditor__msg-num {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-weight: 700;
   font-size: 13px;
   color: var(--da-gray);
 }
 
 .WelcomeSequenceEditor__msg-type-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;

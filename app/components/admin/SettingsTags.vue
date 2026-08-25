@@ -223,14 +223,14 @@ onMounted(() => {
 }
 
 .AdminSettingsTags__title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   margin: 0 0 4px;
 }
 
 .AdminSettingsTags__desc {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.55);
   margin: 0 0 12px;
@@ -258,13 +258,13 @@ onMounted(() => {
 }
 
 .AdminSettingsTags__group-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
 }
 
 .AdminSettingsTags__group-meta {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -305,7 +305,7 @@ onMounted(() => {
 
 .AdminSettingsTags__logActor {
   font-size: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   letter-spacing: 0.05em;
   color: rgba(0, 0, 0, 0.45);
 }
@@ -327,7 +327,7 @@ onMounted(() => {
     margin: 4px 0 8px;
     white-space: pre-wrap;
     word-break: break-all;
-    font-family: 'Fira Code', monospace;
+    font-family: var(--ff-mono);
   }
 }
 </style>

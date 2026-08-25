@@ -2115,7 +2115,7 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-bottom: 24px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -2128,7 +2128,7 @@ $muted: rgba(255, 255, 255, 0.35);
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
@@ -2151,7 +2151,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__filter-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2171,13 +2171,13 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__count {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
 }
 
 .PageAdminOrders__create-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2211,7 +2211,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__empty {
   text-align: center;
   padding: 60px 0;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: $muted;
 }
@@ -2256,7 +2256,7 @@ $muted: rgba(255, 255, 255, 0.35);
     cursor: default;
 
     span {
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--ff-label);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.15em;
@@ -2267,7 +2267,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__cell {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 15px;
   color: $text;
   overflow: hidden;
@@ -2288,7 +2288,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__passenger-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
   color: #fff;
@@ -2298,7 +2298,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__pickup-region {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
   max-width: 100%;
@@ -2307,7 +2307,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__pickup-place {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   color: rgba(255, 255, 255, 0.92);
   max-width: 100%;
@@ -2316,7 +2316,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__flight-chip {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2365,7 +2365,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
   .PageAdminOrders__cell::before {
     content: attr(data-label);
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -2431,7 +2431,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__referral-chip {
   display: inline-block;
   margin-top: 4px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0;
@@ -2444,7 +2444,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__type-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   padding: 3px 9px;
@@ -2460,7 +2460,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__status {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2478,7 +2478,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__dispatch-badge {
   display: inline-block;
   margin-top: 4px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2500,7 +2500,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__rematch-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   line-height: 1.5;
@@ -2523,7 +2523,7 @@ $muted: rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   gap: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -2550,7 +2550,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__history-bid {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 100px;
@@ -2565,13 +2565,13 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__history-empty {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
 }
 
 .PageAdminOrders__dispatch-empty {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
   line-height: 1.6;
@@ -2583,7 +2583,7 @@ $muted: rgba(255, 255, 255, 0.35);
   flex-direction: column;
   gap: 2px;
   margin-bottom: 10px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
 }
@@ -2594,7 +2594,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__bid-loading {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   padding: 12px 0;
@@ -2642,7 +2642,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__modal-type {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2654,7 +2654,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__modal-vehicle {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.55);
@@ -2662,7 +2662,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__modal-status {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2693,7 +2693,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__modal-id {
   padding: 8px 20px 0;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: $muted;
@@ -2707,7 +2707,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__quick-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2739,7 +2739,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__quick-level {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 8px;
@@ -2758,7 +2758,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__dispatch-level-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.12em;
   color: $muted;
@@ -2767,7 +2767,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders__dispatch-level-select {
   flex: 1;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 8px;
@@ -2779,7 +2779,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__dispatch-draft-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   margin-top: 6px;
   color: #f7b96a;
@@ -2787,7 +2787,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 // 強制必選版：未選首發等級時提示（紅色警示，比 draft-hint 更顯眼）
 .PageAdminOrders__dispatch-required-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   margin-top: 6px;
   color: #ef6f6f;
@@ -2802,7 +2802,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__row-dispatch-level {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   padding: 4px 6px;
   border-radius: 6px;
@@ -2838,7 +2838,7 @@ select option:disabled {
 .PageAdminOrders__section { }
 
 .PageAdminOrders__section-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -2852,7 +2852,7 @@ select option:disabled {
   justify-content: space-between;
   gap: 12px;
   padding: 6px 0;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
 
   // Charter Fare V1 W5：司機應現場收取金額 — 整段高亮提示
@@ -2895,7 +2895,7 @@ select option:disabled {
   gap: 4px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -2914,7 +2914,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__notes {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.75);
@@ -2940,7 +2940,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__addr-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -2954,7 +2954,7 @@ select option:disabled {
 .PageAdminOrders__addr-text { flex: 1; min-width: 0; }
 
 .PageAdminOrders__addr-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: #fff;
   line-height: 1.4;
@@ -2962,7 +2962,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__addr-full {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   margin-top: 2px;
@@ -2977,7 +2977,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__extra-tag {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 100px;
@@ -3000,7 +3000,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__edit-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -3016,7 +3016,7 @@ select option:disabled {
   border: 1px solid $border;
   background: rgba(255, 255, 255, 0.03);
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   resize: none;
@@ -3096,7 +3096,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__stopover-num {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3124,7 +3124,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__stopover-add {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -3164,7 +3164,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__extra-pick-btn {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 100px;
@@ -3237,7 +3237,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__tag-edit-key {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.55);
 }
@@ -3263,7 +3263,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__action {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3348,7 +3348,7 @@ select option:disabled {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -3410,7 +3410,7 @@ select option:disabled {
 .PageAdminOrders__row-dispatch-chip {
   display: inline-flex;
   align-items: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3424,7 +3424,7 @@ select option:disabled {
 .PageAdminOrders__row-action-tag {
   display: inline-flex;
   align-items: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3453,7 +3453,7 @@ select option:disabled {
 .PageAdminOrders__driver-info { flex: 1; min-width: 0; }
 
 .PageAdminOrders__driver-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: #fff;
   font-weight: 700;
@@ -3462,7 +3462,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__driver-assign-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -3480,7 +3480,7 @@ select option:disabled {
 
 // ── 字數提示 ──────────────────────────────────────────────
 .PageAdminOrders__char-count {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: $muted;
   text-align: right;
@@ -3512,7 +3512,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__sub-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.06em;
   color: #fff;
@@ -3520,7 +3520,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__sub-subtitle {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -3536,7 +3536,7 @@ select option:disabled {
 }
 
 .PageAdminOrders__sub-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   margin-top: 8px;

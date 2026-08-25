@@ -170,8 +170,6 @@ const ClickClear = () => {
 </template>
 
 <style lang="scss" scoped>
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .DriverRegisterUploadField {
   display: flex;
@@ -180,7 +178,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .DriverRegisterUploadField__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -235,7 +233,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .DriverRegisterUploadField__icon {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 32px;
   font-weight: 300;
   color: rgba(212, 134, 10, 0.6);
@@ -243,13 +241,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .DriverRegisterUploadField__hint {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .DriverRegisterUploadField__sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.3);
@@ -268,7 +266,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   color: rgba(255, 255, 255, 0.7);
 
   span:first-child { font-size: 36px; }
@@ -309,7 +307,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .DriverRegisterUploadField__error {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: #f87171;
 }

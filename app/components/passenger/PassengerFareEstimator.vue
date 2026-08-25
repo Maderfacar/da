@@ -322,9 +322,6 @@ const mountainHit = computed<boolean>(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerFareEstimator {
   background: var(--da-glass-bg);
@@ -387,7 +384,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 8px 16px;
   color: var(--da-dark);
   cursor: pointer;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   align-self: flex-start;
   transition: all 0.15s;
@@ -432,7 +429,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__field-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -449,7 +446,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__btn {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -497,7 +494,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(220, 70, 70, 0.1);
   border: 1px solid rgba(220, 70, 70, 0.3);
   color: #c0392b;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
 }
 
@@ -517,7 +514,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__final-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -526,7 +523,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__final-val {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
   color: var(--da-amber-light, #d4860a);
@@ -542,7 +539,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   padding: 6px 0;
   border-bottom: 1px dashed var(--da-gray-pale);
@@ -576,7 +573,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__notes-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -605,7 +602,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFareEstimator__notes-list li {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.65;
   color: var(--da-dark);
@@ -630,7 +627,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.03);
   color: var(--da-gray);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.6;
 }

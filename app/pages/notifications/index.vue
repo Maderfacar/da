@@ -115,9 +115,6 @@ const FormatTime = (iso: string | null): string => {
 
 <style lang="scss" scoped>
 // Wave 3-P1：cream theme 對齊 booking 家族
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotifications {
   padding: 72px 24px 0;
@@ -130,7 +127,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageNotifications__header { padding: 32px 0; }
 
 .PageNotifications__headerLabel {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -140,7 +137,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageNotifications__headerTitle {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
   line-height: 0.92;
   color: var(--da-dark);
@@ -174,7 +171,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageNotifications__emptyIcon { font-size: 48px; margin-bottom: 16px; }
 
 .PageNotifications__emptyText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: var(--da-gray);
 }
@@ -249,7 +246,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageNotifications__cardTitle {
   flex: 1;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   color: var(--da-dark);
@@ -271,7 +268,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageNotifications__cardTime {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--da-gray-light);
@@ -285,7 +282,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border: 1px solid var(--da-gray-pale);
   background: rgba(250, 248, 244, 0.6);
   color: var(--da-gray);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;

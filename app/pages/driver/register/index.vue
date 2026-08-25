@@ -399,9 +399,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverRegister {
   min-height: 100svh;
@@ -420,7 +417,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(140px, 42vw, 240px);
   letter-spacing: -0.04em;
   color: rgba(255, 255, 255, 0.04);
@@ -447,7 +444,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
@@ -458,7 +455,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__tagline {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -474,7 +471,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__loading {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: rgba(255, 255, 255, 0.4);
   padding: 20px 0;
@@ -497,14 +494,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__user-name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-cream);
   font-weight: 500;
 }
 
 .PageDriverRegister__heading {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -518,7 +515,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: #4ade80;
   padding: 24px 0;
@@ -529,7 +526,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 區塊標題 ────────────────────────────────────────────
 .PageDriverRegister__section-title {
   width: 100%;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -552,7 +549,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -570,7 +567,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: #fff;
 
@@ -600,7 +597,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 
@@ -625,7 +622,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverRegister__tag-hint {
   width: 100%;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.4);
@@ -651,7 +648,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 訊息與按鈕 ──────────────────────────────────────────
 .PageDriverRegister__error {
   width: 100%;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: #f87171;
   background: rgba(248, 113, 113, 0.08);
@@ -669,7 +666,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
   border: none;
   border-radius: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -685,7 +682,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.65);
@@ -694,7 +691,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__hint {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.3);
@@ -720,7 +717,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__cooldown-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.2em;
   color: rgba(248, 113, 113, 0.7);
@@ -728,7 +725,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__cooldown-time {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 28px;
   letter-spacing: 0.06em;
   color: #f87171;
@@ -736,7 +733,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverRegister__reason {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(248, 113, 113, 0.85);
   background: rgba(248, 113, 113, 0.08);
@@ -755,7 +752,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(212, 134, 10, 0.12);
   border: 1px solid rgba(212, 134, 10, 0.25);
   border-radius: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -789,7 +786,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverRegister__oa-cta-icon { font-size: 18px; }
 
 .PageDriverRegister__oa-cta-text {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 500;
   color: #4ade80;
@@ -800,7 +797,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   position: relative;
   z-index: 1;
   margin-top: 24px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.15);

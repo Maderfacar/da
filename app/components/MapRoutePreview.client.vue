@@ -379,7 +379,7 @@ onUnmounted(() => {
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
   border-radius: 20px;
@@ -395,7 +395,7 @@ onUnmounted(() => {
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.9);
   color: var(--da-dark);
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
   border-radius: 20px;
@@ -424,8 +424,8 @@ onUnmounted(() => {
   left: 50%;
   transform: translateX(-50%);
   background: #fff0f0;
-  color: var(--err, #d03030);
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  color: var(--danger);
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 14px;
   border-radius: 20px;

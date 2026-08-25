@@ -312,9 +312,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageReferral {
   padding: 24px;
@@ -325,14 +322,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__header { margin-bottom: 20px; }
 
 .PageReferral__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   color: var(--da-dark);
   letter-spacing: 0.04em;
 }
 
 .PageReferral__sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--da-gray);
@@ -353,7 +350,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -386,7 +383,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferral__section-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -395,7 +392,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferral__section-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-gray);
   margin-bottom: 16px;
@@ -412,14 +409,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__switch-text { display: flex; flex-direction: column; gap: 4px; }
 
 .PageReferral__switch-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
 }
 
 .PageReferral__switch-hint {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-gray);
 }
@@ -441,7 +438,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__field { display: flex; flex-direction: column; gap: 6px; }
 
 .PageReferral__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -450,7 +447,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferral__hint {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray);
   line-height: 1.4;
@@ -481,7 +478,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageReferral__error {
   color: #e74c3c;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -498,7 +495,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__records-bar .PageReferral__hint { flex: 1; min-width: 240px; }
 
 .PageReferral__anomaly-count {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -519,7 +516,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__table {
   width: 100%;
   border-collapse: collapse;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
 
   thead {
@@ -530,7 +527,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   th {
     text-align: left;
     padding: 12px 14px;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -548,14 +545,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageReferral__row.is-anomaly td { background: rgba(231, 76, 60, 0.06); }
 
 .PageReferral__uid {
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 11px;
   color: var(--da-gray);
   word-break: break-all;
 }
 
 .PageReferral__code {
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 12px;
   font-weight: 700;
   color: var(--da-dark);
@@ -563,7 +560,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageReferral__badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -577,7 +574,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferral__count {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: var(--da-dark);
@@ -594,7 +591,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferral__codes {
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 11px;
   color: var(--da-gray);
 }
@@ -605,7 +602,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 60px 16px;
   text-align: center;
   color: var(--da-gray);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 @media (max-width: 768px) {

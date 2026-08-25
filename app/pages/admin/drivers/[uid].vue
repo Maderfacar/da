@@ -699,7 +699,7 @@ onMounted(() => {
 .PageAdminDriverDetail__hero-uid {
   font-size: 12px;
   color: #909399;
-  font-family: 'Barlow', sans-serif;
+  font-family: var(--ff-ui);
 }
 
 .PageAdminDriverDetail__tabs {

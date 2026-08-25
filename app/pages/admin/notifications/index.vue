@@ -335,7 +335,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminAnnouncements__headerText { flex: 1 1 auto; }
 
 .PageAdminAnnouncements__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -349,7 +349,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
   margin: 0;
@@ -361,7 +361,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba($amber, 0.5);
   background: rgba($amber, 0.12);
   color: $amber;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -386,7 +386,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: none;
   background: transparent;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -439,7 +439,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__cardTitle {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   color: #fff;
@@ -457,7 +457,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__chip {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -469,7 +469,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__cardBody {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.5;
@@ -491,7 +491,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__stat {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
   color: $muted;
@@ -509,7 +509,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid $border;
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.8);
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;

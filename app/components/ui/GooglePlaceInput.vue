@@ -182,7 +182,7 @@ defineExpose({ SetPlace });
 }
 
 .UiGooglePlaceInput__label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -199,7 +199,7 @@ defineExpose({ SetPlace });
   min-height: 44px;
   padding: 12px 40px 12px 16px;
   border-radius: 12px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   outline: none;
   transition: border-color 0.2s, background 0.2s;
@@ -296,7 +296,7 @@ defineExpose({ SetPlace });
 }
 
 .UiGooglePlaceInput__dropdown__name {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   color: var(--da-dark);
@@ -306,7 +306,7 @@ defineExpose({ SetPlace });
 }
 
 .UiGooglePlaceInput__dropdown__addr {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray);
   margin-top: 2px;
@@ -317,9 +317,9 @@ defineExpose({ SetPlace });
 
 // ── 錯誤訊息 ───────────────────────────────────────────────
 .UiGooglePlaceInput__error {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
-  color: var(--err);
+  color: var(--danger);
   line-height: 1.4;
 }
 

@@ -135,6 +135,30 @@
 
 這一點對後續階段同樣關鍵 —— W0b 把 441 行改成 `font-family: var(--ff-display)` 之後，靜態掃描一樣解析不出 `var()` 指向哪支字體，只有這個開關能救。**若此選項在未來版本移除或失效，備案是在 `_design-tokens.css` 保留一段字面宣告供掃描器辨識。**
 
+### D7d — `Noto Sans TC` 從來沒有被自架（W0b 驗產物時發現）
+
+D5 寫「中文標題落回 Noto Sans TC 700」。W0b 驗證產物時發現**這句話目前是空的** ——
+`Noto Sans TC` 列在 `fonts.families` 裡，但 `.output/public/static/*.css` 的 64 個 `@font-face`
+全部是 Cormorant（40）與 Jost（24），CJK 一個都沒有。
+
+原因是 provider 的 subset 命名對不上：bunny 把 CJK 切成 `"0"` `"6"` `"7"` … 上百個數字 subset，
+而 `@nuxt/fonts@0.14.0` 內建認得的 subset 只有 `cyrillic-ext / cyrillic / greek-ext / greek /
+vietnamese / latin-ext / latin`。配不到就靜默跳過 —— 不報錯、不警告、build 全綠。
+
+**這不是 W0b 造成的。** 佐證：W0.1 記錄「加入 Cormorant + Jost 後字檔 98 → 162 個」，
+增量 64 正好等於 Cormorant 40 + Jost 24，也就是那 98 個全是 Bebas + Barlow + Barlow Condensed
+共 9 個拉丁字重的 subset，CJK 佔 0。W0b 移除那 9 個字重後剩 64 個，與 `@font-face` 數一致。
+
+**影響**：中文一律走使用者系統字（Mac 蘋方 / Windows 微軟正黑）。
+好處是 CJK payload = 0；代價是中文字重與行高跨平台不一致，且「中文標題 700」實際拿到什麼
+取決於系統有沒有那個字重。
+
+**本階段不動**。自架 CJK 是獨立的 payload 決策（Noto Sans TC 單一字重就是數百個 subset 檔），
+與「換色票與字體」不同量級，交由 Brain 判斷。
+
+**這一條與 D7b 是同一類陷阱**：字體管線的失敗都是靜默的，`pnpm build` 綠不代表字體有下載。
+凡動字體，驗收條件一律是「grep 產物的 `@font-face`」，不是「build exit 0」。
+
 ### D7c — `--da-gray-light` 提高對比（順手修既有缺陷）
 
 實測 10 組色對，9 組過 WCAG AA，唯一未過的是三級文字 `--da-gray-light`：新值 `#A6A198` 於瓷白只有 **2.32:1**，連非文字的 3.0 都沒到。

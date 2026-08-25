@@ -135,15 +135,15 @@ const EmitClose = () => {
         background-color: #fff;
       }
       .el-dialog__header .el-dialog__title {
-        color: var(--primary) !important;
+        color: var(--accent) !important;
       }
       .el-dialog__header .el-dialog__headerbtn i {
-        color: var(--primary) !important;
+        color: var(--accent) !important;
       }
     }
     &[type="edit"] {
       .el-dialog__header {
-        background-color: var(--primary);
+        background-color: var(--accent);
       }
       .el-dialog__header .el-dialog__title {
         color: #fff !important;

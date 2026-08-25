@@ -98,16 +98,13 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .VehiclePublicProfile {
   padding: 24px 16px 80px;
   max-width: 960px;
   margin: 0 auto;
   color: var(--da-dark);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 // ── loading ─────────────────────────────────────
@@ -141,7 +138,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__notfound-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 28px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -149,7 +146,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__notfound-desc {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: var(--da-gray);
   margin: 0 0 24px;
@@ -157,7 +154,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .VehiclePublicProfile__notfound-link {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -178,7 +175,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__hero-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -192,7 +189,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__driver-name {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -205,7 +202,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__verified-badge {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -222,7 +219,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-gray);
 }
@@ -235,7 +232,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__section-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -259,7 +256,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .VehiclePublicProfile__cta-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray);
   margin-top: 10px;

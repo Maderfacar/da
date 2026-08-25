@@ -171,7 +171,7 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__secretCode {
   display: inline-block;
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 15px;
   letter-spacing: 1px;
   background: #f0f0f3;

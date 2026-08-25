@@ -35,7 +35,7 @@ withDefaults(defineProps<Props>(), {
 }
 
 .PassengerFareBreakdownCard__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -49,7 +49,7 @@ withDefaults(defineProps<Props>(), {
 }
 
 .PassengerFareBreakdownCard__total {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 32px;
   color: var(--da-amber-light);
   letter-spacing: 0.05em;

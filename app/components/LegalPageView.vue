@@ -68,9 +68,6 @@ onMounted(() => { void ApiLoad(); });
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LegalPageView {
   padding: 72px 24px 0;
@@ -89,7 +86,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LegalPageView__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -99,7 +96,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LegalPageView__header-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
   line-height: 0.92;
   color: var(--da-dark);
@@ -107,7 +104,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LegalPageView__header-meta {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: var(--da-gray);
   letter-spacing: 0.05em;
@@ -136,14 +133,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &-icon { font-size: 40px; margin-bottom: 12px; }
   &-text {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     color: var(--da-gray);
   }
 }
 
 .LegalPageView__body {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.75;
   color: var(--da-dark);
@@ -159,7 +156,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   :deep(h2),
   :deep(h3),
   :deep(h4) {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     color: var(--da-dark);
     margin: 28px 0 12px;
     font-weight: 700;
@@ -225,7 +222,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   :deep(code) {
-    font-family: 'Menlo', monospace;
+    font-family: var(--ff-mono);
     font-size: 12px;
     background: rgba(26, 24, 20, 0.06);
     padding: 1px 5px;

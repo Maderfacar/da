@@ -190,9 +190,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutFrontDesk {
   min-height: 100svh;
@@ -216,14 +213,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutFrontDesk__banner-text {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 500;
   flex: 1;
 }
 
 .LayoutFrontDesk__banner-btn {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -277,7 +274,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutFrontDesk__roles-failed-msg {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 16px;
   color: var(--da-gray);
   margin: 0;
@@ -289,7 +286,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   color: #fff;
   border: none;
   border-radius: 100px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -317,7 +314,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutFrontDesk__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.08em;
   color: var(--da-dark);

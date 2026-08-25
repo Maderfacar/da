@@ -196,7 +196,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__back {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.06em;
   padding: 6px 0;
@@ -219,7 +219,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__header-type {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
@@ -230,20 +230,20 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__header-id {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   color: $muted;
 }
 
 .PageDriverDispatchedDetail__header-bidcount {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $amber;
   margin-left: auto;
 }
 
 .PageDriverDispatchedDetail__header-bid-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
@@ -264,7 +264,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__section-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -274,13 +274,13 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__section-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.04em;
   color: #fff;
 
   &.is-fare {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 18px;
     font-weight: 700;
     color: $amber;
@@ -297,7 +297,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__section-key {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
 }
@@ -314,7 +314,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__addr-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -327,7 +327,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__addr-text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: $text;
   flex: 1;
@@ -342,7 +342,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 100px;
@@ -352,14 +352,14 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   line-height: 1.6;
 }
 
 .PageDriverDispatchedDetail__notes {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: $text;
   line-height: 1.7;
@@ -383,7 +383,7 @@ $muted: rgba(255, 255, 255, 0.45);
 
 .PageDriverDispatchedDetail__action {
   flex: 1;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -429,7 +429,7 @@ $muted: rgba(255, 255, 255, 0.45);
   color: $muted;
   text-align: center;
   p {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     margin: 0;
   }

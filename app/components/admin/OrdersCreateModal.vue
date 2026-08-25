@@ -463,7 +463,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.05em;
   color: #fff;
@@ -486,7 +486,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .AdminOrdersCreateModal__hint {
   padding: 10px 20px 0;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   line-height: 1.5;
@@ -518,7 +518,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -534,7 +534,7 @@ $muted: rgba(255, 255, 255, 0.35);
   border: 1px solid $border;
   background: rgba(255, 255, 255, 0.03);
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   resize: none;
@@ -629,7 +629,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__stopover-num {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -657,7 +657,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__stopover-add {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -687,7 +687,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__luggage-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.75);
 }
@@ -699,7 +699,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__extra-btn {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 100px;
@@ -738,14 +738,14 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__autodispatch-text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 600;
   color: $amber-light;
 }
 
 .AdminOrdersCreateModal__autodispatch-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   line-height: 1.5;
@@ -761,7 +761,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__action {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

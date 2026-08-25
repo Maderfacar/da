@@ -38,8 +38,6 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerReferralSharePrompt {
   display: flex;
@@ -64,7 +62,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralSharePrompt__title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -72,7 +70,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralSharePrompt__text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.5;
   color: rgba(245, 242, 236, 0.7);
@@ -85,7 +83,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   background: #06c755;
   border: 1px solid #06c755;
   border-radius: 100px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

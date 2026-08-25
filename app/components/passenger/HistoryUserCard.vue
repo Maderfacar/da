@@ -32,7 +32,6 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 </template>
 
 <style lang="scss" scoped>
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerHistoryUserCard {
   background: var(--da-glass-bg);
@@ -59,7 +58,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryUserCard__name {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 20px;
   font-weight: 700;
   color: var(--da-dark);
@@ -67,7 +66,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistoryUserCard__uid {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.05em;
   color: var(--da-gray-light);
@@ -77,7 +76,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray);
 }
@@ -94,7 +93,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerHistoryUserCard__add {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

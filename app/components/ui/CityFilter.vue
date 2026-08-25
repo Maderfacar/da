@@ -164,7 +164,7 @@ const hasValue = computed(
 }
 
 .UiCityFilter__toggle-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -183,12 +183,12 @@ const hasValue = computed(
 
 .UiCityFilter__select {
   width: 160px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
 }
 
 .UiCityFilter__clear {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;

@@ -148,9 +148,6 @@ footer.CommonFooter
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .CommonFooter {
   background: var(--da-dark);
@@ -242,7 +239,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__qr-caption {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: rgba(250, 248, 244, 0.5);
   max-width: 136px;
@@ -250,7 +247,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__qr-hint {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -274,7 +271,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.08em;
 }
@@ -284,7 +281,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__tagline {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(250, 248, 244, 0.55);
   margin-top: 8px;
@@ -292,7 +289,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__col-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -308,7 +305,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border: none;
   padding: 6px 0;
   color: rgba(250, 248, 244, 0.8);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   cursor: pointer;
   text-align: left;
@@ -337,7 +334,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonFooter__copyright {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.3);

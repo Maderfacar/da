@@ -66,14 +66,13 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .LangSwitcher {
   position: relative;
 }
 
 .LangSwitcher__trigger {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -110,7 +109,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .LangSwitcher__item {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;

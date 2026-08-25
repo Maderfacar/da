@@ -95,7 +95,7 @@ $border: rgba(255, 255, 255, 0.08);
 .AnnouncementPreview__section { }
 
 .AnnouncementPreview__sectionLabel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -135,7 +135,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AnnouncementPreview__lineTitle {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   color: #222;
@@ -144,7 +144,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AnnouncementPreview__lineText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: #666;
   line-height: 1.5;
@@ -171,7 +171,7 @@ $border: rgba(255, 255, 255, 0.08);
   border: none;
   background: $amber;
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
   cursor: default;
@@ -199,7 +199,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AnnouncementPreview__appTitle {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   color: #fff;
@@ -208,7 +208,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AnnouncementPreview__appText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.75);
   line-height: 1.6;
@@ -236,7 +236,7 @@ $border: rgba(255, 255, 255, 0.08);
   background: rgba($amber, 0.18);
   border: 1px solid rgba($amber, 0.5);
   color: $amber;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;

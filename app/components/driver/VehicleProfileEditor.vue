@@ -481,14 +481,14 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__block-title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
   color: #fff;
 }
 
 .VehicleProfileEditor__block-sub {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
   flex: 1;
@@ -497,7 +497,7 @@ $danger: #f87171;
 // 較小較淺的補充說明（外語能力 etc.）；獨佔一行排在 block-sub 下方
 .VehicleProfileEditor__block-note {
   width: 100%;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.25);
@@ -505,7 +505,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -524,7 +524,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__loading {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
   padding: 12px 0;
@@ -540,14 +540,14 @@ $danger: #f87171;
   gap: 4px;
 
   &-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     color: $danger;
   }
   &-body {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.5;
@@ -570,14 +570,14 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__photos-title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
 }
 
 .VehicleProfileEditor__photos-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   color: $muted;
 }
@@ -615,7 +615,7 @@ $danger: #f87171;
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
 }
@@ -643,7 +643,7 @@ $danger: #f87171;
   border: 1.5px dashed rgba($amber, 0.45);
   background: rgba($amber, 0.06);
   color: $amber;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -665,14 +665,14 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__hint-line {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
   flex: 1 1 100%;
 }
 
 .VehicleProfileEditor__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -706,7 +706,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__tag-chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 100px;
@@ -716,7 +716,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__empty {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
 }
@@ -735,7 +735,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__capacity-label {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.75);
   min-width: 120px;
@@ -756,21 +756,21 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__capacity-su-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 20px;
   font-weight: 700;
   color: #50c878;
 }
 
 .VehicleProfileEditor__capacity-su-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 600;
   color: rgba(80, 200, 120, 0.8);
 }
 
 .VehicleProfileEditor__capacity-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   color: $muted;
 }
@@ -804,7 +804,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__seat-sep {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
 }
@@ -827,7 +827,7 @@ $danger: #f87171;
 
 .VehicleProfileEditor__seat-add {
   align-self: flex-start;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 14px;
   border: 1.5px dashed rgba($amber, 0.4);
@@ -851,7 +851,7 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__capacity-current {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
 }

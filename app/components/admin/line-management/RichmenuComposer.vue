@@ -361,8 +361,13 @@ function ClickSwitchSize(size: RichmenuSize) {
               option(value='system-ui, "Noto Sans TC", sans-serif') 系統無襯線
               option(value='Georgia, "Noto Serif TC", serif') 系統襯線
               option(value="monospace") 等寬
-              option(value='"Bebas Neue", sans-serif') Bebas Neue
-              option(value='"Barlow Condensed", sans-serif') Barlow Condensed
+              //- 這裡是 canvas 合成用的字體名，會寫進 layer.fontFamily 存 Firestore，
+              //-   由 use-richmenu-composer.ts 直接餵給 ctx.font —— 不吃 CSS token（canvas 無法解析 var()）。
+              //- 只能列「本站實際載入的字族」，否則 canvas 靜默 fallback 成系統字。
+              //- W0b 換裝：Bebas Neue / Barlow Condensed 已下架，改列精品調兩支。
+              //- 既有 richmenu 若存著舊字體名，合成時會 fallback，需由 admin 重選。
+              option(value='"Cormorant Garamond", serif') Cormorant Garamond
+              option(value='"Jost", sans-serif') Jost
           .RichmenuComposer__field
             label 對齊
             select(:value="composer.primaryLayer.value.align ?? 'center'" @change="(e: any) => composer.patchLayer(composer.primaryLayer.value!.id, { align: e.target.value as any })")
@@ -456,7 +461,7 @@ $muted: rgba(0, 0, 0, 0.5);
 .RichmenuComposer__sep { color: $muted; }
 .RichmenuComposer__select-label,
 .RichmenuComposer__mime-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.7);
@@ -500,7 +505,7 @@ $muted: rgba(0, 0, 0, 0.5);
 }
 
 .RichmenuComposer__section-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -605,12 +610,12 @@ $muted: rgba(0, 0, 0, 0.5);
 .RichmenuComposer__empty {
   padding: 40px;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
 }
 
 .RichmenuComposer__hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   letter-spacing: 0.05em;
@@ -630,7 +635,7 @@ $muted: rgba(0, 0, 0, 0.5);
   &.is-full { grid-column: 1 / -1; }
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     color: $muted;
@@ -657,7 +662,7 @@ $muted: rgba(0, 0, 0, 0.5);
 }
 
 .RichmenuComposer__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;

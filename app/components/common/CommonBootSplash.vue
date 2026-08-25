@@ -16,7 +16,6 @@
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
 
 .CommonBootSplash {
   position: fixed;
@@ -31,7 +30,7 @@ $font-display: 'Bebas Neue', sans-serif;
 }
 
 .CommonBootSplash__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   letter-spacing: 0.08em;
   color: var(--da-cream);

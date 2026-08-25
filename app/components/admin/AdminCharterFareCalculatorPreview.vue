@@ -417,7 +417,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__head-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -429,14 +429,14 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__head-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
 }
 
 .AdminCharterFareCalculatorPreview__head-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
 }
@@ -462,7 +462,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -478,7 +478,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__plans-head {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -495,7 +495,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__plan-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.7);
@@ -510,7 +510,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__signals-head {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -529,7 +529,7 @@ $border: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
@@ -556,7 +556,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -581,7 +581,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__error {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 200, 0, 0.85);
   background: rgba(255, 200, 0, 0.08);
@@ -599,7 +599,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__result-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -628,13 +628,13 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__day-key {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .AdminCharterFareCalculatorPreview__day-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
@@ -662,13 +662,13 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminCharterFareCalculatorPreview__line-key {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .AdminCharterFareCalculatorPreview__line-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);

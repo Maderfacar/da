@@ -1,10 +1,13 @@
 /**
  * .rich-content
- * 供 v-html 渲染富文本內容時使用，還原被 _init.css 重置的預設元素樣式，
- * 與 TinyMCE 編輯器內的呈現保持一致。
+ * 供 v-html 渲染富文本內容時使用，還原被 _init.css 重置的預設元素樣式。
+ *
+ * 字體與 TinyMCE 編輯區**不一致，且無法一致**：編輯器渲染在自己的 iframe，
+ * 拿不到本頁 :root 的 --ff-*，也套不到自架 @font-face（見 utils/tinymce-config.ts 的註解）。
+ * 這裡走站上真正的字族 token，發布後的呈現才是對的；編輯中的預覽是系統字，那是已知例外。
  */
 .rich-content {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.6;
   word-break: break-word;
@@ -95,7 +98,7 @@
     border: 1px solid #e4e7ed;
     border-radius: 4px;
     overflow-x: auto;
-    font-family: Menlo, Consolas, monospace;
+    font-family: var(--ff-mono);
     font-size: 0.9em;
     line-height: 1.5;
     white-space: pre;
@@ -104,7 +107,7 @@
     padding: 2px 4px;
     background: #f5f7fa;
     border-radius: 3px;
-    font-family: Menlo, Consolas, monospace;
+    font-family: var(--ff-mono);
     font-size: 0.9em;
   }
   pre code {

@@ -39,9 +39,6 @@ const ClickToggle = (key: string) => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerFaqList {
   display: flex;
@@ -79,7 +76,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFaqList__q-text {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 600;
   color: var(--da-dark);
@@ -87,7 +84,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFaqList__q-mark {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   color: var(--da-amber);
   flex-shrink: 0;
@@ -99,7 +96,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerFaqList__a p {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
   color: var(--da-gray);

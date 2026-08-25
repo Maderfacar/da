@@ -522,13 +522,10 @@ const ClickNext = () => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerBookingStepType {
   &__section-label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -544,7 +541,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__title {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 28px;
     color: var(--da-dark);
     margin-bottom: 20px;
@@ -583,7 +580,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__card-icon { font-size: 32px; color: var(--da-amber); }
 
   &__card-en {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -591,7 +588,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__card-zh {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 15px;
     font-weight: 700;
     color: var(--da-dark);
@@ -627,14 +624,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__charter-day-n {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 22px;
     color: var(--da-dark);
     line-height: 1;
   }
 
   &__charter-day-unit {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -642,7 +639,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__charter-hint {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: var(--da-gray);
     margin: 8px 0 0;
@@ -658,7 +655,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__flight-input {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.15em;
@@ -691,14 +688,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__time-error {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: #e74c3c;
     margin: 6px 0 0;
   }
 
   &__flight-error {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: #e74c3c;
     margin: 0 0 8px;
@@ -708,7 +705,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__manual-link {
     display: inline-block;
     margin-left: 8px;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -738,7 +735,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__manual-title {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 18px;
     letter-spacing: 0.04em;
     color: var(--da-dark);
@@ -757,7 +754,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__manual-hint {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: var(--da-gray);
     margin: 0 0 12px;
@@ -772,7 +769,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__manual-label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -791,7 +788,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__manual-terminal {
     flex: 1;
     padding: 8px 0;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -814,7 +811,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__manual-input {
     flex: 1;
     padding: 8px 12px;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -830,7 +827,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__manual-error {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: #e74c3c;
     margin: 4px 0 8px;
@@ -860,14 +857,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__flight-no {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 22px;
     color: var(--da-dark);
     letter-spacing: 0.05em;
   }
 
   &__flight-airline {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     color: var(--da-gray);
@@ -875,7 +872,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__flight-badge {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -892,7 +889,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__flight-row { display: flex; justify-content: space-between; align-items: center; }
 
   &__flight-label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -901,7 +898,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__flight-val {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 14px;
     font-weight: 700;
     color: var(--da-dark);

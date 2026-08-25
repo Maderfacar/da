@@ -98,10 +98,6 @@ const ClickSupport = () => {
 </template>
 
 <style lang="scss" scoped>
-// ── 字體變數 ──────────────────────────────────────────────────────────────────
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 版面 ──────────────────────────────────────────────────────────────────────
 .PageFaq {
@@ -116,7 +112,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 .PageFaq__watermark {
   position: fixed;
   top: 80px; right: -10px;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 100px;
   color: var(--da-dark);
   opacity: 0.04;
@@ -131,7 +127,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -141,14 +137,14 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__header-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
   line-height: 0.92;
   color: var(--da-dark);
 }
 
 .PageFaq__header-intro {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
   color: var(--da-gray);
@@ -167,7 +163,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 .PageFaq__section.is-trust    { background: var(--da-off-white); }
 
 .PageFaq__section-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -186,7 +182,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__section-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -207,7 +203,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 服務說明 ─────────────────────────────────────────────────────────────────
 .PageFaq__overview-heading {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(22px, 5vw, 28px);
   line-height: 1.3;
   letter-spacing: 0.02em;
@@ -223,7 +219,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   max-width: 560px;
 
   p {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 14.5px;
     font-weight: 300;
     color: var(--da-gray);
@@ -244,14 +240,14 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__trust-subtitle {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 28px;
   letter-spacing: 0.04em;
   color: var(--da-cream);
 }
 
 .PageFaq__trust-tagline {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--da-amber);
@@ -269,7 +265,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__trust-list li {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: rgba(250, 248, 244, 0.88);
   line-height: 1.75;
@@ -293,7 +289,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageFaq__faq-label {
   padding: 0 24px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -317,7 +313,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__cat-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -345,14 +341,14 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageFaq__contact-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   color: var(--da-cream);
   letter-spacing: 0.04em;
 }
 
 .PageFaq__contact-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(250, 248, 244, 0.6);
   margin: 8px 0 20px;
@@ -365,7 +361,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   padding: 14px 28px;
   background: var(--da-amber);
   color: var(--da-dark);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;

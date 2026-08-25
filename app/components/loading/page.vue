@@ -34,7 +34,7 @@ setTimeout(_hide, 8_000);
   @include fs(50px);
   @include center;
   @include fixed(fill);
-  color: $primary;
+  color: var(--accent);
   background-color: white;
   opacity: 1;
   z-index: 9999;

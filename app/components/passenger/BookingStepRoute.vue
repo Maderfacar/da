@@ -274,7 +274,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 }
 
 .PassengerBookingStepRoute__section-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -293,7 +293,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 }
 
 .PassengerBookingStepRoute__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 28px;
   color: var(--da-dark);
   letter-spacing: 0.02em;
@@ -325,7 +325,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 }
 
 .PassengerBookingStepRoute__safety-label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -335,7 +335,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 }
 
 .PassengerBookingStepRoute__safety-text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.55;
   color: #4e342e;
@@ -407,7 +407,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
 
   &:hover {
     border-color: var(--da-amber);
@@ -429,7 +429,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   border: 1px solid rgba(212, 134, 10, 0.25);
   border-radius: 12px;
   padding: 14px 18px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: var(--da-dark);
 }

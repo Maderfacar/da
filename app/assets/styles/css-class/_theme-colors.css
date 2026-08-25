@@ -11,16 +11,11 @@
  * admin / driver 不掛該屬性，改這裡就會變 —— 所以「admin 變了」不等於成功。
  */
 :root {
-  /* ── 樣板遺留（W0b 收斂，現況全站僅 20 處使用）────────────── */
-  --demo: #0baf2c;
-  --primary: #354d7b;
-  --secondary: #00ADA9;
-  --tertiary: #EB8B2D;
-  --gray: #808080;
-  --err: #EE5151;
-  --font: #454545;
-  --bg: #FDF9F2;
-  --white: #fff;
+  /* 樣板遺留的 9 個變數（--demo / --primary / --secondary / --tertiary / --gray /
+   * --err / --font / --bg / --white）已於 W0b 全數收斂並移除。
+   * 那 20 處使用點分別接到 --accent / --ink / --ink-soft / --danger；
+   * 唯一有業務語意的 --err 改名 --danger 並移入 _design-tokens.css。
+   * 別再加回來 —— 色彩只能從這裡的 --da-* 或 _design-tokens.css 的語意別名進來。 */
 
   /* ── DestinationAnywhere 設計系統色彩（精品調）──────────────
    * 括號內為 WCAG 對比實測值，對照底色為 --da-off-white 瓷白。

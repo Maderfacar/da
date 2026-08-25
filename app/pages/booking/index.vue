@@ -444,7 +444,7 @@ const ClickNewOrder = () => {
     position: fixed;
     top: 80px;
     right: -20px;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 120px;
     color: var(--da-dark);
     opacity: 0.04;
@@ -480,7 +480,7 @@ const ClickNewOrder = () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
     color: var(--da-gray-light);
@@ -500,7 +500,7 @@ const ClickNewOrder = () => {
   }
 
   &__step-label {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: var(--da-gray-light);
     white-space: nowrap;
@@ -553,14 +553,14 @@ const ClickNewOrder = () => {
   }
 
   &__success-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     color: var(--da-dark);
     letter-spacing: 0.04em;
   }
 
   &__success-sub {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     letter-spacing: 0.2em;
     color: var(--da-gray);
@@ -580,13 +580,13 @@ const ClickNewOrder = () => {
     span {
       font-size: 12px;
       color: var(--da-gray-light);
-      font-family: 'Barlow Condensed', sans-serif;
+      font-family: var(--ff-label);
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
 
     strong {
-      font-family: 'Bebas Neue', sans-serif;
+      font-family: var(--ff-display);
       font-size: 28px;
       color: var(--da-amber-light);
       letter-spacing: 0.1em;

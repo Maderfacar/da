@@ -82,15 +82,13 @@ section.PassengerReferralPanel(v-if="showPanel")
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerReferralPanel {
   margin-bottom: 16px;
 }
 
 .PassengerReferralPanel__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -99,7 +97,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -125,7 +123,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__code-caption {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -134,7 +132,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__code-value {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 30px;
   letter-spacing: 0.16em;
   color: var(--da-cream);
@@ -147,7 +145,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   background: #06c755;
   border: 1px solid #06c755;
   border-radius: 100px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -179,7 +177,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__stat-num {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   line-height: 1;
   color: var(--da-amber);
@@ -187,7 +185,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__stat-cap {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--da-gray);
@@ -206,7 +204,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__codes-cap {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -215,7 +213,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__empty {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray-light);
   padding: 6px 0;
@@ -249,7 +247,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__item-code {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 18px;
   letter-spacing: 0.08em;
   color: var(--da-dark);
@@ -257,7 +255,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerReferralPanel__item-tag {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -275,7 +273,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerReferralPanel__item-amount {
   display: block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: var(--da-amber);
@@ -283,7 +281,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PassengerReferralPanel__item-expiry {
   display: block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: var(--da-gray);
 }

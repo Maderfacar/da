@@ -63,7 +63,7 @@ const props = defineProps<Props>();
   align-items: center;
   justify-content: center;
   padding: 40px 0;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-gray);
   background: var(--da-amber-pale);

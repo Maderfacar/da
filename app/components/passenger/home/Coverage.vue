@@ -15,9 +15,6 @@ section.PassengerHomeCoverage
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomeCoverage {
   padding: 72px 24px;
@@ -25,7 +22,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeCoverage__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -45,7 +42,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeCoverage__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -60,7 +57,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 .PassengerHomeCoverage__grid {
@@ -92,7 +89,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeCoverage__iata {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 48px;
   line-height: 1;
   color: var(--da-dark);
@@ -100,7 +97,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeCoverage__name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 500;
   color: var(--da-gray);
@@ -110,7 +107,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 .PassengerHomeCoverage__nationwide {
   margin-top: 16px;
   text-align: center;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;

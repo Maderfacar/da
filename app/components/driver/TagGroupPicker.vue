@@ -91,14 +91,14 @@ const ClickChip = (id: string) => {
 }
 
 .TagGroupPicker__title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.85);
 }
 
 .TagGroupPicker__hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.4);
@@ -111,7 +111,7 @@ const ClickChip = (id: string) => {
 }
 
 .TagGroupPicker__chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
   border-radius: 100px;
@@ -136,7 +136,7 @@ const ClickChip = (id: string) => {
 }
 
 .TagGroupPicker__empty {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
 }

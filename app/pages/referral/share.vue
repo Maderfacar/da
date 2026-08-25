@@ -196,8 +196,6 @@ onMounted(ApiLoadMe);
 
 <style lang="scss" scoped>
 // cream theme 對齊 booking / orders 家族
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
 .PageReferralShare {
   padding: 72px 24px 0;
@@ -216,7 +214,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--da-gray);
@@ -232,7 +230,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -242,7 +240,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__header-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(40px, 12vw, 56px);
   line-height: 0.92;
   color: var(--da-dark);
@@ -274,7 +272,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   &-icon { font-size: 44px; margin-bottom: 14px; }
 
   &-text {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     color: var(--da-gray);
     margin-bottom: 18px;
@@ -282,7 +280,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 
   &-link {
     display: inline-block;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -306,7 +304,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__code-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -315,7 +313,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__code-value {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 44px;
   letter-spacing: 0.18em;
   color: var(--da-cream);
@@ -323,7 +321,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__code-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   line-height: 1.5;
   color: rgba(245, 242, 236, 0.6);
@@ -336,7 +334,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__preview-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -366,7 +364,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__card-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -375,7 +373,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 .PageReferralShare__card-text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
   color: var(--da-gray);
@@ -385,7 +383,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 .PageReferralShare__card-cta {
   display: block;
   text-align: center;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -408,7 +406,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   background: #06c755;
   border: 1px solid #06c755;
   border-radius: 12px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -427,7 +425,7 @@ $font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
   background: transparent;
   border: 1px solid rgba(212, 134, 10, 0.4);
   border-radius: 12px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

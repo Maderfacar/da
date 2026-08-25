@@ -161,7 +161,7 @@ $amber: #d4860a;
   margin-bottom: 20px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -174,7 +174,7 @@ $amber: #d4860a;
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
@@ -194,7 +194,7 @@ $amber: #d4860a;
 
 .PageDriverDispatched__tab {
   position: relative;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -225,7 +225,7 @@ $amber: #d4860a;
 }
 
 .PageDriverDispatched__tab-count {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   padding: 2px 8px;
   border-radius: 100px;
@@ -253,14 +253,14 @@ $amber: #d4860a;
   color: rgba(255, 255, 255, 0.45);
 
   p {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     margin: 8px 0 4px;
     color: rgba(255, 255, 255, 0.75);
   }
 
   small {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
   }
 }
@@ -271,7 +271,7 @@ $amber: #d4860a;
 }
 
 .PageDriverDispatched__bid-note {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.6);

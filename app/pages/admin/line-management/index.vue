@@ -1143,7 +1143,7 @@ $border: rgba(212, 134, 10, 0.18);
   margin-bottom: 24px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -1156,7 +1156,7 @@ $border: rgba(212, 134, 10, 0.18);
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
   }
@@ -1172,7 +1172,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__main-tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1198,7 +1198,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__phase-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1228,7 +1228,7 @@ $border: rgba(212, 134, 10, 0.18);
   align-items: center;
   gap: 8px;
   flex: 1;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1275,7 +1275,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__filter-tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1297,7 +1297,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__filter-spacer { flex: 1; }
 
 .PageAdminLineManagement__new {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1316,14 +1316,14 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__loading {
   padding: 40px;
   text-align: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   color: $muted;
 }
 
 .PageAdminLineManagement__empty {
   padding: 40px;
   text-align: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   color: $muted;
 }
 
@@ -1353,7 +1353,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__card-name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   flex: 1;
@@ -1361,7 +1361,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__status-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1388,7 +1388,7 @@ $border: rgba(212, 134, 10, 0.18);
 
 // P42：lang badge（卡片內 lang 標示）
 .PageAdminLineManagement__lang-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1418,7 +1418,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__lang-tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -1459,7 +1459,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__sync-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1493,7 +1493,7 @@ $border: rgba(212, 134, 10, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     color: $muted;
     text-align: center;
@@ -1510,7 +1510,7 @@ $border: rgba(212, 134, 10, 0.18);
     display: flex;
     align-items: baseline;
     gap: 10px;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
 
     .k {
@@ -1523,7 +1523,7 @@ $border: rgba(212, 134, 10, 0.18);
       flex: 1;
       min-width: 0;
       word-break: break-word;
-      &.mono { font-family: monospace; font-size: 11px; }
+      &.mono { font-family: var(--ff-mono); font-size: 11px; }
     }
 
     &.err .v { color: #ef4444; }
@@ -1537,7 +1537,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1587,7 +1587,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__category-tab {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1635,7 +1635,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__template-empty {
   padding: 28px 16px;
   text-align: center;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
 }
@@ -1654,7 +1654,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__template-cat-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -1672,7 +1672,7 @@ $border: rgba(212, 134, 10, 0.18);
   border: none;
   background: transparent;
   cursor: pointer;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(0, 0, 0, 0.7);
   text-align: left;
@@ -1709,7 +1709,7 @@ $border: rgba(212, 134, 10, 0.18);
 
 // 2026-05-29：列表卡片顯眼版 audience pill — 一眼分辨「給乘客 / 給司機」
 .PageAdminLineManagement__template-audience {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1776,7 +1776,7 @@ $border: rgba(212, 134, 10, 0.18);
 
 // ── Bot Replies Tab（P40 Phase 2）─────────────────────────
 .PageAdminLineManagement__bot-intro {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   padding: 14px 18px;
@@ -1809,7 +1809,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__bot-channel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1827,14 +1827,14 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__bot-type-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 .PageAdminLineManagement__bot-customized {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1849,13 +1849,13 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__bot-enabled {
   display: inline-flex;
   align-items: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   cursor: pointer;
 }
 
 .PageAdminLineManagement__bot-desc {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   letter-spacing: 0.05em;
@@ -1866,7 +1866,7 @@ $border: rgba(212, 134, 10, 0.18);
   padding: 10px 12px;
   border: 1px solid $border;
   border-radius: 8px;
-  font-family: 'Noto Sans TC', 'Barlow', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
   background: white;
@@ -1888,7 +1888,7 @@ $border: rgba(212, 134, 10, 0.18);
 
 .PageAdminLineManagement__bot-meta {
   flex: 1;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   letter-spacing: 0.05em;
@@ -1901,7 +1901,7 @@ $border: rgba(212, 134, 10, 0.18);
 
 // ── Diagnostics Tab（P40 Phase 3）─────────────────────────
 .PageAdminLineManagement__diag-intro {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   padding: 14px 18px;
@@ -1941,7 +1941,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__diag-channel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -1964,7 +1964,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__diag-empty {
   padding: 24px;
   text-align: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
 }
@@ -1977,7 +1977,7 @@ $border: rgba(212, 134, 10, 0.18);
   border-radius: 10px;
   background: rgba(5, 150, 105, 0.08);
   color: #059669;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1995,7 +1995,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__diag-inc {
   margin: 0;
   padding: 8px 14px 8px 28px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: rgba(239, 68, 68, 0.9);
   line-height: 1.6;
@@ -2009,7 +2009,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__diag-section-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -2021,7 +2021,7 @@ $border: rgba(212, 134, 10, 0.18);
   display: flex;
   align-items: baseline;
   gap: 10px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
 
   .k {
@@ -2034,7 +2034,7 @@ $border: rgba(212, 134, 10, 0.18);
     flex: 1;
     min-width: 0;
     word-break: break-all;
-    &.mono { font-family: monospace; font-size: 11px; }
+    &.mono { font-family: var(--ff-mono); font-size: 11px; }
     &.muted { color: $muted; }
   }
 }
@@ -2055,7 +2055,7 @@ $border: rgba(212, 134, 10, 0.18);
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.03);
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
 
   &.is-default { background: rgba(5, 150, 105, 0.08); }
@@ -2072,7 +2072,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__diag-menu-id {
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 11px;
   color: $muted;
 }
@@ -2099,7 +2099,7 @@ $border: rgba(212, 134, 10, 0.18);
 .PageAdminLineManagement__diag-stale {
   margin: 6px 0 0;
   padding: 0 0 0 18px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: #d4860a;
   list-style: disc;
@@ -2115,7 +2115,7 @@ $border: rgba(212, 134, 10, 0.18);
 }
 
 .PageAdminLineManagement__diag-sub-tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2148,7 +2148,7 @@ $border: rgba(212, 134, 10, 0.18);
   gap: 2px;
 
   .k {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -2160,7 +2160,7 @@ $border: rgba(212, 134, 10, 0.18);
     padding: 5px 10px;
     border: 1px solid $border;
     border-radius: 6px;
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     background: white;
     min-width: 120px;
@@ -2185,7 +2185,7 @@ $border: rgba(212, 134, 10, 0.18);
   align-items: center;
   padding: 8px 18px;
   border-bottom: 1px solid $border;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   cursor: pointer;
   transition: background 0.15s;
@@ -2208,7 +2208,7 @@ $border: rgba(212, 134, 10, 0.18);
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    &.mono { font-family: monospace; font-size: 11px; }
+    &.mono { font-family: var(--ff-mono); font-size: 11px; }
     &.result {
       font-weight: 700;
       &.is-replied { color: #059669; }
@@ -2217,7 +2217,7 @@ $border: rgba(212, 134, 10, 0.18);
       &.is-ignored { color: $muted; }
     }
     &.status {
-      font-family: monospace;
+      font-family: var(--ff-mono);
       &.is-4xx { color: #d97706; }
       &.is-5xx { color: #ef4444; font-weight: 700; }
     }
@@ -2248,7 +2248,7 @@ $border: rgba(212, 134, 10, 0.18);
     display: flex;
     gap: 12px;
     align-items: baseline;
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
 
     .k {
@@ -2262,7 +2262,7 @@ $border: rgba(212, 134, 10, 0.18);
       min-width: 0;
       word-break: break-all;
       color: rgba(0, 0, 0, 0.85);
-      &.mono { font-family: monospace; font-size: 11px; }
+      &.mono { font-family: var(--ff-mono); font-size: 11px; }
     }
   }
 }
@@ -2277,7 +2277,7 @@ $border: rgba(212, 134, 10, 0.18);
 
   &-icon { font-size: 36px; }
   &-text {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 14px;
     letter-spacing: 0.08em;
     color: $muted;

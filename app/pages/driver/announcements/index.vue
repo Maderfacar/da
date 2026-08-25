@@ -124,7 +124,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__header { margin-bottom: 20px; }
 
 .PageDriverAnnouncements__headerLabel {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -137,7 +137,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 }
 
 .PageDriverAnnouncements__headerTitle {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
   color: #fff;
@@ -168,7 +168,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__emptyIcon { font-size: 48px; margin-bottom: 16px; }
 
 .PageDriverAnnouncements__emptyText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: $muted-2;
 }
@@ -238,7 +238,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncements__cardTitle {
   flex: 1;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -260,7 +260,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 }
 
 .PageDriverAnnouncements__cardTime {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
   color: $muted-2;
@@ -273,7 +273,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   border: 1px solid $border;
   background: rgba(255, 255, 255, 0.04);
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;

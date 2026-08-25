@@ -331,7 +331,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__head-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -343,14 +343,14 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__head-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.8);
 }
 
 .AdminFareCalculatorPreview__head-hint {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: $muted;
 }
@@ -378,7 +378,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -394,7 +394,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -419,7 +419,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__error {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 200, 0, 0.85);
   background: rgba(255, 200, 0, 0.08);
@@ -437,7 +437,7 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__result-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -470,13 +470,13 @@ $border: rgba(255, 255, 255, 0.08);
 }
 
 .AdminFareCalculatorPreview__line-key {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
 }
 
 .AdminFareCalculatorPreview__line-val {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);

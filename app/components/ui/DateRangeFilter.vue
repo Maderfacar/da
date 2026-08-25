@@ -229,7 +229,7 @@ const _SingleInputType = computed(() => {
 }
 
 .UiDateRangeFilter__gran-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -247,7 +247,7 @@ const _SingleInputType = computed(() => {
 }
 
 .UiDateRangeFilter__input {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -264,14 +264,14 @@ const _SingleInputType = computed(() => {
 }
 
 .UiDateRangeFilter__sep {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   padding: 0 2px;
 }
 
 .UiDateRangeFilter__clear {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;

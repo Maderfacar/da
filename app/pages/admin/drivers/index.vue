@@ -300,7 +300,7 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-bottom: 24px;
 
   &-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
@@ -313,7 +313,7 @@ $muted: rgba(255, 255, 255, 0.35);
   }
 
   &-title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
     color: #fff;
@@ -348,7 +348,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__summary-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -357,7 +357,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__summary-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 28px;
   color: #fff;
   line-height: 1;
@@ -372,7 +372,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__tab {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -415,7 +415,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__empty {
   text-align: center;
   padding: 60px 0;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: $muted;
 }
@@ -468,7 +468,7 @@ $muted: rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: $amber;
@@ -477,7 +477,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__info { flex: 1; min-width: 0; }
 
 .PageAdminDrivers__name {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: #fff;
@@ -485,13 +485,13 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__uid {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: $muted;
 }
 
 .PageAdminDrivers__status {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -505,7 +505,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__vehicle-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -525,7 +525,7 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 8px;
   background: rgba($amber, 0.1);
   color: $amber;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -561,7 +561,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__expand-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -585,7 +585,7 @@ $muted: rgba(255, 255, 255, 0.35);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
 }
 
 .PageAdminDrivers__expand-key {
@@ -640,7 +640,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
   span:first-child { font-size: 24px; }
   span:last-child {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.12em;
   }
@@ -654,14 +654,14 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 4px 8px;
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   text-align: center;
 }
 
 .PageAdminDrivers__reject-reason {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
   color: rgba(248, 113, 113, 0.9);
@@ -679,7 +679,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__action-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

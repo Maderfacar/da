@@ -440,7 +440,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   cursor: pointer;
   background: #e5e7eb; // gray-200
   color: #111827; // gray-900
-  &.record { background: $err; color: #fff; } // red-500
+  &.record { background: var(--danger); color: #fff; } // red-500
   &.roteate { 
     @include wh(48px);
     @include center;
@@ -448,7 +448,7 @@ ElDialogPlus.OpenDialogVideoRecording(
     background: #9ca3af; 
     color: #fff;
    } // gray-400
-  &.primary { background: $primary; color: #fff; } // emerald-500
+  &.primary { background: var(--accent); color: #fff; } // emerald-500
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -498,7 +498,7 @@ ElDialogPlus.OpenDialogVideoRecording(
 .countdown {
   @include center;
   @include fs(24px, 700);
-  color: $primary; // gray-900
+  color: var(--accent); // gray-900
 }
 
 .countdown-bar {
@@ -511,7 +511,7 @@ ElDialogPlus.OpenDialogVideoRecording(
 
 .countdown-bar .progress {
   height: 100%;
-  background: $primary; // amber-500
+  background: var(--accent); // amber-500
   transition: width 0.2s linear;
 }
 </style>

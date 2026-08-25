@@ -69,8 +69,6 @@ const ClickPassenger = () => {
 </template>
 
 <style lang="scss" scoped>
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .CommonHeaderUser {
   display: flex;
@@ -81,7 +79,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 跨端切換鈕 ─────────────────────────────────────────────
 .CommonHeaderUser__admin-btn,
 .CommonHeaderUser__passenger-btn {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -134,7 +132,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   justify-content: center;
   background: rgba(212, 134, 10, 0.18);
   color: var(--da-amber);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
@@ -142,7 +140,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 名稱（窄螢幕隱藏，節省 header 空間） ──────────────────
 .CommonHeaderUser__name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 500;
   color: inherit;

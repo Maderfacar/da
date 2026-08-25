@@ -34,7 +34,7 @@ button.UiButton(
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;

@@ -45,9 +45,6 @@ section.PassengerHistorySupport
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHistorySupport {
   background: var(--da-glass-bg);
@@ -61,7 +58,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistorySupport__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -70,7 +67,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistorySupport__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -115,7 +112,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistorySupport__row-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -123,14 +120,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHistorySupport__row-val {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   color: var(--da-dark);
   letter-spacing: 0.04em;
 }
 
 .PassengerHistorySupport__row-sub {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: var(--da-gray);
 }

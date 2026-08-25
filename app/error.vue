@@ -79,7 +79,7 @@ onUnmounted(() => {
   @include wh(100vw, 100vh);
   @include center-col(10px);
   color: white;
-  background-color: $primary;
+  background-color: var(--ink);
 }
 
 // 組件 ----

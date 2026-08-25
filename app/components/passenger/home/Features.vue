@@ -65,9 +65,6 @@ section.PassengerHomeFeatures
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomeFeatures {
   padding: 72px 24px;
@@ -75,7 +72,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -95,7 +92,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -110,7 +107,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 // ── 服務特色 4 卡 ─────────────────────────────────────────
@@ -150,14 +147,14 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 18px;
   color: var(--da-amber);
   margin: 8px 0 12px;
 }
 
 .PassengerHomeFeatures__card-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
@@ -165,7 +162,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__card-body {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
@@ -184,7 +181,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__flow-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -194,7 +191,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__flow-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 30px;
   letter-spacing: 0.01em;
   color: var(--da-dark);
@@ -219,7 +216,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__step-no {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   line-height: 1;
   color: var(--da-amber);
@@ -232,7 +229,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__step-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
@@ -240,7 +237,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__step-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
@@ -280,7 +277,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomeFeatures__line-only-badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -293,7 +290,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__line-only-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 20px;
   font-weight: 700;
   color: var(--da-dark);
@@ -301,7 +298,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomeFeatures__line-only-body {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 400;
   color: var(--da-gray);

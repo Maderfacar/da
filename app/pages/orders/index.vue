@@ -178,9 +178,6 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 <style lang="scss" scoped>
 // cream theme 對齊 booking 家族
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrders {
   padding: 72px 24px 0;
@@ -194,7 +191,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 32px 0;
 
   &-label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -204,7 +201,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &-title {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: clamp(48px, 14vw, 64px);
     line-height: 0.92;
     color: var(--da-dark);
@@ -217,7 +214,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrders__orders-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -226,7 +223,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrders__orders-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -244,7 +241,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageOrders__orders-note {
   flex: 1;
   min-width: 180px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   line-height: 1.5;
   letter-spacing: 0.02em;
@@ -277,7 +274,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &-icon { font-size: 48px; margin-bottom: 16px; }
 
   &-text {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     color: var(--da-gray);
     margin-bottom: 20px;
@@ -285,7 +282,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &-link {
     display: inline-block;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -336,7 +333,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(220, 38, 38, 0.08);
   border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -357,7 +354,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrders__type-badge {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -369,7 +366,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrders__status {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -404,7 +401,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrders__route-addr {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-dark);
   overflow: hidden;
@@ -423,14 +420,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrders__date,
 .PageOrders__vehicle {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: var(--da-gray);
 }
 
 .PageOrders__fare {
   margin-left: auto;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 16px;
   color: var(--da-amber);
   letter-spacing: 0.05em;

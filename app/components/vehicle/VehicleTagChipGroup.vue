@@ -57,7 +57,7 @@ const GroupLabel = (g: TagGroup): string => {
 }
 
 .VehicleTagChipGroup__group-label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -72,7 +72,7 @@ const GroupLabel = (g: TagGroup): string => {
 }
 
 .VehicleTagChipGroup__chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
   border-radius: 100px;

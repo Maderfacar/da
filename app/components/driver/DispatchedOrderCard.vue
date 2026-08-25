@@ -143,7 +143,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__type-badge {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
@@ -154,14 +154,14 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__id {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   margin-left: auto;
 }
 
 .DriverDispatchedOrderCard__bid-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
@@ -185,7 +185,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__time-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.4);
@@ -193,7 +193,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__time-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.05em;
   color: #fff;
@@ -212,7 +212,7 @@ $amber: #d4860a;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
 
@@ -253,7 +253,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__countdown {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
   padding: 5px 10px;
@@ -276,7 +276,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 100px;
@@ -296,7 +296,7 @@ $amber: #d4860a;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: rgba(255, 255, 255, 0.55);
 }
@@ -307,7 +307,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;

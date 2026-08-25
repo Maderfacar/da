@@ -94,9 +94,6 @@ section.PassengerHomePromo(v-if="hasPromo")
 </template>
 
 <style lang="scss" scoped>
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PassengerHomePromo {
   padding: 72px 24px;
@@ -104,7 +101,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomePromo__label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -124,7 +121,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomePromo__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -139,7 +136,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 32px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 .PassengerHomePromo__list {
@@ -167,7 +164,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomePromo__code-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -182,7 +179,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomePromo__code {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 26px;
   letter-spacing: 0.08em;
   color: var(--da-amber-light);
@@ -230,14 +227,14 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PassengerHomePromo__amount {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
   color: var(--da-cream);
 }
 
 .PassengerHomePromo__meta {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(250, 248, 244, 0.5);
 }

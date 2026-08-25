@@ -246,9 +246,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageAuditLogs {
   padding: 24px;
@@ -259,21 +256,21 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     text-align: center;
     padding: 80px 16px;
 
-    h2 { font-family: $font-display; font-size: 48px; color: var(--da-dark); margin-bottom: 12px; }
-    p { color: var(--da-gray); font-family: $font-body; }
+    h2 { font-family: var(--ff-display); font-size: 48px; color: var(--da-dark); margin-bottom: 12px; }
+    p { color: var(--da-gray); font-family: var(--ff-ui); }
   }
 
   &__header { margin-bottom: 24px; }
 
   &__title {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 32px;
     color: var(--da-dark);
     letter-spacing: 0.04em;
   }
 
   &__sub {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 12px;
     letter-spacing: 0.2em;
     color: var(--da-gray);
@@ -296,7 +293,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__filter { display: flex; flex-direction: column; gap: 6px; }
 
   &__label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -313,7 +310,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &__error {
     color: #e74c3c;
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 14px;
     margin: 8px 0;
   }
@@ -328,7 +325,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__table {
     width: 100%;
     border-collapse: collapse;
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 13px;
 
     thead {
@@ -339,7 +336,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     th {
       text-align: left;
       padding: 12px 14px;
-      font-family: $font-condensed;
+      font-family: var(--ff-label);
       font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -363,10 +360,10 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__actor-name { font-weight: 700; }
-  &__actor-uid { font-size: 11px; color: var(--da-gray); font-family: monospace; }
+  &__actor-uid { font-size: 11px; color: var(--da-gray); font-family: var(--ff-mono); }
 
   &__badge {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -379,8 +376,8 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     &.is-assistant { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
   }
 
-  &__action { font-family: monospace; font-size: 12px; }
-  &__target { font-family: monospace; font-size: 11px; color: var(--da-gray); word-break: break-all; }
+  &__action { font-family: var(--ff-mono); font-size: 12px; }
+  &__target { font-family: var(--ff-mono); font-size: 11px; color: var(--da-gray); word-break: break-all; }
 
   &__expand-cell {
     text-align: center;
@@ -401,7 +398,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &__detail-row { display: flex; gap: 12px; align-items: baseline; }
 
   &__detail-label {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -411,14 +408,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     flex-shrink: 0;
   }
 
-  &__detail-val { font-family: monospace; font-size: 12px; color: var(--da-dark); word-break: break-all; }
+  &__detail-val { font-family: var(--ff-mono); font-size: 12px; color: var(--da-dark); word-break: break-all; }
 
   &__payload {
     margin: 0;
     padding: 12px;
     background: var(--da-dark);
     color: #c8e6c9;
-    font-family: monospace;
+    font-family: var(--ff-mono);
     font-size: 11px;
     line-height: 1.5;
     border-radius: 8px;
@@ -430,7 +427,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
     padding: 60px 16px;
     text-align: center;
     color: var(--da-gray);
-    font-family: $font-body;
+    font-family: var(--ff-ui);
   }
 
   &__footer {
@@ -442,7 +439,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &__count {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.1em;
     text-transform: uppercase;

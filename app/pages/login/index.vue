@@ -100,9 +100,6 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageLogin {
   min-height: 100svh;
@@ -121,7 +118,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(160px, 50vw, 280px);
   letter-spacing: -0.04em;
   color: rgba(255, 255, 255, 0.04);
@@ -147,7 +144,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLogin__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
@@ -158,7 +155,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLogin__tagline {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -184,7 +181,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: #06C755;
   border: none;
   border-radius: 12px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 700;
   color: #fff;
@@ -204,7 +201,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageLogin__test-label {
   margin-top: 24px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -226,7 +223,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(212, 134, 10, 0.12);
   border: 1px solid rgba(212, 134, 10, 0.25);
   border-radius: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -241,7 +238,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   position: relative;
   z-index: 1;
   margin-top: 24px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.12em;
   color: rgba(255, 255, 255, 0.15);

@@ -153,9 +153,6 @@ function ClickNav(path: string) {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutBackDesk {
   min-height: 100svh;
@@ -178,7 +175,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutBackDesk__loading-logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
@@ -220,7 +217,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .LayoutBackDesk__logo {
   flex: 1;
   min-width: 0;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 20px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
@@ -267,7 +264,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .LayoutBackDesk__top-right { display: flex; align-items: center; gap: 8px; }
 
 .LayoutBackDesk__admin-badge {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -302,7 +299,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutBackDesk__drawer-logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 28px;
   letter-spacing: 0.08em;
   color: var(--da-cream);
@@ -313,7 +310,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutBackDesk__drawer-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -354,7 +351,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutBackDesk__nav-label {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.6);
@@ -375,11 +372,11 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(238, 81, 81, 0.1);
   border: 1px solid rgba(238, 81, 81, 0.2);
   border-radius: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: var(--err);
+  color: var(--danger);
   cursor: pointer;
   transition: background 0.2s;
 

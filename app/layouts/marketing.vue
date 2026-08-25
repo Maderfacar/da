@@ -58,9 +58,6 @@ const ClickLogo = () => navigateTo('/');
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .LayoutMarketing {
   min-height: 100svh;
@@ -86,7 +83,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .LayoutMarketing__logo {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.08em;
   color: var(--da-dark);

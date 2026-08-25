@@ -289,7 +289,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__count {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -297,7 +297,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__add-btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -314,7 +314,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 
 .SettingsFleetExtras__empty {
   padding: 24px 16px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   color: $muted;
   text-align: center;
@@ -351,14 +351,14 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__row-zh {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .SettingsFleetExtras__row-id {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -370,7 +370,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__row-price {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -382,7 +382,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__row-disabled-tag {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -397,7 +397,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
 }
@@ -409,7 +409,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -468,7 +468,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__modal-title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.06em;
   color: #fff;
@@ -506,7 +506,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -521,7 +521,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   border: 1px solid $border;
   background: rgba(255, 255, 255, 0.03);
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
@@ -560,7 +560,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__error {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: rgba(255, 200, 0, 0.85);
   background: rgba(255, 200, 0, 0.08);
@@ -578,7 +578,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetExtras__action {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

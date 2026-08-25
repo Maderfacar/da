@@ -124,7 +124,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -167,7 +167,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncementDetail__emptyIcon { font-size: 48px; margin-bottom: 16px; }
 
 .PageDriverAnnouncementDetail__emptyText {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: $muted-2;
 }
@@ -189,7 +189,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 }
 
 .PageDriverAnnouncementDetail__title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 22px;
   font-weight: 700;
   color: #fff;
@@ -200,7 +200,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncementDetail__time {
   display: block;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: $muted-2;
@@ -208,7 +208,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 }
 
 .PageDriverAnnouncementDetail__body {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   color: rgba(255, 255, 255, 0.88);
   line-height: 1.75;
@@ -246,7 +246,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   border-radius: 100px;
   background: $amber;
   color: #fff;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;

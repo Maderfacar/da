@@ -270,9 +270,6 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 // Wave 3-P1：cream theme 對齊 booking 家族；司機卡採 dark accent（對應 booking success-id pattern）
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrderDetail {
   padding: 72px 16px 100px;
@@ -288,7 +285,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: var(--da-gray);
@@ -324,7 +321,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   &-icon { font-size: 48px; margin-bottom: 12px; }
 
   &-text {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     color: var(--da-gray);
     margin-bottom: 18px;
@@ -332,7 +329,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
   &-link {
     display: inline-block;
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -348,7 +345,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageOrderDetail__header { margin-bottom: 16px; }
 
 .PageOrderDetail__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -369,7 +366,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__header-id {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 26px;
   letter-spacing: 0.06em;
   color: var(--da-dark);
@@ -377,7 +374,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__status {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -404,7 +401,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__section-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -438,7 +435,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageOrderDetail__route-text { min-width: 0; flex: 1; }
 
 .PageOrderDetail__route-tag {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -446,7 +443,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__route-addr {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.4;
   color: var(--da-dark);
@@ -476,7 +473,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__route-meta-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -484,7 +481,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__route-meta-val {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 20px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -507,7 +504,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageOrderDetail__driver-badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -533,7 +530,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__driver-key {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -545,7 +542,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   font-size: 15px;
   font-weight: 600;
   color: var(--da-cream);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   word-break: break-word;
 
   // 車型放大、加粗
@@ -558,7 +555,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__driver-plate {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.08em;
   color: var(--da-dark);
@@ -574,7 +571,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 17px;
   font-weight: 700;
   color: var(--da-amber-light);
@@ -588,7 +585,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -600,7 +597,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__driver-nophone {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -639,7 +636,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__info-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: var(--da-gray);
@@ -647,7 +644,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__info-val {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-dark);
   text-align: right;
@@ -662,7 +659,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   }
 
   &.is-fare {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 22px;
     color: var(--da-amber);
     letter-spacing: 0.04em;
@@ -678,7 +675,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageOrderDetail__pref-chip {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 100px;
@@ -695,7 +692,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   background: rgba(220, 38, 38, 0.08);
   border: 1px solid rgba(220, 38, 38, 0.25);
   border-radius: 12px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;

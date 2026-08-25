@@ -142,9 +142,6 @@ Teleport(to="body")
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 背景遮罩 ──────────────────────────────────────────────
 .CommonDrawer__mask {
@@ -217,7 +214,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   justify-content: center;
   background: rgba(212, 134, 10, 0.18);
   color: var(--da-amber, #d4860a);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
 }
@@ -230,7 +227,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonDrawer__user-name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 600;
   color: var(--da-cream);
@@ -240,7 +237,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonDrawer__user-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -267,7 +264,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border-radius: 10px;
   background: transparent;
   color: rgba(250, 248, 244, 0.8);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
   text-align: left;
@@ -302,14 +299,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   border-radius: 100px;
   background: #ee5151;
   color: #fff;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
 }
 
 .CommonDrawer__item-ext {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   color: rgba(212, 134, 10, 0.55);
 }
@@ -324,7 +321,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .CommonDrawer__version {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   letter-spacing: 0.15em;
   color: rgba(255, 255, 255, 0.25);

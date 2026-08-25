@@ -104,7 +104,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -112,7 +112,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__loading {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.2);
 }
@@ -130,7 +130,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__desc {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -151,7 +151,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__stat-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -160,7 +160,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__stat-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 16px;
   color: #38bdf8;
   line-height: 1;
@@ -179,7 +179,7 @@ onMounted(ApiGetWeather);
 .WeatherWidget__error-icon { font-size: 14px; flex-shrink: 0; }
 
 .WeatherWidget__error-text {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   color: rgba(255, 120, 120, 0.9);
@@ -187,7 +187,7 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__error-hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.3);
   margin: 2px 0 0;

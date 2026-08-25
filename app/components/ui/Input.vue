@@ -50,7 +50,7 @@ const model = defineModel<string | number>();
 }
 
 .UiInput__label {
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -68,7 +68,7 @@ const model = defineModel<string | number>();
   min-height: 44px;
   padding: 12px 16px;
   border-radius: 12px;
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   color: var(--da-dark);
   outline: none;
@@ -116,18 +116,18 @@ const model = defineModel<string | number>();
 
 // ── 錯誤狀態 ───────────────────────────────────────────────
 .UiInput.is-error .UiInput__field {
-  border-color: var(--err);
+  border-color: var(--danger);
 }
 
 .UiInput__error {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
-  color: var(--err);
+  color: var(--danger);
   line-height: 1.4;
 }
 
 .UiInput__hint {
-  font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray-light);
   line-height: 1.4;

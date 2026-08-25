@@ -196,9 +196,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDashboard {
   padding: 24px;
@@ -215,14 +212,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   color: var(--da-dark);
   letter-spacing: 0.04em;
 }
 
 .PageDashboard__sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: var(--da-gray);
@@ -237,7 +234,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__data-time {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.08em;
   color: var(--da-gray);
@@ -245,7 +242,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDashboard__error {
   color: #e74c3c;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   margin: 8px 0;
 }
@@ -254,7 +251,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -264,7 +261,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__tag {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -298,7 +295,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__stat-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -307,7 +304,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__stat-value {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 44px;
   line-height: 1;
   color: var(--da-dark);
@@ -342,7 +339,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDashboard__card-label {
   flex: 1;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -351,14 +348,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__card-count {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   line-height: 1;
   color: var(--da-amber);
 }
 
 .PageDashboard__card-hint {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: var(--da-gray);
   margin-bottom: 14px;
@@ -383,7 +380,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__discount-code {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -391,7 +388,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__discount-detail {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: var(--da-gray);
 }
@@ -434,7 +431,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   justify-content: center;
   background: var(--da-dark);
   color: var(--da-cream);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
   text-transform: uppercase;
@@ -449,7 +446,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__row-name {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   color: var(--da-dark);
@@ -459,7 +456,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDashboard__row-time {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--da-gray);
@@ -467,7 +464,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDashboard__status {
   flex-shrink: 0;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -484,7 +481,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 40px 16px;
   text-align: center;
   color: var(--da-gray);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
 }
 

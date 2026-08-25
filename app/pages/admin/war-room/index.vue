@@ -390,9 +390,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageWarRoom {
   display: flex;
@@ -430,7 +427,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: rgba(255, 255, 255, 0.75);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -537,7 +534,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__panel-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 28px;
   color: #fff;
   letter-spacing: 0.04em;
@@ -545,7 +542,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__panel-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -562,7 +559,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__filter-btn {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -593,7 +590,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__meta-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -602,7 +599,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__meta-val {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: #fff;
@@ -645,7 +642,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__driver-name {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: #fff;
@@ -655,7 +652,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__driver-coords {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.3);
@@ -675,7 +672,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__driver-order-id {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -683,7 +680,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageWarRoom__driver-order-status {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.65);
   letter-spacing: 0.05em;
@@ -692,7 +689,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // ── 空狀態 ────────────────────────────────────────────────
 .PageWarRoom__empty {
   margin-top: 24px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.2);

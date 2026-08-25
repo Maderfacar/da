@@ -200,7 +200,7 @@ $muted: rgba(255, 255, 255, 0.4);
   min-height: 100svh;
   background: $bg;
   color: #fff;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
 }
 
 .PageAdminUsers__header {
@@ -208,7 +208,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminUsers__header-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.2em;
   color: $amber-light;
@@ -306,7 +306,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminUsers__row-uid {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--ff-mono);
 }
 
 .PageAdminUsers__row-date {
@@ -433,7 +433,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminUsers__sub-user-uid {
   color: $muted;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--ff-mono);
   font-size: 12px;
 }
 

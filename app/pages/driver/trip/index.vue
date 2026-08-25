@@ -532,9 +532,6 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 $amber: #d4860a;
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip {
   padding: 20px 16px 32px;
@@ -547,7 +544,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverTrip__header { margin-bottom: 24px; }
 
 .PageDriverTrip__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -560,7 +557,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__header-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
   color: #fff;
@@ -568,7 +565,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__header-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.2em;
   color: rgba(255, 255, 255, 0.3);
@@ -588,7 +585,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__tab {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -610,7 +607,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__history-badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -644,12 +641,12 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverTrip__empty { text-align: center; padding: 60px 0; }
 .PageDriverTrip__empty-icon { font-size: 48px; margin-bottom: 12px; }
 .PageDriverTrip__empty p {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 15px;
   color: rgba(255, 255, 255, 0.5);
 }
 .PageDriverTrip__empty small {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.25);
@@ -685,14 +682,14 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // 日期與時間同字級（司機在車上快速掃視，日期不能比時間小）
 .PageDriverTrip__card-date {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.65);
 }
 
 .PageDriverTrip__card-clock {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: #fff;
@@ -704,7 +701,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverTrip__card-row { display: flex; align-items: center; gap: 8px; }
 
 .PageDriverTrip__type-badge {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -716,7 +713,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__id {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.25);
   margin-left: auto;
@@ -728,7 +725,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -786,7 +783,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__status-badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -800,7 +797,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__card-fare {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: $amber;
@@ -810,7 +807,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // Phase 1F：confirmation pending chip + banner
 .PageDriverTrip__pending-chip {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -843,7 +840,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__pending-banner-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   color: rgba(255, 220, 150, 0.95);
@@ -851,7 +848,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__pending-banner-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 11.5px;
   color: rgba(255, 255, 255, 0.65);
   line-height: 1.55;
@@ -904,7 +901,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverTrip__modal-head-left { display: flex; gap: 8px; }
 
 .PageDriverTrip__modal-type {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -916,7 +913,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__modal-vehicle {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   padding: 4px 10px;
@@ -938,7 +935,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__modal-id {
   padding: 0 20px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
   color: rgba(255, 255, 255, 0.3);
@@ -948,7 +945,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin: 8px 20px 12px;
   display: inline-block;
   align-self: flex-start;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -976,7 +973,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__section-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -994,7 +991,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__section-key {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.45);
@@ -1002,13 +999,13 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__section-val {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
   text-align: right;
 
   &.is-muted { color: rgba(255, 255, 255, 0.35); font-size: 12px; font-style: italic; }
-  &.is-fare { font-family: $font-condensed; font-weight: 700; color: $amber; font-size: 16px; }
+  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: $amber; font-size: 16px; }
 }
 
 // 地址卡片（可點擊開 Google Maps）
@@ -1034,7 +1031,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__addr-tag {
   flex-shrink: 0;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1046,7 +1043,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageDriverTrip__addr-text { flex: 1; min-width: 0; }
 
 .PageDriverTrip__addr-name {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
@@ -1054,7 +1051,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__addr-full {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   margin-top: 2px;
@@ -1076,7 +1073,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageDriverTrip__extra-tag {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 6px;
@@ -1087,7 +1084,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 // 備註
 .PageDriverTrip__notes {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.6;
@@ -1107,7 +1104,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageDriverTrip__action {
   width: 100%;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1134,7 +1131,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 // Phase 3：時間 gate 倒數提示（緊貼按鈕下方，置中）
 .PageDriverTrip__action-hint {
   margin-top: 8px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.55);

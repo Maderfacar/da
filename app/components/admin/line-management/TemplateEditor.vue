@@ -691,7 +691,7 @@ $border: rgba(0, 0, 0, 0.1);
   text-align: center;
   padding: 40px;
   color: $muted;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
 }
 
 // ── Header ──────────────────────────────────────────────────
@@ -709,14 +709,14 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__title {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.04em;
   margin: 0;
 }
 
 .TemplateEditor__key {
-  font-family: monospace;
+  font-family: var(--ff-mono);
   font-size: 11px;
   color: $muted;
   background: rgba(0, 0, 0, 0.04);
@@ -726,7 +726,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 // 顯眼的 audience badge — 配色標識「給乘客 / 給司機」
 .TemplateEditor__audience {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -756,14 +756,14 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__desc {
-  font-family: 'Barlow', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 12px;
   color: $muted;
   margin: 6px 0 0;
 }
 
 .TemplateEditor__trigger {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 11px;
   color: rgba(0, 0, 0, 0.55);
   margin: 4px 0 0;
@@ -772,7 +772,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__last-edit {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
   margin-top: 4px;
@@ -790,7 +790,7 @@ $border: rgba(0, 0, 0, 0.1);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -836,7 +836,7 @@ $border: rgba(0, 0, 0, 0.1);
   background: rgba(212, 134, 10, 0.06);
   border: 1px dashed rgba(212, 134, 10, 0.3);
   border-radius: 6px;
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $amber;
   line-height: 1.6;
@@ -861,7 +861,7 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 4px;
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     color: rgba(0, 0, 0, 0.7);
@@ -872,7 +872,7 @@ $border: rgba(0, 0, 0, 0.1);
     padding: 8px 12px;
     border: 1px solid $border;
     border-radius: 8px;
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
     background: white;
     width: 100%;
@@ -905,14 +905,14 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__hint {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $muted;
 }
 
 .TemplateEditor__warn {
   margin-top: 6px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $amber;
   background: rgba(212, 134, 10, 0.08);
@@ -943,12 +943,12 @@ $border: rgba(0, 0, 0, 0.1);
   }
 
   code {
-    font-family: monospace;
+    font-family: var(--ff-mono);
     font-size: 11px;
     color: $amber;
   }
   .label {
-    font-family: 'Barlow', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: rgba(0, 0, 0, 0.65);
   }
@@ -963,7 +963,7 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 14px;
 
   label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     cursor: pointer;
     font-weight: 500;
@@ -1016,7 +1016,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__btn {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -1068,7 +1068,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__preview-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -1099,7 +1099,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__bubble-title {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
   color: #222;
@@ -1107,7 +1107,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__bubble-text {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: #666;
   line-height: 1.6;
@@ -1123,7 +1123,7 @@ $border: rgba(0, 0, 0, 0.1);
   background: $amber;
   border: none;
   color: white;
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
   padding: 10px;
@@ -1142,7 +1142,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__text-bubble-content {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 14px;
   color: #1a1814;
   line-height: 1.65;
@@ -1161,7 +1161,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__placeholder-examples-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -1173,12 +1173,12 @@ $border: rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   line-height: 1.5;
 
   code {
-    font-family: monospace;
+    font-family: var(--ff-mono);
     color: $amber;
     background: rgba(212, 134, 10, 0.1);
     padding: 1px 6px;
@@ -1193,7 +1193,7 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .TemplateEditor__preview-note {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   color: $amber;
   background: rgba(212, 134, 10, 0.08);

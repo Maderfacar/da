@@ -47,6 +47,9 @@ export const tinymceDefaultInit = {
   height: 500,
   branding: false,
   promotion: false,
+  // 字族 token 的**已知例外**（W0b）：TinyMCE 把編輯區渲染在自己的 iframe 裡，
+  // 拿不到本頁 :root 的 --ff-* 也套不到自架 @font-face。這裡只能寫字面系統堆疊。
+  // 影響範圍僅限「編輯中的預覽」；發布後的內容在站上是走 rich-content.scss（已 token 化）。
   content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; font-size: 14px; line-height: 1.6; color: #303133; }',
   font_family_formats: [
     'System=-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',

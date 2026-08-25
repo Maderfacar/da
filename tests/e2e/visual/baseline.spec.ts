@@ -89,9 +89,16 @@ async function settle(page: Page): Promise<void> {
  *   http://localhost:3000 不可能產生 SSL 錯誤，所以只會遮住刻意擋掉的外部請求，
  *   不會掩蓋本地資源（例如字檔 404）的問題。
  *
+ * - `[history] load failed`（/orders）：**mock 模式的既有缺陷，與視覺無關**。
+ *   `GetOrderList()` 在 `IsMock()` 為真時走 `mock-res.ts` 的 `CreateRes()`，
+ *   而它回的 `status.code` 是 **0** 不是 200；頁面拿到 code≠success 就 console.error。
+ *   實測：請求根本沒出門（Playwright 收不到任何 /nuxt-api/orders 的 response），
+ *   所以不是網路或 fixture 問題。頁面本身渲染完整，截圖是好的。
+ *   根治屬「mock 回傳包絡 code 0」那條線（參照 api-envelope-zero-code），另開議題。
+ *
  * 真正的 TypeError 等仍會讓測試失敗 —— 那代表頁面沒渲染完整，基線會是壞的。
  */
-const IGNORED_CONSOLE = /Hydration completed but contains mismatches|favicon|Outdated Optimize Dep|504|SSL connect error/;
+const IGNORED_CONSOLE = /Hydration completed but contains mismatches|favicon|Outdated Optimize Dep|504|SSL connect error|\[history\] load failed/;
 
 /** 可見文字。務必用 innerText 而非 textContent —— 後者會把 <script> 裡的
  *  `window.__NUXT__={...}` 一起算進去，長度動輒數千字，任何「內容夠不夠」的判斷都會失效。 */

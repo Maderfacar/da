@@ -34,6 +34,13 @@
   --accent-lit:  var(--da-amber-light);  /* 深底上的主色，會發光 */
   --accent-wash: var(--da-amber-pale);   /* 極淡底 */
 
+  /* 錯誤色 —— W0b 從 scss-tool/colors.scss 的樣板遺留 `--err` 搬過來（全站 7 處）。
+     刻意保留原值 #EE5151 不動：色票換裝不該順手改語意色的判讀門檻。
+     已知債：於瓷白只有 3.28:1，未過 AA 文字標準（Input / Badge 的錯誤字用到它）。
+     這一項與 good / wait / note / stop 一起歸「語意色三件套」階段處理，不在階段 0。
+     它是唯一寫死色值的別名 —— 因為主題引擎白名單只認 --da-*，錯誤色不該隨換季飄。 */
+  --danger: #EE5151;
+
   /* ======================================================================
      B. 尺度 token —— W0a 只定義，不替換既有字面值
      ====================================================================== */
@@ -79,13 +86,31 @@
      C. 字族
      ====================================================================== */
 
-  /* 展示字：拉丁走 Cormorant，中文落回 Noto Sans TC（不加 CJK 襯線，payload 代價不值） */
+  /* ⚠ 這四條的字族名會被 @nuxt/fonts 掃走並自架（靠 nuxt.config.ts 的
+        fonts.experimental.processCSSVariables，否則寫在 var() 裡它看不見）。
+        加任何字族名 = 多一批 woff2，動之前先想 payload。
+
+     ⚠ 'Noto Sans TC' 實測**沒有被自架**（W0b 驗產物：全站 87 個 @font-face 裡它是 0）。
+        原因在 provider 對不上：bunny 把 CJK 的 subset 標成 "0" "6" "7"…，而 @nuxt/fonts
+        認得的 subset 只有 latin / latin-ext / cyrillic / greek / vietnamese，配不到就靜默跳過。
+        → 中文一律走使用者系統字（PingFang TC / 微軟正黑體）。這是 W0b 之前就存在的狀態，
+          不是換裝造成的。好處是 CJK payload = 0；代價是中文字重與行高跨平台不一致。
+        要改就要面對整套 CJK 自架的體積，那是另一個決策，別順手加。 */
+
+  /* 展示字：拉丁走 Cormorant，中文落回系統無襯線（見上方 Noto Sans TC 註記） */
   --ff-display: 'Cormorant Garamond', 'Noto Sans TC', Georgia, serif;
   --ff-ui:      'Jost', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'PingFang TC', sans-serif;
   --ff-label:   var(--ff-ui);
   /* 識別碼與金額：車牌 / 訂單號 / 航班 / 電話 / 時間 / 車資
      搭配 .u-data 的 lining-nums + tabular-nums，確保數字與字母同高同寬 */
   --ff-data:    var(--ff-ui);
+  /* 等寬 —— 只給「原始碼呈現」：admin 的 JSON payload、LINE event log、Firestore uid、
+     TinyEditor 產出的 <code>。與 --ff-data（識別碼／金額）不同用途，別混用。
+     W0b 新增：原先散在 27 處、四種堆疊（monospace / Menlo,Consolas / 'JetBrains Mono' /
+     'Fira Code'），皆非自架、純靠系統 fallback，收成一條後行為不變。
+     這裡刻意**只放系統字**：實測留著 'JetBrains Mono' 會多抓 12 個 @font-face，
+     為了幾個 admin uid 欄位下載一整套字不划算。 */
+  --ff-mono:    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* ==========================================================================

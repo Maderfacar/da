@@ -5,6 +5,13 @@
 
 專案 MUST NOT 存在第二處色彩定義來源。`app/assets/styles/scss-tool/colors.scss` 的樣板遺留變數（`--demo` `--primary` `--secondary` `--tertiary` `--gray` `--err` `--font` `--bg` `--white`）SHALL 被收斂，且 `_theme-colors.css` 中指示「要記得去 scss/_colors.scss 添加」的註解 SHALL 移除。
 
+收斂後 `colors.scss` 已無內容，SHALL 整檔刪除並自 `nuxt.config.ts` 的 vite `additionalData` 移除。其中唯一具業務語意的 `--err` SHALL 改名 `--danger` 並移入 `_design-tokens.css`，值維持 `#EE5151` 不變 —— 語意色的判讀門檻不屬色票換裝的範圍，其對比度債（瓷白上 3.28:1）歸「語意色三件套」階段。
+
+#### Scenario: 收斂成果有常態守衛
+- **WHEN** 日後有人在元件內重新宣告 `$font-*`、內嵌字體堆疊、復活樣板遺留色變數，或把已下架字族加回 `fonts.families`
+- **THEN** `shared/design-token-guards.spec.ts` SHALL 失敗
+- **AND** 該守衛的每一條 MUST 於加入時以注入違規的方式證明它確實會紅
+
 #### Scenario: token 只有一個定義點
 - **WHEN** 開發者搜尋任一設計 token 的字面值（如 `#1A1917`）
 - **THEN** 該字面值只出現在 `_design-tokens.css` 或 `_theme-colors.css` 其一
@@ -42,9 +49,21 @@
 - **THEN** 乘客端顯示舊色而 admin / driver 端顯示新色（此不一致 SHALL 於驗收清單中被明確檢查）
 
 ### Requirement: 字族 token 化
-系統 SHALL 以 `--ff-display` / `--ff-ui` / `--ff-label` / `--ff-data` 四個 token 定義全站字族。所有 `.vue` 檔 MUST NOT 內嵌字體名稱字串，亦 MUST NOT 於檔案內自行宣告 `$font-*` SCSS 變數。
+系統 SHALL 以 `--ff-display` / `--ff-ui` / `--ff-label` / `--ff-data` / `--ff-mono` 五個 token 定義全站字族。所有 `.vue` 檔 MUST NOT 內嵌字體名稱字串，亦 MUST NOT 於檔案內自行宣告 `$font-*` SCSS 變數。
 
-`nuxt.config.ts` 的 `fonts.families` SHALL 只包含實際被 token 引用的字族。
+> `--ff-mono` 為實作時新增（原規格列四個）。全站有 27 處等寬用途散在四種堆疊（`monospace` / `Menlo, Consolas` / `'JetBrains Mono'` / `'Fira Code'`），皆為 admin 的 JSON payload、log、Firestore uid 呈現 —— 與 `--ff-data`（識別碼／金額，需 tabular-nums）語意不同，不收斂就是漏網的第二真相來源。
+
+`nuxt.config.ts` 的 `fonts.families` SHALL 只包含實際被 token 引用的字族。字族 token 的值 MUST NOT 含任何非系統字族名，除非該字族已列入 `fonts.families` —— `@nuxt/fonts` 的 `processCSSVariables` 會把 token 裡出現的字族名視為自架目標並下載。
+
+#### Scenario: 產物必須含 `@font-face`，build 綠不算數
+- **WHEN** 字體換裝完成且 `pnpm build` exit 0
+- **THEN** MUST 檢查 `.output/public/static/*.css` 確實含對應字族的 `@font-face`
+- **AND** 若為 0，表示字體未下載、畫面靜默 fallback 到系統字 —— 此情況 build 一樣全綠，無法由建置結果偵測
+
+#### Scenario: 字族 token 不得夾帶非自架字族名
+- **WHEN** 於 `--ff-*` 任一 token 的值中寫入未列入 `fonts.families` 的字族名（如 `'JetBrains Mono'`）
+- **THEN** `@nuxt/fonts` 會為它產生 `@font-face` 並下載字檔，造成非預期的 payload 增加
+- **AND** 等寬與其他純系統堆疊 SHALL 只使用系統字族名（`ui-monospace` / `Menlo` / `Consolas` 等）
 
 #### Scenario: 換字體只需改一處
 - **WHEN** 修改 `_design-tokens.css` 的 `--ff-display`

@@ -85,7 +85,7 @@ $amber: #d4860a;
 }
 
 .AirportForecastWidget__label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.22em;
@@ -93,7 +93,7 @@ $amber: #d4860a;
 }
 
 .AirportForecastWidget__date {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -102,7 +102,7 @@ $amber: #d4860a;
 
 .AirportForecastWidget__updated {
   margin-left: auto;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.05em;
   color: rgba(255, 255, 255, 0.2);
@@ -123,7 +123,7 @@ $amber: #d4860a;
 }
 
 .AirportForecastWidget__stat-label {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--ff-label);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -133,7 +133,7 @@ $amber: #d4860a;
 }
 
 .AirportForecastWidget__stat-val {
-  font-family: 'Bebas Neue', sans-serif;
+  font-family: var(--ff-display);
   font-size: 16px;
   color: #fff;
   line-height: 1;

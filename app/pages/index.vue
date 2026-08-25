@@ -172,9 +172,6 @@ const ClickFare = () => navigateTo('/fare');
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageLanding {
   background: var(--da-off-white);
@@ -230,7 +227,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__hero-tag {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -248,7 +245,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__hero-title-display {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(64px, 18vw, 128px);
   line-height: 0.9;
   letter-spacing: 0.02em;
@@ -256,7 +253,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__hero-title-sub {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: clamp(14px, 3.4vw, 17px);
   font-weight: 300;
   line-height: 1.65;
@@ -273,7 +270,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageLanding__cta-primary,
 .PageLanding__cta-secondary {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -325,7 +322,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageLanding__section.is-features  { background: var(--da-cream); }
 
 .PageLanding__section-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -344,7 +341,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__section-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
   line-height: 0.92;
   letter-spacing: 0.01em;
@@ -353,7 +350,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__section-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14.5px;
   font-weight: 300;
   color: var(--da-gray);
@@ -370,7 +367,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   max-width: 560px;
 
   p {
-    font-family: $font-body;
+    font-family: var(--ff-ui);
     font-size: 14.5px;
     font-weight: 300;
     color: var(--da-gray);
@@ -408,7 +405,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__airport-code {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 32px;
   letter-spacing: 0.06em;
   color: var(--da-amber);
@@ -417,7 +414,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__airport-name {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
   color: var(--da-dark);
@@ -426,7 +423,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__airport-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
@@ -454,7 +451,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__feature-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -463,7 +460,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__feature-body {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13.5px;
   font-weight: 300;
   color: var(--da-gray);
@@ -489,7 +486,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__cta-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -499,7 +496,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__cta-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(36px, 9vw, 48px);
   letter-spacing: 0.02em;
   color: var(--da-cream);
@@ -507,7 +504,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageLanding__cta-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
   color: rgba(250, 248, 244, 0.75);
@@ -522,7 +519,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   padding: 16px 32px;
   background: var(--da-amber);
   color: var(--da-dark);
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;

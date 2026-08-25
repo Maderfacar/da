@@ -531,7 +531,7 @@ const ClickSubmit = () => {
   gap: 16px;
 
   &__section-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.25em;
@@ -550,7 +550,7 @@ const ClickSubmit = () => {
   }
 
   &__title {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 28px;
     color: var(--da-dark);
     letter-spacing: 0.02em;
@@ -570,7 +570,7 @@ const ClickSubmit = () => {
   }
 
   &__contact-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -585,7 +585,7 @@ const ClickSubmit = () => {
   }
 
   &__field-label {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
     color: var(--da-dark);
     display: flex;
@@ -604,7 +604,7 @@ const ClickSubmit = () => {
   }
 
   &__field-error {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: #ef4444;
     margin-top: 2px;
@@ -629,7 +629,7 @@ const ClickSubmit = () => {
     border: 1px solid var(--da-gray-pale);
     background: transparent;
     cursor: pointer;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
     transition: all 0.15s;
@@ -674,14 +674,14 @@ const ClickSubmit = () => {
   }
 
   &__discount-ok {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
     color: #16a34a;
     font-weight: 600;
   }
 
   &__discount-clear {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
     background: none;
@@ -709,7 +709,7 @@ const ClickSubmit = () => {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 14px;
   }
 
@@ -738,7 +738,7 @@ const ClickSubmit = () => {
   }
 
   &__tag-chip {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     padding: 2px 10px;
     border-radius: 100px;
@@ -764,7 +764,7 @@ const ClickSubmit = () => {
   }
 
   &__charter-title {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -786,7 +786,7 @@ const ClickSubmit = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
   }
 
@@ -797,7 +797,7 @@ const ClickSubmit = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Barlow', 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 13px;
 
     span:first-child { color: var(--da-gray); }
@@ -819,7 +819,7 @@ const ClickSubmit = () => {
 
   &__charter-note {
     margin-top: 4px;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 11px;
     color: var(--da-gray-light);
     line-height: 1.5;
@@ -836,7 +836,7 @@ const ClickSubmit = () => {
   }
 
   &__final-label {
-    font-family: 'Barlow Condensed', sans-serif;
+    font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.18em;
@@ -845,14 +845,14 @@ const ClickSubmit = () => {
   }
 
   &__final-value {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: var(--ff-display);
     font-size: 32px;
     color: var(--da-amber-light);
     letter-spacing: 0.04em;
   }
 
   &__cash-note {
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
     letter-spacing: 0.03em;
@@ -866,7 +866,7 @@ const ClickSubmit = () => {
     gap: 6px;
     font-size: 12px;
     color: var(--da-gray);
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: var(--ff-ui);
     line-height: 1.6;
 
     .nuxt-icon { flex-shrink: 0; margin-top: 1px; color: var(--da-gray-light); }

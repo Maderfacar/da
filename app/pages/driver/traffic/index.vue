@@ -187,9 +187,6 @@ onMounted(ApiLoadFlow);
 </template>
 
 <style lang="scss" scoped>
-$font-display:   'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageTraffic {
   padding: 80px 20px 32px;
@@ -202,7 +199,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageTraffic__header { margin-bottom: 28px; }
 
 .PageTraffic__header-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
@@ -216,7 +213,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__header-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 40px;
   color: #fff;
   letter-spacing: 0.02em;
@@ -224,7 +221,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__header-sub {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.2em;
   color: rgba(255, 255, 255, 0.3);
@@ -309,7 +306,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__aside-title {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -333,7 +330,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__filter-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -348,7 +345,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__shortcut {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -376,7 +373,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__seg-btn {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -416,7 +413,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__stat-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -426,7 +423,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__stat-val {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 26px;
   color: #fff;
   line-height: 1;
@@ -436,7 +433,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageTraffic__stat-unit {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   color: rgba(255, 255, 255, 0.3);
   margin-top: 2px;
@@ -454,7 +451,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
   margin-bottom: 14px;
 
   span {
-    font-family: $font-condensed;
+    font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -487,7 +484,7 @@ $font-body:      'Barlow', 'Noto Sans TC', sans-serif;
 .PageTraffic__suggest-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 
 .PageTraffic__suggest-text {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   line-height: 1.5;

@@ -253,7 +253,7 @@ ElDialog(
 }
 
 .OpenDialogTagEdit__label {
-  font-family: 'Noto Sans TC', sans-serif;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 600;
   color: rgba(0, 0, 0, 0.75);

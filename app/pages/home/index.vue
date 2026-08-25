@@ -262,10 +262,6 @@ onUnmounted(() => {
 
 
 <style lang="scss" scoped>
-// ── 字體變數 ──────────────────────────────────────────────────────────────────
-$font-display: 'Bebas Neue', sans-serif;
-$font-condensed: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-$font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 // ── 動畫 ──────────────────────────────────────────────────────────────────────
 @keyframes fadeUp {
@@ -333,7 +329,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 // Airport badge watermarks — 9 個錯位浮動
 .PageHome__airport-badge {
   position: absolute;
-  font-family: $font-display;
+  font-family: var(--ff-display);
   letter-spacing: 0.06em;
   color: var(--da-dark);
   opacity: 0.06;
@@ -406,7 +402,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -428,7 +424,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__hero-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(72px, 22vw, 108px);
   line-height: 0.88;
   letter-spacing: -0.01em;
@@ -445,7 +441,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__hero-subtitle {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 300;
   color: var(--da-gray);
@@ -467,7 +463,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   flex: 1 1 calc(50% - 5px);
   min-width: 130px;
   padding: 14px 16px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -516,7 +512,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__section-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -535,7 +531,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__section-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(36px, 10vw, 48px);
   line-height: 0.95;
   letter-spacing: 0.01em;
@@ -550,7 +546,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   line-height: 1.7;
   margin-bottom: 28px;
   max-width: 320px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
 }
 
 // ── TRIP CARD（手機優先重排）─────────────────────────────────────────────────
@@ -610,7 +606,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-date {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -618,7 +614,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-weekday {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -626,7 +622,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-time {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 30px;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -635,7 +631,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-status {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -711,7 +707,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-route-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -724,7 +720,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   font-size: 15px;
   font-weight: 500;
   color: var(--da-dark);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -746,7 +742,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-flight-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -755,7 +751,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-flight-val {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 16px;
   letter-spacing: 0.05em;
   color: var(--da-dark);
@@ -780,7 +776,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageHome__trip-driver-badge {
   display: inline-block;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -805,7 +801,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-driver-key {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -817,7 +813,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: var(--da-dark);
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   word-break: break-word;
 
   // 車型放大、加粗 — 與車牌一致辨識度
@@ -829,7 +825,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__trip-driver-plate {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.08em;
   color: var(--da-dark);
@@ -845,7 +841,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 600;
   color: var(--da-amber);
@@ -859,7 +855,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -898,7 +894,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__next-trip-empty-title {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 17px;
   font-weight: 700;
   color: var(--da-dark);
@@ -906,7 +902,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__next-trip-empty-sub {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 300;
   color: var(--da-gray);
@@ -924,7 +920,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-cream);
   border: none;
   border-radius: 100px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -936,7 +932,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   &:active { transform: scale(0.97); }
 
   span:first-child {
-    font-family: $font-display;
+    font-family: var(--ff-display);
     font-size: 16px;
     line-height: 1;
   }
@@ -971,7 +967,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__book-label {
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.25em;
@@ -991,7 +987,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__book-title {
-  font-family: $font-display;
+  font-family: var(--ff-display);
   font-size: clamp(36px, 11vw, 52px);
   line-height: 0.95;
   letter-spacing: 0.01em;
@@ -1000,7 +996,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 }
 
 .PageHome__book-desc {
-  font-family: $font-body;
+  font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
   color: rgba(248, 244, 235, 0.7);
@@ -1018,7 +1014,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
   color: var(--da-dark);
   border: none;
   border-radius: 100px;
-  font-family: $font-condensed;
+  font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1032,7 +1028,7 @@ $font-body: 'Barlow', 'Noto Sans TC', sans-serif;
 
 .PageHome__book-btn-arrow {
   font-size: 18px;
-  font-family: $font-display;
+  font-family: var(--ff-display);
 }
 
 // ── SCROLL REVEAL ─────────────────────────────────────────────────────────────
