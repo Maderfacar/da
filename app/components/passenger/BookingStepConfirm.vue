@@ -845,7 +845,8 @@ const ClickSubmit = () => {
   }
 
   &__final-value {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
+    font-variant-numeric: lining-nums tabular-nums;
     font-size: 32px;
     color: var(--da-amber-light);
     letter-spacing: 0.04em;

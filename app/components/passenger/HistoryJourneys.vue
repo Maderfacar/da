@@ -135,7 +135,7 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 }
 
 .PassengerHistoryJourneys__stat-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 24px;
   line-height: 1;
   color: var(--da-dark);

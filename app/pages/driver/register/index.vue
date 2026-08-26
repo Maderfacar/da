@@ -725,7 +725,7 @@ onUnmounted(() => {
 }
 
 .PageDriverRegister__cooldown-time {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 28px;
   letter-spacing: 0.06em;
   color: #f87171;

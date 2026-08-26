@@ -365,7 +365,8 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__item-code {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 18px;
   letter-spacing: 0.06em;
   color: $amber;

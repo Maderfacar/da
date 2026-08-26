@@ -418,7 +418,7 @@ $amber: #d4860a;
 }
 
 .PageDriverCost__stat-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 28px;
   color: #fff;
   line-height: 1;

@@ -104,7 +104,20 @@
 
 **中文不加襯線。** 拉丁展示字走 Cormorant、中文標題落回 Noto Sans TC 700。理由：Noto Serif TC 是完整 CJK 字重，payload 代價高，而 mockup 上的視覺差異不足以justify。若 Brain 目視後仍要襯線，另開 task 先量 payload。
 
-**識別碼規則**（來自 mockup 驗收）：車牌、訂單號、航班、電話、金額、時間一律 `--ff-data` + `font-variant-numeric: lining-nums tabular-nums`；襯線只給人名與標題。本階段**只定義 token 與 utility class**，實際套用在後續階段。
+**識別碼規則**（來自 mockup 驗收）：車牌、訂單號、航班、電話、金額、時間一律 `--ff-data` + `font-variant-numeric: lining-nums tabular-nums`；襯線只給人名與標題。
+
+> **原訂「只定義不套用、實際套用在後續階段」，W0b 執行時提前做掉了。**
+> 原因不是搶進度，是換裝把它從「未來的優化」變成「現在的缺陷」：
+> Bebas Neue 只有 lining 數字，所以規則沒套也看不出來；換成 Cormorant Garamond 後，
+> 它預設是 **old-style 舊體數字**（1 只有 x-height、3/5/7/9 有降部），
+> admin 儀表板的 `13,700` 直接變得像散文而不像數據。
+> 也就是說「延後套用」這個決定的前提被字體換裝本身推翻了 —— 留著就是明確的可讀性退步。
+>
+> 實際套用範圍：141 處 `--ff-display` 中判定為識別碼／金額／時間／計數的 **37 處**改走 `--ff-data`，
+> 其中 25 處補上 `lining-nums tabular-nums`（另 12 處原作者已自行加過 —— 這 12 處反過來
+> 佐證了分類判斷與既有意圖一致）。
+> **留在 `--ff-display` 的是標題、logo、浮水印、裝飾序號（01/02/03）與 IATA 三字碼**，
+> 那些正是襯線該發揮的地方。
 
 ### D6 — 斜紋 token 的處置
 

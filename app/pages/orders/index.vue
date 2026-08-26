@@ -427,7 +427,8 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__fare {
   margin-left: auto;
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 16px;
   color: var(--da-amber);
   letter-spacing: 0.05em;

@@ -423,7 +423,8 @@ onMounted(ApiLoadFlow);
 }
 
 .PageTraffic__stat-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 26px;
   color: #fff;
   line-height: 1;

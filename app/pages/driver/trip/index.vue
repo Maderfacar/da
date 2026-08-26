@@ -682,14 +682,15 @@ $amber: #d4860a;
 
 // 日期與時間同字級（司機在車上快速掃視，日期不能比時間小）
 .PageDriverTrip__card-date {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 22px;
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.65);
 }
 
 .PageDriverTrip__card-clock {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.04em;
   color: #fff;

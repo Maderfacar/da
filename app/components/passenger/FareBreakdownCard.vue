@@ -49,7 +49,8 @@ withDefaults(defineProps<Props>(), {
 }
 
 .PassengerFareBreakdownCard__total {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 32px;
   color: var(--da-amber-light);
   letter-spacing: 0.05em;

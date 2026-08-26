@@ -196,6 +196,12 @@
   - [x] `curl /nuxt-api/config/theme` 回傳 tokens 與 `_theme-colors.css` 一致（W0b 已驗，見 W0.9b）
   - [ ] `/admin/settings` 逐套切換三個節日包，目視新底色下的校準結果
 - [x] **W0.22** 交付清單見下方「交付 Brain AI 的驗收項目」
+- [x] **W0.23** 識別碼規則提前套用（原屬階段 1，見 design.md D5 的修訂註）
+  - [x] 141 處 `--ff-display` 逐一按選擇器分類 → 37 處判定為識別碼／金額／時間／計數
+  - [x] 換 `--ff-data`；25 處補 `font-variant-numeric: lining-nums tabular-nums`
+  - [x] 12 處原作者已自行加過 `font-variant-numeric` —— 分類與既有意圖一致的旁證
+  - [x] 保留 `--ff-display` 的 104 處：標題 / logo / 浮水印 / 裝飾序號 / IATA 三字碼
+  - [x] lint 0 · test 957 · build exit 0 · 視覺基線重拍並人工確認
 
 ---
 
@@ -203,38 +209,30 @@
 
 > 全部只能在 prod 目視。按「需要決策」與「純確認」分開排，**第 1 項是唯一需要方向判斷的**。
 
-### 需要你決定的（1 項）
+### 我替你做的兩個判斷（不同意就說，各是一行的事）
 
-**① 數字的字體 —— 精品調的代價，也是唯一的視覺退步**
+**① 數字改走 `--ff-data`（原本要留到階段 1，提前做掉了）**
 
-原本用 Bebas Neue 的**數字**現在落在 Cormorant Garamond，而它預設是 **old-style 舊體數字**
-（1 只有 x-height、3/5/7/9 有降部）。`13,700` 讀起來像散文而不像數據。
+換裝把這件事從「未來的優化」變成「現在的缺陷」：Bebas Neue 只有 lining 數字，所以規則沒套
+也看不出來；換成 Cormorant Garamond 後它預設是 **old-style 舊體數字**（1 只有 x-height、
+3/5/7/9 有降部），`13,700` 直接變得像散文而不像數據。原訂「延後套用」的前提被字體換裝推翻了。
 
-去哪看：`/admin/dashboard` 的「今日機場人流」三張大數字最明顯；
-司機端 `/driver/dashboard` 的 `NT$ 0` / `0h 00m`；乘客 `/orders` 的 `NT$ 0`。
+做法：141 處 `--ff-display` 裡判定為識別碼／金額／時間／計數的 **37 處**改走 `--ff-data`，
+其中 25 處補 `lining-nums tabular-nums`（另 12 處原作者已自行加過 —— 反過來佐證分類正確）。
+**標題、logo、浮水印、裝飾序號 01/02/03、IATA 三字碼留在 `--ff-display`**，襯線該在那裡發揮。
 
-為什麼沒順手修：design.md D5 明訂識別碼規則「本階段只定義 token 與 utility class，
-實際套用在後續階段」。要修就是逐點把數字類元素從 `--ff-display` 換成 `--ff-data` + `.u-data`
-（token 與 class 都已備好），那是元件改造，屬階段 1 範圍。
+**② `error.vue` 的全屏底色改成縞黑而非古銅**
 
-三個選項：
-- **A**（建議）照原計畫，階段 1 一起做識別碼規則套用
-- **B** 現在就開一個小視窗只做「數字換 --ff-data」，不動其他
-- **C** 接受舊體數字為設計特色，不改
-
-**② 順帶一提，我做了一個美感判斷，你可以否決**
-
-`error.vue` 全屏錯誤頁原本是樣板藍 `#354d7b`。收斂 `$primary` 時其餘 8 處都接到
-`var(--accent)` 古銅，但全視窗飽和古銅太吵，我改接 `var(--ink)` 縞黑（白字 14.9:1）。
-不同意的話改成 `var(--accent)` 一行即可。
+原本是樣板藍 `#354d7b`。收斂 `$primary` 時其餘 8 處都接 `var(--accent)` 古銅，
+但全視窗飽和古銅在精品調裡太吵，這一處改接 `var(--ink)` 縞黑（白字 14.9:1）。
 
 ### 純確認（跑一遍看有沒有壞）
 
 | # | 在哪 | 看什麼 | 預期 |
 |---|------|--------|------|
 | 1 | 乘客端 `/` | **必驗** —— 它吃主題引擎注入，是唯一會暴露 migration 沒跑的入口 | 骨白底 + 縞黑標題（Cormorant 襯線大寫）+ 古銅 CTA。標題若還是舊的粗體無襯線 = migration 沒生效 |
-| 2 | 乘客端 `/fare` | 車資試算表單、金額 | 版面不溢位；金額為舊體數字（見上方 ①） |
-| 3 | 司機端 `/driver/dashboard` | 三張 stat 卡 | 深底 + 亮銅；數字為 Cormorant |
+| 2 | 乘客端 `/fare` | 車資試算表單、金額 | 版面不溢位；金額為等高等寬數字（Jost），**不是**帶降部的襯線數字 |
+| 3 | 司機端 `/driver/dashboard` | 三張 stat 卡 | 深底 + 亮銅；`NT$ 0` / `0h 00m` 為等高數字。標題「歡迎回來」仍是襯線 —— 這個對比就是 ① 的成果 |
 | 4 | Admin `/admin/orders` | 側欄、篩選 chip、下拉 | 側欄縞黑 + 古銅選中態。**下拉選單的 `<option>` 維持 `#1a1a2e`，這是已知未變色點不是 bug** |
 | 5 | Admin `/admin/settings` | 逐套切換 christmas / lunar-new-year / summer | 三套在骨白底上的重新校準結果（W0a 定的深酒紅 8.52:1 / 深紅 7.56:1 / 深松綠 6.55:1） |
 | 6 | Admin `/admin/line-management` → richmenu 圖層合成器 | 字型下拉 | 選項已換成 Cormorant Garamond / Jost。**既有 richmenu 若存著 Bebas Neue / Barlow Condensed，合成出來會是系統字，需要重選一次** |

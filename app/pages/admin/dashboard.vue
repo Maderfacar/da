@@ -304,7 +304,8 @@ onUnmounted(() => {
 }
 
 .PageDashboard__stat-value {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 44px;
   line-height: 1;
   color: var(--da-dark);
@@ -348,7 +349,8 @@ onUnmounted(() => {
 }
 
 .PageDashboard__card-count {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 36px;
   line-height: 1;
   color: var(--da-amber);

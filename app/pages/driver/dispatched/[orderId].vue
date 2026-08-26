@@ -274,7 +274,8 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__section-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 24px;
   letter-spacing: 0.04em;
   color: #fff;

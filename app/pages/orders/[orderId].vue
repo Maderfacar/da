@@ -366,7 +366,7 @@ onUnmounted(() => {
 }
 
 .PageOrderDetail__header-id {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 26px;
   letter-spacing: 0.06em;
   color: var(--da-dark);
@@ -481,7 +481,7 @@ onUnmounted(() => {
 }
 
 .PageOrderDetail__route-meta-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 20px;
   letter-spacing: 0.04em;
   color: var(--da-dark);
@@ -555,7 +555,8 @@ onUnmounted(() => {
 }
 
 .PageOrderDetail__driver-plate {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 24px;
   letter-spacing: 0.08em;
   color: var(--da-dark);
@@ -659,7 +660,8 @@ onUnmounted(() => {
   }
 
   &.is-fare {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
+    font-variant-numeric: lining-nums tabular-nums;
     font-size: 22px;
     color: var(--da-amber);
     letter-spacing: 0.04em;

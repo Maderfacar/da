@@ -606,7 +606,8 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-date {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -622,7 +623,7 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-time {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 30px;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -751,7 +752,7 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-flight-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 16px;
   letter-spacing: 0.05em;
   color: var(--da-dark);
@@ -825,7 +826,8 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-driver-plate {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.08em;
   color: var(--da-dark);

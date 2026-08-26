@@ -193,7 +193,8 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__time-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.05em;
   color: #fff;

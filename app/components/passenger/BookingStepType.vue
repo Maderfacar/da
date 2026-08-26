@@ -624,7 +624,8 @@ const ClickNext = () => {
   }
 
   &__charter-day-n {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
+    font-variant-numeric: lining-nums tabular-nums;
     font-size: 22px;
     color: var(--da-dark);
     line-height: 1;
@@ -857,7 +858,8 @@ const ClickNext = () => {
   }
 
   &__flight-no {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
+    font-variant-numeric: lining-nums tabular-nums;
     font-size: 22px;
     color: var(--da-dark);
     letter-spacing: 0.05em;

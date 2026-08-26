@@ -132,7 +132,7 @@ section.PassengerReferralPanel(v-if="showPanel")
 }
 
 .PassengerReferralPanel__code-value {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 30px;
   letter-spacing: 0.16em;
   color: var(--da-cream);
@@ -177,7 +177,7 @@ section.PassengerReferralPanel(v-if="showPanel")
 }
 
 .PassengerReferralPanel__stat-num {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 32px;
   line-height: 1;
   color: var(--da-amber);
@@ -247,7 +247,7 @@ section.PassengerReferralPanel(v-if="showPanel")
 }
 
 .PassengerReferralPanel__item-code {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 18px;
   letter-spacing: 0.08em;
   color: var(--da-dark);

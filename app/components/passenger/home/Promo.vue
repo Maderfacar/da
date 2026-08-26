@@ -179,7 +179,8 @@ section.PassengerHomePromo(v-if="hasPromo")
 }
 
 .PassengerHomePromo__code {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 26px;
   letter-spacing: 0.08em;
   color: var(--da-amber-light);

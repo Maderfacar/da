@@ -313,7 +313,7 @@ onMounted(ApiLoadMe);
 }
 
 .PageReferralShare__code-value {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-size: 44px;
   letter-spacing: 0.18em;
   color: var(--da-cream);

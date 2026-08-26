@@ -240,7 +240,8 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 }
 
 .PassengerHomeRouteBoard__fare-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   color: var(--da-cream);
   letter-spacing: 0.02em;

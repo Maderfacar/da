@@ -523,7 +523,8 @@ const mountainHit = computed<boolean>(() => {
 }
 
 .PassengerFareEstimator__final-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 36px;
   letter-spacing: 0.04em;
   color: var(--da-amber-light, #d4860a);

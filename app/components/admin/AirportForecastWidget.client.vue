@@ -133,7 +133,8 @@ $amber: #d4860a;
 }
 
 .AirportForecastWidget__stat-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 16px;
   color: #fff;
   line-height: 1;
