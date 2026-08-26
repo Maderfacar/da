@@ -488,7 +488,7 @@ const ClickSave = async (): Promise<void> => {
   border-radius: 4px;
 
   &.is-text { background: var(--accent-a12); color: var(--da-amber); }
-  &.is-flex { background: rgba(28, 100, 200, 0.15); color: #1c64c8; }
+  &.is-flex { background: var(--note-a15); color: var(--note); }
 }
 
 .WelcomeSequenceEditor__msg-enabled {
@@ -523,9 +523,9 @@ const ClickSave = async (): Promise<void> => {
     color: var(--da-amber);
   }
   &.is-danger:not(:disabled):hover {
-    background: rgba(239, 68, 68, 0.12);
-    border-color: #ef4444;
-    color: #ef4444;
+    background: var(--stop-a15);
+    border-color: var(--stop);
+    color: var(--stop);
   }
 }
 
@@ -627,7 +627,7 @@ const ClickSave = async (): Promise<void> => {
     background: var(--da-amber);
     border: 1px solid var(--da-amber);
     color: #fff;
-    &:not(:disabled):hover { background: #b87308; }
+    &:not(:disabled):hover { background: var(--accent-deep); }
   }
   &.is-secondary {
     background: transparent;

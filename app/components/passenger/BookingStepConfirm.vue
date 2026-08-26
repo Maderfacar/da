@@ -594,7 +594,7 @@ const ClickSubmit = () => {
   }
 
   &__field-required {
-    color: #ef4444;
+    color: var(--stop);
     font-weight: 700;
   }
 
@@ -606,7 +606,7 @@ const ClickSubmit = () => {
   &__field-error {
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: #ef4444;
+    color: var(--stop);
     margin-top: 2px;
   }
 
@@ -676,7 +676,7 @@ const ClickSubmit = () => {
   &__discount-ok {
     font-family: var(--ff-ui);
     font-size: 13px;
-    color: #16a34a;
+    color: var(--good);
     font-weight: 600;
   }
 
@@ -691,7 +691,7 @@ const ClickSubmit = () => {
   }
 
   :deep(.el-input.is-error .el-input__wrapper) {
-    box-shadow: 0 0 0 1px #ef4444 inset;
+    box-shadow: 0 0 0 1px var(--stop) inset;
   }
 
   &__card {

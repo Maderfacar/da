@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // OpenDialogImageSelect // 圖片選擇與編輯 
 // -- 引入 --------------------------------------------------------------------------------------------
 const $option = UseOpenComOption();
@@ -34,7 +35,9 @@ const cfg = computed(() => ({
   lineColor: props.params?.lineColor ?? 'white',
   lineWidth: props.params?.lineWidth ?? 4,
   dash: props.params?.dash ?? [8, 6] as [number, number],
-  handleColor: props.params?.handleColor ?? '#63c6ff',
+  // 裁切控制點畫在 canvas 上（ctx.fillStyle 不解析 var()），走 JS 鏡像。
+  // 用亮銅：在任意照片上都看得見，且與整站同一套色。
+  handleColor: props.params?.handleColor ?? DESIGN_COLORS.accentLit,
   handleSize: props.params?.handleSize ?? 16,
   title: props.params?.title ?? '選擇上傳圖片'
 }));

@@ -112,7 +112,7 @@ $fs:      28px;
   justify-content: center;
   font-family: var(--ff-display);
   font-size:       $fs;
-  color:           var(--da-amber-light, #fbbf24);
+  color:           var(--da-amber-light, var(--wait));
   letter-spacing:  0.04em;
   line-height:     1;
   user-select:     none;

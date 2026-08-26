@@ -34,7 +34,8 @@
    ========================================================================== */
 :root,
 [data-da-theme],
-[data-surface='dark'] {
+[data-surface='dark'],
+[data-surface='light'] {
   /* ======================================================================
      A. 語意色別名 —— 解析路徑：語意名 → --da-* → 主題引擎可覆寫
      ====================================================================== */
@@ -56,12 +57,52 @@
   --accent-lit:  var(--da-amber-light);  /* 深底上的主色，會發光 */
   --accent-wash: var(--da-amber-pale);   /* 極淡底 */
 
-  /* 錯誤色 —— W0b 從 scss-tool/colors.scss 的樣板遺留 `--err` 搬過來（全站 7 處）。
-     刻意保留原值 #EE5151 不動：色票換裝不該順手改語意色的判讀門檻。
-     已知債：於瓷白只有 3.28:1，未過 AA 文字標準（Input / Badge 的錯誤字用到它）。
-     這一項與 good / wait / note / stop 一起歸「語意色三件套」階段處理，不在階段 0。
-     它是唯一寫死色值的別名 —— 因為主題引擎白名單只認 --da-*，錯誤色不該隨換季飄。 */
-  --danger: #EE5151;
+
+
+  /* ======================================================================
+     A3. 語意狀態色四件套 —— good / wait / note / stop
+     階段 1（色彩收尾）新增。收斂前現況：狀態色從來沒有 token，
+     684 處分散在 77 個檔、130 種相異色值，且全是 Tailwind / Element Plus / Bootstrap
+     的預設色，飽和度遠高於精品調，在骨白＋古銅的環境裡像貼紙。
+     同一個「成功」在不同頁面是不同的綠。
+
+     ⚠ 四件套**刻意不列入 DA_THEME_TOKEN_KEYS，值直接寫定，不隨主題引擎覆寫**。
+        狀態色是判讀門檻，不該隨換季飄 —— 聖誕主題不能讓「成功」變成紅色。
+        這也表示它們不需要四處同步（site-theme.ts / migration / fixtures 都不必動）。
+
+     ⚠ wait 刻意不用金色。慣例上等待＝琥珀，但本站的 --accent 就是古銅（hsl 39°），
+        再放一個金色進來會與主色糊在一起。選赤陶 #A0521F（hsl 24°，Δhue 15°）拉開色相，
+        同時保住「暖色＝等待」的閱讀直覺。
+
+     括號內為實測 WCAG 對比。base 對淺底、-lit 對縞黑，全部過 AA（≥ 4.5:1）。
+     元件端一律只寫 var(--good) —— 深色面會由 [data-surface='dark'] 自動換成 -lit 階。
+     ====================================================================== */
+
+  /* good —— 成功／已完成／已核准 */
+  --good:     #3E6B4E;  /* 瓷白 5.54:1 · 骨白 4.98:1 */
+  --good-lit: #86BC9C;  /* 縞黑 8.10:1 —— 深色面用，由 [data-surface='dark'] 自動接手 */
+
+  /* wait —— 等待／處理中／待確認 */
+  --wait:     #A0521F;  /* 瓷白 5.09:1 · 骨白 4.57:1 */
+  --wait-lit: #E5A878;  /* 縞黑 8.54:1 —— 深色面用，由 [data-surface='dark'] 自動接手 */
+
+  /* note —— 提示／資訊／進行中 */
+  --note:     #35527A;  /* 瓷白 7.18:1 · 骨白 6.44:1 */
+  --note-lit: #98B6D6;  /* 縞黑 8.36:1 —— 深色面用，由 [data-surface='dark'] 自動接手 */
+
+  /* stop —— 錯誤／危險／已取消 */
+  --stop:     #9E3535;  /* 瓷白 6.28:1 · 骨白 5.64:1 */
+  --stop-lit: #E08B8B;  /* 縞黑 6.89:1 —— 深色面用，由 [data-surface='dark'] 自動接手 */
+
+  /* ======================================================================
+     A4. 第三方 UI 擬真色 —— 不屬於本站色票，也不該被語意色收編
+
+     這些色的目的是「長得像那個第三方」，換色票時**刻意不跟著換**。
+     單獨列出來的理由：它們是 hex 字面值，不列成 token 的話，
+     未來「元件不得硬編色碼」的守衛會一直誤報，最後只能加例外清單 —— 那比列 token 糟。
+     ====================================================================== */
+  --line-green:  #06C755;  /* LINE 品牌綠（加好友按鈕、官方帳號識別） */
+  --line-bubble: #D4E7C5;  /* LINE 聊天氣泡底色（admin 的訊息預覽要擬真） */
 
   /* ======================================================================
      A2. 疊色階梯 —— 半透明的主色／墨色／表面疊層
@@ -106,7 +147,12 @@
   --ink-a70: rgba(26, 25, 23, 0.7);
   --ink-a90: rgba(26, 25, 23, 0.9);
 
-  /* 表面疊層 —— 高透明區間，玻璃面與浮層底 */
+  /* 表面疊層 —— 低透明區間給深色面上的細線與填底（取代散在各檔的 rgba(255,255,255,.08)），
+     高透明區間給玻璃面與浮層底 */
+  --surface-a06: rgba(245, 243, 238, 0.06);
+  --surface-a12: rgba(245, 243, 238, 0.12);
+  --surface-a20: rgba(245, 243, 238, 0.2);
+  --surface-a30: rgba(245, 243, 238, 0.3);
   --surface-a40: rgba(245, 243, 238, 0.4);
   --surface-a50: rgba(245, 243, 238, 0.5);
   --surface-a60: rgba(245, 243, 238, 0.6);
@@ -117,6 +163,36 @@
 
   /* 主色的深階 —— 實心主色按鈕的 hover。取代散在 9 處的 darken($amber, 6~8%) */
   --accent-deep: #725A2D;
+
+  /* 語意狀態色的疊色 —— 狀態標章的底(a08/a15)、框(a30/a45)、強調字(a70)。
+     現況 684 處用了 25 種相異 alpha，收成五階，最大偏移 0.05（少數高透明處 0.1）。 */
+  --good-a08: rgba(62, 107, 78, 0.08);
+  --good-a15: rgba(62, 107, 78, 0.15);
+  --good-a30: rgba(62, 107, 78, 0.3);
+  --good-a45: rgba(62, 107, 78, 0.45);
+  --good-a70: rgba(62, 107, 78, 0.7);
+
+  --wait-a08: rgba(160, 82, 31, 0.08);
+  --wait-a15: rgba(160, 82, 31, 0.15);
+  --wait-a30: rgba(160, 82, 31, 0.3);
+  --wait-a45: rgba(160, 82, 31, 0.45);
+  --wait-a70: rgba(160, 82, 31, 0.7);
+
+  --note-a08: rgba(53, 82, 122, 0.08);
+  --note-a15: rgba(53, 82, 122, 0.15);
+  --note-a30: rgba(53, 82, 122, 0.3);
+  --note-a45: rgba(53, 82, 122, 0.45);
+  --note-a70: rgba(53, 82, 122, 0.7);
+
+  --stop-a08: rgba(158, 53, 53, 0.08);
+  --stop-a15: rgba(158, 53, 53, 0.15);
+  --stop-a30: rgba(158, 53, 53, 0.3);
+  --stop-a45: rgba(158, 53, 53, 0.45);
+  --stop-a70: rgba(158, 53, 53, 0.7);
+
+  /* --danger 是 --stop 的別名。站上不得同時存在兩個錯誤紅：
+     舊值 #EE5151 於瓷白只有 3.19:1（未過 AA），--stop 是 6.28:1。 */
+  --danger: var(--stop);
 
   /* ======================================================================
      B. 尺度 token —— W0a 只定義，不替換既有字面值
@@ -200,7 +276,8 @@
 @supports (color: color-mix(in srgb, red 50%, transparent)) {
   :root,
   [data-da-theme],
-  [data-surface='dark'] {
+  [data-surface='dark'],
+  [data-surface='light'] {
     --accent-a06: color-mix(in srgb, var(--accent) 6%, transparent);
     --accent-a12: color-mix(in srgb, var(--accent) 12%, transparent);
     --accent-a20: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -221,6 +298,10 @@
     --ink-a70: color-mix(in srgb, var(--ink) 70%, transparent);
     --ink-a90: color-mix(in srgb, var(--ink) 90%, transparent);
 
+    --surface-a06: color-mix(in srgb, var(--surface-raised) 6%, transparent);
+    --surface-a12: color-mix(in srgb, var(--surface-raised) 12%, transparent);
+    --surface-a20: color-mix(in srgb, var(--surface-raised) 20%, transparent);
+    --surface-a30: color-mix(in srgb, var(--surface-raised) 30%, transparent);
     --surface-a40: color-mix(in srgb, var(--surface-raised) 40%, transparent);
     --surface-a50: color-mix(in srgb, var(--surface-raised) 50%, transparent);
     --surface-a60: color-mix(in srgb, var(--surface-raised) 60%, transparent);
@@ -230,6 +311,30 @@
     --surface-a96: color-mix(in srgb, var(--surface-raised) 96%, transparent);
 
     --accent-deep: color-mix(in srgb, var(--accent) 88%, var(--ink));
+
+    --good-a08: color-mix(in srgb, var(--good) 8%, transparent);
+    --good-a15: color-mix(in srgb, var(--good) 15%, transparent);
+    --good-a30: color-mix(in srgb, var(--good) 30%, transparent);
+    --good-a45: color-mix(in srgb, var(--good) 45%, transparent);
+    --good-a70: color-mix(in srgb, var(--good) 70%, transparent);
+
+    --wait-a08: color-mix(in srgb, var(--wait) 8%, transparent);
+    --wait-a15: color-mix(in srgb, var(--wait) 15%, transparent);
+    --wait-a30: color-mix(in srgb, var(--wait) 30%, transparent);
+    --wait-a45: color-mix(in srgb, var(--wait) 45%, transparent);
+    --wait-a70: color-mix(in srgb, var(--wait) 70%, transparent);
+
+    --note-a08: color-mix(in srgb, var(--note) 8%, transparent);
+    --note-a15: color-mix(in srgb, var(--note) 15%, transparent);
+    --note-a30: color-mix(in srgb, var(--note) 30%, transparent);
+    --note-a45: color-mix(in srgb, var(--note) 45%, transparent);
+    --note-a70: color-mix(in srgb, var(--note) 70%, transparent);
+
+    --stop-a08: color-mix(in srgb, var(--stop) 8%, transparent);
+    --stop-a15: color-mix(in srgb, var(--stop) 15%, transparent);
+    --stop-a30: color-mix(in srgb, var(--stop) 30%, transparent);
+    --stop-a45: color-mix(in srgb, var(--stop) 45%, transparent);
+    --stop-a70: color-mix(in srgb, var(--stop) 70%, transparent);
   }
 }
 
@@ -248,6 +353,26 @@
    ========================================================================== */
 [data-surface='dark'] {
   --da-amber: var(--da-amber-light);
+
+  /* 語意色同理：base 是配淺底定的，深色面一律換成 -lit 階。
+     疊色階梯因為在上面的多作用域區塊重新宣告過，會自動跟著推導。 */
+  --good: var(--good-lit);
+  --wait: var(--wait-lit);
+  --note: var(--note-lit);
+  --stop: var(--stop-lit);
+}
+
+/* ==========================================================================
+   淺色面 —— 深色作用域「裡面」的淺底容器（例：admin 深色頁上的白色輸入框、
+   整頁淺色的計費沙盒）。把主色與語意色拉回 base 階，否則會拿到深底用的 -lit，
+   在白底上剩 1.9:1。標在該淺底元素本身即可。
+   ========================================================================== */
+[data-surface='light'] {
+  --da-amber: #7E6330;
+  --good: #3E6B4E;
+  --wait: #A0521F;
+  --note: #35527A;
+  --stop: #9E3535;
 }
 
 /* ==========================================================================

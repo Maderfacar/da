@@ -25,6 +25,7 @@ import {
 } from '@@/utils/template-registry';
 import { loadActiveDrivers } from '@@/utils/order-dispatch';
 import type { DispatchLevel } from '~shared/types/dispatch-visibility';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 export interface DispatchedOrderSummary {
   orderId: string;
@@ -213,14 +214,14 @@ export function buildDispatchFlex(
   const ctaLabel = _pickLabel(customLabels?.ctaLabel, '查看詳情並接單');
 
   const bodyContents: Array<Record<string, unknown>> = [
-    { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#D4860A' },
+    { type: 'text', text: title, weight: 'bold', size: 'lg', color: DESIGN_COLORS.accent },
   ];
   if (subtitle) {
     bodyContents.push({ type: 'text', text: subtitle, size: 'sm', wrap: true, color: '#666666', margin: 'sm' });
   }
   bodyContents.push(
     { type: 'separator', margin: 'md' },
-    { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
+    { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: DESIGN_COLORS.inkSoft, margin: 'md' },
     { type: 'text', text: `${dateLabel} ${dateLine}`, size: 'md', wrap: true, margin: 'sm' },
     { type: 'text', text: `${pickupLabel} ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
     { type: 'text', text: `${dropoffLabel} ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs', color: '#333333' },
@@ -253,7 +254,7 @@ export function buildDispatchFlex(
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],
@@ -347,7 +348,7 @@ export function buildAssignedPassengerFlex(
         { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#50C878' },
         { type: 'separator', margin: 'md' },
         { type: 'text', text: matchedHeader, size: 'sm', wrap: true, margin: 'md' },
-        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'sm' },
+        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: DESIGN_COLORS.inkSoft, margin: 'sm' },
         { type: 'text', text: `🚗 ${payload.driverDisplayName}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
         { type: 'text', text: `📅 ${pickupLabel}：${dateLine}`, size: 'sm', wrap: true, margin: 'sm', color: '#333333' },
       ],
@@ -359,7 +360,7 @@ export function buildAssignedPassengerFlex(
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],
@@ -435,12 +436,12 @@ export function buildAssignedDriverFlex(
       contents: [
         { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#50C878' },
         { type: 'separator', margin: 'md' },
-        { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
+        { type: 'text', text: `${orderIdLabel} #${orderShort}`, size: 'sm', color: DESIGN_COLORS.inkSoft, margin: 'md' },
         { type: 'text', text: `${dateLabel} ${dateLine}`, size: 'md', wrap: true, margin: 'sm', weight: 'bold' },
         { type: 'text', text: `${pickupLabel} ${payload.pickupAddress}`, size: 'sm', wrap: true, margin: 'sm' },
         { type: 'text', text: `${dropoffLabel} ${payload.dropoffAddress}`, size: 'sm', wrap: true, margin: 'xs' },
         { type: 'text', text: `${paxLabel} ${_formatPaxSummary(payload)}`, size: 'sm', margin: 'sm', color: '#666666' },
-        { type: 'text', text: noticeText, size: 'sm', wrap: true, margin: 'md', color: '#D4860A' },
+        { type: 'text', text: noticeText, size: 'sm', wrap: true, margin: 'md', color: DESIGN_COLORS.accent },
       ],
     },
     footer: {
@@ -450,7 +451,7 @@ export function buildAssignedDriverFlex(
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'uri', label: ctaLabel, uri: ctaUri },
         },
       ],

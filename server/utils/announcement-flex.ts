@@ -13,6 +13,7 @@
  */
 import type { LineMessage } from '@@/utils/line-push';
 import { buildTemplateFlex, type TemplateContentFlex } from '@@/utils/template-registry';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 interface AnnouncementForFlex {
   title: string;
@@ -91,7 +92,7 @@ export function buildAnnouncementFlex(ann: AnnouncementForFlex): LineMessage {
           uri: ann.ctaButton.url,
         },
         style: 'primary',
-        color: '#D4860A',
+        color: DESIGN_COLORS.accent,
       }],
     };
   }

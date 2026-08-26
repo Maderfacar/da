@@ -153,7 +153,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
             span 送審時間：{{ FormatTime(pending.submittedAt) }}
           .VehicleProfileReview__pending-meta-line(
             v-if="pending.status === 'rejected' && pending.rejectReason"
-            style="color: #f87171"
+            style="color: var(--stop)"
           ) 退回原因：{{ pending.rejectReason }}
 
         .VehicleProfileReview__photos
@@ -343,12 +343,12 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   border-radius: 100px;
   border: 1px solid #e4e7ed;
   background: #f0f9eb;
-  color: #67c23a;
+  color: var(--good);
 
   &.is-pending {
     background: #fdf6ec;
     border-color: #faecd8;
-    color: #e6a23c;
+    color: var(--wait);
   }
 }
 

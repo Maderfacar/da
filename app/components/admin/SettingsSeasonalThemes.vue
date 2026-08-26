@@ -335,9 +335,9 @@ $border: rgba(255, 255, 255, 0.08);
   border: 1px solid;
 
   &.is-active {
-    color: #7ee787;
-    background: rgba(126, 231, 135, 0.1);
-    border-color: rgba(126, 231, 135, 0.35);
+    color: var(--good);
+    background: var(--good-a08);
+    border-color: var(--good-a30);
   }
   &.is-default {
     color: rgba(255, 255, 255, 0.7);
@@ -345,9 +345,9 @@ $border: rgba(255, 255, 255, 0.08);
     border-color: $border;
   }
   &.is-off {
-    color: rgba(255, 100, 100, 0.85);
-    background: rgba(255, 80, 80, 0.1);
-    border-color: rgba(255, 80, 80, 0.3);
+    color: var(--stop);
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
   }
 }
 
@@ -474,10 +474,10 @@ $border: rgba(255, 255, 255, 0.08);
   }
 
   &.is-delete {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #f87171;
-    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 }
 </style>

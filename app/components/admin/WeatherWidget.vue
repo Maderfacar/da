@@ -108,7 +108,7 @@ onMounted(ApiGetWeather);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: #38bdf8; // sky blue
+  color: var(--note); // sky blue
 }
 
 .WeatherWidget__loading {
@@ -163,7 +163,7 @@ onMounted(ApiGetWeather);
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 16px;
-  color: #38bdf8;
+  color: var(--note);
   line-height: 1;
 }
 
@@ -171,8 +171,8 @@ onMounted(ApiGetWeather);
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: rgba(255, 80, 80, 0.08);
-  border: 1px solid rgba(255, 80, 80, 0.25);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   border-radius: 8px;
   padding: 10px 12px;
 }
@@ -183,7 +183,7 @@ onMounted(ApiGetWeather);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 120, 120, 0.9);
+  color: var(--stop);
   margin: 0;
 }
 

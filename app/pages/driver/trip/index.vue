@@ -613,8 +613,8 @@ onUnmounted(() => {
   padding: 3px 9px;
   border-radius: 6px;
 
-  &.is-completed { background: rgba(80, 200, 120, 0.12); color: #50c878; border: 1px solid rgba(80, 200, 120, 0.3); }
-  &.is-cancelled { background: rgba(248, 113, 113, 0.12); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+  &.is-completed { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
+  &.is-cancelled { background: var(--stop-a15); color: var(--stop); border: 1px solid var(--stop-a30); }
 }
 
 .PageDriverTrip__card.is-history {
@@ -744,7 +744,7 @@ onUnmounted(() => {
   align-self: center;
 
   &.is-from { background: var(--accent); }
-  &.is-to { background: #4ade80; }
+  &.is-to { background: var(--good); }
 }
 
 .PageDriverTrip__route-text {
@@ -790,9 +790,9 @@ onUnmounted(() => {
   padding: 3px 9px;
   border-radius: 6px;
 
-  &.is-confirmed       { background: rgba(74, 222, 128, 0.12); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-  &.is-en_route        { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
-  &.is-arrived_pickup  { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+  &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
+  &.is-en_route        { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
+  &.is-arrived_pickup  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
   &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
@@ -813,9 +813,9 @@ onUnmounted(() => {
   letter-spacing: 0.08em;
   padding: 2px 8px;
   border-radius: 100px;
-  background: rgba(255, 200, 100, 0.12);
-  border: 1px solid rgba(255, 200, 100, 0.35);
-  color: rgba(255, 220, 150, 0.95);
+  background: var(--wait-a15);
+  border: 1px solid var(--wait-a30);
+  color: var(--wait);
   margin-left: 6px;
 }
 
@@ -826,8 +826,8 @@ onUnmounted(() => {
   margin: 12px 16px 0;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 200, 100, 0.08);
-  border: 1px solid rgba(255, 200, 100, 0.3);
+  background: var(--wait-a08);
+  border: 1px solid var(--wait-a30);
 }
 
 .PageDriverTrip__pending-banner-icon {
@@ -843,7 +843,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 220, 150, 0.95);
+  color: var(--wait);
   letter-spacing: 0.04em;
 }
 
@@ -953,9 +953,9 @@ onUnmounted(() => {
   border-radius: 6px;
   width: fit-content;
 
-  &.is-confirmed       { background: rgba(74, 222, 128, 0.12); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-  &.is-en_route        { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
-  &.is-arrived_pickup  { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+  &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
+  &.is-en_route        { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
+  &.is-arrived_pickup  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
   &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
 
   &.is-pickup .PageDriverTrip__addr-tag { background: var(--accent); color: #fff; }
   &.is-stop .PageDriverTrip__addr-tag { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
-  &.is-dropoff .PageDriverTrip__addr-tag { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
+  &.is-dropoff .PageDriverTrip__addr-tag { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
 }
 
 .PageDriverTrip__addr-tag {

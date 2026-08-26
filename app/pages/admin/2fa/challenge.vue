@@ -108,7 +108,7 @@ const ClickVerify = async () => {
   margin: 12px 0;
 }
 .Admin2faChallenge__error {
-  color: #c4262e;
+  color: var(--stop);
   font-size: 13px;
   margin: 8px 0;
 }

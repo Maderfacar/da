@@ -179,7 +179,7 @@ onMounted(() => { void ApiLoad(); });
     color: var(--da-amber);
     text-decoration: underline;
     text-underline-offset: 2px;
-    &:hover { color: #b8730a; }
+    &:hover { color: var(--accent-deep); }
   }
 
   :deep(strong),

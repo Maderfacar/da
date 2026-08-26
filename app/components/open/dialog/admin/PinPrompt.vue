@@ -62,7 +62,7 @@ ElDialog(
   line-height: 1.6;
 }
 .OpenDialogAdminPinPrompt__error {
-  color: #c4262e;
+  color: var(--stop);
   font-size: 12px;
   margin: 0;
 }

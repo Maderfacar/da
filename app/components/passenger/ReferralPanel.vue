@@ -142,8 +142,8 @@ section.PassengerReferralPanel(v-if="showPanel")
 .PassengerReferralPanel__share {
   flex-shrink: 0;
   padding: 9px 16px;
-  background: #06c755;
-  border: 1px solid #06c755;
+  background: var(--line-green);
+  border: 1px solid var(--line-green);
   border-radius: 100px;
   font-family: var(--ff-label);
   font-size: 12px;

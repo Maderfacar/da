@@ -499,7 +499,6 @@ onMounted(() => {
 <style lang="scss" scoped>
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$danger: #c0392b;
 $muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit {
@@ -638,9 +637,9 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .OpenDialogAnnouncementEdit__warning {
-  background: rgba($danger, 0.12);
-  border: 1px solid rgba($danger, 0.4);
-  color: #ffb4ab;
+  background: var(--stop-a15);
+  border: 1px solid var(--stop-a45);
+  color: var(--stop);
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 13px;
@@ -649,7 +648,8 @@ $muted: rgba(255, 255, 255, 0.4);
   &.is-info {
     background: var(--accent-a06);
     border-color: var(--accent-a30);
-    color: rgba(255, 220, 170, 0.95);
+    // 原值 rgba(255,220,170,.95) 是舊琥珀的亮階，不是警告色 —— 底與框都走主色，字也該是主色
+    color: var(--accent-lit);
   }
 }
 
@@ -749,7 +749,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
-  &:hover { background: rgba($danger, 0.8); }
+  &:hover { background: var(--stop-a70); }
 }
 
 // ── CTA / Channels / Radio ────────────────────────────────
@@ -861,9 +861,10 @@ $muted: rgba(255, 255, 255, 0.4);
   }
 
   &--danger {
-    background: $danger;
+    background: var(--stop);
     color: #fff;
-    &:hover:not(:disabled) { background: darken(#c0392b, 8%); }
+    // SCSS 的 darken() 吃不了 var()，改用 CSS 的 color-mix：往縞黑混 12% 等效於加深一階。
+    &:hover:not(:disabled) { background: color-mix(in srgb, var(--stop) 88%, var(--ink)); }
   }
 }
 

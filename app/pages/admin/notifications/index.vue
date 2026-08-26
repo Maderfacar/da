@@ -310,7 +310,6 @@ onMounted(() => {
 <style lang="scss" scoped>
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$danger: #c0392b;
 $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminAnnouncements {
@@ -529,10 +528,10 @@ $muted: rgba(255, 255, 255, 0.4);
   }
 
   &--danger {
-    background: rgba($danger, 0.1);
-    border-color: rgba($danger, 0.4);
-    color: #ff7766;
-    &:hover:not(:disabled) { background: rgba($danger, 0.2); color: #ff5544; }
+    background: var(--stop-a08);
+    border-color: var(--stop-a45);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); color: var(--stop); }
   }
 }
 </style>

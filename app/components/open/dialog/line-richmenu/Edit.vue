@@ -806,12 +806,12 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 3px 10px;
 
   &.is-passenger {
-    background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    background: var(--note-a15);
+    color: var(--note);
   }
   &.is-driver {
-    background: rgba(5, 150, 105, 0.12);
-    color: #059669;
+    background: var(--good-a15);
+    color: var(--good);
   }
 }
 
@@ -823,18 +823,20 @@ $border: rgba(0, 0, 0, 0.1);
   letter-spacing: 0.1em;
   border-radius: 100px;
   padding: 3px 10px;
-
+  /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
+     色相分類把 zh_tw 與 ja 都壓成 --stop，兩個並排的 chip 變同色（功能性退步）。
+     改用三個明顯不同色相的語意 token 撐開：紅 / 藍 / 綠。色只是輔助，旁邊有語言文字。 */
   &.is-zh_tw {
-    background: rgba(220, 38, 38, 0.10);
-    color: #b91c1c;
+    background: var(--stop-a08);
+    color: var(--stop);
   }
   &.is-en {
-    background: rgba(79, 70, 229, 0.10);
-    color: #4338ca;
+    background: var(--note-a08);
+    color: var(--note);
   }
   &.is-ja {
-    background: rgba(244, 114, 182, 0.12);
-    color: #be185d;
+    background: var(--good-a08);
+    color: var(--good);
   }
 }
 
@@ -983,8 +985,8 @@ $border: rgba(0, 0, 0, 0.1);
     background: var(--accent-a30);
   }
   &.is-selected {
-    border-color: #ef4444;
-    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--stop);
+    background: var(--stop-a30);
     z-index: 10;
   }
 
@@ -1042,8 +1044,8 @@ $border: rgba(0, 0, 0, 0.1);
 // P44a：Ctrl+drag marquee 框選
 .DialogLineRichmenuEdit__marquee {
   position: absolute;
-  border: 1px dashed #6366f1;
-  background: rgba(99, 102, 241, 0.08);
+  border: 1px dashed var(--note);
+  background: var(--note-a08);
   pointer-events: none;
   z-index: 13;
 }
@@ -1051,7 +1053,7 @@ $border: rgba(0, 0, 0, 0.1);
 // P44a：對齊輔助線（drag 中顯示）
 .DialogLineRichmenuEdit__guide {
   position: absolute;
-  background: #ec4899;
+  background: var(--stop);
   pointer-events: none;
   opacity: 0.7;
   z-index: 14;
@@ -1074,9 +1076,9 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  background: rgba(99, 102, 241, 0.10);
-  color: #4338ca;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: var(--note-a08);
+  color: var(--note);
+  border: 1px solid var(--note-a30);
   border-radius: 8px;
   padding: 8px 12px;
 }
@@ -1177,8 +1179,8 @@ $border: rgba(0, 0, 0, 0.1);
   margin-top: 6px;
   padding: 8px 10px;
   background: #fff8e1;
-  border: 1px solid #ffb300;
-  border-left: 3px solid #f57c00;
+  border: 1px solid var(--wait);
+  border-left: 3px solid var(--wait);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -1203,7 +1205,7 @@ $border: rgba(0, 0, 0, 0.1);
     min-width: 160px;
     padding: 5px 8px;
     background: #fff;
-    border: 1px solid #f0d896;
+    border: 1px solid var(--wait);
     border-radius: 3px;
     word-break: break-all;
     font-size: 11px;
@@ -1216,7 +1218,7 @@ $border: rgba(0, 0, 0, 0.1);
 .DialogLineRichmenuEdit__liff-apply {
   flex-shrink: 0;
   padding: 5px 14px;
-  background: #f57c00;
+  background: var(--wait);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -1227,7 +1229,7 @@ $border: rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
 
-  &:hover { background: #e65100; }
+  &:hover { background: var(--wait); }
   &:active { transform: scale(0.96); }
 }
 
@@ -1322,13 +1324,13 @@ $border: rgba(0, 0, 0, 0.1);
     background: var(--accent);
     border-color: var(--accent);
     color: white;
-    &:hover:not(:disabled) { background: #b8730a; }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
   &.is-reject {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #ef4444;
-    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.16); }
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
   &.is-mini {
     padding: 4px 10px;

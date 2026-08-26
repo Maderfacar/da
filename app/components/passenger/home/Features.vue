@@ -258,8 +258,8 @@ section.PassengerHomeFeatures
 .PassengerHomeFeatures__line-only {
   margin-top: 32px;
   padding: 22px 20px;
-  background: linear-gradient(135deg, rgba(6, 199, 85, 0.10), rgba(6, 199, 85, 0.02));
-  border: 1.5px solid rgba(6, 199, 85, 0.4);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--line-green) 10%, transparent), color-mix(in srgb, var(--line-green) 2%, transparent));
+  border: 1.5px solid color-mix(in srgb, var(--line-green) 40%, transparent);
   border-radius: 16px;
   position: relative;
   overflow: hidden;
@@ -271,7 +271,7 @@ section.PassengerHomeFeatures
     left: 0;
     width: 4px;
     height: 100%;
-    background: #06c755;
+    background: var(--line-green);
   }
 }
 
@@ -282,8 +282,8 @@ section.PassengerHomeFeatures
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #06c755;
-  background: rgba(6, 199, 85, 0.12);
+  color: var(--line-green);
+  background: color-mix(in srgb, var(--line-green) 12%, transparent);
   padding: 4px 10px;
   border-radius: 100px;
   margin-bottom: 10px;

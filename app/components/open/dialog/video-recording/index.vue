@@ -459,7 +459,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   text-align: center;
   .warn {
     @include fs(14px, 600);
-    color: #b45309; // amber-700
+    color: var(--wait); // amber-700
     background: #fef3c7; // amber-100
     border-radius: 8px;
     padding: 8px 10px;
@@ -467,7 +467,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   }
   .error {
     @include fs(14px, 600);
-    color: #991b1b; // red-800
+    color: var(--stop); // red-800
     background: #fee2e2; // red-100
     border-radius: 8px;
     padding: 8px 10px;

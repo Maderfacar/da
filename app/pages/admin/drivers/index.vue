@@ -390,9 +390,9 @@ $muted: rgba(255, 255, 255, 0.35);
   }
 
   &.is-rejected.is-active {
-    border-color: rgba(248, 113, 113, 0.5);
-    background: rgba(248, 113, 113, 0.1);
-    color: #f87171;
+    border-color: var(--stop-a45);
+    background: var(--stop-a08);
+    color: var(--stop);
   }
 }
 
@@ -498,9 +498,9 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 100px;
   flex-shrink: 0;
 
-  &.is-approved { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
-  &.is-pending  { background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
-  &.is-rejected { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); color: #f87171; }
+  &.is-approved { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
+  &.is-pending  { background: var(--wait-a08); border: 1px solid var(--wait-a30); color: var(--wait); }
+  &.is-rejected { background: var(--stop-a08); border: 1px solid var(--stop-a30); color: var(--stop); }
 }
 
 .PageAdminDrivers__vehicle-badge {
@@ -510,9 +510,9 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.05em;
   padding: 3px 8px;
   border-radius: 100px;
-  background: rgba(255, 200, 0, 0.12);
-  border: 1px solid rgba(255, 200, 0, 0.35);
-  color: #f5c518;
+  background: var(--wait-a15);
+  border: 1px solid var(--wait-a30);
+  color: var(--wait);
   flex-shrink: 0;
   margin-left: 6px;
 }
@@ -663,9 +663,9 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(248, 113, 113, 0.9);
-  background: rgba(248, 113, 113, 0.06);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: var(--stop);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a15);
   border-radius: 8px;
   padding: 10px 12px;
 }
@@ -692,19 +692,19 @@ $muted: rgba(255, 255, 255, 0.35);
   &:hover { opacity: 0.85; }
 
   &.is-approve {
-    background: rgba(34, 197, 94, 0.14);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #4ade80;
+    background: var(--good-a15);
+    border-color: var(--good-a45);
+    color: var(--good);
   }
   &.is-reject {
-    background: rgba(248, 113, 113, 0.12);
-    border-color: rgba(248, 113, 113, 0.35);
-    color: #f87171;
+    background: var(--stop-a15);
+    border-color: var(--stop-a30);
+    color: var(--stop);
   }
   &.is-revoke {
-    background: rgba(255, 200, 0, 0.08);
-    border-color: rgba(255, 200, 0, 0.3);
-    color: #f5c518;
+    background: var(--wait-a08);
+    border-color: var(--wait-a30);
+    color: var(--wait);
   }
   &.is-clear {
     background: var(--accent-a12);

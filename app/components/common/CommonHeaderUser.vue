@@ -93,10 +93,10 @@ const ClickPassenger = () => {
 }
 
 .CommonHeaderUser__admin-btn {
-  background: rgba(238, 81, 81, 0.18);
+  background: var(--stop-a15);
   color: var(--da-amber);
   border: 1px solid var(--accent-a30);
-  &:hover { background: rgba(238, 81, 81, 0.28); }
+  &:hover { background: var(--stop-a30); }
 }
 
 .CommonHeaderUser__passenger-btn {

@@ -188,7 +188,7 @@ const ClickClear = () => {
 }
 
 .DriverRegisterUploadField__required {
-  color: #f87171;
+  color: var(--stop);
 }
 
 .DriverRegisterUploadField__zone {
@@ -219,8 +219,8 @@ const ClickClear = () => {
 
   &.is-uploaded {
     border-style: solid;
-    border-color: rgba(80, 200, 120, 0.4);
-    background: rgba(80, 200, 120, 0.04);
+    border-color: var(--good-a45);
+    background: var(--good-a08);
   }
 
   &.is-uploading {
@@ -309,6 +309,6 @@ const ClickClear = () => {
 .DriverRegisterUploadField__error {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: #f87171;
+  color: var(--stop);
 }
 </style>

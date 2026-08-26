@@ -420,9 +420,9 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminFareCalculatorPreview__error {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 200, 0, 0.85);
-  background: rgba(255, 200, 0, 0.08);
-  border: 1px solid rgba(255, 200, 0, 0.25);
+  color: var(--wait);
+  background: var(--wait-a08);
+  border: 1px solid var(--wait-a30);
   border-radius: 8px;
   padding: 8px 12px;
   margin-top: 12px;

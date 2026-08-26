@@ -548,7 +548,7 @@ const ClickNewOrder = () => {
 
   &__success-icon {
     font-size: 64px;
-    color: #22c55e;
+    color: var(--good);
     margin-bottom: 16px;
   }
 

@@ -129,7 +129,7 @@ const ClickChip = (id: string) => {
   &.is-selected {
     border-color: var(--accent-a70);
     background: var(--accent-a20);
-    color: #f5c518;
+    color: var(--wait);
   }
 
   &:disabled { cursor: not-allowed; }

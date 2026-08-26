@@ -13,6 +13,7 @@
  *   .text 類（passenger.text / driver.text）維持單則 text，不走此 schema。
  */
 import type { LineMessage } from '@@/utils/line-push';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 // ── Limits ────────────────────────────────────────────────────
 export const MAX_MESSAGES = 5;       // LINE reply / push 一次最多 5 則
@@ -23,7 +24,7 @@ export const MAX_LABEL_LEN = 20;
 export const MAX_URL_LEN = 2000;
 
 const MAX_ALT_TEXT = 400;
-const FLEX_AMBER = '#D4860A';
+const FLEX_AMBER = DESIGN_COLORS.accent;
 
 // ── Types ────────────────────────────────────────────────────
 export type SupportedLang = 'zh_tw' | 'en' | 'ja';

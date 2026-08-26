@@ -369,8 +369,8 @@ function ClickNav(path: string) {
 .LayoutBackDesk__signout {
   width: 100%;
   padding: 12px;
-  background: rgba(238, 81, 81, 0.1);
-  border: 1px solid rgba(238, 81, 81, 0.2);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a15);
   border-radius: 10px;
   font-family: var(--ff-label);
   font-size: 13px;
@@ -380,7 +380,7 @@ function ClickNav(path: string) {
   cursor: pointer;
   transition: background 0.2s;
 
-  &:hover { background: rgba(238, 81, 81, 0.18); }
+  &:hover { background: var(--stop-a15); }
 }
 
 // ── 抽屜遮罩 ───────────────────────────────────────────────

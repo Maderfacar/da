@@ -454,7 +454,6 @@ defineExpose({ reloadTags: ApiLoadTags });
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.4);
-$danger: #f87171;
 
 .VehicleProfileEditor {
   display: flex;
@@ -511,10 +510,10 @@ $danger: #f87171;
   padding: 3px 10px;
   border-radius: 100px;
 
-  &.is-pending  { background: rgba(255, 200, 0, 0.12);  border: 1px solid rgba(255, 200, 0, 0.4);  color: #f5c518; }
-  &.is-rejected { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba($danger, 0.4); color: $danger; }
+  &.is-pending  { background: var(--wait-a15);  border: 1px solid var(--wait-a45);  color: var(--wait); }
+  &.is-rejected { background: var(--stop-a15); border: 1px solid var(--stop-a45); color: var(--stop); }
   &.is-draft    { background: var(--accent-a12);       border: 1px solid var(--accent-a30);  color: var(--accent); }
-  &.is-verified { background: rgba(80, 200, 120, 0.12); border: 1px solid rgba(80, 200, 120, 0.4); color: #50c878; }
+  &.is-verified { background: var(--good-a15); border: 1px solid var(--good-a45); color: var(--good); }
   &.is-none     { background: rgba(255, 255, 255, 0.05); border: 1px solid $border; color: $muted; }
 }
 
@@ -530,8 +529,8 @@ $danger: #f87171;
 }
 
 .VehicleProfileEditor__reject {
-  background: rgba($danger, 0.08);
-  border: 1px solid rgba($danger, 0.3);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   border-radius: 10px;
   padding: 10px 12px;
   display: flex;
@@ -543,7 +542,7 @@ $danger: #f87171;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: $danger;
+    color: var(--stop);
   }
   &-body {
     font-family: var(--ff-ui);
@@ -626,15 +625,15 @@ $danger: #f87171;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 1px solid rgba($danger, 0.4);
+  border: 1px solid var(--stop-a45);
   background: rgba(0, 0, 0, 0.6);
-  color: $danger;
+  color: var(--stop);
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
   padding: 0;
 
-  &:hover { background: rgba($danger, 0.2); }
+  &:hover { background: var(--stop-a15); }
 }
 
 .VehicleProfileEditor__photo-add {
@@ -709,9 +708,9 @@ $danger: #f87171;
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 100px;
-  background: rgba(80, 200, 120, 0.12);
-  border: 1px solid rgba(80, 200, 120, 0.3);
-  color: #50c878;
+  background: var(--good-a15);
+  border: 1px solid var(--good-a30);
+  color: var(--good);
 }
 
 .VehicleProfileEditor__empty {
@@ -749,8 +748,8 @@ $danger: #f87171;
   align-items: baseline;
   gap: 2px;
   padding: 4px 12px;
-  background: rgba(80, 200, 120, 0.1);
-  border: 1px solid rgba(80, 200, 120, 0.3);
+  background: var(--good-a08);
+  border: 1px solid var(--good-a30);
   border-radius: 8px;
 }
 
@@ -758,14 +757,14 @@ $danger: #f87171;
   font-family: var(--ff-label);
   font-size: 20px;
   font-weight: 700;
-  color: #50c878;
+  color: var(--good);
 }
 
 .VehicleProfileEditor__capacity-su-label {
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 600;
-  color: rgba(80, 200, 120, 0.8);
+  color: var(--good);
 }
 
 .VehicleProfileEditor__capacity-hint {
@@ -812,16 +811,16 @@ $danger: #f87171;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid rgba($danger, 0.4);
+  border: 1px solid var(--stop-a45);
   background: transparent;
-  color: $danger;
+  color: var(--stop);
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
   padding: 0;
   flex-shrink: 0;
 
-  &:hover { background: rgba($danger, 0.15); }
+  &:hover { background: var(--stop-a15); }
 }
 
 .VehicleProfileEditor__seat-add {

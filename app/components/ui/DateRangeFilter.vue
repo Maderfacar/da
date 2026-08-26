@@ -243,7 +243,7 @@ const _SingleInputType = computed(() => {
 
   &:last-child { border-right: none; }
   &:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-  &.is-active { background: var(--accent-a20); color: #f7b96a; }
+  &.is-active { background: var(--accent-a20); color: var(--accent-lit); }
 }
 
 .UiDateRangeFilter__input {
@@ -283,7 +283,7 @@ const _SingleInputType = computed(() => {
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 
-  &:hover { background: rgba(255, 80, 80, 0.12); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+  &:hover { background: var(--stop-a15); color: var(--stop); border-color: var(--stop-a30); }
 }
 
 // ── 尺寸：size-md（front-desk 用，字級略大）─────────────────
@@ -309,7 +309,7 @@ const _SingleInputType = computed(() => {
     }
     &.is-active {
       background: var(--accent-a20);
-      color: #b8730a;
+      color: var(--accent-deep);
     }
   }
   .UiDateRangeFilter__input {
@@ -330,9 +330,9 @@ const _SingleInputType = computed(() => {
     color: var(--da-gray);
 
     &:hover {
-      background: rgba(220, 38, 38, 0.10);
-      color: #dc2626;
-      border-color: rgba(220, 38, 38, 0.30);
+      background: var(--stop-a08);
+      color: var(--stop);
+      border-color: var(--stop-a30);
     }
   }
 }

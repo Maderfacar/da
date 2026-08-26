@@ -207,9 +207,9 @@ section.PassengerHomePromo(v-if="hasPromo")
   &:active { transform: scale(0.92); }
 
   &.is-copied {
-    color: #6ee7a8;
-    border-color: rgba(110, 231, 168, 0.5);
-    background: rgba(110, 231, 168, 0.08);
+    color: var(--good);
+    border-color: var(--good-a45);
+    background: var(--good-a08);
   }
 }
 

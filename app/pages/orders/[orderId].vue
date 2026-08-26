@@ -16,13 +16,16 @@ const cancelling = ref(false);
 // 狀態色卡（沿用 orders/index.vue + 補 en_route / arrived_pickup）
 // Wave 3-P1：cream 底色 → 全部調整為深色系（rgba 白色系不可讀）
 const STATUS_COLOR: Record<string, string> = {
-  pending:        '#b45309',  // amber-700
-  confirmed:      '#1B4F8A',  // navy（與 dropoff dot 同色）
-  en_route:       '#6d28d9',  // violet-700
-  arrived_pickup: '#0e7490',  // cyan-700
-  in_transit:     '#15803d',  // green-700
+  pending:        DESIGN_COLORS.wait,
+  confirmed:      DESIGN_COLORS.note,
+  // en_route / arrived_pickup 原本是紫與青，四件套裡沒有對應語意。
+  // 收斂成 note（進行中）—— 色只是輔助，狀態意義由旁邊的 StatusText 文字承擔，
+  // 三個進行中狀態同色不影響判讀，卻換到整組色都在精品調裡。
+  en_route:       DESIGN_COLORS.note,
+  arrived_pickup: DESIGN_COLORS.note,
+  in_transit:     DESIGN_COLORS.good,
   completed:      DESIGN_COLORS.inkSoft,  // 次要文字
-  cancelled:      '#dc2626',
+  cancelled:      DESIGN_COLORS.stop,
 };
 
 // 乘客可主動取消的狀態（行程中 / 已完成 / 已取消 都不可）
@@ -430,7 +433,7 @@ onUnmounted(() => {
 
   &.is-pickup   { background: var(--da-amber); }
   &.is-stopover { background: var(--da-gray-light); }
-  &.is-dropoff  { background: #1B4F8A; }
+  &.is-dropoff  { background: var(--note); }
 }
 
 .PageOrderDetail__route-text { min-width: 0; flex: 1; }
@@ -510,9 +513,9 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #06c755;
-  background: rgba(6, 199, 85, 0.18);
-  border: 1px solid rgba(6, 199, 85, 0.4);
+  color: var(--line-green);
+  background: color-mix(in srgb, var(--line-green) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-green) 40%, transparent);
   padding: 4px 10px;
   border-radius: 100px;
 }
@@ -692,18 +695,18 @@ onUnmounted(() => {
   display: block;
   width: 100%;
   padding: 12px;
-  background: rgba(220, 38, 38, 0.08);
-  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   border-radius: 12px;
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #dc2626;
+  color: var(--stop);
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s, transform 0.1s;
 
-  &:hover:not(:disabled) { background: rgba(220, 38, 38, 0.14); }
+  &:hover:not(:disabled) { background: var(--stop-a15); }
   &:active { transform: scale(0.99); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

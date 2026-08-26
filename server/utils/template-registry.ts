@@ -15,6 +15,7 @@
  */
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LineMessage } from '@@/utils/line-push';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -831,7 +832,7 @@ export function getTemplateMeta(templateKey: string): TemplateMeta | null {
 
 const MAX_ALT_TEXT = 400;
 const MAX_LABEL = 20;
-const FLEX_AMBER = '#D4860A';
+const FLEX_AMBER = DESIGN_COLORS.accent;
 
 /**
  * 把 `{placeholder}` 替換為 params[key]。

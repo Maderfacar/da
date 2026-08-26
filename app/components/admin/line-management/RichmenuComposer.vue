@@ -561,7 +561,7 @@ $muted: rgba(0, 0, 0, 0.5);
   border-radius: 3px;
 
   &:hover { background: rgba(0, 0, 0, 0.06); color: black; }
-  &.is-reject:hover { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+  &.is-reject:hover { background: var(--stop-a15); color: var(--stop); }
 }
 
 .RichmenuComposer__add-btns {
@@ -695,7 +695,7 @@ $muted: rgba(0, 0, 0, 0.5);
     color: white;
     padding: 7px 16px;
     font-size: 12px;
-    &:hover:not(:disabled) { background: #b8730a; }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 }
 </style>

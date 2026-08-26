@@ -491,9 +491,9 @@ const mountainHit = computed<boolean>(() => {
   margin: 8px 0 12px;
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(220, 70, 70, 0.1);
-  border: 1px solid rgba(220, 70, 70, 0.3);
-  color: #c0392b;
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
+  color: var(--stop);
   font-family: var(--ff-ui);
   font-size: 13px;
 }
@@ -559,7 +559,7 @@ const mountainHit = computed<boolean>(() => {
   &.is-check {
     display: inline-flex;
     align-items: center;
-    color: #2ecc71;
+    color: var(--good);
     font-size: 22px;
   }
 }

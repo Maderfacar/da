@@ -204,7 +204,7 @@ const _IconForDriver = (d: DriverWithDerived): google.maps.Symbol => {
   // offline 司機半透明
   // online 用藍色（非綠）— 避免與 TrafficLayer 即時車流綠線色塊相近難辨
   const colorMap: Record<DerivedStatus, string> = {
-    online:  '#3b82f6',
+    online:  DESIGN_COLORS.note,
     busy:    DESIGN_COLORS.accent,
     offline: '#6b7280',
   };
@@ -632,7 +632,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   margin-top: 6px;
 
-  &.is-online  { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.5); }
+  &.is-online  { background: var(--note); box-shadow: 0 0 6px var(--note-a45); }
   &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px var(--accent-a50); }
   &.is-offline { background: #6b7280; }
 }

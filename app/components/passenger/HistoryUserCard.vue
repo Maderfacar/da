@@ -88,7 +88,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   background: var(--da-gray-pale);
   flex-shrink: 0;
 
-  &.is-friend { background: #16a34a; }
+  &.is-friend { background: var(--good); }
 }
 
 .PassengerHistoryUserCard__add {
@@ -99,7 +99,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   letter-spacing: 0.06em;
   padding: 7px 18px;
   border-radius: 100px;
-  background: #06c755;
+  background: var(--line-green);
   color: #fff;
   text-decoration: none;
 }

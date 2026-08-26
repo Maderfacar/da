@@ -19,6 +19,7 @@ import type {
   RichmenuLayer,
   RichmenuSize,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 export interface UseRichmenuComposerParams {
   layers: Ref<RichmenuLayer[]>;
@@ -329,7 +330,7 @@ export function useRichmenuComposer(params: UseRichmenuComposerParams) {
       color: partial.color ?? (partial.type === 'text' ? '#1f2937' : undefined),
       align: partial.align ?? (partial.type === 'text' ? 'center' : undefined),
       vAlign: partial.vAlign ?? (partial.type === 'text' ? 'middle' : undefined),
-      fillColor: partial.fillColor ?? (partial.type === 'rectangle' ? '#d4860a' : undefined),
+      fillColor: partial.fillColor ?? (partial.type === 'rectangle' ? DESIGN_COLORS.accent : undefined),
       borderColor: partial.borderColor,
       borderWidth: partial.borderWidth,
       radius: partial.radius,

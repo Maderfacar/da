@@ -262,7 +262,7 @@ const FormatTime = (iso: string | null): string => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #dc2626;
+  background: var(--stop);
   flex-shrink: 0;
   margin-top: 6px;
 }

@@ -116,7 +116,10 @@ async function settle(page: Page): Promise<void> {
  *
  * 真正的 TypeError 等仍會讓測試失敗 —— 那代表頁面沒渲染完整，基線會是壞的。
  */
-const IGNORED_CONSOLE = /Hydration completed but contains mismatches|favicon|Outdated Optimize Dep|504|SSL connect error|\[history\] load failed/;
+// `ResizeObserver loop …` 是瀏覽器層的良性警告（觀察器在一幀內又觸發了一次），
+// 規範明文說可以忽略，各家框架也都當噪音。WebKit 上會間歇性地以 pageerror 形式冒出來，
+// 不濾掉的話 /orders 的基線大約每三次跑會紅一次。
+const IGNORED_CONSOLE = /Hydration completed but contains mismatches|favicon|Outdated Optimize Dep|504|SSL connect error|\[history\] load failed|ResizeObserver loop/;
 
 /** 可見文字。務必用 innerText 而非 textContent —— 後者會把 <script> 裡的
  *  `window.__NUXT__={...}` 一起算進去，長度動輒數千字，任何「內容夠不夠」的判斷都會失效。 */
@@ -157,7 +160,7 @@ async function assertRenderedForReal(page: Page, target: VisualTarget): Promise<
 for (const target of TARGETS) {
   test(`visual: ${target.name}`, async ({ page, loginAs }) => {
     const appErrors: string[] = [];
-    page.on('pageerror', (e) => appErrors.push(`[pageerror] ${e.message}`));
+    page.on('pageerror', (e) => { if (!IGNORED_CONSOLE.test(e.message)) appErrors.push(`[pageerror] ${e.message}`); });
     page.on('console', (m) => {
       if (m.type() === 'error' && !IGNORED_CONSOLE.test(m.text())) appErrors.push(m.text());
     });
@@ -187,6 +190,12 @@ for (const target of TARGETS) {
       }
     });
 
+    // 把「現在」凍住。/booking 的 ElTimeSelect 與 /fare 的 ElDatePicker 會帶入當下時間，
+    // 每 10 分鐘就讓基線差一次（實測就是那 36×13 px 的 `02:40`）。
+    // 用凍結時鐘而不是遮罩 —— 遮罩會連那兩個元件的樣式一起蓋掉，等於放棄它們的視覺覆蓋。
+    // setFixedTime 只固定 Date.now()／new Date()，不暫停 timer，不影響輪詢與動畫。
+    await page.clock.setFixedTime(new Date('2026-08-27T09:30:00+08:00'));
+
     await loginAs(target.identity);
 
     await page.goto(target.path, { waitUntil: 'load', timeout: 25000 });
@@ -201,16 +210,10 @@ for (const target of TARGETS) {
       animations: 'disabled',
       caret: 'hide',
       // 色票換裝預期整片變動；比對階段本就要人工看 diff，不設寬容值。
-      // 不穩定源改用遮罩精準處理，而不是放寬容值 —— 放寬容值會連帶讓
-      // 「某個小徽章色跑掉」這種真實 regression 也一起被吞掉。
+      // 不設寬容值。放寬容值會連帶讓「某個小徽章色跑掉」這種真實 regression 一起被吞掉。
+      // 唯一的不穩定源是「現在時間」，已由上方的 clock.setFixedTime 處理 ——
+      // 用凍結時鐘而不是遮罩，那些欄位的樣式才留在覆蓋範圍內。
       maxDiffPixelRatio: 0,
-      // 原生 date / time 欄位會帶入「現在」，每分鐘就讓基線差一次。
-      // /booking 的出發時間欄位即是（實測差異就是那 20×13 px 的 `01:10`）。
-      mask: [
-        page.locator('input[type="time"]'),
-        page.locator('input[type="date"]'),
-        page.locator('input[type="datetime-local"]'),
-      ],
     });
   });
 }

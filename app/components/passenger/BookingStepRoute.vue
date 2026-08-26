@@ -306,16 +306,16 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   gap: 12px;
   padding: 14px 16px;
   background: linear-gradient(135deg, #fff4e5 0%, #ffe8d4 100%);
-  border: 1.5px solid #ef6c00;
-  border-left: 4px solid #d84315;
+  border: 1.5px solid var(--wait);
+  border-left: 4px solid var(--stop);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(216, 67, 21, 0.12);
+  box-shadow: 0 2px 8px var(--stop-a15);
 }
 
 .PassengerBookingStepRoute__safety-icon {
   flex-shrink: 0;
   font-size: 22px;
-  color: #d84315;
+  color: var(--stop);
   margin-top: 2px;
 }
 
@@ -330,7 +330,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #d84315;
+  color: var(--stop);
   margin-bottom: 4px;
 }
 
@@ -392,7 +392,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   margin-bottom: 2px;
   transition: color 0.15s;
 
-  &:hover { color: #ef4444; }
+  &:hover { color: var(--stop); }
 }
 
 .PassengerBookingStepRoute__add-btn {

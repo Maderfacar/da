@@ -579,7 +579,7 @@ onMounted(() => {
                 .PageAdminDriverDetail__doc-meta-line {{ FormatTime(driver.application.documentsPending[field.type]?.uploadedAt ?? null) }} 上傳
                 .PageAdminDriverDetail__doc-meta-line(
                   v-if="driver.application.documentsPending[field.type]?.status === 'rejected'"
-                  style="color: #f87171"
+                  style="color: var(--stop)"
                 ) 退回原因：{{ driver.application.documentsPending[field.type]?.rejectReason || '—' }}
                 .PageAdminDriverDetail__doc-actions(v-if="driver.application.documentsPending[field.type]?.status === 'pending'")
                   ElButton(
@@ -659,7 +659,7 @@ onMounted(() => {
   height: 60px;
   border-radius: 50%;
   background: #ecf5ff;
-  color: #409eff;
+  color: var(--note);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,11 +688,11 @@ onMounted(() => {
 
   &.is-approved {
     background: #f0f9eb;
-    color: #67c23a;
+    color: var(--good);
   }
   &.is-pending {
     background: #fdf6ec;
-    color: #e6a23c;
+    color: var(--wait);
   }
 }
 
@@ -750,9 +750,9 @@ onMounted(() => {
 .PageAdminDriverDetail__row-edit {
   padding: 4px 10px;
   border-radius: 6px;
-  border: 1px solid #409eff;
+  border: 1px solid var(--note);
   background: #ecf5ff;
-  color: #409eff;
+  color: var(--note);
   font-size: 12px;
   cursor: pointer;
 

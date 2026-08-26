@@ -23,6 +23,7 @@ import {
   type TemplateContentFlex,
   type TemplateContentText,
 } from '@@/utils/template-registry';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 export interface SoftMatchPassengerPayload {
   orderId: string;
@@ -197,10 +198,10 @@ export function buildSoftMatchPassengerFlex(
       type: 'box',
       layout: 'vertical',
       contents: [
-        { type: 'text', text: title, weight: 'bold', size: 'lg', color: '#D4860A' },
+        { type: 'text', text: title, weight: 'bold', size: 'lg', color: DESIGN_COLORS.accent },
         { type: 'text', text: subtitle, size: 'sm', color: '#666666', wrap: true, margin: 'sm' },
         { type: 'separator', margin: 'md' },
-        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: '#6B6560', margin: 'md' },
+        { type: 'text', text: `🔖 #${orderShort}`, size: 'sm', color: DESIGN_COLORS.inkSoft, margin: 'md' },
         { type: 'text', text: `🚗 ${t.driverLabel}：${payload.driverDisplayName}`, size: 'md', weight: 'bold', wrap: true, margin: 'sm' },
         { type: 'text', text: `📅 ${t.pickupLabel}：${dateLine}`, size: 'sm', margin: 'xs', color: '#333333' },
         { type: 'text', text: `✓ ${t.completedLabel(payload.completedOrders)}`, size: 'xs', color: '#666666', margin: 'xs' },
@@ -231,7 +232,7 @@ export function buildSoftMatchPassengerFlex(
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'postback', label: btnWait, data: `passenger.softMatch.wait?orderId=${payload.orderId}`, displayText: btnWait },
         },
         {

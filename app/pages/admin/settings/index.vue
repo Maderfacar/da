@@ -1359,7 +1359,6 @@ const ClickSaveFareRules = async () => {
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.35);
-$rose: #f0556d;
 
 .PageAdminSettings {
   padding: 80px 20px 100px;
@@ -1554,14 +1553,14 @@ $rose: #f0556d;
   line-height: 1.4;
 
   &.is-super {
-    color: #fbbf24;
-    background: rgba(251, 191, 36, 0.12);
-    border-color: rgba(251, 191, 36, 0.4);
+    color: var(--wait);
+    background: var(--wait-a15);
+    border-color: var(--wait-a45);
   }
   &.is-admin {
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-    border-color: rgba(74, 222, 128, 0.35);
+    color: var(--good);
+    background: var(--good-a08);
+    border-color: var(--good-a30);
   }
   &.is-assistant {
     color: #94a3b8;
@@ -1599,22 +1598,22 @@ $rose: #f0556d;
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.is-approve {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #4ade80;
+    background: var(--good-a15);
+    border-color: var(--good-a45);
+    color: var(--good);
 
     &:hover:not(:disabled) {
-      background: rgba(34, 197, 94, 0.22);
+      background: var(--good-a15);
     }
   }
 
   &.is-reject {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #f87171;
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
 
     &:hover:not(:disabled) {
-      background: rgba(239, 68, 68, 0.2);
+      background: var(--stop-a15);
     }
   }
 
@@ -1809,8 +1808,8 @@ $rose: #f0556d;
 
   &.is-info {
     margin: 0 16px 12px;
-    background: rgba(56, 189, 248, 0.06);
-    border-color: rgba(56, 189, 248, 0.2);
+    background: var(--note-a08);
+    border-color: var(--note-a15);
   }
 }
 
@@ -1994,7 +1993,7 @@ $rose: #f0556d;
   color: $muted;
 
   &.is-invalid {
-    color: $rose;
+    color: var(--stop);
     text-transform: none;
     letter-spacing: 0.04em;
     font-size: 11px;
@@ -2002,7 +2001,7 @@ $rose: #f0556d;
 }
 
 .PageAdminSettings__fare-tier :deep(.el-input.is-invalid .el-input__wrapper) {
-  box-shadow: 0 0 0 1px $rose inset;
+  box-shadow: 0 0 0 1px var(--stop) inset;
 }
 
 .PageAdminSettings__fare-subhead {
@@ -2045,9 +2044,9 @@ $rose: #f0556d;
   border-radius: 100px;
 
   &.is-paused {
-    color: rgba(255, 200, 100, 0.95);
-    background: rgba(255, 165, 60, 0.15);
-    border: 1px solid rgba(255, 165, 60, 0.35);
+    color: var(--wait);
+    background: var(--wait-a15);
+    border: 1px solid var(--wait-a30);
   }
 }
 
@@ -2151,9 +2150,9 @@ $rose: #f0556d;
 .PageAdminSettings__fare-error {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 200, 0, 0.85);
-  background: rgba(255, 200, 0, 0.08);
-  border: 1px solid rgba(255, 200, 0, 0.25);
+  color: var(--wait);
+  background: var(--wait-a08);
+  border: 1px solid var(--wait-a30);
   border-radius: 8px;
   padding: 8px 12px;
   margin: 0 16px 4px;
@@ -2163,9 +2162,9 @@ $rose: #f0556d;
     margin: 8px 16px 12px;
     font-size: 13px;
     font-weight: 600;
-    background: rgba(255, 200, 0, 0.14);
-    border-color: rgba(255, 200, 0, 0.45);
-    color: rgba(255, 215, 50, 1);
+    background: var(--wait-a15);
+    border-color: var(--wait-a45);
+    color: var(--wait);
   }
 }
 
@@ -2177,7 +2176,7 @@ $rose: #f0556d;
   padding: 12px 16px;
   margin: 0 0 16px;
   background: #fffaeb;
-  border: 1px solid #fedf89;
+  border: 1px solid var(--wait);
   border-radius: 8px;
 }
 .PageAdminSettings__pin-banner-text {
@@ -2185,16 +2184,16 @@ $rose: #f0556d;
   flex-direction: column;
   gap: 2px;
   font-size: 13px;
-  color: #7a4a07;
+  color: var(--wait);
   strong {
     font-size: 14px;
     color: #492a00;
   }
 }
 .PageAdminSettings__pin-banner-btn {
-  border: 1px solid #b54708;
+  border: 1px solid var(--accent-deep);
   background: #fff;
-  color: #b54708;
+  color: var(--accent-deep);
   border-radius: 6px;
   padding: 6px 14px;
   font-size: 13px;

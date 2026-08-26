@@ -477,7 +477,7 @@ onMounted(() => {
 }
 
 .PageReferral__error {
-  color: #e74c3c;
+  color: var(--stop);
   font-family: var(--ff-ui);
   font-size: 14px;
   margin-bottom: 12px;
@@ -499,9 +499,9 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
-  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: var(--stop);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   padding: 4px 10px;
   border-radius: 100px;
 }
@@ -542,7 +542,7 @@ onMounted(() => {
   }
 }
 
-.PageReferral__row.is-anomaly td { background: rgba(231, 76, 60, 0.06); }
+.PageReferral__row.is-anomaly td { background: var(--stop-a08); }
 
 .PageReferral__uid {
   font-family: var(--ff-mono);
@@ -568,8 +568,8 @@ onMounted(() => {
   border-radius: 100px;
 
   &.is-pending   { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
-  &.is-qualified { background: rgba(52, 152, 219, 0.12);  color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); }
-  &.is-rewarded  { background: rgba(39, 174, 96, 0.12);   color: #27ae60; border: 1px solid rgba(39, 174, 96, 0.3); }
+  &.is-qualified { background: var(--note-a15);  color: var(--note); border: 1px solid var(--note-a30); }
+  &.is-rewarded  { background: var(--good-a15);   color: var(--good); border: 1px solid var(--good-a30); }
   &.is-expired   { background: rgba(189, 195, 199, 0.18); color: #95a5a6; border: 1px solid rgba(189, 195, 199, 0.4); }
 }
 
@@ -579,14 +579,14 @@ onMounted(() => {
   font-weight: 700;
   color: var(--da-dark);
 
-  &.is-anomaly { color: #e74c3c; }
+  &.is-anomaly { color: var(--stop); }
 }
 
 .PageReferral__anomaly-tag {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #e74c3c;
+  color: var(--stop);
   margin-top: 2px;
 }
 

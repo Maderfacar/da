@@ -388,9 +388,9 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__source-tag.is-driver {
-  color: #fcd34d;
-  background: rgba(252, 211, 77, 0.1);
-  border-color: rgba(252, 211, 77, 0.35);
+  color: var(--wait);
+  background: var(--wait-a08);
+  border-color: var(--wait-a30);
 }
 
 .SettingsDiscountCodes__item-meta {
@@ -420,15 +420,15 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__badge.is-on {
-  color: #4ade80;
-  border-color: rgba(74, 222, 128, 0.4);
-  background: rgba(74, 222, 128, 0.1);
+  color: var(--good);
+  border-color: var(--good-a45);
+  background: var(--good-a08);
 }
 
 .SettingsDiscountCodes__badge.is-off {
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.4);
-  background: rgba(248, 113, 113, 0.1);
+  color: var(--stop);
+  border-color: var(--stop-a45);
+  background: var(--stop-a08);
 }
 
 .SettingsDiscountCodes__form-title {
@@ -514,7 +514,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__btn.is-approve:hover:not(:disabled) {
-  background: #b8730a;
+  background: var(--accent-deep);
 }
 
 .SettingsDiscountCodes__btn.is-toggle {

@@ -729,12 +729,12 @@ const swiperBreakpoints = {
       background: var(--da-amber-pale);
     }
 
-    &.is-warn { border-color: #f59e0b; }
+    &.is-warn { border-color: var(--wait); }
 
     &.is-disabled {
       opacity: 0.45;
       cursor: not-allowed;
-      border-color: #ef4444;
+      border-color: var(--stop);
     }
   }
 
@@ -822,8 +822,8 @@ const swiperBreakpoints = {
     font-size: 12px;
     font-family: var(--ff-ui);
 
-    .is-disabled & { color: #ef4444; }
-    .is-warn & { color: #d97706; }
+    .is-disabled & { color: var(--stop); }
+    .is-warn & { color: var(--wait); }
   }
 
   // ── Charter Fare V1 W4：每日 plan picker ────────────────────────────────
@@ -991,7 +991,7 @@ const swiperBreakpoints = {
     margin: 0 0 -6px;
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: #ef4444;
+    color: var(--stop);
     text-align: center;
     line-height: 1.4;
   }

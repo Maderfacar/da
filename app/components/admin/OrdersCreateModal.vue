@@ -567,7 +567,7 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: opacity 0.15s, box-shadow 0.15s;
 
   &.is-dragging { opacity: 0.45; }
-  &.is-drop-target { box-shadow: 0 -2px 0 0 #64c8ff; }
+  &.is-drop-target { box-shadow: 0 -2px 0 0 var(--note); }
 }
 
 .AdminOrdersCreateModal__stopover-handle {
@@ -582,7 +582,7 @@ $muted: rgba(255, 255, 255, 0.35);
   cursor: grab;
   transition: color 0.15s;
 
-  &:hover { color: #64c8ff; }
+  &:hover { color: var(--note); }
   &:active { cursor: grabbing; }
 }
 
@@ -596,16 +596,16 @@ $muted: rgba(255, 255, 255, 0.35);
   width: 26px;
   height: 15px;
   padding: 0;
-  border: 1px solid rgba(100, 200, 255, 0.25);
-  background: rgba(100, 200, 255, 0.06);
-  color: #64c8ff;
+  border: 1px solid var(--note-a30);
+  background: var(--note-a08);
+  color: var(--note);
   border-radius: 5px;
   font-size: 8px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
 
-  &:hover:not(:disabled) { background: rgba(100, 200, 255, 0.16); }
+  &:hover:not(:disabled) { background: var(--note-a15); }
   &:disabled { opacity: 0.25; cursor: not-allowed; }
 }
 
@@ -631,9 +631,9 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #64c8ff;
-  background: rgba(100, 200, 255, 0.1);
-  border: 1px solid rgba(100, 200, 255, 0.25);
+  color: var(--note);
+  background: var(--note-a08);
+  border: 1px solid var(--note-a30);
   padding: 4px 8px;
   border-radius: 6px;
   text-align: center;
@@ -642,16 +642,16 @@ $muted: rgba(255, 255, 255, 0.35);
 .AdminOrdersCreateModal__stopover-remove {
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(255, 80, 80, 0.25);
-  background: rgba(255, 80, 80, 0.08);
-  color: rgba(255, 100, 100, 0.85);
+  border: 1px solid var(--stop-a30);
+  background: var(--stop-a08);
+  color: var(--stop);
   border-radius: 8px;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 80, 80, 0.18); }
+  &:hover { background: var(--stop-a15); }
 }
 
 .AdminOrdersCreateModal__stopover-add {
@@ -661,14 +661,14 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.06em;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px dashed rgba(100, 200, 255, 0.3);
-  background: rgba(100, 200, 255, 0.04);
-  color: #64c8ff;
+  border: 1px dashed var(--note-a30);
+  background: var(--note-a08);
+  color: var(--note);
   cursor: pointer;
   margin-top: 6px;
   transition: background 0.15s;
 
-  &:hover { background: rgba(100, 200, 255, 0.1); }
+  &:hover { background: var(--note-a08); }
 }
 
 .AdminOrdersCreateModal__luggage {

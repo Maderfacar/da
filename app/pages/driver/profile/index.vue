@@ -577,7 +577,6 @@ onMounted(() => {
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.35);
-$danger: #f87171;
 
 .PageDriverProfile {
   padding: 80px 20px 32px;
@@ -881,8 +880,8 @@ $danger: #f87171;
   border: 1px solid var(--accent-a30);
 
   &.is-rejected {
-    background: rgba($danger, 0.1);
-    border-color: rgba($danger, 0.4);
+    background: var(--stop-a08);
+    border-color: var(--stop-a45);
   }
 
   &-title {
@@ -893,7 +892,7 @@ $danger: #f87171;
     color: var(--accent);
   }
 
-  &.is-rejected &-title { color: $danger; }
+  &.is-rejected &-title { color: var(--stop); }
 
   &-sub {
     font-family: var(--ff-ui);

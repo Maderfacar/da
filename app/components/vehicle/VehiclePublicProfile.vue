@@ -208,9 +208,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   letter-spacing: 0.08em;
   padding: 4px 12px;
   border-radius: 100px;
-  background: rgba(80, 160, 90, 0.14);
-  border: 1px solid rgba(80, 160, 90, 0.4);
-  color: #4a8a52;
+  background: var(--good-a15);
+  border: 1px solid var(--good-a45);
+  color: var(--good);
   line-height: 1.4;
 }
 

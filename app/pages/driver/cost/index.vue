@@ -404,8 +404,8 @@ onMounted(ApiLoadCostSettings);
   flex-direction: column;
   gap: 4px;
 
-  &.is-positive { border-color: rgba(80, 200, 120, 0.4); }
-  &.is-negative { border-color: rgba(231, 76, 60, 0.45); }
+  &.is-positive { border-color: var(--good-a45); }
+  &.is-negative { border-color: var(--stop-a45); }
 }
 
 .PageDriverCost__stat-label {
@@ -423,8 +423,8 @@ onMounted(ApiLoadCostSettings);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 
-  .PageDriverCost__stat.is-positive & { color: #50c878; }
-  .PageDriverCost__stat.is-negative & { color: #f87171; }
+  .PageDriverCost__stat.is-positive & { color: var(--good); }
+  .PageDriverCost__stat.is-negative & { color: var(--stop); }
 }
 
 .PageDriverCost__stat-unit {

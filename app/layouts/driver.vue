@@ -326,7 +326,7 @@ onUnmounted(() => {
   font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.04em;
-  color: var(--da-amber-light, #f7b96a);
+  color: var(--da-amber-light, var(--accent-lit));
   margin-bottom: 12px;
 }
 
@@ -439,8 +439,8 @@ onUnmounted(() => {
 .LayoutDriver__status-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+  background: var(--good);
+  box-shadow: 0 0 6px var(--good-a70);
 }
 
 .LayoutDriver__status-label {
@@ -549,8 +549,10 @@ onUnmounted(() => {
   height: 20px;
   padding: 0 6px;
   border-radius: 10px;
-  background: #f87171;
-  color: #fff;
+  background: var(--stop);
+  // 深色面上 --stop 解析為亮階（淺紅），白字只剩 1.7:1。
+  // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
+  color: var(--ink);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;

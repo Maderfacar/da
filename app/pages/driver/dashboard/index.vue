@@ -174,8 +174,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   gap: 12px;
   padding: 12px 16px;
   margin-bottom: 20px;
-  background: rgba(6, 199, 85, 0.12);
-  border: 1px solid rgba(6, 199, 85, 0.35);
+  background: color-mix(in srgb, var(--line-green) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-green) 35%, transparent);
   border-radius: 12px;
 }
 
@@ -204,7 +204,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .PageDriverDashboard__oa-cta-btn {
   flex-shrink: 0;
   padding: 8px 16px;
-  background: #06c755;
+  background: var(--line-green);
   color: #fff;
   border-radius: 100px;
   font-family: var(--ff-label);
@@ -289,7 +289,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   background: rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 
-  &.is-online { background: #50c878; box-shadow: 0 0 0 3px rgba(80, 200, 120, 0.18); }
+  &.is-online { background: var(--good); box-shadow: 0 0 0 3px var(--good-a15); }
   &.is-busy   { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-a20); }
   &.is-offline { background: rgba(255, 255, 255, 0.25); }
 }

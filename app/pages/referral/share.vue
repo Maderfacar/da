@@ -404,8 +404,8 @@ onMounted(ApiLoadMe);
 .PageReferralShare__share {
   width: 100%;
   padding: 14px;
-  background: #06c755;
-  border: 1px solid #06c755;
+  background: var(--line-green);
+  border: 1px solid var(--line-green);
   border-radius: 12px;
   font-family: var(--ff-label);
   font-size: 14px;

@@ -184,7 +184,7 @@ const metricsRows = computed(() => {
 </script>
 
 <template lang="pug">
-.AdminFareSandbox
+.AdminFareSandbox(data-surface='light')
   .AdminFareSandbox__head
     NuxtLink.AdminFareSandbox__back(to="/admin/settings") ← 回設定
     h1.AdminFareSandbox__title 計費沙盒
@@ -356,19 +356,20 @@ const metricsRows = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-$cream-bg: #f7f0e6;
-$cream-panel: #ffffff;
-$ink: #2c1810;
-$muted: #8a7a68;
-$border: #e3d6c4;
-$accent: #c0392b;
-$accent-soft: #e8d5d0;
+// 計費沙盒原本自帶一套與設計系統無關的色盤（米白底 / 咖啡字 / 磚紅主色），
+// 是這個站最後一個沒有進到 token 系統裡的頁面。階段 1 一併併入。
+//
+// 這一頁整頁是淺色，但它掛在 back-desk（深色）layout 下，所以模板根節點標了
+// data-surface="light" 把主色拉回 base 階 —— 否則會拿到深底用的亮銅，在白底上只剩 1.9:1。
+//
+// 對應：cream-bg → --surface-ground · cream-panel → --surface-raised · ink → --ink
+//       muted → --ink-soft · border → --hairline · accent → --accent · accent-soft → --accent-wash
 
 .AdminFareSandbox {
   padding: 24px;
-  background: $cream-bg;
+  background: var(--surface-ground);
   min-height: 100vh;
-  color: $ink;
+  color: var(--ink);
 }
 
 .AdminFareSandbox__head {
@@ -377,12 +378,12 @@ $accent-soft: #e8d5d0;
 
 .AdminFareSandbox__back {
   display: inline-block;
-  color: $muted;
+  color: var(--ink-soft);
   font-size: 13px;
   text-decoration: none;
   margin-bottom: 8px;
 
-  &:hover { color: $accent; }
+  &:hover { color: var(--accent); }
 }
 
 .AdminFareSandbox__title {
@@ -392,7 +393,7 @@ $accent-soft: #e8d5d0;
 }
 
 .AdminFareSandbox__sub {
-  color: $muted;
+  color: var(--ink-soft);
   margin: 0;
   font-size: 13px;
 }
@@ -408,8 +409,8 @@ $accent-soft: #e8d5d0;
 }
 
 .AdminFareSandbox__panel {
-  background: $cream-panel;
-  border: 1px solid $border;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
   border-radius: 12px;
   padding: 18px 20px;
 }
@@ -419,7 +420,7 @@ $accent-soft: #e8d5d0;
   font-weight: 600;
   margin: 0 0 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .AdminFareSandbox__row {
@@ -432,7 +433,7 @@ $accent-soft: #e8d5d0;
 .AdminFareSandbox__label {
   flex: 0 0 110px;
   font-size: 13px;
-  color: $muted;
+  color: var(--ink-soft);
 }
 
 .AdminFareSandbox__pair {
@@ -452,12 +453,12 @@ $accent-soft: #e8d5d0;
 .AdminFareSandbox__input,
 .AdminFareSandbox__select {
   flex: 1;
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 14px;
   background: #fff;
-  color: $ink;
+  color: var(--ink);
 }
 
 // 視窗 3：上車時間 ElDatePicker + ElTimeSelect 雙欄
@@ -482,9 +483,9 @@ $accent-soft: #e8d5d0;
 }
 
 .AdminFareSandbox__chip {
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   background: #fff;
-  color: $ink;
+  color: var(--ink);
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 12px;
@@ -492,16 +493,16 @@ $accent-soft: #e8d5d0;
   transition: all 120ms;
 
   &.is-on {
-    background: $accent;
+    background: var(--accent);
     color: #fff;
-    border-color: $accent;
+    border-color: var(--accent);
   }
 }
 
 .AdminFareSandbox__btn-mini {
   background: none;
-  border: 1px solid $border;
-  color: $accent;
+  border: 1px solid var(--hairline);
+  color: var(--accent);
   border-radius: 4px;
   padding: 2px 8px;
   cursor: pointer;
@@ -510,8 +511,8 @@ $accent-soft: #e8d5d0;
 
 .AdminFareSandbox__btn-add {
   background: none;
-  border: 1px dashed $border;
-  color: $muted;
+  border: 1px dashed var(--hairline);
+  color: var(--ink-soft);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
@@ -522,11 +523,11 @@ $accent-soft: #e8d5d0;
 .AdminFareSandbox__actions {
   margin-top: 18px;
   padding-top: 12px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--hairline);
 }
 
 .AdminFareSandbox__btn {
-  background: $accent;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -544,14 +545,14 @@ $accent-soft: #e8d5d0;
 .AdminFareSandbox__error {
   margin-top: 12px;
   padding: 10px 12px;
-  background: $accent-soft;
+  background: var(--accent-wash);
   border-radius: 6px;
-  color: $accent;
+  color: var(--accent);
   font-size: 13px;
 }
 
 .AdminFareSandbox__empty {
-  color: $muted;
+  color: var(--ink-soft);
   font-size: 13px;
   padding: 24px 0;
   text-align: center;
@@ -566,13 +567,13 @@ $accent-soft: #e8d5d0;
   margin-bottom: 12px;
 
   &.is-fare-v2 { background: #e8f0d5; color: #4a6b00; }
-  &.is-fare-v1 { background: #fff3d5; color: #8a5a00; }
-  &.is-charter { background: #d5e0f0; color: #1a4a8a; }
+  &.is-fare-v1 { background: var(--wait-a15); color: var(--wait); }
+  &.is-charter { background: var(--note-a15); color: var(--note); }
 }
 
 .AdminFareSandbox__roundtrip {
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-soft);
   margin-bottom: 12px;
 }
 
@@ -580,7 +581,7 @@ $accent-soft: #e8d5d0;
   font-size: 13px;
   font-weight: 600;
   margin: 16px 0 8px;
-  color: $accent;
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -589,7 +590,7 @@ $accent-soft: #e8d5d0;
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -599,21 +600,21 @@ $accent-soft: #e8d5d0;
   justify-content: space-between;
   padding: 8px 12px;
   font-size: 13px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--hairline);
 
   &:last-child { border-bottom: none; }
   &.is-highlight {
-    background: $accent-soft;
+    background: var(--accent-wash);
     font-weight: 700;
   }
 }
 
 .AdminFareSandbox__breakdown-label {
-  color: $muted;
+  color: var(--ink-soft);
 }
 
 .AdminFareSandbox__breakdown-val {
-  color: $ink;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -624,7 +625,7 @@ $accent-soft: #e8d5d0;
 }
 
 .AdminFareSandbox__hit {
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 12px;
@@ -632,18 +633,18 @@ $accent-soft: #e8d5d0;
 
 .AdminFareSandbox__hit-name {
   font-weight: 600;
-  color: $accent;
+  color: var(--accent);
   margin-bottom: 2px;
 }
 
 .AdminFareSandbox__hit-val {
-  color: $ink;
+  color: var(--ink);
 
-  &.is-on { color: $accent; font-weight: 600; }
+  &.is-on { color: var(--accent); font-weight: 600; }
 }
 
 .AdminFareSandbox__hit-sub {
-  color: $muted;
+  color: var(--ink-soft);
   font-size: 11px;
   margin-top: 2px;
 }
@@ -651,23 +652,23 @@ $accent-soft: #e8d5d0;
 // 視窗 2：路段明細展開
 .AdminFareSandbox__seg-toggle {
   background: none;
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   border-radius: 4px;
   padding: 3px 8px;
   margin-top: 6px;
-  color: $accent;
+  color: var(--accent);
   font-size: 11px;
   cursor: pointer;
   transition: all 120ms;
 
   &:hover {
-    background: $accent-soft;
+    background: var(--accent-wash);
   }
 }
 
 .AdminFareSandbox__seg-table {
   margin-top: 6px;
-  border: 1px solid $border;
+  border: 1px solid var(--hairline);
   border-radius: 4px;
   overflow: hidden;
   max-height: 280px;
@@ -680,13 +681,13 @@ $accent-soft: #e8d5d0;
   grid-template-columns: 50px 60px 1fr;
   gap: 6px;
   padding: 6px 8px;
-  background: $cream-bg;
+  background: var(--surface-ground);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: $muted;
-  border-bottom: 1px solid $border;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .AdminFareSandbox__seg-row {
@@ -699,24 +700,24 @@ $accent-soft: #e8d5d0;
 
   &:last-child { border-bottom: none; }
   &.is-highway {
-    background: rgba(192, 57, 43, 0.04);
+    background: var(--accent-a06);
 
-    .AdminFareSandbox__seg-cell.is-tag { color: $accent; font-weight: 600; }
+    .AdminFareSandbox__seg-cell.is-tag { color: var(--accent); font-weight: 600; }
   }
 }
 
 .AdminFareSandbox__seg-cell {
   &.is-tag {
-    color: $muted;
+    color: var(--ink-soft);
     font-weight: 500;
   }
   &.is-km {
-    color: $ink;
+    color: var(--ink);
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
   &.is-instr {
-    color: $ink;
+    color: var(--ink);
     word-break: break-word;
     line-height: 1.4;
   }

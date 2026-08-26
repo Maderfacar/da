@@ -246,14 +246,14 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba(80, 200, 120, 0.12);
-  border: 1px solid rgba(80, 200, 120, 0.3);
-  color: #50c878;
+  background: var(--good-a15);
+  border: 1px solid var(--good-a30);
+  color: var(--good);
 
   &.is-withdraw {
-    background: rgba(255, 100, 100, 0.1);
-    border-color: rgba(255, 100, 100, 0.25);
-    color: rgba(255, 130, 130, 0.85);
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
   }
 }
 
@@ -408,10 +408,10 @@ $muted: rgba(255, 255, 255, 0.45);
   }
 
   &.is-danger {
-    background: rgba(255, 80, 80, 0.1);
-    color: rgba(255, 100, 100, 0.95);
-    border-color: rgba(255, 80, 80, 0.35);
-    &:hover:not(:disabled) { background: rgba(255, 80, 80, 0.18); }
+    background: var(--stop-a08);
+    color: var(--stop);
+    border-color: var(--stop-a30);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 }
 

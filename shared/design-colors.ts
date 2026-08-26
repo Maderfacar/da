@@ -34,6 +34,25 @@ export const DESIGN_COLORS = {
   accentLit: '#C9A961',
   /** 極淡底 */
   accentWash: '#F0E8D6',
+  /** 主色深階（實心主色按鈕的 hover） */
+  accentDeep: '#725A2D',
+
+  /* ── 語意狀態色四件套 ──────────────────────────────────────────
+     與 _design-tokens.css 的 --good / --wait / --note / --stop 同值。
+     `*Lit` 是深色面用的階，對縞黑皆 ≥ 4.5:1。
+     LINE Flex 的訊息底是白的（LINE 伺服器算圖，不吃我們的深色面），所以那邊用 base 階。 */
+  /** 成功／已完成／已核准 */
+  good: '#3E6B4E',
+  goodLit: '#86BC9C',
+  /** 等待／處理中／待確認 */
+  wait: '#A0521F',
+  waitLit: '#E5A878',
+  /** 提示／資訊／進行中 */
+  note: '#35527A',
+  noteLit: '#98B6D6',
+  /** 錯誤／危險／已取消 */
+  stop: '#9E3535',
+  stopLit: '#E08B8B',
 } as const;
 
 export type DesignColorKey = keyof typeof DESIGN_COLORS;

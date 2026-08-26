@@ -2319,9 +2319,9 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.06em;
   padding: 2px 8px;
   border-radius: 100px;
-  background: rgba(96, 165, 250, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.35);
-  color: #93c5fd;
+  background: var(--note-a15);
+  border: 1px solid var(--note-a30);
+  color: var(--note);
   white-space: nowrap;
 }
 
@@ -2432,9 +2432,9 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0;
-  color: #fcd34d;
-  background: rgba(252, 211, 77, 0.12);
-  border: 1px solid rgba(252, 211, 77, 0.35);
+  color: var(--wait);
+  background: var(--wait-a15);
+  border: 1px solid var(--wait-a30);
   border-radius: 100px;
   padding: 2px 8px;
   cursor: help;
@@ -2464,11 +2464,11 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 3px 9px;
   border-radius: 100px;
 
-  &.is-pending   { background: rgba(255, 200, 0, 0.12); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
-  &.is-confirmed { background: rgba(100, 200, 255, 0.1); border: 1px solid rgba(100, 200, 255, 0.3); color: #64c8ff; }
+  &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
+  &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
   &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
-  &.is-done      { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
-  &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
+  &.is-done      { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
+  &.is-cancel    { background: var(--stop-a08); border: 1px solid var(--stop-a15); color: var(--stop); }
 }
 
 // Phase 1E：dispatch 狀態徽章（疊加在主狀態下方）
@@ -2482,10 +2482,10 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 2px 6px;
   border-radius: 100px;
 
-  &.is-pending  { background: rgba(255, 80, 80, 0.1);  border: 1px solid rgba(255, 80, 80, 0.25);  color: rgba(255, 120, 120, 0.85); }
+  &.is-pending  { background: var(--stop-a08);  border: 1px solid var(--stop-a30);  color: var(--stop); }
   &.is-progress { background: var(--accent-a12);       border: 1px solid var(--accent-a30);         color: var(--accent); }
   // Phase 1F：重派次數徽章
-  &.is-rematch  { background: rgba(140, 110, 220, 0.12); border: 1px solid rgba(140, 110, 220, 0.3); color: rgba(180, 150, 240, 0.95); margin-left: 4px; }
+  &.is-rematch  { background: var(--note-a15); border: 1px solid var(--note-a30); color: var(--note); margin-left: 4px; }
 }
 
 // Phase 1F：強制重新配對 + bidHistory
@@ -2666,11 +2666,11 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 3px 8px;
   border-radius: 100px;
 
-  &.is-pending   { background: rgba(255, 200, 0, 0.12); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
-  &.is-confirmed { background: rgba(100, 200, 255, 0.1); border: 1px solid rgba(100, 200, 255, 0.3); color: #64c8ff; }
+  &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
+  &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
   &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
-  &.is-done      { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
-  &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
+  &.is-done      { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
+  &.is-cancel    { background: var(--stop-a08); border: 1px solid var(--stop-a15); color: var(--stop); }
 }
 
 .PageAdminOrders__modal-close {
@@ -2712,7 +2712,7 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 8px;
   border: 1px solid var(--accent-a30);
   background: var(--accent-a12);
-  color: #f7b96a;
+  color: var(--accent-lit);
   cursor: pointer;
   transition: background 0.15s;
 
@@ -2721,17 +2721,17 @@ $muted: rgba(255, 255, 255, 0.35);
 
   // Wave 2D：立即降級（橘紅 — 警示性低於 force-open）
   &.is-downgrade {
-    border-color: rgba(255, 165, 90, 0.5);
-    background: rgba(255, 165, 90, 0.12);
-    color: rgba(255, 185, 120, 0.95);
-    &:hover:not(:disabled) { background: rgba(255, 165, 90, 0.22); }
+    border-color: var(--wait-a45);
+    background: var(--wait-a15);
+    color: var(--wait);
+    &:hover:not(:disabled) { background: var(--wait-a15); }
   }
   // Wave 2D：全開放（紅色警示，最強動作）
   &.is-force-open {
-    border-color: rgba(240, 100, 100, 0.5);
-    background: rgba(240, 100, 100, 0.12);
-    color: rgba(255, 140, 140, 0.95);
-    &:hover:not(:disabled) { background: rgba(240, 100, 100, 0.22); }
+    border-color: var(--stop-a45);
+    background: var(--stop-a15);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 }
 
@@ -2779,7 +2779,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 12px;
   margin-top: 6px;
-  color: #f7b96a;
+  color: var(--accent-lit);
 }
 
 // 強制必選版：未選首發等級時提示（紅色警示，比 draft-hint 更顯眼）
@@ -2787,7 +2787,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 12px;
   margin-top: 6px;
-  color: #ef6f6f;
+  color: var(--stop);
 }
 
 .PageAdminOrders__row-dispatch-group {
@@ -2815,11 +2815,11 @@ $muted: rgba(255, 255, 255, 0.35);
 // 修：option 自帶深色背景 + 對應文字色；disabled placeholder option 淡化
 // 套用範圍：本頁所有 native <select>（首發等級 / 重發 / 編輯訂單 / 指派司機 / 取消原因）
 select option {
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--ink);
+  color: var(--surface-raised);
 }
 select option:disabled {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
 }
 
 .PageAdminOrders__modal-body {
@@ -2898,15 +2898,15 @@ select option:disabled {
   letter-spacing: 0.02em;
 
   &.is-ugly {
-    color: #f7b96a;
-    background: rgba(247, 185, 106, 0.12);
-    border: 1px solid rgba(247, 185, 106, 0.35);
+    color: var(--accent-lit);
+    background: var(--accent-a12);
+    border: 1px solid var(--accent-a30);
   }
 
   &.is-blacklist {
-    color: #ff7a7a;
-    background: rgba(255, 122, 122, 0.14);
-    border: 1px solid rgba(255, 122, 122, 0.4);
+    color: var(--stop);
+    background: var(--stop-a15);
+    border: 1px solid var(--stop-a45);
   }
 }
 
@@ -2932,8 +2932,8 @@ select option:disabled {
   margin-bottom: 6px;
 
   &.is-pickup .PageAdminOrders__addr-tag { background: var(--accent-a20); color: var(--accent); border-color: var(--accent-a30); }
-  &.is-stop   .PageAdminOrders__addr-tag { background: rgba(100, 200, 255, 0.12); color: #64c8ff; border-color: rgba(100, 200, 255, 0.3); }
-  &.is-dropoff .PageAdminOrders__addr-tag { background: rgba(80, 200, 120, 0.1); color: #50c878; border-color: rgba(80, 200, 120, 0.3); }
+  &.is-stop   .PageAdminOrders__addr-tag { background: var(--note-a15); color: var(--note); border-color: var(--note-a30); }
+  &.is-dropoff .PageAdminOrders__addr-tag { background: var(--good-a08); color: var(--good); border-color: var(--good-a30); }
 }
 
 .PageAdminOrders__addr-tag {
@@ -3050,7 +3050,7 @@ select option:disabled {
   transition: opacity 0.15s, box-shadow 0.15s;
 
   &.is-dragging { opacity: 0.45; }
-  &.is-drop-target { box-shadow: 0 -2px 0 0 #64c8ff; }
+  &.is-drop-target { box-shadow: 0 -2px 0 0 var(--note); }
 }
 
 .PageAdminOrders__stopover-handle {
@@ -3065,7 +3065,7 @@ select option:disabled {
   cursor: grab;
   transition: color 0.15s;
 
-  &:hover { color: #64c8ff; }
+  &:hover { color: var(--note); }
   &:active { cursor: grabbing; }
 }
 
@@ -3079,16 +3079,16 @@ select option:disabled {
   width: 26px;
   height: 15px;
   padding: 0;
-  border: 1px solid rgba(100, 200, 255, 0.25);
-  background: rgba(100, 200, 255, 0.06);
-  color: #64c8ff;
+  border: 1px solid var(--note-a30);
+  background: var(--note-a08);
+  color: var(--note);
   border-radius: 5px;
   font-size: 8px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
 
-  &:hover:not(:disabled) { background: rgba(100, 200, 255, 0.16); }
+  &:hover:not(:disabled) { background: var(--note-a15); }
   &:disabled { opacity: 0.25; cursor: not-allowed; }
 }
 
@@ -3097,9 +3097,9 @@ select option:disabled {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #64c8ff;
-  background: rgba(100, 200, 255, 0.1);
-  border: 1px solid rgba(100, 200, 255, 0.25);
+  color: var(--note);
+  background: var(--note-a08);
+  border: 1px solid var(--note-a30);
   padding: 4px 8px;
   border-radius: 6px;
   text-align: center;
@@ -3108,16 +3108,16 @@ select option:disabled {
 .PageAdminOrders__stopover-remove {
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(255, 80, 80, 0.25);
-  background: rgba(255, 80, 80, 0.08);
-  color: rgba(255, 100, 100, 0.85);
+  border: 1px solid var(--stop-a30);
+  background: var(--stop-a08);
+  color: var(--stop);
   border-radius: 8px;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255, 80, 80, 0.18); }
+  &:hover { background: var(--stop-a15); }
 }
 
 .PageAdminOrders__stopover-add {
@@ -3127,14 +3127,14 @@ select option:disabled {
   letter-spacing: 0.06em;
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px dashed rgba(100, 200, 255, 0.3);
-  background: rgba(100, 200, 255, 0.04);
-  color: #64c8ff;
+  border: 1px dashed var(--note-a30);
+  background: var(--note-a08);
+  color: var(--note);
   cursor: pointer;
   margin-top: 6px;
   transition: background 0.15s;
 
-  &:hover { background: rgba(100, 200, 255, 0.1); }
+  &:hover { background: var(--note-a08); }
 }
 
 // 窄螢幕：地址輸入框獨佔第二行，避免與序號 / 排序鈕互相擠壓
@@ -3183,7 +3183,7 @@ select option:disabled {
 
 .PageAdminOrders__tag-edit-hint {
   font-size: 11px;
-  color: rgba(255, 200, 100, 0.85);
+  color: var(--wait);
   font-weight: 400;
   margin-left: 6px;
 }
@@ -3200,8 +3200,8 @@ select option:disabled {
   margin-top: 10px;
   padding: 12px 14px;
   border-radius: 10px;
-  background: rgba(100, 200, 255, 0.06);
-  border: 1px solid rgba(100, 200, 255, 0.18);
+  background: var(--note-a08);
+  border: 1px solid var(--note-a15);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -3214,10 +3214,10 @@ select option:disabled {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.78);
 
-  &.is-error { color: rgba(255, 120, 120, 0.95); justify-content: flex-start; }
+  &.is-error { color: var(--stop); justify-content: flex-start; }
 
   &.is-warning {
-    color: rgba(255, 200, 100, 0.95);
+    color: var(--wait);
     font-size: 12px;
     justify-content: flex-start;
   }
@@ -3229,8 +3229,8 @@ select option:disabled {
     margin-top: 2px;
   }
 
-  &.is-up .PageAdminOrders__tag-edit-val { color: rgba(255, 120, 120, 0.95); }
-  &.is-down .PageAdminOrders__tag-edit-val { color: rgba(120, 220, 150, 0.95); }
+  &.is-up .PageAdminOrders__tag-edit-val { color: var(--stop); }
+  &.is-down .PageAdminOrders__tag-edit-val { color: var(--good); }
 }
 
 .PageAdminOrders__tag-edit-key {
@@ -3287,18 +3287,18 @@ select option:disabled {
   }
 
   &.is-danger {
-    background: rgba(255, 80, 80, 0.1);
-    color: rgba(255, 100, 100, 0.95);
-    border-color: rgba(255, 80, 80, 0.35);
-    &:hover:not(:disabled) { background: rgba(255, 80, 80, 0.18); }
+    background: var(--stop-a08);
+    color: var(--stop);
+    border-color: var(--stop-a30);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 
   // Phase 1F：warn 變體（強制重新配對等需謹慎但非破壞性的動作）
   &.is-warn {
-    background: rgba(255, 165, 0, 0.1);
-    color: rgba(255, 200, 100, 0.95);
-    border-color: rgba(255, 165, 0, 0.35);
-    &:hover:not(:disabled) { background: rgba(255, 165, 0, 0.2); }
+    background: var(--wait-a08);
+    color: var(--wait);
+    border-color: var(--wait-a30);
+    &:hover:not(:disabled) { background: var(--wait-a15); }
   }
 
   &.is-block { display: block; width: 100%; }
@@ -3367,37 +3367,37 @@ select option:disabled {
 
   // 重發按鈕用藍紫系區分（避免 admin 看混首發/重發）
   &.is-redispatch {
-    border-color: rgba(140, 110, 220, 0.5);
-    background: rgba(140, 110, 220, 0.12);
-    color: rgba(180, 150, 240, 0.95);
+    border-color: var(--note-a45);
+    background: var(--note-a15);
+    color: var(--note);
 
     &:hover:not(:disabled) {
-      background: rgba(140, 110, 220, 0.22);
-      border-color: rgba(140, 110, 220, 0.75);
+      background: var(--note-a15);
+      border-color: var(--note-a70);
     }
   }
 
   // Wave 2D：立即降級（橘紅色，警示性低於 force-open）
   &.is-downgrade {
-    border-color: rgba(255, 165, 90, 0.5);
-    background: rgba(255, 165, 90, 0.12);
-    color: rgba(255, 185, 120, 0.95);
+    border-color: var(--wait-a45);
+    background: var(--wait-a15);
+    color: var(--wait);
 
     &:hover:not(:disabled) {
-      background: rgba(255, 165, 90, 0.22);
-      border-color: rgba(255, 165, 90, 0.75);
+      background: var(--wait-a15);
+      border-color: var(--wait-a70);
     }
   }
 
   // Wave 2D：全開放（紅色警示，最強動作）
   &.is-force-open {
-    border-color: rgba(240, 100, 100, 0.5);
-    background: rgba(240, 100, 100, 0.12);
-    color: rgba(255, 140, 140, 0.95);
+    border-color: var(--stop-a45);
+    background: var(--stop-a15);
+    color: var(--stop);
 
     &:hover:not(:disabled) {
-      background: rgba(240, 100, 100, 0.22);
-      border-color: rgba(240, 100, 100, 0.75);
+      background: var(--stop-a15);
+      border-color: var(--stop-a70);
     }
   }
 }
@@ -3430,9 +3430,9 @@ select option:disabled {
   white-space: nowrap;
 
   &.is-assigned {
-    background: rgba(80, 200, 120, 0.1);
-    border: 1px solid rgba(80, 200, 120, 0.3);
-    color: #50c878;
+    background: var(--good-a08);
+    border: 1px solid var(--good-a30);
+    color: var(--good);
   }
 }
 
@@ -3539,7 +3539,7 @@ select option:disabled {
   margin-top: 8px;
   line-height: 1.5;
 
-  &.is-warn { color: rgba(255, 200, 0, 0.7); }
+  &.is-warn { color: var(--wait-a70); }
 }
 
 .PageAdminOrders__sub-actions {
@@ -3566,11 +3566,16 @@ select option:disabled {
   都吃到深色背景 + 白字。
 -->
 <style lang="scss">
+/* important-audit.md 的 A-1 清單原本就是這三行 —— 全站唯一「換色票也不會變」的深色面。
+   !important 保留（要壓過瀏覽器對 <option> 的強制樣式），但值改走 token：
+   深藍黑 #1a1a2e → 縞黑 var(--ink)。兩色極接近，肉眼幾乎分不出，
+   但它從此會跟著色票走，A-1 清單也就清空了。
+   custom property 由 <select> 繼承給 <option>，unscoped 也拿得到。 */
 .PageAdminOrders select option {
-  background: #1a1a2e !important;
-  color: #fff !important;
+  background: var(--ink) !important;
+  color: var(--surface-raised) !important;
 }
 .PageAdminOrders select option:disabled {
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: var(--surface-a40) !important;
 }
 </style>

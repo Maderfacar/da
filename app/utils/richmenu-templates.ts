@@ -10,6 +10,7 @@ import type {
   RichmenuLayer,
   RichmenuSize,
 } from '@/protocol/fetch-api/api/admin/line-richmenu';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 export interface RichmenuTemplate {
   key: string;
@@ -23,8 +24,8 @@ export interface RichmenuTemplate {
 }
 
 // 統一視覺色（與 P38 既有 admin amber 對齊）
-const AMBER = '#d4860a';
-const AMBER_DEEP = '#b8730a';
+const AMBER = DESIGN_COLORS.accent;
+const AMBER_DEEP = DESIGN_COLORS.accentDeep;
 const CREAM = '#fdf9f1';
 const SLATE = '#1f2937';
 const SLATE_SOFT = '#374151';

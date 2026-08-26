@@ -309,7 +309,7 @@ onMounted(() => {
   }
 
   &__error {
-    color: #e74c3c;
+    color: var(--stop);
     font-family: var(--ff-ui);
     font-size: 14px;
     margin: 8px 0;
@@ -371,7 +371,7 @@ onMounted(() => {
     border-radius: 100px;
     text-transform: uppercase;
 
-    &.is-super     { background: rgba(231, 76, 60, 0.12);  color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
+    &.is-super     { background: var(--stop-a15);  color: var(--stop); border: 1px solid var(--stop-a30); }
     &.is-admin     { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }
     &.is-assistant { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
   }
@@ -414,7 +414,7 @@ onMounted(() => {
     margin: 0;
     padding: 12px;
     background: var(--da-dark);
-    color: #c8e6c9;
+    color: var(--good);
     font-family: var(--ff-mono);
     font-size: 11px;
     line-height: 1.5;

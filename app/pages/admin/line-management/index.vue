@@ -846,6 +846,7 @@ onMounted(() => {
             //- text：單則文字
             template(v-else)
               textarea.PageAdminLineManagement__bot-text(
+                data-surface="light"
                 v-model="item.text"
                 rows="4"
                 :maxlength="TEXT_MAX"
@@ -1007,16 +1008,16 @@ onMounted(() => {
       .PageAdminLineManagement__diag-intro
         | 列最近 50 筆 webhook event（依 createdAt desc）。要查更舊紀錄請至 Firestore Console。
       .PageAdminLineManagement__diag-filters
-        label.PageAdminLineManagement__diag-filter
+        label.PageAdminLineManagement__diag-filter(data-surface='light')
           span.k Channel
           select(v-model="eventLogChannel")
             option(value="passenger") 乘客 OA
             option(value="driver") 司機 OA
-        label.PageAdminLineManagement__diag-filter
+        label.PageAdminLineManagement__diag-filter(data-surface='light')
           span.k Event Type
           select(v-model="eventLogTypeFilter")
             option(v-for="o in EVENT_TYPE_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
-        label.PageAdminLineManagement__diag-filter
+        label.PageAdminLineManagement__diag-filter(data-surface='light')
           span.k Handler Result
           select(v-model="eventLogResultFilter")
             option(v-for="o in HANDLER_RESULT_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
@@ -1065,11 +1066,11 @@ onMounted(() => {
       .PageAdminLineManagement__diag-intro
         | 列最近 50 筆 LINE API error log（依 createdAt desc）。要查更舊紀錄請至 Firestore Console。
       .PageAdminLineManagement__diag-filters
-        label.PageAdminLineManagement__diag-filter
+        label.PageAdminLineManagement__diag-filter(data-surface='light')
           span.k Channel
           select(v-model="errorLogChannel")
             option(v-for="o in ERROR_CHANNEL_OPTIONS" :key="o.value" :value="o.value") {{ o.label }}
-        label.PageAdminLineManagement__diag-filter
+        label.PageAdminLineManagement__diag-filter(data-surface='light')
           span.k API（含字串過濾）
           input(
             v-model="errorLogApiFilter"
@@ -1247,15 +1248,15 @@ $border: var(--accent-a20);
   }
 
   &.is-passenger.is-active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
-    background: rgba(37, 99, 235, 0.05);
+    color: var(--note);
+    border-bottom-color: var(--note);
+    background: var(--note-a08);
     .dot { opacity: 1; }
   }
   &.is-driver.is-active {
-    color: #059669;
-    border-bottom-color: #059669;
-    background: rgba(5, 150, 105, 0.05);
+    color: var(--good);
+    border-bottom-color: var(--good);
+    background: var(--good-a08);
     .dot { opacity: 1; }
   }
   &:not(.is-active) {
@@ -1308,7 +1309,7 @@ $border: var(--accent-a20);
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: #b8730a; }
+  &:hover { background: var(--accent-deep); }
 }
 
 // ── 列表 ─────────────────────────────────────────────────────
@@ -1341,7 +1342,7 @@ $border: var(--accent-a20);
 
   &:last-child { border-bottom: none; }
   &:hover { background: var(--accent-a06); }
-  &.is-active { background: rgba(5, 150, 105, 0.04); }
+  &.is-active { background: var(--good-a08); }
 }
 
 .PageAdminLineManagement__card-head {
@@ -1374,9 +1375,9 @@ $border: var(--accent-a20);
     border-color: rgba(107, 114, 128, 0.3);
   }
   &.is-active {
-    color: #059669;
-    background: rgba(5, 150, 105, 0.1);
-    border-color: rgba(5, 150, 105, 0.4);
+    color: var(--good);
+    background: var(--good-a08);
+    border-color: var(--good-a45);
   }
   &.is-archived {
     color: #9ca3af;
@@ -1393,18 +1394,20 @@ $border: var(--accent-a20);
   letter-spacing: 0.1em;
   border-radius: 100px;
   padding: 2px 8px;
-
+  /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
+     色相分類把 zh_tw 與 ja 都壓成 --stop，兩個並排的 chip 變同色（功能性退步）。
+     改用三個明顯不同色相的語意 token 撐開：紅 / 藍 / 綠。色只是輔助，旁邊有語言文字。 */
   &.is-zh_tw {
-    background: rgba(220, 38, 38, 0.10);
-    color: #b91c1c;
+    background: var(--stop-a08);
+    color: var(--stop);
   }
   &.is-en {
-    background: rgba(79, 70, 229, 0.10);
-    color: #4338ca;
+    background: var(--note-a08);
+    color: var(--note);
   }
   &.is-ja {
-    background: rgba(244, 114, 182, 0.12);
-    color: #be185d;
+    background: var(--good-a08);
+    color: var(--good);
   }
 }
 
@@ -1444,16 +1447,16 @@ $border: var(--accent-a20);
     background: #1f2937;
   }
   &.is-zh_tw.is-active {
-    background: #b91c1c;
-    border-color: #b91c1c;
+    background: var(--stop);
+    border-color: var(--stop);
   }
   &.is-en.is-active {
-    background: #4338ca;
-    border-color: #4338ca;
+    background: var(--note);
+    border-color: var(--note);
   }
   &.is-ja.is-active {
-    background: #be185d;
-    border-color: #be185d;
+    background: var(--good);
+    border-color: var(--good);
   }
 }
 
@@ -1467,9 +1470,9 @@ $border: var(--accent-a20);
   background: rgba(0, 0, 0, 0.05);
   color: $muted;
 
-  &.is-synced { color: #059669; background: rgba(5, 150, 105, 0.08); }
+  &.is-synced { color: var(--good); background: var(--good-a08); }
   &.is-syncing { color: var(--accent); background: var(--accent-a12); }
-  &.is-sync_failed { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+  &.is-sync_failed { color: var(--stop); background: var(--stop-a08); }
 }
 
 .PageAdminLineManagement__card-body {
@@ -1525,7 +1528,7 @@ $border: var(--accent-a20);
       &.mono { font-family: var(--ff-mono); font-size: 11px; }
     }
 
-    &.err .v { color: #ef4444; }
+    &.err .v { color: var(--stop); }
   }
 }
 
@@ -1549,10 +1552,10 @@ $border: var(--accent-a20);
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.is-approve {
-    background: rgba(5, 150, 105, 0.1);
-    border-color: rgba(5, 150, 105, 0.4);
-    color: #059669;
-    &:hover:not(:disabled) { background: rgba(5, 150, 105, 0.18); }
+    background: var(--good-a08);
+    border-color: var(--good-a45);
+    color: var(--good);
+    &:hover:not(:disabled) { background: var(--good-a15); }
   }
   &.is-warning {
     background: var(--accent-a12);
@@ -1561,10 +1564,10 @@ $border: var(--accent-a20);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
   &.is-reject {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #ef4444;
-    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.16); }
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
   &.is-toggle {
     background: rgba(0, 0, 0, 0.03);
@@ -1610,24 +1613,24 @@ $border: var(--accent-a20);
   }
 
   &.is-bot-reply.is-active {
-    background: #4338ca;
-    border-color: #4338ca;
+    background: var(--note);
+    border-color: var(--note);
   }
   &.is-dispatch.is-active {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: var(--note);
+    border-color: var(--note);
   }
   &.is-softmatch.is-active {
-    background: #be185d;
-    border-color: #be185d;
+    background: var(--stop);
+    border-color: var(--stop);
   }
   &.is-driver-notify.is-active {
-    background: #059669;
-    border-color: #059669;
+    background: var(--good);
+    border-color: var(--good);
   }
   &.is-order.is-active {
-    background: #b91c1c;
-    border-color: #b91c1c;
+    background: var(--stop);
+    border-color: var(--stop);
   }
 }
 
@@ -1696,7 +1699,7 @@ $border: var(--accent-a20);
     .PageAdminLineManagement__template-name {
       color: rgba(0, 0, 0, 0.4);
     }
-    &:hover { background: rgba(239, 68, 68, 0.04); }
+    &:hover { background: var(--stop-a08); }
   }
 }
 
@@ -1718,14 +1721,14 @@ $border: var(--accent-a20);
   flex-shrink: 0;
 
   &.is-passenger {
-    color: #2563eb;
-    border-color: rgba(37, 99, 235, 0.4);
-    background: rgba(37, 99, 235, 0.08);
+    color: var(--note);
+    border-color: var(--note-a45);
+    background: var(--note-a08);
   }
   &.is-driver {
-    color: #059669;
-    border-color: rgba(5, 150, 105, 0.4);
-    background: rgba(5, 150, 105, 0.08);
+    color: var(--good);
+    border-color: var(--good-a45);
+    background: var(--good-a08);
   }
   &.is-admin,
   &.is-both {
@@ -1751,7 +1754,7 @@ $border: var(--accent-a20);
   background: rgba(0, 0, 0, 0.04);
 
   &.is-lock {
-    background: rgba(239, 68, 68, 0.12);
+    background: var(--stop-a15);
   }
 }
 
@@ -1763,10 +1766,10 @@ $border: var(--accent-a20);
   flex-shrink: 0;
 }
 .PageAdminLineManagement__template-entry.is-customized .PageAdminLineManagement__template-dot {
-  background: #059669;
+  background: var(--good);
 }
 .PageAdminLineManagement__template-entry.is-customized.is-disabled .PageAdminLineManagement__template-dot {
-  background: #ef4444;
+  background: var(--stop);
 }
 
 .PageAdminLineManagement__template-editor {
@@ -1796,8 +1799,8 @@ $border: var(--accent-a20);
   gap: 8px;
 
   &:last-child { border-bottom: none; }
-  &.is-passenger { border-left: 3px solid rgba(37, 99, 235, 0.4); }
-  &.is-driver { border-left: 3px solid rgba(5, 150, 105, 0.4); }
+  &.is-passenger { border-left: 3px solid var(--note-a45); }
+  &.is-driver { border-left: 3px solid var(--good-a45); }
 }
 
 .PageAdminLineManagement__bot-head {
@@ -1816,12 +1819,12 @@ $border: var(--accent-a20);
   padding: 3px 10px;
 
   &.is-passenger {
-    background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    background: var(--note-a15);
+    color: var(--note);
   }
   &.is-driver {
-    background: rgba(5, 150, 105, 0.12);
-    color: #059669;
+    background: var(--good-a15);
+    color: var(--good);
   }
 }
 
@@ -1860,6 +1863,9 @@ $border: var(--accent-a20);
   letter-spacing: 0.05em;
 }
 
+/* 這個白底輸入框在 admin 的 [data-surface='dark'] 之內。
+   模板上標了 data-surface="light" 把主色拉回 base 階，
+   否則 :focus 的邊框會拿到深底用的亮銅，落在白底上只剩 1.9:1（焦點指示需 3:1）。 */
 .PageAdminLineManagement__bot-text {
   width: 100%;
   padding: 10px 12px;
@@ -1948,12 +1954,12 @@ $border: var(--accent-a20);
   padding: 4px 12px;
 
   &.is-passenger {
-    background: rgba(37, 99, 235, 0.12);
-    color: #2563eb;
+    background: var(--note-a15);
+    color: var(--note);
   }
   &.is-driver {
-    background: rgba(5, 150, 105, 0.12);
-    color: #059669;
+    background: var(--good-a15);
+    color: var(--good);
   }
 }
 
@@ -1974,16 +1980,16 @@ $border: var(--accent-a20);
   gap: 10px;
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(5, 150, 105, 0.08);
-  color: #059669;
+  background: var(--good-a08);
+  color: var(--good);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
 
   &.is-warning {
-    background: rgba(239, 68, 68, 0.08);
-    color: #ef4444;
+    background: var(--stop-a08);
+    color: var(--stop);
   }
 }
 
@@ -1996,7 +2002,7 @@ $border: var(--accent-a20);
   padding: 8px 14px 8px 28px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: rgba(239, 68, 68, 0.9);
+  color: var(--stop);
   line-height: 1.6;
   list-style: disc;
 }
@@ -2057,8 +2063,8 @@ $border: var(--accent-a20);
   font-family: var(--ff-label);
   font-size: 12px;
 
-  &.is-default { background: rgba(5, 150, 105, 0.08); }
-  &.is-orphan { background: rgba(239, 68, 68, 0.08); }
+  &.is-default { background: var(--good-a08); }
+  &.is-orphan { background: var(--stop-a08); }
 }
 
 .PageAdminLineManagement__diag-menu-name {
@@ -2084,12 +2090,12 @@ $border: var(--accent-a20);
   padding: 2px 8px;
 
   &.is-default {
-    color: #059669;
-    background: rgba(5, 150, 105, 0.16);
+    color: var(--good);
+    background: var(--good-a15);
   }
   &.is-orphan {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.14);
+    color: var(--stop);
+    background: var(--stop-a15);
   }
 }
 
@@ -2199,8 +2205,8 @@ $border: var(--accent-a20);
     &:hover { background: rgba(0, 0, 0, 0.03); }
   }
   &.is-expanded { background: var(--accent-a06); }
-  &.is-failed { background: rgba(239, 68, 68, 0.05); }
-  &.is-error { color: #b91c1c; }
+  &.is-failed { background: var(--stop-a08); }
+  &.is-error { color: var(--stop); }
 
   .col {
     overflow: hidden;
@@ -2210,15 +2216,15 @@ $border: var(--accent-a20);
     &.mono { font-family: var(--ff-mono); font-size: 11px; }
     &.result {
       font-weight: 700;
-      &.is-replied { color: #059669; }
-      &.is-handler_failed { color: #ef4444; }
-      &.is-no_handler { color: #d97706; }
+      &.is-replied { color: var(--good); }
+      &.is-handler_failed { color: var(--stop); }
+      &.is-no_handler { color: var(--wait); }
       &.is-ignored { color: $muted; }
     }
     &.status {
       font-family: var(--ff-mono);
-      &.is-4xx { color: #d97706; }
-      &.is-5xx { color: #ef4444; font-weight: 700; }
+      &.is-4xx { color: var(--wait); }
+      &.is-5xx { color: var(--stop); font-weight: 700; }
     }
   }
 

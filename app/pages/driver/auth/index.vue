@@ -182,7 +182,7 @@ function ClickMockLogin() {
   justify-content: center;
   gap: 10px;
   padding: 14px 20px;
-  background: #06C755;
+  background: var(--line-green);
   border: none;
   border-radius: 12px;
   font-family: var(--ff-ui);

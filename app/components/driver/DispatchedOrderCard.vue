@@ -165,14 +165,14 @@ const ClickWithdraw = (e: Event) => {
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba(80, 200, 120, 0.12);
-  border: 1px solid rgba(80, 200, 120, 0.3);
-  color: #50c878;
+  background: var(--good-a15);
+  border: 1px solid var(--good-a30);
+  color: var(--good);
 
   &.is-withdraw {
-    background: rgba(255, 100, 100, 0.1);
-    border-color: rgba(255, 100, 100, 0.25);
-    color: rgba(255, 130, 130, 0.85);
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
   }
 }
 
@@ -233,7 +233,7 @@ const ClickWithdraw = (e: Event) => {
   background: var(--accent);
 }
 .DriverDispatchedOrderCard__route-point.is-dropoff .DriverDispatchedOrderCard__route-dot {
-  background: rgba(80, 200, 120, 0.9);
+  background: var(--good);
 }
 
 .DriverDispatchedOrderCard__route-line {
@@ -264,9 +264,9 @@ const ClickWithdraw = (e: Event) => {
   color: rgba(255, 255, 255, 0.65);
 
   &.is-urgent {
-    color: #ff8366;
-    border-color: rgba(255, 131, 102, 0.35);
-    background: rgba(255, 131, 102, 0.08);
+    color: var(--stop);
+    border-color: var(--stop-a30);
+    background: var(--stop-a08);
   }
 
   &.is-expired {
@@ -323,10 +323,10 @@ const ClickWithdraw = (e: Event) => {
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-withdraw {
-    border-color: rgba(255, 100, 100, 0.4);
-    background: rgba(255, 100, 100, 0.1);
-    color: rgba(255, 130, 130, 0.95);
-    &:hover:not(:disabled) { background: rgba(255, 100, 100, 0.18); }
+    border-color: var(--stop-a45);
+    background: var(--stop-a08);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 }
 </style>

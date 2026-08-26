@@ -310,7 +310,7 @@ onMounted(ApiLoadFlow);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.25em;
-  color: #38bdf8;
+  color: var(--note);
   margin-bottom: 10px;
 }
 
@@ -445,8 +445,8 @@ onMounted(ApiLoadFlow);
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 200, 0, 0.08);
-  border: 1px solid rgba(255, 200, 0, 0.25);
+  background: var(--wait-a08);
+  border: 1px solid var(--wait-a30);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 14px;
@@ -456,7 +456,7 @@ onMounted(ApiLoadFlow);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
-    color: rgba(255, 200, 0, 0.85);
+    color: var(--wait);
   }
 }
 

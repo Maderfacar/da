@@ -188,7 +188,6 @@ onMounted(() => {
 $surface: rgba(255, 255, 255, 0.04);
 $surface-2: rgba(255, 255, 255, 0.08);
 $border: rgba(255, 255, 255, 0.08);
-$danger: #ff7a7a;
 $text: rgba(255, 255, 255, 0.8);
 $muted: rgba(255, 255, 255, 0.4);
 
@@ -330,20 +329,20 @@ $muted: rgba(255, 255, 255, 0.4);
 
   &.is-ugly {
     color: var(--accent-lit);
-    background: rgba(247, 185, 106, 0.12);
-    border: 1px solid rgba(247, 185, 106, 0.35);
+    background: var(--accent-a12);
+    border: 1px solid var(--accent-a30);
   }
 
   &.is-blacklist {
-    color: $danger;
-    background: rgba(255, 122, 122, 0.14);
-    border: 1px solid rgba(255, 122, 122, 0.4);
+    color: var(--stop);
+    background: var(--stop-a15);
+    border: 1px solid var(--stop-a45);
   }
 
   &.is-clean {
-    color: rgba(167, 220, 167, 0.85);
-    background: rgba(167, 220, 167, 0.08);
-    border: 1px solid rgba(167, 220, 167, 0.25);
+    color: var(--good);
+    background: var(--good-a08);
+    border: 1px solid var(--good-a30);
   }
 }
 
@@ -368,7 +367,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
   &.is-danger {
     color: #fff;
-    background: $danger;
+    background: var(--stop);
   }
 
   &.is-primary {
@@ -457,7 +456,7 @@ $muted: rgba(255, 255, 255, 0.4);
   line-height: 1.6;
 
   &.is-warn {
-    color: rgba(255, 200, 0, 0.7);
+    color: var(--wait-a70);
   }
 }
 

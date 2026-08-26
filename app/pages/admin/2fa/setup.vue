@@ -142,9 +142,9 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__warn {
   font-size: 13px;
-  color: #b54708;
+  color: var(--accent-deep);
   background: #fffaeb;
-  border: 1px solid #fedf89;
+  border: 1px solid var(--wait);
   border-radius: 8px;
   padding: 10px 12px;
   margin: 12px 0 20px;
@@ -190,7 +190,7 @@ onMounted(() => { void ApiSetup(); });
   color: #333;
 }
 .Admin2faSetup__error {
-  color: #c4262e;
+  color: var(--stop);
   font-size: 13px;
   margin: 8px 0;
 }

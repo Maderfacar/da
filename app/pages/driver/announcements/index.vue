@@ -252,7 +252,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #f87171;
+  background: var(--stop);
   flex-shrink: 0;
   margin-top: 6px;
 }

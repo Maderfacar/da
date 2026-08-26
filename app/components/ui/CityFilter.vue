@@ -178,7 +178,7 @@ const hasValue = computed(
 
   &:last-child { border-right: none; }
   &:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-  &.is-active { background: var(--accent-a20); color: #f7b96a; }
+  &.is-active { background: var(--accent-a20); color: var(--accent-lit); }
 }
 
 .UiCityFilter__select {
@@ -201,9 +201,9 @@ const hasValue = computed(
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: rgba(255, 80, 80, 0.12);
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.3);
+    background: var(--stop-a15);
+    color: var(--stop);
+    border-color: var(--stop-a30);
   }
 }
 
@@ -215,16 +215,16 @@ const hasValue = computed(
     color: var(--da-gray);
     border-right-color: var(--ink-a12);
     &:hover { background: var(--ink-a06); color: var(--da-dark); }
-    &.is-active { background: var(--accent-a20); color: #b8730a; }
+    &.is-active { background: var(--accent-a20); color: var(--accent-deep); }
   }
   .UiCityFilter__clear {
     background: var(--ink-a06);
     border-color: var(--ink-a20);
     color: var(--da-gray);
     &:hover {
-      background: rgba(220, 38, 38, 0.10);
-      color: #dc2626;
-      border-color: rgba(220, 38, 38, 0.30);
+      background: var(--stop-a08);
+      color: var(--stop);
+      border-color: var(--stop-a30);
     }
   }
 }

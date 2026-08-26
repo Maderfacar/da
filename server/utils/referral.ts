@@ -18,6 +18,7 @@ import type { I18nMsg } from '@@/utils/response';
 import type { Lang } from '@@/utils/user-lang';
 import type { LineMessage } from '@@/utils/line-push';
 import { mintDiscountCode } from '@@/utils/discount-code';
+import { DESIGN_COLORS } from '~shared/design-colors';
 
 // ── referralCode 產生 ─────────────────────────────────────────────
 
@@ -432,7 +433,7 @@ export function buildReferralShareFlex(input: BuildReferralShareFlexInput): Line
       spacing: 'md',
       contents: [
         { type: 'text', text: title, weight: 'bold', size: 'xl', wrap: true },
-        { type: 'text', text: body, size: 'sm', color: '#6B6560', wrap: true },
+        { type: 'text', text: body, size: 'sm', color: DESIGN_COLORS.inkSoft, wrap: true },
       ],
     },
     footer: {
@@ -442,7 +443,7 @@ export function buildReferralShareFlex(input: BuildReferralShareFlexInput): Line
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'uri', label: cta, uri },
         },
       ],

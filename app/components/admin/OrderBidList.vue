@@ -138,9 +138,9 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 100px;
-  background: rgba(255, 100, 100, 0.12);
-  border: 1px solid rgba(255, 100, 100, 0.3);
-  color: rgba(255, 120, 120, 0.85);
+  background: var(--stop-a15);
+  border: 1px solid var(--stop-a30);
+  color: var(--stop);
 }
 
 .AdminOrderBidList__meta {

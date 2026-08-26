@@ -517,7 +517,7 @@ onUnmounted(() => {
   gap: 8px;
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: #4ade80;
+  color: var(--good);
   padding: 24px 0;
 
   span:first-child { font-size: 36px; }
@@ -557,7 +557,7 @@ onUnmounted(() => {
 }
 
 .PageDriverRegister__required {
-  color: #f87171;
+  color: var(--stop);
   margin-left: 2px;
 }
 
@@ -650,9 +650,9 @@ onUnmounted(() => {
   width: 100%;
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: #f87171;
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: var(--stop);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a15);
   border-radius: 10px;
   padding: 10px 14px;
   margin-top: 12px;
@@ -711,8 +711,8 @@ onUnmounted(() => {
   gap: 4px;
   margin: 16px 0 24px;
   padding: 14px 20px;
-  background: rgba(248, 113, 113, 0.06);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a15);
   border-radius: 12px;
 }
 
@@ -720,7 +720,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.2em;
-  color: rgba(248, 113, 113, 0.7);
+  color: var(--stop-a70);
   text-transform: uppercase;
 }
 
@@ -728,16 +728,16 @@ onUnmounted(() => {
   font-family: var(--ff-data);
   font-size: 28px;
   letter-spacing: 0.06em;
-  color: #f87171;
+  color: var(--stop);
   font-variant-numeric: tabular-nums;
 }
 
 .PageDriverRegister__reason {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(248, 113, 113, 0.85);
-  background: rgba(248, 113, 113, 0.08);
-  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: var(--stop);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a15);
   border-radius: 10px;
   padding: 10px 14px;
   margin-bottom: 24px;
@@ -774,13 +774,13 @@ onUnmounted(() => {
   margin-top: 16px;
   margin-bottom: 12px;
   padding: 12px 14px;
-  background: rgba(6, 199, 85, 0.16);
-  border: 1px solid rgba(6, 199, 85, 0.4);
+  background: color-mix(in srgb, var(--line-green) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-green) 40%, transparent);
   border-radius: 10px;
   text-decoration: none;
   transition: background 0.2s;
 
-  &:hover { background: rgba(6, 199, 85, 0.24); }
+  &:hover { background: color-mix(in srgb, var(--line-green) 24%, transparent); }
 }
 
 .PageDriverRegister__oa-cta-icon { font-size: 18px; }
@@ -789,7 +789,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 500;
-  color: #4ade80;
+  color: var(--good);
   text-align: center;
 }
 

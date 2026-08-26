@@ -39,20 +39,20 @@ span.UiBadge(:class="`is-${variant}`")
 }
 
 .UiBadge.is-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #16a34a;
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: var(--good-a08);
+  color: var(--good);
+  border: 1px solid var(--good-a30);
 }
 
 .UiBadge.is-error {
-  background: rgba(238, 81, 81, 0.1);
+  background: var(--stop-a08);
   color: var(--danger);
-  border: 1px solid rgba(238, 81, 81, 0.25);
+  border: 1px solid var(--stop-a30);
 }
 
 .UiBadge.is-info {
-  background: rgba(107, 101, 96, 0.1);
-  color: var(--da-gray);
-  border: 1px solid rgba(107, 101, 96, 0.2);
+  background: var(--ink-a12);
+  color: var(--ink-soft);
+  border: 1px solid var(--ink-a20);
 }
 </style>

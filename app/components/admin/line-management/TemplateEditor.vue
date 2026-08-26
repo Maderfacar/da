@@ -737,14 +737,14 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 4px;
 
   &.is-passenger {
-    color: #2563eb;
-    border-color: rgba(37, 99, 235, 0.4);
-    background: rgba(37, 99, 235, 0.08);
+    color: var(--note);
+    border-color: var(--note-a45);
+    background: var(--note-a08);
   }
   &.is-driver {
-    color: #059669;
-    border-color: rgba(5, 150, 105, 0.4);
-    background: rgba(5, 150, 105, 0.08);
+    color: var(--good);
+    border-color: var(--good-a45);
+    background: var(--good-a08);
   }
   &.is-admin,
   &.is-both {
@@ -808,16 +808,16 @@ $border: rgba(0, 0, 0, 0.1);
     border-bottom-color: var(--accent);
   }
   &.is-zh_tw.is-active {
-    color: #b91c1c;
-    border-bottom-color: #b91c1c;
+    color: var(--stop);
+    border-bottom-color: var(--stop);
   }
   &.is-en.is-active {
-    color: #4338ca;
-    border-bottom-color: #4338ca;
+    color: var(--note);
+    border-bottom-color: var(--note);
   }
   &.is-ja.is-active {
-    color: #be185d;
-    border-bottom-color: #be185d;
+    color: var(--stop);
+    border-bottom-color: var(--stop);
   }
 }
 
@@ -825,7 +825,7 @@ $border: rgba(0, 0, 0, 0.1);
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #059669;
+  background: var(--good);
   display: inline-block;
 }
 
@@ -952,7 +952,7 @@ $border: rgba(0, 0, 0, 0.1);
     color: rgba(0, 0, 0, 0.65);
   }
   .req {
-    color: #ef4444;
+    color: var(--stop);
     font-weight: 700;
   }
 }
@@ -1043,15 +1043,15 @@ $border: rgba(0, 0, 0, 0.1);
     border-color: var(--accent);
     color: white;
     &:hover:not(:disabled) {
-      background: #b8730a;
+      background: var(--accent-deep);
     }
   }
   &.is-reject {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #ef4444;
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
     &:hover:not(:disabled) {
-      background: rgba(239, 68, 68, 0.16);
+      background: var(--stop-a15);
     }
   }
 }
@@ -1132,7 +1132,8 @@ $border: rgba(0, 0, 0, 0.1);
 
 // W6：純文字預覽（LINE 文字訊息氣泡）
 .TemplateEditor__text-bubble {
-  background: #d4e7c5;
+  // 擬真 LINE 的氣泡底色，**刻意不走語意綠** —— 它要長得像 LINE，不是要表達「成功」
+  background: var(--line-bubble);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 18px 18px 18px 4px;
   padding: 12px 16px;

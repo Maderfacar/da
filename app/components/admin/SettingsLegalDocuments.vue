@@ -218,7 +218,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__meta-dirty {
-  color: #f7b96a;
+  color: var(--accent-lit);
   font-weight: 600;
 }
 
@@ -286,7 +286,7 @@ $muted: rgba(255, 255, 255, 0.5);
   &.is-approve {
     background: var(--accent);
     color: white;
-    &:hover:not(:disabled) { background: #b8730a; }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 }
 

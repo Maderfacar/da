@@ -15,11 +15,11 @@ const dateRange = ref<{ from: string | null; to: string | null }>({ from: null, 
 
 // status 文字走 i18n（status.{key}）；色碼留在前端（不參與翻譯）
 const STATUS_COLOR: Record<string, string> = {
-  pending:    '#b45309',  // amber-700（cream 底可讀）
-  confirmed:  '#1B4F8A',  // 與 dropoff dot 同色
-  in_transit: '#15803d',  // green-700
+  pending:    DESIGN_COLORS.wait,
+  confirmed:  DESIGN_COLORS.note,
+  in_transit: DESIGN_COLORS.good,
   completed:  DESIGN_COLORS.inkSoft,  // 次要文字
-  cancelled:  '#dc2626',
+  cancelled:  DESIGN_COLORS.stop,
 };
 
 // 可取消狀態（pending / confirmed 才允許乘客主動取消）
@@ -331,18 +331,18 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   width: 100%;
   margin-top: 12px;
   padding: 8px 12px;
-  background: rgba(220, 38, 38, 0.08);
-  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   border-radius: 10px;
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #dc2626;
+  color: var(--stop);
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s, transform 0.1s;
 
-  &:hover:not(:disabled) { background: rgba(220, 38, 38, 0.14); }
+  &:hover:not(:disabled) { background: var(--stop-a15); }
   &:active { transform: scale(0.99); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -391,7 +391,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   flex-shrink: 0;
 
   &.is-pickup  { background: var(--da-amber); }
-  &.is-dropoff { background: #1B4F8A; }
+  &.is-dropoff { background: var(--note); }
 }
 
 .PageOrders__route-line {

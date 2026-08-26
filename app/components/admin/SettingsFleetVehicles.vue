@@ -889,9 +889,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(255, 100, 100, 0.85);
-  background: rgba(255, 80, 80, 0.1);
-  border: 1px solid rgba(255, 80, 80, 0.3);
+  color: var(--stop);
+  background: var(--stop-a08);
+  border: 1px solid var(--stop-a30);
   border-radius: 100px;
   padding: 1px 8px;
 }
@@ -939,10 +939,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   }
 
   &.is-delete {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: #f87171;
-    &:hover:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
+    background: var(--stop-a08);
+    border-color: var(--stop-a30);
+    color: var(--stop);
+    &:hover:not(:disabled) { background: var(--stop-a15); }
   }
 }
 
@@ -1271,9 +1271,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
 .SettingsFleetVehicles__error {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 200, 0, 0.85);
-  background: rgba(255, 200, 0, 0.08);
-  border: 1px solid rgba(255, 200, 0, 0.25);
+  color: var(--wait);
+  background: var(--wait-a08);
+  border: 1px solid var(--wait-a30);
   border-radius: 8px;
   padding: 8px 12px;
 }

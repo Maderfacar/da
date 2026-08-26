@@ -45,7 +45,7 @@ transition(name="fade")
 
 <style scoped lang="scss">
 .SystemInappBrowserBlock {
-  --green: #16a34a;
+  --green: var(--good);
   --border: #d0d7de;
   --text: #222;
   --gray: #6b7280;

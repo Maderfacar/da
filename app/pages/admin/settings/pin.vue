@@ -168,9 +168,9 @@ onMounted(() => { void _LoadStatus(); });
 }
 .AdminSettingsPin__warn {
   font-size: 12px;
-  color: #b54708;
+  color: var(--accent-deep);
   background: #fffaeb;
-  border: 1px solid #fedf89;
+  border: 1px solid var(--wait);
   border-radius: 8px;
   padding: 8px 10px;
   margin: 8px 0 18px;
@@ -192,7 +192,7 @@ onMounted(() => { void _LoadStatus(); });
   color: #333;
 }
 .AdminSettingsPin__error {
-  color: #c4262e;
+  color: var(--stop);
   font-size: 13px;
   margin: 8px 0;
 }

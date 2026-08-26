@@ -208,7 +208,7 @@ onUnmounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
-  background: #06c755;
+  background: var(--line-green);
   color: #fff;
 }
 
@@ -227,7 +227,7 @@ onUnmounted(() => {
   padding: 5px 14px;
   border-radius: 100px;
   background: #fff;
-  color: #06c755;
+  color: var(--line-green);
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;

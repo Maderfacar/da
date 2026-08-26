@@ -297,8 +297,10 @@ Teleport(to="body")
   align-items: center;
   justify-content: center;
   border-radius: 100px;
-  background: #ee5151;
-  color: #fff;
+  background: var(--stop);
+  // 深色面上 --stop 解析為亮階（淺紅），白字只剩 1.7:1。
+  // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
+  color: var(--ink);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;

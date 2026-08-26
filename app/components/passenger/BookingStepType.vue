@@ -691,14 +691,14 @@ const ClickNext = () => {
   &__time-error {
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: #e74c3c;
+    color: var(--stop);
     margin: 6px 0 0;
   }
 
   &__flight-error {
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: #e74c3c;
+    color: var(--stop);
     margin: 0 0 8px;
   }
 
@@ -715,7 +715,7 @@ const ClickNext = () => {
     text-decoration: underline;
     text-underline-offset: 3px;
 
-    &:hover { color: var(--da-amber-dark, #b56a08); }
+    &:hover { color: var(--da-amber-dark, var(--accent-deep)); }
   }
 
   &__manual {
@@ -830,7 +830,7 @@ const ClickNext = () => {
   &__manual-error {
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: #e74c3c;
+    color: var(--stop);
     margin: 4px 0 8px;
   }
 
@@ -881,9 +881,9 @@ const ClickNext = () => {
     padding: 3px 10px;
     border-radius: 100px;
 
-    &.is-ok    { background: rgba(39, 174, 96, 0.12); color: #27ae60; border: 1px solid rgba(39, 174, 96, 0.3); }
-    &.is-warn  { background: rgba(230, 126, 34, 0.12); color: #e67e22; border: 1px solid rgba(230, 126, 34, 0.3); }
-    &.is-error { background: rgba(231, 76, 60, 0.12);  color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
+    &.is-ok    { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
+    &.is-warn  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
+    &.is-error { background: var(--stop-a15);  color: var(--stop); border: 1px solid var(--stop-a30); }
   }
 
   &__flight-card-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
