@@ -145,11 +145,13 @@ const EmitClose = () => {
       .el-dialog__header {
         background-color: var(--accent);
       }
+      // !important 是為了壓過 Element Plus 的預設，值改走 token
+      //（底色是 var(--accent)，瓷白字對古銅 5.42:1）
       .el-dialog__header .el-dialog__title {
-        color: #fff !important;
+        color: var(--surface-raised) !important;
       }
       .el-dialog__header .el-dialog__headerbtn i {
-        color: #fff !important;
+        color: var(--surface-raised) !important;
       }
     }
   }
