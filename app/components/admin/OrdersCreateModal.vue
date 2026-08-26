@@ -426,8 +426,6 @@ Transition(name="fade")
 $surface: rgba(255, 255, 255, 0.04);
 $surface-2: rgba(255, 255, 255, 0.08);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
-$amber-light: #f7b96a;
 $muted: rgba(255, 255, 255, 0.35);
 
 .AdminOrdersCreateModal {
@@ -542,7 +540,7 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: border-color 0.15s;
 
   &::placeholder { color: rgba(255, 255, 255, 0.2); }
-  &:focus { border-color: rgba($amber, 0.4); }
+  &:focus { border-color: var(--accent-a40); }
 }
 
 .AdminOrdersCreateModal__input[type="datetime-local"] {
@@ -710,9 +708,9 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: all 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.12);
-    color: $amber-light;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent-lit);
   }
 }
 
@@ -723,15 +721,15 @@ $muted: rgba(255, 255, 255, 0.35);
   row-gap: 2px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(212, 134, 10, 0.06);
-  border: 1px solid rgba(212, 134, 10, 0.2);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
   cursor: pointer;
   align-items: center;
 
   input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: $amber;
+    accent-color: var(--accent);
     cursor: pointer;
     grid-row: span 2;
   }
@@ -741,7 +739,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 600;
-  color: $amber-light;
+  color: var(--accent-lit);
 }
 
 .AdminOrdersCreateModal__autodispatch-hint {
@@ -774,9 +772,9 @@ $muted: rgba(255, 255, 255, 0.35);
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover:not(:disabled) { background: darken(#d4860a, 6%); }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {

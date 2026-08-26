@@ -110,11 +110,11 @@ section.PassengerReferralPanel(v-if="showPanel")
   align-items: center;
   gap: 12px;
   background: var(--da-dark);
-  border: 1px solid rgba(212, 134, 10, 0.35);
+  border: 1px solid var(--accent-a30);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 10px;
-  box-shadow: 0 8px 32px rgba(26, 24, 20, 0.18);
+  box-shadow: 0 8px 32px var(--ink-a20);
 }
 
 .PassengerReferralPanel__code-info {
@@ -234,7 +234,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   justify-content: space-between;
   gap: 12px;
   padding: 10px 12px;
-  border: 1px dashed rgba(212, 134, 10, 0.4);
+  border: 1px dashed var(--accent-a40);
   border-radius: 12px;
   background: var(--da-amber-pale);
 }
@@ -261,7 +261,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   letter-spacing: 0.06em;
   padding: 2px 8px;
   border-radius: 100px;
-  background: rgba(212, 134, 10, 0.16);
+  background: var(--accent-a12);
   color: var(--da-amber);
   white-space: nowrap;
 }

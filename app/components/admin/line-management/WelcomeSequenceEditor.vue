@@ -384,7 +384,7 @@ const ClickSave = async (): Promise<void> => {
   align-items: center;
   font-size: 14px;
   font-weight: 600;
-  color: var(--da-dark, #1a1814);
+  color: var(--da-dark);
   cursor: pointer;
 }
 
@@ -416,7 +416,7 @@ const ClickSave = async (): Promise<void> => {
   transition: background 0.15s, color 0.15s;
 
   &.is-active {
-    background: var(--da-amber, #d4860a);
+    background: var(--da-amber);
     color: #fff;
   }
 }
@@ -487,7 +487,7 @@ const ClickSave = async (): Promise<void> => {
   padding: 2px 8px;
   border-radius: 4px;
 
-  &.is-text { background: rgba(212, 134, 10, 0.15); color: var(--da-amber); }
+  &.is-text { background: var(--accent-a12); color: var(--da-amber); }
   &.is-flex { background: rgba(28, 100, 200, 0.15); color: #1c64c8; }
 }
 
@@ -544,7 +544,7 @@ const ClickSave = async (): Promise<void> => {
   &:focus {
     outline: none;
     border-color: var(--da-amber);
-    box-shadow: 0 0 0 2px rgba(212, 134, 10, 0.15);
+    box-shadow: 0 0 0 2px var(--accent-a12);
   }
 }
 
@@ -600,7 +600,7 @@ const ClickSave = async (): Promise<void> => {
   &:not(:disabled):hover {
     border-color: var(--da-amber);
     color: var(--da-amber);
-    background: rgba(212, 134, 10, 0.05);
+    background: var(--accent-a06);
   }
 }
 

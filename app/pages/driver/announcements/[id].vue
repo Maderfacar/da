@@ -98,17 +98,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg:      #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border:  rgba(255, 255, 255, 0.08);
-$amber:   #d4860a;
 $muted:   rgba(255, 255, 255, 0.55);
 $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncementDetail {
   min-height: 100svh;
   padding: 56px 0 100px;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -135,8 +133,8 @@ $muted-2: rgba(255, 255, 255, 0.35);
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 
   &:hover {
-    color: $amber;
-    border-color: rgba(212, 134, 10, 0.45);
+    color: var(--accent);
+    border-color: var(--accent-a40);
     background: rgba(0, 0, 0, 0.7);
   }
 
@@ -151,8 +149,8 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncementDetail__spinner {
   width: 32px; height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -215,7 +213,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
-  :deep(a) { color: $amber; text-decoration: underline; }
+  :deep(a) { color: var(--accent); text-decoration: underline; }
   :deep(strong) { font-weight: 700; color: #fff; }
   :deep(em) { font-style: italic; }
   :deep(ul), :deep(ol) { margin: 8px 0 12px 22px; }
@@ -230,11 +228,11 @@ $muted-2: rgba(255, 255, 255, 0.35);
   :deep(h3) { font-size: 15px; }
   :deep(img) { max-width: 100%; border-radius: 12px; margin: 10px 0; }
   :deep(blockquote) {
-    border-left: 3px solid rgba(212, 134, 10, 0.5);
+    border-left: 3px solid var(--accent-a50);
     padding: 4px 14px;
     margin: 12px 0;
     color: $muted;
-    background: rgba(212, 134, 10, 0.05);
+    background: var(--accent-a06);
     border-radius: 0 8px 8px 0;
   }
 }
@@ -244,7 +242,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   margin-top: 24px;
   padding: 12px 28px;
   border-radius: 100px;
-  background: $amber;
+  background: var(--accent);
   color: #fff;
   font-family: var(--ff-label);
   font-size: 14px;
@@ -253,6 +251,6 @@ $muted-2: rgba(255, 255, 255, 0.35);
   text-decoration: none;
   transition: background 0.15s;
 
-  &:hover { background: lighten($amber, 8%); }
+  &:hover { background: var(--accent-lit); }
 }
 </style>

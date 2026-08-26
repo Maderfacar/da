@@ -150,7 +150,7 @@ onUnmounted(() => {
       .PageHome__airport-badge.is-sfo SFO
 
       svg.PageHome__hero-plane(viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg")
-        path(d="M44 8L4 22L18 26L20 44L28 32L40 36L44 8Z" fill="#1A1814" stroke="#1A1814" stroke-width="1.5" stroke-linejoin="round")
+        path(d="M44 8L4 22L18 26L20 44L28 32L40 36L44 8Z" fill="var(--ink)" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round")
 
       .PageHome__hero-content
         .PageHome__hero-tag {{ $t('home.hero.tag') }}
@@ -578,7 +578,7 @@ onUnmounted(() => {
     transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
 
     &:hover {
-      border-color: rgba(212, 134, 10, 0.35);
+      border-color: var(--accent-a30);
       box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
     }
     &:active { transform: scale(0.99); }
@@ -596,7 +596,7 @@ onUnmounted(() => {
   gap: 12px;
   flex-wrap: wrap;
   padding-bottom: 16px;
-  border-bottom: 1px dashed rgba(26, 24, 20, 0.1);
+  border-bottom: 1px dashed var(--ink-a12);
 }
 
 .PageHome__trip-datetime-left {
@@ -643,17 +643,17 @@ onUnmounted(() => {
   white-space: nowrap;
 
   &.is-pending {
-    background: rgba(26, 24, 20, 0.06);
+    background: var(--ink-a06);
     color: var(--da-dark);
-    border: 1px solid rgba(26, 24, 20, 0.15);
+    border: 1px solid var(--ink-a12);
   }
   &.is-confirmed,
   &.is-en_route,
   &.is-arrived_pickup,
   &.is-in_transit {
-    background: rgba(212, 134, 10, 0.12);
+    background: var(--accent-a12);
     color: var(--da-amber);
-    border: 1px solid rgba(212, 134, 10, 0.25);
+    border: 1px solid var(--accent-a20);
   }
 }
 
@@ -680,7 +680,7 @@ onUnmounted(() => {
     top: 18px;
     bottom: -14px;
     width: 2px;
-    background: repeating-linear-gradient(to bottom, rgba(212, 134, 10, 0.5) 0 3px, transparent 3px 7px);
+    background: repeating-linear-gradient(to bottom, var(--accent-a50) 0 3px, transparent 3px 7px);
   }
 }
 
@@ -695,7 +695,7 @@ onUnmounted(() => {
 
   &.is-pickup {
     background: var(--da-amber);
-    box-shadow: 0 0 0 3px rgba(212, 134, 10, 0.15);
+    box-shadow: 0 0 0 3px var(--accent-a12);
   }
   &.is-stop {
     background: var(--da-cream);
@@ -703,7 +703,7 @@ onUnmounted(() => {
   }
   &.is-dropoff {
     background: var(--da-dark);
-    box-shadow: 0 0 0 3px rgba(26, 24, 20, 0.1);
+    box-shadow: 0 0 0 3px var(--ink-a12);
   }
 }
 
@@ -732,8 +732,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: rgba(212, 134, 10, 0.08);
-  border: 1px solid rgba(212, 134, 10, 0.2);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
   border-radius: 10px;
 }
 
@@ -763,7 +763,7 @@ onUnmounted(() => {
 // 區塊 4：司機資料
 .PageHome__trip-driver {
   padding-top: 14px;
-  border-top: 1px dashed rgba(26, 24, 20, 0.12);
+  border-top: 1px dashed var(--ink-a12);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -877,8 +877,8 @@ onUnmounted(() => {
   width: 100%;
   padding: 36px 24px 32px;
   border-radius: 20px;
-  border: 1.5px dashed rgba(26, 24, 20, 0.18);
-  background: rgba(26, 24, 20, 0.02);
+  border: 1.5px dashed var(--ink-a20);
+  background: var(--ink-a06);
   text-align: center;
 }
 
@@ -889,7 +889,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgba(212, 134, 10, 0.1);
+  background: var(--accent-a12);
   color: var(--da-amber);
   font-size: 28px;
   margin-bottom: 4px;

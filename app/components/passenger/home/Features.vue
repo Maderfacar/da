@@ -173,7 +173,7 @@ section.PassengerHomeFeatures
 .PassengerHomeFeatures__flow {
   margin-top: 40px;
   padding-top: 32px;
-  border-top: 1.5px dashed rgba(212, 134, 10, 0.25);
+  border-top: 1.5px dashed var(--accent-a20);
 }
 
 .PassengerHomeFeatures__flow-head {

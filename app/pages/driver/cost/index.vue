@@ -304,7 +304,6 @@ onMounted(ApiLoadCostSettings);
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .PageDriverCost {
   padding: 80px 20px 32px;
@@ -322,12 +321,12 @@ $amber: #d4860a;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -361,7 +360,7 @@ $amber: #d4860a;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: $amber;
+  color: var(--accent);
   margin-bottom: 10px;
 }
 
@@ -454,7 +453,7 @@ $amber: #d4860a;
   border-radius: 10px;
   transition: border-color 0.2s;
 
-  &:focus-within { border-color: rgba($amber, 0.5); }
+  &:focus-within { border-color: var(--accent-a50); }
 }
 
 .PageDriverCost__field-label {
@@ -494,7 +493,7 @@ $amber: #d4860a;
   outline: none;
 
   &::placeholder { color: rgba(255, 255, 255, 0.2); }
-  &:focus { border-color: $amber; }
+  &:focus { border-color: var(--accent); }
 }
 
 // ── 每公里明細 ────────────────────────────────────────────
@@ -517,8 +516,8 @@ $amber: #d4860a;
   &:last-child { border-bottom: none; }
 
   &.is-total {
-    background: rgba($amber, 0.08);
-    border-top: 1px solid rgba($amber, 0.3);
+    background: var(--accent-a06);
+    border-top: 1px solid var(--accent-a30);
     font-weight: 700;
   }
 }
@@ -533,7 +532,7 @@ $amber: #d4860a;
   color: rgba(255, 255, 255, 0.9);
   font-variant-numeric: tabular-nums;
 
-  .is-total & { color: $amber; font-size: 15px; font-weight: 700; }
+  .is-total & { color: var(--accent); font-size: 15px; font-weight: 700; }
 }
 
 // ── 儲存區（P30）──────────────────────────────────────────
@@ -558,9 +557,9 @@ $amber: #d4860a;
   flex-shrink: 0;
   padding: 11px 22px;
   border-radius: 100px;
-  border: 1.5px solid rgba($amber, 0.6);
-  background: rgba($amber, 0.15);
-  color: #f5c842;
+  border: 1.5px solid var(--accent-a60);
+  background: var(--accent-a12);
+  color: var(--da-stripe-yellow);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;

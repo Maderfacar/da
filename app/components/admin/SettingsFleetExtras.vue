@@ -269,7 +269,6 @@ const ClickDelete = async (e: FleetExtraDto) => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.4);
 $border: rgba(255, 255, 255, 0.08);
 $surface: rgba(255, 255, 255, 0.04);
@@ -303,13 +302,13 @@ $surface-2: rgba(255, 255, 255, 0.08);
   letter-spacing: 0.06em;
   padding: 6px 14px;
   border-radius: 8px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.4);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a40);
+  color: var(--accent);
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba($amber, 0.22); }
+  &:hover { background: var(--accent-a20); }
 }
 
 .SettingsFleetExtras__empty {
@@ -374,9 +373,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: $amber;
-  background: rgba($amber, 0.1);
-  border: 1px solid rgba($amber, 0.3);
+  color: var(--accent);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
   border-radius: 100px;
   padding: 1px 8px;
 }
@@ -429,10 +428,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   }
 
   &.is-edit {
-    background: rgba($amber, 0.1);
-    border-color: rgba($amber, 0.35);
-    color: $amber;
-    &:hover:not(:disabled) { background: rgba($amber, 0.2); }
+    background: var(--accent-a12);
+    border-color: var(--accent-a30);
+    color: var(--accent);
+    &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 
   &.is-delete {
@@ -528,7 +527,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   transition: border-color 0.15s;
 
   &::placeholder { color: rgba(255, 255, 255, 0.2); }
-  &:focus { border-color: rgba($amber, 0.4); }
+  &:focus { border-color: var(--accent-a40); }
 }
 
 .SettingsFleetExtras__switch {
@@ -543,8 +542,8 @@ $surface-2: rgba(255, 255, 255, 0.08);
   position: relative;
 
   &.is-on {
-    background: rgba($amber, 0.7);
-    border-color: rgba($amber, 0.9);
+    background: var(--accent-a70);
+    border-color: var(--accent-a90);
 
     .SettingsFleetExtras__switch-thumb { transform: translateX(20px); }
   }
@@ -591,9 +590,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover:not(:disabled) { background: darken($amber, 6%); }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {

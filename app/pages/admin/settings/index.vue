@@ -1356,17 +1356,15 @@ const ClickSaveFareRules = async () => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.35);
 $rose: #f0556d;
 
 .PageAdminSettings {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -1378,12 +1376,12 @@ $rose: #f0556d;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -1418,9 +1416,9 @@ $rose: #f0556d;
   &:hover { color: rgba(255, 255, 255, 0.7); }
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.12);
-    color: $amber;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent);
   }
 }
 
@@ -1446,9 +1444,9 @@ $rose: #f0556d;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
-    color: $amber;
-    background: rgba($amber, 0.1);
-    border: 1px solid rgba($amber, 0.25);
+    color: var(--accent);
+    background: var(--accent-a12);
+    border: 1px solid var(--accent-a20);
     border-radius: 100px;
     padding: 2px 8px;
   }
@@ -1484,8 +1482,8 @@ $rose: #f0556d;
   transition: all 0.15s;
 
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -1631,9 +1629,9 @@ $rose: #f0556d;
     }
 
     &.is-expanded {
-      background: rgba(212, 134, 10, 0.12);
-      border-color: rgba(212, 134, 10, 0.5);
-      color: #f5c842;
+      background: var(--accent-a12);
+      border-color: var(--accent-a50);
+      color: var(--da-stripe-yellow);
     }
 
     &.is-mini {
@@ -1649,9 +1647,9 @@ $rose: #f0556d;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #d4860a;
-  background: rgba(212, 134, 10, 0.12);
-  border: 1px solid rgba(212, 134, 10, 0.4);
+  color: var(--accent);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a40);
   border-radius: 100px;
   padding: 1px 6px;
   line-height: 1.4;
@@ -1660,7 +1658,7 @@ $rose: #f0556d;
 
 .PageAdminSettings__perm-panel {
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  border: 1px solid var(--accent-a20);
   border-radius: 10px;
   padding: 14px 16px;
   margin: -4px 0 10px;
@@ -1679,7 +1677,7 @@ $rose: #f0556d;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: #d4860a;
+  color: var(--accent);
 }
 
 .PageAdminSettings__perm-head-hint {
@@ -1712,8 +1710,8 @@ $rose: #f0556d;
 
   // 與 LEVEL 預設不同時用 amber 框
   &.is-override {
-    background: rgba(212, 134, 10, 0.06);
-    border-color: rgba(212, 134, 10, 0.35);
+    background: var(--accent-a06);
+    border-color: var(--accent-a30);
   }
 }
 
@@ -1731,7 +1729,7 @@ $rose: #f0556d;
     grid-row: 1 / 3;
     align-self: start;
     margin-top: 4px;
-    accent-color: #d4860a;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 }
@@ -1775,7 +1773,7 @@ $rose: #f0556d;
   color: #fff;
 
   &::placeholder { color: $muted; }
-  &:focus { outline: none; border-color: rgba($amber, 0.5); }
+  &:focus { outline: none; border-color: var(--accent-a50); }
 }
 
 // ── 其他狀態 ─────────────────────────────────────────────────────
@@ -1799,8 +1797,8 @@ $rose: #f0556d;
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  background: rgba($amber, 0.06);
-  border: 1px solid rgba($amber, 0.2);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 24px;
@@ -1843,9 +1841,9 @@ $rose: #f0556d;
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
-    color: $amber;
-    background: rgba($amber, 0.1);
-    border: 1px solid rgba($amber, 0.25);
+    color: var(--accent);
+    background: var(--accent-a12);
+    border: 1px solid var(--accent-a20);
     border-radius: 100px;
     padding: 2px 8px;
   }
@@ -1937,7 +1935,7 @@ $rose: #f0556d;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: $amber;
+  color: var(--accent);
 }
 
 .PageAdminSettings__fare-switch-label {
@@ -1953,7 +1951,7 @@ $rose: #f0556d;
   margin-left: auto;
 
   input[type="checkbox"] {
-    accent-color: $amber;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 }
@@ -2098,9 +2096,9 @@ $rose: #f0556d;
   transition: all 0.15s;
 
   &.is-on {
-    background: rgba($amber, 0.18);
-    border-color: rgba($amber, 0.6);
-    color: $amber;
+    background: var(--accent-a20);
+    border-color: var(--accent-a60);
+    color: var(--accent);
   }
 }
 
@@ -2132,9 +2130,9 @@ $rose: #f0556d;
   transition: all 0.15s;
 
   &.is-on {
-    background: rgba($amber, 0.18);
-    border-color: rgba($amber, 0.6);
-    color: $amber;
+    background: var(--accent-a20);
+    border-color: var(--accent-a60);
+    color: var(--accent);
   }
 }
 

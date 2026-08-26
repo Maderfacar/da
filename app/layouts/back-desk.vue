@@ -86,7 +86,7 @@ function ClickNav(path: string) {
 </script>
 
 <template lang="pug">
-.LayoutBackDesk
+.LayoutBackDesk(data-surface='dark')
   ClientOnly
     UiToast
 
@@ -187,7 +187,7 @@ function ClickNav(path: string) {
 .LayoutBackDesk__loading-spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -211,7 +211,7 @@ function ClickNav(path: string) {
   align-items: center;
   gap: 12px;
   background: var(--da-dark);
-  border-bottom: 1px solid rgba(212, 134, 10, 0.2);
+  border-bottom: 1px solid var(--accent-a20);
 }
 
 .LayoutBackDesk__logo {
@@ -269,8 +269,8 @@ function ClickNav(path: string) {
   font-weight: 700;
   letter-spacing: 0.15em;
   color: var(--da-amber);
-  background: rgba(212, 134, 10, 0.15);
-  border: 1px solid rgba(212, 134, 10, 0.3);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
   padding: 3px 10px;
   border-radius: 100px;
 }
@@ -338,7 +338,7 @@ function ClickNav(path: string) {
   &:hover { background: rgba(255, 255, 255, 0.06); }
 
   &.is-active {
-    background: rgba(212, 134, 10, 0.15);
+    background: var(--accent-a12);
     border-left-color: var(--da-amber);
   }
 }
@@ -388,7 +388,7 @@ function ClickNav(path: string) {
   position: fixed;
   inset: 0;
   z-index: 250;
-  background: rgba(26, 24, 20, 0.5);
+  background: var(--ink-a50);
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;

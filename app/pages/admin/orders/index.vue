@@ -2095,19 +2095,16 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $surface-2: rgba(255, 255, 255, 0.08);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
-$amber-light: #f7b96a;
 $text: rgba(255, 255, 255, 0.8);
 $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -2119,12 +2116,12 @@ $muted: rgba(255, 255, 255, 0.35);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -2164,9 +2161,9 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: all 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.1);
-    color: $amber;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent);
   }
 }
 
@@ -2183,14 +2180,14 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.06em;
   padding: 7px 16px;
   border-radius: 100px;
-  border: 1px solid rgba($amber, 0.5);
-  background: rgba($amber, 0.12);
-  color: $amber;
+  border: 1px solid var(--accent-a50);
+  background: var(--accent-a12);
+  color: var(--accent);
   cursor: pointer;
   margin-left: auto;
   transition: all 0.15s;
 
-  &:hover { background: rgba($amber, 0.2); }
+  &:hover { background: var(--accent-a20); }
 }
 
 .PageAdminOrders__loading {
@@ -2202,8 +2199,8 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__spinner {
   width: 28px;
   height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -2245,7 +2242,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
     &:hover {
       background: $surface-2;
-      border-color: rgba($amber, 0.25);
+      border-color: var(--accent-a20);
     }
   }
 
@@ -2275,7 +2272,7 @@ $muted: rgba(255, 255, 255, 0.35);
   white-space: nowrap;
 
   &.is-time { color: rgba(255, 255, 255, 0.85); font-weight: 700; }
-  &.is-fare { font-weight: 700; color: $amber; }
+  &.is-fare { font-weight: 700; color: var(--accent); }
   // 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
   &.is-type,
   &.is-passenger,
@@ -2449,9 +2446,9 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent);
 }
 
 .PageAdminOrders__unassigned {
@@ -2469,7 +2466,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
   &.is-pending   { background: rgba(255, 200, 0, 0.12); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
   &.is-confirmed { background: rgba(100, 200, 255, 0.1); border: 1px solid rgba(100, 200, 255, 0.3); color: #64c8ff; }
-  &.is-progress  { background: rgba($amber, 0.12); border: 1px solid rgba($amber, 0.3); color: $amber; }
+  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
   &.is-done      { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
   &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
 }
@@ -2486,7 +2483,7 @@ $muted: rgba(255, 255, 255, 0.35);
   border-radius: 100px;
 
   &.is-pending  { background: rgba(255, 80, 80, 0.1);  border: 1px solid rgba(255, 80, 80, 0.25);  color: rgba(255, 120, 120, 0.85); }
-  &.is-progress { background: rgba($amber, 0.12);       border: 1px solid rgba($amber, 0.3);         color: $amber; }
+  &.is-progress { background: var(--accent-a12);       border: 1px solid var(--accent-a30);         color: var(--accent); }
   // Phase 1F：重派次數徽章
   &.is-rematch  { background: rgba(140, 110, 220, 0.12); border: 1px solid rgba(140, 110, 220, 0.3); color: rgba(180, 150, 240, 0.95); margin-left: 4px; }
 }
@@ -2530,7 +2527,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__history-round {
-  color: $amber;
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -2589,7 +2586,7 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__dispatch-active {
-  color: $amber;
+  color: var(--accent);
   font-weight: 700;
 }
 
@@ -2648,9 +2645,9 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.08em;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.15);
-  border: 1px solid rgba($amber, 0.3);
-  color: $amber-light;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
+  color: var(--accent-lit);
 }
 
 .PageAdminOrders__modal-vehicle {
@@ -2671,7 +2668,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
   &.is-pending   { background: rgba(255, 200, 0, 0.12); border: 1px solid rgba(255, 200, 0, 0.3); color: #f5c518; }
   &.is-confirmed { background: rgba(100, 200, 255, 0.1); border: 1px solid rgba(100, 200, 255, 0.3); color: #64c8ff; }
-  &.is-progress  { background: rgba($amber, 0.12); border: 1px solid rgba($amber, 0.3); color: $amber; }
+  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
   &.is-done      { background: rgba(80, 200, 120, 0.1); border: 1px solid rgba(80, 200, 120, 0.3); color: #50c878; }
   &.is-cancel    { background: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.2); color: rgba(255, 100, 100, 0.8); }
 }
@@ -2713,13 +2710,13 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.06em;
   padding: 7px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(212, 134, 10, 0.35);
-  background: rgba(212, 134, 10, 0.1);
+  border: 1px solid var(--accent-a30);
+  background: var(--accent-a12);
   color: #f7b96a;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover:not(:disabled) { background: rgba(212, 134, 10, 0.18); }
+  &:hover:not(:disabled) { background: var(--accent-a20); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   // Wave 2D：立即降級（橘紅 — 警示性低於 force-open）
@@ -2860,12 +2857,12 @@ select option:disabled {
     margin-top: 6px;
     padding: 10px 12px;
     border-radius: 8px;
-    border: 1px solid rgba($amber, 0.35);
-    background: rgba($amber, 0.08);
+    border: 1px solid var(--accent-a30);
+    background: var(--accent-a06);
     font-size: 14px;
 
     .PageAdminOrders__section-key {
-      color: $amber-light;
+      color: var(--accent-lit);
       font-weight: 700;
       letter-spacing: 0.02em;
     }
@@ -2878,7 +2875,7 @@ select option:disabled {
   color: #fff;
   text-align: right;
 
-  &.is-fare { color: $amber; font-weight: 700; }
+  &.is-fare { color: var(--accent); font-weight: 700; }
   &.is-muted { color: $muted; }
 }
 
@@ -2934,7 +2931,7 @@ select option:disabled {
   border: 1px solid $border;
   margin-bottom: 6px;
 
-  &.is-pickup .PageAdminOrders__addr-tag { background: rgba($amber, 0.18); color: $amber; border-color: rgba($amber, 0.35); }
+  &.is-pickup .PageAdminOrders__addr-tag { background: var(--accent-a20); color: var(--accent); border-color: var(--accent-a30); }
   &.is-stop   .PageAdminOrders__addr-tag { background: rgba(100, 200, 255, 0.12); color: #64c8ff; border-color: rgba(100, 200, 255, 0.3); }
   &.is-dropoff .PageAdminOrders__addr-tag { background: rgba(80, 200, 120, 0.1); color: #50c878; border-color: rgba(80, 200, 120, 0.3); }
 }
@@ -2981,9 +2978,9 @@ select option:disabled {
   font-size: 11px;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.1);
-  color: $amber-light;
-  border: 1px solid rgba($amber, 0.25);
+  background: var(--accent-a12);
+  color: var(--accent-lit);
+  border: 1px solid var(--accent-a20);
 }
 
 // ── 編輯欄位 ──────────────────────────────────────────────
@@ -3024,7 +3021,7 @@ select option:disabled {
   transition: border-color 0.15s;
 
   &::placeholder { color: rgba(255, 255, 255, 0.2); }
-  &:focus { border-color: rgba($amber, 0.4); }
+  &:focus { border-color: var(--accent-a40); }
 }
 
 .PageAdminOrders__edit-input[type="datetime-local"] {
@@ -3175,9 +3172,9 @@ select option:disabled {
   transition: all 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.12);
-    color: $amber-light;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent-lit);
   }
 }
 
@@ -3277,9 +3274,9 @@ select option:disabled {
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover:not(:disabled) { background: darken(#d4860a, 6%); }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
@@ -3354,16 +3351,16 @@ select option:disabled {
   letter-spacing: 0.05em;
   padding: 5px 9px;
   border-radius: 8px;
-  border: 1px solid rgba($amber, 0.4);
-  background: rgba($amber, 0.1);
-  color: $amber;
+  border: 1px solid var(--accent-a40);
+  background: var(--accent-a12);
+  color: var(--accent);
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
 
   &:hover:not(:disabled) {
-    background: rgba($amber, 0.2);
-    border-color: rgba($amber, 0.6);
+    background: var(--accent-a20);
+    border-color: var(--accent-a60);
   }
   &:active:not(:disabled) { transform: scale(0.97); }
   &:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -3468,14 +3465,14 @@ select option:disabled {
   letter-spacing: 0.08em;
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid rgba($amber, 0.4);
-  background: rgba($amber, 0.1);
-  color: $amber;
+  border: 1px solid var(--accent-a40);
+  background: var(--accent-a12);
+  color: var(--accent);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s;
 
-  &:hover { background: rgba($amber, 0.18); }
+  &:hover { background: var(--accent-a20); }
 }
 
 // ── 字數提示 ──────────────────────────────────────────────

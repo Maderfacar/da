@@ -753,7 +753,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(0, 0, 0, 0.5);
 $border: rgba(0, 0, 0, 0.1);
 
@@ -876,7 +875,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: $amber;
+  color: var(--accent);
   margin: 0;
 }
 
@@ -904,7 +903,7 @@ $border: rgba(0, 0, 0, 0.1);
 
     &:focus {
       outline: none;
-      border-color: $amber;
+      border-color: var(--accent);
     }
   }
 
@@ -974,14 +973,14 @@ $border: rgba(0, 0, 0, 0.1);
 
 .DialogLineRichmenuEdit__area-overlay {
   position: absolute;
-  border: 2px solid rgba(212, 134, 10, 0.6);
-  background: rgba(212, 134, 10, 0.18);
+  border: 2px solid var(--accent-a60);
+  background: var(--accent-a20);
   cursor: move;
   touch-action: none;
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: rgba(212, 134, 10, 0.3);
+    background: var(--accent-a30);
   }
   &.is-selected {
     border-color: #ef4444;
@@ -1010,7 +1009,7 @@ $border: rgba(0, 0, 0, 0.1);
   width: 10px;
   height: 10px;
   background: white;
-  border: 1.5px solid $amber;
+  border: 1.5px solid var(--accent);
   border-radius: 2px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
   z-index: 11;
@@ -1034,8 +1033,8 @@ $border: rgba(0, 0, 0, 0.1);
 // P44a：拖拉建 area 中的臨時 preview rect
 .DialogLineRichmenuEdit__transient {
   position: absolute;
-  border: 1.5px dashed $amber;
-  background: rgba(212, 134, 10, 0.12);
+  border: 1.5px dashed var(--accent);
+  background: var(--accent-a12);
   pointer-events: none;
   z-index: 12;
 }
@@ -1113,8 +1112,8 @@ $border: rgba(0, 0, 0, 0.1);
 
   &:hover { background: rgba(0, 0, 0, 0.04); }
   &.is-selected {
-    border-color: $amber;
-    background: rgba(212, 134, 10, 0.06);
+    border-color: var(--accent);
+    background: var(--accent-a06);
   }
 }
 
@@ -1270,7 +1269,7 @@ $border: rgba(0, 0, 0, 0.1);
     background: white;
 
     &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
-    &.is-focused { box-shadow: 0 0 0 1px $amber; }
+    &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
   }
 }
 
@@ -1278,8 +1277,8 @@ $border: rgba(0, 0, 0, 0.1);
   margin-top: 6px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: #d4860a;
-  background: rgba(212, 134, 10, 0.08);
+  color: var(--accent);
+  background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: 6px;
   line-height: 1.5;
@@ -1314,14 +1313,14 @@ $border: rgba(0, 0, 0, 0.1);
     color: rgba(0, 0, 0, 0.7);
     &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
     &.is-active {
-      background: $amber;
-      border-color: $amber;
+      background: var(--accent);
+      border-color: var(--accent);
       color: white;
     }
   }
   &.is-approve {
-    background: $amber;
-    border-color: $amber;
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
     &:hover:not(:disabled) { background: #b8730a; }
   }

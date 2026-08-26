@@ -682,7 +682,7 @@ const ClickNext = () => {
     transform: translateY(-50%);
     width: 18px;
     height: 18px;
-    border: 2px solid rgba(212, 134, 10, 0.2);
+    border: 2px solid var(--accent-a20);
     border-top-color: var(--da-amber);
     border-radius: 50%;
     animation: spin 0.7s linear infinite;

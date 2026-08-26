@@ -318,7 +318,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.5);
 
@@ -369,7 +368,7 @@ $muted: rgba(255, 255, 255, 0.5);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 18px;
   letter-spacing: 0.06em;
-  color: $amber;
+  color: var(--accent);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -437,7 +436,7 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: $amber;
+  color: var(--accent);
 }
 
 .SettingsDiscountCodes__grid {
@@ -510,7 +509,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__btn.is-approve {
-  background: $amber;
+  background: var(--accent);
   color: #fff;
 }
 

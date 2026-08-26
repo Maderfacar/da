@@ -326,7 +326,7 @@ onMounted(() => {
 </script>
 
 <template lang="pug">
-.OpenDialogAnnouncementEdit
+.OpenDialogAnnouncementEdit(data-surface='dark')
   .OpenDialogAnnouncementEdit__mask(@click="ClickCancel")
   .OpenDialogAnnouncementEdit__panel
     //- ── Header ─────────────────────────────────────────
@@ -497,10 +497,8 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
 $danger: #c0392b;
 $muted: rgba(255, 255, 255, 0.4);
 
@@ -527,7 +525,7 @@ $muted: rgba(255, 255, 255, 0.4);
   margin: 4vh auto;
   width: min(1200px, 96vw);
   max-height: 92vh;
-  background: $bg;
+  background: var(--ink);
   border: 1px solid $border;
   border-radius: 18px;
   display: flex;
@@ -551,11 +549,11 @@ $muted: rgba(255, 255, 255, 0.4);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: $amber;
+  color: var(--accent);
   display: flex;
   align-items: center;
   gap: 8px;
-  &::before { content: ''; width: 16px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 16px; height: 1.5px; background: var(--accent); }
 }
 
 .OpenDialogAnnouncementEdit__headerTitle {
@@ -649,8 +647,8 @@ $muted: rgba(255, 255, 255, 0.4);
   line-height: 1.5;
 
   &.is-info {
-    background: rgba($amber, 0.08);
-    border-color: rgba($amber, 0.35);
+    background: var(--accent-a06);
+    border-color: var(--accent-a30);
     color: rgba(255, 220, 170, 0.95);
   }
 }
@@ -669,7 +667,7 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .OpenDialogAnnouncementEdit__required {
-  color: $amber;
+  color: var(--accent);
   margin-left: 4px;
 }
 
@@ -685,7 +683,7 @@ $muted: rgba(255, 255, 255, 0.4);
   box-sizing: border-box;
   transition: border-color 0.15s;
   &::placeholder { color: rgba(255, 255, 255, 0.25); }
-  &:focus { border-color: rgba($amber, 0.5); }
+  &:focus { border-color: var(--accent-a50); }
 }
 
 .OpenDialogAnnouncementEdit__counter {
@@ -706,7 +704,7 @@ $muted: rgba(255, 255, 255, 0.4);
   transition: all 0.15s;
   background: rgba(255, 255, 255, 0.02);
 
-  &:hover { border-color: rgba($amber, 0.4); background: rgba($amber, 0.04); }
+  &:hover { border-color: var(--accent-a40); background: var(--accent-a06); }
   &.is-uploading { pointer-events: none; opacity: 0.6; }
 }
 
@@ -782,9 +780,9 @@ $muted: rgba(255, 255, 255, 0.4);
   transition: all 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.1);
-    color: $amber;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent);
   }
 }
 
@@ -805,7 +803,7 @@ $muted: rgba(255, 255, 255, 0.4);
   input[type='checkbox'] {
     width: 16px;
     height: 16px;
-    accent-color: $amber;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 }
@@ -857,9 +855,9 @@ $muted: rgba(255, 255, 255, 0.4);
   }
 
   &--primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover:not(:disabled) { background: darken(#d4860a, 8%); }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &--danger {

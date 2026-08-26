@@ -54,7 +54,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   height: 72px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(212, 134, 10, 0.5);
+  border: 2px solid var(--accent-a50);
 }
 
 .PassengerHistoryUserCard__name {

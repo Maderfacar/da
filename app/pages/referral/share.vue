@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // 推薦獎勵機制 Phase 3：LIFF 分享頁
 // 設計：openspec/changes/2026-05-20-referral-share-reward/design.md §4 ② / §C4 / §8
 //
@@ -62,7 +63,7 @@ const BuildFlexMessage = () => {
       spacing: 'md',
       contents: [
         { type: 'text', text: cardTitle.value, weight: 'bold', size: 'xl', wrap: true },
-        { type: 'text', text: cardBody.value, size: 'sm', color: '#6B6560', wrap: true },
+        { type: 'text', text: cardBody.value, size: 'sm', color: DESIGN_COLORS.inkSoft, wrap: true },
       ],
     },
     footer: {
@@ -72,7 +73,7 @@ const BuildFlexMessage = () => {
         {
           type: 'button',
           style: 'primary',
-          color: '#D4860A',
+          color: DESIGN_COLORS.accent,
           action: { type: 'uri', label: cardCta.value.slice(0, 20), uri: shareLink.value },
         },
       ],
@@ -256,7 +257,7 @@ onMounted(ApiLoadMe);
 .PageReferralShare__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -295,12 +296,12 @@ onMounted(ApiLoadMe);
 // ── 我的推薦碼 ────────────────────────────────────────────
 .PageReferralShare__code {
   background: var(--da-dark);
-  border: 1px solid rgba(212, 134, 10, 0.35);
+  border: 1px solid var(--accent-a30);
   border-radius: 20px;
   padding: 22px 18px;
   text-align: center;
   margin-bottom: 16px;
-  box-shadow: 0 8px 32px rgba(26, 24, 20, 0.18);
+  box-shadow: 0 8px 32px var(--ink-a20);
 }
 
 .PageReferralShare__code-label {
@@ -324,7 +325,7 @@ onMounted(ApiLoadMe);
   font-family: var(--ff-ui);
   font-size: 11px;
   line-height: 1.5;
-  color: rgba(245, 242, 236, 0.6);
+  color: var(--surface-a60);
   margin-top: 8px;
 }
 
@@ -423,7 +424,7 @@ onMounted(ApiLoadMe);
   width: 100%;
   padding: 12px;
   background: transparent;
-  border: 1px solid rgba(212, 134, 10, 0.4);
+  border: 1px solid var(--accent-a40);
   border-radius: 12px;
   font-family: var(--ff-label);
   font-size: 13px;

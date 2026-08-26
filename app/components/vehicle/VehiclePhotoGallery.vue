@@ -49,12 +49,12 @@ const props = defineProps<Props>();
   overflow: hidden;
   background: var(--da-gray-pale);
   cursor: zoom-in;
-  box-shadow: 0 2px 8px rgba(26, 24, 20, 0.06);
+  box-shadow: 0 2px 8px var(--ink-a06);
   transition: transform 0.2s, box-shadow 0.2s;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(26, 24, 20, 0.12);
+    box-shadow: 0 6px 18px var(--ink-a12);
   }
 }
 

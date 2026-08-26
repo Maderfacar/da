@@ -283,16 +283,14 @@ const DOC_LABEL: Record<string, string> = {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminDrivers {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -304,12 +302,12 @@ $muted: rgba(255, 255, 255, 0.35);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -386,9 +384,9 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: all 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.1);
-    color: $amber;
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
+    color: var(--accent);
   }
 
   &.is-rejected.is-active {
@@ -407,8 +405,8 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__spinner {
   width: 28px;
   height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -435,7 +433,7 @@ $muted: rgba(255, 255, 255, 0.35);
   transition: border-color 0.15s;
 
   &.is-expanded {
-    border-color: rgba($amber, 0.3);
+    border-color: var(--accent-a30);
   }
 }
 
@@ -457,22 +455,22 @@ $muted: rgba(255, 255, 255, 0.35);
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba($amber, 0.3);
+  border: 1.5px solid var(--accent-a30);
 }
 
 .PageAdminDrivers__avatar-fallback {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba($amber, 0.15);
-  border: 1.5px solid rgba($amber, 0.3);
+  background: var(--accent-a12);
+  border: 1.5px solid var(--accent-a30);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
-  color: $amber;
+  color: var(--accent);
 }
 
 .PageAdminDrivers__info { flex: 1; min-width: 0; }
@@ -524,8 +522,8 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   padding: 4px 10px;
   border-radius: 8px;
-  background: rgba($amber, 0.1);
-  color: $amber;
+  background: var(--accent-a12);
+  color: var(--accent);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -534,7 +532,7 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-left: 8px;
   transition: background 0.15s;
 
-  &:hover { background: rgba($amber, 0.2); }
+  &:hover { background: var(--accent-a20); }
 }
 
 .PageAdminDrivers__chevron {
@@ -567,7 +565,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: $amber;
+  color: var(--accent);
 }
 
 .PageAdminDrivers__expand-grid {
@@ -619,7 +617,7 @@ $muted: rgba(255, 255, 255, 0.35);
   cursor: pointer;
   transition: border-color 0.15s;
 
-  &:hover { border-color: rgba($amber, 0.5); }
+  &:hover { border-color: var(--accent-a50); }
 }
 
 .PageAdminDrivers__doc-img {
@@ -709,9 +707,9 @@ $muted: rgba(255, 255, 255, 0.35);
     color: #f5c518;
   }
   &.is-clear {
-    background: rgba(212, 134, 10, 0.14);
-    border-color: rgba(212, 134, 10, 0.4);
-    color: $amber;
+    background: var(--accent-a12);
+    border-color: var(--accent-a40);
+    color: var(--accent);
   }
 }
 

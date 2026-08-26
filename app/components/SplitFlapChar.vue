@@ -99,7 +99,7 @@ $fs:      28px;
   width:      100%;
   height:     50%;
   overflow:   hidden;
-  background: var(--da-dark, #1a1814);
+  background: var(--da-dark);
 }
 
 // ── 文字：height 200% = 覆蓋整張卡高，使上下半都能正確裁切 ─────────────────

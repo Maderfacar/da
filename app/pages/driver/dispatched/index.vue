@@ -148,7 +148,6 @@ onMounted(ApiLoadOrders);
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .PageDriverDispatched {
   padding: 80px 16px 32px;
@@ -165,12 +164,12 @@ $amber: #d4860a;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -211,7 +210,7 @@ $amber: #d4860a;
   &:hover { color: rgba(255, 255, 255, 0.75); }
 
   &.is-active {
-    color: $amber;
+    color: var(--accent);
     &::after {
       content: '';
       position: absolute;
@@ -219,7 +218,7 @@ $amber: #d4860a;
       left: 0;
       right: 0;
       height: 2px;
-      background: $amber;
+      background: var(--accent);
     }
   }
 }
@@ -241,8 +240,8 @@ $amber: #d4860a;
 
 .PageDriverDispatched__spinner {
   width: 28px; height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -275,8 +274,8 @@ $amber: #d4860a;
   font-size: 12px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.6);
-  background: rgba($amber, 0.08);
-  border: 1px solid rgba($amber, 0.2);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
   border-radius: 10px;
   padding: 10px 12px;
   margin-bottom: 14px;

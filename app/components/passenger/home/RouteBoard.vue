@@ -139,7 +139,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
-  color: rgba(250, 248, 244, 0.55);
+  color: var(--surface-a60);
   margin-top: 8px;
   line-height: 1.7;
 }
@@ -205,11 +205,11 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   }
 
   &:hover {
-    background: rgba(212, 134, 10, 0.08);
+    background: var(--accent-a06);
   }
 
   &:active {
-    background: rgba(212, 134, 10, 0.14);
+    background: var(--accent-a12);
   }
 }
 

@@ -181,8 +181,6 @@ onMounted(ApiLoadOrder);
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $text: rgba(255, 255, 255, 0.85);
@@ -191,7 +189,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .PageDriverDispatchedDetail {
   padding: 80px 16px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -224,9 +222,9 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent);
 }
 
 .PageDriverDispatchedDetail__header-id {
@@ -238,7 +236,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .PageDriverDispatchedDetail__header-bidcount {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $amber;
+  color: var(--accent);
   margin-left: auto;
 }
 
@@ -284,7 +282,7 @@ $muted: rgba(255, 255, 255, 0.45);
     font-family: var(--ff-label);
     font-size: 18px;
     font-weight: 700;
-    color: $amber;
+    color: var(--accent);
   }
 }
 
@@ -321,9 +319,9 @@ $muted: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.15em;
   padding: 3px 8px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -347,9 +345,9 @@ $muted: rgba(255, 255, 255, 0.45);
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.1);
-  border: 1px solid rgba($amber, 0.25);
-  color: rgba($amber, 0.9);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent-a90);
 }
 
 .PageDriverDispatchedDetail__hint {
@@ -379,7 +377,7 @@ $muted: rgba(255, 255, 255, 0.45);
   gap: 8px;
   padding: 16px 0 0;
   margin-top: 24px;
-  background: linear-gradient(to top, $bg 60%, rgba($bg, 0));
+  background: linear-gradient(to top, var(--ink) 60%, transparent);
 }
 
 .PageDriverDispatchedDetail__action {
@@ -397,9 +395,9 @@ $muted: rgba(255, 255, 255, 0.45);
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover:not(:disabled) { background: darken(#d4860a, 6%); }
+    &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
@@ -442,8 +440,8 @@ $muted: rgba(255, 255, 255, 0.45);
 
 .PageDriverDispatchedDetail__spinner {
   width: 28px; height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

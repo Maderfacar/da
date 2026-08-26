@@ -154,7 +154,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -198,14 +198,14 @@ const FormatTime = (iso: string | null): string => {
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 
   &:hover {
-    background: rgba(250, 248, 244, 0.92);
-    border-color: rgba(212, 134, 10, 0.32);
-    box-shadow: 0 6px 24px rgba(26, 24, 20, 0.08);
+    background: var(--surface-a88);
+    border-color: var(--accent-a30);
+    box-shadow: 0 6px 24px var(--ink-a06);
   }
 
   &.is-unread {
     background: var(--da-amber-pale);
-    border-color: rgba(212, 134, 10, 0.35);
+    border-color: var(--accent-a30);
   }
 }
 
@@ -280,7 +280,7 @@ const FormatTime = (iso: string | null): string => {
   padding: 10px 22px;
   border-radius: 100px;
   border: 1px solid var(--da-gray-pale);
-  background: rgba(250, 248, 244, 0.6);
+  background: var(--surface-a60);
   color: var(--da-gray);
   font-family: var(--ff-label);
   font-size: 12px;
@@ -291,9 +291,9 @@ const FormatTime = (iso: string | null): string => {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 
   &:hover:not(:disabled) {
-    background: rgba(250, 248, 244, 0.95);
+    background: var(--surface-a96);
     color: var(--da-amber);
-    border-color: rgba(212, 134, 10, 0.32);
+    border-color: var(--accent-a30);
   }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

@@ -74,7 +74,6 @@ const ClickAssign = (driverId: string) => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $border: rgba(255, 255, 255, 0.1);
 $text: rgba(255, 255, 255, 0.85);
 $muted: rgba(255, 255, 255, 0.45);
@@ -155,7 +154,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .AdminOrderBidList__match {
-  color: $amber;
+  color: var(--accent);
   font-weight: 700;
   &.is-none { color: $muted; font-weight: 500; }
 }
@@ -176,9 +175,9 @@ $muted: rgba(255, 255, 255, 0.45);
   font-size: 10px;
   padding: 2px 8px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: rgba($amber, 0.9);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent-a90);
 }
 
 .AdminOrderBidList__time {
@@ -194,15 +193,15 @@ $muted: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.06em;
   padding: 8px 14px;
   border-radius: 100px;
-  border: 1px solid rgba($amber, 0.5);
-  background: rgba($amber, 0.12);
-  color: $amber;
+  border: 1px solid var(--accent-a50);
+  background: var(--accent-a12);
+  color: var(--accent);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: rgba($amber, 0.2);
+    background: var(--accent-a20);
   }
 
   &:disabled {

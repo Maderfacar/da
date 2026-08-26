@@ -100,7 +100,7 @@ Teleport(to="body")
       @click="Close"
     )
   transition(name="drawer-slide")
-    aside.CommonDrawer(v-if="modelValue" role="dialog" :aria-label="$t('drawer.ariaDialog')")
+    aside.CommonDrawer(v-if="modelValue" role="dialog" data-surface="dark" :aria-label="$t('drawer.ariaDialog')")
       //- ── 使用者資訊 ─────────────────────────────────
       header.CommonDrawer__user
         .CommonDrawer__avatar-wrap
@@ -165,11 +165,11 @@ Teleport(to="body")
   top: 0; left: 0; bottom: 0;
   width: min(280px, 80vw);
   z-index: 999;
-  background: var(--da-dark, #1a1814);
-  color: var(--da-cream, #faf8f4);
+  background: var(--da-dark);
+  color: var(--da-cream);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(212, 134, 10, 0.18);
+  border-right: 1px solid var(--accent-a20);
   box-shadow: 4px 0 32px rgba(0, 0, 0, 0.4);
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
@@ -192,7 +192,7 @@ Teleport(to="body")
 .CommonDrawer__avatar-wrap {
   width: 44px;
   height: 44px;
-  border: 1px solid rgba(212, 134, 10, 0.35);
+  border: 1px solid var(--accent-a30);
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -212,8 +212,8 @@ Teleport(to="body")
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(212, 134, 10, 0.18);
-  color: var(--da-amber, #d4860a);
+  background: var(--accent-a20);
+  color: var(--da-amber);
   font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
@@ -241,7 +241,7 @@ Teleport(to="body")
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: rgba(212, 134, 10, 0.7);
+  color: var(--accent-a70);
 }
 
 // ── 主導航 ─────────────────────────────────────────────
@@ -263,7 +263,7 @@ Teleport(to="body")
   border: none;
   border-radius: 10px;
   background: transparent;
-  color: rgba(250, 248, 244, 0.8);
+  color: var(--surface-a82);
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
@@ -272,11 +272,11 @@ Teleport(to="body")
   transition: background 0.15s, color 0.15s;
 
   &:hover { background: rgba(255, 255, 255, 0.05); color: var(--da-cream); }
-  &:active { background: rgba(212, 134, 10, 0.1); }
+  &:active { background: var(--accent-a12); }
 
   &.is-active {
-    background: rgba(212, 134, 10, 0.14);
-    color: var(--da-amber, #d4860a);
+    background: var(--accent-a12);
+    color: var(--da-amber);
     font-weight: 600;
   }
 
@@ -308,7 +308,7 @@ Teleport(to="body")
 .CommonDrawer__item-ext {
   font-family: var(--ff-label);
   font-size: 14px;
-  color: rgba(212, 134, 10, 0.55);
+  color: var(--accent-a60);
 }
 
 // ── 底部 ────────────────────────────────────────────────

@@ -235,7 +235,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.4);
 $border: rgba(255, 255, 255, 0.08);
 
@@ -280,8 +279,8 @@ $border: rgba(255, 255, 255, 0.08);
   transition: border-color 0.15s, background 0.15s;
 
   &.is-active {
-    border-color: rgba($amber, 0.55);
-    background: rgba($amber, 0.06);
+    border-color: var(--accent-a60);
+    background: var(--accent-a06);
   }
   &.is-disabled { opacity: 0.55; }
 }
@@ -468,10 +467,10 @@ $border: rgba(255, 255, 255, 0.08);
   }
 
   &.is-apply {
-    background: rgba($amber, 0.12);
-    border-color: rgba($amber, 0.4);
-    color: $amber;
-    &:hover:not(:disabled) { background: rgba($amber, 0.22); }
+    background: var(--accent-a12);
+    border-color: var(--accent-a40);
+    color: var(--accent);
+    &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 
   &.is-delete {

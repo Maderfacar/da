@@ -1127,16 +1127,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(0, 0, 0, 0.45);
 $surface: rgba(255, 255, 255, 0.7);
-$border: rgba(212, 134, 10, 0.18);
+$border: var(--accent-a20);
 
 .PageAdminLineManagement {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--da-cream, #f6efe1);
-  color: var(--da-dark, #1a1814);
+  color: var(--da-dark);
 }
 
 .PageAdminLineManagement__header {
@@ -1147,12 +1146,12 @@ $border: rgba(212, 134, 10, 0.18);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -1188,8 +1187,8 @@ $border: rgba(212, 134, 10, 0.18);
   gap: 8px;
 
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
   &.is-disabled {
     opacity: 0.5;
@@ -1288,9 +1287,9 @@ $border: rgba(212, 134, 10, 0.18);
   transition: all 0.15s;
 
   &.is-active {
-    color: $amber;
-    background: rgba(212, 134, 10, 0.1);
-    border-color: rgba(212, 134, 10, 0.3);
+    color: var(--accent);
+    background: var(--accent-a12);
+    border-color: var(--accent-a30);
   }
 }
 
@@ -1303,7 +1302,7 @@ $border: rgba(212, 134, 10, 0.18);
   letter-spacing: 0.06em;
   padding: 7px 16px;
   border-radius: 100px;
-  background: $amber;
+  background: var(--accent);
   color: white;
   border: none;
   cursor: pointer;
@@ -1341,7 +1340,7 @@ $border: rgba(212, 134, 10, 0.18);
   transition: background 0.15s;
 
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(212, 134, 10, 0.03); }
+  &:hover { background: var(--accent-a06); }
   &.is-active { background: rgba(5, 150, 105, 0.04); }
 }
 
@@ -1469,7 +1468,7 @@ $border: rgba(212, 134, 10, 0.18);
   color: $muted;
 
   &.is-synced { color: #059669; background: rgba(5, 150, 105, 0.08); }
-  &.is-syncing { color: #d4860a; background: rgba(212, 134, 10, 0.1); }
+  &.is-syncing { color: var(--accent); background: var(--accent-a12); }
   &.is-sync_failed { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
 }
 
@@ -1556,10 +1555,10 @@ $border: rgba(212, 134, 10, 0.18);
     &:hover:not(:disabled) { background: rgba(5, 150, 105, 0.18); }
   }
   &.is-warning {
-    background: rgba(212, 134, 10, 0.1);
-    border-color: rgba(212, 134, 10, 0.4);
-    color: #d4860a;
-    &:hover:not(:disabled) { background: rgba(212, 134, 10, 0.18); }
+    background: var(--accent-a12);
+    border-color: var(--accent-a40);
+    color: var(--accent);
+    &:hover:not(:disabled) { background: var(--accent-a20); }
   }
   &.is-reject {
     background: rgba(239, 68, 68, 0.08);
@@ -1605,8 +1604,8 @@ $border: rgba(212, 134, 10, 0.18);
   }
 
   &.is-active {
-    background: $amber;
-    border-color: $amber;
+    background: var(--accent);
+    border-color: var(--accent);
     color: #fff;
   }
 
@@ -1682,9 +1681,9 @@ $border: rgba(212, 134, 10, 0.18);
 
   &:hover { background: rgba(0, 0, 0, 0.03); }
   &.is-active {
-    background: rgba(212, 134, 10, 0.08);
+    background: var(--accent-a06);
     color: rgba(0, 0, 0, 0.9);
-    border-left-color: $amber;
+    border-left-color: var(--accent);
     font-weight: 700;
   }
   &.is-disabled .PageAdminLineManagement__template-name {
@@ -1838,8 +1837,8 @@ $border: rgba(212, 134, 10, 0.18);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: $amber;
-  background: rgba(212, 134, 10, 0.1);
+  color: var(--accent);
+  background: var(--accent-a12);
   border-radius: 100px;
   padding: 2px 8px;
 }
@@ -1875,7 +1874,7 @@ $border: rgba(212, 134, 10, 0.18);
 
   &:focus {
     outline: none;
-    border-color: $amber;
+    border-color: var(--accent);
   }
 }
 
@@ -2014,7 +2013,7 @@ $border: rgba(212, 134, 10, 0.18);
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: $amber;
+  color: var(--accent);
 }
 
 .PageAdminLineManagement__diag-meta-row {
@@ -2101,7 +2100,7 @@ $border: rgba(212, 134, 10, 0.18);
   padding: 0 0 0 18px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: #d4860a;
+  color: var(--accent);
   list-style: disc;
   line-height: 1.6;
 }
@@ -2128,8 +2127,8 @@ $border: rgba(212, 134, 10, 0.18);
   transition: all 0.15s;
 
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -2167,7 +2166,7 @@ $border: rgba(212, 134, 10, 0.18);
 
     &:focus {
       outline: none;
-      border-color: $amber;
+      border-color: var(--accent);
     }
   }
 }
@@ -2190,7 +2189,7 @@ $border: rgba(212, 134, 10, 0.18);
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(212, 134, 10, 0.04); }
+  &:hover { background: var(--accent-a06); }
   &.is-head {
     background: rgba(0, 0, 0, 0.03);
     font-weight: 700;
@@ -2199,7 +2198,7 @@ $border: rgba(212, 134, 10, 0.18);
     cursor: default;
     &:hover { background: rgba(0, 0, 0, 0.03); }
   }
-  &.is-expanded { background: rgba(212, 134, 10, 0.06); }
+  &.is-expanded { background: var(--accent-a06); }
   &.is-failed { background: rgba(239, 68, 68, 0.05); }
   &.is-error { color: #b91c1c; }
 

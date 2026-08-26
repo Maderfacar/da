@@ -386,8 +386,8 @@ onMounted(ApiLoadFlow);
   transition: all 0.15s;
 
   &.is-active {
-    background: rgba(212, 134, 10, 0.2);
-    border-color: rgba(212, 134, 10, 0.5);
+    background: var(--accent-a20);
+    border-color: var(--accent-a50);
     color: var(--da-amber);
   }
 }
@@ -407,8 +407,8 @@ onMounted(ApiLoadFlow);
   padding: 14px 16px;
 
   &.is-peak {
-    border-color: rgba(212, 134, 10, 0.35);
-    background: rgba(212, 134, 10, 0.08);
+    border-color: var(--accent-a30);
+    background: var(--accent-a06);
   }
 }
 
@@ -476,8 +476,8 @@ onMounted(ApiLoadFlow);
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(212, 134, 10, 0.1);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
   border-radius: 12px;
   padding: 14px 16px;
 }

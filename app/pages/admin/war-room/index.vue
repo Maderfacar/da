@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 definePageMeta({ layout: 'back-desk', middleware: ['auth', 'role'], ssr: false });
 
 const TW_CENTER = { lat: 23.7, lng: 121.0 };
@@ -204,7 +205,7 @@ const _IconForDriver = (d: DriverWithDerived): google.maps.Symbol => {
   // online 用藍色（非綠）— 避免與 TrafficLayer 即時車流綠線色塊相近難辨
   const colorMap: Record<DerivedStatus, string> = {
     online:  '#3b82f6',
-    busy:    '#d4860a',
+    busy:    DESIGN_COLORS.accent,
     offline: '#6b7280',
   };
   const fillColor = colorMap[d.derivedStatus];
@@ -422,7 +423,7 @@ onUnmounted(() => {
   gap: 6px;
   padding: 10px 14px;
   border-radius: 100px;
-  border: 1px solid rgba(212, 134, 10, 0.3);
+  border: 1px solid var(--accent-a30);
   background: rgba(26, 26, 46, 0.92);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -436,7 +437,7 @@ onUnmounted(() => {
   transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
   white-space: nowrap;
 
-  &:hover { background: rgba(212, 134, 10, 0.18); }
+  &:hover { background: var(--accent-a20); }
   &:active { transform: scale(0.96); }
 
   &.is-active {
@@ -632,7 +633,7 @@ onUnmounted(() => {
   margin-top: 6px;
 
   &.is-online  { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.5); }
-  &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px rgba(212, 134, 10, 0.5); }
+  &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px var(--accent-a50); }
   &.is-offline { background: #6b7280; }
 }
 
@@ -666,8 +667,8 @@ onUnmounted(() => {
   gap: 8px;
   align-items: center;
   padding: 4px 8px;
-  background: rgba(212, 134, 10, 0.08);
-  border: 1px solid rgba(212, 134, 10, 0.2);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
   border-radius: 6px;
 }
 

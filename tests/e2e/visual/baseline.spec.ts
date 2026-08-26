@@ -21,10 +21,28 @@ import type { Page } from '@playwright/test';
 
 // 司機端沒有定位權限就會被「需要位置權限」全屏彈窗蓋住，整張基線只剩那個 modal。
 // 預先授權 + 給一個固定座標（台北車站），讓畫面穩定且拍得到底下的實際 UI。
+// ⚠ iPhone 14（WebKit）基線能不能拍到 CSS，取決於下面那個 stripSecurityHeaders。
+//
+// 專案的 CSP 含 `upgrade-insecure-requests`（server/utils/security-headers.ts）。
+// Chromium 對 localhost / 127.0.0.1 這類 potentially-trustworthy origin 豁免該指令，
+// **WebKit 不豁免** —— 於是 WebKit 把 `http://localhost:3000/static/entry.css` 升級成
+// `https://` 然後 SSL connect error，整張 entry.css 靜默載入失敗。
+// 頁面照樣渲染，只是完全沒有 design token（`--da-*` / `--ink` / `--accent` 全解析為空）。
+//
+// 這就是舊基線裡「iPhone 14 的 /booking /home /orders 三張截圖 md5 完全相同」的真正原因：
+// 那不是 boot/hydration race，是三張都在拍沒有 CSS 的頁面，所以長得一樣。
+// 換句話說 **iPhone 14 那 11 張基線在此之前驗不到任何 token 相關的東西**。
+//
+// 在 prod 全站走 https，`upgrade-insecure-requests` 是 no-op —— 這純粹是「本地用 http
+// 跑 prod server」造成的測試假象，不是應用缺陷，所以不動 production 的 CSP。
+//
+// 注意：Playwright 的 `bypassCSP: true` **救不了這個**（實測 WebKit 下 `--da-amber` 仍為空）。
+// 它不涵蓋 upgrade-insecure-requests，必須從 response header 把 CSP 拿掉才有效。
 test.use({
   permissions: ['geolocation'],
   geolocation: { latitude: 25.0478, longitude: 121.5170 },
 });
+
 
 type Identity = 'passenger' | 'driverApproved' | 'adminWith2fa';
 
@@ -144,14 +162,29 @@ for (const target of TARGETS) {
       if (m.type() === 'error' && !IGNORED_CONSOLE.test(m.text())) appErrors.push(m.text());
     });
 
-    // 擋掉所有第三方請求（GTM / Clarity / Google Maps…）。
-    // 兩個理由：① 視覺基線不該讓分析腳本參與，否則截圖受外部服務狀態影響；
-    // ② WebKit on Windows 對這些外部網域一律回 SSL connect error，會淹沒真正的錯誤。
-    // 字體是 @nuxt/fonts 自架於同源 /_fonts/，不受影響。
-    await page.route('**/*', (route) => {
-      const url = route.request().url();
-      if (url.startsWith('http') && !/^https?:\/\/localhost:3000/.test(url)) return route.abort();
-      return route.continue();
+    // 這個 handler 做兩件事：
+    //
+    // ① 擋掉所有第三方請求（GTM / Clarity / Google Maps…）。視覺基線不該讓分析腳本參與，
+    //    否則截圖受外部服務狀態影響。字體是 @nuxt/fonts 自架於同源 /_fonts/，不受影響。
+    //
+    // ② 同源回應剝掉 CSP 與 HSTS —— 見檔頭說明。沒有這一步，WebKit 會把同源子資源
+    //    升級成 https 而全數 SSL 失敗，iPhone 14 的基線就會拍到完全沒有 CSS 的頁面。
+    await page.route('**/*', async (route) => {
+      const req = route.request();
+      if (req.url().startsWith('http') && !/^https?:\/\/localhost:3000/.test(req.url())) return route.abort();
+      // 只需要改寫**文件**的 header —— upgrade-insecure-requests 是由文件的 CSP 發動的，
+      // 子資源本身的 header 不影響升級與否。只攔 document 也避開了「測試收尾時
+      // 還有子資源在飛，route.fetch() 會對已關閉的 page 拋錯」那個坑。
+      if (req.resourceType() !== 'document') return route.continue();
+      try {
+        const res = await route.fetch();
+        const headers = { ...res.headers() };
+        delete headers['content-security-policy'];
+        delete headers['strict-transport-security'];
+        return await route.fulfill({ response: res, headers });
+      } catch {
+        return route.continue().catch(() => { /* page 已關閉，忽略 */ });
+      }
     });
 
     await loginAs(target.identity);
@@ -167,8 +200,17 @@ for (const target of TARGETS) {
       fullPage: true,
       animations: 'disabled',
       caret: 'hide',
-      // 色票換裝預期整片變動；比對階段本就要人工看 diff，不設寬容值
+      // 色票換裝預期整片變動；比對階段本就要人工看 diff，不設寬容值。
+      // 不穩定源改用遮罩精準處理，而不是放寬容值 —— 放寬容值會連帶讓
+      // 「某個小徽章色跑掉」這種真實 regression 也一起被吞掉。
       maxDiffPixelRatio: 0,
+      // 原生 date / time 欄位會帶入「現在」，每分鐘就讓基線差一次。
+      // /booking 的出發時間欄位即是（實測差異就是那 20×13 px 的 `01:10`）。
+      mask: [
+        page.locator('input[type="time"]'),
+        page.locator('input[type="date"]'),
+        page.locator('input[type="datetime-local"]'),
+      ],
     });
   });
 }

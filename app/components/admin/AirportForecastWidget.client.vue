@@ -68,7 +68,6 @@ onMounted(ApiGetForecast);
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .AirportForecastWidget {
   background: rgba(255, 255, 255, 0.03);
@@ -89,7 +88,7 @@ $amber: #d4860a;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: $amber;
+  color: var(--accent);
 }
 
 .AirportForecastWidget__date {

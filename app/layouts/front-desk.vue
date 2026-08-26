@@ -249,7 +249,7 @@ onUnmounted(() => {
 .LayoutFrontDesk__loading-spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -307,7 +307,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(250, 248, 244, 0.88);
+  background: var(--surface-a88);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--da-glass-border);

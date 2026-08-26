@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const route = useRoute();
@@ -20,7 +21,7 @@ const STATUS_COLOR: Record<string, string> = {
   en_route:       '#6d28d9',  // violet-700
   arrived_pickup: '#0e7490',  // cyan-700
   in_transit:     '#15803d',  // green-700
-  completed:      '#6B6560',  // var(--da-gray)
+  completed:      DESIGN_COLORS.inkSoft,  // 次要文字
   cancelled:      '#dc2626',
 };
 
@@ -30,7 +31,7 @@ const CAN_CANCEL_STATUS = new Set(['pending', 'confirmed']);
 const DRIVER_VISIBLE_STATUSES = new Set(['confirmed', 'en_route', 'arrived_pickup', 'in_transit', 'completed']);
 
 const StatusText = (status: string) => t(`status.${status}`, status);
-const StatusColor = (status: string) => STATUS_COLOR[status] ?? '#6B6560';
+const StatusColor = (status: string) => STATUS_COLOR[status] ?? DESIGN_COLORS.inkSoft;
 const FormatDate = (iso: string) => (iso ? $dayjs(iso).format('YYYY/MM/DD HH:mm') : '');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
 const FormatDistance = (km: number) => `${km.toFixed(1)} km`;
@@ -305,7 +306,7 @@ onUnmounted(() => {
 .PageOrderDetail__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -394,9 +395,9 @@ onUnmounted(() => {
   // 司機卡：dark accent（對應 booking success-id pattern，視覺重點突顯）
   &.is-driver {
     background: var(--da-dark);
-    border-color: rgba(212, 134, 10, 0.35);
+    border-color: var(--accent-a30);
     color: var(--da-cream);
-    box-shadow: 0 8px 32px rgba(26, 24, 20, 0.18);
+    box-shadow: 0 8px 32px var(--ink-a20);
   }
 }
 
@@ -535,7 +536,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(245, 242, 236, 0.55);
+  color: var(--surface-a60);
 }
 
 .PageOrderDetail__driver-val {
@@ -602,7 +603,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: rgba(245, 242, 236, 0.5);
+  color: var(--surface-a50);
   background: rgba(255, 255, 255, 0.04);
   border: 1px dashed rgba(255, 255, 255, 0.18);
   border-radius: 10px;
@@ -630,7 +631,7 @@ onUnmounted(() => {
 
   &.is-fare {
     padding-top: 10px;
-    border-top: 1px solid rgba(212, 134, 10, 0.25);
+    border-top: 1px solid var(--accent-a20);
     border-bottom: 0;
     margin-top: 4px;
   }

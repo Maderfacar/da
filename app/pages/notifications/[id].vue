@@ -123,7 +123,7 @@ onMounted(() => {
   padding: 8px 14px 8px 10px;
   border-radius: 100px;
   border: 1px solid var(--da-glass-border);
-  background: rgba(250, 248, 244, 0.85);
+  background: var(--surface-a82);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--da-dark);
@@ -139,8 +139,8 @@ onMounted(() => {
 
   &:hover {
     color: var(--da-amber);
-    border-color: rgba(212, 134, 10, 0.45);
-    background: rgba(250, 248, 244, 0.95);
+    border-color: var(--accent-a40);
+    background: var(--surface-a96);
   }
 
   span { font-size: 16px; line-height: 1; }
@@ -156,7 +156,7 @@ onMounted(() => {
 .PageNotificationDetail__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -237,11 +237,11 @@ onMounted(() => {
   :deep(h3) { font-size: 15px; }
   :deep(img) { max-width: 100%; border-radius: 12px; margin: 10px 0; }
   :deep(blockquote) {
-    border-left: 3px solid rgba(212, 134, 10, 0.5);
+    border-left: 3px solid var(--accent-a50);
     padding: 4px 14px;
     margin: 12px 0;
     color: var(--da-gray);
-    background: rgba(212, 134, 10, 0.05);
+    background: var(--accent-a06);
     border-radius: 0 8px 8px 0;
   }
 }

@@ -451,7 +451,6 @@ defineExpose({ reloadTags: ApiLoadTags });
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.4);
@@ -514,7 +513,7 @@ $danger: #f87171;
 
   &.is-pending  { background: rgba(255, 200, 0, 0.12);  border: 1px solid rgba(255, 200, 0, 0.4);  color: #f5c518; }
   &.is-rejected { background: rgba(248, 113, 113, 0.12); border: 1px solid rgba($danger, 0.4); color: $danger; }
-  &.is-draft    { background: rgba($amber, 0.12);       border: 1px solid rgba($amber, 0.35);  color: $amber; }
+  &.is-draft    { background: var(--accent-a12);       border: 1px solid var(--accent-a30);  color: var(--accent); }
   &.is-verified { background: rgba(80, 200, 120, 0.12); border: 1px solid rgba(80, 200, 120, 0.4); color: #50c878; }
   &.is-none     { background: rgba(255, 255, 255, 0.05); border: 1px solid $border; color: $muted; }
 }
@@ -640,9 +639,9 @@ $danger: #f87171;
 
 .VehicleProfileEditor__photo-add {
   aspect-ratio: 4 / 3;
-  border: 1.5px dashed rgba($amber, 0.45);
-  background: rgba($amber, 0.06);
-  color: $amber;
+  border: 1.5px dashed var(--accent-a40);
+  background: var(--accent-a06);
+  color: var(--accent);
   font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 700;
@@ -650,7 +649,7 @@ $danger: #f87171;
   border-radius: 10px;
   transition: background 0.15s;
 
-  &:hover:not(:disabled) { background: rgba($amber, 0.14); }
+  &:hover:not(:disabled) { background: var(--accent-a12); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -685,10 +684,10 @@ $danger: #f87171;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.18);
-    color: $amber;
-    &:hover:not(:disabled) { background: rgba($amber, 0.28); }
+    border-color: var(--accent-a50);
+    background: var(--accent-a20);
+    color: var(--accent);
+    &:hover:not(:disabled) { background: var(--accent-a30); }
   }
   &.is-secondary {
     border-color: $border;
@@ -830,14 +829,14 @@ $danger: #f87171;
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 14px;
-  border: 1.5px dashed rgba($amber, 0.4);
-  background: rgba($amber, 0.05);
-  color: $amber;
+  border: 1.5px dashed var(--accent-a40);
+  background: var(--accent-a06);
+  color: var(--accent);
   cursor: pointer;
   border-radius: 8px;
   margin-top: 2px;
 
-  &:hover { background: rgba($amber, 0.12); }
+  &:hover { background: var(--accent-a12); }
 }
 
 .VehicleProfileEditor__capacity-actions {

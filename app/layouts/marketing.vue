@@ -76,7 +76,7 @@ const ClickLogo = () => navigateTo('/');
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(250, 248, 244, 0.88);
+  background: var(--surface-a88);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--da-glass-border);

@@ -25,10 +25,10 @@ const _RenderChart = async (hours: HourData[]) => {
   const maxVal = Math.max(...forecastData);
 
   const bgColors = forecastData.map((v) =>
-    v === maxVal && maxVal > 0 ? 'rgba(212, 134, 10, 0.9)' : 'rgba(212, 134, 10, 0.3)',
+    v === maxVal && maxVal > 0 ? 'var(--accent-a90)' : 'var(--accent-a30)',
   );
   const borderColors = forecastData.map((v) =>
-    v === maxVal && maxVal > 0 ? 'rgba(212, 134, 10, 1)' : 'rgba(212, 134, 10, 0.5)',
+    v === maxVal && maxVal > 0 ? 'var(--accent)' : 'var(--accent-a50)',
   );
 
   const datasets: ChartData<'bar'>['datasets'] = [
@@ -123,7 +123,7 @@ onUnmounted(() => {
 .TrafficChart__spinner {
   width: 28px;
   height: 28px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

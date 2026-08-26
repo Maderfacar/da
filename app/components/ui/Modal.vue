@@ -37,7 +37,7 @@ teleport(to="body")
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(26, 24, 20, 0.6);
+  background: var(--ink-a60);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;

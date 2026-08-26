@@ -772,7 +772,7 @@ const swiperBreakpoints = {
     padding: 14px 18px 16px;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    background: rgba(250, 248, 244, 0.82);
+    background: var(--surface-a82);
     border-top: 1px solid rgba(255, 255, 255, 0.7);
     display: flex;
     flex-direction: column;

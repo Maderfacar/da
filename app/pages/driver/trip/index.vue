@@ -531,7 +531,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .PageDriverTrip {
   padding: 20px 16px 32px;
@@ -548,12 +547,12 @@ $amber: #d4860a;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: $amber;
+  color: var(--accent);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
-  &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
 }
 
 .PageDriverTrip__header-title {
@@ -598,7 +597,7 @@ $amber: #d4860a;
   transition: background 0.15s, color 0.15s;
 
   &:hover { color: rgba(255, 255, 255, 0.75); }
-  &.is-active { background: rgba($amber, 0.18); color: $amber; }
+  &.is-active { background: var(--accent-a20); color: var(--accent); }
 }
 
 .PageDriverTrip__history-toolbar {
@@ -629,8 +628,8 @@ $amber: #d4860a;
 
 .PageDriverTrip__spinner {
   width: 28px; height: 28px;
-  border: 2px solid rgba($amber, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -665,7 +664,7 @@ $amber: #d4860a;
   cursor: pointer;
   transition: all 0.15s;
   &:active { transform: scale(0.99); background: rgba(255, 255, 255, 0.06); }
-  &:hover { border-color: rgba($amber, 0.3); }
+  &:hover { border-color: var(--accent-a30); }
 }
 
 .PageDriverTrip__card-time {
@@ -708,9 +707,9 @@ $amber: #d4860a;
   letter-spacing: 0.1em;
   padding: 2px 8px;
   border-radius: 100px;
-  background: rgba($amber, 0.15);
-  border: 1px solid rgba($amber, 0.3);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
+  color: var(--accent);
 }
 
 .PageDriverTrip__id {
@@ -744,7 +743,7 @@ $amber: #d4860a;
   border-radius: 50%;
   align-self: center;
 
-  &.is-from { background: $amber; }
+  &.is-from { background: var(--accent); }
   &.is-to { background: #4ade80; }
 }
 
@@ -794,14 +793,14 @@ $amber: #d4860a;
   &.is-confirmed       { background: rgba(74, 222, 128, 0.12); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
   &.is-en_route        { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
   &.is-arrived_pickup  { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
-  &.is-in_transit      { background: rgba($amber, 0.12); color: $amber; border: 1px solid rgba($amber, 0.4); }
+  &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
 .PageDriverTrip__card-fare {
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: $amber;
+  color: var(--accent);
   letter-spacing: 0.04em;
 }
 
@@ -879,7 +878,7 @@ $amber: #d4860a;
   max-width: 480px;
   max-height: 90vh;
   background: #1a1a2e;
-  border: 1px solid rgba($amber, 0.2);
+  border: 1px solid var(--accent-a20);
   border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
@@ -908,9 +907,9 @@ $amber: #d4860a;
   letter-spacing: 0.1em;
   padding: 4px 12px;
   border-radius: 100px;
-  background: rgba($amber, 0.18);
-  border: 1px solid rgba($amber, 0.4);
-  color: $amber;
+  background: var(--accent-a20);
+  border: 1px solid var(--accent-a40);
+  color: var(--accent);
 }
 
 .PageDriverTrip__modal-vehicle {
@@ -957,7 +956,7 @@ $amber: #d4860a;
   &.is-confirmed       { background: rgba(74, 222, 128, 0.12); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
   &.is-en_route        { background: rgba(96, 165, 250, 0.12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
   &.is-arrived_pickup  { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
-  &.is-in_transit      { background: rgba($amber, 0.12); color: $amber; border: 1px solid rgba($amber, 0.4); }
+  &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
 .PageDriverTrip__modal-body {
@@ -1006,7 +1005,7 @@ $amber: #d4860a;
   text-align: right;
 
   &.is-muted { color: rgba(255, 255, 255, 0.35); font-size: 12px; font-style: italic; }
-  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: $amber; font-size: 16px; }
+  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: var(--accent); font-size: 16px; }
 }
 
 // 地址卡片（可點擊開 Google Maps）
@@ -1022,10 +1021,10 @@ $amber: #d4860a;
   cursor: pointer;
   transition: all 0.15s;
 
-  &:hover { border-color: rgba($amber, 0.4); background: rgba($amber, 0.05); }
+  &:hover { border-color: var(--accent-a40); background: var(--accent-a06); }
   &:active { transform: scale(0.99); }
 
-  &.is-pickup .PageDriverTrip__addr-tag { background: $amber; color: #fff; }
+  &.is-pickup .PageDriverTrip__addr-tag { background: var(--accent); color: #fff; }
   &.is-stop .PageDriverTrip__addr-tag { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
   &.is-dropoff .PageDriverTrip__addr-tag { background: rgba(74, 222, 128, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
 }
@@ -1062,7 +1061,7 @@ $amber: #d4860a;
 .PageDriverTrip__addr-icon {
   flex-shrink: 0;
   font-size: 18px;
-  color: $amber;
+  color: var(--accent);
   margin-top: 4px;
 }
 
@@ -1078,9 +1077,9 @@ $amber: #d4860a;
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba($amber, 0.1);
-  border: 1px solid rgba($amber, 0.25);
-  color: rgba($amber, 0.9);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent-a90);
 }
 
 // 備註
@@ -1112,7 +1111,7 @@ $amber: #d4860a;
   padding: 14px 20px;
   border-radius: 12px;
   border: none;
-  background: $amber;
+  background: var(--accent);
   color: #fff;
   cursor: pointer;
   transition: all 0.15s;

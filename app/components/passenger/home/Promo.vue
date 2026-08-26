@@ -237,6 +237,6 @@ section.PassengerHomePromo(v-if="hasPromo")
 .PassengerHomePromo__meta {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(250, 248, 244, 0.5);
+  color: var(--surface-a50);
 }
 </style>

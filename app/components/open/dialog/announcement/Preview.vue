@@ -82,7 +82,6 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.4);
 $border: rgba(255, 255, 255, 0.08);
 
@@ -109,7 +108,7 @@ $border: rgba(255, 255, 255, 0.08);
     content: '';
     width: 16px;
     height: 1.5px;
-    background: $amber;
+    background: var(--accent);
   }
 }
 
@@ -169,7 +168,7 @@ $border: rgba(255, 255, 255, 0.08);
   padding: 10px;
   border-radius: 8px;
   border: none;
-  background: $amber;
+  background: var(--accent);
   color: #fff;
   font-family: var(--ff-ui);
   font-size: 14px;
@@ -216,7 +215,7 @@ $border: rgba(255, 255, 255, 0.08);
 
   // 最少限度排版（避免 v-html 內排版崩掉）
   :deep(p) { margin: 0 0 6px; }
-  :deep(a) { color: $amber; text-decoration: underline; }
+  :deep(a) { color: var(--accent); text-decoration: underline; }
   :deep(strong) { font-weight: 700; color: #fff; }
   :deep(ul), :deep(ol) { margin: 4px 0 6px 18px; }
   :deep(img) { max-width: 100%; border-radius: 6px; margin: 6px 0; }
@@ -233,9 +232,9 @@ $border: rgba(255, 255, 255, 0.08);
   margin-top: 12px;
   padding: 8px 18px;
   border-radius: 100px;
-  background: rgba($amber, 0.18);
-  border: 1px solid rgba($amber, 0.5);
-  color: $amber;
+  background: var(--accent-a20);
+  border: 1px solid var(--accent-a50);
+  color: var(--accent);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;

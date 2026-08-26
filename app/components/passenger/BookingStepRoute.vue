@@ -426,7 +426,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   align-items: center;
   gap: 20px;
   background: var(--da-amber-pale);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  border: 1px solid var(--accent-a20);
   border-radius: 12px;
   padding: 14px 18px;
   font-family: var(--ff-ui);

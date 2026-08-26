@@ -44,7 +44,7 @@ withDefaults(defineProps<Props>(), {
 .UiCard.is-dark {
   background: var(--da-dark);
   border: none;
-  box-shadow: 0 8px 40px rgba(26, 24, 20, 0.2);
+  box-shadow: 0 8px 40px var(--ink-a20);
 }
 
 .UiCard.is-cream {

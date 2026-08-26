@@ -27,15 +27,15 @@ span.UiBadge(:class="`is-${variant}`")
 }
 
 .UiBadge.is-confirmed {
-  background: rgba(212, 134, 10, 0.12);
+  background: var(--accent-a12);
   color: var(--da-amber);
-  border: 1px solid rgba(212, 134, 10, 0.3);
+  border: 1px solid var(--accent-a30);
 }
 
 .UiBadge.is-pending {
-  background: rgba(26, 24, 20, 0.06);
+  background: var(--ink-a06);
   color: var(--da-dark);
-  border: 1px solid rgba(26, 24, 20, 0.15);
+  border: 1px solid var(--ink-a12);
 }
 
 .UiBadge.is-success {

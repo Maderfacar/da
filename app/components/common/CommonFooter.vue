@@ -241,7 +241,7 @@ footer.CommonFooter
 .CommonFooter__qr-caption {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(250, 248, 244, 0.5);
+  color: var(--surface-a50);
   max-width: 136px;
   line-height: 1.4;
 }
@@ -283,7 +283,7 @@ footer.CommonFooter
 .CommonFooter__tagline {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(250, 248, 244, 0.55);
+  color: var(--surface-a60);
   margin-top: 8px;
   line-height: 1.6;
 }
@@ -304,7 +304,7 @@ footer.CommonFooter
   background: transparent;
   border: none;
   padding: 6px 0;
-  color: rgba(250, 248, 244, 0.8);
+  color: var(--surface-a82);
   font-family: var(--ff-ui);
   font-size: 14px;
   cursor: pointer;
@@ -323,7 +323,7 @@ footer.CommonFooter
 
 .CommonFooter__hours {
   font-size: 12px;
-  color: rgba(250, 248, 244, 0.4);
+  color: var(--surface-a40);
   margin-top: 4px;
 }
 

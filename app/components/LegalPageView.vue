@@ -119,7 +119,7 @@ onMounted(() => { void ApiLoad(); });
 .LegalPageView__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -145,7 +145,7 @@ onMounted(() => { void ApiLoad(); });
   line-height: 1.75;
   color: var(--da-dark);
   background: rgba(255, 255, 255, 0.55);
-  border: 1px solid var(--da-glass-border, rgba(26, 24, 20, 0.10));
+  border: 1px solid var(--da-glass-border, var(--ink-a12));
   border-radius: 18px;
   padding: 24px 22px;
   backdrop-filter: blur(8px);
@@ -189,7 +189,7 @@ onMounted(() => { void ApiLoad(); });
     margin: 14px 0;
     padding: 10px 14px;
     border-left: 3px solid var(--da-amber);
-    background: rgba(212, 134, 10, 0.06);
+    background: var(--accent-a06);
     color: var(--da-gray);
     border-radius: 0 8px 8px 0;
   }
@@ -200,19 +200,19 @@ onMounted(() => { void ApiLoad(); });
     margin: 14px 0;
     font-size: 13px;
     th, td {
-      border: 1px solid rgba(26, 24, 20, 0.12);
+      border: 1px solid var(--ink-a12);
       padding: 8px 10px;
       text-align: left;
     }
     th {
-      background: rgba(212, 134, 10, 0.08);
+      background: var(--accent-a06);
       font-weight: 700;
     }
   }
 
   :deep(hr) {
     border: none;
-    border-top: 1px solid rgba(26, 24, 20, 0.1);
+    border-top: 1px solid var(--ink-a12);
     margin: 20px 0;
   }
 
@@ -224,7 +224,7 @@ onMounted(() => { void ApiLoad(); });
   :deep(code) {
     font-family: var(--ff-mono);
     font-size: 12px;
-    background: rgba(26, 24, 20, 0.06);
+    background: var(--ink-a06);
     padding: 1px 5px;
     border-radius: 4px;
   }

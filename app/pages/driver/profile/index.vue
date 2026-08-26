@@ -574,17 +574,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.35);
 $danger: #f87171;
 
 .PageDriverProfile {
   padding: 80px 20px 32px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -596,12 +594,12 @@ $danger: #f87171;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -630,22 +628,22 @@ $danger: #f87171;
   height: 54px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba($amber, 0.4);
+  border: 2px solid var(--accent-a40);
 }
 
 .PageDriverProfile__avatar-fallback {
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: rgba($amber, 0.15);
-  border: 2px solid rgba($amber, 0.4);
+  background: var(--accent-a12);
+  border: 2px solid var(--accent-a40);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
   font-size: 22px;
   font-weight: 700;
-  color: $amber;
+  color: var(--accent);
 }
 
 .PageDriverProfile__hero-info { flex: 1; min-width: 0; }
@@ -756,9 +754,9 @@ $danger: #f87171;
 .PageDriverProfile__row-edit {
   padding: 4px 10px;
   border-radius: 8px;
-  border: 1px solid rgba($amber, 0.4);
-  background: rgba($amber, 0.08);
-  color: $amber;
+  border: 1px solid var(--accent-a40);
+  background: var(--accent-a06);
+  color: var(--accent);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -766,7 +764,7 @@ $danger: #f87171;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba($amber, 0.16); }
+  &:hover { background: var(--accent-a12); }
 }
 
 .PageDriverProfile__row-editing {
@@ -776,7 +774,7 @@ $danger: #f87171;
 
   :deep(.el-input__wrapper) {
     background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 0 1px rgba($amber, 0.4) inset;
+    box-shadow: 0 0 0 1px var(--accent-a40) inset;
   }
   :deep(.el-input__inner) {
     color: #fff;
@@ -800,10 +798,10 @@ $danger: #f87171;
 }
 
 .PageDriverProfile__row-save {
-  border-color: rgba($amber, 0.4);
-  background: $amber;
+  border-color: var(--accent-a40);
+  background: var(--accent);
   color: #fff;
-  &:hover:not(:disabled) { background: lighten($amber, 5%); }
+  &:hover:not(:disabled) { background: var(--accent-lit); }
 }
 
 .PageDriverProfile__row-cancel {
@@ -879,8 +877,8 @@ $danger: #f87171;
 .PageDriverProfile__doc-banner {
   padding: 6px 10px;
   border-radius: 8px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.35);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
 
   &.is-rejected {
     background: rgba($danger, 0.1);
@@ -892,7 +890,7 @@ $danger: #f87171;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
-    color: $amber;
+    color: var(--accent);
   }
 
   &.is-rejected &-title { color: $danger; }
@@ -908,9 +906,9 @@ $danger: #f87171;
 .PageDriverProfile__doc-btn {
   padding: 8px;
   border-radius: 8px;
-  border: 1px solid rgba($amber, 0.4);
-  background: rgba($amber, 0.08);
-  color: $amber;
+  border: 1px solid var(--accent-a40);
+  background: var(--accent-a06);
+  color: var(--accent);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -918,7 +916,7 @@ $danger: #f87171;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover:not(:disabled) { background: rgba($amber, 0.16); }
+  &:hover:not(:disabled) { background: var(--accent-a12); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 

@@ -211,7 +211,7 @@ const ClickFare = () => navigateTo('/fare');
   // 斜紋亮色綁季節主題 hero 變數（缺省回退現行黃）
   background: repeating-linear-gradient(
     -45deg,
-    var(--da-hero-stripe-yellow, #F5C842) 0px, var(--da-hero-stripe-yellow, #F5C842) 20px,
+    var(--da-hero-stripe-yellow) 0px, var(--da-hero-stripe-yellow) 20px,
     transparent 20px, transparent 40px
   );
   opacity: 0.12;
@@ -306,8 +306,8 @@ const ClickFare = () => navigateTo('/fare');
   // 季節主題斜紋分隔（hero 專屬變數；缺省回退現行黃 / 深）
   background: repeating-linear-gradient(
     -45deg,
-    var(--da-hero-stripe-yellow, #F5C842) 0px, var(--da-hero-stripe-yellow, #F5C842) 12px,
-    var(--da-hero-stripe-dark, #1A1814) 12px, var(--da-hero-stripe-dark, #1A1814) 24px
+    var(--da-hero-stripe-yellow) 0px, var(--da-hero-stripe-yellow) 12px,
+    var(--da-hero-stripe-dark) 12px, var(--da-hero-stripe-dark) 24px
   );
   opacity: 0.85;
 }
@@ -399,7 +399,7 @@ const ClickFare = () => navigateTo('/fare');
   transition: border-color 0.15s, transform 0.15s;
 
   &:hover {
-    border-color: rgba(212, 134, 10, 0.32);
+    border-color: var(--accent-a30);
     transform: translateY(-2px);
   }
 }
@@ -507,7 +507,7 @@ const ClickFare = () => navigateTo('/fare');
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
-  color: rgba(250, 248, 244, 0.75);
+  color: var(--surface-a72);
   line-height: 1.7;
   margin: 0 0 28px;
 }

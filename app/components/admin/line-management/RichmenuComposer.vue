@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // P44b：richmenu 圖層合成器主 component
 //
 // 結構：[ template 下拉 ] [ 合成並上傳 ]
@@ -148,7 +149,7 @@ async function ClickApplyTemplate() {
 
 // ── 加 layer ─────────────────────────────────────────────
 function ClickAddRectangle() {
-  composer.addLayer({ type: 'rectangle', fillColor: '#d4860a' });
+  composer.addLayer({ type: 'rectangle', fillColor: DESIGN_COLORS.accent });
 }
 function ClickAddText() {
   composer.addLayer({ type: 'text', text: '新文字' });
@@ -386,7 +387,7 @@ function ClickSwitchSize(size: RichmenuSize) {
         .RichmenuComposer__field-grid
           .RichmenuComposer__field
             label 填色
-            input(type="color" :value="composer.primaryLayer.value.fillColor ?? '#d4860a'" @input="(e: any) => composer.patchLayer(composer.primaryLayer.value!.id, { fillColor: e.target.value })")
+            input(type="color" :value="composer.primaryLayer.value.fillColor ?? DESIGN_COLORS.accent" @input="(e: any) => composer.patchLayer(composer.primaryLayer.value!.id, { fillColor: e.target.value })")
           .RichmenuComposer__field
             label 邊色
             input(type="color" :value="composer.primaryLayer.value.borderColor ?? '#000000'" @input="(e: any) => composer.patchLayer(composer.primaryLayer.value!.id, { borderColor: e.target.value })")
@@ -428,7 +429,6 @@ function ClickSwitchSize(size: RichmenuSize) {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $border: rgba(0, 0, 0, 0.1);
 $muted: rgba(0, 0, 0, 0.5);
 
@@ -510,7 +510,7 @@ $muted: rgba(0, 0, 0, 0.5);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: $amber;
+  color: var(--accent);
   margin: 0 0 8px;
 }
 
@@ -532,8 +532,8 @@ $muted: rgba(0, 0, 0, 0.5);
 
   &:hover { background: rgba(0, 0, 0, 0.04); }
   &.is-selected {
-    border-color: $amber;
-    background: rgba(212, 134, 10, 0.08);
+    border-color: var(--accent);
+    background: var(--accent-a06);
   }
 }
 .RichmenuComposer__layer-icon {
@@ -602,7 +602,7 @@ $muted: rgba(0, 0, 0, 0.5);
 
 .RichmenuComposer__selection-box {
   position: absolute;
-  border: 1.5px dashed $amber;
+  border: 1.5px dashed var(--accent);
   pointer-events: none;
   z-index: 5;
 }
@@ -651,7 +651,7 @@ $muted: rgba(0, 0, 0, 0.5);
 
     &:focus {
       outline: none;
-      border-color: $amber;
+      border-color: var(--accent);
     }
   }
   input[type='color'] {
@@ -679,8 +679,8 @@ $muted: rgba(0, 0, 0, 0.5);
     font-size: 10px;
   }
   &.is-active {
-    background: $amber;
-    border-color: $amber;
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
   }
   &.is-toggle {
@@ -690,8 +690,8 @@ $muted: rgba(0, 0, 0, 0.5);
     &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
   }
   &.is-approve {
-    background: $amber;
-    border-color: $amber;
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
     padding: 7px 16px;
     font-size: 12px;

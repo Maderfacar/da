@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // 歷史訂單頁（原 /orders + /profile 合併）
 // Section 順序：使用者頭像卡 → 我的旅程 → 我的訂單（日期篩選 + 列表）→ 客服資訊
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
@@ -17,7 +18,7 @@ const STATUS_COLOR: Record<string, string> = {
   pending:    '#b45309',  // amber-700（cream 底可讀）
   confirmed:  '#1B4F8A',  // 與 dropoff dot 同色
   in_transit: '#15803d',  // green-700
-  completed:  '#6B6560',  // var(--da-gray)
+  completed:  DESIGN_COLORS.inkSoft,  // 次要文字
   cancelled:  '#dc2626',
 };
 
@@ -94,7 +95,7 @@ onUnmounted(() => {
 const FormatDate = (iso: string) => $dayjs(iso).format('MM/DD HH:mm');
 const FormatFare = (fare: number) => `NT$ ${fare.toLocaleString()}`;
 const StatusText = (status: string) => t(`status.${status}`, status);
-const StatusColor = (status: string) => STATUS_COLOR[status] ?? '#6B6560';
+const StatusColor = (status: string) => STATUS_COLOR[status] ?? DESIGN_COLORS.inkSoft;
 const OrderTypeLabel = (orderType: string) => t(`orderType.${orderType}`, orderType);
 const VehicleLabel = (vehicleType: string) => t(`vehicle.${vehicleType}`, vehicleType);
 const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
@@ -258,7 +259,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 .PageOrders__spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -316,9 +317,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
 
   &:hover {
-    background: rgba(250, 248, 244, 0.92);
-    border-color: rgba(212, 134, 10, 0.32);
-    box-shadow: 0 6px 24px rgba(26, 24, 20, 0.08);
+    background: var(--surface-a88);
+    border-color: var(--accent-a30);
+    box-shadow: 0 6px 24px var(--ink-a06);
   }
 
   &:active { transform: scale(0.998); }
@@ -360,7 +361,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   letter-spacing: 0.1em;
   color: var(--da-amber);
   background: var(--da-amber-pale);
-  border: 1px solid rgba(212, 134, 10, 0.30);
+  border: 1px solid var(--accent-a30);
   border-radius: 100px;
   padding: 2px 10px;
 }

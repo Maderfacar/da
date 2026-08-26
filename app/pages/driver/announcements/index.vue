@@ -107,17 +107,15 @@ const FormatTime = (iso: string | null): string => {
 </template>
 
 <style lang="scss" scoped>
-$bg:      #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border:  rgba(255, 255, 255, 0.08);
-$amber:   #d4860a;
 $muted:   rgba(255, 255, 255, 0.55);
 $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncements {
   padding: 80px 20px 32px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -128,12 +126,12 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: $amber;
+  color: var(--accent);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
-  &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
 }
 
 .PageDriverAnnouncements__headerTitle {
@@ -152,8 +150,8 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
 .PageDriverAnnouncements__spinner {
   width: 32px; height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
-  border-top-color: $amber;
+  border: 2px solid var(--accent-a20);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -192,12 +190,12 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
   &:hover {
     background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(212, 134, 10, 0.32);
+    border-color: var(--accent-a30);
   }
 
   &.is-unread {
-    background: rgba($amber, 0.08);
-    border-color: rgba(212, 134, 10, 0.35);
+    background: var(--accent-a06);
+    border-color: var(--accent-a30);
   }
 }
 
@@ -213,7 +211,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   width: 80px;
   height: 60px;
   border-radius: 10px;
-  background: rgba($amber, 0.12);
+  background: var(--accent-a12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,8 +281,8 @@ $muted-2: rgba(255, 255, 255, 0.35);
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.07);
-    color: $amber;
-    border-color: rgba(212, 134, 10, 0.32);
+    color: var(--accent);
+    border-color: var(--accent-a30);
   }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

@@ -160,7 +160,6 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $border: rgba(255, 255, 255, 0.08);
 $muted: rgba(255, 255, 255, 0.5);
 
@@ -191,8 +190,8 @@ $muted: rgba(255, 255, 255, 0.5);
 
   &:hover { color: #fff; }
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -213,7 +212,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__meta-version {
-  color: $amber;
+  color: var(--accent);
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -246,7 +245,7 @@ $muted: rgba(255, 255, 255, 0.5);
   font-family: var(--ff-ui);
   font-size: 14px;
   outline: none;
-  &:focus { border-color: rgba(212, 134, 10, 0.55); }
+  &:focus { border-color: var(--accent-a60); }
   &::placeholder { color: rgba(255, 255, 255, 0.3); }
 }
 
@@ -285,7 +284,7 @@ $muted: rgba(255, 255, 255, 0.5);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
   &.is-approve {
-    background: $amber;
+    background: var(--accent);
     color: white;
     &:hover:not(:disabled) { background: #b8730a; }
   }
@@ -298,7 +297,7 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsLegalDocuments__public-link {
-  color: $amber;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
   &:hover { text-decoration: underline; }

@@ -308,17 +308,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
 $danger: #c0392b;
 $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminAnnouncements {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
 }
 
@@ -339,13 +337,13 @@ $muted: rgba(255, 255, 255, 0.4);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: $amber;
+  color: var(--accent);
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 
-  &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+  &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
 }
 
 .PageAdminAnnouncements__title {
@@ -358,9 +356,9 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminAnnouncements__createBtn {
   padding: 10px 18px;
   border-radius: 100px;
-  border: 1px solid rgba($amber, 0.5);
-  background: rgba($amber, 0.12);
-  color: $amber;
+  border: 1px solid var(--accent-a50);
+  background: var(--accent-a12);
+  color: var(--accent);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
@@ -368,7 +366,7 @@ $muted: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: all 0.15s;
 
-  &:hover { background: rgba($amber, 0.2); }
+  &:hover { background: var(--accent-a20); }
 }
 
 // ── Tabs ───────────────────────────────────────────────────
@@ -398,8 +396,8 @@ $muted: rgba(255, 255, 255, 0.4);
 
   &:hover { color: #fff; }
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -463,9 +461,9 @@ $muted: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.08em;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent);
 }
 
 .PageAdminAnnouncements__cardBody {
@@ -524,10 +522,10 @@ $muted: rgba(255, 255, 255, 0.4);
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &--primary {
-    background: rgba($amber, 0.12);
-    border-color: rgba($amber, 0.45);
-    color: $amber;
-    &:hover:not(:disabled) { background: rgba($amber, 0.2); }
+    background: var(--accent-a12);
+    border-color: var(--accent-a40);
+    color: var(--accent);
+    &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 
   &--danger {

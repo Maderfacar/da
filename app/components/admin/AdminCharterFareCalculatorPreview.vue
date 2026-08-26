@@ -396,13 +396,12 @@ const estimatedEndDisplay = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(255, 255, 255, 0.4);
 $border: rgba(255, 255, 255, 0.08);
 
 .AdminCharterFareCalculatorPreview {
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  border: 1px solid var(--accent-a20);
   border-radius: 12px;
   padding: 16px;
   margin: 12px 16px 16px;
@@ -421,9 +420,9 @@ $border: rgba(255, 255, 255, 0.08);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: $amber;
-  background: rgba($amber, 0.1);
-  border: 1px solid rgba($amber, 0.25);
+  color: var(--accent);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
   border-radius: 100px;
   padding: 2px 8px;
 }
@@ -536,7 +535,7 @@ $border: rgba(255, 255, 255, 0.08);
   user-select: none;
 
   input[type="checkbox"] {
-    accent-color: $amber;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 }
@@ -567,9 +566,9 @@ $border: rgba(255, 255, 255, 0.08);
   transition: all 0.15s;
 
   &.is-primary {
-    background: $amber;
+    background: var(--accent);
     color: #fff;
-    &:hover { background: darken($amber, 6%); }
+    &:hover { background: var(--accent-deep); }
   }
 
   &.is-secondary {
@@ -593,7 +592,7 @@ $border: rgba(255, 255, 255, 0.08);
 
 .AdminCharterFareCalculatorPreview__result {
   margin-top: 14px;
-  border: 1px solid rgba($amber, 0.3);
+  border: 1px solid var(--accent-a30);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -604,10 +603,10 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $amber;
-  background: rgba($amber, 0.08);
+  color: var(--accent);
+  background: var(--accent-a06);
   padding: 8px 14px;
-  border-bottom: 1px solid rgba($amber, 0.2);
+  border-bottom: 1px solid var(--accent-a20);
 }
 
 .AdminCharterFareCalculatorPreview__days {
@@ -656,8 +655,8 @@ $border: rgba(255, 255, 255, 0.08);
   }
 
   &.is-final {
-    background: rgba($amber, 0.12);
-    border-top: 1px solid rgba($amber, 0.3);
+    background: var(--accent-a12);
+    border-top: 1px solid var(--accent-a30);
   }
 }
 
@@ -676,7 +675,7 @@ $border: rgba(255, 255, 255, 0.08);
 
 .AdminCharterFareCalculatorPreview__line.is-final .AdminCharterFareCalculatorPreview__line-key,
 .AdminCharterFareCalculatorPreview__line.is-final .AdminCharterFareCalculatorPreview__line-val {
-  color: #f5c842;
+  color: var(--da-stripe-yellow);
   font-size: 15px;
 }
 </style>

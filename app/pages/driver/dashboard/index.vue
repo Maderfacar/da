@@ -159,7 +159,6 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .PageDriverDashboard {
   padding: 80px 20px 32px;
@@ -242,12 +241,12 @@ $amber: #d4860a;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.3em;
-    color: $amber;
+    color: var(--accent);
     display: flex;
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    &::before { content: ''; width: 20px; height: 1.5px; background: $amber; }
+    &::before { content: ''; width: 20px; height: 1.5px; background: var(--accent); }
   }
 
   &-title {
@@ -262,7 +261,7 @@ $amber: #d4860a;
     font-family: var(--ff-label);
     font-size: 18px;
     font-weight: 700;
-    color: $amber;
+    color: var(--accent);
     margin-top: 4px;
   }
 
@@ -291,7 +290,7 @@ $amber: #d4860a;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
 
   &.is-online { background: #50c878; box-shadow: 0 0 0 3px rgba(80, 200, 120, 0.18); }
-  &.is-busy   { background: #d4860a; box-shadow: 0 0 0 3px rgba(212, 134, 10, 0.18); }
+  &.is-busy   { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-a20); }
   &.is-offline { background: rgba(255, 255, 255, 0.25); }
 }
 
@@ -310,9 +309,9 @@ $amber: #d4860a;
   letter-spacing: 0.1em;
   padding: 6px 16px;
   border-radius: 100px;
-  border: 1.5px solid rgba(212, 134, 10, 0.6);
-  background: rgba(212, 134, 10, 0.1);
-  color: #f5c842;
+  border: 1.5px solid var(--accent-a60);
+  background: var(--accent-a12);
+  color: var(--da-stripe-yellow);
   cursor: pointer;
   transition: opacity 0.2s;
 
@@ -387,8 +386,8 @@ $amber: #d4860a;
   &:active { transform: scale(0.97); }
 
   &.is-primary {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.08);
+    border-color: var(--accent-a50);
+    background: var(--accent-a06);
   }
 
   &-icon { font-size: 32px; }

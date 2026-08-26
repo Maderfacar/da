@@ -160,7 +160,7 @@ onUnmounted(() => {
 </script>
 
 <template lang="pug">
-.LayoutDriver
+.LayoutDriver(data-surface='dark')
   ClientOnly
     UiToast
 
@@ -280,7 +280,7 @@ onUnmounted(() => {
 .LayoutDriver__loading-spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -310,7 +310,7 @@ onUnmounted(() => {
   max-width: 360px;
   width: 100%;
   background: #1a1a2e;
-  border: 1px solid rgba(212, 134, 10, 0.3);
+  border: 1px solid var(--accent-a30);
   border-radius: 18px;
   padding: 28px 24px;
   text-align: center;
@@ -380,7 +380,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   background: var(--da-dark);
-  border-bottom: 1px solid rgba(212, 134, 10, 0.2);
+  border-bottom: 1px solid var(--accent-a20);
 }
 
 .LayoutDriver__hamburger {
@@ -520,7 +520,7 @@ onUnmounted(() => {
   &:hover { background: rgba(255, 255, 255, 0.06); }
 
   &.is-active {
-    background: rgba(212, 134, 10, 0.15);
+    background: var(--accent-a12);
     border-left-color: var(--da-amber);
   }
 }
@@ -566,7 +566,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 250;
-  background: rgba(26, 24, 20, 0.5);
+  background: var(--ink-a50);
   backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;

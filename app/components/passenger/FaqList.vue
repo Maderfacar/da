@@ -55,7 +55,7 @@ const ClickToggle = (key: string) => {
 }
 
 .PassengerFaqList__item.is-open {
-  border-color: rgba(212, 134, 10, 0.4);
+  border-color: var(--accent-a40);
 }
 
 .PassengerFaqList__q {

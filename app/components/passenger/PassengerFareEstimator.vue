@@ -527,7 +527,7 @@ const mountainHit = computed<boolean>(() => {
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 36px;
   letter-spacing: 0.04em;
-  color: var(--da-amber-light, #d4860a);
+  color: var(--da-amber-light);
 }
 
 .PassengerFareEstimator__lines {
@@ -569,8 +569,8 @@ const mountainHit = computed<boolean>(() => {
   margin-top: 18px;
   padding: 16px 18px;
   border-radius: 12px;
-  background: rgba(212, 134, 10, 0.08);
-  border: 1px solid rgba(212, 134, 10, 0.22);
+  background: var(--accent-a06);
+  border: 1px solid var(--accent-a20);
 }
 
 .PassengerFareEstimator__notes-title {

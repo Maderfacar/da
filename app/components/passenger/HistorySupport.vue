@@ -94,7 +94,7 @@ section.PassengerHistorySupport
 
   &:hover {
     background: rgba(255, 255, 255, 0.8);
-    border-color: rgba(212, 134, 10, 0.35);
+    border-color: var(--accent-a30);
   }
 }
 

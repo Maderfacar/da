@@ -110,7 +110,6 @@ const ClickWithdraw = (e: Event) => {
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 
 .DriverDispatchedOrderCard {
   padding: 16px;
@@ -122,12 +121,12 @@ $amber: #d4860a;
 
   &:hover {
     background: rgba(255, 255, 255, 0.07);
-    border-color: rgba($amber, 0.3);
+    border-color: var(--accent-a30);
   }
 
   &.is-bid {
-    border-color: rgba($amber, 0.5);
-    background: rgba($amber, 0.06);
+    border-color: var(--accent-a50);
+    background: var(--accent-a06);
   }
 
   &.is-withdrawn {
@@ -148,9 +147,9 @@ $amber: #d4860a;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 100px;
-  background: rgba($amber, 0.12);
-  border: 1px solid rgba($amber, 0.25);
-  color: $amber;
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
+  color: var(--accent);
 }
 
 .DriverDispatchedOrderCard__id {
@@ -231,7 +230,7 @@ $amber: #d4860a;
 }
 
 .DriverDispatchedOrderCard__route-point.is-pickup .DriverDispatchedOrderCard__route-dot {
-  background: $amber;
+  background: var(--accent);
 }
 .DriverDispatchedOrderCard__route-point.is-dropoff .DriverDispatchedOrderCard__route-dot {
   background: rgba(80, 200, 120, 0.9);
@@ -314,13 +313,13 @@ $amber: #d4860a;
   letter-spacing: 0.06em;
   padding: 7px 14px;
   border-radius: 100px;
-  border: 1px solid rgba($amber, 0.5);
-  background: rgba($amber, 0.12);
-  color: $amber;
+  border: 1px solid var(--accent-a50);
+  background: var(--accent-a12);
+  color: var(--accent);
   cursor: pointer;
   transition: all 0.15s;
 
-  &:hover:not(:disabled) { background: rgba($amber, 0.2); }
+  &:hover:not(:disabled) { background: var(--accent-a20); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-withdraw {

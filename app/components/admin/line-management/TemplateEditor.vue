@@ -679,7 +679,6 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 </template>
 
 <style lang="scss" scoped>
-$amber: #d4860a;
 $muted: rgba(0, 0, 0, 0.5);
 $border: rgba(0, 0, 0, 0.1);
 
@@ -768,7 +767,7 @@ $border: rgba(0, 0, 0, 0.1);
   color: rgba(0, 0, 0, 0.55);
   margin: 4px 0 0;
   padding-left: 8px;
-  border-left: 2px solid rgba(212, 134, 10, 0.3);
+  border-left: 2px solid var(--accent-a30);
 }
 
 .TemplateEditor__last-edit {
@@ -805,8 +804,8 @@ $border: rgba(0, 0, 0, 0.1);
   &:hover { color: rgba(0, 0, 0, 0.75); }
 
   &.is-active {
-    color: $amber;
-    border-bottom-color: $amber;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
   &.is-zh_tw.is-active {
     color: #b91c1c;
@@ -833,12 +832,12 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__lang-hint {
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: rgba(212, 134, 10, 0.06);
-  border: 1px dashed rgba(212, 134, 10, 0.3);
+  background: var(--accent-a06);
+  border: 1px dashed var(--accent-a30);
   border-radius: 6px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $amber;
+  color: var(--accent);
   line-height: 1.6;
 }
 
@@ -879,7 +878,7 @@ $border: rgba(0, 0, 0, 0.1);
 
     &:focus {
       outline: none;
-      border-color: $amber;
+      border-color: var(--accent);
     }
   }
   textarea {
@@ -914,8 +913,8 @@ $border: rgba(0, 0, 0, 0.1);
   margin-top: 6px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $amber;
-  background: rgba(212, 134, 10, 0.08);
+  color: var(--accent);
+  background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: 6px;
   line-height: 1.5;
@@ -931,21 +930,21 @@ $border: rgba(0, 0, 0, 0.1);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(212, 134, 10, 0.3);
-  background: rgba(212, 134, 10, 0.08);
+  border: 1px solid var(--accent-a30);
+  background: var(--accent-a06);
   border-radius: 100px;
   padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(212, 134, 10, 0.16);
+    background: var(--accent-a12);
   }
 
   code {
     font-family: var(--ff-mono);
     font-size: 11px;
-    color: $amber;
+    color: var(--accent);
   }
   .label {
     font-family: var(--ff-ui);
@@ -981,7 +980,7 @@ $border: rgba(0, 0, 0, 0.1);
     background: white;
 
     &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
-    &.is-focused { box-shadow: 0 0 0 1px $amber; }
+    &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
   }
 }
 
@@ -1040,8 +1039,8 @@ $border: rgba(0, 0, 0, 0.1);
     }
   }
   &.is-approve {
-    background: $amber;
-    border-color: $amber;
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
     &:hover:not(:disabled) {
       background: #b8730a;
@@ -1073,7 +1072,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: $amber;
+  color: var(--accent);
 }
 
 .TemplateEditor__bubble {
@@ -1120,7 +1119,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 .TemplateEditor__bubble-cta {
   width: 100%;
-  background: $amber;
+  background: var(--accent);
   border: none;
   color: white;
   font-family: var(--ff-ui);
@@ -1144,7 +1143,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__text-bubble-content {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: #1a1814;
+  color: var(--ink);
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1155,8 +1154,8 @@ $border: rgba(0, 0, 0, 0.1);
   flex-direction: column;
   gap: 4px;
   padding: 10px 12px;
-  background: rgba(212, 134, 10, 0.06);
-  border: 1px dashed rgba(212, 134, 10, 0.3);
+  background: var(--accent-a06);
+  border: 1px dashed var(--accent-a30);
   border-radius: 8px;
 }
 
@@ -1165,7 +1164,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: $amber;
+  color: var(--accent);
   margin-bottom: 2px;
 }
 
@@ -1179,8 +1178,8 @@ $border: rgba(0, 0, 0, 0.1);
 
   code {
     font-family: var(--ff-mono);
-    color: $amber;
-    background: rgba(212, 134, 10, 0.1);
+    color: var(--accent);
+    background: var(--accent-a12);
     padding: 1px 6px;
     border-radius: 4px;
   }
@@ -1195,8 +1194,8 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__preview-note {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $amber;
-  background: rgba(212, 134, 10, 0.08);
+  color: var(--accent);
+  background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: 6px;
 }

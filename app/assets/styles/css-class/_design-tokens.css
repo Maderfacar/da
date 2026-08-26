@@ -12,7 +12,29 @@
      新元件只能從這裡挑值，禁止 hard-coded 色碼 / 字體名 / 圓角 / 陰影 / z-index。
    ========================================================================== */
 
-:root {
+/* ==========================================================================
+   ⚠ 這一組選擇器是刻意的，不是複製貼上失誤。
+
+   CSS custom property 的**計算值是「var() 代入之後」的 token stream**，然後被子孫繼承。
+   也就是說 `--accent: var(--da-amber)` 寫在 :root，就在 :root 當場定案成 #7E6330；
+   之後子孫元素上的 --da-amber 再怎麼覆寫，都追不回那個已經定案的 --accent。
+
+   實測（2026-08-27）：在子孫上把 --da-amber 覆寫成聖誕深酒紅 #7A2B2B，
+   該子孫讀到的 --accent 仍是 #7e6330 —— 別名沒跟著換。
+   階段 0 的 design.md D1 有寫「別名必須指向 --da-* 否則換膚會切一半」，
+   防範方向是對的，但只做到「值寫成 var(--da-*)」還不夠：**宣告的位置也要跟著覆寫的位置**。
+   階段 0 當時沒出事，是因為別名幾乎沒人用（940 處都是直接 var(--da-*)）；
+   階段 1 把 750 處改用別名之後，這一條就從理論問題變成「季節主題在乘客端會失效」。
+
+   解法：凡是會覆寫 --da-* 的作用域，都要把整層別名與疊色階梯重新宣告一次。
+     • [data-da-theme]      —— 主題引擎注入處（乘客 layout 根節點，見 shared/site-theme.ts）
+     • [data-surface='dark'] —— 深色面（見下方說明）
+
+   新增會覆寫 --da-* 的作用域時，**必須同步加進這三處選擇器**（含下方 @supports 那份）。
+   ========================================================================== */
+:root,
+[data-da-theme],
+[data-surface='dark'] {
   /* ======================================================================
      A. 語意色別名 —— 解析路徑：語意名 → --da-* → 主題引擎可覆寫
      ====================================================================== */
@@ -40,6 +62,61 @@
      這一項與 good / wait / note / stop 一起歸「語意色三件套」階段處理，不在階段 0。
      它是唯一寫死色值的別名 —— 因為主題引擎白名單只認 --da-*，錯誤色不該隨換季飄。 */
   --danger: #EE5151;
+
+  /* ======================================================================
+     A2. 疊色階梯 —— 半透明的主色／墨色／表面疊層
+     階段 1（色彩收尾）新增。收斂前現況：全站 52 種各自為政的 alpha
+     （accent 27 / ink 13 / surface 12），另有 203 處 `rgba($amber, α)` 走本地 SCSS 變數。
+
+     階梯取法：先看實測分布（0.12×45 / 0.2×44 / 0.5×34 / 0.4×34 / 0.1×32 / 0.18×31 /
+     0.3×30 / 0.08×27 / 0.25×26 / 0.35×22 …），再定成「低區細、高區十進」的九階，
+     使**任何既有值就近吸附的偏移都 ≤ 0.05**。alpha 差 0.05 在疊色上肉眼不可辨；
+     再粗一階（例如砍掉 0.4 或 0.6）就會出現 0.08–0.1 的偏移，那是看得出來的。
+     α ≥ 0.95 不進階梯，直接用實色 token。
+
+     ⚠ 後備值與 @supports 的寫法不可改成「同名重複宣告」。
+        custom property 在 parse 期幾乎不驗證值，`--x: color-mix(…)` 在不支援的瀏覽器
+        會被原樣存下，直到 var(--x) 代入時才變成 invalid at computed-value time ——
+        那時屬性退回的是「初始值」（border-color 變 currentColor），而不是前一條宣告。
+        亦即同名重複宣告不是後備，是破圖。必須用 @supports 才安全。
+
+     ⚠ 後備值的三通道是本檔唯一容許的字面色碼，
+        它們 MUST 等於 --da-amber / --da-dark / --da-off-white 的當前值，由守衛比對。
+     ====================================================================== */
+
+  /* 主色疊層 —— 邊框、光暈、hover 底、選中態 */
+  --accent-a06: rgba(126, 99, 48, 0.06);
+  --accent-a12: rgba(126, 99, 48, 0.12);
+  --accent-a20: rgba(126, 99, 48, 0.2);
+  --accent-a30: rgba(126, 99, 48, 0.3);
+  --accent-a40: rgba(126, 99, 48, 0.4);
+  --accent-a50: rgba(126, 99, 48, 0.5);
+  --accent-a60: rgba(126, 99, 48, 0.6);
+  --accent-a70: rgba(126, 99, 48, 0.7);
+  --accent-a90: rgba(126, 99, 48, 0.9);
+
+  /* 墨色疊層 —— 陰影、遮罩、深色分隔 */
+  --ink-a06: rgba(26, 25, 23, 0.06);
+  --ink-a12: rgba(26, 25, 23, 0.12);
+  --ink-a20: rgba(26, 25, 23, 0.2);
+  --ink-a30: rgba(26, 25, 23, 0.3);
+  --ink-a40: rgba(26, 25, 23, 0.4);
+  --ink-a50: rgba(26, 25, 23, 0.5);
+  --ink-a60: rgba(26, 25, 23, 0.6);
+  --ink-a70: rgba(26, 25, 23, 0.7);
+  --ink-a90: rgba(26, 25, 23, 0.9);
+
+  /* 表面疊層 —— 高透明區間，玻璃面與浮層底 */
+  --surface-a40: rgba(245, 243, 238, 0.4);
+  --surface-a50: rgba(245, 243, 238, 0.5);
+  --surface-a60: rgba(245, 243, 238, 0.6);
+  --surface-a72: rgba(245, 243, 238, 0.72);
+  --surface-a82: rgba(245, 243, 238, 0.82);
+  --surface-a88: rgba(245, 243, 238, 0.88);
+  --surface-a96: rgba(245, 243, 238, 0.96);
+
+  /* 主色的深階 —— 實心主色按鈕的 hover。取代散在 9 處的 darken($amber, 6~8%) */
+  --accent-deep: #725A2D;
 
   /* ======================================================================
      B. 尺度 token —— W0a 只定義，不替換既有字面值
@@ -111,6 +188,66 @@
      這裡刻意**只放系統字**：實測留著 'JetBrains Mono' 會多抓 12 個 @font-face，
      為了幾個 admin uid 欄位下載一整套字不划算。 */
   --ff-mono:    ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ==========================================================================
+   疊色階梯的漸進增強 —— 支援 color-mix 的瀏覽器改由 token 推導，
+   於是節日主題把 --da-amber 換成深酒紅時，400 多處主色疊層一併跟著轉，
+   而不是按鈕變酒紅、周圍光暈還是古銅。
+   門檻：Chrome 111 / Safari 16.2 / Firefox 113。低於此者留在上面的 rgba 後備，
+   行為等同今天（固定色調），只有更好沒有更差。
+   ========================================================================== */
+@supports (color: color-mix(in srgb, red 50%, transparent)) {
+  :root,
+  [data-da-theme],
+  [data-surface='dark'] {
+    --accent-a06: color-mix(in srgb, var(--accent) 6%, transparent);
+    --accent-a12: color-mix(in srgb, var(--accent) 12%, transparent);
+    --accent-a20: color-mix(in srgb, var(--accent) 20%, transparent);
+    --accent-a30: color-mix(in srgb, var(--accent) 30%, transparent);
+    --accent-a40: color-mix(in srgb, var(--accent) 40%, transparent);
+    --accent-a50: color-mix(in srgb, var(--accent) 50%, transparent);
+    --accent-a60: color-mix(in srgb, var(--accent) 60%, transparent);
+    --accent-a70: color-mix(in srgb, var(--accent) 70%, transparent);
+    --accent-a90: color-mix(in srgb, var(--accent) 90%, transparent);
+
+    --ink-a06: color-mix(in srgb, var(--ink) 6%, transparent);
+    --ink-a12: color-mix(in srgb, var(--ink) 12%, transparent);
+    --ink-a20: color-mix(in srgb, var(--ink) 20%, transparent);
+    --ink-a30: color-mix(in srgb, var(--ink) 30%, transparent);
+    --ink-a40: color-mix(in srgb, var(--ink) 40%, transparent);
+    --ink-a50: color-mix(in srgb, var(--ink) 50%, transparent);
+    --ink-a60: color-mix(in srgb, var(--ink) 60%, transparent);
+    --ink-a70: color-mix(in srgb, var(--ink) 70%, transparent);
+    --ink-a90: color-mix(in srgb, var(--ink) 90%, transparent);
+
+    --surface-a40: color-mix(in srgb, var(--surface-raised) 40%, transparent);
+    --surface-a50: color-mix(in srgb, var(--surface-raised) 50%, transparent);
+    --surface-a60: color-mix(in srgb, var(--surface-raised) 60%, transparent);
+    --surface-a72: color-mix(in srgb, var(--surface-raised) 72%, transparent);
+    --surface-a82: color-mix(in srgb, var(--surface-raised) 82%, transparent);
+    --surface-a88: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+    --surface-a96: color-mix(in srgb, var(--surface-raised) 96%, transparent);
+
+    --accent-deep: color-mix(in srgb, var(--accent) 88%, var(--ink));
+  }
+}
+
+/* ==========================================================================
+   深色面 —— 標在深底容器的根節點（admin layout / driver layout / 深色彈窗 / 深色抽屜）。
+
+   為什麼需要它：古銅 --da-amber #7E6330 是配著淺底定的（瓷白 5.10:1 過 AA），
+   但放到縞黑上只有 **3.11:1**，連非文字的 3.0 都只是剛過。
+   深色面該用的是亮銅 --da-amber-light #C9A961（於縞黑 **7.81:1**）——
+   `_theme-colors.css` 對這兩個 token 的註解本來就是這樣寫的（「深底上使用」）。
+
+   做法是在深色作用域把 --da-amber 本身換成亮銅，而不是叫每個元件去改寫成 --accent-lit。
+   好處：① 元件端一律寫 var(--accent)，不必知道自己在什麼底色上
+        ② 連既有那些直接寫 var(--da-amber) 的舊程式碼也一起救到
+        ③ 疊色階梯（--accent-a*）因為在同一個作用域重新宣告，會自動跟著推導成亮銅的疊色
+   ========================================================================== */
+[data-surface='dark'] {
+  --da-amber: var(--da-amber-light);
 }
 
 /* ==========================================================================

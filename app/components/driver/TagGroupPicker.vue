@@ -122,13 +122,13 @@ const ClickChip = (id: string) => {
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
-    border-color: rgba(212, 134, 10, 0.5);
+    border-color: var(--accent-a50);
     color: #fff;
   }
 
   &.is-selected {
-    border-color: rgba(212, 134, 10, 0.7);
-    background: rgba(212, 134, 10, 0.18);
+    border-color: var(--accent-a70);
+    background: var(--accent-a20);
     color: #f5c518;
   }
 

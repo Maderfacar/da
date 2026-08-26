@@ -234,7 +234,7 @@ const ClickSupport = () => {
   color: var(--da-cream);
   border-radius: 20px;
   padding: 28px 24px;
-  border: 1px solid rgba(212, 134, 10, 0.18);
+  border: 1px solid var(--accent-a20);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
   max-width: 640px;
 }
@@ -267,7 +267,7 @@ const ClickSupport = () => {
 .PageFaq__trust-list li {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: rgba(250, 248, 244, 0.88);
+  color: var(--surface-a88);
   line-height: 1.75;
   padding-left: 24px;
   position: relative;
@@ -350,7 +350,7 @@ const ClickSupport = () => {
 .PageFaq__contact-desc {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(250, 248, 244, 0.6);
+  color: var(--surface-a60);
   margin: 8px 0 20px;
 }
 

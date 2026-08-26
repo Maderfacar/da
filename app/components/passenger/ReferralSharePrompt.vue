@@ -44,11 +44,11 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
   align-items: center;
   gap: 12px;
   background: var(--da-dark);
-  border: 1px solid rgba(212, 134, 10, 0.35);
+  border: 1px solid var(--accent-a30);
   border-radius: 18px;
   padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 8px 32px rgba(26, 24, 20, 0.18);
+  box-shadow: 0 8px 32px var(--ink-a20);
 }
 
 .PassengerReferralSharePrompt__icon {
@@ -73,7 +73,7 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
   font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.5;
-  color: rgba(245, 242, 236, 0.7);
+  color: var(--surface-a72);
   margin-top: 3px;
 }
 

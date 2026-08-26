@@ -95,22 +95,22 @@ const ClickPassenger = () => {
 .CommonHeaderUser__admin-btn {
   background: rgba(238, 81, 81, 0.18);
   color: var(--da-amber);
-  border: 1px solid rgba(212, 134, 10, 0.35);
+  border: 1px solid var(--accent-a30);
   &:hover { background: rgba(238, 81, 81, 0.28); }
 }
 
 .CommonHeaderUser__passenger-btn {
-  background: rgba(212, 134, 10, 0.14);
+  background: var(--accent-a12);
   color: var(--da-cream);
-  border: 1px solid rgba(212, 134, 10, 0.4);
-  &:hover { background: rgba(212, 134, 10, 0.24); }
+  border: 1px solid var(--accent-a40);
+  &:hover { background: var(--accent-a20); }
 }
 
 // ── 頭像（純顯示，不可點擊） ─────────────────────────────
 .CommonHeaderUser__avatar-wrap {
   width: clamp(28px, 8vw, 36px);
   height: clamp(28px, 8vw, 36px);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  border: 1px solid var(--accent-a20);
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
@@ -130,7 +130,7 @@ const ClickPassenger = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(212, 134, 10, 0.18);
+  background: var(--accent-a20);
   color: var(--da-amber);
   font-family: var(--ff-label);
   font-size: 14px;

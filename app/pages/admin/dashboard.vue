@@ -266,8 +266,8 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--da-amber);
-  background: rgba(212, 134, 10, 0.12);
-  border: 1px solid rgba(212, 134, 10, 0.3);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a30);
   padding: 2px 8px;
   border-radius: 100px;
 }
@@ -289,8 +289,8 @@ onUnmounted(() => {
   gap: 6px;
 
   &.is-accent {
-    border-color: rgba(212, 134, 10, 0.4);
-    background: rgba(212, 134, 10, 0.06);
+    border-color: var(--accent-a40);
+    background: var(--accent-a06);
   }
 }
 
@@ -475,7 +475,7 @@ onUnmounted(() => {
   border-radius: 100px;
 
   &.is-online  { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
-  &.is-busy    { background: rgba(212, 134, 10, 0.12); color: var(--da-amber); border: 1px solid rgba(212, 134, 10, 0.3); }
+  &.is-busy    { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }
   &.is-offline { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
 }
 

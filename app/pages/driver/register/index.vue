@@ -434,7 +434,7 @@ onUnmounted(() => {
   max-width: 480px;
   background: rgba(40, 37, 31, 0.85);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 134, 10, 0.2);
+  border: 1px solid var(--accent-a20);
   border-radius: 20px;
   padding: 32px 24px 28px;
   display: flex;
@@ -466,7 +466,7 @@ onUnmounted(() => {
 .PageDriverRegister__divider {
   width: 100%;
   height: 1px;
-  background: rgba(212, 134, 10, 0.15);
+  background: var(--accent-a12);
   margin: 20px 0;
 }
 
@@ -489,7 +489,7 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 2px solid rgba(212, 134, 10, 0.4);
+  border: 2px solid var(--accent-a40);
   object-fit: cover;
 }
 
@@ -534,7 +534,7 @@ onUnmounted(() => {
   color: var(--da-amber);
   margin: 16px 0 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(212, 134, 10, 0.2);
+  border-bottom: 1px solid var(--accent-a20);
 }
 
 .PageDriverRegister__section-title:first-of-type { margin-top: 0; }
@@ -574,7 +574,7 @@ onUnmounted(() => {
   &::placeholder { color: rgba(255, 255, 255, 0.3); }
   &:focus {
     outline: none;
-    border-color: rgba(212, 134, 10, 0.5);
+    border-color: var(--accent-a50);
     background: rgba(255, 255, 255, 0.08);
   }
 }
@@ -604,8 +604,8 @@ onUnmounted(() => {
   input { display: none; }
 
   &.is-active {
-    border-color: rgba(212, 134, 10, 0.5);
-    background: rgba(212, 134, 10, 0.12);
+    border-color: var(--accent-a50);
+    background: var(--accent-a12);
     color: var(--da-amber);
   }
 
@@ -749,8 +749,8 @@ onUnmounted(() => {
   width: 100%;
   margin-top: 8px;
   padding: 11px 8px;
-  background: rgba(212, 134, 10, 0.12);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
   border-radius: 10px;
   font-family: var(--ff-label);
   font-size: 13px;
@@ -760,7 +760,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: background 0.2s, transform 0.1s;
 
-  &:hover { background: rgba(212, 134, 10, 0.22); }
+  &:hover { background: var(--accent-a20); }
   &:active { transform: scale(0.98); }
 }
 

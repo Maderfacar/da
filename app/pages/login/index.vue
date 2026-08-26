@@ -134,7 +134,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   max-width: 360px;
   background: rgba(40, 37, 31, 0.8);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 134, 10, 0.2);
+  border: 1px solid var(--accent-a20);
   border-radius: 20px;
   padding: 36px 28px 32px;
   display: flex;
@@ -167,7 +167,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 .PageLogin__divider {
   width: 100%;
   height: 1px;
-  background: rgba(212, 134, 10, 0.15);
+  background: var(--accent-a12);
   margin: 28px 0;
 }
 
@@ -220,8 +220,8 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 .PageLogin__test-btn {
   flex: 1;
   padding: 10px 8px;
-  background: rgba(212, 134, 10, 0.12);
-  border: 1px solid rgba(212, 134, 10, 0.25);
+  background: var(--accent-a12);
+  border: 1px solid var(--accent-a20);
   border-radius: 10px;
   font-family: var(--ff-label);
   font-size: 13px;
@@ -231,7 +231,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   cursor: pointer;
   transition: background 0.2s;
 
-  &:hover { background: rgba(212, 134, 10, 0.22); }
+  &:hover { background: var(--accent-a20); }
 }
 
 .PageLogin__copy {

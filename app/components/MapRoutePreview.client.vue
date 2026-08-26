@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 import type { GooglePlace } from '~/protocol/fetch-api/api/maps';
 
 interface Props {
@@ -187,7 +188,7 @@ function _PlaceTempPin(lat: number, lng: number) {
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 8,
-      fillColor: '#D4860A',
+      fillColor: DESIGN_COLORS.accent,
       fillOpacity: 0.8,
       strokeColor: '#fff',
       strokeWeight: 2,
@@ -232,7 +233,7 @@ function _UpdateOriginMarker() {
     position: { lat: props.origin.lat, lng: props.origin.lng },
     map: gmMap,
     label: { text: 'A', color: '#fff', fontSize: '12px', fontWeight: '700' },
-    icon: { ..._markerIcon('#D4860A', 'A') },
+    icon: { ..._markerIcon(DESIGN_COLORS.accent, 'A') },
     title: props.origin.displayName,
     zIndex: 10,
   });
@@ -320,9 +321,9 @@ watch(() => [props.origin, props.destination, props.waypoints], _SyncMarkersAndR
 // ── 自訂地圖樣式（機場復古風）───────────────────────────────
 function _mapStyles(): google.maps.MapTypeStyle[] {
   return [
-    { elementType: 'geometry', stylers: [{ color: '#f5f2ec' }] },
+    { elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.surfaceGround }] },
     { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#e8dfc7' }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#d4860a' }, { lightness: 60 }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.accent }, { lightness: 60 }] },
     { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#b8d4e8' }] },
     { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
     { featureType: 'transit', stylers: [{ visibility: 'off' }] },

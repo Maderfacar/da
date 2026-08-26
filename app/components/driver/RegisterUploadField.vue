@@ -195,7 +195,7 @@ const ClickClear = () => {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border: 1.5px dashed rgba(212, 134, 10, 0.35);
+  border: 1.5px dashed var(--accent-a30);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   display: flex;
@@ -208,13 +208,13 @@ const ClickClear = () => {
   transition: border-color 0.2s, background 0.2s;
 
   &:hover {
-    border-color: rgba(212, 134, 10, 0.6);
-    background: rgba(212, 134, 10, 0.06);
+    border-color: var(--accent-a60);
+    background: var(--accent-a06);
   }
 
   &.is-dragging {
     border-color: var(--da-amber);
-    background: rgba(212, 134, 10, 0.12);
+    background: var(--accent-a12);
   }
 
   &.is-uploaded {
@@ -236,7 +236,7 @@ const ClickClear = () => {
   font-family: var(--ff-label);
   font-size: 32px;
   font-weight: 300;
-  color: rgba(212, 134, 10, 0.6);
+  color: var(--accent-a60);
   line-height: 1;
 }
 
@@ -296,7 +296,7 @@ const ClickClear = () => {
 .DriverRegisterUploadField__spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(212, 134, 10, 0.2);
+  border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

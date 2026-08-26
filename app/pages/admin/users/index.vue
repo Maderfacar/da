@@ -185,12 +185,9 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$bg: #0d0f14;
 $surface: rgba(255, 255, 255, 0.04);
 $surface-2: rgba(255, 255, 255, 0.08);
 $border: rgba(255, 255, 255, 0.08);
-$amber: #d4860a;
-$amber-light: #f7b96a;
 $danger: #ff7a7a;
 $text: rgba(255, 255, 255, 0.8);
 $muted: rgba(255, 255, 255, 0.4);
@@ -198,7 +195,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminUsers {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: $bg;
+  background: var(--ink);
   color: #fff;
   font-family: var(--ff-ui);
 }
@@ -211,7 +208,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.2em;
-  color: $amber-light;
+  color: var(--accent-lit);
   text-transform: uppercase;
 }
 
@@ -249,7 +246,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
   &.is-active {
     color: #fff;
-    border-bottom-color: $amber;
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -332,7 +329,7 @@ $muted: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.02em;
 
   &.is-ugly {
-    color: $amber-light;
+    color: var(--accent-lit);
     background: rgba(247, 185, 106, 0.12);
     border: 1px solid rgba(247, 185, 106, 0.35);
   }
@@ -376,7 +373,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
   &.is-primary {
     color: #000;
-    background: $amber;
+    background: var(--accent);
   }
 
   &.is-secondary {

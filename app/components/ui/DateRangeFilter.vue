@@ -243,7 +243,7 @@ const _SingleInputType = computed(() => {
 
   &:last-child { border-right: none; }
   &:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-  &.is-active { background: rgba(212, 134, 10, 0.18); color: #f7b96a; }
+  &.is-active { background: var(--accent-a20); color: #f7b96a; }
 }
 
 .UiDateRangeFilter__input {
@@ -259,7 +259,7 @@ const _SingleInputType = computed(() => {
   width: 130px;
   box-sizing: border-box;
 
-  &:focus { border-color: rgba(212, 134, 10, 0.5); }
+  &:focus { border-color: var(--accent-a50); }
   &::placeholder { color: rgba(255, 255, 255, 0.3); }
 }
 
@@ -297,37 +297,37 @@ const _SingleInputType = computed(() => {
 // 既有 .UiDateRangeFilter__* 規則為 dark theme；此處覆蓋色系為深底文字
 .UiDateRangeFilter.theme-cream {
   .UiDateRangeFilter__granularity {
-    border-color: rgba(26, 24, 20, 0.18);
+    border-color: var(--ink-a20);
   }
   .UiDateRangeFilter__gran-btn {
-    background: rgba(26, 24, 20, 0.04);
-    color: var(--da-gray, #6b6560);
-    border-right-color: rgba(26, 24, 20, 0.10);
+    background: var(--ink-a06);
+    color: var(--da-gray);
+    border-right-color: var(--ink-a12);
     &:hover {
-      background: rgba(26, 24, 20, 0.08);
-      color: var(--da-dark, #1a1814);
+      background: var(--ink-a06);
+      color: var(--da-dark);
     }
     &.is-active {
-      background: rgba(212, 134, 10, 0.18);
+      background: var(--accent-a20);
       color: #b8730a;
     }
   }
   .UiDateRangeFilter__input {
     background: rgba(255, 255, 255, 0.65);
-    border-color: rgba(26, 24, 20, 0.18);
-    color: var(--da-dark, #1a1814);
+    border-color: var(--ink-a20);
+    color: var(--da-dark);
     color-scheme: light;
 
-    &::placeholder { color: rgba(26, 24, 20, 0.4); }
-    &:focus { border-color: rgba(212, 134, 10, 0.55); }
+    &::placeholder { color: var(--ink-a40); }
+    &:focus { border-color: var(--accent-a60); }
   }
   .UiDateRangeFilter__sep {
-    color: rgba(26, 24, 20, 0.4);
+    color: var(--ink-a40);
   }
   .UiDateRangeFilter__clear {
-    background: rgba(26, 24, 20, 0.04);
-    border-color: rgba(26, 24, 20, 0.18);
-    color: var(--da-gray, #6b6560);
+    background: var(--ink-a06);
+    border-color: var(--ink-a20);
+    color: var(--da-gray);
 
     &:hover {
       background: rgba(220, 38, 38, 0.10);

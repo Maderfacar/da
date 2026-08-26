@@ -95,7 +95,7 @@ onMounted(() => {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: rgba(250, 248, 244, 0.96);
+  background: var(--surface-a96);
   border: 1px solid var(--da-glass-border);
   border-radius: 12px;
   padding: 6px;
@@ -123,7 +123,7 @@ onMounted(() => {
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(26, 24, 20, 0.06);
+    background: var(--ink-a06);
     color: var(--da-dark);
   }
 }

@@ -355,8 +355,8 @@ onMounted(() => {
     cursor: pointer;
     transition: background 0.15s;
 
-    &:hover { background: rgba(212, 134, 10, 0.04); }
-    &.is-expanded { background: rgba(212, 134, 10, 0.08); }
+    &:hover { background: var(--accent-a06); }
+    &.is-expanded { background: var(--accent-a06); }
   }
 
   &__actor-name { font-weight: 700; }
@@ -372,7 +372,7 @@ onMounted(() => {
     text-transform: uppercase;
 
     &.is-super     { background: rgba(231, 76, 60, 0.12);  color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); }
-    &.is-admin     { background: rgba(212, 134, 10, 0.12); color: var(--da-amber); border: 1px solid rgba(212, 134, 10, 0.3); }
+    &.is-admin     { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }
     &.is-assistant { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
   }
 
@@ -388,7 +388,7 @@ onMounted(() => {
   }
 
   &__detail {
-    background: rgba(212, 134, 10, 0.04);
+    background: var(--accent-a06);
 
     td { padding: 16px 20px !important; }
   }
