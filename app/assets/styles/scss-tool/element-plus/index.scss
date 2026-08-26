@@ -1,29 +1,48 @@
+// Element Plus 色階來源
+//
+// ⚠ 這是全站**唯一**容許寫色碼字面值的第二處（除了 _design-tokens.css 本身）。
+//    原因是 Sass 需要編譯期常數才能推導色階（-light-3 … -dark-2 共 7 階），
+//    餵它 `var(--accent)` 只會得到一串無效的 CSS。
+//
+//    代價是這裡會與 token 漂移。因此 `shared/design-token-guards.spec.ts` 逐項比對
+//    這份 map 與 `_design-tokens.css` 的對應 token，值不一樣就紅。
+//    **改色票時這裡要一起改。**
+//
+// 這份檔案掛在 nuxt.config.ts 的 vite additionalData，全域生效。
+// 階段 1 之前它還是專案樣板帶進來的顏色（primary #354d7b 樣板藍 / success #00ADA9 青綠 /
+// warning #EB8B2D / danger #EE5151 / info #808080），也就是說 **admin 17 頁的 Element Plus
+// 元件從來沒有進入過品牌色系** —— 按鈕、開關、Tag、分頁、focus ring、表格表頭全是樣板色。
+// W0b 收斂 colors.scss 時清掉了 `--primary: #354d7b`，但同一個色碼在這份 map 裡活著，
+// 而當時的守衛只掃 --da-* 與 $font-*，看不到 SCSS map 的 key。
+//
+// 對應關係（右側為 _design-tokens.css 的 token）：
+//   primary → --accent      success → --good       warning → --wait
+//   danger  → --stop        error   → --stop       info    → --ink-soft
+//   table header-bg → --ink   header-text → --surface-raised   border → --hairline
 @forward 'element-plus/theme-chalk/src/common/var.scss' with (
   $colors: (
     'primary': (
-      'base': #354d7b,
+      'base': #7E6330,
     ),
     'success': (
-      'base': #00ADA9,
+      'base': #3E6B4E,
     ),
     'warning': (
-      'base': #EB8B2D,
+      'base': #A0521F,
     ),
     'danger': (
-      'base': #EE5151,
+      'base': #9E3535,
     ),
     'error': (
-      'base': #EE5151,
+      'base': #9E3535,
     ),
     'info': (
-      'base': #808080,
+      'base': #6D6A62,
     ),
   ),
   $table: (
-    'header-text-color': #fff,
-    'header-bg-color': #354d7b,
-    'border-color': #E6E7E7
+    'header-text-color': #F5F3EE,
+    'header-bg-color': #1A1917,
+    'border-color': #D6D1C7
   )
 );
-// @use './dark' as *;
-
