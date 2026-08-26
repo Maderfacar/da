@@ -189,12 +189,13 @@
         `tokens.scss` 只做轉指 / 樣板遺留色變數不得復活
   - [x] **每條守衛都先證明它會失敗**：逐條注入違規 → 紅，還原 → 綠（6 個 case 全驗）
 - [x] **W0.20** git commit + push origin main（= prod）
-- [ ] **W0.21** prod 三端目視驗證（**乘客端必驗**，它吃主題注入，是唯一會暴露 migration 沒跑的入口）
-  - [ ] 乘客端 `/` — 新色票 + 新字體
-  - [ ] 司機端 `/driver/dashboard`
-  - [ ] Admin `/admin/orders`
+- [x] **W0.21** prod 三端目視驗證 —— **Brain AI 2026-08-27 回覆「驗收沒問題」**
+  - [x] 乘客端 `/` — 新色票 + 新字體（吃主題注入，是唯一會暴露 migration 沒跑的入口）
+  - [x] 司機端 `/driver/dashboard`
+  - [x] Admin `/admin/orders`
   - [x] `curl /nuxt-api/config/theme` 回傳 tokens 與 `_theme-colors.css` 一致（W0b 已驗，見 W0.9b）
-  - [ ] `/admin/settings` 逐套切換三個節日包，目視新底色下的校準結果
+  - [x] `/admin/settings` 逐套切換三個節日包，目視新底色下的校準結果
+  - [x] 兩項 Claude 代決的判斷（數字改 `--ff-data`、`error.vue` 底色用縞黑）**未被否決**
 - [x] **W0.22** 交付清單見下方「交付 Brain AI 的驗收項目」
 - [x] **W0.23** 識別碼規則提前套用（原屬階段 1，見 design.md D5 的修訂註）
   - [x] 141 處 `--ff-display` 逐一按選擇器分類 → 37 處判定為識別碼／金額／時間／計數
@@ -262,7 +263,7 @@
 | 測試 | 既有 610+ 測試全綠 | ✅ 957/957（含新增 5 條 token 守衛） |
 | Lint | `pnpm lint` 0 error | ✅ |
 | 視覺 | 33 張基線逐張人工確認通過 | ✅ 已確認並接受，乾淨比對 33/33 綠 |
-| 三端 | prod 目視皆為精品調（**含乘客端**） | ⏳ 待 Brain AI |
+| 三端 | prod 目視皆為精品調（**含乘客端**） | ✅ Brain AI 2026-08-27 驗收通過 |
 | 單一來源 | `grep` 不到第二處色彩／字體定義 | ✅ 且已由 `design-token-guards.spec.ts` 常態守著 |
 | 交付物 | `important-audit.md` + payload 量測 + 未變色點清單 | ✅ 三項齊 |
 
