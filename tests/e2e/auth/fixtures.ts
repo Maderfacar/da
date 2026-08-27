@@ -93,6 +93,13 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
         'da-dark-mid': '#26241F', 'da-gray': '#6D6A62', 'da-gray-light': '#868073',
         'da-gray-pale': '#D6D1C7', 'da-stripe-yellow': '#B79A5E', 'da-stripe-dark': '#26241F',
       },
+      // 深色盤同樣是同步點：不同步的話，深色模式的視覺基線會拍到跟 prod 不同的顏色。
+      tokensDark: {
+        'da-cream': '#121110', 'da-off-white': '#1C1A18', 'da-amber': '#C9A961',
+        'da-amber-light': '#DCC188', 'da-amber-pale': '#2B2519', 'da-dark': '#EDEAE3',
+        'da-dark-mid': '#C6C1B7', 'da-gray': '#A29D93', 'da-gray-light': '#7E7A71',
+        'da-gray-pale': '#34312C', 'da-stripe-yellow': '#6E5C36', 'da-stripe-dark': '#171613',
+      },
       hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7E6330' },
     },
     status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },

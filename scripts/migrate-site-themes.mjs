@@ -35,7 +35,7 @@ function loadServiceAccount() {
 }
 
 // ── 目標色票 ────────────────────────────────────────────────────────────────
-// 必須與 shared/site-theme.ts 的 DEFAULT_TOKENS / DEFAULT_SITE_THEMES 逐字一致。
+// 必須與 shared/site-theme.ts 的 DEFAULT_TOKENS / DEFAULT_TOKENS_DARK / DEFAULT_SITE_THEMES 逐字一致。
 // 兩邊不同步 = 下次 seed 或 fallback 時色值會漂回去。
 
 const TARGET = {
@@ -54,6 +54,20 @@ const TARGET = {
       'da-stripe-yellow': '#B79A5E',  // 斜紋退場前的過渡值：暗金取代亮黃
       'da-stripe-dark': '#26241F',
     },
+    tokensDark: {
+      'da-cream': '#121110',
+      'da-off-white': '#1C1A18',
+      'da-amber': '#C9A961',          // 亮銅（對 #121110 8.38:1）
+      'da-amber-light': '#DCC188',
+      'da-amber-pale': '#2B2519',
+      'da-dark': '#EDEAE3',           // ⚠ 深色模式下主文字反轉為淺色
+      'da-dark-mid': '#C6C1B7',
+      'da-gray': '#A29D93',
+      'da-gray-light': '#7E7A71',
+      'da-gray-pale': '#34312C',
+      'da-stripe-yellow': '#6E5C36',
+      'da-stripe-dark': '#171613',
+    },
     hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7E6330' },
   },
 
@@ -69,6 +83,15 @@ const TARGET = {
       'da-stripe-yellow': '#2E4F3C',  // 深常綠
       'da-stripe-dark': '#6E2020',
     },
+    tokensDark: {
+      'da-amber': '#D2705C',          // 暖磚紅（5.56:1）
+      'da-amber-light': '#E8A08E',
+      'da-amber-pale': '#2C1A17',
+      'da-cream': '#141110',
+      'da-off-white': '#1E1917',
+      'da-stripe-yellow': '#4C7A62',
+      'da-stripe-dark': '#3A1614',
+    },
     hero: { stripeYellow: '#2E4F3C', stripeDark: '#6E2020', tagColor: '#7A2B2B' },
   },
   'lunar-new-year': {
@@ -80,6 +103,15 @@ const TARGET = {
       'da-off-white': '#F7F2EC',
       'da-stripe-yellow': '#B08D4A',
       'da-stripe-dark': '#7A1F1F',
+    },
+    tokensDark: {
+      'da-amber': '#D4685F',          // 5.35:1
+      'da-amber-light': '#E0BE7C',    // 金
+      'da-amber-pale': '#2C1614',
+      'da-cream': '#141010',
+      'da-off-white': '#1F1817',
+      'da-stripe-yellow': '#B08D4A',
+      'da-stripe-dark': '#3A1414',
     },
     hero: { stripeYellow: '#B08D4A', stripeDark: '#7A1F1F', tagColor: '#8C2B2B' },
   },
@@ -94,6 +126,16 @@ const TARGET = {
       'da-stripe-yellow': '#3E7F70',
       'da-stripe-dark': '#1E3A34',
     },
+    tokensDark: {
+      'da-amber': '#5FAE9B',          // 7.08:1
+      'da-amber-light': '#8CCBBB',
+      'da-amber-pale': '#132320',
+      'da-cream': '#101413',
+      'da-off-white': '#18201E',
+      'da-dark': '#E6EDEA',
+      'da-stripe-yellow': '#3E7F70',
+      'da-stripe-dark': '#16302B',
+    },
     hero: { stripeYellow: '#3E7F70', stripeDark: '#1E3A34', tagColor: '#2F6156' },
   },
 };
@@ -106,6 +148,9 @@ function assertPaletteValid() {
   for (const [id, spec] of Object.entries(TARGET)) {
     for (const [k, v] of Object.entries(spec.tokens)) {
       if (!HEX_RE.test(v)) bad.push(`${id}.tokens.${k} = ${v}`);
+    }
+    for (const [k, v] of Object.entries(spec.tokensDark ?? {})) {
+      if (!HEX_RE.test(v)) bad.push(`${id}.tokensDark.${k} = ${v}`);
     }
     for (const [k, v] of Object.entries(spec.hero)) {
       if (!HEX_RE.test(v)) bad.push(`${id}.hero.${k} = ${v}`);
@@ -145,6 +190,11 @@ async function main() {
       const prev = beforeTokens[k];
       if (prev !== next) console.log(`   tokens.${k.padEnd(18)} ${String(prev ?? '(未設)').padEnd(9)} → ${next}`);
     }
+    const beforeTokensDark = before.tokensDark ?? {};
+    for (const [k, next] of Object.entries(spec.tokensDark ?? {})) {
+      const prev = beforeTokensDark[k];
+      if (prev !== next) console.log(`   tokensDark.${k.padEnd(14)} ${String(prev ?? '(未設)').padEnd(9)} → ${next}`);
+    }
     for (const [k, next] of Object.entries(spec.hero)) {
       const prev = beforeHero[k];
       if (prev !== next) console.log(`   hero.${k.padEnd(20)} ${String(prev ?? '(未設)').padEnd(9)} → ${next}`);
@@ -153,9 +203,10 @@ async function main() {
     // hero.bgImage 是後台上傳的主圖，必須原樣保留
     const nextHero = { ...beforeHero, ...spec.hero };
     const nextTokens = { ...beforeTokens, ...spec.tokens };
+    const nextTokensDark = { ...beforeTokensDark, ...(spec.tokensDark ?? {}) };
 
     if (!DRY) {
-      await ref.update({ tokens: nextTokens, hero: nextHero });
+      await ref.update({ tokens: nextTokens, tokensDark: nextTokensDark, hero: nextHero });
       console.log('   ✔ 已寫入');
     }
     console.log('');

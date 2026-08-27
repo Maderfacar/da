@@ -1,7 +1,9 @@
 /**
  * PATCH /nuxt-api/admin/config/themes/{id}/tokens
  *
- * 覆寫主題的 --da-* 色票。body `{ tokens: Record<DaTokenKey, string> }`。
+ * 覆寫主題的 --da-* 色票。body `{ tokens?, tokensDark? }`，兩者至少擇一。
+ * `tokensDark` 是深色模式下的那一組 —— 深色不是從淺色推導的：
+ * `--da-dark` 在兩個模式下語意都是「主文字色」，值卻要反過來（深 ↔ 淺）。
  *
  * 這是「後台色票編輯」的落地端點 —— 在此之前換色只能改
  * `scripts/migrate-site-themes.mjs` 重跑，或手動改 Firestore。
@@ -40,33 +42,33 @@ export default defineEventHandler(async (event) => {
     return badRequestError({ zh_tw: '缺少主題 id', en: 'Theme id required', ja: 'テーマ id が必要です' });
   }
 
-  const body = await readBody<{ tokens?: unknown }>(event).catch(() => null);
-  const raw = body?.tokens;
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-    return badRequestError({ zh_tw: '缺少 tokens', en: 'tokens required', ja: 'tokens が必要です' });
-  }
-
+  const body = await readBody<{ tokens?: unknown; tokensDark?: unknown }>(event).catch(() => null);
   const allowed = new Set<string>(DA_THEME_TOKEN_KEYS);
-  const tokens: Record<string, string> = {};
-  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (!allowed.has(k)) {
-      return badRequestError({
-        zh_tw: `不支援的色票 key：${k}`,
-        en: `Unsupported token key: ${k}`,
-        ja: `対応していないトークンキー：${k}`,
-      });
+
+  /** 白名單 + hex 兩道驗證；回傳 [已正規化的 map, 錯誤訊息] */
+  const sanitize = (raw: unknown, field: string): [Record<string, string>, string | null] => {
+    if (raw === undefined) return [{}, null];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [{}, `${field} 格式不正確`];
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (!allowed.has(k)) return [{}, `不支援的色票 key：${field}.${k}`];
+      if (!isHexColor(v)) return [{}, `色票 ${field}.${k} 必須是 hex 色（例 #7E6330）`];
+      out[k] = v.toUpperCase();
     }
-    if (!isHexColor(v)) {
-      return badRequestError({
-        zh_tw: `色票 ${k} 必須是 hex 色（例 #7E6330）`,
-        en: `Token ${k} must be a hex color (e.g. #7E6330)`,
-        ja: `トークン ${k} は hex カラーである必要があります（例 #7E6330）`,
-      });
-    }
-    tokens[k] = v.toUpperCase();
-  }
-  if (Object.keys(tokens).length === 0) {
-    return badRequestError({ zh_tw: 'tokens 不得為空', en: 'tokens must not be empty', ja: 'tokens を空にできません' });
+    return [out, null];
+  };
+
+  const [tokens, tErr] = sanitize(body?.tokens, 'tokens');
+  if (tErr) return badRequestError({ zh_tw: tErr, en: tErr, ja: tErr });
+  const [tokensDark, dErr] = sanitize(body?.tokensDark, 'tokensDark');
+  if (dErr) return badRequestError({ zh_tw: dErr, en: dErr, ja: dErr });
+
+  if (Object.keys(tokens).length === 0 && Object.keys(tokensDark).length === 0) {
+    return badRequestError({
+      zh_tw: 'tokens 與 tokensDark 不得同時為空',
+      en: 'tokens and tokensDark must not both be empty',
+      ja: 'tokens と tokensDark を同時に空にできません',
+    });
   }
 
   const { firebaseServiceAccountJson } = useRuntimeConfig();
@@ -85,8 +87,12 @@ export default defineEventHandler(async (event) => {
     for (const k of Object.keys(tokens)) {
       before[k] = target.tokens?.[k as DaTokenKey] ?? null;
     }
+    const beforeDark: Record<string, string | null> = {};
+    for (const k of Object.keys(tokensDark)) {
+      beforeDark[k] = target.tokensDark?.[k as DaTokenKey] ?? null;
+    }
 
-    await setThemeTokens(db, id, tokens);
+    await setThemeTokens(db, id, tokens, tokensDark);
     invalidateSiteThemeCache();
 
     await writeAuditLog({
@@ -95,10 +101,10 @@ export default defineEventHandler(async (event) => {
       action: 'site_theme.tokens_update',
       targetType: 'site_theme',
       targetId: id,
-      payload: { before, after: tokens, isDefault: target.isDefault === true },
+      payload: { before, after: tokens, beforeDark, afterDark: tokensDark, isDefault: target.isDefault === true },
     });
 
-    return successResponse({ id, tokens });
+    return successResponse({ id, tokens, tokensDark });
   } catch (err) {
     console.error('[admin/config/themes tokens PATCH] failed:', err);
     return serverError();

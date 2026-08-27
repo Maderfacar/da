@@ -64,8 +64,8 @@ export const PatchThemeHero = (id: string, bgImage: string | null) =>
   methods.patch<{ id: string; bgImage: string | null }>(`/nuxt-api/admin/config/themes/${id}/hero`, { bgImage });
 
 /** 覆寫主題色票（--da-* 白名單 12 個，值須為 hex；後台色票編輯器用） */
-export const PatchThemeTokens = (id: string, tokens: Record<string, string>) =>
-  methods.patch<{ id: string; tokens: Record<string, string> }>(`/nuxt-api/admin/config/themes/${id}/tokens`, { tokens });
+export const PatchThemeTokens = (id: string, tokens: Record<string, string>, tokensDark?: Record<string, string>) =>
+  methods.patch<{ id: string; tokens: Record<string, string>; tokensDark: Record<string, string> }>(`/nuxt-api/admin/config/themes/${id}/tokens`, { tokens, tokensDark });
 
 /** 上傳 Hero 主圖到 Storage，回傳可注入的網址（前端接著呼叫 PatchThemeHero 持久化） */
 export const UploadThemeHeroImage = (file: File, themeId: string) =>

@@ -50,6 +50,15 @@ export interface SiteTheme {
   name: I18nLabel;
   /** --da-* hex 覆寫；缺項 fallback default 主題 */
   tokens: Partial<Record<DaTokenKey, string>>;
+  /**
+   * 深色模式下的 --da-* 覆寫；缺項 fallback default 主題的 tokensDark，
+   * 再缺回退 DEFAULT_TOKENS_DARK。
+   *
+   * ⚠ 為什麼深色要另一組而不是從淺色推導：--da-dark 在淺色模式是**主文字色**（深），
+   *    在深色模式是**主文字色**（淺）—— 它的角色沒變，值卻要反過來。
+   *    這種「同一個 key 在兩個模式下語意相同但值相反」的關係算不出來，只能各寫一組。
+   */
+  tokensDark?: Partial<Record<DaTokenKey, string>>;
   hero: SiteThemeHero;
   enabled: boolean;
   sortOrder: number;
@@ -62,6 +71,7 @@ export interface ResolvedTheme {
   activeThemeId: string;
   name: I18nLabel;
   tokens: Record<DaTokenKey, string>;
+  tokensDark: Record<DaTokenKey, string>;
   hero: {
     bgImage?: string;
     stripeYellow: string;
@@ -112,6 +122,26 @@ const DEFAULT_TOKENS: Record<DaTokenKey, string> = {
   'da-stripe-dark': '#26241F',
 };
 
+// ── 預設深色調色盤 ────────────────────────────────────────────────────────────
+// ⚠ 必須與 app/assets/styles/css-class/_theme-colors.css 的
+//    `.dark [data-da-theme]` 區塊逐字一致（由 site-theme-sync.spec.ts 比對）。
+//    那個區塊是「沒有主題注入時」的深色來源，這裡是「有主題注入時」的合併底層。
+//    兩者不同步的症狀跟淺色那組一樣惡劣：切深色之後某一個 token 突然跳回另一組的值。
+const DEFAULT_TOKENS_DARK: Record<DaTokenKey, string> = {
+  'da-cream': '#121110',
+  'da-off-white': '#1C1A18',
+  'da-amber': '#C9A961',
+  'da-amber-light': '#DCC188',
+  'da-amber-pale': '#2B2519',
+  'da-dark': '#EDEAE3',
+  'da-dark-mid': '#C6C1B7',
+  'da-gray': '#A29D93',
+  'da-gray-light': '#7E7A71',
+  'da-gray-pale': '#34312C',
+  'da-stripe-yellow': '#6E5C36',
+  'da-stripe-dark': '#171613',
+};
+
 // ── Seed 主題包（Claude 定色，Brain 審）──────────────────────────────────────
 // default 攜帶完整 tokens 作為合併底層；節日包只覆寫需變動的 key。色值已於 2026-08-25
 // 依精品調底色（骨白 #EAE7E0）重新校準 —— 舊值是配著米白 + 琥珀定的，換底後會失衡。
@@ -121,6 +151,7 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
     id: 'default',
     name: { zh: '經典（預設）', en: 'Classic (Default)', ja: 'クラシック（既定）' },
     tokens: { ...DEFAULT_TOKENS },
+    tokensDark: { ...DEFAULT_TOKENS_DARK },
     hero: {},
     enabled: true,
     sortOrder: 0,
@@ -137,6 +168,16 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
       'da-off-white': '#F5F2ED',
       'da-stripe-yellow': '#2E4F3C', // 深常綠
       'da-stripe-dark': '#6E2020',
+    },
+    // 深色版：括號內為對該主題深色頁底的實測對比
+    tokensDark: {
+      'da-amber': '#D2705C',        // 暖磚紅（對 #141110 5.56:1）
+      'da-amber-light': '#E8A08E',  // 8.82:1
+      'da-amber-pale': '#2C1A17',
+      'da-cream': '#141110',
+      'da-off-white': '#1E1917',
+      'da-stripe-yellow': '#4C7A62', // 常綠，深底上提亮（3.82:1，非文字）
+      'da-stripe-dark': '#3A1614',
     },
     hero: { stripeYellow: '#2E4F3C', stripeDark: '#6E2020', tagColor: '#7A2B2B' },
     enabled: true,
@@ -155,6 +196,15 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
       'da-stripe-yellow': '#B08D4A',
       'da-stripe-dark': '#7A1F1F',
     },
+    tokensDark: {
+      'da-amber': '#D4685F',        // 5.35:1
+      'da-amber-light': '#E0BE7C',  // 金，10.64:1
+      'da-amber-pale': '#2C1614',
+      'da-cream': '#141010',
+      'da-off-white': '#1F1817',
+      'da-stripe-yellow': '#B08D4A', // 6.08:1
+      'da-stripe-dark': '#3A1414',
+    },
     hero: { stripeYellow: '#B08D4A', stripeDark: '#7A1F1F', tagColor: '#8C2B2B' },
     enabled: true,
     sortOrder: 2,
@@ -172,6 +222,16 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
       'da-dark': '#17201D',
       'da-stripe-yellow': '#3E7F70',
       'da-stripe-dark': '#1E3A34',
+    },
+    tokensDark: {
+      'da-amber': '#5FAE9B',        // 7.08:1
+      'da-amber-light': '#8CCBBB',  // 10.05:1
+      'da-amber-pale': '#132320',
+      'da-cream': '#101413',
+      'da-off-white': '#18201E',
+      'da-dark': '#E6EDEA',         // 主文字在深色模式反轉為淺色，這裡帶一點冷調呼應主題
+      'da-stripe-yellow': '#3E7F70', // 3.95:1（非文字）
+      'da-stripe-dark': '#16302B',
     },
     hero: { stripeYellow: '#3E7F70', stripeDark: '#1E3A34', tagColor: '#2F6156' },
     enabled: true,
@@ -209,6 +269,17 @@ export const resolveTheme = (
       DEFAULT_TOKENS[key];
   }
 
+  // 深色盤走同一條合併路徑：active → default → DEFAULT_TOKENS_DARK
+  const tokensDark = {} as Record<DaTokenKey, string>;
+  for (const key of DA_THEME_TOKEN_KEYS) {
+    const fromActive = active.tokensDark?.[key];
+    const fromBase = base.tokensDark?.[key];
+    tokensDark[key] =
+      (isHexColor(fromActive) && fromActive) ||
+      (isHexColor(fromBase) && fromBase) ||
+      DEFAULT_TOKENS_DARK[key];
+  }
+
   const hero: ResolvedTheme['hero'] = {
     stripeYellow: isHexColor(active.hero.stripeYellow)
       ? active.hero.stripeYellow!
@@ -222,7 +293,7 @@ export const resolveTheme = (
   };
   if (isSafeThemeImageUrl(active.hero.bgImage)) hero.bgImage = active.hero.bgImage;
 
-  return { activeThemeId: active.id, name: active.name, tokens, hero };
+  return { activeThemeId: active.id, name: active.name, tokens, tokensDark, hero };
 };
 
 // ── 產出注入用 CSS（scoped 到 [data-da-theme]）─────────────────────────────────
@@ -242,5 +313,10 @@ export const buildThemeCss = (resolved: ResolvedTheme): string => {
   if (resolved.hero.bgImage) {
     decls.push(`--da-hero-bg:url("${resolved.hero.bgImage}")`);
   }
-  return `[data-da-theme]{${decls.join(';')}}`;
+  // 深色區塊的選擇器必須是 `.dark [data-da-theme]`（0,2,0），才贏得過上面那條
+  // `[data-da-theme]`（0,1,0）—— 兩者作用在**同一個節點**上，後者是前者的一般化。
+  // 寫成 `:root.dark` 沒用：那是別的節點，子孫的宣告直接蓋掉繼承值，特異度不參與比較。
+  // 詳見 design.md D23 與 _theme-colors.css 末段。
+  const darkDecls = DA_THEME_TOKEN_KEYS.map((key) => `--${key}:${resolved.tokensDark[key]}`);
+  return `[data-da-theme]{${decls.join(';')}}.dark [data-da-theme]{${darkDecls.join(';')}}`;
 };

@@ -179,6 +179,11 @@ const CONTRAST_CHECKS: ReadonlyArray<[string, string, string, number]> = [
 const editingId = ref('');
 const savingTokens = ref(false);
 const draft = ref<Record<string, string>>({});
+/** 深色模式的那一組。深色不是從淺色推導的 —— `da-dark` 在兩個模式下語意都是
+ *  「主文字色」，值卻要反過來（深 ↔ 淺），所以只能各編一組。 */
+const draftDark = ref<Record<string, string>>({});
+const editMode = ref<'light' | 'dark'>('light');
+const activeDraft = computed(() => (editMode.value === 'dark' ? draftDark : draft).value);
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
@@ -202,7 +207,10 @@ const Contrast = (a?: string, b?: string): number => {
 const contrastRows = computed(() => {
   const theme = themes.value.find((t) => t.id === editingId.value);
   const base = themes.value.find((t) => t.isDefault);
-  const pick = (k: string) => draft.value[k] || theme?.tokens?.[k] || base?.tokens?.[k] || '';
+  const dark = editMode.value === 'dark';
+  const pick = (k: string) => dark
+    ? (draftDark.value[k] || theme?.tokensDark?.[k] || base?.tokensDark?.[k] || '')
+    : (draft.value[k] || theme?.tokens?.[k] || base?.tokens?.[k] || '');
   return CONTRAST_CHECKS.map(([fg, bg, label, min]) => {
     const ratio = Contrast(pick(fg), pick(bg));
     return { label, min, ratio, pass: ratio >= min, text: ratio ? ratio.toFixed(2) + ':1' : '—' };
@@ -211,27 +219,35 @@ const contrastRows = computed(() => {
 
 const ClickEditTokens = (t: AdminSiteThemeDto) => {
   editingId.value = t.id;
+  editMode.value = 'light';
   const base = themes.value.find((x) => x.isDefault);
   const next: Record<string, string> = {};
+  const nextDark: Record<string, string> = {};
   for (const f of TOKEN_FIELDS) {
     next[f.key] = (t.tokens?.[f.key] || base?.tokens?.[f.key] || '#000000').toUpperCase();
+    nextDark[f.key] = (t.tokensDark?.[f.key] || base?.tokensDark?.[f.key] || '#000000').toUpperCase();
   }
   draft.value = next;
+  draftDark.value = nextDark;
 };
 
 const ClickCancelTokens = () => {
   editingId.value = '';
   draft.value = {};
+  draftDark.value = {};
 };
 
 /** 色票文字欄：允許使用者邊打邊看，只在合法 hex 時才同步給色塊 */
 const OnHexInput = (key: string, value: string) => {
   const v = value.trim();
-  draft.value[key] = v.startsWith('#') ? v.toUpperCase() : ('#' + v).toUpperCase();
+  activeDraft.value[key] = v.startsWith('#') ? v.toUpperCase() : ('#' + v).toUpperCase();
 };
 
 const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
-  const invalid = TOKEN_FIELDS.filter((f) => !HEX_RE.test(draft.value[f.key] || ''));
+  // 兩組一起驗、一起存 —— 只存一半的話，淺色與深色會落在不同的版本上
+  const invalid = TOKEN_FIELDS.filter(
+    (f) => !HEX_RE.test(draft.value[f.key] || '') || !HEX_RE.test(draftDark.value[f.key] || ''),
+  );
   if (invalid.length) {
     ElMessage({ message: `色票格式錯誤：${invalid.map((f) => f.label).join('、')}（需 6 碼 hex）`, type: 'error' });
     return;
@@ -248,7 +264,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
   savingTokens.value = true;
   try {
-    const res = await $api.PatchThemeTokens(t.id, { ...draft.value });
+    const res = await $api.PatchThemeTokens(t.id, { ...draft.value }, { ...draftDark.value });
     if (res.status?.code !== 200) {
       ElMessage({ message: res.status?.message?.zh_tw ?? '儲存色票失敗', type: 'error' });
       return;
@@ -256,6 +272,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
     ElMessage({ message: '色票已儲存', type: 'success' });
     editingId.value = '';
     draft.value = {};
+    draftDark.value = {};
     await ApiLoadThemes();
   } finally {
     savingTokens.value = false;
@@ -308,6 +325,18 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
         //- ── 色票編輯器（階段 2）────────────────────────────────
         .SettingsSeasonalThemes__editor(v-if="editingId === t.id")
+          //- 淺色 / 深色雙盤：深色不是從淺色推導的，兩組都要編
+          .SettingsSeasonalThemes__mode
+            button.SettingsSeasonalThemes__mode-btn(
+              type="button"
+              :class="{ 'is-on': editMode === 'light' }"
+              @click="editMode = 'light'"
+            ) 淺色
+            button.SettingsSeasonalThemes__mode-btn(
+              type="button"
+              :class="{ 'is-on': editMode === 'dark' }"
+              @click="editMode = 'dark'"
+            ) 深色
           .SettingsSeasonalThemes__editor-grid
             label.SettingsSeasonalThemes__field(v-for="f in TOKEN_FIELDS" :key="f.key")
               span.SettingsSeasonalThemes__field-label {{ f.label }}
@@ -315,20 +344,20 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
               .SettingsSeasonalThemes__field-row
                 input.SettingsSeasonalThemes__color(
                   type="color"
-                  :value="draft[f.key]"
+                  :value="activeDraft[f.key]"
                   @input="(e) => OnHexInput(f.key, (e.target as HTMLInputElement).value)"
                 )
                 input.SettingsSeasonalThemes__hex(
                   type="text"
                   maxlength="7"
                   spellcheck="false"
-                  :value="draft[f.key]"
+                  :value="activeDraft[f.key]"
                   @input="(e) => OnHexInput(f.key, (e.target as HTMLInputElement).value)"
                 )
 
           //- 對比即時檢查：色票編輯最容易出事的地方，不是「好不好看」是「看不看得見」
           .SettingsSeasonalThemes__contrast
-            .SettingsSeasonalThemes__contrast-head 對比檢查（WCAG）
+            .SettingsSeasonalThemes__contrast-head 對比檢查（WCAG · {{ editMode === 'dark' ? '深色' : '淺色' }}）
             .SettingsSeasonalThemes__contrast-row(
               v-for="r in contrastRows"
               :key="r.label"
@@ -644,6 +673,35 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
     color: var(--stop);
     &:hover:not(:disabled) { background: var(--stop-a15); }
   }
+}
+
+.SettingsSeasonalThemes__mode {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-pill);
+  align-self: flex-start;
+}
+
+.SettingsSeasonalThemes__mode-btn {
+  min-height: 26px;
+  padding: 0 14px;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  color: var(--surface-a50);
+  background: none;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.SettingsSeasonalThemes__mode-btn.is-on {
+  color: var(--ink);
+  background: var(--accent);
 }
 
 /* ── 色票編輯器（階段 2）──────────────────────────────────── */

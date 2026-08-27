@@ -14,7 +14,7 @@
 //   靠 migration 的 --dry 輸出才發現。這支測試把那次僥倖變成常態防護。
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { DA_THEME_TOKEN_KEYS, DEFAULT_SITE_THEMES, type DaTokenKey } from './site-theme';
+import { DA_THEME_TOKEN_KEYS, DEFAULT_SITE_THEMES, buildThemeCss, resolveTheme, type DaTokenKey } from './site-theme';
 
 const read = (rel: string): string =>
   readFileSync(new URL(rel, import.meta.url), 'utf8');
@@ -112,5 +112,60 @@ describe('色票四處同步', () => {
     const declared = new Set([...m![1]!.matchAll(/--(da-[\w-]+)\s*:/g)].map((x) => x[1]!));
     const missing = DA_THEME_TOKEN_KEYS.filter((k) => !declared.has(k));
     expect(missing, `深色調色盤漏了這些 token，它們會沿用淺色值：${missing.join(', ')}`).toEqual([]);
+  });
+
+  // ── 深色盤的四處同步（階段 2 續，2026-08-28）──────────────────────────────
+  // 深色模式讓每個 --da-* 多了一組值，於是同步點從 4 個變成 8 個。
+  // 淺色那組漏改的症狀是「admin 變了、乘客端沒變」；深色這組漏改的症狀更難發現：
+  // 只有切到深色模式、而且剛好用到那個 token 的地方才看得出來。
+  const DARK_SOURCE_OF_TRUTH = Object.fromEntries(
+    DA_THEME_TOKEN_KEYS.map((k) => [
+      k,
+      DEFAULT_SITE_THEMES.find((t) => t.isDefault)!.tokensDark![k]!.toUpperCase(),
+    ]),
+  ) as Record<DaTokenKey, string>;
+
+  it('default 主題的深色盤涵蓋全部白名單 token', () => {
+    for (const key of DA_THEME_TOKEN_KEYS) {
+      expect(DARK_SOURCE_OF_TRUTH[key], `default 主題的 tokensDark 缺 ${key}`).toMatch(/^#[0-9A-F]{6}$/);
+    }
+  });
+
+  it('_theme-colors.css 的 .dark 區塊與 default 深色盤一致', () => {
+    const css = read('../app/assets/styles/css-class/_theme-colors.css');
+    const m = css.match(/\.dark \[data-da-theme\]\s*\{([^}]*)\}/);
+    expect(m, '找不到 .dark [data-da-theme] 區塊').not.toBeNull();
+    const parsed = parseCssTokens(m![1]!);
+    for (const key of DA_THEME_TOKEN_KEYS) {
+      expect(parsed[key], `.dark 區塊缺 ${key}`).toBeDefined();
+      expect(parsed[key], `.dark 區塊的 ${key} 與 tokensDark 不一致`).toBe(DARK_SOURCE_OF_TRUTH[key]);
+    }
+  });
+
+  it('migration script 的 tokensDark 與 default 深色盤一致', () => {
+    const mjs = parseObjTokens(read('../scripts/migrate-site-themes.mjs'), 'tokensDark: {', '},');
+    for (const key of DA_THEME_TOKEN_KEYS) {
+      expect(mjs[key], `migration script 的 tokensDark 缺 ${key}`).toBeDefined();
+      expect(mjs[key], `migration script 的 tokensDark.${key} 不一致`).toBe(DARK_SOURCE_OF_TRUTH[key]);
+    }
+  });
+
+  it('e2e fixtures 的深色 mock 與 default 深色盤一致', () => {
+    const fx = parseObjTokens(read('../tests/e2e/auth/fixtures.ts'), 'tokensDark: {', '},');
+    for (const key of DA_THEME_TOKEN_KEYS) {
+      expect(fx[key], `fixtures 的 tokensDark 缺 ${key}`).toBeDefined();
+      expect(fx[key], `fixtures 的 tokensDark.${key} 不一致`).toBe(DARK_SOURCE_OF_TRUTH[key]);
+    }
+  });
+
+  it('buildThemeCss 同時輸出淺色與深色兩個區塊', () => {
+    // 深色區塊的選擇器必須是 `.dark [data-da-theme]`（0,2,0）——
+    // 寫成 :root.dark 沒用：那是別的節點，子孫宣告直接蓋掉繼承值，特異度不參與比較。
+    const css = buildThemeCss(resolveTheme(DEFAULT_SITE_THEMES, 'christmas'));
+    expect(css, '缺淺色區塊').toContain('[data-da-theme]{');
+    expect(css, '缺深色區塊').toContain('.dark [data-da-theme]{');
+    // 聖誕的深色主色不得等於它的淺色主色（否則就是深色盤沒生效）
+    expect(css).toContain('--da-amber:#7A2B2B');
+    expect(css).toContain('--da-amber:#D2705C');
   });
 });

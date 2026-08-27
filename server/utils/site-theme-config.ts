@@ -136,9 +136,12 @@ export const setThemeTokens = async (
   db: Firestore,
   id: string,
   tokens: Record<string, string>,
+  tokensDark: Record<string, string> = {},
 ): Promise<void> => {
   const patch: Record<string, string> = {};
   for (const [k, v] of Object.entries(tokens)) patch[`tokens.${k}`] = v;
+  for (const [k, v] of Object.entries(tokensDark)) patch[`tokensDark.${k}`] = v;
+  if (Object.keys(patch).length === 0) return;
   await db.collection(SITE_THEMES_COLLECTION).doc(id).update(patch);
 };
 

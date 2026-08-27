@@ -100,6 +100,8 @@ interface GetSiteThemeRes {
   name: I18nLabelDto;
   /** --da-* token（不含 -- 前綴）→ hex 值，完整 record */
   tokens: Record<string, string>;
+  /** 深色模式的那一組（缺項 fallback default 主題的 tokensDark） */
+  tokensDark?: Record<string, string>;
   hero: SiteThemeHeroDto;
 }
 
@@ -118,6 +120,8 @@ interface AdminSiteThemeDto {
   name: I18nLabelDto;
   /** --da-* token（不含 -- 前綴）→ hex 覆寫（Partial；缺項 fallback default） */
   tokens: Record<string, string>;
+  /** 深色模式的那一組（缺項 fallback default 主題的 tokensDark） */
+  tokensDark?: Record<string, string>;
   hero: AdminSiteThemeHeroDto;
   enabled: boolean;
   sortOrder: number;
