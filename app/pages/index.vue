@@ -586,12 +586,16 @@ const ClickFare = () => navigateTo('/fare');
   margin: 0 0 28px;
 }
 
+/* 主動作不用金色實心 —— 介面方向提案的規則二：「金色實心大按鈕會廉價，
+   精品的主動作是黑底白字，金只作箭頭」（模擬檔 .btn.primary / .btn.primary svg）。
+   這顆按鈕坐在縞黑卡片上，黑底黑字不成立，故取其反相：瓷白底 + 縞黑字，
+   金留給箭頭。金屬色全站省著用才貴。 */
 .PageLanding__cta-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 16px 32px;
-  background: var(--da-amber);
+  background: var(--da-off-white);
   color: var(--da-dark);
   font-family: var(--ff-label);
   font-size: var(--fs-body);
@@ -609,5 +613,7 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__cta-btn-arrow {
   font-size: var(--fs-body-lg);
+  /* 唯一保留金屬色的地方（古銅於瓷白 5.07:1，過 AA） */
+  color: var(--da-amber);
 }
 </style>
