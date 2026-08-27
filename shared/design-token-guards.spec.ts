@@ -579,13 +579,19 @@ describe('排版守衛（階段 2 續）', () => {
     // 那個收斂從來沒發生：實測 444 處低於它自訂的最小值，而整套 16 個 token 只被引用 8 次。
     // 跟圓角同一個病 —— 階梯定了，實況沒跟上。本輪把 1,309 處接上去。
     //
+    // ⚠ 前面的 (?<![\w-]) 是必要的：沒有它，`$base-font-size: 16px` 這種**變數宣告**
+    //    會因為含有 `font-size:` 子字串而被誤判成違規。
+    //    替換腳本當年就是漏了同一個邊界，把那個 Sass 編譯期常數換成 var()，直接讓 build 中斷。
+    // ⚠ 前面的 (?<![\w-]) 是必要的：沒有它，`$base-font-size: 16px` 這種**變數宣告**
+    //    會因為含有 `font-size:` 子字串而被誤判成違規。替換腳本當年漏的就是同一個邊界，
+    //    把那個 Sass 編譯期常數換成了 var()，直接讓 build 中斷（Undefined operation）。
     // 放行 clamp()：超大展示字必須隨視窗縮放，固定 token 蓋不住（否則手機爆版）。
     // 放行 em / rem / %：那是相對於父級的比例，不是階梯上的一階。
     const offenders: string[] = [];
     for (const f of FILES) {
       if (TYPE_ALLOW.has(f.rel)) continue;
       styleOf(f).split(/\r?\n/).forEach((line, i) => {
-        const m = line.match(/font-size\s*:\s*([^;{}]+);/);
+        const m = line.match(/(?<![\w-])font-size\s*:\s*([^;{}]+);/);
         if (!m) return;
         const val = m[1]!.replace(/!important/, '').trim();
         if (/var\(|\$|clamp\(|calc\(|v-bind|inherit/.test(val)) return;
@@ -604,14 +610,14 @@ describe('排版守衛（階段 2 續）', () => {
     for (const f of FILES) {
       if (TYPE_ALLOW.has(f.rel)) continue;
       styleOf(f).split(/\r?\n/).forEach((line, i) => {
-        const lh = line.match(/line-height\s*:\s*([^;{}]+);/);
+        const lh = line.match(/(?<![\w-])line-height\s*:\s*([^;{}]+);/);
         if (lh) {
           const v = lh[1]!.replace(/!important/, '').trim();
           if (!/var\(|\$|v-bind|calc\(|inherit|normal|px|em|rem|%/.test(v) && /^\d*\.?\d+$/.test(v)) {
             offenders.push(`${f.rel}:${i + 1} → line-height ${v}`);
           }
         }
-        const ls = line.match(/letter-spacing\s*:\s*([^;{}]+);/);
+        const ls = line.match(/(?<![\w-])letter-spacing\s*:\s*([^;{}]+);/);
         if (ls) {
           const v = ls[1]!.replace(/!important/, '').trim();
           if (!/var\(|\$|v-bind|calc\(|inherit|normal/.test(v)) {
@@ -631,5 +637,51 @@ describe('排版守衛（階段 2 續）', () => {
       .filter((m) => !/^var\(/.test(m[2]!.trim()))
       .map((m) => `$${m[1]} = ${m[2]!.trim()}`);
     expect(offenders, `typography.scss 應只做轉指：\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('Sass 與 CSS 變數的邊界（階段 2 續）', () => {
+  it('值為 var() 的 SCSS 變數不得餵進 Sass 算術', () => {
+    // 既有那條「不得餵進 Sass **色彩函式**」擋的是靜默失效（編出無效 CSS，宣告消失但 build 全綠）。
+    // 這一條擋的是相反的失敗：**build 直接中斷**。
+    //
+    // 實際踩到：字級替換把 `$base-font-size: 16px` 換成了 `var(--fs-body-lg)`，
+    // 而 `rem()` 是 `calc($px / $base-font-size) * 1rem` ——
+    // Sass 無法對 var() 做算術，報 `Undefined operation "calc(40px / var(--fs-body-lg)) * 1rem"`。
+    // （會誤換是因為 regex 寫成 `font-size:`，而 `$base-font-size:` 含有那個子字串。
+    //  同一類子字串錯誤本階段犯過兩次，另一次是 `color:` 吃掉 `border-color:`。）
+    //
+    // 這條紅了的話，選擇是二選一：那個變數留成編譯期字面值，或改用 CSS 的 calc() 在瀏覽器算。
+    const offenders: string[] = [];
+    for (const { rel, text } of FILES) {
+      if (!/\.(scss|vue)$/.test(rel)) continue;
+      const clean = stripComments(text);
+      const varAliases = new Set([...clean.matchAll(/^\s*\$([\w-]+)\s*:\s*var\(/gm)].map((m) => m[1]!));
+      if (!varAliases.size) continue;
+      clean.split(/\r?\n/).forEach((line, i) => {
+        for (const name of varAliases) {
+          // $x 左右緊鄰算術運算子，或出現在 calc() 裡跟運算子作伴
+          const re = new RegExp(String.raw`\$${name}\s*[*/+]|[*/+]\s*\$${name}\b`);
+          if (re.test(line)) offenders.push(`${rel}:${i + 1} → $${name}  ${line.trim().slice(0, 60)}`);
+        }
+      });
+    }
+    expect(offenders, `Sass 無法對 var() 做算術，build 會直接中斷：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('config.scss 的編譯期常數不得改成 var()', () => {
+    // 上一條是通用檢查，但**抓不到本階段實際踩到的那次**：
+    // `$base-font-size` 宣告在 config.scss，而算術發生在 fn.scss 的
+    // `@function rem($px, $defaultVal: $base-font-size)` —— 跨檔、又走函式預設參數，
+    // 通用的「同一行同時出現 $alias 與運算子」看不到。
+    //
+    // config.scss 裡全部都是給 Sass 在編譯期算的常數（rem 的基準、RWD 斷點）。
+    // 它們一旦變成 var()，build 會直接中斷（Undefined operation）。
+    // 這條窄但準：與其寫一個看得懂 Sass 語意的檢查，不如直接守住那個檔案的性質。
+    const scss = stripComments(readFileSync(join(ROOT, 'app/assets/styles/scss-tool/config.scss'), 'utf8'));
+    const offenders = [...scss.matchAll(/^\s*\$([\w-]+)\s*:\s*([^;]+);/gm)]
+      .filter((m) => /var\(/.test(m[2]!))
+      .map((m) => `$${m[1]} = ${m[2]!.trim()}`);
+    expect(offenders, `這些是編譯期常數，改成 var() 會讓 build 中斷：\n${offenders.join('\n')}`).toEqual([]);
   });
 });

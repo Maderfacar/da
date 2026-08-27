@@ -1,4 +1,7 @@
-$base-font-size: var(--fs-body-lg);
+// ⚠ 這是 Sass 的**編譯期常數**，rem() 拿它做除法（calc($px / $base-font-size) * 1rem）。
+// 不能改成 var(--fs-*) —— Sass 無法對 var() 做算術，會編出 Undefined operation 並中斷 build。
+// （階段 2 續的字級替換一度把它換掉了：regex 寫成 `font-size:` 而 `$base-font-size:` 含有那個子字串。）
+$base-font-size: 16px;
 
 // RWD
 $xxl: 1920px;
