@@ -49,7 +49,8 @@ withDefaults(defineProps<Props>(), {
 }
 
 .PassengerFareBreakdownCard__total {
-  font-family: var(--ff-data);
+  /* 提案規則五：總價換成襯線大字，數字本身就成了裝飾 */
+  font-family: var(--ff-display);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h1);
   color: var(--da-amber-light);

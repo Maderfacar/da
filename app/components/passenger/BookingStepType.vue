@@ -574,7 +574,9 @@ const ClickNext = () => {
     user-select: none;
 
     &:active { transform: scale(0.97); }
-    &.is-active { border-color: var(--da-amber); background: var(--da-amber-pale); }
+    /* 提案規則二：選中的車型「只變邊框顏色」—— 不加陰影、不放大、不打勾、
+       也不換底色。古銅細框一道，剛好夠看見。 */
+    &.is-active { border-color: var(--da-amber); }
   }
 
   &__card-icon { font-size: var(--fs-h1); color: var(--da-amber); }

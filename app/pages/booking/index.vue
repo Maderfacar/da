@@ -486,15 +486,18 @@ const ClickNewOrder = () => {
     color: var(--da-gray-light);
     transition: border-color var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out);
 
+    /* 提案規則一：完成是古銅描邊、當前是縞黑實心。
+       當前這一步是頁面上最該被看到的東西，那要用主文字色而不是金屬色 ——
+       金屬色留給「已經過去的」那些。 */
     .is-active & {
-      border-color: var(--da-amber);
-      background: var(--da-amber);
-      color: var(--surface-raised);
+      border-color: var(--da-dark);
+      background: var(--da-dark);
+      color: var(--da-cream);
     }
 
     .is-done & {
       border-color: var(--da-amber);
-      background: var(--da-amber-pale);
+      background: transparent;
       color: var(--da-amber);
     }
   }
