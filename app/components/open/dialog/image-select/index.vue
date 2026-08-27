@@ -788,7 +788,7 @@ ElDialogPlus.OpenDialogImageSelect(
     user-select: none;
     .placeholder {
       position: absolute;
-      color: white;
+      color: var(--surface-raised);
       @include fs(24px);
     }
     .delete-btn {
@@ -824,7 +824,7 @@ ElDialogPlus.OpenDialogImageSelect(
     @include fs(28px);
     border-radius: var(--r-md);
     background: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     opacity: 0.7;
   }
 
@@ -835,11 +835,11 @@ ElDialogPlus.OpenDialogImageSelect(
     @include fs(16px, bold);
     border-radius: var(--r-sm);
     background: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     opacity: 0.7;
     &[disabled="true"] {
       cursor: not-allowed;
-      background: gray;
+      background: var(--ink-mute);
       opacity: .5;
     }
   }

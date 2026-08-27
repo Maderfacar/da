@@ -871,7 +871,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
     border-radius: var(--r-sm);
     font-family: var(--ff-ui);
     font-size: 14px;
-    background: white;
+    background: var(--surface-raised);
     width: 100%;
 
     &:focus {
@@ -975,7 +975,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
     border-radius: var(--r-sm);
     min-height: 36px;
     box-shadow: 0 0 0 1px var(--ink-a12);
-    background: white;
+    background: var(--surface-raised);
 
     &:hover { box-shadow: 0 0 0 1px var(--ink-a20); }
     &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
@@ -1039,7 +1039,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   &.is-approve {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     &:hover:not(:disabled) {
       background: var(--accent-deep);
     }
@@ -1074,7 +1074,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 }
 
 .TemplateEditor__bubble {
-  background: white;
+  background: var(--surface-raised);
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-lg);
   overflow: hidden;
@@ -1119,7 +1119,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   width: 100%;
   background: var(--accent);
   border: none;
-  color: white;
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;

@@ -1302,7 +1302,7 @@ $border: var(--accent-a20);
   padding: 7px 16px;
   border-radius: var(--r-pill);
   background: var(--accent);
-  color: white;
+  color: var(--surface-raised);
   border: none;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
@@ -1872,7 +1872,7 @@ $border: var(--accent-a20);
   font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
-  background: white;
+  background: var(--surface-raised);
   resize: vertical;
   min-height: 96px;
 
@@ -2165,7 +2165,7 @@ $border: var(--accent-a20);
     border-radius: var(--r-sm);
     font-family: var(--ff-ui);
     font-size: 12px;
-    background: white;
+    background: var(--surface-raised);
     min-width: 120px;
 
     &:focus {

@@ -248,7 +248,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 }
 
 .SettingsLegalDocuments__editor {
-  background: white;
+  background: var(--surface-raised);
   border-radius: var(--r-sm);
   overflow: hidden;
   // TinyEditor 內部 iframe 不繼承 dark theme，這層只控制圓角邊框
@@ -283,7 +283,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
   &:disabled { opacity: 0.4; cursor: not-allowed; }
   &.is-approve {
     background: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 }

@@ -766,7 +766,7 @@ onMounted(() => {
 }
 
 .DialogLineRichmenuEdit__inner {
-  background: white;
+  background: var(--surface-raised);
   border-radius: var(--r-lg);
   width: 100%;
   max-width: 920px;
@@ -844,7 +844,7 @@ onMounted(() => {
   font-size: 20px;
   cursor: pointer;
   color: var(--ink-a50);
-  &:hover { color: black; }
+  &:hover { color: var(--ink); }
 }
 
 // ── Body ─────────────────────────────────────────────────────
@@ -899,7 +899,7 @@ onMounted(() => {
     font-family: var(--ff-ui);
     font-size: 14px;
     width: 100%;
-    background: white;
+    background: var(--surface-raised);
 
     &:focus {
       outline: none;
@@ -995,7 +995,7 @@ onMounted(() => {
     font-family: var(--ff-label);
     font-size: 11px;
     font-weight: 700;
-    color: white;
+    color: var(--surface-raised);
     background: var(--ink-a50);
     border-radius: var(--r-pill);
     padding: 0 6px;
@@ -1008,7 +1008,7 @@ onMounted(() => {
   position: absolute;
   width: 10px;
   height: 10px;
-  background: white;
+  background: var(--surface-raised);
   border: 1.5px solid var(--accent);
   border-radius: var(--r-xs);
   box-shadow: 0 1px 2px var(--ink-a12);
@@ -1266,7 +1266,7 @@ onMounted(() => {
     border-radius: var(--r-sm);
     min-height: 32px;
     box-shadow: 0 0 0 1px var(--ink-a12);
-    background: white;
+    background: var(--surface-raised);
 
     &:hover { box-shadow: 0 0 0 1px var(--ink-a20); }
     &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
@@ -1315,13 +1315,13 @@ onMounted(() => {
     &.is-active {
       background: var(--accent);
       border-color: var(--accent);
-      color: white;
+      color: var(--surface-raised);
     }
   }
   &.is-approve {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
   &.is-reject {

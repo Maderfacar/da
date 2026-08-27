@@ -453,6 +453,13 @@ describe('表面與尺度守衛（階段 2）', () => {
         for (const m of line.matchAll(/rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*[,)]/g)) {
           offenders.push(`${f.rel}:${i + 1} → ${m[0]}  ${line.trim().slice(0, 58)}`);
         }
+        // CSS 顏色關鍵字 —— 本階段撞到的**第五種寫法**。
+        // `background: white` 不含 # 也不含 rgb(，前面所有掃描與守衛都不認得它，
+        // 而 minifier 會把它輸出成 `#fff` —— 所以它只在 build 產物裡現形。實測 36 處。
+        // 只擋會拿來塗色的屬性；`transparent` / `currentColor` / `inherit` 不在此列。
+        for (const m of line.matchAll(/(?:background|color|border(?:-[a-z]+)?-color|fill|stroke|outline-color|text-decoration-color)\s*:\s*(white|black|gray|grey|red|blue|green|silver|orange|yellow|purple|pink|brown|navy|teal|olive|lime|aqua|maroon|fuchsia)\b/g)) {
+          offenders.push(`${f.rel}:${i + 1} → ${m[1]}  ${line.trim().slice(0, 58)}`);
+        }
       });
     }
     expect(offenders, `色彩只能從 token 進來（--ink* / --surface* / --accent* / --good|wait|note|stop*）：\n${offenders.join('\n')}`).toEqual([]);

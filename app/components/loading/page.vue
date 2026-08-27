@@ -35,7 +35,7 @@ setTimeout(_hide, 8_000);
   @include center;
   @include fixed(fill);
   color: var(--accent);
-  background-color: white;
+  background-color: var(--surface-raised);
   opacity: 1;
   z-index: var(--z-boot);
   transition: opacity var(--dur-slower) var(--ease-out);

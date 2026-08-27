@@ -231,6 +231,6 @@
 /// @param  {Integer} $stroke - Stroke width
 /// @param  {Color}   $color  - Stroke color
 /// @return {Style}           - text-shadow
-@mixin stroke($stroke: 1, $color: white) {
+@mixin stroke($stroke: 1, $color: var(--surface-raised)) {
   text-shadow: _stroke($stroke, $color);
 }

@@ -433,7 +433,7 @@ function ClickSwitchSize(size: RichmenuSize) {
 .RichmenuComposer {
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-md);
-  background: white;
+  background: var(--surface-raised);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -469,7 +469,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-sm);
   font-size: 13px;
-  background: white;
+  background: var(--surface-raised);
   min-width: 220px;
 }
 
@@ -526,7 +526,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   border: 1px solid transparent;
   border-radius: var(--r-sm);
   cursor: pointer;
-  background: white;
+  background: var(--surface-raised);
 
   &:hover { background: var(--ink-a06); }
   &.is-selected {
@@ -558,7 +558,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   color: var(--ink-a50);
   border-radius: var(--r-xs);
 
-  &:hover { background: var(--ink-a06); color: black; }
+  &:hover { background: var(--ink-a06); color: var(--ink); }
   &.is-reject:hover { background: var(--stop-a15); color: var(--stop); }
 }
 
@@ -588,7 +588,7 @@ function ClickSwitchSize(size: RichmenuSize) {
 .RichmenuComposer__canvas-wrap {
   position: relative;
   display: inline-block;
-  background: white;
+  background: var(--surface-raised);
   box-shadow: var(--shadow-soft);
 }
 
@@ -645,7 +645,7 @@ function ClickSwitchSize(size: RichmenuSize) {
     border: 1px solid var(--ink-a12);
     border-radius: var(--r-xs);
     font-size: 12px;
-    background: white;
+    background: var(--surface-raised);
 
     &:focus {
       outline: none;
@@ -679,7 +679,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   &.is-active {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: var(--surface-raised);
   }
   &.is-toggle {
     background: var(--ink-a06);
@@ -690,7 +690,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   &.is-approve {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: var(--surface-raised);
     padding: 7px 16px;
     font-size: 12px;
     &:hover:not(:disabled) { background: var(--accent-deep); }
