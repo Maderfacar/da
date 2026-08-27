@@ -88,10 +88,10 @@ const ClickVerify = async () => {
 .Admin2faChallenge__card {
   width: 100%;
   max-width: 420px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
   padding: 32px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 .Admin2faChallenge__title {
   font-size: 22px;

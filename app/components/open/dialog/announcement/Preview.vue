@@ -82,8 +82,8 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
+
+
 
 .AnnouncementPreview {
   display: flex;
@@ -98,7 +98,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: $muted;
+  color: var(--surface-a40);
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -114,11 +114,11 @@ $border: rgba(255, 255, 255, 0.08);
 
 // ── LINE Flex ─────────────────────────────────────────────────
 .AnnouncementPreview__lineCard {
-  background: #fff;
-  border-radius: 14px;
+  background: var(--surface-raised);
+  border-radius: var(--r-lg);
   overflow: hidden;
   max-width: 320px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-soft);
   color: #222;
 }
 
@@ -166,10 +166,10 @@ $border: rgba(255, 255, 255, 0.08);
 .AnnouncementPreview__lineButton {
   width: 100%;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
@@ -179,9 +179,9 @@ $border: rgba(255, 255, 255, 0.08);
 
 // ── App Card ──────────────────────────────────────────────────
 .AnnouncementPreview__appCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid $border;
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
   max-width: 360px;
 }
@@ -201,7 +201,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.4;
   margin: 0 0 8px;
 }
@@ -209,21 +209,21 @@ $border: rgba(255, 255, 255, 0.08);
 .AnnouncementPreview__appText {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   line-height: 1.6;
   word-break: break-word;
 
   // 最少限度排版（避免 v-html 內排版崩掉）
   :deep(p) { margin: 0 0 6px; }
   :deep(a) { color: var(--accent); text-decoration: underline; }
-  :deep(strong) { font-weight: 700; color: #fff; }
+  :deep(strong) { font-weight: 700; color: var(--surface-raised); }
   :deep(ul), :deep(ol) { margin: 4px 0 6px 18px; }
-  :deep(img) { max-width: 100%; border-radius: 6px; margin: 6px 0; }
+  :deep(img) { max-width: 100%; border-radius: var(--r-sm); margin: 6px 0; }
 }
 
 .AnnouncementPreview__appPlaceholder {
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   font-style: italic;
 }
 
@@ -231,7 +231,7 @@ $border: rgba(255, 255, 255, 0.08);
   display: inline-block;
   margin-top: 12px;
   padding: 8px 18px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a20);
   border: 1px solid var(--accent-a50);
   color: var(--accent);

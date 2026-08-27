@@ -37,8 +37,8 @@ setTimeout(_hide, 8_000);
   color: var(--accent);
   background-color: white;
   opacity: 1;
-  z-index: 9999;
-  transition: opacity .4s ease;
+  z-index: var(--z-boot);
+  transition: opacity var(--dur-slower) var(--ease-out);
 }
 
 // 組件 ----

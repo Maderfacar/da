@@ -753,14 +753,12 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(0, 0, 0, 0.5);
-$border: rgba(0, 0, 0, 0.1);
 
 .DialogLineRichmenuEdit {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-modal);
+  background: var(--ink-a50);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -769,7 +767,7 @@ $border: rgba(0, 0, 0, 0.1);
 
 .DialogLineRichmenuEdit__inner {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   width: 100%;
   max-width: 920px;
   max-height: 92svh;
@@ -783,7 +781,7 @@ $border: rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--ink-a12);
   gap: 12px;
 }
 
@@ -802,7 +800,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 3px 10px;
 
   &.is-passenger {
@@ -821,7 +819,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 3px 10px;
   /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
      色相分類把 zh_tw 與 ja 都壓成 --stop，兩個並排的 chip 變同色（功能性退步）。
@@ -845,7 +843,7 @@ $border: rgba(0, 0, 0, 0.1);
   border: none;
   font-size: 20px;
   cursor: pointer;
-  color: $muted;
+  color: var(--ink-a50);
   &:hover { color: black; }
 }
 
@@ -862,7 +860,7 @@ $border: rgba(0, 0, 0, 0.1);
 .DialogLineRichmenuEdit__loading {
   text-align: center;
   padding: 40px;
-  color: $muted;
+  color: var(--ink-a50);
 }
 
 .DialogLineRichmenuEdit__section {
@@ -890,14 +888,14 @@ $border: rgba(0, 0, 0, 0.1);
     font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--ink-a70);
   }
 
   input[type='text'],
   input[type='number'] {
     padding: 8px 12px;
-    border: 1px solid $border;
-    border-radius: 8px;
+    border: 1px solid var(--ink-a12);
+    border-radius: var(--r-sm);
     font-family: var(--ff-ui);
     font-size: 14px;
     width: 100%;
@@ -925,7 +923,7 @@ $border: rgba(0, 0, 0, 0.1);
 .DialogLineRichmenuEdit__hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a50);
   letter-spacing: 0.05em;
 }
 
@@ -945,10 +943,10 @@ $border: rgba(0, 0, 0, 0.1);
 .DialogLineRichmenuEdit__image-preview {
   position: relative;
   display: inline-block;
-  border: 1px solid $border;
-  border-radius: 8px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-sm);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--ink-a06);
   max-width: 100%;
   cursor: crosshair;
   touch-action: none;
@@ -964,11 +962,11 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__image-empty {
-  border: 2px dashed $border;
-  border-radius: 8px;
+  border: 2px dashed var(--ink-a12);
+  border-radius: var(--r-sm);
   padding: 40px;
   text-align: center;
-  color: $muted;
+  color: var(--ink-a50);
   font-family: var(--ff-label);
   font-size: 13px;
 }
@@ -979,7 +977,7 @@ $border: rgba(0, 0, 0, 0.1);
   background: var(--accent-a20);
   cursor: move;
   touch-action: none;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--accent-a30);
@@ -998,8 +996,8 @@ $border: rgba(0, 0, 0, 0.1);
     font-size: 11px;
     font-weight: 700;
     color: white;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 100px;
+    background: var(--ink-a50);
+    border-radius: var(--r-pill);
     padding: 0 6px;
     pointer-events: none;
   }
@@ -1012,11 +1010,11 @@ $border: rgba(0, 0, 0, 0.1);
   height: 10px;
   background: white;
   border: 1.5px solid var(--accent);
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  border-radius: var(--r-xs);
+  box-shadow: 0 1px 2px var(--ink-a12);
   z-index: 11;
   touch-action: none;
-  transition: transform 0.1s;
+  transition: transform var(--dur-fast) var(--ease-out);
 
   &:hover {
     transform: scale(1.35);
@@ -1079,7 +1077,7 @@ $border: rgba(0, 0, 0, 0.1);
   background: var(--note-a08);
   color: var(--note);
   border: 1px solid var(--note-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
 }
 
@@ -1105,14 +1103,14 @@ $border: rgba(0, 0, 0, 0.1);
 }
 
 .DialogLineRichmenuEdit__area-card {
-  border: 1px solid $border;
-  border-radius: 10px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-md);
   padding: 12px;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--ink-a06);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(0, 0, 0, 0.04); }
+  &:hover { background: var(--ink-a06); }
   &.is-selected {
     border-color: var(--accent);
     background: var(--accent-a06);
@@ -1149,13 +1147,13 @@ $border: rgba(0, 0, 0, 0.1);
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.1em;
-      color: $muted;
+      color: var(--ink-a50);
     }
     input {
       width: 100%;
       padding: 5px 8px;
-      border: 1px solid $border;
-      border-radius: 6px;
+      border: 1px solid var(--ink-a12);
+      border-radius: var(--r-sm);
       font-family: var(--ff-mono);
       font-size: 12px;
     }
@@ -1181,7 +1179,7 @@ $border: rgba(0, 0, 0, 0.1);
   background: #fff8e1;
   border: 1px solid var(--wait);
   border-left: 3px solid var(--wait);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1204,9 +1202,9 @@ $border: rgba(0, 0, 0, 0.1);
     flex: 1;
     min-width: 160px;
     padding: 5px 8px;
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--wait);
-    border-radius: 3px;
+    border-radius: var(--r-xs);
     word-break: break-all;
     font-size: 11px;
     font-family: var(--ff-mono);
@@ -1219,15 +1217,15 @@ $border: rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
   padding: 5px 14px;
   background: var(--wait);
-  color: #fff;
+  color: var(--surface-raised);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--wait); }
   &:active { transform: scale(0.96); }
@@ -1239,15 +1237,15 @@ $border: rgba(0, 0, 0, 0.1);
   label {
     font-family: var(--ff-label);
     font-size: 10px;
-    color: $muted;
+    color: var(--ink-a50);
     letter-spacing: 0.1em;
   }
   input {
     margin-top: 2px;
     width: 100%;
     padding: 5px 8px;
-    border: 1px solid $border;
-    border-radius: 6px;
+    border: 1px solid var(--ink-a12);
+    border-radius: var(--r-sm);
     font-size: 12px;
   }
 }
@@ -1255,8 +1253,8 @@ $border: rgba(0, 0, 0, 0.1);
 .DialogLineRichmenuEdit__area-action input[type='text'] {
   width: 100%;
   padding: 6px 10px;
-  border: 1px solid $border;
-  border-radius: 6px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-sm);
   font-family: var(--ff-ui);
   font-size: 13px;
 }
@@ -1265,12 +1263,12 @@ $border: rgba(0, 0, 0, 0.1);
   width: 100%;
 
   :deep(.el-select__wrapper) {
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     min-height: 32px;
-    box-shadow: 0 0 0 1px $border;
+    box-shadow: 0 0 0 1px var(--ink-a12);
     background: white;
 
-    &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
+    &:hover { box-shadow: 0 0 0 1px var(--ink-a20); }
     &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
   }
 }
@@ -1282,7 +1280,7 @@ $border: rgba(0, 0, 0, 0.1);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   line-height: 1.5;
 }
 
@@ -1292,8 +1290,8 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 8px;
   justify-content: flex-end;
   padding: 16px 20px;
-  border-top: 1px solid $border;
-  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid var(--ink-a12);
+  background: var(--ink-a06);
 }
 
 .DialogLineRichmenuEdit__btn {
@@ -1302,18 +1300,18 @@ $border: rgba(0, 0, 0, 0.1);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.is-toggle {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: $border;
-    color: rgba(0, 0, 0, 0.7);
-    &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
+    background: var(--ink-a06);
+    border-color: var(--ink-a12);
+    color: var(--ink-a70);
+    &:hover:not(:disabled) { background: var(--ink-a06); }
     &.is-active {
       background: var(--accent);
       border-color: var(--accent);

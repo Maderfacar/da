@@ -202,14 +202,14 @@ onUnmounted(() => {
 .LayoutFrontDesk__friend-banner {
   position: fixed;
   top: 56px; left: 0; right: 0;
-  z-index: 99;
+  z-index: var(--z-nav);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
   background: var(--line-green);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .LayoutFrontDesk__banner-text {
@@ -225,8 +225,8 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 5px 14px;
-  border-radius: 100px;
-  background: #fff;
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
   color: var(--line-green);
   text-decoration: none;
   white-space: nowrap;
@@ -234,7 +234,7 @@ onUnmounted(() => {
 }
 
 .banner-slide-enter-active,
-.banner-slide-leave-active { transition: transform 0.3s ease, opacity 0.3s ease; }
+.banner-slide-leave-active { transition: transform var(--dur-slow) var(--ease-out), opacity var(--dur-slow) var(--ease-out); }
 .banner-slide-enter-from,
 .banner-slide-leave-to    { transform: translateY(-100%); opacity: 0; }
 
@@ -251,7 +251,7 @@ onUnmounted(() => {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -259,7 +259,7 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.auth-fade-leave-active { transition: opacity 0.4s ease; }
+.auth-fade-leave-active { transition: opacity var(--dur-slower) var(--ease-out); }
 .auth-fade-leave-to { opacity: 0; }
 
 // ── W4：roles lazy load 失敗兜底 ───────────────────────────
@@ -283,15 +283,15 @@ onUnmounted(() => {
 .LayoutFrontDesk__roles-failed-btn {
   padding: 12px 28px;
   background: var(--da-amber);
-  color: #fff;
+  color: var(--surface-raised);
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.9; }
   &:active { transform: scale(0.96); }
@@ -301,16 +301,14 @@ onUnmounted(() => {
 .LayoutFrontDesk__top {
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 100;
+  z-index: var(--z-header);
   height: 56px;
   padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--surface-a88);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--da-glass-border);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .LayoutFrontDesk__logo {
@@ -341,16 +339,16 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-md);
+  background: var(--surface-a40);
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(0, 0, 0, 0.12);
+    background: var(--surface-a72);
+    border-color: var(--ink-a12);
   }
   &:active { transform: scale(0.96); }
 }
@@ -359,7 +357,7 @@ onUnmounted(() => {
   width: 16px;
   height: 1.5px;
   background: var(--da-dark);
-  border-radius: 1px;
+  border-radius: var(--r-xs);
 }
 
 // ── 頁面主體 ───────────────────────────────────────────────

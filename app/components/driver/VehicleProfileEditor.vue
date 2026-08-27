@@ -451,9 +451,6 @@ defineExpose({ reloadTags: ApiLoadTags });
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.4);
 
 .VehicleProfileEditor {
   display: flex;
@@ -462,9 +459,9 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .VehicleProfileEditor__block {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -482,13 +479,13 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .VehicleProfileEditor__block-sub {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
   flex: 1;
 }
 
@@ -498,7 +495,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-ui);
   font-size: 10px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
   margin-top: 2px;
 }
 
@@ -508,13 +505,13 @@ $muted: rgba(255, 255, 255, 0.4);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-pending  { background: var(--wait-a15);  border: 1px solid var(--wait-a45);  color: var(--wait); }
   &.is-rejected { background: var(--stop-a15); border: 1px solid var(--stop-a45); color: var(--stop); }
   &.is-draft    { background: var(--accent-a12);       border: 1px solid var(--accent-a30);  color: var(--accent); }
   &.is-verified { background: var(--good-a15); border: 1px solid var(--good-a45); color: var(--good); }
-  &.is-none     { background: rgba(255, 255, 255, 0.05); border: 1px solid $border; color: $muted; }
+  &.is-none     { background: var(--surface-a06); border: 1px solid var(--surface-a06); color: var(--surface-a40); }
 }
 
 .VehicleProfileEditor__group {
@@ -524,14 +521,14 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__loading {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   padding: 12px 0;
 }
 
 .VehicleProfileEditor__reject {
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
@@ -547,7 +544,7 @@ $muted: rgba(255, 255, 255, 0.4);
   &-body {
     font-family: var(--ff-ui);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--surface-a82);
     line-height: 1.5;
   }
 }
@@ -556,7 +553,7 @@ $muted: rgba(255, 255, 255, 0.4);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-top: 1px dashed $border;
+  border-top: 1px dashed var(--surface-a06);
   padding-top: 12px;
   margin-top: 4px;
 }
@@ -571,13 +568,13 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
 }
 
 .VehicleProfileEditor__photos-hint {
   font-family: var(--ff-ui);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .VehicleProfileEditor__photo-grid {
@@ -595,10 +592,10 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__photo {
   position: relative;
   aspect-ratio: 4 / 3;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid $border;
+  background: var(--ink-a30);
+  border: 1px solid var(--surface-a06);
 }
 
 .VehicleProfileEditor__photo-img {
@@ -615,7 +612,7 @@ $muted: rgba(255, 255, 255, 0.4);
   height: 100%;
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .VehicleProfileEditor__photo-remove {
@@ -624,9 +621,9 @@ $muted: rgba(255, 255, 255, 0.4);
   right: 4px;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1px solid var(--stop-a45);
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--ink-a60);
   color: var(--stop);
   cursor: pointer;
   font-size: 14px;
@@ -645,8 +642,8 @@ $muted: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  border-radius: 10px;
-  transition: background 0.15s;
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--accent-a12); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -665,7 +662,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__hint-line {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   flex: 1 1 100%;
 }
 
@@ -675,10 +672,10 @@ $muted: rgba(255, 255, 255, 0.4);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 8px 18px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   border: 1px solid;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -689,10 +686,10 @@ $muted: rgba(255, 255, 255, 0.4);
     &:hover:not(:disabled) { background: var(--accent-a30); }
   }
   &.is-secondary {
-    border-color: $border;
-    background: $surface;
-    color: rgba(255, 255, 255, 0.7);
-    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+    border-color: var(--surface-a06);
+    background: var(--surface-a06);
+    color: var(--surface-a72);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 }
 
@@ -707,7 +704,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--good-a15);
   border: 1px solid var(--good-a30);
   color: var(--good);
@@ -716,7 +713,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__empty {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .VehicleProfileEditor__capacity {
@@ -735,7 +732,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__capacity-label {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   min-width: 120px;
 }
 
@@ -750,7 +747,7 @@ $muted: rgba(255, 255, 255, 0.4);
   padding: 4px 12px;
   background: var(--good-a08);
   border: 1px solid var(--good-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
 }
 
 .VehicleProfileEditor__capacity-su-val {
@@ -770,7 +767,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__capacity-hint {
   font-family: var(--ff-ui);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .VehicleProfileEditor__seat-toggle {
@@ -804,13 +801,13 @@ $muted: rgba(255, 255, 255, 0.4);
 .VehicleProfileEditor__seat-sep {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .VehicleProfileEditor__seat-remove {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1px solid var(--stop-a45);
   background: transparent;
   color: var(--stop);
@@ -832,7 +829,7 @@ $muted: rgba(255, 255, 255, 0.4);
   background: var(--accent-a06);
   color: var(--accent);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   margin-top: 2px;
 
   &:hover { background: var(--accent-a12); }
@@ -845,12 +842,12 @@ $muted: rgba(255, 255, 255, 0.4);
   gap: 10px;
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px dashed $border;
+  border-top: 1px dashed var(--surface-a06);
 }
 
 .VehicleProfileEditor__capacity-current {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 </style>

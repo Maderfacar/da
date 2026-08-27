@@ -232,10 +232,10 @@ const ClickSupport = () => {
 .PageFaq__trust-card {
   background: var(--da-dark);
   color: var(--da-cream);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 28px 24px;
   border: 1px solid var(--accent-a20);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-pop);
   max-width: 640px;
 }
 
@@ -336,7 +336,7 @@ const ClickSupport = () => {
   margin: 16px 24px 56px;
   padding: 32px 24px;
   background: var(--da-dark);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   text-align: center;
 }
 
@@ -367,7 +367,7 @@ const ClickSupport = () => {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   cursor: pointer;
 }
 

@@ -256,9 +256,9 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   z-index: 5;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1px solid var(--da-gray-pale);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--surface-a96);
   color: var(--da-dark);
   font-size: 22px;
   font-family: var(--ff-display);
@@ -267,13 +267,13 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: background 0.15s, transform 0.1s;
+  box-shadow: var(--shadow-soft);
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &.is-prev { left: 0; }
   &.is-next { right: 0; }
 
-  &:hover { background: #fff; }
+  &:hover { background: var(--surface-raised); }
   &:active { transform: translateY(-50%) scale(0.92); }
 }
 
@@ -281,22 +281,22 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1.5px solid var(--da-glass-border);
-  border-radius: 20px;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--r-xl);
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition: border-color var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
   overflow: hidden;
   height: 380px;
   box-sizing: border-box;
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-pop);
   }
 
   &.is-active {
     border-color: var(--da-amber);
-    box-shadow: 0 10px 28px var(--accent-a20);
+    box-shadow: var(--shadow-pop);
   }
 }
 
@@ -305,7 +305,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 .PageFare__vehicle-hero {
   flex: none;
   height: 220px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--ink-a06);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -335,10 +335,8 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   min-height: 0;
   overflow: hidden;
   padding: 14px 18px 16px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   background: var(--surface-a82);
-  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  border-top: 1px solid var(--surface-a72);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -409,12 +407,12 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 }
 
 .PageFare__engine-card {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 22px;
   position: relative;
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PageFare__engine-num {
@@ -448,7 +446,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   margin: 16px 24px 56px;
   padding: 32px 24px;
   background: var(--da-dark);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   text-align: center;
 }
 
@@ -479,7 +477,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   cursor: pointer;
 }
 

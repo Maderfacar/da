@@ -285,9 +285,9 @@ onMounted(() => {
     align-items: end;
     margin-bottom: 16px;
     padding: 16px;
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1px solid var(--da-gray-pale);
-    border-radius: 12px;
+    border-radius: var(--r-md);
   }
 
   &__filter { display: flex; flex-direction: column; gap: 6px; }
@@ -316,9 +316,9 @@ onMounted(() => {
   }
 
   &__table-wrap {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1px solid var(--da-gray-pale);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     overflow: hidden;
   }
 
@@ -330,7 +330,7 @@ onMounted(() => {
 
     thead {
       background: var(--da-dark);
-      color: #fff;
+      color: var(--surface-raised);
     }
 
     th {
@@ -353,7 +353,7 @@ onMounted(() => {
 
   &__row {
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background var(--dur-fast) var(--ease-out);
 
     &:hover { background: var(--accent-a06); }
     &.is-expanded { background: var(--accent-a06); }
@@ -368,7 +368,7 @@ onMounted(() => {
     font-weight: 700;
     letter-spacing: 0.1em;
     padding: 2px 8px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     text-transform: uppercase;
 
     &.is-super     { background: var(--stop-a15);  color: var(--stop); border: 1px solid var(--stop-a30); }
@@ -383,7 +383,7 @@ onMounted(() => {
     text-align: center;
     color: var(--da-gray);
 
-    span { display: inline-block; transition: transform 0.2s; font-size: 18px; }
+    span { display: inline-block; transition: transform var(--dur-base) var(--ease-out); font-size: 18px; }
     span.is-rotated { transform: rotate(90deg); }
   }
 
@@ -418,7 +418,7 @@ onMounted(() => {
     font-family: var(--ff-mono);
     font-size: 11px;
     line-height: 1.5;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     overflow-x: auto;
     max-height: 320px;
   }

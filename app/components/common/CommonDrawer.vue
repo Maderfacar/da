@@ -148,14 +148,12 @@ Teleport(to="body")
   position: fixed;
   inset: 0;
   background: rgba(20, 18, 14, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 998;
+  z-index: var(--z-overlay);
   cursor: pointer;
 }
 
 .drawer-mask-enter-active,
-.drawer-mask-leave-active { transition: opacity 0.25s ease; }
+.drawer-mask-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .drawer-mask-enter-from,
 .drawer-mask-leave-to { opacity: 0; }
 
@@ -164,19 +162,19 @@ Teleport(to="body")
   position: fixed;
   top: 0; left: 0; bottom: 0;
   width: min(280px, 80vw);
-  z-index: 999;
+  z-index: var(--z-drawer);
   background: var(--da-dark);
   color: var(--da-cream);
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--accent-a20);
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 4px 0 32px var(--ink-a40);
   padding-top: env(safe-area-inset-top, 0);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .drawer-slide-enter-active,
-.drawer-slide-leave-active { transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.drawer-slide-leave-active { transition: transform var(--dur-base) cubic-bezier(0.22, 0.61, 0.36, 1); }
 .drawer-slide-enter-from,
 .drawer-slide-leave-to { transform: translateX(-100%); }
 
@@ -186,14 +184,14 @@ Teleport(to="body")
   align-items: center;
   gap: 12px;
   padding: 22px 20px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .CommonDrawer__avatar-wrap {
   width: 44px;
   height: 44px;
   border: 1px solid var(--accent-a30);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   overflow: hidden;
   flex-shrink: 0;
   background: transparent;
@@ -261,7 +259,7 @@ Teleport(to="body")
   width: 100%;
   padding: 13px 14px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--surface-a82);
   font-family: var(--ff-ui);
@@ -269,9 +267,9 @@ Teleport(to="body")
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.05); color: var(--da-cream); }
+  &:hover { background: var(--surface-a06); color: var(--da-cream); }
   &:active { background: var(--accent-a12); }
 
   &.is-active {
@@ -282,7 +280,7 @@ Teleport(to="body")
 
   &.is-support {
     margin-top: 6px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--surface-a06);
     padding-top: 18px;
   }
 }
@@ -296,7 +294,7 @@ Teleport(to="body")
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--stop);
   // 深色面上 --stop 解析為亮階（淺紅），白字只剩 1.7:1。
   // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
@@ -316,7 +314,7 @@ Teleport(to="body")
 // ── 底部 ────────────────────────────────────────────────
 .CommonDrawer__footer {
   padding: 14px 20px 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--surface-a06);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,6 +324,6 @@ Teleport(to="body")
   font-family: var(--ff-label);
   font-size: $fs-label;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
 }
 </style>

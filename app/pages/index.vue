@@ -276,9 +276,9 @@ const ClickFare = () => navigateTo('/fare');
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 14px 26px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s, background 0.15s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &:active { transform: scale(0.97); }
 }
@@ -293,10 +293,10 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__cta-secondary {
   background: transparent;
   color: var(--da-dark);
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  border: 1px solid var(--ink-a12);
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.24);
+    background: var(--ink-a06);
+    border-color: var(--ink-a20);
   }
 }
 
@@ -390,13 +390,13 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__airport {
   background: var(--da-cream);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-lg);
   padding: 22px 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover {
     border-color: var(--accent-a30);
@@ -445,8 +445,8 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__feature {
   background: var(--da-off-white);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 16px;
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-lg);
   padding: 24px 22px;
 }
 
@@ -477,12 +477,12 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__cta-card {
   background: var(--da-dark);
   color: var(--da-cream);
-  border-radius: 24px;
+  border-radius: var(--r-xl);
   padding: 44px 32px;
   text-align: center;
   max-width: 640px;
   margin: 0 auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-pop);
 }
 
 .PageLanding__cta-label {
@@ -525,9 +525,9 @@ const ClickFare = () => navigateTo('/fare');
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.9; }
   &:active { transform: scale(0.97); }

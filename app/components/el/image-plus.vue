@@ -74,7 +74,7 @@ const imgBoxStyle = computed(() => {
   @include fs(30px);
   color: var(--el-text-color-secondary);
   // background: var(--el-fill-color-light);
-  background-color: #fff;
+  background-color: var(--surface-raised);
 }
 .border {
   border: 1px solid var(--el-border-color);

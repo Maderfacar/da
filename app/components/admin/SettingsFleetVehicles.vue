@@ -761,10 +761,10 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
-$surface: rgba(255, 255, 255, 0.04);
-$surface-2: rgba(255, 255, 255, 0.08);
+
+
+
+
 
 .SettingsFleetVehicles {
   display: flex;
@@ -776,7 +776,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .SettingsFleetVehicles__count {
@@ -784,7 +784,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__head-actions {
@@ -799,14 +799,14 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: var(--r-sm);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a20);
+  color: var(--surface-a72);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
-  &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+  &:hover:not(:disabled) { background: var(--surface-a12); color: var(--surface-raised); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -816,12 +816,12 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
   color: var(--accent);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -830,7 +830,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   padding: 24px 16px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   text-align: center;
 }
 
@@ -844,11 +844,11 @@ $surface-2: rgba(255, 255, 255, 0.08);
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  transition: background 0.15s;
+  border-bottom: 1px solid var(--surface-a06);
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(255, 255, 255, 0.02); }
+  &:hover { background: var(--surface-a06); }
   &.is-disabled { opacity: 0.5; }
 }
 
@@ -869,7 +869,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
 }
 
 .SettingsFleetVehicles__row-id {
@@ -877,10 +877,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: $muted;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid $border;
-  border-radius: 100px;
+  color: var(--surface-a40);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -892,7 +892,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -902,7 +902,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   gap: 4px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__row-actions {
@@ -917,18 +917,18 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 5px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.is-toggle {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.7);
-    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    background: var(--surface-a06);
+    border-color: var(--surface-a20);
+    color: var(--surface-a72);
+    &:hover:not(:disabled) { background: var(--surface-a12); color: var(--surface-raised); }
   }
 
   &.is-edit {
@@ -950,9 +950,8 @@ $surface-2: rgba(255, 255, 255, 0.08);
 .SettingsFleetVehicles__mask {
   position: fixed;
   inset: 0;
-  z-index: 1200;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: var(--z-modal-2);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -960,9 +959,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetVehicles__modal {
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: var(--surface-deep-2);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
@@ -974,9 +973,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--surface-raised);
   padding: 20px 22px 14px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .SettingsFleetVehicles__modal-body {
@@ -1014,35 +1013,35 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__input {
   width: 100%;
   padding: 9px 11px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent-a40); }
 }
 
 .SettingsFleetVehicles__switch {
   width: 44px;
   height: 24px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--r-pill);
+  background: var(--surface-a12);
+  border: 1px solid var(--surface-a20);
   padding: 2px;
   cursor: pointer;
-  transition: background 0.18s;
+  transition: background var(--dur-fast) var(--ease-out);
   position: relative;
 
   &.is-on {
@@ -1057,9 +1056,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   display: block;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.18s;
+  border-radius: var(--r-round);
+  background: var(--surface-raised);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
 .SettingsFleetVehicles__switch.is-small {
@@ -1080,7 +1079,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 .SettingsFleetVehicles__image-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   line-height: 1.5;
   padding: 2px 2px 0;
 }
@@ -1105,16 +1104,16 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   text-transform: none;
 }
 
 .SettingsFleetVehicles__image-frame {
   position: relative;
   width: 100%;
-  border-radius: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--r-md);
+  border: 1px dashed var(--surface-a20);
+  background: var(--ink-a20);
   overflow: hidden;
 }
 
@@ -1135,7 +1134,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .SettingsFleetVehicles__image-overlay {
@@ -1144,8 +1143,8 @@ $surface-2: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
@@ -1159,7 +1158,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
 
 // ── Charter Fare V1：包車套餐 section ─────────────────────────────────────
 .SettingsFleetVehicles__charter {
-  border-top: 1px dashed $border;
+  border-top: 1px dashed var(--surface-a06);
   padding-top: 14px;
   margin-top: 2px;
 }
@@ -1170,14 +1169,14 @@ $surface-2: rgba(255, 255, 255, 0.08);
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.85);
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a82);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--surface-a06); }
   &.is-open {
     background: var(--accent-a06);
     border-color: var(--accent-a30);
@@ -1194,13 +1193,13 @@ $surface-2: rgba(255, 255, 255, 0.08);
 .SettingsFleetVehicles__charter-toggle-hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__charter-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   padding: 10px 2px 6px;
   line-height: 1.5;
 }
@@ -1218,7 +1217,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__plan-grid {
@@ -1236,10 +1235,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   flex-direction: column;
   gap: 8px;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.02);
-  transition: border-color 0.15s, background 0.15s;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &.is-on {
     border-color: var(--accent-a40);
@@ -1259,7 +1258,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
 }
 
 .SettingsFleetVehicles__plan-field {
@@ -1274,7 +1273,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
 }
 
@@ -1283,7 +1282,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 22px 20px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
 }
 
 .SettingsFleetVehicles__action {
@@ -1292,24 +1291,24 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: $surface;
-    color: rgba(255, 255, 255, 0.7);
-    border-color: $border;
-    &:hover:not(:disabled) { background: $surface-2; }
+    background: var(--surface-a06);
+    color: var(--surface-a72);
+    border-color: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 }
 </style>

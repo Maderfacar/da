@@ -113,14 +113,14 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard {
   padding: 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-lg);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--surface-a06);
     border-color: var(--accent-a30);
   }
 
@@ -146,7 +146,7 @@ const ClickWithdraw = (e: Event) => {
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent);
@@ -155,7 +155,7 @@ const ClickWithdraw = (e: Event) => {
 .DriverDispatchedOrderCard__id {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   margin-left: auto;
 }
 
@@ -164,7 +164,7 @@ const ClickWithdraw = (e: Event) => {
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--good-a15);
   border: 1px solid var(--good-a30);
   color: var(--good);
@@ -187,7 +187,7 @@ const ClickWithdraw = (e: Event) => {
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   text-transform: uppercase;
 }
 
@@ -196,7 +196,7 @@ const ClickWithdraw = (e: Event) => {
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .DriverDispatchedOrderCard__route {
@@ -204,8 +204,8 @@ const ClickWithdraw = (e: Event) => {
   flex-direction: column;
   margin-bottom: 12px;
   padding: 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--r-md);
+  background: var(--ink-a20);
 }
 
 .DriverDispatchedOrderCard__route-point {
@@ -214,7 +214,7 @@ const ClickWithdraw = (e: Event) => {
   gap: 10px;
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
 
   span {
     flex: 1;
@@ -225,7 +225,7 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__route-dot {
   width: 8px; height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
 }
 
@@ -239,7 +239,7 @@ const ClickWithdraw = (e: Event) => {
 .DriverDispatchedOrderCard__route-line {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--surface-a12);
   margin-left: 3.5px;
   margin-top: 4px;
   margin-bottom: 4px;
@@ -258,10 +258,10 @@ const ClickWithdraw = (e: Event) => {
   letter-spacing: 0.04em;
   padding: 5px 10px;
   margin-bottom: 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.65);
+  border-radius: var(--r-sm);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  color: var(--surface-a60);
 
   &.is-urgent {
     color: var(--stop);
@@ -270,7 +270,7 @@ const ClickWithdraw = (e: Event) => {
   }
 
   &.is-expired {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--surface-a50);
     font-style: italic;
   }
 }
@@ -279,10 +279,10 @@ const ClickWithdraw = (e: Event) => {
   font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.75);
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  color: var(--surface-a72);
 }
 
 .DriverDispatchedOrderCard__foot {
@@ -298,7 +298,7 @@ const ClickWithdraw = (e: Event) => {
   gap: 12px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
 }
 
 .DriverDispatchedOrderCard__btns {
@@ -312,12 +312,12 @@ const ClickWithdraw = (e: Event) => {
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 14px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
   color: var(--accent);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--accent-a20); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }

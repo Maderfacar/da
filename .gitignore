@@ -56,3 +56,4 @@ scripts/.geo-build/
 
 # Playwright HTML 報告（本機產物，不 commit；test-results/ 見上方）
 playwright-report/
+build.log

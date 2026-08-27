@@ -119,7 +119,7 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -159,9 +159,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 10px 22px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--da-amber);
-  color: #fff;
+  color: var(--surface-raised);
   text-decoration: none;
 
   &:hover { background: var(--da-amber-light); }
@@ -207,7 +207,7 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 4px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--good-a15);
   border: 1px solid var(--good-a45);
   color: var(--good);
@@ -245,9 +245,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 .VehiclePublicProfile__cta {
   margin-top: 32px;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   background: var(--da-amber-pale);
-  border: 1px solid var(--da-glass-border);
+  border: 1px solid var(--hairline);
   text-align: center;
 }
 

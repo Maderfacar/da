@@ -529,9 +529,9 @@ const swiperBreakpoints = {
   }
 
   &__counter {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1px solid var(--da-gray-pale);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     padding: 14px 16px;
     display: flex;
     justify-content: space-between;
@@ -570,14 +570,14 @@ const swiperBreakpoints = {
     button {
       width: 32px;
       height: 32px;
-      border-radius: 50%;
+      border-radius: var(--r-round);
       border: 1.5px solid var(--da-amber);
       background: none;
       color: var(--da-amber);
       font-size: 18px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s, opacity 0.15s;
+      transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -603,9 +603,9 @@ const swiperBreakpoints = {
   }
 
   &__luggage-row {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1px solid var(--da-gray-pale);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     padding: 12px 14px;
     display: flex;
     justify-content: space-between;
@@ -637,7 +637,7 @@ const swiperBreakpoints = {
     button {
       width: 28px;
       height: 28px;
-      border-radius: 50%;
+      border-radius: var(--r-round);
       border: 1.5px solid var(--da-amber);
       background: none;
       color: var(--da-amber);
@@ -678,15 +678,15 @@ const swiperBreakpoints = {
     z-index: 5;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--r-round);
     border: 1px solid var(--da-gray-pale);
     background: var(--da-cream);
     color: var(--da-dark);
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    transition: background 0.15s, border-color 0.15s;
+    box-shadow: var(--shadow-soft);
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -712,14 +712,14 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-card {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
     position: relative;
     height: 380px;
     box-sizing: border-box;
@@ -743,13 +743,13 @@ const swiperBreakpoints = {
     flex: none;
     height: 220px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--ink-a06);
     display: flex;
     align-items: center;
     justify-content: center;
 
     &.is-icon {
-      background: rgba(0, 0, 0, 0.03);
+      background: var(--ink-a06);
     }
   }
 
@@ -770,10 +770,8 @@ const swiperBreakpoints = {
     min-height: 0;
     overflow: hidden;
     padding: 14px 18px 16px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     background: var(--surface-a82);
-    border-top: 1px solid rgba(255, 255, 255, 0.7);
+    border-top: 1px solid var(--surface-a72);
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -834,7 +832,7 @@ const swiperBreakpoints = {
     padding: 14px 16px;
     background: var(--da-amber-pale);
     border: 1px dashed var(--da-amber);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
   }
 
   &__charter-plan-row {
@@ -873,14 +871,14 @@ const swiperBreakpoints = {
     align-items: center;
     gap: 6px;
     padding: 14px 10px;
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     cursor: pointer;
     font-size: 13px;
     color: var(--da-dark);
     text-align: center;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
     font-family: var(--ff-ui);
 
     .nuxt-icon { font-size: 24px; color: var(--da-gray-light); }
@@ -901,11 +899,11 @@ const swiperBreakpoints = {
 
   // ── 期望特徵 可摺疊卡片（承襲 PassengerFaqList 的 cream theme collapsible 風格）
   &__expectations {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     overflow: hidden;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
 
     &:hover { border-color: var(--da-amber); }
 
@@ -957,7 +955,7 @@ const swiperBreakpoints = {
   &__expectations-mark {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--r-round);
     border: 1.5px solid var(--da-amber);
     background: var(--da-cream);
     color: var(--da-amber);
@@ -969,7 +967,7 @@ const swiperBreakpoints = {
     justify-content: center;
     flex-shrink: 0;
     user-select: none;
-    transition: background 0.15s, color 0.15s, transform 0.2s;
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out);
 
     .PassengerBookingStepOptions__expectations-header:hover & {
       background: var(--da-amber-pale);
@@ -978,7 +976,7 @@ const swiperBreakpoints = {
 
     .is-open & {
       background: var(--da-amber);
-      color: #fff;
+      color: var(--surface-raised);
     }
   }
 
@@ -1005,7 +1003,7 @@ const swiperBreakpoints = {
 // ── expectations 展開動畫 ───────────────────────────────────────────
 .expectations-expand-enter-active,
 .expectations-expand-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-base) var(--ease-out);
 }
 
 .expectations-expand-enter-from,

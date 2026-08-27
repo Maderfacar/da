@@ -86,13 +86,18 @@ function ClickNav(path: string) {
 </script>
 
 <template lang="pug">
-.LayoutBackDesk(data-surface='dark')
+//- ⚠ data-surface='dark' 刻意**不**標在這個根節點上。
+//-    admin 是 7 深 7 淺混用：orders/settings/users/drivers/notifications/traffic/war-room 是深色頁，
+//-    dashboard/audit-logs/referral/line-management/fare-sandbox/pin/drivers[uid] 是淺色頁。
+//-    標在根節點會讓那 7 個淺色頁也拿到深底用的亮銅 #C9A961，於骨白只有 1.82:1。
+//-    正確做法是標在「真正是深色表面」的節點：下方三處 chrome + 各深色頁自己的根節點。
+.LayoutBackDesk
   ClientOnly
     UiToast
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")
-    .LayoutBackDesk__loading(v-if="!authResolved")
+    .LayoutBackDesk__loading(v-if="!authResolved" data-surface='dark')
       .LayoutBackDesk__loading-logo
         | DEST
         span ∙
@@ -100,7 +105,7 @@ function ClickNav(path: string) {
       .LayoutBackDesk__loading-spinner
 
   //- ── 頂部 Bar ─────────────────────────────────────────────
-  nav.LayoutBackDesk__top
+  nav.LayoutBackDesk__top(data-surface='dark')
     button.LayoutBackDesk__hamburger(
       @click="drawerOpen = !drawerOpen"
       :class="{ 'is-open': drawerOpen }"
@@ -118,7 +123,7 @@ function ClickNav(path: string) {
       CommonHeaderUser
 
   //- ── 側邊抽屜（手機 overlay / 桌機常駐）────────────────────
-  aside.LayoutBackDesk__drawer(:class="{ 'is-open': drawerOpen }")
+  aside.LayoutBackDesk__drawer(data-surface='dark' :class="{ 'is-open': drawerOpen }")
     .LayoutBackDesk__drawer-header
       .LayoutBackDesk__drawer-logo
         | DEST
@@ -165,7 +170,7 @@ function ClickNav(path: string) {
 .LayoutBackDesk__loading {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-boot);
   background: var(--da-dark);
   display: flex;
   flex-direction: column;
@@ -189,7 +194,7 @@ function ClickNav(path: string) {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -197,14 +202,14 @@ function ClickNav(path: string) {
   to { transform: rotate(360deg); }
 }
 
-.auth-fade-leave-active { transition: opacity 0.4s ease; }
+.auth-fade-leave-active { transition: opacity var(--dur-slower) var(--ease-out); }
 .auth-fade-leave-to { opacity: 0; }
 
 // ── 頂部 Bar ───────────────────────────────────────────────
 .LayoutBackDesk__top {
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 200;
+  z-index: var(--z-header);
   height: 56px;
   padding: 0 16px;
   display: flex;
@@ -251,8 +256,8 @@ function ClickNav(path: string) {
     width: 100%;
     height: 2px;
     background: var(--da-cream);
-    border-radius: 2px;
-    transition: all 0.25s ease;
+    border-radius: var(--r-xs);
+    transition: all var(--dur-base) var(--ease-out);
     transform-origin: center;
   }
 
@@ -272,14 +277,14 @@ function ClickNav(path: string) {
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 // ── 側邊抽屜 ───────────────────────────────────────────────
 .LayoutBackDesk__drawer {
   position: fixed;
   top: 0; left: 0;
-  z-index: 300;
+  z-index: var(--z-drawer);
   width: 280px;
   height: 100svh;
   background: var(--da-dark);
@@ -288,14 +293,14 @@ function ClickNav(path: string) {
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-slow) var(--ease-out);
 
   &.is-open { transform: translateX(0); }
 }
 
 .LayoutBackDesk__drawer-header {
   padding: 24px 20px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .LayoutBackDesk__drawer-logo {
@@ -315,7 +320,7 @@ function ClickNav(path: string) {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .LayoutBackDesk__drawer-nav {
@@ -329,13 +334,13 @@ function ClickNav(path: string) {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
   margin-bottom: 4px;
   border-left: 3px solid transparent;
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--surface-a06); }
 
   &.is-active {
     background: var(--accent-a12);
@@ -354,7 +359,7 @@ function ClickNav(path: string) {
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--surface-a60);
 }
 
 .LayoutBackDesk__nav-item.is-active .LayoutBackDesk__nav-label {
@@ -363,7 +368,7 @@ function ClickNav(path: string) {
 
 .LayoutBackDesk__drawer-footer {
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--surface-a06);
 }
 
 .LayoutBackDesk__signout {
@@ -371,14 +376,14 @@ function ClickNav(path: string) {
   padding: 12px;
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--danger);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--dur-base) var(--ease-out);
 
   &:hover { background: var(--stop-a15); }
 }
@@ -387,12 +392,11 @@ function ClickNav(path: string) {
 .LayoutBackDesk__overlay {
   position: fixed;
   inset: 0;
-  z-index: 250;
+  z-index: var(--z-overlay);
   background: var(--ink-a50);
-  backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition: opacity var(--dur-slow) var(--ease-out), visibility var(--dur-slow) var(--ease-out);
 
   &.is-open {
     opacity: 1;
@@ -410,8 +414,8 @@ function ClickNav(path: string) {
 // hamburger 永遠保留可 toggle（無論桌機/手機）
 @media (min-width: 768px) {
   .LayoutBackDesk__drawer {
-    z-index: 150;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: var(--z-nav);
+    border-right: 1px solid var(--surface-a06);
   }
 
   // 桌機 drawer 開啟時不顯示 overlay（避免擋主畫面）
@@ -429,7 +433,7 @@ function ClickNav(path: string) {
   // 平滑過渡
   .LayoutBackDesk__top,
   .LayoutBackDesk__body {
-    transition: left 0.3s ease, padding-left 0.3s ease;
+    transition: left var(--dur-slow) var(--ease-out), padding-left var(--dur-slow) var(--ease-out);
   }
 }
 </style>

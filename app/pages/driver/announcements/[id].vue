@@ -98,16 +98,16 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border:  rgba(255, 255, 255, 0.08);
-$muted:   rgba(255, 255, 255, 0.55);
-$muted-2: rgba(255, 255, 255, 0.35);
+
+
+
+
 
 .PageDriverAnnouncementDetail {
   min-height: 100svh;
   padding: 56px 0 100px;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageDriverAnnouncementDetail__back {
@@ -116,12 +116,10 @@ $muted-2: rgba(255, 255, 255, 0.35);
   z-index: 5;
   margin: 12px 16px 0;
   padding: 8px 14px 8px 10px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
@@ -130,12 +128,12 @@ $muted-2: rgba(255, 255, 255, 0.35);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &:hover {
     color: var(--accent);
     border-color: var(--accent-a40);
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--ink-a70);
   }
 
   span { font-size: 16px; line-height: 1; }
@@ -151,7 +149,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   width: 32px; height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -167,7 +165,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncementDetail__emptyText {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: $muted-2;
+  color: var(--surface-a30);
 }
 
 .PageDriverAnnouncementDetail__article {
@@ -190,7 +188,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 22px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.4;
   margin: 0 0 10px;
   word-break: break-word;
@@ -201,39 +199,39 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: $muted-2;
+  color: var(--surface-a30);
   margin-bottom: 24px;
 }
 
 .PageDriverAnnouncementDetail__body {
   font-family: var(--ff-ui);
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--surface-a88);
   line-height: 1.75;
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
   :deep(a) { color: var(--accent); text-decoration: underline; }
-  :deep(strong) { font-weight: 700; color: #fff; }
+  :deep(strong) { font-weight: 700; color: var(--surface-raised); }
   :deep(em) { font-style: italic; }
   :deep(ul), :deep(ol) { margin: 8px 0 12px 22px; }
   :deep(li) { margin: 4px 0; }
   :deep(h1), :deep(h2), :deep(h3) {
-    color: #fff;
+    color: var(--surface-raised);
     margin: 18px 0 10px;
     line-height: 1.4;
   }
   :deep(h1) { font-size: 20px; }
   :deep(h2) { font-size: 17px; }
   :deep(h3) { font-size: 15px; }
-  :deep(img) { max-width: 100%; border-radius: 12px; margin: 10px 0; }
+  :deep(img) { max-width: 100%; border-radius: var(--r-md); margin: 10px 0; }
   :deep(blockquote) {
     border-left: 3px solid var(--accent-a50);
     padding: 4px 14px;
     margin: 12px 0;
-    color: $muted;
+    color: var(--surface-a60);
     background: var(--accent-a06);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
   }
 }
 
@@ -241,15 +239,15 @@ $muted-2: rgba(255, 255, 255, 0.35);
   display: inline-block;
   margin-top: 24px;
   padding: 12px 28px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent);
-  color: #fff;
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-lit); }
 }

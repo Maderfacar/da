@@ -778,7 +778,7 @@ ElDialogPlus.OpenDialogImageSelect(
     max-height: 640px;
     min-height: 240px;
     // border: 2px dashed #6A574E;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     overflow: hidden;
     background: #00000094;
     display: flex;
@@ -797,8 +797,8 @@ ElDialogPlus.OpenDialogImageSelect(
       @include wh(35px, 35px);
       @include center;
       @include fs(28px);
-      border-radius: 10px;
-      background-color: #fff ;
+      border-radius: var(--r-md);
+      background-color: var(--surface-raised) ;
       color: var(--accent);
       opacity: 0.7;
     }
@@ -822,7 +822,7 @@ ElDialogPlus.OpenDialogImageSelect(
     @include wh(35px, 35px);
     @include center;
     @include fs(28px);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--accent);
     color: white;
     opacity: 0.7;
@@ -833,7 +833,7 @@ ElDialogPlus.OpenDialogImageSelect(
     @include wh(100%, 40px);
     @include center;
     @include fs(16px, bold);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     background: var(--accent);
     color: white;
     opacity: 0.7;

@@ -111,10 +111,10 @@ section.PassengerReferralPanel(v-if="showPanel")
   gap: 12px;
   background: var(--da-dark);
   border: 1px solid var(--accent-a30);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 16px;
   margin-bottom: 10px;
-  box-shadow: 0 8px 32px var(--ink-a20);
+  box-shadow: var(--shadow-pop);
 }
 
 .PassengerReferralPanel__code-info {
@@ -144,14 +144,14 @@ section.PassengerReferralPanel(v-if="showPanel")
   padding: 9px 16px;
   background: var(--line-green);
   border: 1px solid var(--line-green);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--surface-raised);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.92; }
   &:active { transform: scale(0.98); }
@@ -166,14 +166,12 @@ section.PassengerReferralPanel(v-if="showPanel")
 }
 
 .PassengerReferralPanel__stat {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 14px;
   text-align: center;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerReferralPanel__stat-num {
@@ -194,13 +192,11 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 // ── 未用折扣碼 ────────────────────────────────────────────
 .PassengerReferralPanel__codes {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 14px 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerReferralPanel__codes-cap {
@@ -235,7 +231,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   gap: 12px;
   padding: 10px 12px;
   border: 1px dashed var(--accent-a40);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--da-amber-pale);
 }
 
@@ -260,7 +256,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   color: var(--da-amber);
   white-space: nowrap;

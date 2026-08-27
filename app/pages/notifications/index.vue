@@ -156,7 +156,7 @@ const FormatTime = (iso: string | null): string => {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -187,20 +187,18 @@ const FormatTime = (iso: string | null): string => {
   display: flex;
   gap: 12px;
   padding: 12px;
-  border-radius: 18px;
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
   text-decoration: none;
   color: inherit;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow-soft);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--surface-a88);
     border-color: var(--accent-a30);
-    box-shadow: 0 6px 24px var(--ink-a06);
+    box-shadow: var(--shadow-pop);
   }
 
   &.is-unread {
@@ -212,7 +210,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__cover {
   width: 80px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -220,7 +218,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__coverPlaceholder {
   width: 80px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--da-amber-pale);
   display: flex;
   align-items: center;
@@ -261,7 +259,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__cardDot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--stop);
   flex-shrink: 0;
   margin-top: 6px;
@@ -278,7 +276,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__loadMore {
   margin: 18px auto 0;
   padding: 10px 22px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--da-gray-pale);
   background: var(--surface-a60);
   color: var(--da-gray);
@@ -288,7 +286,7 @@ const FormatTime = (iso: string | null): string => {
   letter-spacing: 0.1em;
   cursor: pointer;
   align-self: center;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
     background: var(--surface-a96);

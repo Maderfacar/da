@@ -235,8 +235,8 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
+
+
 
 .SettingsSeasonalThemes {
   display: flex;
@@ -247,9 +247,9 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
   padding: 12px 16px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .SettingsSeasonalThemes__loading,
@@ -257,7 +257,7 @@ $border: rgba(255, 255, 255, 0.08);
   padding: 24px 16px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   text-align: center;
 }
 
@@ -273,10 +273,10 @@ $border: rgba(255, 255, 255, 0.08);
   flex-direction: column;
   gap: 10px;
   padding: 14px;
-  border-radius: 14px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.02);
-  transition: border-color 0.15s, background 0.15s;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a60);
@@ -303,7 +303,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--surface-a96);
 }
 
 .SettingsSeasonalThemes__card-id {
@@ -311,10 +311,10 @@ $border: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: $muted;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid $border;
-  border-radius: 100px;
+  color: var(--surface-a40);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -330,7 +330,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 1px 8px;
   border: 1px solid;
 
@@ -340,9 +340,9 @@ $border: rgba(255, 255, 255, 0.08);
     border-color: var(--good-a30);
   }
   &.is-default {
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.05);
-    border-color: $border;
+    color: var(--surface-a72);
+    background: var(--surface-a06);
+    border-color: var(--surface-a06);
   }
   &.is-off {
     color: var(--stop);
@@ -355,7 +355,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsSeasonalThemes__swatches {
@@ -374,15 +374,15 @@ $border: rgba(255, 255, 255, 0.08);
 .SettingsSeasonalThemes__swatch-chip {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a20);
 }
 
 .SettingsSeasonalThemes__swatch-label {
   font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.04em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsSeasonalThemes__hero {
@@ -395,9 +395,9 @@ $border: rgba(255, 255, 255, 0.08);
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--r-md);
+  border: 1px dashed var(--surface-a20);
+  background: var(--ink-a20);
   overflow: hidden;
 }
 
@@ -418,7 +418,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .SettingsSeasonalThemes__hero-overlay {
@@ -427,8 +427,8 @@ $border: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
@@ -452,18 +452,18 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
   &.is-ghost {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.7);
-    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    background: var(--surface-a06);
+    border-color: var(--surface-a20);
+    color: var(--surface-a72);
+    &:hover:not(:disabled) { background: var(--surface-a12); color: var(--surface-raised); }
   }
 
   &.is-apply {

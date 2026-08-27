@@ -356,7 +356,7 @@ onMounted(() => {
   letter-spacing: 0.06em;
   color: var(--da-gray);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
 
 .PageReferral__tab:hover { color: var(--da-dark); }
@@ -375,9 +375,9 @@ onMounted(() => {
 }
 
 .PageReferral__section {
-  background: var(--da-glass-bg);
+  background: var(--surface-raised);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -464,7 +464,7 @@ onMounted(() => {
 .PageReferral__preview-img {
   max-width: 320px;
   max-height: 200px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--da-gray-pale);
   object-fit: cover;
 }
@@ -503,13 +503,13 @@ onMounted(() => {
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 .PageReferral__table-wrap {
-  background: var(--da-glass-bg);
+  background: var(--surface-raised);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -521,7 +521,7 @@ onMounted(() => {
 
   thead {
     background: var(--da-dark);
-    color: #fff;
+    color: var(--surface-raised);
   }
 
   th {
@@ -565,7 +565,7 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 2px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-pending   { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
   &.is-qualified { background: var(--note-a15);  color: var(--note); border: 1px solid var(--note-a30); }

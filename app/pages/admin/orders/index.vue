@@ -1329,7 +1329,7 @@ onMounted(() => {
 </script>
 
 <template lang="pug">
-.PageAdminOrders
+.PageAdminOrders(data-surface='dark')
   .PageAdminOrders__header
     .PageAdminOrders__header-label ORDER MANAGEMENT
     h1.PageAdminOrders__header-title 訂單管理
@@ -2095,17 +2095,12 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$surface-2: rgba(255, 255, 255, 0.08);
-$border: rgba(255, 255, 255, 0.08);
-$text: rgba(255, 255, 255, 0.8);
-$muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminOrders {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageAdminOrders__header {
@@ -2128,7 +2123,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -2153,12 +2148,12 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 5px 12px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: $muted;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a30);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -2170,7 +2165,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__count {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__create-btn {
@@ -2179,13 +2174,13 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
   color: var(--accent);
   cursor: pointer;
   margin-left: auto;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -2201,7 +2196,7 @@ $muted: rgba(255, 255, 255, 0.35);
   height: 28px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -2210,7 +2205,7 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 60px 0;
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__table {
@@ -2231,17 +2226,17 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 12px;
-  background: $surface;
-  border: 1px solid $border;
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
   min-width: 1280px;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &.is-clickable {
     cursor: pointer;
 
     &:hover {
-      background: $surface-2;
+      background: var(--surface-a06);
       border-color: var(--accent-a20);
     }
   }
@@ -2257,7 +2252,7 @@ $muted: rgba(255, 255, 255, 0.35);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.15em;
-      color: $muted;
+      color: var(--surface-a30);
       text-transform: uppercase;
     }
   }
@@ -2266,12 +2261,12 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__cell {
   font-family: var(--ff-label);
   font-size: 15px;
-  color: $text;
+  color: var(--surface-a82);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  &.is-time { color: rgba(255, 255, 255, 0.85); font-weight: 700; }
+  &.is-time { color: var(--surface-a82); font-weight: 700; }
   &.is-fare { font-weight: 700; color: var(--accent); }
   // 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
   &.is-type,
@@ -2288,7 +2283,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
-  color: #fff;
+  color: var(--surface-raised);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2297,7 +2292,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__pickup-region {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2306,7 +2301,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__pickup-place {
   font-family: var(--ff-ui);
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--surface-a96);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2318,7 +2313,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--note-a15);
   border: 1px solid var(--note-a30);
   color: var(--note);
@@ -2367,24 +2362,24 @@ $muted: rgba(255, 255, 255, 0.35);
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: $muted;
+    color: var(--surface-a30);
   }
 
   .PageAdminOrders__cell.is-id { grid-area: id; }
-  .PageAdminOrders__order-id { font-size: 14px; color: #fff; font-weight: 700; }
+  .PageAdminOrders__order-id { font-size: 14px; color: var(--surface-raised); font-weight: 700; }
 
   .PageAdminOrders__cell.is-status { grid-area: status; align-items: flex-end; }
 
   .PageAdminOrders__cell.is-time {
     grid-area: time;
     font-size: 16px;
-    color: #fff;
+    color: var(--surface-raised);
     font-weight: 700;
     padding: 8px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--surface-a06);
+    border-bottom: 1px solid var(--surface-a06);
   }
-  .PageAdminOrders__cell.is-time::before { color: $muted; }
+  .PageAdminOrders__cell.is-time::before { color: var(--surface-a30); }
 
   .PageAdminOrders__cell.is-driver { grid-area: driver; }
   .PageAdminOrders__cell.is-fare { grid-area: fare; align-items: flex-end; font-size: 17px; }
@@ -2395,7 +2390,7 @@ $muted: rgba(255, 255, 255, 0.35);
   .PageAdminOrders__cell.is-pickup {
     grid-area: pickup;
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--surface-a06);
   }
   .PageAdminOrders__pickup-place { white-space: normal; }
 
@@ -2407,7 +2402,7 @@ $muted: rgba(255, 255, 255, 0.35);
     grid-area: action;
     margin-top: 6px;
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--surface-a06);
   }
 
   .PageAdminOrders__cell.is-action::before { display: none; }
@@ -2421,7 +2416,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__order-id {
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   letter-spacing: 0.05em;
 }
 
@@ -2435,7 +2430,7 @@ $muted: rgba(255, 255, 255, 0.35);
   color: var(--wait);
   background: var(--wait-a15);
   border: 1px solid var(--wait-a30);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
   cursor: help;
 }
@@ -2445,14 +2440,14 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 12px;
   font-weight: 700;
   padding: 3px 9px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent);
 }
 
 .PageAdminOrders__unassigned {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   font-size: 13px;
 }
 
@@ -2462,7 +2457,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 3px 9px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
   &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
@@ -2480,7 +2475,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 2px 6px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-pending  { background: var(--stop-a08);  border: 1px solid var(--stop-a30);  color: var(--stop); }
   &.is-progress { background: var(--accent-a12);       border: 1px solid var(--accent-a30);         color: var(--accent); }
@@ -2499,7 +2494,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__rematch-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   line-height: 1.5;
 }
 
@@ -2510,10 +2505,10 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__history-row {
-  border: 1px solid $border;
-  border-radius: 8px;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-sm);
   padding: 8px 12px;
-  background: $surface;
+  background: var(--surface-a06);
 }
 
 .PageAdminOrders__history-head {
@@ -2532,11 +2527,11 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminOrders__history-reason {
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__history-time {
-  color: $muted;
+  color: var(--surface-a30);
   margin-left: auto;
 }
 
@@ -2550,10 +2545,10 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid $border;
-  color: $text;
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  color: var(--surface-a82);
 
   &.is-withdrawn {
     text-decoration: line-through;
@@ -2564,13 +2559,13 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__history-empty {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__dispatch-empty {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
   line-height: 1.6;
   margin-bottom: 8px;
 }
@@ -2582,7 +2577,7 @@ $muted: rgba(255, 255, 255, 0.35);
   margin-bottom: 10px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__dispatch-active {
@@ -2593,7 +2588,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__bid-loading {
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
   padding: 12px 0;
   text-align: center;
 }
@@ -2602,9 +2597,8 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminOrders__modal-mask {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2617,9 +2611,9 @@ $muted: rgba(255, 255, 255, 0.35);
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: var(--surface-deep-2);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -2628,7 +2622,7 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 
   &-left {
     display: flex;
@@ -2644,7 +2638,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   color: var(--accent-lit);
@@ -2654,7 +2648,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   letter-spacing: 0.08em;
 }
 
@@ -2664,7 +2658,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 3px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
   &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
@@ -2677,15 +2671,15 @@ $muted: rgba(255, 255, 255, 0.35);
   width: 32px;
   height: 32px;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
+  background: var(--surface-a06);
+  color: var(--surface-a60);
+  border-radius: var(--r-round);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
 
 .PageAdminOrders__modal-id {
@@ -2693,7 +2687,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__quick-actions {
@@ -2709,12 +2703,12 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--accent-a30);
   background: var(--accent-a12);
   color: var(--accent-lit);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--accent-a20); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -2739,10 +2733,10 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 12px;
   padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -2758,7 +2752,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.12em;
-  color: $muted;
+  color: var(--surface-a30);
   text-transform: uppercase;
 }
 
@@ -2767,10 +2761,10 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 12px;
   padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -2802,16 +2796,16 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   padding: 4px 6px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 // Native <select> dropdown 在 dark theme 下白底白字 fix
-// Windows Chrome / Edge：<option> 的背景不繼承 <select>（瀏覽器強制白底），文字繼承 #fff → 看不見
+// Windows Chrome / Edge：<option> 的背景不繼承 <select>（瀏覽器強制白底），文字繼承 var(--surface-raised) → 看不見
 // 修：option 自帶深色背景 + 對應文字色；disabled placeholder option 淡化
 // 套用範圍：本頁所有 native <select>（首發等級 / 重發 / 編輯訂單 / 指派司機 / 取消原因）
 select option {
@@ -2840,7 +2834,7 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a30);
   margin-bottom: 8px;
 }
 
@@ -2856,7 +2850,7 @@ select option:disabled {
   &.is-charter-collect {
     margin-top: 6px;
     padding: 10px 12px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     border: 1px solid var(--accent-a30);
     background: var(--accent-a06);
     font-size: 14px;
@@ -2869,14 +2863,14 @@ select option:disabled {
   }
 }
 
-.PageAdminOrders__section-key { color: rgba(255, 255, 255, 0.45); }
+.PageAdminOrders__section-key { color: var(--surface-a40); }
 
 .PageAdminOrders__section-val {
-  color: #fff;
+  color: var(--surface-raised);
   text-align: right;
 
   &.is-fare { color: var(--accent); font-weight: 700; }
-  &.is-muted { color: $muted; }
+  &.is-muted { color: var(--surface-a30); }
 }
 
 // A2 醜點系統 Phase 1：乘客紅旗 / 拉黑徽章
@@ -2891,7 +2885,7 @@ select option:disabled {
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 600;
@@ -2914,10 +2908,10 @@ select option:disabled {
   font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   white-space: pre-wrap;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 10px 12px;
 }
 
@@ -2926,9 +2920,9 @@ select option:disabled {
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid $border;
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
   margin-bottom: 6px;
 
   &.is-pickup .PageAdminOrders__addr-tag { background: var(--accent-a20); color: var(--accent); border-color: var(--accent-a30); }
@@ -2942,7 +2936,7 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   flex-shrink: 0;
   white-space: nowrap;
@@ -2953,7 +2947,7 @@ select option:disabled {
 .PageAdminOrders__addr-name {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -2961,7 +2955,7 @@ select option:disabled {
 .PageAdminOrders__addr-full {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   margin-top: 2px;
   line-height: 1.4;
   word-break: break-word;
@@ -2977,7 +2971,7 @@ select option:disabled {
   font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   color: var(--accent-lit);
   border: 1px solid var(--accent-a20);
@@ -3002,25 +2996,25 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminOrders__edit-input,
 .PageAdminOrders__edit-textarea {
   width: 100%;
   padding: 9px 11px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   resize: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent-a40); }
 }
 
@@ -3031,8 +3025,8 @@ select option:disabled {
 // select 原生 popup 在 Windows/部分瀏覽器下會吃 OS theme（白底白字）。
 // 直接在 option 上設定 dark 配色強制覆寫
 .PageAdminOrders__edit-input option {
-  background: #161b22;
-  color: #fff;
+  background: var(--surface-deep-2);
+  color: var(--surface-raised);
 }
 
 .PageAdminOrders__stopover-list {
@@ -3046,8 +3040,8 @@ select option:disabled {
   grid-template-columns: 22px 60px 1fr 26px 32px;
   align-items: center;
   gap: 8px;
-  border-radius: 10px;
-  transition: opacity 0.15s, box-shadow 0.15s;
+  border-radius: var(--r-md);
+  transition: opacity var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 
   &.is-dragging { opacity: 0.45; }
   &.is-drop-target { box-shadow: 0 -2px 0 0 var(--note); }
@@ -3059,11 +3053,11 @@ select option:disabled {
   padding: 0;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   font-size: 15px;
   line-height: 1;
   cursor: grab;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--note); }
   &:active { cursor: grabbing; }
@@ -3082,11 +3076,11 @@ select option:disabled {
   border: 1px solid var(--note-a30);
   background: var(--note-a08);
   color: var(--note);
-  border-radius: 5px;
+  border-radius: var(--r-xs);
   font-size: 8px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--note-a15); }
   &:disabled { opacity: 0.25; cursor: not-allowed; }
@@ -3101,7 +3095,7 @@ select option:disabled {
   background: var(--note-a08);
   border: 1px solid var(--note-a30);
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   text-align: center;
 }
 
@@ -3111,11 +3105,11 @@ select option:disabled {
   border: 1px solid var(--stop-a30);
   background: var(--stop-a08);
   color: var(--stop);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--stop-a15); }
 }
@@ -3126,13 +3120,13 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px dashed var(--note-a30);
   background: var(--note-a08);
   color: var(--note);
   cursor: pointer;
   margin-top: 6px;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--note-a08); }
 }
@@ -3164,12 +3158,12 @@ select option:disabled {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: rgba(255, 255, 255, 0.55);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -3190,16 +3184,16 @@ select option:disabled {
 
 .PageAdminOrders__tag-edit-empty {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--r-sm);
+  background: var(--surface-a06);
 }
 
 .PageAdminOrders__tag-edit-preview {
   margin-top: 10px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--note-a08);
   border: 1px solid var(--note-a15);
   display: flex;
@@ -3212,7 +3206,7 @@ select option:disabled {
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--surface-a82);
 
   &.is-error { color: var(--stop); justify-content: flex-start; }
 
@@ -3225,7 +3219,7 @@ select option:disabled {
   &.is-diff {
     font-weight: 700;
     padding-top: 4px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    border-top: 1px dashed var(--surface-a12);
     margin-top: 2px;
   }
 
@@ -3236,7 +3230,7 @@ select option:disabled {
 .PageAdminOrders__tag-edit-key {
   font-family: var(--ff-label);
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
 }
 
 .PageAdminOrders__tag-edit-val {
@@ -3252,11 +3246,11 @@ select option:disabled {
 // ── Modal Footer ──────────────────────────────────────────
 .PageAdminOrders__modal-foot {
   padding: 14px 20px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ink-a20);
 }
 
 .PageAdminOrders__action {
@@ -3265,25 +3259,25 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: $surface;
-    color: rgba(255, 255, 255, 0.7);
-    border-color: $border;
-    &:hover:not(:disabled) { background: $surface-2; }
+    background: var(--surface-a06);
+    color: var(--surface-a72);
+    border-color: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 
   &.is-danger {
@@ -3318,7 +3312,7 @@ select option:disabled {
 // ── 列表 chevron ───────────────────────────────────────────
 .PageAdminOrders__row-chevron {
   font-size: 22px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
   text-align: center;
   display: block;
   line-height: 1;
@@ -3350,13 +3344,13 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 5px 9px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a12);
   color: var(--accent);
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
     background: var(--accent-a20);
@@ -3412,10 +3406,10 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 1px 6px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  color: var(--surface-a82);
 }
 
 .PageAdminOrders__row-action-tag {
@@ -3426,7 +3420,7 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 5px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   white-space: nowrap;
 
   &.is-assigned {
@@ -3442,9 +3436,9 @@ select option:disabled {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid $border;
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
 }
 
 .PageAdminOrders__driver-info { flex: 1; min-width: 0; }
@@ -3452,10 +3446,10 @@ select option:disabled {
 .PageAdminOrders__driver-name {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: #fff;
+  color: var(--surface-raised);
   font-weight: 700;
 
-  &.is-muted { color: $muted; font-weight: 400; }
+  &.is-muted { color: var(--surface-a30); font-weight: 400; }
 }
 
 .PageAdminOrders__driver-assign-btn {
@@ -3464,13 +3458,13 @@ select option:disabled {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a12);
   color: var(--accent);
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -3479,7 +3473,7 @@ select option:disabled {
 .PageAdminOrders__char-count {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a30);
   text-align: right;
   margin-top: 4px;
 }
@@ -3488,9 +3482,8 @@ select option:disabled {
 .PageAdminOrders__sub-mask {
   position: fixed;
   inset: 0;
-  z-index: 1100;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: var(--z-modal-2);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3498,9 +3491,9 @@ select option:disabled {
 }
 
 .PageAdminOrders__sub-modal {
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: var(--surface-deep-2);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   padding: 22px;
   width: 100%;
   max-width: 380px;
@@ -3512,7 +3505,7 @@ select option:disabled {
   font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--surface-raised);
   margin-bottom: 16px;
 }
 
@@ -3521,7 +3514,7 @@ select option:disabled {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: $muted;
+  color: var(--surface-a30);
   margin-left: 4px;
 }
 
@@ -3535,7 +3528,7 @@ select option:disabled {
 .PageAdminOrders__sub-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   margin-top: 8px;
   line-height: 1.5;
 
@@ -3550,7 +3543,7 @@ select option:disabled {
 
 // ── Transition ────────────────────────────────────────────
 .fade-enter-active,
-.fade-leave-active { transition: opacity 0.2s ease; }
+.fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from,
 .fade-leave-to { opacity: 0; }
 

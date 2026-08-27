@@ -21,7 +21,7 @@ withDefaults(defineProps<Props>(), {
 
 <style lang="scss" scoped>
 .UiCard {
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   position: relative;
   overflow: hidden;
 }
@@ -34,17 +34,15 @@ withDefaults(defineProps<Props>(), {
 
 // ── 變體 ──────────────────────────────────────────────────
 .UiCard.is-glass {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-soft);
 }
 
 .UiCard.is-dark {
   background: var(--da-dark);
   border: none;
-  box-shadow: 0 8px 40px var(--ink-a20);
+  box-shadow: var(--shadow-lift);
 }
 
 .UiCard.is-cream {
@@ -59,6 +57,6 @@ withDefaults(defineProps<Props>(), {
   top: 0; left: 0;
   width: 4px; height: 100%;
   background: var(--da-amber);
-  border-radius: 20px 0 0 20px;
+  border-radius: var(--r-xl) 0 0 var(--r-xl);
 }
 </style>

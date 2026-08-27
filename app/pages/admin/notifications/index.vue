@@ -197,7 +197,7 @@ onMounted(() => {
 </script>
 
 <template lang="pug">
-.PageAdminAnnouncements
+.PageAdminAnnouncements(data-surface='dark')
   //- ── Header ─────────────────────────────────────────
   header.PageAdminAnnouncements__header
     .PageAdminAnnouncements__headerInner
@@ -308,15 +308,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.4);
+
+
+
 
 .PageAdminAnnouncements {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 // ── Header ─────────────────────────────────────────────────
@@ -354,7 +354,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminAnnouncements__createBtn {
   padding: 10px 18px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
   color: var(--accent);
@@ -363,7 +363,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -373,7 +373,7 @@ $muted: rgba(255, 255, 255, 0.4);
   display: flex;
   gap: 6px;
   margin-bottom: 20px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
   padding-bottom: 0;
   overflow-x: auto;
 }
@@ -382,7 +382,7 @@ $muted: rgba(255, 255, 255, 0.4);
   padding: 10px 18px;
   border: none;
   background: transparent;
-  color: $muted;
+  color: var(--surface-a40);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
@@ -390,10 +390,10 @@ $muted: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 
-  &:hover { color: #fff; }
+  &:hover { color: var(--surface-raised); }
   &.is-active {
     color: var(--accent);
     border-bottom-color: var(--accent);
@@ -408,23 +408,23 @@ $muted: rgba(255, 255, 255, 0.4);
 }
 
 .PageAdminAnnouncements__placeholder {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 40px 20px;
   text-align: center;
-  color: $muted;
+  color: var(--surface-a40);
   font-size: 13px;
 }
 
 .PageAdminAnnouncements__card {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 16px 18px;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
-  &:hover { border-color: rgba(255, 255, 255, 0.16); }
+  &:hover { border-color: var(--surface-a12); }
 }
 
 .PageAdminAnnouncements__cardHead {
@@ -439,7 +439,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.4;
   flex: 1 1 auto;
   min-width: 0;
@@ -459,7 +459,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent);
@@ -468,7 +468,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminAnnouncements__cardBody {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   line-height: 1.5;
   margin-bottom: 12px;
 }
@@ -491,7 +491,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .PageAdminAnnouncements__cardActions {
@@ -502,20 +502,20 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminAnnouncements__actionBtn {
   padding: 6px 14px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a82);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--surface-a12);
+    color: var(--surface-raised);
   }
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }

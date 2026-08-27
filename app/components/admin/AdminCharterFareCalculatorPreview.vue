@@ -396,13 +396,13 @@ const estimatedEndDisplay = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
+
+
 
 .AdminCharterFareCalculatorPreview {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--ink-a20);
   border: 1px solid var(--accent-a20);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 16px;
   margin: 12px 16px 16px;
 }
@@ -423,7 +423,7 @@ $border: rgba(255, 255, 255, 0.08);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
 }
 
@@ -431,13 +431,13 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
 }
 
 .AdminCharterFareCalculatorPreview__head-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminCharterFareCalculatorPreview__grid {
@@ -466,14 +466,14 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminCharterFareCalculatorPreview__plans {
   margin-top: 14px;
   padding: 10px 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border: 1px dashed var(--surface-a06);
+  border-radius: var(--r-md);
 }
 
 .AdminCharterFareCalculatorPreview__plans-head {
@@ -482,7 +482,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   margin-bottom: 8px;
 }
 
@@ -497,15 +497,15 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   min-width: 64px;
 }
 
 .AdminCharterFareCalculatorPreview__signals {
   margin-top: 14px;
   padding: 10px 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border: 1px dashed var(--surface-a06);
+  border-radius: var(--r-md);
 }
 
 .AdminCharterFareCalculatorPreview__signals-head {
@@ -514,7 +514,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   margin-bottom: 8px;
 }
 
@@ -530,7 +530,7 @@ $border: rgba(255, 255, 255, 0.08);
   gap: 6px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   cursor: pointer;
   user-select: none;
 
@@ -560,22 +560,22 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 8px 18px;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: $border;
-    color: rgba(255, 255, 255, 0.7);
-    &:hover { background: rgba(255, 255, 255, 0.1); }
+    background: var(--surface-a06);
+    border-color: var(--surface-a06);
+    color: var(--surface-a72);
+    &:hover { background: var(--surface-a12); }
   }
 }
 
@@ -585,7 +585,7 @@ $border: rgba(255, 255, 255, 0.08);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
   margin-top: 12px;
 }
@@ -593,7 +593,7 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminCharterFareCalculatorPreview__result {
   margin-top: 14px;
   border: 1px solid var(--accent-a30);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -612,8 +612,8 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminCharterFareCalculatorPreview__days {
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--ink-a12);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .AdminCharterFareCalculatorPreview__day {
@@ -621,7 +621,7 @@ $border: rgba(255, 255, 255, 0.08);
   justify-content: space-between;
   align-items: center;
   padding: 6px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 }
@@ -629,14 +629,14 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminCharterFareCalculatorPreview__day-key {
   font-family: var(--ff-label);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .AdminCharterFareCalculatorPreview__day-val {
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
 }
 
 .AdminCharterFareCalculatorPreview__line {
@@ -645,13 +645,13 @@ $border: rgba(255, 255, 255, 0.08);
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 
   &.is-raw {
-    background: rgba(255, 255, 255, 0.03);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-a06);
+    border-top: 1px solid var(--surface-a12);
   }
 
   &.is-final {
@@ -663,14 +663,14 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminCharterFareCalculatorPreview__line-key {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .AdminCharterFareCalculatorPreview__line-val {
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
 }
 
 .AdminCharterFareCalculatorPreview__line.is-final .AdminCharterFareCalculatorPreview__line-key,

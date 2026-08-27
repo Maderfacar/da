@@ -98,7 +98,7 @@ onMounted(() => {
 </script>
 
 <template lang="pug">
-.PageAdminUsers
+.PageAdminUsers(data-surface='dark')
   .PageAdminUsers__header
     .PageAdminUsers__header-label PASSENGER MANAGEMENT
     h1.PageAdminUsers__header-title 乘客管理
@@ -185,17 +185,12 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$surface-2: rgba(255, 255, 255, 0.08);
-$border: rgba(255, 255, 255, 0.08);
-$text: rgba(255, 255, 255, 0.8);
-$muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminUsers {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
 }
 
@@ -221,7 +216,7 @@ $muted: rgba(255, 255, 255, 0.4);
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PageAdminUsers__tab {
@@ -231,20 +226,20 @@ $muted: rgba(255, 255, 255, 0.4);
   padding: 10px 18px;
   background: transparent;
   border: 0;
-  color: $muted;
+  color: var(--surface-a40);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color var(--dur-base) var(--ease-out);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 
   &:hover {
-    color: $text;
+    color: var(--surface-a82);
   }
 
   &.is-active {
-    color: #fff;
+    color: var(--surface-raised);
     border-bottom-color: var(--accent);
   }
 }
@@ -255,8 +250,8 @@ $muted: rgba(255, 255, 255, 0.4);
   justify-content: center;
   min-width: 22px;
   padding: 2px 6px;
-  border-radius: 999px;
-  background: $surface-2;
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
   font-size: 11px;
   font-weight: 600;
 }
@@ -273,13 +268,13 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: center;
   gap: 16px;
   padding: 16px 18px;
-  border: 1px solid $border;
-  border-radius: 10px;
-  background: $surface;
-  transition: background 0.2s ease;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
+  transition: background var(--dur-base) var(--ease-out);
 
   &:hover {
-    background: $surface-2;
+    background: var(--surface-a06);
   }
 }
 
@@ -290,7 +285,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminUsers__row-name {
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageAdminUsers__row-meta {
@@ -298,7 +293,7 @@ $muted: rgba(255, 255, 255, 0.4);
   display: flex;
   gap: 12px;
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .PageAdminUsers__row-uid {
@@ -308,7 +303,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminUsers__row-date {
   &::before {
     content: '· ';
-    color: $muted;
+    color: var(--surface-a40);
   }
 }
 
@@ -322,7 +317,7 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -354,11 +349,11 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminUsers__action {
   padding: 8px 16px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-base) var(--ease-out);
 
   &:disabled {
     opacity: 0.5;
@@ -366,19 +361,19 @@ $muted: rgba(255, 255, 255, 0.4);
   }
 
   &.is-danger {
-    color: #fff;
+    color: var(--surface-raised);
     background: var(--stop);
   }
 
   &.is-primary {
-    color: #000;
+    color: var(--ink);
     background: var(--accent);
   }
 
   &.is-secondary {
-    color: $text;
+    color: var(--surface-a82);
     background: transparent;
-    border: 1px solid $border;
+    border: 1px solid var(--surface-a06);
   }
 }
 
@@ -386,7 +381,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .PageAdminUsers__loading {
   padding: 60px 20px;
   text-align: center;
-  color: $muted;
+  color: var(--surface-a40);
   font-size: 14px;
 }
 
@@ -397,8 +392,8 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 200;
+  background: var(--ink-a70);
+  z-index: var(--z-modal);
 }
 
 .PageAdminUsers__sub-modal {
@@ -406,8 +401,8 @@ $muted: rgba(255, 255, 255, 0.4);
   max-width: 460px;
   padding: 24px;
   background: #1a1d24;
-  border: 1px solid $border;
-  border-radius: 12px;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
 }
 
 .PageAdminUsers__sub-title {
@@ -424,27 +419,27 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminUsers__sub-user {
   font-size: 14px;
-  color: $text;
+  color: var(--surface-a82);
 }
 
 .PageAdminUsers__sub-user-uid {
-  color: $muted;
+  color: var(--surface-a40);
   font-family: var(--ff-mono);
   font-size: 12px;
 }
 
 .PageAdminUsers__sub-label {
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .PageAdminUsers__sub-textarea {
   width: 100%;
   padding: 10px 12px;
-  background: $surface;
-  color: #fff;
-  border: 1px solid $border;
-  border-radius: 8px;
+  background: var(--surface-a06);
+  color: var(--surface-raised);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-family: inherit;
   resize: vertical;
@@ -452,7 +447,7 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .PageAdminUsers__sub-hint {
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   line-height: 1.6;
 
   &.is-warn {

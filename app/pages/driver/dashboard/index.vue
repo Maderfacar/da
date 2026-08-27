@@ -163,8 +163,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .PageDriverDashboard {
   padding: 80px 20px 32px;
   min-height: 100svh;
-  background: #0d0f14;
-  color: #fff;
+  background: var(--surface-deep);
+  color: var(--surface-raised);
 }
 
 // ── Driver OA CTA ──────────────────────────────────────────
@@ -176,7 +176,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   margin-bottom: 20px;
   background: color-mix(in srgb, var(--line-green) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--line-green) 35%, transparent);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 
 .PageDriverDashboard__oa-cta-icon { font-size: 22px; }
@@ -193,11 +193,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--surface-raised);
 }
 .PageDriverDashboard__oa-cta-text span {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
   line-height: 1.4;
 }
 
@@ -205,8 +205,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   flex-shrink: 0;
   padding: 8px 16px;
   background: var(--line-green);
-  color: #fff;
-  border-radius: 100px;
+  color: var(--surface-raised);
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
@@ -222,15 +222,15 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-round);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   border: none;
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
 
-  &:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+  &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
 
 .PageDriverDashboard__header {
@@ -254,7 +254,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-size: 40px;
     letter-spacing: 0.04em;
     line-height: 1;
-    color: #fff;
+    color: var(--surface-raised);
   }
 
   &-name {
@@ -269,7 +269,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-family: var(--ff-label);
     font-size: 11px;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--surface-a30);
     margin-top: 2px;
   }
 }
@@ -285,20 +285,20 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .PageDriverDashboard__status-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+  border-radius: var(--r-round);
+  background: var(--surface-a30);
+  box-shadow: 0 0 0 3px var(--surface-a06);
 
   &.is-online { background: var(--good); box-shadow: 0 0 0 3px var(--good-a15); }
   &.is-busy   { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-a20); }
-  &.is-offline { background: rgba(255, 255, 255, 0.25); }
+  &.is-offline { background: var(--surface-a20); }
 }
 
 .PageDriverDashboard__status-text {
   font-family: var(--ff-label);
   font-size: 13px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
   flex: 1;
 }
 
@@ -308,12 +308,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 6px 16px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1.5px solid var(--accent-a60);
   background: var(--accent-a12);
   color: var(--da-stripe-yellow);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-base) var(--ease-out);
 
   &:hover:not(:disabled) { opacity: 0.85; }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -334,9 +334,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 }
 
 .PageDriverDashboard__stat {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 14px 12px;
 
   &-label {
@@ -344,7 +344,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--surface-a30);
     margin-bottom: 6px;
   }
 
@@ -352,14 +352,14 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
     font-size: 24px;
-    color: #fff;
+    color: var(--surface-raised);
     line-height: 1;
   }
 
   &-unit {
     font-family: var(--ff-label);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--surface-a30);
     margin-top: 2px;
   }
 }
@@ -377,11 +377,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   align-items: center;
   gap: 10px;
   padding: 24px 16px;
-  border-radius: 18px;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--surface-a12);
+  background: var(--surface-a06);
   text-decoration: none;
-  transition: transform 0.15s, border-color 0.2s;
+  transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-base) var(--ease-out);
 
   &:active { transform: scale(0.97); }
 
@@ -401,7 +401,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     span {
       font-family: var(--ff-display);
       font-size: 20px;
-      color: #fff;
+      color: var(--surface-raised);
       letter-spacing: 0.05em;
     }
 
@@ -410,7 +410,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.15em;
-      color: rgba(255, 255, 255, 0.3);
+      color: var(--surface-a30);
     }
   }
 }
@@ -423,16 +423,16 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 }
 
 .PageDriverDashboard__notice {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 14px 16px;
   margin-top: 20px;
 
   p {
     font-family: var(--ff-ui);
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--surface-a30);
     line-height: 1.8;
     &::before { content: '· '; }
   }

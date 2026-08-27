@@ -20,7 +20,7 @@
 .CommonBootSplash {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-boot);
   background: var(--da-dark);
   display: flex;
   flex-direction: column;
@@ -44,7 +44,7 @@
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: CommonBootSplash-spin 0.8s linear infinite;
 }
 

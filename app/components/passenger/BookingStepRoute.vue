@@ -308,8 +308,8 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   background: linear-gradient(135deg, #fff4e5 0%, #ffe8d4 100%);
   border: 1.5px solid var(--wait);
   border-left: 4px solid var(--stop);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px var(--stop-a15);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerBookingStepRoute__safety-icon {
@@ -346,7 +346,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &.is-dragging {
     opacity: 0.45;
@@ -355,7 +355,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   &.is-drop-target {
     transform: translateY(2px);
     box-shadow: 0 -2px 0 var(--da-amber);
-    border-radius: 2px;
+    border-radius: var(--r-xs);
   }
 }
 
@@ -375,7 +375,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   margin-bottom: 2px;
   touch-action: none;
   user-select: none;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--da-amber); }
   &:active { cursor: grabbing; }
@@ -390,7 +390,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   cursor: pointer;
   padding: 6px;
   margin-bottom: 2px;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--stop); }
 }
@@ -401,12 +401,12 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   gap: 6px;
   background: none;
   border: 1px dashed var(--da-gray-pale);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 16px;
   color: var(--da-gray);
   font-size: 13px;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
   font-family: var(--ff-ui);
 
   &:hover {
@@ -427,7 +427,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   gap: 20px;
   background: var(--da-amber-pale);
   border: 1px solid var(--accent-a20);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 14px 18px;
   font-family: var(--ff-ui);
   font-size: 14px;
@@ -455,7 +455,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .fade-up-enter-active,
 .fade-up-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
 
 .fade-up-enter-from,

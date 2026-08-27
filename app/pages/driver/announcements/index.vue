@@ -107,16 +107,16 @@ const FormatTime = (iso: string | null): string => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border:  rgba(255, 255, 255, 0.08);
-$muted:   rgba(255, 255, 255, 0.55);
-$muted-2: rgba(255, 255, 255, 0.35);
+
+
+
+
 
 .PageDriverAnnouncements {
   padding: 80px 20px 32px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageDriverAnnouncements__header { margin-bottom: 20px; }
@@ -138,7 +138,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--surface-raised);
   margin: 0;
 }
 
@@ -152,7 +152,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   width: 32px; height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -168,7 +168,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__emptyText {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: $muted-2;
+  color: var(--surface-a30);
 }
 
 .PageDriverAnnouncements__list {
@@ -181,15 +181,15 @@ $muted-2: rgba(255, 255, 255, 0.35);
   display: flex;
   gap: 12px;
   padding: 12px;
-  border-radius: 14px;
-  background: $surface;
-  border: 1px solid $border;
+  border-radius: var(--r-lg);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
   text-decoration: none;
   color: inherit;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--surface-a06);
     border-color: var(--accent-a30);
   }
 
@@ -202,7 +202,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__cover {
   width: 80px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -210,7 +210,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__coverPlaceholder {
   width: 80px;
   height: 60px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--accent-a12);
   display: flex;
   align-items: center;
@@ -239,7 +239,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -251,7 +251,7 @@ $muted-2: rgba(255, 255, 255, 0.35);
 .PageDriverAnnouncements__cardDot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--stop);
   flex-shrink: 0;
   margin-top: 6px;
@@ -261,26 +261,26 @@ $muted-2: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: $muted-2;
+  color: var(--surface-a30);
 }
 
 .PageDriverAnnouncements__loadMore {
   margin: 18px auto 0;
   padding: 10px 22px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.04);
-  color: $muted;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
   cursor: pointer;
   align-self: center;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--surface-a06);
     color: var(--accent);
     border-color: var(--accent-a30);
   }

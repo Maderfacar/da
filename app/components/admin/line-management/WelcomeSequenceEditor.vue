@@ -367,8 +367,8 @@ const ClickSave = async (): Promise<void> => {
   gap: 12px;
   padding: 16px;
   background: var(--da-cream, #faf7f0);
-  border-radius: 12px;
-  border: 1px solid var(--da-glass-border, #e6dfd0);
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
 }
 
 .WelcomeSequenceEditor__head {
@@ -399,25 +399,25 @@ const ClickSave = async (): Promise<void> => {
   display: inline-flex;
   gap: 4px;
   padding: 4px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 8px;
+  background: var(--ink-a06);
+  border-radius: var(--r-sm);
   align-self: flex-start;
 }
 
 .WelcomeSequenceEditor__lang-tab {
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-weight: 600;
   border: none;
   background: transparent;
   color: var(--da-gray);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
   &.is-active {
     background: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -433,15 +433,15 @@ const ClickSave = async (): Promise<void> => {
   color: var(--da-gray);
   font-size: 13px;
   border: 1px dashed var(--da-gray-pale, #d5cfc0);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 
 .WelcomeSequenceEditor__message {
-  background: #fff;
-  border: 1.5px solid var(--da-glass-border);
-  border-radius: 10px;
+  background: var(--surface-raised);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--r-md);
   padding: 12px;
-  transition: opacity 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: opacity var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 
   &.is-dragging { opacity: 0.45; }
   &.is-drop-target {
@@ -457,7 +457,7 @@ const ClickSave = async (): Promise<void> => {
   gap: 8px;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--da-glass-border);
+  border-bottom: 1px solid var(--hairline);
   flex-wrap: wrap;
 }
 
@@ -485,7 +485,7 @@ const ClickSave = async (): Promise<void> => {
   font-weight: 700;
   letter-spacing: 0.15em;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 
   &.is-text { background: var(--accent-a12); color: var(--da-amber); }
   &.is-flex { background: var(--note-a15); color: var(--note); }
@@ -507,14 +507,14 @@ const ClickSave = async (): Promise<void> => {
 
 .WelcomeSequenceEditor__icon-btn {
   background: none;
-  border: 1px solid var(--da-glass-border);
+  border: 1px solid var(--hairline);
   color: var(--da-gray);
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.3; cursor: not-allowed; }
   &:not(:disabled):hover {
@@ -533,8 +533,8 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__input {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--da-glass-border);
-  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-family: inherit;
   color: var(--da-dark);
@@ -588,13 +588,13 @@ const ClickSave = async (): Promise<void> => {
   flex: 1;
   padding: 10px;
   border: 1px dashed var(--da-gray-pale);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--da-gray);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
   &:not(:disabled):hover {
@@ -610,28 +610,28 @@ const ClickSave = async (): Promise<void> => {
   justify-content: flex-end;
   margin-top: 4px;
   padding-top: 12px;
-  border-top: 1px solid var(--da-glass-border);
+  border-top: 1px solid var(--hairline);
 }
 
 .WelcomeSequenceEditor__btn {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--da-amber);
     border: 1px solid var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
     &:not(:disabled):hover { background: var(--accent-deep); }
   }
   &.is-secondary {
     background: transparent;
-    border: 1px solid var(--da-glass-border);
+    border: 1px solid var(--hairline);
     color: var(--da-gray);
     &:not(:disabled):hover { border-color: var(--da-gray); color: var(--da-dark); }
   }

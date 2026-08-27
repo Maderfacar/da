@@ -220,7 +220,7 @@ onMounted(ApiLoadMe);
   letter-spacing: 0.1em;
   color: var(--da-gray);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--da-amber); }
 }
@@ -259,7 +259,7 @@ onMounted(ApiLoadMe);
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -286,9 +286,9 @@ onMounted(ApiLoadMe);
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 9px 22px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
     text-decoration: none;
   }
 }
@@ -297,11 +297,11 @@ onMounted(ApiLoadMe);
 .PageReferralShare__code {
   background: var(--da-dark);
   border: 1px solid var(--accent-a30);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 22px 18px;
   text-align: center;
   margin-bottom: 16px;
-  box-shadow: 0 8px 32px var(--ink-a20);
+  box-shadow: var(--shadow-pop);
 }
 
 .PageReferralShare__code-label {
@@ -344,13 +344,11 @@ onMounted(ApiLoadMe);
 }
 
 .PageReferralShare__card {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PageReferralShare__card-img {
@@ -389,9 +387,9 @@ onMounted(ApiLoadMe);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--da-amber);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 // ── 操作 ──────────────────────────────────────────────────
@@ -406,14 +404,14 @@ onMounted(ApiLoadMe);
   padding: 14px;
   background: var(--line-green);
   border: 1px solid var(--line-green);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #fff;
+  color: var(--surface-raised);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { opacity: 0.92; }
   &:active { transform: scale(0.99); }
@@ -425,14 +423,14 @@ onMounted(ApiLoadMe);
   padding: 12px;
   background: transparent;
   border: 1px solid var(--accent-a40);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--da-amber);
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--da-amber-pale); }
   &:active { transform: scale(0.99); }

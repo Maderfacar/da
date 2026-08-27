@@ -20,7 +20,7 @@
   position: relative;
   .img-area {
     pointer-events: none;
-    z-index: 100;
+    z-index: var(--z-nav);
   }
   .content-area {
     @include absolute('tl', 0, 0);

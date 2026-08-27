@@ -119,9 +119,9 @@ section.PassengerHomeFeatures
 }
 
 .PassengerHomeFeatures__card {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 20px 16px;
   position: relative;
 
@@ -133,7 +133,7 @@ section.PassengerHomeFeatures
     transform: translateX(-50%);
     width: 18px;
     height: 4px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: var(--da-amber);
     opacity: 0.5;
   }
@@ -142,7 +142,7 @@ section.PassengerHomeFeatures
 .PassengerHomeFeatures__stamp {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1.5px solid var(--da-amber);
   display: flex;
   align-items: center;
@@ -260,7 +260,7 @@ section.PassengerHomeFeatures
   padding: 22px 20px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--line-green) 10%, transparent), color-mix(in srgb, var(--line-green) 2%, transparent));
   border: 1.5px solid color-mix(in srgb, var(--line-green) 40%, transparent);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   position: relative;
   overflow: hidden;
 
@@ -285,7 +285,7 @@ section.PassengerHomeFeatures
   color: var(--line-green);
   background: color-mix(in srgb, var(--line-green) 12%, transparent);
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   margin-bottom: 10px;
 }
 

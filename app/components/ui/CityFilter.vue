@@ -158,8 +158,8 @@ const hasValue = computed(
 
 .UiCityFilter__toggle {
   display: inline-flex;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
   overflow: hidden;
 }
 
@@ -170,14 +170,14 @@ const hasValue = computed(
   letter-spacing: 0.08em;
   padding: 5px 10px;
   border: none;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.55);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  border-right: 1px solid var(--surface-a06);
 
   &:last-child { border-right: none; }
-  &:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+  &:hover { background: var(--surface-a06); color: var(--surface-raised); }
   &.is-active { background: var(--accent-a20); color: var(--accent-lit); }
 }
 
@@ -193,12 +193,12 @@ const hasValue = computed(
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 5px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.55);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--stop-a15);

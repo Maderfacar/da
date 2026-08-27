@@ -327,7 +327,7 @@ export function useRichmenuComposer(params: UseRichmenuComposerParams) {
       fontSize: partial.fontSize ?? (partial.type === 'text' ? 120 : undefined),
       fontWeight: partial.fontWeight,
       fontFamily: partial.fontFamily ?? (partial.type === 'text' ? 'system-ui, "Noto Sans TC", sans-serif' : undefined),
-      color: partial.color ?? (partial.type === 'text' ? '#1f2937' : undefined),
+      color: partial.color ?? (partial.type === 'text' ? DESIGN_COLORS.ink : undefined),
       align: partial.align ?? (partial.type === 'text' ? 'center' : undefined),
       vAlign: partial.vAlign ?? (partial.type === 'text' ? 'middle' : undefined),
       fillColor: partial.fillColor ?? (partial.type === 'rectangle' ? DESIGN_COLORS.accent : undefined),

@@ -36,30 +36,39 @@ $ff-data:    var(--ff-data);
 $ff-mono:    var(--ff-mono);
 
 // ── 圓角 ─────────────────────────────────────────────────
-$r-pill:  var(--r-pill);
 $r-round: var(--r-round);
-$r-tile:  var(--r-tile);
-$r-card:  var(--r-card);
+$r-pill:  var(--r-pill);
+$r-xl:    var(--r-xl);
+$r-lg:    var(--r-lg);
+$r-md:    var(--r-md);
 $r-sm:    var(--r-sm);
+$r-xs:    var(--r-xs);
 
 // ── 陰影 ─────────────────────────────────────────────────
 $shadow-none: var(--shadow-none);
 $shadow-soft: var(--shadow-soft);
+$shadow-pop:  var(--shadow-pop);
 $shadow-lift: var(--shadow-lift);
 
 // ── z-index ──────────────────────────────────────────────
 $z-base:    var(--z-base);
 $z-sticky:  var(--z-sticky);
+$z-nav:     var(--z-nav);
 $z-header:  var(--z-header);
 $z-overlay: var(--z-overlay);
+$z-drawer:  var(--z-drawer);
 $z-modal:   var(--z-modal);
+$z-modal-2: var(--z-modal-2);
+$z-boot:    var(--z-boot);
+$z-gate:    var(--z-gate);
 $z-toast:   var(--z-toast);
 
 // ── 動效 ─────────────────────────────────────────────────
-$dur-fast: var(--dur-fast);
-$dur-base: var(--dur-base);
-$dur-slow: var(--dur-slow);
-$ease-out: var(--ease-out);
+$dur-fast:   var(--dur-fast);
+$dur-base:   var(--dur-base);
+$dur-slow:   var(--dur-slow);
+$dur-slower: var(--dur-slower);
+$ease-out:   var(--ease-out);
 
 // ── 觸控 ─────────────────────────────────────────────────
 $tap: var(--tap);

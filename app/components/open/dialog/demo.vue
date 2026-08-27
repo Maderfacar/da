@@ -62,7 +62,7 @@ const MittRefresh = () => {
   .content-area {
     @include wh(400px, 200px);
     position: relative;
-    background-color: #fff;
+    background-color: var(--surface-raised);
     z-index: 1;
   }
   // TODO

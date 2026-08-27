@@ -181,16 +181,16 @@ onMounted(ApiLoadOrder);
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$text: rgba(255, 255, 255, 0.85);
-$muted: rgba(255, 255, 255, 0.45);
+
+
+
+
 
 .PageDriverDispatchedDetail {
   padding: 80px 16px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageDriverDispatchedDetail__back {
@@ -200,10 +200,10 @@ $muted: rgba(255, 255, 255, 0.45);
   padding: 6px 0;
   border: none;
   background: none;
-  color: $muted;
+  color: var(--surface-a40);
   cursor: pointer;
   margin-bottom: 16px;
-  &:hover { color: #fff; }
+  &:hover { color: var(--surface-raised); }
 }
 
 .PageDriverDispatchedDetail__header {
@@ -213,7 +213,7 @@ $muted: rgba(255, 255, 255, 0.45);
   gap: 8px;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PageDriverDispatchedDetail__header-type {
@@ -221,7 +221,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-size: 11px;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent);
@@ -230,7 +230,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .PageDriverDispatchedDetail__header-id {
   font-family: var(--ff-label);
   font-size: 13px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .PageDriverDispatchedDetail__header-bidcount {
@@ -245,7 +245,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-size: 10px;
   font-weight: 700;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--good-a15);
   border: 1px solid var(--good-a30);
   color: var(--good);
@@ -267,7 +267,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a40);
   margin-bottom: 6px;
 }
 
@@ -276,7 +276,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 24px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--surface-raised);
 
   &.is-fare {
     font-family: var(--ff-label);
@@ -291,14 +291,14 @@ $muted: rgba(255, 255, 255, 0.45);
   justify-content: space-between;
   align-items: baseline;
   padding: 6px 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+  border-bottom: 1px dashed var(--surface-a06);
   &:last-child { border-bottom: none; }
 }
 
 .PageDriverDispatchedDetail__section-key {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .PageDriverDispatchedDetail__addr-card {
@@ -307,9 +307,9 @@ $muted: rgba(255, 255, 255, 0.45);
   gap: 10px;
   padding: 10px 12px;
   margin-bottom: 6px;
-  border-radius: 10px;
-  background: $surface;
-  border: 1px solid $border;
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
 }
 
 .PageDriverDispatchedDetail__addr-tag {
@@ -318,7 +318,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   letter-spacing: 0.15em;
   padding: 3px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent);
@@ -328,7 +328,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .PageDriverDispatchedDetail__addr-text {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: $text;
+  color: var(--surface-a82);
   flex: 1;
   word-break: break-all;
 }
@@ -344,7 +344,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent-a90);
@@ -353,19 +353,19 @@ $muted: rgba(255, 255, 255, 0.45);
 .PageDriverDispatchedDetail__hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
   line-height: 1.6;
 }
 
 .PageDriverDispatchedDetail__notes {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: $text;
+  color: var(--surface-a82);
   line-height: 1.7;
   padding: 10px 12px;
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -387,24 +387,24 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 14px 18px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: $surface;
-    color: $text;
-    border-color: $border;
-    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+    background: var(--surface-a06);
+    color: var(--surface-a82);
+    border-color: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 
   &.is-danger {
@@ -425,7 +425,7 @@ $muted: rgba(255, 255, 255, 0.45);
 }
 
 .PageDriverDispatchedDetail__error {
-  color: $muted;
+  color: var(--surface-a40);
   text-align: center;
   p {
     font-family: var(--ff-ui);
@@ -442,7 +442,7 @@ $muted: rgba(255, 255, 255, 0.45);
   width: 28px; height: 28px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 

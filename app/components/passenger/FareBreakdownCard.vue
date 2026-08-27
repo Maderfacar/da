@@ -23,7 +23,7 @@ withDefaults(defineProps<Props>(), {
 <style lang="scss" scoped>
 .PassengerFareBreakdownCard {
   background: var(--da-dark);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 16px 20px;
 }
 

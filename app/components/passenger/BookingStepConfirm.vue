@@ -559,14 +559,13 @@ const ClickSubmit = () => {
 
   // ── 聯絡資訊區 ───────────────────────────────────────────────────────────
   &__contact {
-    background: var(--da-glass-bg);
-    border: 1px solid var(--da-glass-border);
-    border-radius: 16px;
+    background: var(--surface-raised);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    backdrop-filter: blur(12px);
   }
 
   &__contact-label {
@@ -625,14 +624,14 @@ const ClickSubmit = () => {
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     border: 1px solid var(--da-gray-pale);
     background: transparent;
     cursor: pointer;
     font-family: var(--ff-ui);
     font-size: 12px;
     color: var(--da-gray);
-    transition: all 0.15s;
+    transition: all var(--dur-fast) var(--ease-out);
 
     &:hover { border-color: var(--da-amber); color: var(--da-amber); }
 
@@ -650,7 +649,7 @@ const ClickSubmit = () => {
     justify-content: center;
     width: 16px;
     height: 16px;
-    border-radius: 4px;
+    border-radius: var(--r-xs);
     border: 1.5px solid currentColor;
     font-size: 12px;
 
@@ -695,14 +694,13 @@ const ClickSubmit = () => {
   }
 
   &__card {
-    background: var(--da-glass-bg);
-    border: 1px solid var(--da-glass-border);
-    border-radius: 16px;
+    background: var(--surface-raised);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    backdrop-filter: blur(12px);
   }
 
   &__row {
@@ -741,7 +739,7 @@ const ClickSubmit = () => {
     font-family: var(--ff-ui);
     font-size: 12px;
     padding: 2px 10px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: var(--da-amber-pale);
     border: 1px solid var(--da-amber);
     color: var(--da-amber);
@@ -754,9 +752,9 @@ const ClickSubmit = () => {
 
   // ── Charter Fare V1 W4：包車明細卡 ──────────────────────────────────────
   &__charter-breakdown {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1px solid var(--da-amber);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 16px 18px;
     display: flex;
     flex-direction: column;
@@ -832,7 +830,7 @@ const ClickSubmit = () => {
     align-items: center;
     padding: 18px 22px;
     background: var(--da-dark);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
   }
 
   &__final-label {

@@ -68,14 +68,12 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 <style lang="scss" scoped>
 
 .PassengerHistoryJourneys {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 18px 16px;
   margin-bottom: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerHistoryJourneys__label {
@@ -117,9 +115,9 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 }
 
 .PassengerHistoryJourneys__stat {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--surface-a50);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 12px 10px;
   display: flex;
   flex-direction: column;

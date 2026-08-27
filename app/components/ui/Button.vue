@@ -38,9 +38,9 @@ button.UiButton(
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
   white-space: nowrap;
   user-select: none;
 
@@ -81,11 +81,9 @@ button.UiButton(
 }
 
 .UiButton.is-glass {
-  background: var(--da-glass-bg);
+  background: var(--surface-raised);
   color: var(--da-dark);
-  border: 1px solid var(--da-glass-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--hairline);
 
   &:hover { opacity: 0.85; }
 }
@@ -107,7 +105,7 @@ button.UiButton(
   height: 14px;
   border: 2px solid currentColor;
   border-top-color: transparent;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.7s linear infinite;
 }
 

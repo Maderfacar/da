@@ -256,7 +256,7 @@ ElDialog(
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.75);
+  color: var(--ink-a70);
 }
 
 .OpenDialogTagEdit__required {
@@ -266,9 +266,9 @@ ElDialog(
 
 .OpenDialogTagEdit__readonly {
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 6px;
+  background: var(--ink-a06);
+  border-radius: var(--r-sm);
   font-size: 13px;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--ink-a60);
 }
 </style>

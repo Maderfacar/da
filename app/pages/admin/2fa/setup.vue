@@ -124,10 +124,10 @@ onMounted(() => { void ApiSetup(); });
 .Admin2faSetup__card {
   width: 100%;
   max-width: 480px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
   padding: 32px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 .Admin2faSetup__title {
   font-size: 22px;
@@ -145,7 +145,7 @@ onMounted(() => { void ApiSetup(); });
   color: var(--accent-deep);
   background: #fffaeb;
   border: 1px solid var(--wait);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 10px 12px;
   margin: 12px 0 20px;
   line-height: 1.6;
@@ -176,7 +176,7 @@ onMounted(() => { void ApiSetup(); });
   letter-spacing: 1px;
   background: #f0f0f3;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   word-break: break-all;
 }
 .Admin2faSetup__field {

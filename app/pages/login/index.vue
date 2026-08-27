@@ -121,7 +121,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   font-family: var(--ff-display);
   font-size: clamp(160px, 50vw, 280px);
   letter-spacing: -0.04em;
-  color: rgba(255, 255, 255, 0.04);
+  color: var(--surface-a06);
   pointer-events: none;
   user-select: none;
   line-height: 1;
@@ -133,9 +133,8 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   width: 100%;
   max-width: 360px;
   background: rgba(40, 37, 31, 0.8);
-  backdrop-filter: blur(20px);
   border: 1px solid var(--accent-a20);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 36px 28px 32px;
   display: flex;
   flex-direction: column;
@@ -160,7 +159,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-bottom: 0;
 }
 
@@ -180,13 +179,13 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   padding: 14px 20px;
   background: var(--line-green);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.9; }
   &:active { transform: scale(0.98); }
@@ -222,14 +221,14 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   padding: 10px 8px;
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--da-amber);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--dur-base) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -241,6 +240,6 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--surface-a12);
 }
 </style>

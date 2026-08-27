@@ -578,7 +578,7 @@ const ClickSaveFareRules = async () => {
 </script>
 
 <template lang="pug">
-.PageAdminSettings
+.PageAdminSettings(data-surface='dark')
   .PageAdminSettings__header
     .PageAdminSettings__header-label SYSTEM SETTINGS
     h1.PageAdminSettings__header-title 系統設定
@@ -1356,15 +1356,12 @@ const ClickSaveFareRules = async () => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminSettings {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageAdminSettings__header {
@@ -1387,7 +1384,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -1405,14 +1402,14 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: $muted;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a30);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
-  &:hover { color: rgba(255, 255, 255, 0.7); }
+  &:hover { color: var(--surface-a72); }
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -1423,9 +1420,9 @@ $muted: rgba(255, 255, 255, 0.35);
 
 // ── 存取控制區塊 ────────────────────────────────────────────────
 .PageAdminSettings__section {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
   margin-bottom: 24px;
 
@@ -1434,8 +1431,8 @@ $muted: rgba(255, 255, 255, 0.35);
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    border-bottom: 1px solid $border;
-    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--surface-a06);
+    background: var(--surface-a06);
   }
 
   &-label {
@@ -1446,7 +1443,7 @@ $muted: rgba(255, 255, 255, 0.35);
     color: var(--accent);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     padding: 2px 8px;
   }
 
@@ -1454,7 +1451,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--surface-a72);
   }
 }
 
@@ -1464,7 +1461,7 @@ $muted: rgba(255, 255, 255, 0.35);
   flex-wrap: wrap;
   gap: 0;
   padding: 12px 16px 0;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PageAdminSettings__tab {
@@ -1476,9 +1473,9 @@ $muted: rgba(255, 255, 255, 0.35);
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: $muted;
+  color: var(--surface-a30);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     color: var(--accent);
@@ -1497,7 +1494,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a30);
   padding: 12px 16px 4px;
 }
 
@@ -1511,7 +1508,7 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 }
@@ -1519,10 +1516,10 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-a06);
 }
 
 .PageAdminSettings__user-info {
@@ -1534,7 +1531,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
   margin-bottom: 2px;
   display: flex;
   align-items: center;
@@ -1547,7 +1544,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 1px 6px;
   border: 1px solid;
   line-height: 1.4;
@@ -1571,7 +1568,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminSettings__user-uid {
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a30);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1590,10 +1587,10 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 5px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -1618,13 +1615,13 @@ $muted: rgba(255, 255, 255, 0.35);
   }
 
   &.is-toggle {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: rgba(255, 255, 255, 0.7);
+    background: var(--surface-a06);
+    border-color: var(--surface-a20);
+    color: var(--surface-a72);
 
     &:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
+      background: var(--surface-a12);
+      color: var(--surface-raised);
     }
 
     &.is-expanded {
@@ -1649,16 +1646,16 @@ $muted: rgba(255, 255, 255, 0.35);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 1px 6px;
   line-height: 1.4;
   margin-left: 4px;
 }
 
 .PageAdminSettings__perm-panel {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--ink-a20);
   border: 1px solid var(--accent-a20);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 14px 16px;
   margin: -4px 0 10px;
 }
@@ -1682,7 +1679,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__perm-head-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   flex: 1;
 }
 
@@ -1700,12 +1697,12 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminSettings__perm-item {
   padding: 9px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  transition: border-color 0.15s, background 0.15s;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-sm);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.05); }
+  &:hover { background: var(--surface-a06); }
 
   // 與 LEVEL 預設不同時用 amber 框
   &.is-override {
@@ -1739,7 +1736,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
 }
 
 .PageAdminSettings__perm-hint {
@@ -1747,7 +1744,7 @@ $muted: rgba(255, 255, 255, 0.35);
   grid-row: 2;
   font-family: var(--ff-ui);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   margin-top: 1px;
 }
 
@@ -1757,21 +1754,21 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 8px;
   padding: 12px 16px;
   flex-wrap: wrap;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PageAdminSettings__add-input {
   flex: 1;
   min-width: 160px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
   padding: 7px 12px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: #fff;
+  color: var(--surface-raised);
 
-  &::placeholder { color: $muted; }
+  &::placeholder { color: var(--surface-a30); }
   &:focus { outline: none; border-color: var(--accent-a50); }
 }
 
@@ -1780,14 +1777,14 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 20px 16px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminSettings__empty {
   padding: 20px 16px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a30);
   text-align: center;
 }
 
@@ -1798,12 +1795,12 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 8px;
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 12px 16px;
   margin-bottom: 24px;
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
   line-height: 1.6;
 
   &.is-info {
@@ -1821,9 +1818,9 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminSettings__group {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
 
   &-head {
@@ -1831,8 +1828,8 @@ $muted: rgba(255, 255, 255, 0.35);
     align-items: center;
     gap: 10px;
     padding: 12px 16px;
-    border-bottom: 1px solid $border;
-    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--surface-a06);
+    background: var(--surface-a06);
   }
 
   &-label {
@@ -1843,7 +1840,7 @@ $muted: rgba(255, 255, 255, 0.35);
     color: var(--accent);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     padding: 2px 8px;
   }
 
@@ -1851,7 +1848,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-label);
     font-size: 14px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--surface-a72);
   }
 }
 
@@ -1866,7 +1863,7 @@ $muted: rgba(255, 255, 255, 0.35);
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 
@@ -1876,20 +1873,20 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--surface-a72);
     margin-bottom: 2px;
   }
 
   &-hint {
     font-family: var(--ff-ui);
     font-size: 11px;
-    color: $muted;
+    color: var(--surface-a30);
   }
 
   &-val {
     font-family: var(--ff-label);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--surface-a40);
     flex-shrink: 0;
     max-width: 55%;
     overflow: hidden;
@@ -1911,12 +1908,12 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__fare-meta {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   padding: 10px 16px 0;
 }
 
 .PageAdminSettings__fare-block {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
   padding: 14px 16px;
 
   &:last-of-type { border-bottom: none; }
@@ -1944,7 +1941,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   cursor: pointer;
   user-select: none;
   margin-left: auto;
@@ -1990,7 +1987,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a30);
 
   &.is-invalid {
     color: var(--stop);
@@ -2010,7 +2007,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   margin: 14px 0 8px;
 }
 
@@ -2018,7 +2015,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 11px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   line-height: 1.55;
   margin-top: 6px;
 }
@@ -2027,7 +2024,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--surface-a60);
   line-height: 1.6;
   margin: 8px 0 14px;
 }
@@ -2041,7 +2038,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-paused {
     color: var(--wait);
@@ -2068,8 +2065,8 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminSettings__fare-window {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 10px 12px;
   margin-bottom: 10px;
 }
@@ -2084,15 +2081,15 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__fare-day {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-on {
     background: var(--accent-a20);
@@ -2104,7 +2101,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__fare-window-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   margin-bottom: 5px;
 }
 
@@ -2118,15 +2115,15 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminSettings__fare-order {
   height: 30px;
   padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   font-family: var(--ff-ui);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-on {
     background: var(--accent-a20);
@@ -2153,7 +2150,7 @@ $muted: rgba(255, 255, 255, 0.35);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
   margin: 0 16px 4px;
 
@@ -2177,7 +2174,7 @@ $muted: rgba(255, 255, 255, 0.35);
   margin: 0 0 16px;
   background: #fffaeb;
   border: 1px solid var(--wait);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
 }
 .PageAdminSettings__pin-banner-text {
   display: flex;
@@ -2192,9 +2189,9 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 .PageAdminSettings__pin-banner-btn {
   border: 1px solid var(--accent-deep);
-  background: #fff;
+  background: var(--surface-raised);
   color: var(--accent-deep);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 600;

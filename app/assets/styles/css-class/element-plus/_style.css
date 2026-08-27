@@ -102,6 +102,6 @@
 /* message box --------------- */
 
 .el-message {
-  z-index: 90000 !important;
+  z-index: var(--z-toast) !important;
 }
 

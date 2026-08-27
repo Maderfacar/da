@@ -150,7 +150,7 @@ section.PassengerHomePromo(v-if="hasPromo")
   display: flex;
   align-items: stretch;
   background: var(--da-dark);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -160,7 +160,7 @@ section.PassengerHomePromo(v-if="hasPromo")
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  border-right: 2px dashed rgba(255, 255, 255, 0.15);
+  border-right: 2px dashed var(--surface-a12);
 }
 
 .PassengerHomePromo__code-label {
@@ -169,7 +169,7 @@ section.PassengerHomePromo(v-if="hasPromo")
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
 }
 
 .PassengerHomePromo__code-row {
@@ -193,16 +193,16 @@ section.PassengerHomePromo(v-if="hasPromo")
   width: 32px;
   height: 32px;
   padding: 0;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a20);
+  background: var(--surface-a06);
   color: var(--da-amber-light);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--surface-a12);
+    border-color: var(--surface-a30);
   }
   &:active { transform: scale(0.92); }
 

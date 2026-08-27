@@ -614,8 +614,8 @@ onMounted(() => {
 .PageAdminDriverDetail__back {
   padding: 6px 12px;
   border: 1px solid #dcdfe6;
-  background: #fff;
-  border-radius: 6px;
+  background: var(--surface-raised);
+  border-radius: var(--r-sm);
   cursor: pointer;
   font-size: 13px;
   color: #606266;
@@ -641,23 +641,23 @@ onMounted(() => {
   align-items: center;
   gap: 16px;
   padding: 18px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
+  box-shadow: 0 1px 3px var(--ink-a06);
   margin-bottom: 16px;
 }
 
 .PageAdminDriverDetail__avatar {
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
 }
 
 .PageAdminDriverDetail__avatar-fallback {
   width: 60px;
   height: 60px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: #ecf5ff;
   color: var(--note);
   display: flex;
@@ -682,7 +682,7 @@ onMounted(() => {
 
 .status-pill {
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 12px;
   font-weight: 600;
 
@@ -703,8 +703,8 @@ onMounted(() => {
 }
 
 .PageAdminDriverDetail__tabs {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
   padding: 0 16px;
 }
 
@@ -749,7 +749,7 @@ onMounted(() => {
 
 .PageAdminDriverDetail__row-edit {
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--note);
   background: #ecf5ff;
   color: var(--note);
@@ -774,7 +774,7 @@ onMounted(() => {
 .PageAdminDriverDetail__doc {
   background: #fafbfc;
   border: 1px solid #ebeef5;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 14px;
 }
 
@@ -814,7 +814,7 @@ onMounted(() => {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   background: #f0f2f5;
   display: flex;

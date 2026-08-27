@@ -216,7 +216,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 .VehicleProfileReview {
   background: #fafbfc;
   border: 1px solid #ebeef5;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -257,9 +257,9 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__col {
-  background: #fff;
+  background: var(--surface-raised);
   border: 1px solid #ebeef5;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -297,7 +297,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   aspect-ratio: 4 / 3;
   width: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: #f0f2f5;
 
   &.is-fallback {
@@ -340,7 +340,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 .VehicleProfileReview__chip {
   font-size: 11px;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid #e4e7ed;
   background: #f0f9eb;
   color: var(--good);

@@ -324,11 +324,11 @@ const mountainHit = computed<boolean>(() => {
 <style lang="scss" scoped>
 
 .PassengerFareEstimator {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 22px;
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 // ── 行程輸入 ────────────────────────────────────────────────
@@ -380,14 +380,14 @@ const mountainHit = computed<boolean>(() => {
   gap: 6px;
   border: 1px dashed var(--da-gray-pale);
   background: transparent;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 8px 16px;
   color: var(--da-dark);
   cursor: pointer;
   font-family: var(--ff-ui);
   font-size: 13px;
   align-self: flex-start;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--da-off-white);
@@ -452,22 +452,22 @@ const mountainHit = computed<boolean>(() => {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 10px 22px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--da-dark);
-    color: #fff;
+    color: var(--surface-raised);
     border-color: var(--da-dark);
 
     &:hover:not(:disabled) {
       background: var(--da-amber-light);
       border-color: var(--da-amber-light);
-      color: #fff;
+      color: var(--surface-raised);
     }
   }
 
@@ -490,7 +490,7 @@ const mountainHit = computed<boolean>(() => {
 .PassengerFareEstimator__error {
   margin: 8px 0 12px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
   color: var(--stop);
@@ -568,7 +568,7 @@ const mountainHit = computed<boolean>(() => {
 .PassengerFareEstimator__notes {
   margin-top: 18px;
   padding: 16px 18px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
 }
@@ -625,8 +625,8 @@ const mountainHit = computed<boolean>(() => {
 .PassengerFareEstimator__disclaimer {
   margin: 14px 0 0;
   padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--r-md);
+  background: var(--ink-a06);
   color: var(--da-gray);
   font-family: var(--ff-ui);
   font-size: 12px;

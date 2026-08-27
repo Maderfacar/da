@@ -90,9 +90,9 @@ onMounted(ApiGetWeather);
 
 <style lang="scss" scoped>
 .WeatherWidget {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 12px 14px;
 }
 
@@ -114,7 +114,7 @@ onMounted(ApiGetWeather);
 .WeatherWidget__loading {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--surface-a20);
 }
 
 .WeatherWidget__main {
@@ -134,7 +134,7 @@ onMounted(ApiGetWeather);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .WeatherWidget__stats {
@@ -144,8 +144,8 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__stat {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-a06);
+  border-radius: var(--r-sm);
   padding: 8px 6px;
   text-align: center;
 }
@@ -155,7 +155,7 @@ onMounted(ApiGetWeather);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
   margin-bottom: 4px;
 }
 
@@ -173,7 +173,7 @@ onMounted(ApiGetWeather);
   gap: 8px;
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 10px 12px;
 }
 
@@ -190,7 +190,7 @@ onMounted(ApiGetWeather);
 .WeatherWidget__error-hint {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin: 2px 0 0;
 }
 </style>

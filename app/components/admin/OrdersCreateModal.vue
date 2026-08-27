@@ -423,17 +423,16 @@ Transition(name="fade")
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$surface-2: rgba(255, 255, 255, 0.08);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.35);
+
+
+
+
 
 .AdminOrdersCreateModal {
   position: fixed;
   inset: 0;
-  z-index: 1050;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -446,9 +445,9 @@ $muted: rgba(255, 255, 255, 0.35);
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: var(--surface-deep-2);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -457,36 +456,36 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 12px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .AdminOrdersCreateModal__title {
   font-family: var(--ff-display);
   font-size: 24px;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .AdminOrdersCreateModal__close {
   width: 32px;
   height: 32px;
   border: none;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
+  background: var(--surface-a06);
+  color: var(--surface-a60);
+  border-radius: var(--r-round);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
 
 .AdminOrdersCreateModal__hint {
   padding: 10px 20px 0;
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   line-height: 1.5;
 }
 
@@ -521,25 +520,25 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .AdminOrdersCreateModal__input,
 .AdminOrdersCreateModal__textarea {
   width: 100%;
   padding: 9px 11px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   resize: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent-a40); }
 }
 
@@ -548,8 +547,8 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .AdminOrdersCreateModal__input option {
-  background: #161b22;
-  color: #fff;
+  background: var(--surface-deep-2);
+  color: var(--surface-raised);
 }
 
 .AdminOrdersCreateModal__stopover-list {
@@ -563,8 +562,8 @@ $muted: rgba(255, 255, 255, 0.35);
   grid-template-columns: 22px 60px 1fr 26px 32px;
   align-items: center;
   gap: 8px;
-  border-radius: 10px;
-  transition: opacity 0.15s, box-shadow 0.15s;
+  border-radius: var(--r-md);
+  transition: opacity var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 
   &.is-dragging { opacity: 0.45; }
   &.is-drop-target { box-shadow: 0 -2px 0 0 var(--note); }
@@ -576,11 +575,11 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 0;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   font-size: 15px;
   line-height: 1;
   cursor: grab;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--note); }
   &:active { cursor: grabbing; }
@@ -599,11 +598,11 @@ $muted: rgba(255, 255, 255, 0.35);
   border: 1px solid var(--note-a30);
   background: var(--note-a08);
   color: var(--note);
-  border-radius: 5px;
+  border-radius: var(--r-xs);
   font-size: 8px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--note-a15); }
   &:disabled { opacity: 0.25; cursor: not-allowed; }
@@ -635,7 +634,7 @@ $muted: rgba(255, 255, 255, 0.35);
   background: var(--note-a08);
   border: 1px solid var(--note-a30);
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   text-align: center;
 }
 
@@ -645,11 +644,11 @@ $muted: rgba(255, 255, 255, 0.35);
   border: 1px solid var(--stop-a30);
   background: var(--stop-a08);
   color: var(--stop);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--stop-a15); }
 }
@@ -660,13 +659,13 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px dashed var(--note-a30);
   background: var(--note-a08);
   color: var(--note);
   cursor: pointer;
   margin-top: 6px;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--note-a08); }
 }
@@ -687,7 +686,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .AdminOrdersCreateModal__luggage-name {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
 }
 
 .AdminOrdersCreateModal__extras {
@@ -700,12 +699,12 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: rgba(255, 255, 255, 0.55);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -720,7 +719,7 @@ $muted: rgba(255, 255, 255, 0.35);
   column-gap: 8px;
   row-gap: 2px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
   cursor: pointer;
@@ -745,17 +744,17 @@ $muted: rgba(255, 255, 255, 0.35);
 .AdminOrdersCreateModal__autodispatch-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   line-height: 1.5;
 }
 
 .AdminOrdersCreateModal__foot {
   padding: 14px 20px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ink-a20);
 }
 
 .AdminOrdersCreateModal__action {
@@ -764,29 +763,29 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: $surface;
-    color: rgba(255, 255, 255, 0.7);
-    border-color: $border;
-    &:hover:not(:disabled) { background: $surface-2; }
+    background: var(--surface-a06);
+    color: var(--surface-a72);
+    border-color: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 }
 
 .fade-enter-active,
-.fade-leave-active { transition: opacity 0.2s ease; }
+.fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from,
 .fade-leave-to { opacity: 0; }
 </style>

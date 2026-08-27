@@ -220,10 +220,10 @@ const ClickDelete = async (t: FleetLuggageTypeDto) => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
-$surface: rgba(255, 255, 255, 0.04);
-$surface-2: rgba(255, 255, 255, 0.08);
+
+
+
+
 
 .SettingsFleetLuggage {
   display: flex;
@@ -235,7 +235,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -252,13 +252,13 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetLuggage__hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetLuggage__add-btn {
@@ -267,12 +267,12 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
   color: var(--accent);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
@@ -281,7 +281,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   padding: 24px 16px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   text-align: center;
 }
 
@@ -295,10 +295,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
-  &:hover { background: rgba(255, 255, 255, 0.02); }
+  &:hover { background: var(--surface-a06); }
 }
 
 .SettingsFleetLuggage__row-main {
@@ -318,7 +318,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
 }
 
 .SettingsFleetLuggage__row-id {
@@ -326,10 +326,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: $muted;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid $border;
-  border-radius: 100px;
+  color: var(--surface-a40);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -341,7 +341,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 1px 8px;
 }
 
@@ -351,7 +351,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   gap: 4px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetLuggage__row-actions {
@@ -366,10 +366,10 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 5px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -392,9 +392,8 @@ $surface-2: rgba(255, 255, 255, 0.08);
 .SettingsFleetLuggage__mask {
   position: fixed;
   inset: 0;
-  z-index: 1200;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  z-index: var(--z-modal-2);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -402,9 +401,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
 }
 
 .SettingsFleetLuggage__modal {
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  background: var(--surface-deep-2);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
@@ -416,9 +415,9 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--surface-raised);
   padding: 20px 22px 14px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .SettingsFleetLuggage__modal-body {
@@ -456,23 +455,23 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .SettingsFleetLuggage__input {
   width: 100%;
   padding: 9px 11px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent-a40); }
 }
 
@@ -482,7 +481,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
 }
 
@@ -491,7 +490,7 @@ $surface-2: rgba(255, 255, 255, 0.08);
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 22px 20px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
 }
 
 .SettingsFleetLuggage__action {
@@ -500,24 +499,24 @@ $surface-2: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: $surface;
-    color: rgba(255, 255, 255, 0.7);
-    border-color: $border;
-    &:hover:not(:disabled) { background: $surface-2; }
+    background: var(--surface-a06);
+    color: var(--surface-a72);
+    border-color: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a06); }
   }
 }
 </style>

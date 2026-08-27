@@ -160,8 +160,6 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 </template>
 
 <style lang="scss" scoped>
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.5);
 
 .SettingsLegalDocuments {
   display: flex;
@@ -172,7 +170,7 @@ $muted: rgba(255, 255, 255, 0.5);
 .SettingsLegalDocuments__tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .SettingsLegalDocuments__tab {
@@ -183,12 +181,12 @@ $muted: rgba(255, 255, 255, 0.5);
   padding: 10px 18px;
   border: none;
   background: transparent;
-  color: $muted;
+  color: var(--surface-a50);
   cursor: pointer;
   border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
-  &:hover { color: #fff; }
+  &:hover { color: var(--surface-raised); }
   &.is-active {
     color: var(--accent);
     border-bottom-color: var(--accent);
@@ -198,7 +196,7 @@ $muted: rgba(255, 255, 255, 0.5);
 .SettingsLegalDocuments__loading {
   padding: 40px;
   text-align: center;
-  color: $muted;
+  color: var(--surface-a50);
 }
 
 .SettingsLegalDocuments__meta {
@@ -208,7 +206,7 @@ $muted: rgba(255, 255, 255, 0.5);
   flex-wrap: wrap;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a50);
 }
 
 .SettingsLegalDocuments__meta-version {
@@ -233,25 +231,25 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .SettingsLegalDocuments__input {
   padding: 9px 14px;
-  border: 1px solid $border;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-sm);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 14px;
   outline: none;
   &:focus { border-color: var(--accent-a60); }
-  &::placeholder { color: rgba(255, 255, 255, 0.3); }
+  &::placeholder { color: var(--surface-a30); }
 }
 
 .SettingsLegalDocuments__editor {
   background: white;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   overflow: hidden;
   // TinyEditor 內部 iframe 不繼承 dark theme，這層只控制圓角邊框
 }
@@ -259,7 +257,7 @@ $muted: rgba(255, 255, 255, 0.5);
 .SettingsLegalDocuments__hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a50);
   letter-spacing: 0.04em;
 }
 
@@ -277,10 +275,10 @@ $muted: rgba(255, 255, 255, 0.5);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 9px 22px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
   &.is-approve {
@@ -293,7 +291,7 @@ $muted: rgba(255, 255, 255, 0.5);
 .SettingsLegalDocuments__public-hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a50);
 }
 
 .SettingsLegalDocuments__public-link {

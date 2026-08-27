@@ -67,12 +67,12 @@ const model = defineModel<string | number>();
   width: 100%;
   min-height: 44px;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-ui);
   font-size: 15px;
   color: var(--da-dark);
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
   -webkit-appearance: none;
 
   &::placeholder {
@@ -87,30 +87,30 @@ const model = defineModel<string | number>();
 
 // ── Light 主題 ─────────────────────────────────────────────
 .UiInput.is-light .UiInput__field {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-a82);
   border: 1.5px solid var(--da-gray-pale);
 
   &:focus {
     border-color: var(--da-amber);
-    background: #fff;
+    background: var(--surface-raised);
   }
 }
 
 // ── Dark 主題 ──────────────────────────────────────────────
 .UiInput.is-dark .UiInput__label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 
 .UiInput.is-dark .UiInput__field {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
   color: var(--da-cream);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.25); }
+  &::placeholder { color: var(--surface-a20); }
 
   &:focus {
     border-color: var(--da-amber);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-a12);
   }
 }
 

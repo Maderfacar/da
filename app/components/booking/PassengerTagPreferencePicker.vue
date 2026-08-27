@@ -154,12 +154,12 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--da-gray-pale);
   background: var(--da-off-white);
   color: var(--da-dark);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
     border-color: var(--da-amber);

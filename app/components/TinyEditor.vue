@@ -82,7 +82,7 @@ const mergedInit = computed(() => ({
   color: #999;
   font-size: 14px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: #fafafa;
 }
 </style>

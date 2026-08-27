@@ -125,29 +125,29 @@ const _InitMapFlow = async () => {
 function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
   return [
     // 基礎暗色
-    { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a9a' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
+    { elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.ink2 }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: DESIGN_COLORS.inkMute }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: DESIGN_COLORS.ink2 }] },
     // 道路（ON）
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
-    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoad }] },
+    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoadMajor }] },
     // 高速公路：與一般道路同色（移除原灰薄荷高亮，避免與即時車流綠線混淆）
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoad }] },
     // 水域（地理基礎，保留）
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.ink }] },
     // 行政邊界（province / locality ON，其他子類關）
-    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
+    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: DESIGN_COLORS.mapStroke }] },
     { featureType: 'administrative.country', stylers: [{ visibility: 'off' }] },
     { featureType: 'administrative.neighborhood', stylers: [{ visibility: 'off' }] },
     { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
-    // OFF：POI labels（景點 / 商家 / 醫院 / 學校 / 公園等文字 + icon）— 但保留 geometry 吃頂層 #1a1a2e，避免灰底露出
+    // OFF：POI labels（景點 / 商家 / 醫院 / 學校 / 公園等文字 + icon）— 但保留 geometry 吃頂層基礎暗色，避免灰底露出
     { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
     // POI park 區域顯式壓暗（避免綠色公園斑塊跑出）
-    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
+    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.ink2 }] },
     // OFF：landscape labels（地景名「林口」「龜山」等）— 但保留 geometry 吃頂層暗色
     { featureType: 'landscape', elementType: 'labels', stylers: [{ visibility: 'off' }] },
     // landscape.man_made（建築物）壓更深一階，呼應 full 版視覺
-    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#1f1f35' }] },
+    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.surfaceDeep3 }] },
   ];
 }
 
@@ -155,20 +155,20 @@ function _mapStylesMinimal(): google.maps.MapTypeStyle[] {
 // 顯示 POI / landscape，但保留暗色基底（避免太亮喧賓奪主）
 function _mapStylesFull(): google.maps.MapTypeStyle[] {
   return [
-    { elementType: 'geometry', stylers: [{ color: '#1a1a2e' }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: '#8a8a9a' }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a2e' }] },
-    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
-    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373760' }] },
+    { elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.ink2 }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: DESIGN_COLORS.inkMute }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: DESIGN_COLORS.ink2 }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoad }] },
+    { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoadMajor }] },
     // 高速公路：與一般道路同色（移除原灰薄荷高亮，避免與即時車流綠線混淆）
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2d2d4e' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f1623' }] },
-    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#3a3a5c' }] },
+    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.mapRoad }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.ink }] },
+    { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: DESIGN_COLORS.mapStroke }] },
     // POI labels 顯示但壓暗色，icon 仍隱藏避免太雜
     { featureType: 'poi', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
     { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#6a6a8a' }] },
     // 建築物深色
-    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: '#1f1f35' }] },
+    { featureType: 'landscape.man_made', elementType: 'geometry', stylers: [{ color: DESIGN_COLORS.surfaceDeep3 }] },
   ];
 }
 
@@ -305,7 +305,7 @@ onUnmounted(() => {
 </script>
 
 <template lang="pug">
-.PageWarRoom
+.PageWarRoom(data-surface='dark')
   //- 地圖
   .PageWarRoom__map(ref="mapEl")
 
@@ -395,7 +395,7 @@ onUnmounted(() => {
 .PageWarRoom {
   display: flex;
   height: calc(100vh - 60px);
-  background: #0f1115;
+  background: var(--surface-deep);
   overflow: hidden;
   position: relative;
 }
@@ -411,7 +411,7 @@ onUnmounted(() => {
   position: absolute;
   right: calc(300px + 16px); // 桌機：避開右側 300px panel
   bottom: 24px;
-  z-index: 60;
+  z-index: var(--z-sticky);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -422,19 +422,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--accent-a30);
   background: rgba(26, 26, 46, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: 0.08em;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-soft);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 
   &:hover { background: var(--accent-a20); }
@@ -443,7 +441,7 @@ onUnmounted(() => {
   &.is-active {
     background: var(--da-amber);
     border-color: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -460,12 +458,11 @@ onUnmounted(() => {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 70;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(2px);
+  z-index: var(--z-overlay);
+  background: var(--ink-a60);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  transition: opacity var(--dur-base) var(--ease-out), visibility var(--dur-base) var(--ease-out);
 
   &.is-open {
     opacity: 1;
@@ -479,8 +476,8 @@ onUnmounted(() => {
   width: 40px;
   height: 4px;
   margin: 6px auto 12px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.25);
+  border-radius: var(--r-xs);
+  background: var(--surface-a20);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -489,8 +486,8 @@ onUnmounted(() => {
 .PageWarRoom__panel {
   width: 300px;
   flex-shrink: 0;
-  background: #1a1a2e;
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-deep-2);
+  border-left: 1px solid var(--surface-a06);
   display: flex;
   flex-direction: column;
   padding: 20px 16px;
@@ -515,16 +512,16 @@ onUnmounted(() => {
   .PageWarRoom__panel {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    z-index: 80;
+    z-index: var(--z-drawer);
     width: 100%;
     max-height: 75vh;
     border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--surface-a06);
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
     padding: 4px 16px 24px;
     transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    transition: transform var(--dur-slow) cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: var(--shadow-pop);
 
     &.is-sheet-open { transform: translateY(0); }
   }
@@ -537,7 +534,7 @@ onUnmounted(() => {
 .PageWarRoom__panel-title {
   font-family: var(--ff-display);
   font-size: 28px;
-  color: #fff;
+  color: var(--surface-raised);
   letter-spacing: 0.04em;
   line-height: 1;
 }
@@ -565,18 +562,18 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 7px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a50);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--surface-a06); }
   &.is-active {
     background: var(--da-amber);
     border-color: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -586,7 +583,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--surface-a06);
   margin-bottom: 4px;
 }
 
@@ -596,14 +593,14 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PageWarRoom__meta-val {
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 // ── 司機列表 ──────────────────────────────────────────────
@@ -618,9 +615,9 @@ onUnmounted(() => {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 10px 12px;
 
   &.is-offline { opacity: 0.55; }
@@ -628,7 +625,7 @@ onUnmounted(() => {
 
 .PageWarRoom__driver-dot {
   width: 8px; height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
   margin-top: 6px;
 
@@ -646,7 +643,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -656,7 +653,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-top: 2px;
 }
 
@@ -669,7 +666,7 @@ onUnmounted(() => {
   padding: 4px 8px;
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 
 .PageWarRoom__driver-order-id {
@@ -683,7 +680,7 @@ onUnmounted(() => {
 .PageWarRoom__driver-order-status {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
   letter-spacing: 0.05em;
 }
 
@@ -693,7 +690,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--surface-a20);
   text-align: center;
 }
 

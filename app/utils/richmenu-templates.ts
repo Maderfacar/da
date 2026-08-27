@@ -26,10 +26,10 @@ export interface RichmenuTemplate {
 // 統一視覺色（與 P38 既有 admin amber 對齊）
 const AMBER = DESIGN_COLORS.accent;
 const AMBER_DEEP = DESIGN_COLORS.accentDeep;
-const CREAM = '#fdf9f1';
-const SLATE = '#1f2937';
-const SLATE_SOFT = '#374151';
-const WHITE = '#ffffff';
+const CREAM = DESIGN_COLORS.accentWash;
+const SLATE = DESIGN_COLORS.ink;
+const SLATE_SOFT = DESIGN_COLORS.inkSoft;
+const WHITE = DESIGN_COLORS.surfaceRaised;
 
 // helper：產生隨機 id（避免額外引 nanoid）
 let _idCounter = 0;

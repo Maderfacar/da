@@ -679,8 +679,6 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(0, 0, 0, 0.5);
-$border: rgba(0, 0, 0, 0.1);
 
 .TemplateEditor {
   padding: 20px;
@@ -689,7 +687,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__loading {
   text-align: center;
   padding: 40px;
-  color: $muted;
+  color: var(--ink-a50);
   font-family: var(--ff-label);
 }
 
@@ -697,7 +695,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__header {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--ink-a12);
 }
 
 .TemplateEditor__meta-row {
@@ -717,9 +715,9 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__key {
   font-family: var(--ff-mono);
   font-size: 11px;
-  color: $muted;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 6px;
+  color: var(--ink-a50);
+  background: var(--ink-a06);
+  border-radius: var(--r-sm);
   padding: 2px 8px;
 }
 
@@ -730,7 +728,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 4px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1.5px solid;
   display: inline-flex;
   align-items: center;
@@ -757,14 +755,14 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__desc {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-a50);
   margin: 6px 0 0;
 }
 
 .TemplateEditor__trigger {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--ink-a60);
   margin: 4px 0 0;
   padding-left: 8px;
   border-left: 2px solid var(--accent-a30);
@@ -773,7 +771,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__last-edit {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a50);
   margin-top: 4px;
 }
 
@@ -782,7 +780,7 @@ $border: rgba(0, 0, 0, 0.1);
   display: flex;
   gap: 0;
   margin-bottom: 12px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--ink-a12);
 }
 
 .TemplateEditor__lang-tab {
@@ -797,11 +795,11 @@ $border: rgba(0, 0, 0, 0.1);
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: $muted;
+  color: var(--ink-a50);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
-  &:hover { color: rgba(0, 0, 0, 0.75); }
+  &:hover { color: var(--ink-a70); }
 
   &.is-active {
     color: var(--accent);
@@ -824,7 +822,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__lang-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--good);
   display: inline-block;
 }
@@ -834,7 +832,7 @@ $border: rgba(0, 0, 0, 0.1);
   margin-bottom: 12px;
   background: var(--accent-a06);
   border: 1px dashed var(--accent-a30);
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   font-family: var(--ff-label);
   font-size: 11px;
   color: var(--accent);
@@ -863,14 +861,14 @@ $border: rgba(0, 0, 0, 0.1);
     font-family: var(--ff-label);
     font-size: 12px;
     font-weight: 700;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--ink-a70);
   }
 
   input[type='text'],
   textarea {
     padding: 8px 12px;
-    border: 1px solid $border;
-    border-radius: 8px;
+    border: 1px solid var(--ink-a12);
+    border-radius: var(--r-sm);
     font-family: var(--ff-ui);
     font-size: 14px;
     background: white;
@@ -906,7 +904,7 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a50);
 }
 
 .TemplateEditor__warn {
@@ -916,7 +914,7 @@ $border: rgba(0, 0, 0, 0.1);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   line-height: 1.5;
 }
 
@@ -932,10 +930,10 @@ $border: rgba(0, 0, 0, 0.1);
   gap: 6px;
   border: 1px solid var(--accent-a30);
   background: var(--accent-a06);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 4px 10px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--accent-a12);
@@ -949,7 +947,7 @@ $border: rgba(0, 0, 0, 0.1);
   .label {
     font-family: var(--ff-ui);
     font-size: 11px;
-    color: rgba(0, 0, 0, 0.65);
+    color: var(--ink-a70);
   }
   .req {
     color: var(--stop);
@@ -974,12 +972,12 @@ $border: rgba(0, 0, 0, 0.1);
   width: 100%;
 
   :deep(.el-select__wrapper) {
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     min-height: 36px;
-    box-shadow: 0 0 0 1px $border;
+    box-shadow: 0 0 0 1px var(--ink-a12);
     background: white;
 
-    &:hover { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2); }
+    &:hover { box-shadow: 0 0 0 1px var(--ink-a20); }
     &.is-focused { box-shadow: 0 0 0 1px var(--accent); }
   }
 }
@@ -994,8 +992,8 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__cover-preview {
   max-width: 100%;
   max-height: 200px;
-  border-radius: 10px;
-  border: 1px solid $border;
+  border-radius: var(--r-md);
+  border: 1px solid var(--ink-a12);
   object-fit: cover;
 }
 
@@ -1011,7 +1009,7 @@ $border: rgba(0, 0, 0, 0.1);
   justify-content: flex-end;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--ink-a12);
 }
 
 .TemplateEditor__btn {
@@ -1020,10 +1018,10 @@ $border: rgba(0, 0, 0, 0.1);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled {
     opacity: 0.4;
@@ -1031,11 +1029,11 @@ $border: rgba(0, 0, 0, 0.1);
   }
 
   &.is-toggle {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: $border;
-    color: rgba(0, 0, 0, 0.7);
+    background: var(--ink-a06);
+    border-color: var(--ink-a12);
+    color: var(--ink-a70);
     &:hover:not(:disabled) {
-      background: rgba(0, 0, 0, 0.08);
+      background: var(--ink-a06);
     }
   }
   &.is-approve {
@@ -1077,10 +1075,10 @@ $border: rgba(0, 0, 0, 0.1);
 
 .TemplateEditor__bubble {
   background: white;
-  border: 1px solid $border;
-  border-radius: 14px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .TemplateEditor__bubble-hero {
@@ -1126,7 +1124,7 @@ $border: rgba(0, 0, 0, 0.1);
   font-size: 14px;
   font-weight: 600;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   cursor: pointer;
 }
 
@@ -1134,11 +1132,11 @@ $border: rgba(0, 0, 0, 0.1);
 .TemplateEditor__text-bubble {
   // 擬真 LINE 的氣泡底色，**刻意不走語意綠** —— 它要長得像 LINE，不是要表達「成功」
   background: var(--line-bubble);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 18px 18px 18px 4px;
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-lg) var(--r-lg) var(--r-lg) var(--r-xs);
   padding: 12px 16px;
   max-width: 100%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px var(--ink-a06);
 }
 
 .TemplateEditor__text-bubble-content {
@@ -1157,7 +1155,7 @@ $border: rgba(0, 0, 0, 0.1);
   padding: 10px 12px;
   background: var(--accent-a06);
   border: 1px dashed var(--accent-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
 }
 
 .TemplateEditor__placeholder-examples-label {
@@ -1182,13 +1180,13 @@ $border: rgba(0, 0, 0, 0.1);
     color: var(--accent);
     background: var(--accent-a12);
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: var(--r-xs);
   }
   .arrow {
-    color: $muted;
+    color: var(--ink-a50);
   }
   .example {
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--ink-a70);
   }
 }
 
@@ -1198,7 +1196,7 @@ $border: rgba(0, 0, 0, 0.1);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 }
 
 // ── RWD ─────────────────────────────────────────────────────

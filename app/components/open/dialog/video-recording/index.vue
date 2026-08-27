@@ -415,8 +415,8 @@ ElDialogPlus.OpenDialogVideoRecording(
   object-fit: cover;
   display: block;
   // height: 50vh;
-  // border-radius: 12px;
-  background: #000;
+  // border-radius: var(--r-md);
+  background: var(--ink);
   // 自拍鏡像顯示（僅影響預覽與回放，不改變輸出檔案）
   transform: scaleX(-1);
   backface-visibility: hidden;
@@ -435,20 +435,20 @@ ElDialogPlus.OpenDialogVideoRecording(
 .btn {
   @include fs(16px, 700);
   padding: 10px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   cursor: pointer;
   background: #e5e7eb; // gray-200
   color: #111827; // gray-900
-  &.record { background: var(--danger); color: #fff; } // red-500
+  &.record { background: var(--danger); color: var(--surface-raised); } // red-500
   &.roteate { 
     @include wh(48px);
     @include center;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: #9ca3af; 
-    color: #fff;
+    color: var(--surface-raised);
    } // gray-400
-  &.primary { background: var(--accent); color: #fff; } // emerald-500
+  &.primary { background: var(--accent); color: var(--surface-raised); } // emerald-500
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
@@ -461,7 +461,7 @@ ElDialogPlus.OpenDialogVideoRecording(
     @include fs(14px, 600);
     color: var(--wait); // amber-700
     background: #fef3c7; // amber-100
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 8px 10px;
     margin-bottom: 6px;
   }
@@ -469,7 +469,7 @@ ElDialogPlus.OpenDialogVideoRecording(
     @include fs(14px, 600);
     color: var(--stop); // red-800
     background: #fee2e2; // red-100
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 8px 10px;
     margin-bottom: 8px;
   }
@@ -483,10 +483,10 @@ ElDialogPlus.OpenDialogVideoRecording(
   transform: translate(-50%, -50%);
   width: 64px;
   height: 64px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-size: 24px;
   display: flex;
   align-items: center;
@@ -505,13 +505,13 @@ ElDialogPlus.OpenDialogVideoRecording(
   width: 100%;
   height: 8px;
   background: #e5e7eb; // gray-200
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   overflow: hidden;
 }
 
 .countdown-bar .progress {
   height: 100%;
   background: var(--accent); // amber-500
-  transition: width 0.2s linear;
+  transition: width var(--dur-base) linear;
 }
 </style>

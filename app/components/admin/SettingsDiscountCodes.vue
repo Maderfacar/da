@@ -318,8 +318,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.5);
 
 .SettingsDiscountCodes {
   display: flex;
@@ -336,7 +334,7 @@ $muted: rgba(255, 255, 255, 0.5);
 .SettingsDiscountCodes__empty {
   padding: 32px;
   text-align: center;
-  color: $muted;
+  color: var(--surface-a50);
   font-family: var(--ff-label);
   font-size: 12px;
 }
@@ -354,9 +352,9 @@ $muted: rgba(255, 255, 255, 0.5);
   gap: 12px;
   flex-wrap: wrap;
   padding: 12px 14px;
-  border: 1px solid $border;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
 }
 
 .SettingsDiscountCodes__item.is-disabled {
@@ -380,10 +378,10 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 100px;
+  color: var(--surface-a60);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-pill);
   padding: 2px 9px;
 }
 
@@ -399,7 +397,7 @@ $muted: rgba(255, 255, 255, 0.5);
   gap: 4px;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a50);
   margin-top: 2px;
 }
 
@@ -414,7 +412,7 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
   border: 1px solid;
 }
@@ -456,7 +454,7 @@ $muted: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .SettingsDiscountCodes__types {
@@ -471,7 +469,7 @@ $muted: rgba(255, 255, 255, 0.5);
   gap: 6px;
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
   cursor: pointer;
 }
 
@@ -481,7 +479,7 @@ $muted: rgba(255, 255, 255, 0.5);
   gap: 8px;
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
   cursor: pointer;
 }
 
@@ -497,10 +495,10 @@ $muted: rgba(255, 255, 255, 0.5);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 18px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 }
 
 .SettingsDiscountCodes__btn:disabled {
@@ -510,7 +508,7 @@ $muted: rgba(255, 255, 255, 0.5);
 
 .SettingsDiscountCodes__btn.is-approve {
   background: var(--accent);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .SettingsDiscountCodes__btn.is-approve:hover:not(:disabled) {
@@ -518,13 +516,13 @@ $muted: rgba(255, 255, 255, 0.5);
 }
 
 .SettingsDiscountCodes__btn.is-toggle {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.75);
+  background: var(--surface-a06);
+  border-color: var(--surface-a20);
+  color: var(--surface-a72);
 }
 
 .SettingsDiscountCodes__btn.is-toggle:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-a12);
 }
 
 @media (max-width: 767.98px) {

@@ -77,12 +77,12 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.12em;
   padding: 6px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1.5px solid var(--da-gray-pale);
   background: transparent;
   color: var(--da-gray);
   cursor: pointer;
-  transition: all 0.18s;
+  transition: all var(--dur-fast) var(--ease-out);
   line-height: 1;
 
   &:hover {
@@ -96,15 +96,14 @@ onMounted(() => {
   top: calc(100% + 6px);
   right: 0;
   background: var(--surface-a96);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  z-index: 200;
+  box-shadow: var(--shadow-soft);
+  z-index: var(--z-overlay);
   min-width: 52px;
 }
 
@@ -114,13 +113,13 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   background: transparent;
   color: var(--da-gray);
   cursor: pointer;
   text-align: center;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--ink-a06);
@@ -129,7 +128,7 @@ onMounted(() => {
 }
 
 .lang-drop-enter-active,
-.lang-drop-leave-active { transition: opacity 0.15s, transform 0.15s; }
+.lang-drop-leave-active { transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
 .lang-drop-enter-from,
 .lang-drop-leave-to { opacity: 0; transform: translateY(-4px); }
 </style>

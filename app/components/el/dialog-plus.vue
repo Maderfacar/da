@@ -132,7 +132,7 @@ const EmitClose = () => {
 
     &[type="info"] {
       .el-dialog__header {
-        background-color: #fff;
+        background-color: var(--surface-raised);
       }
       .el-dialog__header .el-dialog__title {
         color: var(--accent) !important;

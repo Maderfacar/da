@@ -143,10 +143,10 @@ onMounted(() => { void _LoadStatus(); });
 .AdminSettingsPin__card {
   width: 100%;
   max-width: 480px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
   padding: 28px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 .AdminSettingsPin__title {
   font-size: 22px;
@@ -171,7 +171,7 @@ onMounted(() => { void _LoadStatus(); });
   color: var(--accent-deep);
   background: #fffaeb;
   border: 1px solid var(--wait);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 10px;
   margin: 8px 0 18px;
   line-height: 1.6;

@@ -249,7 +249,9 @@ onUnmounted(() => {
 
 .LayoutDriver {
   min-height: 100svh;
-  background: var(--da-off-white);
+  /* 司機端 11 頁全部是深色頁，這裡原本是瓷白 —— 深色頁蓋在淺底上，
+     載入瞬間會閃一下白，且捲動回彈時露出白邊。改為深色面底。 */
+  background: var(--surface-deep);
   color: var(--da-dark);
   -webkit-font-smoothing: antialiased;
 }
@@ -258,7 +260,7 @@ onUnmounted(() => {
 .LayoutDriver__loading {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-boot);
   background: var(--da-dark);
   display: flex;
   flex-direction: column;
@@ -282,7 +284,7 @@ onUnmounted(() => {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -290,16 +292,15 @@ onUnmounted(() => {
   to { transform: rotate(360deg); }
 }
 
-.auth-fade-leave-active { transition: opacity 0.4s ease; }
+.auth-fade-leave-active { transition: opacity var(--dur-slower) var(--ease-out); }
 .auth-fade-leave-to { opacity: 0; }
 
 // ── 地理位置授權 Modal ─────────────────────────────────────
 .LayoutDriver__perm-mask {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-gate);
   background: rgba(15, 17, 21, 0.92);
-  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -309,12 +310,12 @@ onUnmounted(() => {
 .LayoutDriver__perm-card {
   max-width: 360px;
   width: 100%;
-  background: #1a1a2e;
+  background: var(--surface-deep-2);
   border: 1px solid var(--accent-a30);
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   padding: 28px 24px;
   text-align: center;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .LayoutDriver__perm-icon {
@@ -334,7 +335,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   margin-bottom: 24px;
 }
 
@@ -350,22 +351,22 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: none;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 
   &.is-primary {
     background: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
     &:active:not(:disabled) { transform: scale(0.98); }
   }
 
   &.is-secondary {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.6);
+    background: var(--surface-a06);
+    color: var(--surface-a60);
   }
 }
 
@@ -373,7 +374,7 @@ onUnmounted(() => {
 .LayoutDriver__top {
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 200;
+  z-index: var(--z-header);
   height: 56px;
   padding: 0 16px;
   display: flex;
@@ -402,8 +403,8 @@ onUnmounted(() => {
     width: 100%;
     height: 2px;
     background: var(--da-cream);
-    border-radius: 2px;
-    transition: all 0.25s ease;
+    border-radius: var(--r-xs);
+    transition: all var(--dur-base) var(--ease-out);
     transform-origin: center;
   }
 
@@ -438,7 +439,7 @@ onUnmounted(() => {
 
 .LayoutDriver__status-dot {
   width: 8px; height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--good);
   box-shadow: 0 0 6px var(--good-a70);
 }
@@ -448,7 +449,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--surface-a60);
   white-space: nowrap;
 }
 
@@ -461,7 +462,7 @@ onUnmounted(() => {
 .LayoutDriver__drawer {
   position: fixed;
   top: 0; left: 0;
-  z-index: 300;
+  z-index: var(--z-drawer);
   width: 280px;
   height: 100svh;
   background: var(--da-dark);
@@ -470,14 +471,14 @@ onUnmounted(() => {
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-slow) var(--ease-out);
 
   &.is-open { transform: translateX(0); }
 }
 
 .LayoutDriver__drawer-header {
   padding: 24px 20px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .LayoutDriver__drawer-logo {
@@ -497,7 +498,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .LayoutDriver__drawer-nav {
@@ -511,13 +512,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
   margin-bottom: 4px;
   border-left: 3px solid transparent;
 
-  &:hover { background: rgba(255, 255, 255, 0.06); }
+  &:hover { background: var(--surface-a06); }
 
   &.is-active {
     background: var(--accent-a12);
@@ -536,7 +537,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 15px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--surface-a60);
 }
 
 .LayoutDriver__nav-item.is-active .LayoutDriver__nav-label {
@@ -548,7 +549,7 @@ onUnmounted(() => {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--stop);
   // 深色面上 --stop 解析為亮階（淺紅），白字只剩 1.7:1。
   // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
@@ -567,12 +568,11 @@ onUnmounted(() => {
 .LayoutDriver__overlay {
   position: fixed;
   inset: 0;
-  z-index: 250;
+  z-index: var(--z-overlay);
   background: var(--ink-a50);
-  backdrop-filter: blur(2px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition: opacity var(--dur-slow) var(--ease-out), visibility var(--dur-slow) var(--ease-out);
 
   &.is-open {
     opacity: 1;
@@ -590,8 +590,8 @@ onUnmounted(() => {
 // hamburger 永遠保留可 toggle（無論桌機/手機）
 @media (min-width: 768px) {
   .LayoutDriver__drawer {
-    z-index: 150;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    z-index: var(--z-nav);
+    border-right: 1px solid var(--surface-a06);
   }
 
   // 桌機 drawer 開啟時不顯示 overlay（避免擋主畫面）
@@ -609,7 +609,7 @@ onUnmounted(() => {
   // 平滑過渡
   .LayoutDriver__top,
   .LayoutDriver__body {
-    transition: left 0.3s ease, padding-left 0.3s ease;
+    transition: left var(--dur-slow) var(--ease-out), padding-left var(--dur-slow) var(--ease-out);
   }
 }
 </style>

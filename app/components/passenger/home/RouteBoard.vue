@@ -145,9 +145,9 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 }
 
 .PassengerHomeRouteBoard__board {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -156,7 +156,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   grid-template-columns: 64px 1fr auto;
   gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PassengerHomeRouteBoard__col-flight {
@@ -165,7 +165,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PassengerHomeRouteBoard__col-route {
@@ -174,7 +174,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PassengerHomeRouteBoard__col-fare {
@@ -183,7 +183,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   text-align: right;
 }
 
@@ -196,9 +196,9 @@ section.PassengerHomeRouteBoard(ref="boardRef")
   padding: 16px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--surface-a06);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:last-child {
     border-bottom: none;

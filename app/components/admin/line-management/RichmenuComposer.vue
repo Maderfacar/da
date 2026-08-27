@@ -429,12 +429,10 @@ function ClickSwitchSize(size: RichmenuSize) {
 </template>
 
 <style lang="scss" scoped>
-$border: rgba(0, 0, 0, 0.1);
-$muted: rgba(0, 0, 0, 0.5);
 
 .RichmenuComposer {
-  border: 1px solid $border;
-  border-radius: 12px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-md);
   background: white;
   display: flex;
   flex-direction: column;
@@ -447,8 +445,8 @@ $muted: rgba(0, 0, 0, 0.5);
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid $border;
-  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid var(--ink-a12);
+  background: var(--ink-a06);
   flex-wrap: wrap;
 }
 .RichmenuComposer__head-left,
@@ -458,18 +456,18 @@ $muted: rgba(0, 0, 0, 0.5);
   gap: 8px;
   flex-wrap: wrap;
 }
-.RichmenuComposer__sep { color: $muted; }
+.RichmenuComposer__sep { color: var(--ink-a50); }
 .RichmenuComposer__select-label,
 .RichmenuComposer__mime-label {
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--ink-a70);
 }
 .RichmenuComposer__select {
   padding: 5px 10px;
-  border: 1px solid $border;
-  border-radius: 6px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-sm);
   font-size: 13px;
   background: white;
   min-width: 220px;
@@ -485,14 +483,14 @@ $muted: rgba(0, 0, 0, 0.5);
 .RichmenuComposer__sidebar,
 .RichmenuComposer__inspector {
   padding: 12px;
-  border-right: 1px solid $border;
-  background: rgba(0, 0, 0, 0.015);
+  border-right: 1px solid var(--ink-a12);
+  background: var(--ink-a06);
   overflow-y: auto;
   max-height: 540px;
 }
 .RichmenuComposer__inspector {
   border-right: none;
-  border-left: 1px solid $border;
+  border-left: 1px solid var(--ink-a12);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -526,11 +524,11 @@ $muted: rgba(0, 0, 0, 0.5);
   gap: 6px;
   padding: 6px 8px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   background: white;
 
-  &:hover { background: rgba(0, 0, 0, 0.04); }
+  &:hover { background: var(--ink-a06); }
   &.is-selected {
     border-color: var(--accent);
     background: var(--accent-a06);
@@ -557,10 +555,10 @@ $muted: rgba(0, 0, 0, 0.5);
   cursor: pointer;
   padding: 2px 4px;
   font-size: 11px;
-  color: $muted;
-  border-radius: 3px;
+  color: var(--ink-a50);
+  border-radius: var(--r-xs);
 
-  &:hover { background: rgba(0, 0, 0, 0.06); color: black; }
+  &:hover { background: var(--ink-a06); color: black; }
   &.is-reject:hover { background: var(--stop-a15); color: var(--stop); }
 }
 
@@ -584,14 +582,14 @@ $muted: rgba(0, 0, 0, 0.5);
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: repeating-conic-gradient(rgba(0, 0, 0, 0.03) 0% 25%, white 0% 50%) 50% / 16px 16px;
+  background: repeating-conic-gradient(var(--ink-a06) 0% 25%, white 0% 50%) 50% / 16px 16px;
 }
 
 .RichmenuComposer__canvas-wrap {
   position: relative;
   display: inline-block;
   background: white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .RichmenuComposer__canvas {
@@ -609,7 +607,7 @@ $muted: rgba(0, 0, 0, 0.5);
 
 .RichmenuComposer__empty {
   padding: 40px;
-  color: $muted;
+  color: var(--ink-a50);
   font-family: var(--ff-label);
   font-size: 13px;
 }
@@ -617,7 +615,7 @@ $muted: rgba(0, 0, 0, 0.5);
 .RichmenuComposer__hint {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a50);
   letter-spacing: 0.05em;
 }
 
@@ -638,14 +636,14 @@ $muted: rgba(0, 0, 0, 0.5);
     font-family: var(--ff-label);
     font-size: 10px;
     font-weight: 700;
-    color: $muted;
+    color: var(--ink-a50);
     letter-spacing: 0.1em;
   }
   input,
   select {
     padding: 5px 8px;
-    border: 1px solid $border;
-    border-radius: 5px;
+    border: 1px solid var(--ink-a12);
+    border-radius: var(--r-xs);
     font-size: 12px;
     background: white;
 
@@ -667,10 +665,10 @@ $muted: rgba(0, 0, 0, 0.5);
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 5px 12px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -684,10 +682,10 @@ $muted: rgba(0, 0, 0, 0.5);
     color: white;
   }
   &.is-toggle {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: $border;
-    color: rgba(0, 0, 0, 0.7);
-    &:hover:not(:disabled) { background: rgba(0, 0, 0, 0.08); }
+    background: var(--ink-a06);
+    border-color: var(--ink-a12);
+    color: var(--ink-a70);
+    &:hover:not(:disabled) { background: var(--ink-a06); }
   }
   &.is-approve {
     background: var(--accent);

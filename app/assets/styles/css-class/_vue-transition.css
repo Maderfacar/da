@@ -1,6 +1,6 @@
 .layout-enter-active,
 .layout-leave-active {
-  transition: all 0.2s;
+  transition: all var(--dur-base) var(--ease-out);
 }
 .layout-enter-from,
 .layout-leave-to {
@@ -10,7 +10,7 @@
 
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.2s ease;
+  transition: all var(--dur-base) var(--ease-out);
 }
 
 .page-enter-from,
@@ -21,7 +21,7 @@
 
 .opacity-enter-active,
 .opacity-leave-active {
-  transition: opacity .4s ease;
+  transition: opacity var(--dur-slower) var(--ease-out);
 }
 
 .opacity-enter-from,
@@ -32,7 +32,7 @@
 .com-enter-active,
 .com-leave-active {
   position: absolute;
-  transition: opacity .4s ease, transform .4s ease;
+  transition: opacity var(--dur-slower) var(--ease-out), transform var(--dur-slower) var(--ease-out);
 }
 
 .com-enter-from,

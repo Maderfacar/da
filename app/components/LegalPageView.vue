@@ -121,7 +121,7 @@ onMounted(() => { void ApiLoad(); });
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -144,12 +144,10 @@ onMounted(() => { void ApiLoad(); });
   font-size: 14px;
   line-height: 1.75;
   color: var(--da-dark);
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid var(--da-glass-border, var(--ink-a12));
-  border-radius: 18px;
+  background: var(--surface-a60);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 24px 22px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 
   // TinyEditor 內容渲染樣式（v-html 後的常見 tag）
   :deep(h1),
@@ -191,7 +189,7 @@ onMounted(() => { void ApiLoad(); });
     border-left: 3px solid var(--da-amber);
     background: var(--accent-a06);
     color: var(--da-gray);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
   }
 
   :deep(table) {
@@ -218,7 +216,7 @@ onMounted(() => { void ApiLoad(); });
 
   :deep(img) {
     max-width: 100%;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
   }
 
   :deep(code) {
@@ -226,7 +224,7 @@ onMounted(() => { void ApiLoad(); });
     font-size: 12px;
     background: var(--ink-a06);
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: var(--r-xs);
   }
 }
 </style>

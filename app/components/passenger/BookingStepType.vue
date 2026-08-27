@@ -561,16 +561,16 @@ const ClickNext = () => {
   }
 
   &__card {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 20px 14px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
     user-select: none;
 
     &:active { transform: scale(0.97); }
@@ -604,9 +604,9 @@ const ClickNext = () => {
   }
 
   &__charter-day {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     padding: 10px 6px;
     display: flex;
     flex-direction: column;
@@ -614,7 +614,7 @@ const ClickNext = () => {
     justify-content: center;
     gap: 2px;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, transform 0.12s;
+    transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
     &:active { transform: scale(0.97); }
     &.is-active {
@@ -664,11 +664,11 @@ const ClickNext = () => {
     width: 100%;
     padding: 12px 44px 12px 16px;
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 12px;
-    background: var(--da-glass-bg);
+    border-radius: var(--r-md);
+    background: var(--surface-raised);
     color: var(--da-dark);
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color var(--dur-base) var(--ease-out);
     box-sizing: border-box;
 
     &::placeholder { color: var(--da-gray); font-weight: 400; letter-spacing: 0.05em; }
@@ -684,7 +684,7 @@ const ClickNext = () => {
     height: 18px;
     border: 2px solid var(--accent-a20);
     border-top-color: var(--da-amber);
-    border-radius: 50%;
+    border-radius: var(--r-round);
     animation: spin 0.7s linear infinite;
   }
 
@@ -721,9 +721,9 @@ const ClickNext = () => {
   &__manual {
     margin-top: 8px;
     margin-bottom: 12px;
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px dashed var(--da-amber);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 16px 14px 14px;
     overflow: hidden;
   }
@@ -793,12 +793,12 @@ const ClickNext = () => {
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.1em;
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     color: var(--da-gray);
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
     user-select: none;
 
     &:active { transform: scale(0.97); }
@@ -817,11 +817,11 @@ const ClickNext = () => {
     font-weight: 700;
     letter-spacing: 0.08em;
     border: 1.5px solid var(--da-gray-pale);
-    border-radius: 10px;
-    background: var(--da-glass-bg);
+    border-radius: var(--r-md);
+    background: var(--surface-raised);
     color: var(--da-dark);
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color var(--dur-base) var(--ease-out);
     box-sizing: border-box;
 
     &:focus { border-color: var(--da-amber); }
@@ -842,9 +842,9 @@ const ClickNext = () => {
 
   // ── 航班資訊卡片 ──────────────────────────────────────────────
   &__flight-card {
-    background: var(--da-glass-bg);
+    background: var(--surface-raised);
     border: 1.5px solid var(--da-amber);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     overflow: hidden;
     margin-bottom: 4px;
   }
@@ -879,7 +879,7 @@ const ClickNext = () => {
     font-weight: 700;
     letter-spacing: 0.1em;
     padding: 3px 10px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
 
     &.is-ok    { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
     &.is-warn  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
@@ -909,17 +909,17 @@ const ClickNext = () => {
 
 // ── Transitions ──────────────────────────────────────────────
 .flight-slide-enter-active,
-.flight-slide-leave-active { transition: all 0.3s ease; }
+.flight-slide-leave-active { transition: all var(--dur-slow) var(--ease-out); }
 .flight-slide-enter-from,
 .flight-slide-leave-to { opacity: 0; transform: translateY(-12px); }
 
-.card-pop-enter-active  { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.card-pop-leave-active  { transition: all 0.2s ease; }
+.card-pop-enter-active  { transition: all var(--dur-slow) cubic-bezier(0.34, 1.56, 0.64, 1); }
+.card-pop-leave-active  { transition: all var(--dur-base) var(--ease-out); }
 .card-pop-enter-from    { opacity: 0; transform: scale(0.92) translateY(8px); }
 .card-pop-leave-to      { opacity: 0; transform: scale(0.96); }
 
 .manual-slide-enter-active,
-.manual-slide-leave-active { transition: all 0.25s ease; }
+.manual-slide-leave-active { transition: all var(--dur-base) var(--ease-out); }
 .manual-slide-enter-from,
 .manual-slide-leave-to { opacity: 0; transform: translateY(-8px); max-height: 0; padding: 0 14px; }
 

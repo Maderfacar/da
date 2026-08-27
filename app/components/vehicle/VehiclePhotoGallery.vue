@@ -45,16 +45,16 @@ const props = defineProps<Props>();
 .VehiclePhotoGallery__item {
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   overflow: hidden;
   background: var(--da-gray-pale);
   cursor: zoom-in;
-  box-shadow: 0 2px 8px var(--ink-a06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 18px var(--ink-a12);
+    box-shadow: var(--shadow-soft);
   }
 }
 
@@ -67,6 +67,6 @@ const props = defineProps<Props>();
   font-size: 13px;
   color: var(--da-gray);
   background: var(--da-amber-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 </style>

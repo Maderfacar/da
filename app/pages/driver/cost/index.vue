@@ -308,8 +308,8 @@ onMounted(ApiLoadCostSettings);
 .PageDriverCost {
   padding: 80px 20px 32px;
   min-height: 100svh;
-  background: #0d0f14;
-  color: #fff;
+  background: var(--surface-deep);
+  color: var(--surface-raised);
 }
 
 // ── 頁首（對齊 dashboard） ─────────────────────────────────
@@ -334,23 +334,23 @@ onMounted(ApiLoadCostSettings);
     font-size: 40px;
     letter-spacing: 0.04em;
     line-height: 1;
-    color: #fff;
+    color: var(--surface-raised);
   }
 
   &-sub {
     font-family: var(--ff-label);
     font-size: 13px;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--surface-a40);
     margin-top: 6px;
   }
 }
 
 // ── Section 卡片 ──────────────────────────────────────────
 .PageDriverCost__section {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -368,7 +368,7 @@ onMounted(ApiLoadCostSettings);
   font-family: var(--ff-display);
   font-size: 22px;
   letter-spacing: 0.05em;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
 }
 
@@ -376,7 +376,7 @@ onMounted(ApiLoadCostSettings);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   margin-top: 4px;
   margin-bottom: 14px;
 }
@@ -396,9 +396,9 @@ onMounted(ApiLoadCostSettings);
 }
 
 .PageDriverCost__stat {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 14px 12px;
   display: flex;
   flex-direction: column;
@@ -413,13 +413,13 @@ onMounted(ApiLoadCostSettings);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PageDriverCost__stat-val {
   font-family: var(--ff-data);
   font-size: 28px;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 
@@ -431,7 +431,7 @@ onMounted(ApiLoadCostSettings);
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
 }
 
 // ── 欄位列表 ──────────────────────────────────────────────
@@ -448,10 +448,10 @@ onMounted(ApiLoadCostSettings);
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  transition: border-color 0.2s;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-base) var(--ease-out);
 
   &:focus-within { border-color: var(--accent-a50); }
 }
@@ -467,24 +467,24 @@ onMounted(ApiLoadCostSettings);
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--surface-a82);
   }
 
   small {
     font-family: var(--ff-label);
     font-size: 10px;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--surface-a30);
     text-transform: uppercase;
   }
 }
 
 .PageDriverCost__input {
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #fff;
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
+  background: var(--ink-a30);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 16px;
   font-variant-numeric: tabular-nums;
@@ -492,15 +492,15 @@ onMounted(ApiLoadCostSettings);
   width: 100%;
   outline: none;
 
-  &::placeholder { color: rgba(255, 255, 255, 0.2); }
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent); }
 }
 
 // ── 每公里明細 ────────────────────────────────────────────
 .PageDriverCost__breakdown {
   margin-top: 12px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
+  background: var(--ink-a20);
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -509,7 +509,7 @@ onMounted(ApiLoadCostSettings);
   justify-content: space-between;
   align-items: center;
   padding: 11px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--surface-a06);
   font-family: var(--ff-label);
   font-size: 13px;
 
@@ -523,13 +523,13 @@ onMounted(ApiLoadCostSettings);
 }
 
 .PageDriverCost__breakdown-label {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
 
-  .is-total & { color: #fff; font-size: 14px; letter-spacing: 0.06em; }
+  .is-total & { color: var(--surface-raised); font-size: 14px; letter-spacing: 0.06em; }
 }
 
 .PageDriverCost__breakdown-num {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
   font-variant-numeric: tabular-nums;
 
   .is-total & { color: var(--accent); font-size: 15px; font-weight: 700; }
@@ -541,22 +541,20 @@ onMounted(ApiLoadCostSettings);
   bottom: 16px;
   margin-top: 20px;
   background: rgba(20, 23, 30, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-lg);
   padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-pop);
 }
 
 .PageDriverCost__save-btn {
   flex-shrink: 0;
   padding: 11px 22px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1.5px solid var(--accent-a60);
   background: var(--accent-a12);
   color: var(--da-stripe-yellow);
@@ -565,7 +563,7 @@ onMounted(ApiLoadCostSettings);
   font-weight: 700;
   letter-spacing: 0.12em;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { opacity: 0.85; }
   &:active:not(:disabled) { transform: scale(0.98); }
@@ -576,7 +574,7 @@ onMounted(ApiLoadCostSettings);
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   flex: 1;
   text-align: right;
 }

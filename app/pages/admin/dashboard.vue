@@ -269,7 +269,7 @@ onUnmounted(() => {
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 // ── 統計卡 ─────────────────────────────────────────────────
@@ -280,9 +280,9 @@ onUnmounted(() => {
 }
 
 .PageDashboard__stat {
-  background: var(--da-glass-bg);
+  background: var(--surface-raised);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
@@ -323,9 +323,9 @@ onUnmounted(() => {
 }
 
 .PageDashboard__card {
-  background: var(--da-glass-bg);
+  background: var(--surface-raised);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 20px;
 }
 
@@ -377,7 +377,7 @@ onUnmounted(() => {
   padding: 12px 14px;
   background: var(--da-cream);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   flex-wrap: wrap;
 }
 
@@ -411,7 +411,7 @@ onUnmounted(() => {
   padding: 10px 12px;
   background: var(--da-cream);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 
 .PageDashboard__avatar-wrap { flex-shrink: 0; }
@@ -419,7 +419,7 @@ onUnmounted(() => {
 .PageDashboard__avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
   display: block;
 }
@@ -427,7 +427,7 @@ onUnmounted(() => {
 .PageDashboard__avatar-fallback {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -472,7 +472,7 @@ onUnmounted(() => {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 3px 9px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 
   &.is-online  { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
   &.is-busy    { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }

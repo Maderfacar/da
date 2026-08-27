@@ -420,7 +420,7 @@ onUnmounted(() => {
   font-family: var(--ff-display);
   font-size: clamp(140px, 42vw, 240px);
   letter-spacing: -0.04em;
-  color: rgba(255, 255, 255, 0.04);
+  color: var(--surface-a06);
   pointer-events: none;
   user-select: none;
   line-height: 1;
@@ -433,9 +433,8 @@ onUnmounted(() => {
   width: 100%;
   max-width: 480px;
   background: rgba(40, 37, 31, 0.85);
-  backdrop-filter: blur(20px);
   border: 1px solid var(--accent-a20);
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   padding: 32px 24px 28px;
   display: flex;
   flex-direction: column;
@@ -460,7 +459,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PageDriverRegister__divider {
@@ -473,7 +472,7 @@ onUnmounted(() => {
 .PageDriverRegister__loading {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   padding: 20px 0;
 }
 
@@ -488,7 +487,7 @@ onUnmounted(() => {
 .PageDriverRegister__avatar {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 2px solid var(--accent-a40);
   object-fit: cover;
 }
@@ -553,7 +552,7 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--surface-a72);
 }
 
 .PageDriverRegister__required {
@@ -564,18 +563,18 @@ onUnmounted(() => {
 .PageDriverRegister__input {
   width: 100%;
   padding: 9px 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: #fff;
+  color: var(--surface-raised);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.3); }
+  &::placeholder { color: var(--surface-a30); }
   &:focus {
     outline: none;
     border-color: var(--accent-a50);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-a06);
   }
 }
 
@@ -589,17 +588,17 @@ onUnmounted(() => {
 .PageDriverRegister__radio {
   position: relative;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
+  background: var(--surface-a06);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 
   input { display: none; }
 
@@ -610,7 +609,7 @@ onUnmounted(() => {
   }
 
   &:hover:not(.is-active) {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-a06);
   }
 }
 
@@ -625,7 +624,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   margin: -2px 0 12px;
   line-height: 1.5;
 }
@@ -653,7 +652,7 @@ onUnmounted(() => {
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 14px;
   margin-top: 12px;
 }
@@ -665,13 +664,13 @@ onUnmounted(() => {
   background: var(--da-amber);
   color: var(--da-dark);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.1em;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:disabled {
     opacity: 0.4;
@@ -685,7 +684,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
   margin-bottom: 16px;
   text-align: center;
 }
@@ -694,7 +693,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-bottom: 24px;
   text-align: center;
 }
@@ -713,7 +712,7 @@ onUnmounted(() => {
   padding: 14px 20px;
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 
 .PageDriverRegister__cooldown-label {
@@ -738,7 +737,7 @@ onUnmounted(() => {
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 14px;
   margin-bottom: 24px;
   width: 100%;
@@ -751,14 +750,14 @@ onUnmounted(() => {
   padding: 11px 8px;
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--da-amber);
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
   &:active { transform: scale(0.98); }
@@ -776,9 +775,9 @@ onUnmounted(() => {
   padding: 12px 14px;
   background: color-mix(in srgb, var(--line-green) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--line-green) 40%, transparent);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background var(--dur-base) var(--ease-out);
 
   &:hover { background: color-mix(in srgb, var(--line-green) 24%, transparent); }
 }
@@ -800,6 +799,6 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--surface-a12);
 }
 </style>

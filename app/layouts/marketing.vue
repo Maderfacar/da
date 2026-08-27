@@ -70,16 +70,14 @@ const ClickLogo = () => navigateTo('/');
 .LayoutMarketing__top {
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 100;
+  z-index: var(--z-header);
   height: 56px;
   padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--surface-a88);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--da-glass-border);
+  border-bottom: 1px solid var(--hairline);
 }
 
 .LayoutMarketing__logo {
@@ -110,16 +108,16 @@ const ClickLogo = () => navigateTo('/');
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-md);
+  background: var(--surface-a40);
   cursor: pointer;
   padding: 0;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(0, 0, 0, 0.12);
+    background: var(--surface-a72);
+    border-color: var(--ink-a12);
   }
   &:active { transform: scale(0.96); }
 }
@@ -128,7 +126,7 @@ const ClickLogo = () => navigateTo('/');
   width: 16px;
   height: 1.5px;
   background: var(--da-dark);
-  border-radius: 1px;
+  border-radius: var(--r-xs);
 }
 
 // ── 頁面主體 ─────────────────────────────────────────────────────

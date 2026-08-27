@@ -53,11 +53,11 @@ transition(name="fade")
 .iab-mask {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: var(--ink-a70);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1900;
+  z-index: var(--z-gate);
   padding: 24px;
 }
 .iab-panel {
@@ -65,9 +65,9 @@ transition(name="fade")
   max-width: 520px;
   background: white;
   color: var(--text);
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   padding: 24px;
-  box-shadow: 0 12px 32px rgba(0,0,0,.24);
+  box-shadow: var(--shadow-pop);
   text-align: center;
 }
 .iab-title {
@@ -92,7 +92,7 @@ transition(name="fade")
   border: 1px solid var(--border);
   background: white;
   color: var(--text);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 14px;
   font-size: 14px;
 }
@@ -101,6 +101,6 @@ transition(name="fade")
   color: white;
   border-color: var(--green);
 }
-.fade-enter-active, .fade-leave-active { transition: opacity .2s ease; }
+.fade-enter-active, .fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

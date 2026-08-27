@@ -198,11 +198,11 @@ defineExpose({ SetPlace });
   width: 100%;
   min-height: 44px;
   padding: 12px 40px 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-ui);
   font-size: 15px;
   outline: none;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
   -webkit-appearance: none;
 
   &::placeholder { color: var(--da-gray-light); }
@@ -211,25 +211,25 @@ defineExpose({ SetPlace });
 
 // ── Light ──────────────────────────────────────────────────
 .UiGooglePlaceInput.is-light .UiGooglePlaceInput__field {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--surface-a82);
   border: 1.5px solid var(--da-gray-pale);
   color: var(--da-dark);
 
-  &:focus { border-color: var(--da-amber); background: #fff; }
+  &:focus { border-color: var(--da-amber); background: var(--surface-raised); }
 }
 
 // ── Dark ───────────────────────────────────────────────────
 .UiGooglePlaceInput.is-dark .UiGooglePlaceInput__label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 
 .UiGooglePlaceInput.is-dark .UiGooglePlaceInput__field {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
   color: var(--da-cream);
 
-  &::placeholder { color: rgba(255, 255, 255, 0.25); }
-  &:focus { border-color: var(--da-amber); background: rgba(255, 255, 255, 0.1); }
+  &::placeholder { color: var(--surface-a20); }
+  &:focus { border-color: var(--da-amber); background: var(--surface-a12); }
 }
 
 // ── suffix（loading spinner / clear btn）──────────────────
@@ -247,7 +247,7 @@ defineExpose({ SetPlace });
   height: 16px;
   border: 2px solid var(--da-gray-pale);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.7s linear infinite;
 }
 
@@ -276,21 +276,21 @@ defineExpose({ SetPlace });
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--surface-raised);
   border: 1.5px solid var(--da-gray-pale);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
   list-style: none;
   padding: 6px 0;
   margin: 0;
-  z-index: 100;
+  z-index: var(--z-nav);
   overflow: hidden;
 }
 
 .UiGooglePlaceInput__dropdown__item {
   padding: 10px 16px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--da-cream); }
 }
@@ -326,7 +326,7 @@ defineExpose({ SetPlace });
 // ── 下拉動畫 ───────────────────────────────────────────────
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.15s, transform 0.15s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .dropdown-enter-from,

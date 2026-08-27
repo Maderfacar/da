@@ -474,7 +474,7 @@ const ClickNewOrder = () => {
   &__step-dot {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: var(--r-round);
     border: 2px solid var(--da-gray-pale);
     background: var(--da-cream);
     display: flex;
@@ -484,12 +484,12 @@ const ClickNewOrder = () => {
     font-size: 14px;
     font-weight: 700;
     color: var(--da-gray-light);
-    transition: border-color 0.3s, background 0.3s, color 0.3s;
+    transition: border-color var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out);
 
     .is-active & {
       border-color: var(--da-amber);
       background: var(--da-amber);
-      color: #fff;
+      color: var(--surface-raised);
     }
 
     .is-done & {
@@ -504,7 +504,7 @@ const ClickNewOrder = () => {
     font-size: 11px;
     color: var(--da-gray-light);
     white-space: nowrap;
-    transition: color 0.3s;
+    transition: color var(--dur-slow) var(--ease-out);
 
     .is-active &,
     .is-done & { color: var(--da-amber); }
@@ -516,7 +516,7 @@ const ClickNewOrder = () => {
     width: calc(25% - 28px);
     height: 2px;
     background: var(--da-gray-pale);
-    transition: background 0.3s;
+    transition: background var(--dur-slow) var(--ease-out);
 
     &.is-done { background: var(--da-amber); }
 
@@ -528,13 +528,11 @@ const ClickNewOrder = () => {
 
   // ── 表單卡片 ──────────────────────────────────────────────────────────────
   &__card {
-    background: var(--da-glass-bg);
-    border: 1px solid var(--da-glass-border);
-    border-radius: 24px;
+    background: var(--surface-raised);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-xl);
     padding: 24px 20px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-pop);
   }
 
   // ── 成功畫面 ──────────────────────────────────────────────────────────────
@@ -570,7 +568,7 @@ const ClickNewOrder = () => {
   &__success-id {
     margin-top: 24px;
     background: var(--da-dark);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     padding: 14px 24px;
     display: flex;
     flex-direction: column;
@@ -602,7 +600,7 @@ const ClickNewOrder = () => {
 
 .step-slide-enter-active,
 .step-slide-leave-active {
-  transition: opacity 0.25s, transform 0.25s;
+  transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
 }
 
 .step-slide-enter-from {
@@ -617,7 +615,7 @@ const ClickNewOrder = () => {
 
 .fade-up-enter-active,
 .fade-up-leave-active {
-  transition: opacity 0.3s, transform 0.3s;
+  transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
 }
 
 .fade-up-enter-from,

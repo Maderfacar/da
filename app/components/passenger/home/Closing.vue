@@ -87,7 +87,7 @@ section.PassengerHomeClosing
   font-size: 22px;
   letter-spacing: 0.12em;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   cursor: pointer;
 
   &:active {
@@ -106,7 +106,7 @@ section.PassengerHomeClosing
   letter-spacing: 0.1em;
   text-transform: uppercase;
   border: 1.5px solid var(--da-dark);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   cursor: pointer;
   display: flex;
   align-items: center;

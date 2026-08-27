@@ -121,11 +121,9 @@ onMounted(() => {
   z-index: 5;
   margin: 12px 16px 0;
   padding: 8px 14px 8px 10px;
-  border-radius: 100px;
-  border: 1px solid var(--da-glass-border);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hairline);
   background: var(--surface-a82);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   color: var(--da-dark);
   font-family: var(--ff-label);
   font-size: 12px;
@@ -135,7 +133,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &:hover {
     color: var(--da-amber);
@@ -158,7 +156,7 @@ onMounted(() => {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -235,14 +233,14 @@ onMounted(() => {
   :deep(h1) { font-size: 20px; }
   :deep(h2) { font-size: 17px; }
   :deep(h3) { font-size: 15px; }
-  :deep(img) { max-width: 100%; border-radius: 12px; margin: 10px 0; }
+  :deep(img) { max-width: 100%; border-radius: var(--r-md); margin: 10px 0; }
   :deep(blockquote) {
     border-left: 3px solid var(--accent-a50);
     padding: 4px 14px;
     margin: 12px 0;
     color: var(--da-gray);
     background: var(--accent-a06);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
   }
 }
 
@@ -250,15 +248,15 @@ onMounted(() => {
   display: inline-block;
   margin-top: 24px;
   padding: 12px 28px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--da-amber);
-  color: #fff;
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--da-amber-light); }
 }

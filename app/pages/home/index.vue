@@ -320,7 +320,8 @@ onUnmounted(() => {
   height: 220px;
   background: repeating-linear-gradient(
     -45deg,
-    rgba(245, 200, 66, 0.12) 0px, rgba(245, 200, 66, 0.12) 20px,
+    color-mix(in srgb, var(--da-stripe-yellow) 12%, transparent) 0px,
+    color-mix(in srgb, var(--da-stripe-yellow) 12%, transparent) 20px,
     transparent 20px, transparent 40px
   );
   pointer-events: none;
@@ -411,13 +412,13 @@ onUnmounted(() => {
   margin-bottom: 20px;
   padding: 6px 14px;
   border: 1.5px solid var(--da-amber);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   animation: fadeUp 0.8s ease both;
 
   &::before {
     content: '';
     width: 6px; height: 6px;
-    border-radius: 50%;
+    border-radius: var(--r-round);
     background: var(--da-amber);
     animation: pulse 2s ease infinite;
   }
@@ -468,9 +469,9 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-base) var(--ease-out);
   text-align: center;
 
   &:active { transform: scale(0.97); }
@@ -551,13 +552,11 @@ onUnmounted(() => {
 
 // ── TRIP CARD（手機優先重排）─────────────────────────────────────────────────
 .PageHome__trip-card {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-xl);
   padding: 20px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -570,16 +569,16 @@ onUnmounted(() => {
     top: 0; left: 0;
     width: 4px; height: 100%;
     background: var(--da-amber);
-    border-radius: 20px 0 0 20px;
+    border-radius: var(--r-xl) 0 0 var(--r-xl);
   }
 
   &.is-clickable {
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
     &:hover {
       border-color: var(--accent-a30);
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+      box-shadow: var(--shadow-pop);
     }
     &:active { transform: scale(0.99); }
     &:focus-visible {
@@ -638,7 +637,7 @@ onUnmounted(() => {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: 5px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   margin-left: auto;
   white-space: nowrap;
 
@@ -687,7 +686,7 @@ onUnmounted(() => {
 .PageHome__trip-route-dot {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   margin-top: 4px;
   flex-shrink: 0;
   position: relative;
@@ -734,7 +733,7 @@ onUnmounted(() => {
   padding: 10px 12px;
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 
 .PageHome__trip-flight-icon {
@@ -785,7 +784,7 @@ onUnmounted(() => {
   color: var(--line-green);
   background: color-mix(in srgb, var(--line-green) 12%, transparent);
   padding: 3px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 .PageHome__trip-driver-rows {
@@ -833,7 +832,7 @@ onUnmounted(() => {
   color: var(--da-dark);
   background: var(--da-cream);
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 2px solid var(--da-dark);
   justify-self: start;
   font-variant-numeric: tabular-nums;
@@ -865,7 +864,7 @@ onUnmounted(() => {
   background: var(--da-amber);
   color: var(--da-cream);
   padding: 3px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 // 無單：明確空狀態卡
@@ -876,7 +875,7 @@ onUnmounted(() => {
   gap: 12px;
   width: 100%;
   padding: 36px 24px 32px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1.5px dashed var(--ink-a20);
   background: var(--ink-a06);
   text-align: center;
@@ -888,7 +887,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--accent-a12);
   color: var(--da-amber);
   font-size: 28px;
@@ -921,14 +920,14 @@ onUnmounted(() => {
   background: var(--da-dark);
   color: var(--da-cream);
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.92; }
   &:active { transform: scale(0.97); }
@@ -949,7 +948,7 @@ onUnmounted(() => {
 .PageHome__book-card {
   background: linear-gradient(135deg, var(--da-dark), #2a2520);
   color: var(--da-cream);
-  border-radius: 24px;
+  border-radius: var(--r-xl);
   padding: 32px 24px;
   text-align: left;
   position: relative;
@@ -962,8 +961,8 @@ onUnmounted(() => {
     right: -40px;
     width: 160px;
     height: 160px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(245, 200, 66, 0.25), transparent 70%);
+    border-radius: var(--r-round);
+    background: radial-gradient(circle, color-mix(in srgb, var(--da-stripe-yellow) 25%, transparent), transparent 70%);
     pointer-events: none;
   }
 }
@@ -1015,14 +1014,14 @@ onUnmounted(() => {
   background: var(--da-amber);
   color: var(--da-dark);
   border: none;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.15s, opacity 0.15s;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.92; }
   &:active { transform: scale(0.97); }
@@ -1037,7 +1036,7 @@ onUnmounted(() => {
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity var(--dur-slower) var(--ease-out), transform var(--dur-slower) var(--ease-out);
 
   &.visible {
     opacity: 1;

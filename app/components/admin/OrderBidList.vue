@@ -74,9 +74,9 @@ const ClickAssign = (driverId: string) => {
 </template>
 
 <style lang="scss" scoped>
-$border: rgba(255, 255, 255, 0.1);
-$text: rgba(255, 255, 255, 0.85);
-$muted: rgba(255, 255, 255, 0.45);
+
+
+
 
 .AdminOrderBidList {
   display: flex;
@@ -87,7 +87,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .AdminOrderBidList__empty {
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--surface-a40);
   padding: 16px 0;
   text-align: center;
 }
@@ -104,9 +104,9 @@ $muted: rgba(255, 255, 255, 0.45);
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  border: 1px solid $border;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-md);
+  background: var(--surface-a06);
 
   &.is-withdrawn {
     opacity: 0.4;
@@ -126,7 +126,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 600;
-  color: $text;
+  color: var(--surface-a82);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -137,7 +137,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-size: 9px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--stop-a15);
   border: 1px solid var(--stop-a30);
   color: var(--stop);
@@ -150,17 +150,17 @@ $muted: rgba(255, 255, 255, 0.45);
   gap: 6px;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminOrderBidList__match {
   color: var(--accent);
   font-weight: 700;
-  &.is-none { color: $muted; font-weight: 500; }
+  &.is-none { color: var(--surface-a40); font-weight: 500; }
 }
 
 .AdminOrderBidList__divider {
-  color: rgba(255, 255, 255, 0.18);
+  color: var(--surface-a20);
 }
 
 .AdminOrderBidList__tags {
@@ -174,7 +174,7 @@ $muted: rgba(255, 255, 255, 0.45);
   font-family: var(--ff-ui);
   font-size: 10px;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent-a90);
@@ -183,7 +183,7 @@ $muted: rgba(255, 255, 255, 0.45);
 .AdminOrderBidList__time {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminOrderBidList__assign {
@@ -192,12 +192,12 @@ $muted: rgba(255, 255, 255, 0.45);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 8px 14px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
   color: var(--accent);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 
   &:hover:not(:disabled) {

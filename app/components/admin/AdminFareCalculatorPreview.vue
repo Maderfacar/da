@@ -310,13 +310,13 @@ const fmt = (n: number): string => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(255, 255, 255, 0.4);
-$border: rgba(255, 255, 255, 0.08);
+
+
 
 .AdminFareCalculatorPreview {
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--ink-a20);
   border: 1px solid var(--accent-a20);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 16px;
   margin: 12px 16px 4px;
 }
@@ -337,7 +337,7 @@ $border: rgba(255, 255, 255, 0.08);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
 }
 
@@ -345,13 +345,13 @@ $border: rgba(255, 255, 255, 0.08);
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--surface-a82);
 }
 
 .AdminFareCalculatorPreview__head-hint {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminFareCalculatorPreview__grid {
@@ -382,7 +382,7 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--surface-a40);
 }
 
 .AdminFareCalculatorPreview__actions {
@@ -398,22 +398,22 @@ $border: rgba(255, 255, 255, 0.08);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 8px 18px;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover { background: var(--accent-deep); }
   }
 
   &.is-secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: $border;
-    color: rgba(255, 255, 255, 0.7);
-    &:hover { background: rgba(255, 255, 255, 0.1); }
+    background: var(--surface-a06);
+    border-color: var(--surface-a06);
+    color: var(--surface-a72);
+    &:hover { background: var(--surface-a12); }
   }
 }
 
@@ -423,7 +423,7 @@ $border: rgba(255, 255, 255, 0.08);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
   margin-top: 12px;
 }
@@ -431,7 +431,7 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminFareCalculatorPreview__result {
   margin-top: 14px;
   border: 1px solid var(--accent-a30);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
 }
 
@@ -453,13 +453,13 @@ $border: rgba(255, 255, 255, 0.08);
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 
   &.is-raw {
-    background: rgba(255, 255, 255, 0.03);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--surface-a06);
+    border-top: 1px solid var(--surface-a12);
   }
 
   &.is-final {
@@ -471,14 +471,14 @@ $border: rgba(255, 255, 255, 0.08);
 .AdminFareCalculatorPreview__line-key {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .AdminFareCalculatorPreview__line-val {
   font-family: var(--ff-label);
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
 }
 
 .AdminFareCalculatorPreview__line.is-final .AdminFareCalculatorPreview__line-key,

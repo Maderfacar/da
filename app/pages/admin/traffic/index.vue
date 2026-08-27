@@ -104,7 +104,7 @@ onMounted(ApiLoadFlow);
 </script>
 
 <template lang="pug">
-.PageTraffic
+.PageTraffic(data-surface='dark')
   //- 頁首
   .PageTraffic__header
     .PageTraffic__header-label AIRPORT INTELLIGENCE
@@ -191,8 +191,8 @@ onMounted(ApiLoadFlow);
 .PageTraffic {
   padding: 24px 20px 60px;
   min-height: 100svh;
-  background: #0f1115;
-  color: #fff;
+  background: var(--surface-deep);
+  color: var(--surface-raised);
 }
 
 // ── 頁首 ──────────────────────────────────────────────────
@@ -215,7 +215,7 @@ onMounted(ApiLoadFlow);
 .PageTraffic__header-title {
   font-family: var(--ff-display);
   font-size: 40px;
-  color: #fff;
+  color: var(--surface-raised);
   letter-spacing: 0.02em;
   line-height: 0.95;
 }
@@ -224,7 +224,7 @@ onMounted(ApiLoadFlow);
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-top: 4px;
 }
 
@@ -335,7 +335,7 @@ onMounted(ApiLoadFlow);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   min-width: 36px;
 }
 
@@ -350,17 +350,17 @@ onMounted(ApiLoadFlow);
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 5px 12px;
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a12);
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     background: var(--da-amber);
     border-color: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -378,12 +378,12 @@ onMounted(ApiLoadFlow);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 5px 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a12);
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     background: var(--accent-a20);
@@ -401,9 +401,9 @@ onMounted(ApiLoadFlow);
 }
 
 .PageTraffic__stat-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 14px 16px;
 
   &.is-peak {
@@ -418,7 +418,7 @@ onMounted(ApiLoadFlow);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-bottom: 4px;
 }
 
@@ -426,7 +426,7 @@ onMounted(ApiLoadFlow);
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 26px;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
   letter-spacing: 0.02em;
 
@@ -436,7 +436,7 @@ onMounted(ApiLoadFlow);
 .PageTraffic__stat-unit {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-top: 2px;
 }
 
@@ -447,7 +447,7 @@ onMounted(ApiLoadFlow);
   gap: 8px;
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 8px 12px;
   margin-bottom: 14px;
 
@@ -462,9 +462,9 @@ onMounted(ApiLoadFlow);
 
 // ── 圖表 ──────────────────────────────────────────────────
 .PageTraffic__chart-wrapper {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 16px;
   height: 320px;
   position: relative;
@@ -478,7 +478,7 @@ onMounted(ApiLoadFlow);
   gap: 10px;
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 14px 16px;
 }
 
@@ -487,7 +487,7 @@ onMounted(ApiLoadFlow);
 .PageTraffic__suggest-text {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   line-height: 1.5;
 
   strong { color: var(--da-amber); font-weight: 700; }

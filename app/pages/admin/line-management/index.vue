@@ -1128,8 +1128,6 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$muted: rgba(0, 0, 0, 0.45);
-$surface: rgba(255, 255, 255, 0.7);
 $border: var(--accent-a20);
 
 .PageAdminLineManagement {
@@ -1180,9 +1178,9 @@ $border: var(--accent-a20);
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: $muted;
+  color: var(--ink-a40);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1202,17 +1200,17 @@ $border: var(--accent-a20);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: $muted;
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 100px;
+  color: var(--ink-a40);
+  background: var(--ink-a06);
+  border-radius: var(--r-pill);
   padding: 1px 6px;
 }
 
 // ── Panel ───────────────────────────────────────────────────
 .PageAdminLineManagement__panel {
-  background: $surface;
+  background: var(--surface-a72);
   border: 1px solid $border;
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   overflow: hidden;
 }
 
@@ -1237,12 +1235,12 @@ $border: var(--accent-a20);
   border-bottom: 3px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-base) var(--ease-out);
 
   .dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--r-round);
     background: currentColor;
     opacity: 0.4;
   }
@@ -1260,7 +1258,7 @@ $border: var(--accent-a20);
     .dot { opacity: 1; }
   }
   &:not(.is-active) {
-    color: $muted;
+    color: var(--ink-a40);
   }
 }
 
@@ -1281,11 +1279,11 @@ $border: var(--accent-a20);
   letter-spacing: 0.06em;
   padding: 5px 12px;
   border: 1px solid transparent;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: transparent;
-  color: $muted;
+  color: var(--ink-a40);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     color: var(--accent);
@@ -1302,12 +1300,12 @@ $border: var(--accent-a20);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent);
   color: white;
   border: none;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-deep); }
 }
@@ -1317,14 +1315,14 @@ $border: var(--accent-a20);
   padding: 40px;
   text-align: center;
   font-family: var(--ff-label);
-  color: $muted;
+  color: var(--ink-a40);
 }
 
 .PageAdminLineManagement__empty {
   padding: 40px;
   text-align: center;
   font-family: var(--ff-label);
-  color: $muted;
+  color: var(--ink-a40);
 }
 
 .PageAdminLineManagement__list {
@@ -1338,7 +1336,7 @@ $border: var(--accent-a20);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:last-child { border-bottom: none; }
   &:hover { background: var(--accent-a06); }
@@ -1365,7 +1363,7 @@ $border: var(--accent-a20);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
   border: 1px solid;
 
@@ -1392,7 +1390,7 @@ $border: var(--accent-a20);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
   /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
      色相分類把 zh_tw 與 ja 都壓成 --stop，兩個並排的 chip 變同色（功能性退步）。
@@ -1424,27 +1422,27 @@ $border: var(--accent-a20);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 100px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-pill);
   padding: 4px 14px;
   background: transparent;
   color: #6b7280;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
-    border-color: rgba(0, 0, 0, 0.25);
-    color: #1f2937;
+    border-color: var(--ink-a20);
+    color: var(--ink);
   }
 
   &.is-active {
-    background: #1f2937;
-    border-color: #1f2937;
-    color: #fff;
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--surface-raised);
   }
 
   &.is-all.is-active {
-    background: #1f2937;
+    background: var(--ink);
   }
   &.is-zh_tw.is-active {
     background: var(--stop);
@@ -1465,10 +1463,10 @@ $border: var(--accent-a20);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
-  background: rgba(0, 0, 0, 0.05);
-  color: $muted;
+  background: var(--ink-a06);
+  color: var(--ink-a40);
 
   &.is-synced { color: var(--good); background: var(--good-a08); }
   &.is-syncing { color: var(--accent); background: var(--accent-a12); }
@@ -1484,9 +1482,9 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__thumb {
   width: 140px;
   height: 95px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--ink-a06);
   border: 1px solid $border;
 
   img { width: 100%; height: 100%; object-fit: cover; }
@@ -1497,7 +1495,7 @@ $border: var(--accent-a20);
     justify-content: center;
     font-family: var(--ff-label);
     font-size: 11px;
-    color: $muted;
+    color: var(--ink-a40);
     text-align: center;
     padding: 8px;
   }
@@ -1518,7 +1516,7 @@ $border: var(--accent-a20);
     .k {
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: $muted;
+      color: var(--ink-a40);
       min-width: 80px;
     }
     .v {
@@ -1544,10 +1542,10 @@ $border: var(--accent-a20);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 5px 12px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -1570,11 +1568,11 @@ $border: var(--accent-a20);
     &:hover:not(:disabled) { background: var(--stop-a15); }
   }
   &.is-toggle {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.7);
+    background: var(--ink-a06);
+    border-color: var(--ink-a12);
+    color: var(--ink-a70);
     &:hover:not(:disabled) {
-      background: rgba(0, 0, 0, 0.06);
+      background: var(--ink-a06);
     }
   }
 }
@@ -1593,23 +1591,23 @@ $border: var(--accent-a20);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 100px;
+  border: 1px solid var(--ink-a12);
+  border-radius: var(--r-pill);
   padding: 5px 14px;
   background: transparent;
   color: #6b7280;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover {
-    border-color: rgba(0, 0, 0, 0.25);
-    color: #1f2937;
+    border-color: var(--ink-a20);
+    color: var(--ink);
   }
 
   &.is-active {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
   }
 
   &.is-bot-reply.is-active {
@@ -1639,7 +1637,7 @@ $border: var(--accent-a20);
   text-align: center;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-a40);
 }
 
 // ── Templates Tab ─────────────────────────────────────────
@@ -1661,7 +1659,7 @@ $border: var(--accent-a20);
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: $muted;
+  color: var(--ink-a40);
   padding: 8px 16px 4px;
 }
 
@@ -1676,16 +1674,16 @@ $border: var(--accent-a20);
   cursor: pointer;
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(0, 0, 0, 0.7);
+  color: var(--ink-a70);
   text-align: left;
   border-left: 3px solid transparent;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
   flex-wrap: nowrap;
 
-  &:hover { background: rgba(0, 0, 0, 0.03); }
+  &:hover { background: var(--ink-a06); }
   &.is-active {
     background: var(--accent-a06);
-    color: rgba(0, 0, 0, 0.9);
+    color: var(--ink-a90);
     border-left-color: var(--accent);
     font-weight: 700;
   }
@@ -1697,7 +1695,7 @@ $border: var(--accent-a20);
     cursor: not-allowed;
     opacity: 0.7;
     .PageAdminLineManagement__template-name {
-      color: rgba(0, 0, 0, 0.4);
+      color: var(--ink-a40);
     }
     &:hover { background: var(--stop-a08); }
   }
@@ -1716,7 +1714,7 @@ $border: var(--accent-a20);
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: 1px solid;
   flex-shrink: 0;
 
@@ -1750,8 +1748,8 @@ $border: var(--accent-a20);
   font-size: 11px;
   line-height: 1;
   padding: 2px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--r-xs);
+  background: var(--ink-a06);
 
   &.is-lock {
     background: var(--stop-a15);
@@ -1761,8 +1759,8 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__template-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--r-round);
+  background: var(--ink-a12);
   flex-shrink: 0;
 }
 .PageAdminLineManagement__template-entry.is-customized .PageAdminLineManagement__template-dot {
@@ -1773,14 +1771,14 @@ $border: var(--accent-a20);
 }
 
 .PageAdminLineManagement__template-editor {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--surface-a50);
 }
 
 // ── Bot Replies Tab（P40 Phase 2）─────────────────────────
 .PageAdminLineManagement__bot-intro {
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-a40);
   padding: 14px 18px;
   border-bottom: 1px solid $border;
   letter-spacing: 0.05em;
@@ -1815,7 +1813,7 @@ $border: var(--accent-a20);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 3px 10px;
 
   &.is-passenger {
@@ -1842,7 +1840,7 @@ $border: var(--accent-a20);
   letter-spacing: 0.15em;
   color: var(--accent);
   background: var(--accent-a12);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
 }
 
@@ -1859,7 +1857,7 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__bot-desc {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a40);
   letter-spacing: 0.05em;
 }
 
@@ -1870,7 +1868,7 @@ $border: var(--accent-a20);
   width: 100%;
   padding: 10px 12px;
   border: 1px solid $border;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-family: var(--ff-ui);
   font-size: 13px;
   line-height: 1.6;
@@ -1895,7 +1893,7 @@ $border: var(--accent-a20);
   flex: 1;
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a40);
   letter-spacing: 0.05em;
 }
 
@@ -1908,7 +1906,7 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__diag-intro {
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-a40);
   padding: 14px 18px;
   border-bottom: 1px solid $border;
   letter-spacing: 0.05em;
@@ -1950,7 +1948,7 @@ $border: var(--accent-a20);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 4px 12px;
 
   &.is-passenger {
@@ -1971,7 +1969,7 @@ $border: var(--accent-a20);
   text-align: center;
   font-family: var(--ff-label);
   font-size: 12px;
-  color: $muted;
+  color: var(--ink-a40);
 }
 
 .PageAdminLineManagement__diag-banner {
@@ -1979,7 +1977,7 @@ $border: var(--accent-a20);
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--good-a08);
   color: var(--good);
   font-family: var(--ff-label);
@@ -2032,7 +2030,7 @@ $border: var(--accent-a20);
   .k {
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: $muted;
+    color: var(--ink-a40);
     min-width: 90px;
   }
   .v {
@@ -2040,7 +2038,7 @@ $border: var(--accent-a20);
     min-width: 0;
     word-break: break-all;
     &.mono { font-family: var(--ff-mono); font-size: 11px; }
-    &.muted { color: $muted; }
+    &.muted { color: var(--ink-a40); }
   }
 }
 
@@ -2058,8 +2056,8 @@ $border: var(--accent-a20);
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.03);
+  border-radius: var(--r-sm);
+  background: var(--ink-a06);
   font-family: var(--ff-label);
   font-size: 12px;
 
@@ -2079,14 +2077,14 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__diag-menu-id {
   font-family: var(--ff-mono);
   font-size: 11px;
-  color: $muted;
+  color: var(--ink-a40);
 }
 
 .PageAdminLineManagement__diag-menu-badge {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 8px;
 
   &.is-default {
@@ -2128,9 +2126,9 @@ $border: var(--accent-a20);
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: $muted;
+  color: var(--ink-a40);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     color: var(--accent);
@@ -2157,14 +2155,14 @@ $border: var(--accent-a20);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: $muted;
+    color: var(--ink-a40);
   }
 
   select,
   input[type='text'] {
     padding: 5px 10px;
     border: 1px solid $border;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     font-family: var(--ff-ui);
     font-size: 12px;
     background: white;
@@ -2193,16 +2191,16 @@ $border: var(--accent-a20);
   font-family: var(--ff-label);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a06); }
   &.is-head {
-    background: rgba(0, 0, 0, 0.03);
+    background: var(--ink-a06);
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: $muted;
+    color: var(--ink-a40);
     cursor: default;
-    &:hover { background: rgba(0, 0, 0, 0.03); }
+    &:hover { background: var(--ink-a06); }
   }
   &.is-expanded { background: var(--accent-a06); }
   &.is-failed { background: var(--stop-a08); }
@@ -2219,7 +2217,7 @@ $border: var(--accent-a20);
       &.is-replied { color: var(--good); }
       &.is-handler_failed { color: var(--stop); }
       &.is-no_handler { color: var(--wait); }
-      &.is-ignored { color: $muted; }
+      &.is-ignored { color: var(--ink-a40); }
     }
     &.status {
       font-family: var(--ff-mono);
@@ -2243,7 +2241,7 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-expand {
   padding: 10px 18px 14px;
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--ink-a06);
   border-bottom: 1px solid $border;
   display: flex;
   flex-direction: column;
@@ -2260,13 +2258,13 @@ $border: var(--accent-a20);
       min-width: 100px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: $muted;
+      color: var(--ink-a40);
     }
     .v {
       flex: 1;
       min-width: 0;
       word-break: break-all;
-      color: rgba(0, 0, 0, 0.85);
+      color: var(--ink-a90);
       &.mono { font-family: var(--ff-mono); font-size: 11px; }
     }
   }
@@ -2285,7 +2283,7 @@ $border: var(--accent-a20);
     font-family: var(--ff-label);
     font-size: 14px;
     letter-spacing: 0.08em;
-    color: $muted;
+    color: var(--ink-a40);
   }
 }
 

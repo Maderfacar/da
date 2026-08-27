@@ -84,9 +84,9 @@ const ClickPassenger = () => {
   font-weight: 700;
   letter-spacing: 0.15em;
   padding: 5px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 
   &:active { transform: scale(0.96); }
@@ -111,7 +111,7 @@ const ClickPassenger = () => {
   width: clamp(28px, 8vw, 36px);
   height: clamp(28px, 8vw, 36px);
   border: 1px solid var(--accent-a20);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   overflow: hidden;
   flex-shrink: 0;
   background: transparent;

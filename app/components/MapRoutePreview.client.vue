@@ -362,7 +362,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .MapRoutePreview {
   position: relative;
-  border-radius: 16px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   background: var(--da-cream);
 }
@@ -378,12 +378,12 @@ onUnmounted(() => {
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -394,17 +394,17 @@ onUnmounted(() => {
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface-a88);
   color: var(--da-dark);
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   display: flex;
   align-items: center;
   gap: 8px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-soft);
 }
 
 .MapRoutePreview__spinner {
@@ -412,7 +412,7 @@ onUnmounted(() => {
   height: 14px;
   border: 2px solid var(--da-gray-pale);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.7s linear infinite;
 }
 
@@ -429,15 +429,15 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   border: 1px solid rgba(208, 48, 48, 0.25);
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-soft);
 }
 
 // ── fade 動畫 ──────────────────────────────────────────────
 .fade-enter-active,
-.fade-leave-active { transition: opacity 0.3s; }
+.fade-leave-active { transition: opacity var(--dur-slow) var(--ease-out); }
 .fade-enter-from,
 .fade-leave-to { opacity: 0; }
 </style>

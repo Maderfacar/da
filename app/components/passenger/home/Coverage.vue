@@ -68,9 +68,9 @@ section.PassengerHomeCoverage
 }
 
 .PassengerHomeCoverage__card {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 16px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 24px 18px;
   text-align: center;
   position: relative;
@@ -84,7 +84,7 @@ section.PassengerHomeCoverage
     width: 4px;
     height: 100%;
     background: var(--da-amber);
-    border-radius: 16px 0 0 16px;
+    border-radius: var(--r-lg) 0 0 var(--r-lg);
   }
 }
 

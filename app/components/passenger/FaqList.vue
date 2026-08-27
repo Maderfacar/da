@@ -47,11 +47,11 @@ const ClickToggle = (key: string) => {
 }
 
 .PassengerFaqList__item {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .PassengerFaqList__item.is-open {

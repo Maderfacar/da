@@ -294,7 +294,7 @@ onUnmounted(() => {
   letter-spacing: 0.1em;
   color: var(--da-gray);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--da-amber); }
 }
@@ -311,7 +311,7 @@ onUnmounted(() => {
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -338,9 +338,9 @@ onUnmounted(() => {
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 9px 22px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
     text-decoration: none;
   }
 }
@@ -386,21 +386,19 @@ onUnmounted(() => {
 
 // ── Section（cream 玻璃卡）──────────────────────────────
 .PageOrderDetail__section {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 18px 16px;
   margin-bottom: 14px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 
   // 司機卡：dark accent（對應 booking success-id pattern，視覺重點突顯）
   &.is-driver {
     background: var(--da-dark);
     border-color: var(--accent-a30);
     color: var(--da-cream);
-    box-shadow: 0 8px 32px var(--ink-a20);
+    box-shadow: var(--shadow-pop);
   }
 }
 
@@ -427,7 +425,7 @@ onUnmounted(() => {
 .PageOrderDetail__route-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
   margin-top: 5px;
 
@@ -470,9 +468,9 @@ onUnmounted(() => {
 }
 
 .PageOrderDetail__route-meta-item {
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--surface-a40);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   padding: 10px 12px;
 }
 
@@ -517,7 +515,7 @@ onUnmounted(() => {
   background: color-mix(in srgb, var(--line-green) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--line-green) 40%, transparent);
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 .PageOrderDetail__driver-rows {
@@ -566,7 +564,7 @@ onUnmounted(() => {
   color: var(--da-dark);
   background: var(--da-cream);
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 2px solid var(--da-amber);
   justify-self: start;
   font-variant-numeric: tabular-nums;
@@ -598,7 +596,7 @@ onUnmounted(() => {
   background: var(--da-amber);
   color: var(--da-dark);
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
 }
 
 .PageOrderDetail__driver-nophone {
@@ -607,9 +605,9 @@ onUnmounted(() => {
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--surface-a50);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px dashed var(--surface-a20);
+  border-radius: var(--r-md);
   padding: 10px 12px;
   text-align: center;
 }
@@ -684,9 +682,9 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 11px;
   padding: 3px 9px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--da-amber-pale);
-  border: 1px solid var(--da-glass-border);
+  border: 1px solid var(--hairline);
   color: var(--da-dark);
 }
 
@@ -697,14 +695,14 @@ onUnmounted(() => {
   padding: 12px;
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--stop);
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--stop-a15); }
   &:active { transform: scale(0.99); }

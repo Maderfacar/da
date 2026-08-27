@@ -70,9 +70,9 @@ onMounted(ApiGetForecast);
 <style lang="scss" scoped>
 
 .AirportForecastWidget {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 12px 14px;
 }
 
@@ -96,7 +96,7 @@ onMounted(ApiGetForecast);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 
 .AirportForecastWidget__updated {
@@ -104,7 +104,7 @@ onMounted(ApiGetForecast);
   font-family: var(--ff-label);
   font-size: 9px;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--surface-a20);
 }
 
 .AirportForecastWidget__stats {
@@ -115,8 +115,8 @@ onMounted(ApiGetForecast);
 }
 
 .AirportForecastWidget__stat {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-a06);
+  border-radius: var(--r-sm);
   padding: 8px 6px;
   text-align: center;
 }
@@ -126,7 +126,7 @@ onMounted(ApiGetForecast);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
   margin-bottom: 4px;
   white-space: nowrap;
 }
@@ -135,7 +135,7 @@ onMounted(ApiGetForecast);
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 16px;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
 }
 

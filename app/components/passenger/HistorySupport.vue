@@ -47,14 +47,12 @@ section.PassengerHistorySupport
 <style lang="scss" scoped>
 
 .PassengerHistorySupport {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 18px 16px;
   margin-bottom: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerHistorySupport__label {
@@ -85,15 +83,15 @@ section.PassengerHistorySupport
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--surface-a50);
   border: 1px solid var(--da-gray-pale);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   color: inherit;
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.8);
+    background: var(--surface-a82);
     border-color: var(--accent-a30);
   }
 }

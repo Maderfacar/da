@@ -139,7 +139,7 @@ const DOC_LABEL: Record<string, string> = {
 </script>
 
 <template lang="pug">
-.PageAdminDrivers
+.PageAdminDrivers(data-surface='dark')
   .PageAdminDrivers__header
     .PageAdminDrivers__header-label DRIVER MANAGEMENT
     h1.PageAdminDrivers__header-title 司機管理
@@ -283,15 +283,12 @@ const DOC_LABEL: Record<string, string> = {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.35);
 
 .PageAdminDrivers {
   padding: 80px 20px 100px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageAdminDrivers__header {
@@ -314,7 +311,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -339,9 +336,9 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__summary-item {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 14px 16px;
 }
 
@@ -350,7 +347,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: $muted;
+  color: var(--surface-a30);
   margin-bottom: 6px;
 }
 
@@ -358,7 +355,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 28px;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
 }
 
@@ -376,12 +373,12 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 6px 14px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: $muted;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a30);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -407,7 +404,7 @@ $muted: rgba(255, 255, 255, 0.35);
   height: 28px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -416,7 +413,7 @@ $muted: rgba(255, 255, 255, 0.35);
   padding: 60px 0;
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminDrivers__list {
@@ -426,11 +423,11 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageAdminDrivers__card {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
   &.is-expanded {
     border-color: var(--accent-a30);
@@ -443,9 +440,9 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 12px;
   padding: 14px 16px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
-  &:hover { background: rgba(255, 255, 255, 0.02); }
+  &:hover { background: var(--surface-a06); }
 }
 
 .PageAdminDrivers__avatar-wrap { flex-shrink: 0; }
@@ -453,7 +450,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
   border: 1.5px solid var(--accent-a30);
 }
@@ -461,7 +458,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__avatar-fallback {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--accent-a12);
   border: 1.5px solid var(--accent-a30);
   display: flex;
@@ -479,14 +476,14 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 16px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.2;
 }
 
 .PageAdminDrivers__uid {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminDrivers__status {
@@ -495,7 +492,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 3px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   flex-shrink: 0;
 
   &.is-approved { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
@@ -509,7 +506,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 3px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--wait-a15);
   border: 1px solid var(--wait-a30);
   color: var(--wait);
@@ -521,7 +518,7 @@ $muted: rgba(255, 255, 255, 0.35);
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--accent-a12);
   color: var(--accent);
   font-family: var(--ff-label);
@@ -530,15 +527,15 @@ $muted: rgba(255, 255, 255, 0.35);
   letter-spacing: 0.06em;
   text-decoration: none;
   margin-left: 8px;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a20); }
 }
 
 .PageAdminDrivers__chevron {
   font-size: 14px;
-  color: $muted;
-  transition: transform 0.2s;
+  color: var(--surface-a30);
+  transition: transform var(--dur-base) var(--ease-out);
   margin-left: 4px;
 
   &.is-up { transform: rotate(180deg); }
@@ -546,7 +543,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 // ── 展開區 ──────────────────────────────────────────────
 .PageAdminDrivers__expand {
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -590,12 +587,12 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageAdminDrivers__expand-key {
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageAdminDrivers__expand-val {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
   word-break: break-all;
 }
 
@@ -609,13 +606,13 @@ $muted: rgba(255, 255, 255, 0.35);
   position: relative;
   display: block;
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   overflow: hidden;
-  border: 1px solid $border;
-  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--surface-a06);
+  background: var(--ink-a30);
   text-decoration: none;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast) var(--ease-out);
 
   &:hover { border-color: var(--accent-a50); }
 }
@@ -635,7 +632,7 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   justify-content: center;
   gap: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 
   span:first-child { font-size: 24px; }
   span:last-child {
@@ -651,8 +648,8 @@ $muted: rgba(255, 255, 255, 0.35);
   left: 0;
   right: 0;
   padding: 4px 8px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
+  background: var(--ink-a70);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -666,7 +663,7 @@ $muted: rgba(255, 255, 255, 0.35);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   padding: 10px 12px;
 }
 
@@ -683,9 +680,9 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 16px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   border: 1px solid;
 
   &:active { transform: scale(0.98); }

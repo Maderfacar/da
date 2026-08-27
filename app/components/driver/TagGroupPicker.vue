@@ -94,14 +94,14 @@ const ClickChip = (id: string) => {
   font-family: var(--ff-ui);
   font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
 }
 
 .TagGroupPicker__hint {
   font-family: var(--ff-label);
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
 }
 
 .TagGroupPicker__chips {
@@ -114,16 +114,16 @@ const ClickChip = (id: string) => {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.75);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a20);
+  background: var(--surface-a06);
+  color: var(--surface-a72);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) {
     border-color: var(--accent-a50);
-    color: #fff;
+    color: var(--surface-raised);
   }
 
   &.is-selected {
@@ -138,6 +138,6 @@ const ClickChip = (id: string) => {
 .TagGroupPicker__empty {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
 }
 </style>

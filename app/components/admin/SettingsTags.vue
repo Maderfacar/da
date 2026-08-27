@@ -215,7 +215,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .AdminSettingsTags {
   padding: 14px 16px;
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .AdminSettingsTags__header {
@@ -232,22 +232,22 @@ onMounted(() => {
 .AdminSettingsTags__desc {
   font-family: var(--ff-ui);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   margin: 0 0 12px;
 }
 
 .AdminSettingsTags__loading {
   padding: 24px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 
 .AdminSettingsTags__group {
   margin-bottom: 20px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
 }
 
 .AdminSettingsTags__group-head {
@@ -268,7 +268,7 @@ onMounted(() => {
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   margin-right: auto;
 }
 
@@ -280,14 +280,14 @@ onMounted(() => {
 .AdminSettingsTags__drawerEmpty {
   padding: 24px 12px;
   text-align: center;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--ink-a40);
 }
 
 .AdminSettingsTags__log {
   padding: 10px 12px;
   margin-bottom: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-sm);
 }
 
 .AdminSettingsTags__logHead {
@@ -300,19 +300,19 @@ onMounted(() => {
 
 .AdminSettingsTags__logTime {
   font-size: 12px;
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--ink-a60);
 }
 
 .AdminSettingsTags__logActor {
   font-size: 12px;
   font-family: var(--ff-label);
   letter-spacing: 0.05em;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--ink-a40);
 }
 
 .AdminSettingsTags__logBody {
   font-size: 11px;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--ink-a70);
 
   :deep(summary) {
     cursor: pointer;
@@ -321,8 +321,8 @@ onMounted(() => {
   }
 
   :deep(pre) {
-    background: rgba(0, 0, 0, 0.04);
-    border-radius: 6px;
+    background: var(--ink-a06);
+    border-radius: var(--r-sm);
     padding: 8px;
     margin: 4px 0 8px;
     white-space: pre-wrap;

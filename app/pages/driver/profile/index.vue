@@ -574,15 +574,15 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.35);
+
+
+
 
 .PageDriverProfile {
   padding: 80px 20px 32px;
   min-height: 100svh;
   background: var(--ink);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 .PageDriverProfile__header {
@@ -605,7 +605,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -614,9 +614,9 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 18px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   margin-bottom: 16px;
 }
 
@@ -625,7 +625,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageDriverProfile__avatar {
   width: 54px;
   height: 54px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
   border: 2px solid var(--accent-a40);
 }
@@ -633,7 +633,7 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageDriverProfile__avatar-fallback {
   width: 54px;
   height: 54px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--accent-a12);
   border: 2px solid var(--accent-a40);
   display: flex;
@@ -651,14 +651,14 @@ $muted: rgba(255, 255, 255, 0.35);
   font-family: var(--ff-label);
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1.2;
 }
 
 .PageDriverProfile__uid {
   font-family: var(--ff-label);
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a30);
   margin-top: 2px;
 }
 
@@ -677,9 +677,9 @@ $muted: rgba(255, 255, 255, 0.35);
 }
 
 .PageDriverProfile__stat {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   padding: 12px 14px;
 
   &-label {
@@ -687,7 +687,7 @@ $muted: rgba(255, 255, 255, 0.35);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.15em;
-    color: $muted;
+    color: var(--surface-a30);
     margin-bottom: 6px;
   }
 
@@ -695,15 +695,15 @@ $muted: rgba(255, 255, 255, 0.35);
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
     font-size: 20px;
-    color: #fff;
+    color: var(--surface-raised);
     line-height: 1;
   }
 }
 
 .PageDriverProfile__section {
-  background: $surface;
-  border: 1px solid $border;
-  border-radius: 16px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   overflow: hidden;
   margin-bottom: 14px;
 
@@ -712,10 +712,10 @@ $muted: rgba(255, 255, 255, 0.35);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.2em;
-    color: $muted;
+    color: var(--surface-a30);
     padding: 10px 16px 8px;
-    border-bottom: 1px solid $border;
-    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--surface-a06);
+    background: var(--surface-a06);
   }
 }
 
@@ -726,21 +726,21 @@ $muted: rgba(255, 255, 255, 0.35);
   align-items: center;
   justify-content: space-between;
   padding: 11px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--surface-a06);
 
   &:last-child { border-bottom: none; }
 
   &-key {
     font-family: var(--ff-label);
     font-size: 13px;
-    color: $muted;
+    color: var(--surface-a30);
   }
 
   &-val {
     font-family: var(--ff-label);
     font-size: 13px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--surface-a82);
   }
 }
 
@@ -752,7 +752,7 @@ $muted: rgba(255, 255, 255, 0.35);
 
 .PageDriverProfile__row-edit {
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a06);
   color: var(--accent);
@@ -761,7 +761,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover { background: var(--accent-a12); }
 }
@@ -772,11 +772,11 @@ $muted: rgba(255, 255, 255, 0.35);
   gap: 6px;
 
   :deep(.el-input__wrapper) {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-a06);
     box-shadow: 0 0 0 1px var(--accent-a40) inset;
   }
   :deep(.el-input__inner) {
-    color: #fff;
+    color: var(--surface-raised);
     font-family: var(--ff-ui);
   }
 }
@@ -784,14 +784,14 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageDriverProfile__row-save,
 .PageDriverProfile__row-cancel {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   cursor: pointer;
   border: 1px solid;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -799,15 +799,15 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageDriverProfile__row-save {
   border-color: var(--accent-a40);
   background: var(--accent);
-  color: #fff;
+  color: var(--surface-raised);
   &:hover:not(:disabled) { background: var(--accent-lit); }
 }
 
 .PageDriverProfile__row-cancel {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--surface-a20);
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
-  &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+  color: var(--surface-a60);
+  &:hover:not(:disabled) { background: var(--surface-a06); }
 }
 
 // ── 證件區 ────────────────────────────────────────────
@@ -828,9 +828,9 @@ $muted: rgba(255, 255, 255, 0.35);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 10px;
 }
 
@@ -839,16 +839,16 @@ $muted: rgba(255, 255, 255, 0.35);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .PageDriverProfile__doc-preview {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--ink-a20);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -863,19 +863,19 @@ $muted: rgba(255, 255, 255, 0.35);
 .PageDriverProfile__doc-pdf {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
 }
 
 .PageDriverProfile__doc-empty {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: $muted;
+  color: var(--surface-a30);
 }
 
 .PageDriverProfile__doc-banner {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
 
@@ -897,14 +897,14 @@ $muted: rgba(255, 255, 255, 0.35);
   &-sub {
     font-family: var(--ff-ui);
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--surface-a60);
     margin-top: 2px;
   }
 }
 
 .PageDriverProfile__doc-btn {
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a06);
   color: var(--accent);
@@ -913,7 +913,7 @@ $muted: rgba(255, 255, 255, 0.35);
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--accent-a12); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }

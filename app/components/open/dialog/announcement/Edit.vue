@@ -497,26 +497,22 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-$surface: rgba(255, 255, 255, 0.04);
-$border: rgba(255, 255, 255, 0.08);
-$muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: stretch;
   justify-content: center;
-  color: #fff;
+  color: var(--surface-raised);
   font-family: var(--ff-ui);
 }
 
 .OpenDialogAnnouncementEdit__mask {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: var(--ink-a70);
 }
 
 .OpenDialogAnnouncementEdit__panel {
@@ -525,12 +521,12 @@ $muted: rgba(255, 255, 255, 0.4);
   width: min(1200px, 96vw);
   max-height: 92vh;
   background: var(--ink);
-  border: 1px solid $border;
-  border-radius: 18px;
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-lift);
 }
 
 // ── Header ────────────────────────────────────────────────
@@ -539,7 +535,7 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: center;
   gap: 16px;
   padding: 18px 22px;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid var(--surface-a06);
   flex-shrink: 0;
 }
 
@@ -572,10 +568,10 @@ $muted: rgba(255, 255, 255, 0.4);
 .OpenDialogAnnouncementEdit__previewToggle {
   display: none; // 桌機隱藏
   padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: #fff;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -586,10 +582,10 @@ $muted: rgba(255, 255, 255, 0.4);
 .OpenDialogAnnouncementEdit__close {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
-  border: 1px solid $border;
-  background: $surface;
-  color: #fff;
+  border-radius: var(--r-round);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-size: 18px;
   cursor: pointer;
   display: flex;
@@ -617,14 +613,14 @@ $muted: rgba(255, 255, 255, 0.4);
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.16em;
-  color: $muted;
+  color: var(--surface-a40);
   z-index: 2;
 }
 
 .OpenDialogAnnouncementEdit__form {
   padding: 18px 22px 22px;
   overflow-y: auto;
-  border-right: 1px solid $border;
+  border-right: 1px solid var(--surface-a06);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -633,7 +629,7 @@ $muted: rgba(255, 255, 255, 0.4);
 .OpenDialogAnnouncementEdit__preview {
   padding: 18px 22px 22px;
   overflow-y: auto;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ink-a20);
 }
 
 .OpenDialogAnnouncementEdit__warning {
@@ -641,7 +637,7 @@ $muted: rgba(255, 255, 255, 0.4);
   border: 1px solid var(--stop-a45);
   color: var(--stop);
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-size: 13px;
   line-height: 1.5;
 
@@ -662,7 +658,7 @@ $muted: rgba(255, 255, 255, 0.4);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: $muted;
+  color: var(--surface-a40);
   margin-bottom: 8px;
 }
 
@@ -674,15 +670,15 @@ $muted: rgba(255, 255, 255, 0.4);
 .OpenDialogAnnouncementEdit__input {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid $border;
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  border-radius: var(--r-md);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
-  &::placeholder { color: rgba(255, 255, 255, 0.25); }
+  transition: border-color var(--dur-fast) var(--ease-out);
+  &::placeholder { color: var(--surface-a20); }
   &:focus { border-color: var(--accent-a50); }
 }
 
@@ -690,19 +686,19 @@ $muted: rgba(255, 255, 255, 0.4);
   text-align: right;
   font-family: var(--ff-label);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a40);
   margin-top: 4px;
 }
 
 // ── Cover ─────────────────────────────────────────────────
 .OpenDialogAnnouncementEdit__coverArea {
-  border: 2px dashed $border;
-  border-radius: 12px;
+  border: 2px dashed var(--surface-a06);
+  border-radius: var(--r-md);
   padding: 30px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.15s;
-  background: rgba(255, 255, 255, 0.02);
+  transition: all var(--dur-fast) var(--ease-out);
+  background: var(--surface-a06);
 
   &:hover { border-color: var(--accent-a40); background: var(--accent-a06); }
   &.is-uploading { pointer-events: none; opacity: 0.6; }
@@ -710,22 +706,22 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit__coverHint {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   margin-bottom: 4px;
 }
 
 .OpenDialogAnnouncementEdit__coverSubHint {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: $muted;
+  color: var(--surface-a40);
   letter-spacing: 0.08em;
 }
 
 .OpenDialogAnnouncementEdit__coverPreview {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   overflow: hidden;
-  border: 1px solid $border;
+  border: 1px solid var(--surface-a06);
 
   img {
     display: block;
@@ -740,10 +736,10 @@ $muted: rgba(255, 255, 255, 0.4);
   top: 8px;
   right: 8px;
   padding: 4px 10px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   border: none;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  background: var(--ink-a60);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 11px;
   font-weight: 700;
@@ -768,16 +764,16 @@ $muted: rgba(255, 255, 255, 0.4);
 
 .OpenDialogAnnouncementEdit__radio {
   padding: 6px 14px;
-  border-radius: 100px;
-  border: 1px solid $border;
-  background: $surface;
-  color: $muted;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--surface-a06);
+  background: var(--surface-a06);
+  color: var(--surface-a40);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
     border-color: var(--accent-a50);
@@ -797,7 +793,7 @@ $muted: rgba(255, 255, 255, 0.4);
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
   cursor: pointer;
 
   input[type='checkbox'] {
@@ -811,58 +807,58 @@ $muted: rgba(255, 255, 255, 0.4);
 .OpenDialogAnnouncementEdit__hint {
   margin-top: 6px;
   font-size: 11px;
-  color: $muted;
+  color: var(--surface-a40);
   line-height: 1.5;
 }
 
 // ── Footer ────────────────────────────────────────────────
 .OpenDialogAnnouncementEdit__footer {
-  border-top: 1px solid $border;
+  border-top: 1px solid var(--surface-a06);
   padding: 14px 22px;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--ink-a20);
 }
 
 .OpenDialogAnnouncementEdit__btn {
   padding: 10px 22px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid transparent;
-  background: $surface;
-  color: #fff;
+  background: var(--surface-a06);
+  color: var(--surface-raised);
   font-family: var(--ff-label);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
   &--ghost {
-    border-color: $border;
+    border-color: var(--surface-a06);
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    &:hover:not(:disabled) { color: #fff; border-color: rgba(255, 255, 255, 0.2); }
+    color: var(--surface-a60);
+    &:hover:not(:disabled) { color: var(--surface-raised); border-color: var(--surface-a20); }
   }
 
   &--secondary {
-    border-color: $border;
-    background: rgba(255, 255, 255, 0.06);
-    &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+    border-color: var(--surface-a06);
+    background: var(--surface-a06);
+    &:hover:not(:disabled) { background: var(--surface-a12); }
   }
 
   &--primary {
     background: var(--accent);
-    color: #fff;
+    color: var(--surface-raised);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 
   &--danger {
     background: var(--stop);
-    color: #fff;
+    color: var(--surface-raised);
     // SCSS 的 darken() 吃不了 var()，改用 CSS 的 color-mix：往縞黑混 12% 等效於加深一階。
     &:hover:not(:disabled) { background: color-mix(in srgb, var(--stop) 88%, var(--ink)); }
   }

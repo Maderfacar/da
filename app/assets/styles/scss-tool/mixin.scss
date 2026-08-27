@@ -123,7 +123,7 @@
 @mixin btn-click {
   cursor: pointer;
   user-select: none;
-  transition: filter 0.2s ease;
+  transition: filter var(--dur-base) var(--ease-out);
   &:hover {
     filter: brightness(1.1);
   }

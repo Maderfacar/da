@@ -36,9 +36,8 @@ teleport(to="body")
 .UiModal {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-modal);
   background: var(--ink-a60);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -47,7 +46,7 @@ teleport(to="body")
 .UiModal__sheet {
   width: 100%;
   background: var(--da-off-white);
-  border-radius: 24px 24px 0 0;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: 20px 24px 48px;
   padding-bottom: max(48px, env(safe-area-inset-bottom, 48px));
 }
@@ -55,7 +54,7 @@ teleport(to="body")
 .UiModal__handle {
   width: 40px; height: 4px;
   background: var(--da-gray-pale);
-  border-radius: 2px;
+  border-radius: var(--r-xs);
   margin: 0 auto 20px;
 }
 
@@ -83,13 +82,13 @@ teleport(to="body")
 
 // ── 動畫 ──────────────────────────────────────────────────
 .modal-overlay-enter-active,
-.modal-overlay-leave-active { transition: opacity 0.25s ease; }
+.modal-overlay-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 
 .modal-overlay-enter-from,
 .modal-overlay-leave-to { opacity: 0; }
 
 .modal-sheet-enter-active,
-.modal-sheet-leave-active { transition: transform 0.3s ease; }
+.modal-sheet-leave-active { transition: transform var(--dur-slow) var(--ease-out); }
 
 .modal-sheet-enter-from,
 .modal-sheet-leave-to { transform: translateY(100%); }

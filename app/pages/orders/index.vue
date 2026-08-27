@@ -261,7 +261,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   height: 32px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--da-amber);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -288,9 +288,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 10px 24px;
-    border-radius: 100px;
+    border-radius: var(--r-pill);
     background: var(--da-amber);
-    color: #fff;
+    color: var(--surface-raised);
     text-decoration: none;
   }
 }
@@ -304,22 +304,20 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__card {
   display: block;
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 18px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-lg);
   padding: 14px 16px;
   color: inherit;
   text-decoration: none;
   cursor: pointer;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
-  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: var(--shadow-soft);
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 
   &:hover {
     background: var(--surface-a88);
     border-color: var(--accent-a30);
-    box-shadow: 0 6px 24px var(--ink-a06);
+    box-shadow: var(--shadow-pop);
   }
 
   &:active { transform: scale(0.998); }
@@ -333,14 +331,14 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   padding: 8px 12px;
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--stop);
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+  transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover:not(:disabled) { background: var(--stop-a15); }
   &:active { transform: scale(0.99); }
@@ -362,7 +360,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   color: var(--da-amber);
   background: var(--da-amber-pale);
   border: 1px solid var(--accent-a30);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   padding: 2px 10px;
 }
 
@@ -387,7 +385,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 .PageOrders__route-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
 
   &.is-pickup  { background: var(--da-amber); }

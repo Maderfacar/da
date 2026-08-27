@@ -152,8 +152,8 @@ onMounted(ApiLoadOrders);
 .PageDriverDispatched {
   padding: 80px 16px 32px;
   min-height: 100svh;
-  background: #0d0f14;
-  color: #fff;
+  background: var(--surface-deep);
+  color: var(--surface-raised);
 }
 
 .PageDriverDispatched__header {
@@ -176,7 +176,7 @@ onMounted(ApiLoadOrders);
     font-family: var(--ff-display);
     font-size: 36px;
     letter-spacing: 0.04em;
-    color: #fff;
+    color: var(--surface-raised);
   }
 }
 
@@ -188,7 +188,7 @@ onMounted(ApiLoadOrders);
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--surface-a06);
 }
 
 .PageDriverDispatched__tab {
@@ -200,14 +200,14 @@ onMounted(ApiLoadOrders);
   padding: 10px 16px;
   border: none;
   background: none;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: color var(--dur-fast) var(--ease-out);
   display: flex;
   align-items: center;
   gap: 6px;
 
-  &:hover { color: rgba(255, 255, 255, 0.75); }
+  &:hover { color: var(--surface-a72); }
 
   &.is-active {
     color: var(--accent);
@@ -227,8 +227,8 @@ onMounted(ApiLoadOrders);
   font-family: var(--ff-label);
   font-size: 10px;
   padding: 2px 8px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
   color: inherit;
 }
 
@@ -242,20 +242,20 @@ onMounted(ApiLoadOrders);
   width: 28px; height: 28px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
 .PageDriverDispatched__empty {
   text-align: center;
   padding: 60px 16px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
 
   p {
     font-family: var(--ff-ui);
     font-size: 14px;
     margin: 8px 0 4px;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--surface-a72);
   }
 
   small {
@@ -273,10 +273,10 @@ onMounted(ApiLoadOrders);
   font-family: var(--ff-ui);
   font-size: 12px;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--surface-a60);
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px 12px;
   margin-bottom: 14px;
 }

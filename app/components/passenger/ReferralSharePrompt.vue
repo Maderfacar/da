@@ -45,10 +45,10 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
   gap: 12px;
   background: var(--da-dark);
   border: 1px solid var(--accent-a30);
-  border-radius: 18px;
+  border-radius: var(--r-lg);
   padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 8px 32px var(--ink-a20);
+  box-shadow: var(--shadow-pop);
 }
 
 .PassengerReferralSharePrompt__icon {
@@ -82,14 +82,14 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
   padding: 9px 16px;
   background: var(--line-green);
   border: 1px solid var(--line-green);
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   font-family: var(--ff-label);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--surface-raised);
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
   &:hover { opacity: 0.92; }
   &:active { transform: scale(0.98); }

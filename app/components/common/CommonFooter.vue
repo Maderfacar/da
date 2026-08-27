@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // CommonFooter — 乘客端共用頁尾
 // 由 front-desk layout 統一掛載，所有 layout: 'front-desk' 頁面皆顯示
 //
@@ -23,7 +24,7 @@ onMounted(async () => {
     qrSrc.value = await QRCode.toDataURL(lineOaAddUrl, {
       width: 240,
       margin: 1,
-      color: { dark: '#0f1115', light: '#ffffff' },
+      color: { dark: DESIGN_COLORS.ink, light: DESIGN_COLORS.surfaceRaised },
       errorCorrectionLevel: 'M',
     });
   } catch {
@@ -192,19 +193,19 @@ footer.CommonFooter
   align-items: center;
   justify-content: center;
   padding: 8px;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   width: 136px;
   height: 136px;
 }
 
 .CommonFooter__qr-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-soft);
 }
 
 .CommonFooter__qr-card:active {
@@ -215,19 +216,19 @@ footer.CommonFooter
   display: block;
   width: 120px;
   height: 120px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   image-rendering: pixelated; // QR 邊緣清晰
 }
 
 .CommonFooter__qr-loading {
   width: 120px;
   height: 120px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.04),
-    rgba(0, 0, 0, 0.1),
-    rgba(0, 0, 0, 0.04)
+    var(--ink-a06),
+    var(--ink-a12),
+    var(--ink-a06)
   );
   background-size: 200% 100%;
   animation: CommonFooter-shimmer 1.2s infinite;
@@ -329,7 +330,7 @@ footer.CommonFooter
 
 .CommonFooter__bottom {
   padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--surface-a06);
   text-align: center;
 }
 
@@ -337,6 +338,6 @@ footer.CommonFooter
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.15em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 </style>

@@ -148,6 +148,7 @@ const RETIRED_PALETTE: Array<[string, string, [number, number, number]]> = [
   ['舊骨白 --da-cream', '#f5f2ec', [245, 242, 236]],
   ['舊次要灰 --da-gray', '#6b6560', [107, 101, 96]],
   ['舊三級灰 --da-gray-light', '#b8b3ac', [184, 179, 172]],
+  ['舊亮黃 --da-stripe-yellow', '#f5c842', [245, 200, 66]],   // 階段 1 的表列過它，名單漏收
   ['舊琥珀深階', '#b8730a', [184, 115, 10]],
   ['舊琥珀亮階', '#f7b96a', [247, 185, 106]],
 ];
@@ -211,10 +212,10 @@ describe('色彩收尾守衛（階段 1）', () => {
     //
     // 兩類放行：
     //   ① 值為 var(--x) 的別名 —— 那是轉指 token，不是第二真相來源
-    //   ② **中性**的白／黑疊層（r === g === b），例如 `$border: rgba(255,255,255,.08)`。
-    //      它們不帶色相、不隨色票改變，不是「第二套調色盤」。全站約 40 條，
-    //      屬「表面疊層 token 化」（--surface-a* / --ink-a*）的範圍，不在色彩收尾階段。
-    //      這是刻意放行並記錄，不是忘了處理。
+    //   ② —— 原本這裡放行「中性的白／黑疊層」（r === g === b），理由是它們不帶色相。
+    //      **階段 2 已關閉**：79 條宣告連同 343 處引用全數改走 --surface-a* / --ink-a*。
+    //      當時註解估「全站約 40 條」，實測 79 條；而行內寫法（非變數宣告）另有 884 處。
+    //      又一次「只查一種寫法就低估」—— 與階段 1 的 rgba 舊色是同一個教訓。
     const offenders: string[] = [];
     for (const { rel, text } of FILES) {
       stripComments(text).split(/\r?\n/).forEach((line, i) => {
@@ -227,7 +228,6 @@ describe('色彩收尾守衛（階段 1）', () => {
         const [r, g, b] = hex
           ? [0, 2, 4].map((k) => parseInt(hex[1]!.slice(k, k + 2), 16))
           : [1, 2, 3].map((k) => Number(rgb![k]));
-        if (r === g && g === b) return;   // 中性疊層，放行（見上）
         offenders.push(rel + ':' + (i + 1) + ' → ' + line.trim());
       });
     }
@@ -293,13 +293,12 @@ describe('色彩收尾守衛（階段 1）', () => {
 
   it('元件不得硬編飽和色（狀態色／品牌色）', () => {
     // 只擋「飽和且中等明度」的色：s ≥ 25%、25% ≤ l ≤ 85%。
-    // 中性色（白／黑／灰）與深色面暫時放行 —— 它們歸「尺度與表面 token」階段，不在色彩收尾範圍。
+    // 中性色（白／黑／灰）與深色面改由階段 2 的「表面色不得硬編」那條專門守，這裡只管有色相的。
     // 例外檔案都附了理由，不是「先加進來讓測試變綠」。
     const ALLOW: Array<[string, string]> = [
       ['app/components/MapRoutePreview.client.vue', 'Google Maps 的 stylers / marker 吃色碼字串，不解析 var()'],
       ['app/pages/admin/war-room/index.vue', '同上，即時戰情地圖的 stylers'],
       ['app/components/admin/TrafficChart.client.vue', 'Chart.js 的資料集色，畫在 canvas 上'],
-      ['app/pages/home/index.vue', 'Hero 斜紋的漸層停點，走 --da-hero-*（待玻璃與斜紋退場階段）'],
     ];
     const allowSet = new Set(ALLOW.map(([f]) => f));
     const offenders: string[] = [];
@@ -320,5 +319,145 @@ describe('色彩收尾守衛（階段 1）', () => {
       });
     }
     expect(offenders, '狀態色請用 --good/--wait/--note/--stop，主色用 --accent，第三方擬真色用 --line-*：\n' + offenders.join('\n')).toEqual([]);
+  });
+});
+
+// ── 階段 2（玻璃退場 + 表面 token 化）新增的守衛 ──────────────────────────────
+//
+// 階段 1 的守衛裡有兩處註解明寫「暫時放行，歸尺度與表面 token 階段」。
+// 那兩處已在本階段關閉，下面這幾條是接手它們的常態檢查。
+//
+// ⚠ 中性色的檢查**只掃 <style> 區塊**。理由：`#fff` 這種字串在 .vue 的 <script>
+//    裡是合法的（QRCode 的 light 模組色、canvas ctx.fillStyle、送去 LINE 的 payload），
+//    那些地方 CSS 變數到不了，正確做法是走 shared/design-colors.ts 的 JS 鏡像。
+//    掃全檔會把那些誤判成違規，最後只能加例外清單 —— 那比縮小掃描範圍糟。
+
+/** .vue 只取 <style> 內容；.scss / .css 取全檔。回傳已剝註解的文字。 */
+function styleOf({ rel, text }: SourceFile): string {
+  const css = rel.endsWith('.vue')
+    ? [...text.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]!).join('\n')
+    : text;
+  return stripComments(css);
+}
+
+/** 深色面的藍黑家族 —— 階段 2 之前散在 34 處，與縞黑差了近一個補色 */
+const RETIRED_BLUE_BLACK = ['#1a1a2e', '#161b22', '#1f2937', '#0f1115', '#2d2d4e', '#0d0f14',
+  '#373760', '#0f1623', '#3a3a5c', '#1f1f35'];
+
+describe('表面與尺度守衛（階段 2）', () => {
+  it('玻璃已下架 —— --da-glass-* 零引用', () => {
+    // 半透明底 + 古銅邊 + 雙層陰影，配 backdrop-filter，是 glassmorphism 的語彙。
+    // 精品調的層級語言是「實心表面 + 髮絲線 + 極淡陰影」，兩者疊在一起會既不通透也不紮實。
+    const offenders: string[] = [];
+    for (const { rel, text } of FILES) {
+      stripComments(text).split(/\r?\n/).forEach((line, i) => {
+        if (line.includes('--da-glass')) offenders.push(`${rel}:${i + 1} → ${line.trim().slice(0, 90)}`);
+      });
+    }
+    expect(offenders, `玻璃 token 已下架，請改用 --surface-raised / --hairline / --shadow-soft：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('backdrop-filter 零使用', () => {
+    // 除了風格不合，它每幀都要重新取樣整個背景並強制建立合成層 ——
+    // 站上原本 30 處是 blur(12px)，全在會捲動的卡片上。遮罩改用實色疊層（--ink-a50 之類）。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        if (/backdrop-filter/i.test(line)) offenders.push(`${f.rel}:${i + 1} → ${line.trim().slice(0, 90)}`);
+      });
+    }
+    expect(offenders, `遮罩請用實色疊層，卡片請用實心表面：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('深色面的藍黑家族不得復活', () => {
+    // 縞黑 #1A1917 是 hue 40° 的暖黑，這些是 hue 213–240° 的冷藍黑。
+    // 兩者並置時暖黑顯得偏紅、藍黑顯得偏冷 —— 那是「admin 跟乘客端不像同一個站」的成因。
+    const offenders: string[] = [];
+    for (const { rel, text } of FILES) {
+      stripComments(text).split(/\r?\n/).forEach((line, i) => {
+        const low = line.toLowerCase();
+        for (const hex of RETIRED_BLUE_BLACK) {
+          if (low.includes(hex)) offenders.push(`${rel}:${i + 1}（${hex}）→ ${line.trim().slice(0, 80)}`);
+        }
+      });
+    }
+    expect(offenders, `深色面請用 --surface-deep / -2 / -3（暖黑軸）：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('表面色不得硬編 —— 中性白／黑疊層與純白純黑', () => {
+    // 接手階段 1 那條「r === g === b 放行」。實測規模：SCSS 變數宣告 79 條、
+    // 行內寫法 884 處（白 rgba 524 · 黑 rgba 151 · #fff 205 · #000 4）。
+    // 疊層一律走 --surface-a* / --ink-a*，實色走 --surface-raised / --ink。
+    // 註：--surface-a* 的底是瓷白 #F5F3EE 而非純白，這是刻意的（純白在骨白環境裡會跳）。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const push = (what: string) => offenders.push(`${f.rel}:${i + 1} → ${what}  ${line.trim().slice(0, 70)}`);
+        for (const m of line.matchAll(/rgba?\(\s*(255|0)\s*,\s*(255|0)\s*,\s*(255|0)\s*[,)]/g)) {
+          if (m[1] === m[2] && m[2] === m[3]) push(`rgb(${m[1]},${m[2]},${m[3]})`);
+        }
+        for (const m of line.matchAll(/#(?:fff|ffffff|000|000000)\b/gi)) push(m[0]);
+      });
+    }
+    expect(offenders, `疊層請用 --surface-a* / --ink-a*，實色請用 --surface-raised / --ink：\n${offenders.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('尺度守衛（階段 2）', () => {
+  it('圓角不得寫字面值', () => {
+    // 階段 0 定了階梯卻一處都沒替換，於是實況長到 31 種相異值。
+    // 放行：0 / 百分比（橢圓角）/ SCSS 變數與 v-bind（動態）/ token。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const m = line.match(/border(?:-[a-z]+)*-radius\s*:\s*([^;{}]+);/);
+        if (!m) return;
+        const val = m[1]!.replace(/!important/, '').trim();
+        if (/var\(|v-bind|calc\(|\$/.test(val)) return;
+        for (const t of val.split('/').join(' ').split(/\s+/)) {
+          if (t === '0' || t === '0px' || t.endsWith('%')) continue;
+          offenders.push(`${f.rel}:${i + 1} → ${t}  ${line.trim().slice(0, 60)}`);
+        }
+      });
+    }
+    expect(offenders, `圓角請從 --r-round / --r-pill / --r-xl / --r-lg / --r-md / --r-sm / --r-xs 挑：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('跨元件層級的 z-index 必須走 token', () => {
+    // 20 以下刻意放行 —— 那是元件自己 stacking context 內的相對關係（把 ::after 疊到內容上、
+    // richmenu 編輯器的四個把手 11/12/13/14）。收進全域 token 會把它們壓成同一層。
+    // token 治的是「跨元件」的層級，那些原本長到 9999 / 10000 / 90000。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const m = line.match(/z-index\s*:\s*([^;{}]+);/);
+        if (!m) return;
+        const val = m[1]!.replace(/!important/, '').trim();
+        if (/var\(|calc\(|\$/.test(val)) return;
+        const n = Number(val);
+        if (Number.isFinite(n) && Math.abs(n) <= 20) return;
+        offenders.push(`${f.rel}:${i + 1} → ${val}  ${line.trim().slice(0, 60)}`);
+      });
+    }
+    expect(offenders, `層級請從 --z-sticky / --z-nav / --z-header / --z-overlay / --z-drawer / --z-modal / --z-modal-2 / --z-boot / --z-gate / --z-toast 挑：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('transition 的時長必須走 --dur-*', () => {
+    // 實測 14 種時長、245 處 0.15s。緩動同時收成 --ease-out（expo-out）。
+    // `linear` 與明確寫出的 cubic-bezier 放行：前者多用在進度／旋轉，後者是刻意挑過的曲線。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const m = line.match(/transition\s*:\s*([^;{}]+);/);
+        if (!m) return;
+        const val = m[1]!;
+        if (/v-bind|\$/.test(val)) return;
+        for (const seg of val.split(',')) {
+          const lit = seg.match(/(^|\s)(\d*\.?\d+m?s)(?=\s|$)/);
+          if (lit) offenders.push(`${f.rel}:${i + 1} → ${lit[2]}  ${line.trim().slice(0, 60)}`);
+        }
+      });
+    }
+    expect(offenders, `時長請用 --dur-fast / --dur-base / --dur-slow / --dur-slower：\n${offenders.join('\n')}`).toEqual([]);
   });
 });

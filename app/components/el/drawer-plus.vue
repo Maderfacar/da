@@ -107,7 +107,7 @@ const EmitClose = () => {
 
     &[type="info"] {
       .el-drawer__header {
-        background-color: #fff;
+        background-color: var(--surface-raised);
       }
       .el-drawer__header span,
     
@@ -123,7 +123,7 @@ const EmitClose = () => {
       }
       .el-drawer__header span,
       .el-drawer__close-btn {
-        color: #fff;
+        color: var(--surface-raised);
         font-weight: 700;
       } 
     }

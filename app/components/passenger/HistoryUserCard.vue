@@ -34,9 +34,9 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 <style lang="scss" scoped>
 
 .PassengerHistoryUserCard {
-  background: var(--da-glass-bg);
-  border: 1px solid var(--da-glass-border);
-  border-radius: 24px;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-xl);
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
@@ -44,15 +44,13 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   gap: 12px;
   text-align: center;
   margin-bottom: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--da-glass-shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .PassengerHistoryUserCard__avatar {
   width: 72px;
   height: 72px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   object-fit: cover;
   border: 2px solid var(--accent-a50);
 }
@@ -84,7 +82,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 .PassengerHistoryUserCard__friend-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--da-gray-pale);
   flex-shrink: 0;
 
@@ -98,9 +96,9 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 7px 18px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--line-green);
-  color: #fff;
+  color: var(--surface-raised);
   text-decoration: none;
 }
 </style>

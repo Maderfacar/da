@@ -536,7 +536,7 @@ onUnmounted(() => {
   padding: 20px 16px 32px;
   min-height: 100vh;
   background: var(--da-dark);
-  color: #fff;
+  color: var(--surface-raised);
 }
 
 // ── 頁首 ──────────────────────────────────────────────
@@ -559,7 +559,7 @@ onUnmounted(() => {
   font-family: var(--ff-display);
   font-size: 36px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--surface-raised);
   line-height: 1;
 }
 
@@ -567,7 +567,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
   margin-top: 4px;
 }
 
@@ -577,9 +577,9 @@ onUnmounted(() => {
   gap: 4px;
   margin-bottom: 14px;
   padding: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   width: fit-content;
 }
 
@@ -590,13 +590,13 @@ onUnmounted(() => {
   letter-spacing: 0.1em;
   padding: 6px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
-  &:hover { color: rgba(255, 255, 255, 0.75); }
+  &:hover { color: var(--surface-a72); }
   &.is-active { background: var(--accent-a20); color: var(--accent); }
 }
 
@@ -611,7 +611,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 3px 9px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 
   &.is-completed { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
   &.is-cancelled { background: var(--stop-a15); color: var(--stop); border: 1px solid var(--stop-a30); }
@@ -619,8 +619,8 @@ onUnmounted(() => {
 
 .PageDriverTrip__card.is-history {
   cursor: default;
-  &:hover { border-color: rgba(255, 255, 255, 0.08); }
-  &:active { transform: none; background: rgba(255, 255, 255, 0.04); }
+  &:hover { border-color: var(--surface-a06); }
+  &:active { transform: none; background: var(--surface-a06); }
 }
 
 // ── Loading ──────────────────────────────────────────
@@ -630,7 +630,7 @@ onUnmounted(() => {
   width: 28px; height: 28px;
   border: 2px solid var(--accent-a20);
   border-top-color: var(--accent);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 0.8s linear infinite;
 }
 
@@ -642,13 +642,13 @@ onUnmounted(() => {
 .PageDriverTrip__empty p {
   font-family: var(--ff-ui);
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 .PageDriverTrip__empty small {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
 }
 
 // ── 列表卡片（簡略）──────────────────────────────────────
@@ -658,12 +658,12 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   padding: 14px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-lg);
   cursor: pointer;
-  transition: all 0.15s;
-  &:active { transform: scale(0.99); background: rgba(255, 255, 255, 0.06); }
+  transition: all var(--dur-fast) var(--ease-out);
+  &:active { transform: scale(0.99); background: var(--surface-a06); }
   &:hover { border-color: var(--accent-a30); }
 }
 
@@ -675,7 +675,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 6px 0;
-  border-right: 1px dashed rgba(255, 255, 255, 0.1);
+  border-right: 1px dashed var(--surface-a12);
   padding-right: 12px;
 }
 
@@ -684,7 +684,7 @@ onUnmounted(() => {
   font-family: var(--ff-data);
   font-size: 22px;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
 }
 
 .PageDriverTrip__card-clock {
@@ -692,7 +692,7 @@ onUnmounted(() => {
   font-variant-numeric: lining-nums tabular-nums;
   font-size: 22px;
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--surface-raised);
   margin-top: 2px;
 }
 
@@ -706,7 +706,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   color: var(--accent);
@@ -715,7 +715,7 @@ onUnmounted(() => {
 .PageDriverTrip__id {
   font-family: var(--ff-label);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--surface-a20);
   margin-left: auto;
   letter-spacing: 0.08em;
 }
@@ -726,7 +726,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 4px;
   font-family: var(--ff-ui);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
 }
 
 .PageDriverTrip__route-line {
@@ -740,7 +740,7 @@ onUnmounted(() => {
   flex-shrink: 0;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   align-self: center;
 
   &.is-from { background: var(--accent); }
@@ -762,13 +762,13 @@ onUnmounted(() => {
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--surface-a50);
 }
 
 .PageDriverTrip__route-place {
   min-width: 0;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -788,7 +788,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 3px 9px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
 
   &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
   &.is-en_route        { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
@@ -812,7 +812,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--wait-a15);
   border: 1px solid var(--wait-a30);
   color: var(--wait);
@@ -825,7 +825,7 @@ onUnmounted(() => {
   align-items: flex-start;
   margin: 12px 16px 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
 }
@@ -850,7 +850,7 @@ onUnmounted(() => {
 .PageDriverTrip__pending-banner-desc {
   font-family: var(--ff-ui);
   font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--surface-a60);
   line-height: 1.55;
   margin-top: 4px;
 }
@@ -859,9 +859,8 @@ onUnmounted(() => {
 .PageDriverTrip__modal-mask {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
+  z-index: var(--z-modal);
+  background: var(--ink-a70);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -877,15 +876,15 @@ onUnmounted(() => {
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
-  background: #1a1a2e;
+  background: var(--surface-deep-2);
   border: 1px solid var(--accent-a20);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 
   @media (min-width: 640px) {
-    border-radius: 20px;
+    border-radius: var(--r-xl);
     max-height: 80vh;
   }
 }
@@ -906,7 +905,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 4px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--accent-a20);
   border: 1px solid var(--accent-a40);
   color: var(--accent);
@@ -917,20 +916,20 @@ onUnmounted(() => {
   font-size: 12px;
   font-weight: 700;
   padding: 4px 10px;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--r-pill);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
 }
 
 .PageDriverTrip__modal-close {
   width: 36px; height: 36px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--surface-a06);
+  color: var(--surface-a60);
   font-size: 22px;
   cursor: pointer;
-  &:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
 
 .PageDriverTrip__modal-id {
@@ -938,7 +937,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--surface-a30);
 }
 
 .PageDriverTrip__modal-status {
@@ -950,7 +949,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.12em;
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   width: fit-content;
 
   &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
@@ -968,7 +967,7 @@ onUnmounted(() => {
 // Section
 .PageDriverTrip__section {
   padding: 14px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--surface-a06);
   &:first-child { border-top: none; padding-top: 4px; }
 }
 
@@ -977,7 +976,7 @@ onUnmounted(() => {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--surface-a30);
   text-transform: uppercase;
   margin-bottom: 8px;
 }
@@ -994,17 +993,17 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--surface-a40);
   flex-shrink: 0;
 }
 
 .PageDriverTrip__section-val {
   font-family: var(--ff-ui);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--surface-a82);
   text-align: right;
 
-  &.is-muted { color: rgba(255, 255, 255, 0.35); font-size: 12px; font-style: italic; }
+  &.is-muted { color: var(--surface-a30); font-size: 12px; font-style: italic; }
   &.is-fare { font-family: var(--ff-label); font-weight: 700; color: var(--accent); font-size: 16px; }
 }
 
@@ -1015,17 +1014,17 @@ onUnmounted(() => {
   gap: 10px;
   padding: 12px 12px;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a06);
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:hover { border-color: var(--accent-a40); background: var(--accent-a06); }
   &:active { transform: scale(0.99); }
 
-  &.is-pickup .PageDriverTrip__addr-tag { background: var(--accent); color: #fff; }
-  &.is-stop .PageDriverTrip__addr-tag { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
+  &.is-pickup .PageDriverTrip__addr-tag { background: var(--accent); color: var(--surface-raised); }
+  &.is-stop .PageDriverTrip__addr-tag { background: var(--surface-a12); color: var(--surface-a60); }
   &.is-dropoff .PageDriverTrip__addr-tag { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
 }
 
@@ -1036,7 +1035,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--r-xs);
   margin-top: 2px;
 }
 
@@ -1045,7 +1044,7 @@ onUnmounted(() => {
 .PageDriverTrip__addr-name {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--surface-a88);
   font-weight: 500;
   line-height: 1.4;
 }
@@ -1053,7 +1052,7 @@ onUnmounted(() => {
 .PageDriverTrip__addr-full {
   font-family: var(--ff-ui);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--surface-a40);
   margin-top: 2px;
   line-height: 1.4;
 }
@@ -1076,7 +1075,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   color: var(--accent-a90);
@@ -1086,20 +1085,20 @@ onUnmounted(() => {
 .PageDriverTrip__notes {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--surface-a72);
   line-height: 1.6;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-a06);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--surface-a06);
 }
 
 // Modal footer
 .PageDriverTrip__modal-foot {
   flex-shrink: 0;
   padding: 12px 20px 20px;
-  background: linear-gradient(180deg, transparent 0, rgba(0, 0, 0, 0.4) 30%);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, transparent 0, var(--ink-a40) 30%);
+  border-top: 1px solid var(--surface-a06);
 }
 
 .PageDriverTrip__action {
@@ -1109,12 +1108,12 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 14px 20px;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: none;
   background: var(--accent);
-  color: #fff;
+  color: var(--surface-raised);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--dur-fast) var(--ease-out);
 
   &:disabled { opacity: 0.6; cursor: not-allowed; }
   &:active:not(:disabled) { transform: scale(0.98); }
@@ -1122,9 +1121,9 @@ onUnmounted(() => {
   // 「僅紀錄」次按鈕：與主按鈕同寬，但低調配色（不發 LINE 給乘客）
   &.is-quiet {
     margin-top: 8px;
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: var(--surface-a06);
+    color: var(--surface-a82);
+    border: 1px solid var(--surface-a20);
   }
 }
 
@@ -1134,11 +1133,11 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--surface-a60);
   text-align: center;
 }
 
 // transition
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-active, .fade-leave-active { transition: opacity var(--dur-base) var(--ease-out); }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

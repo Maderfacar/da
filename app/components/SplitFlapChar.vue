@@ -170,7 +170,7 @@ $fs:      28px;
   left:           0;
   right:          0;
   height:         1.5px;
-  background:     rgba(0, 0, 0, 0.9);
+  background:     var(--ink-a90);
   transform:      translateY(-50%);
   z-index:        10;
   pointer-events: none;
@@ -179,12 +179,12 @@ $fs:      28px;
 // ── Keyframes ──────────────────────────────────────────────────────────────
 @keyframes sfcFlapDown {
   0%   { transform: rotateX(0deg);   box-shadow: none; }
-  40%  { transform: rotateX(-55deg); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55); }
+  40%  { transform: rotateX(-55deg); box-shadow: var(--shadow-soft); }
   100% { transform: rotateX(-90deg); box-shadow: none; }
 }
 
 @keyframes sfcFlapUp {
-  0%   { transform: rotateX(90deg); box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5); }
+  0%   { transform: rotateX(90deg); box-shadow: var(--shadow-soft); }
   100% { transform: rotateX(0deg);  box-shadow: none; }
 }
 </style>

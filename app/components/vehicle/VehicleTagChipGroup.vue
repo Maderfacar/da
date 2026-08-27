@@ -75,9 +75,9 @@ const GroupLabel = (g: TagGroup): string => {
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 5px 12px;
-  border-radius: 100px;
+  border-radius: var(--r-pill);
   background: var(--da-amber-pale);
-  border: 1px solid var(--da-glass-border);
+  border: 1px solid var(--hairline);
   color: var(--da-dark);
 }
 </style>
