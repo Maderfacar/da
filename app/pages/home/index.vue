@@ -949,7 +949,7 @@ onUnmounted(() => {
   font-family: var(--ff-display);
   font-size: var(--fs-h2);
   color: var(--da-amber);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PageHome__quick-arrow {
