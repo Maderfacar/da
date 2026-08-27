@@ -110,7 +110,7 @@ const EmitClose = () => {
     }
   
     .el-dialog__header {
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--hairline);
       text-align: center;
       padding: 10px 20px !important;
       font-weight: 700;
@@ -125,7 +125,7 @@ const EmitClose = () => {
   
     .el-dialog__footer {
       min-height: 54px;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--hairline);
       padding: 10px 20px !important;
       z-index: 1;
     }

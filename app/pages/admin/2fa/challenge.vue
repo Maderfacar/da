@@ -83,7 +83,7 @@ const ClickVerify = async () => {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #f5f5f7;
+  background: var(--surface-ground);
 }
 .Admin2faChallenge__card {
   width: 100%;
@@ -100,7 +100,7 @@ const ClickVerify = async () => {
 }
 .Admin2faChallenge__lead {
   font-size: 14px;
-  color: #555;
+  color: var(--ink-soft);
   line-height: 1.6;
   margin: 0 0 20px;
 }
@@ -119,7 +119,7 @@ const ClickVerify = async () => {
 }
 .Admin2faChallenge__help {
   font-size: 12px;
-  color: #888;
+  color: var(--ink-mute);
   line-height: 1.6;
   margin: 20px 0 0;
 }

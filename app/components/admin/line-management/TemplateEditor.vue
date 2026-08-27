@@ -746,9 +746,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   }
   &.is-admin,
   &.is-both {
-    color: #6b7280;
-    border-color: rgba(107, 114, 128, 0.4);
-    background: rgba(107, 114, 128, 0.08);
+    color: var(--ink-soft);
+    border-color: color-mix(in srgb, var(--ink-soft) 40%, transparent);
+    background: color-mix(in srgb, var(--ink-soft) 8%, transparent);
   }
 }
 
@@ -1099,14 +1099,14 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
-  color: #222;
+  color: var(--ink);
   line-height: 1.4;
 }
 
 .TemplateEditor__bubble-text {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: #666;
+  color: var(--ink-soft);
   line-height: 1.6;
   white-space: pre-wrap;
 }

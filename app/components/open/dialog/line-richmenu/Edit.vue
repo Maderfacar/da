@@ -1176,7 +1176,7 @@ onMounted(() => {
 .DialogLineRichmenuEdit__liff-hint {
   margin-top: 6px;
   padding: 8px 10px;
-  background: #fff8e1;
+  background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-left: 3px solid var(--wait);
   border-radius: var(--r-xs);
@@ -1189,7 +1189,7 @@ onMounted(() => {
   font-family: var(--ff-ui);
   font-size: 11.5px;
   line-height: 1.55;
-  color: #6a4c00;
+  color: var(--wait);
 }
 
 .DialogLineRichmenuEdit__liff-hint-row {
@@ -1208,7 +1208,7 @@ onMounted(() => {
     word-break: break-all;
     font-size: 11px;
     font-family: var(--ff-mono);
-    color: #2c1810;
+    color: var(--ink);
     line-height: 1.4;
   }
 }

@@ -613,27 +613,27 @@ onMounted(() => {
 
 .PageAdminDriverDetail__back {
   padding: 6px 12px;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--hairline);
   background: var(--surface-raised);
   border-radius: var(--r-sm);
   cursor: pointer;
   font-size: 13px;
-  color: #606266;
+  color: var(--ink-soft);
 
-  &:hover { background: #f5f7fa; }
+  &:hover { background: var(--surface-ground); }
 }
 
 .PageAdminDriverDetail__title {
   font-size: 20px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ink);
 }
 
 .PageAdminDriverDetail__loading,
 .PageAdminDriverDetail__empty {
   padding: 60px 0;
   text-align: center;
-  color: #909399;
+  color: var(--ink-mute);
 }
 
 .PageAdminDriverDetail__hero {
@@ -658,7 +658,7 @@ onMounted(() => {
   width: 60px;
   height: 60px;
   border-radius: var(--r-round);
-  background: #ecf5ff;
+  background: var(--note-a08);
   color: var(--note);
   display: flex;
   align-items: center;
@@ -670,7 +670,7 @@ onMounted(() => {
 .PageAdminDriverDetail__hero-name {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ink);
 }
 
 .PageAdminDriverDetail__hero-meta {
@@ -687,18 +687,18 @@ onMounted(() => {
   font-weight: 600;
 
   &.is-approved {
-    background: #f0f9eb;
+    background: var(--good-a08);
     color: var(--good);
   }
   &.is-pending {
-    background: #fdf6ec;
+    background: var(--wait-a08);
     color: var(--wait);
   }
 }
 
 .PageAdminDriverDetail__hero-uid {
   font-size: 12px;
-  color: #909399;
+  color: var(--ink-mute);
   font-family: var(--ff-ui);
 }
 
@@ -722,17 +722,17 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--surface-ground);
 
   &:last-child { border-bottom: none; }
 
   &-key {
-    color: #909399;
+    color: var(--ink-mute);
     font-size: 13px;
   }
 
   &-val {
-    color: #303133;
+    color: var(--ink);
     font-size: 14px;
     font-weight: 500;
     text-align: right;
@@ -751,12 +751,12 @@ onMounted(() => {
   padding: 4px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--note);
-  background: #ecf5ff;
+  background: var(--note-a08);
   color: var(--note);
   font-size: 12px;
   cursor: pointer;
 
-  &:hover { background: #d9ecff; }
+  &:hover { background: var(--note-a15); }
 }
 
 .PageAdminDriverDetail__row-editing {
@@ -772,8 +772,8 @@ onMounted(() => {
 }
 
 .PageAdminDriverDetail__doc {
-  background: #fafbfc;
-  border: 1px solid #ebeef5;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 14px;
 }
@@ -781,7 +781,7 @@ onMounted(() => {
 .PageAdminDriverDetail__doc-head {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ink);
   margin-bottom: 12px;
 }
 
@@ -807,7 +807,7 @@ onMounted(() => {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: #909399;
+  color: var(--ink-mute);
 }
 
 .PageAdminDriverDetail__doc-preview {
@@ -816,7 +816,7 @@ onMounted(() => {
   aspect-ratio: 4 / 3;
   border-radius: var(--r-sm);
   overflow: hidden;
-  background: #f0f2f5;
+  background: var(--surface-ground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -831,17 +831,17 @@ onMounted(() => {
 .PageAdminDriverDetail__doc-pdf,
 .PageAdminDriverDetail__doc-empty {
   font-size: 13px;
-  color: #909399;
+  color: var(--ink-mute);
 }
 
 .PageAdminDriverDetail__doc-meta {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px dashed #ebeef5;
+  border-top: 1px dashed var(--hairline);
 
   &-line {
     font-size: 12px;
-    color: #606266;
+    color: var(--ink-soft);
     margin-bottom: 4px;
   }
 }

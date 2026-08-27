@@ -373,7 +373,7 @@ onMounted(() => {
 
     &.is-super     { background: var(--stop-a15);  color: var(--stop); border: 1px solid var(--stop-a30); }
     &.is-admin     { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }
-    &.is-assistant { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
+    &.is-assistant { background: color-mix(in srgb, var(--ink-mute) 12%, transparent); color: var(--ink-mute); border: 1px solid color-mix(in srgb, var(--ink-mute) 30%, transparent); }
   }
 
   &__action { font-family: var(--ff-mono); font-size: 12px; }

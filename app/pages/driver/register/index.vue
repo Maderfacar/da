@@ -432,7 +432,7 @@ onUnmounted(() => {
   z-index: 1;
   width: 100%;
   max-width: 480px;
-  background: rgba(40, 37, 31, 0.85);
+  background: color-mix(in srgb, var(--surface-deep-2) 85%, transparent);
   border: 1px solid var(--accent-a20);
   border-radius: var(--r-xl);
   padding: 32px 24px 28px;

@@ -540,7 +540,7 @@ onMounted(ApiLoadCostSettings);
   position: sticky;
   bottom: 16px;
   margin-top: 20px;
-  background: rgba(20, 23, 30, 0.95);
+  background: var(--surface-deep);
   border: 1px solid var(--surface-a12);
   border-radius: var(--r-lg);
   padding: 14px 18px;

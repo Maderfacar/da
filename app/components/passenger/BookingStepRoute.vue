@@ -305,7 +305,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: linear-gradient(135deg, #fff4e5 0%, #ffe8d4 100%);
+  background: linear-gradient(135deg, var(--wait-a08) 0%, var(--wait-a15) 100%);
   border: 1.5px solid var(--wait);
   border-left: 4px solid var(--stop);
   border-radius: var(--r-md);
@@ -338,7 +338,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   font-family: var(--ff-ui);
   font-size: 14px;
   line-height: 1.55;
-  color: #4e342e;
+  color: var(--ink);
   font-weight: 500;
 }
 

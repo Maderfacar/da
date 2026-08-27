@@ -1133,7 +1133,7 @@ $border: var(--accent-a20);
 .PageAdminLineManagement {
   padding: 80px 20px 100px;
   min-height: 100svh;
-  background: var(--da-cream, #f6efe1);
+  background: var(--da-cream);
   color: var(--da-dark);
 }
 
@@ -1368,9 +1368,9 @@ $border: var(--accent-a20);
   border: 1px solid;
 
   &.is-draft {
-    color: #6b7280;
-    background: rgba(107, 114, 128, 0.1);
-    border-color: rgba(107, 114, 128, 0.3);
+    color: var(--ink-soft);
+    background: color-mix(in srgb, var(--ink-soft) 10%, transparent);
+    border-color: color-mix(in srgb, var(--ink-soft) 30%, transparent);
   }
   &.is-active {
     color: var(--good);
@@ -1378,9 +1378,9 @@ $border: var(--accent-a20);
     border-color: var(--good-a45);
   }
   &.is-archived {
-    color: #9ca3af;
-    background: rgba(156, 163, 175, 0.1);
-    border-color: rgba(156, 163, 175, 0.3);
+    color: var(--ink-mute);
+    background: color-mix(in srgb, var(--ink-mute) 10%, transparent);
+    border-color: color-mix(in srgb, var(--ink-mute) 30%, transparent);
   }
 }
 
@@ -1426,7 +1426,7 @@ $border: var(--accent-a20);
   border-radius: var(--r-pill);
   padding: 4px 14px;
   background: transparent;
-  color: #6b7280;
+  color: var(--ink-soft);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -1595,7 +1595,7 @@ $border: var(--accent-a20);
   border-radius: var(--r-pill);
   padding: 5px 14px;
   background: transparent;
-  color: #6b7280;
+  color: var(--ink-soft);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -1730,9 +1730,9 @@ $border: var(--accent-a20);
   }
   &.is-admin,
   &.is-both {
-    color: #6b7280;
-    border-color: rgba(107, 114, 128, 0.4);
-    background: rgba(107, 114, 128, 0.08);
+    color: var(--ink-soft);
+    border-color: color-mix(in srgb, var(--ink-soft) 40%, transparent);
+    background: color-mix(in srgb, var(--ink-soft) 8%, transparent);
   }
 }
 

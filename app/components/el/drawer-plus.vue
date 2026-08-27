@@ -96,11 +96,11 @@ const EmitClose = () => {
       padding: 10px !important;
       margin: 0 !important;
       text-align: center;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--hairline);
     }
 
     .el-drawer__footer {
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--hairline);
       padding: 10px 20px !important;
       margin: 0 !important;
     } 

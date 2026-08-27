@@ -214,8 +214,8 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 
 <style lang="scss" scoped>
 .VehicleProfileReview {
-  background: #fafbfc;
-  border: 1px solid #ebeef5;
+  background: var(--surface-raised);
+  border: 1px solid var(--hairline);
   border-radius: var(--r-md);
   padding: 14px;
   display: flex;
@@ -234,12 +234,12 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 .VehicleProfileReview__title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ink);
 }
 
 .VehicleProfileReview__verified-meta {
   font-size: 11px;
-  color: #909399;
+  color: var(--ink-mute);
   display: flex;
   gap: 4px;
 }
@@ -258,7 +258,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 
 .VehicleProfileReview__col {
   background: var(--surface-raised);
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
   padding: 10px;
   display: flex;
@@ -270,7 +270,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: #909399;
+  color: var(--ink-mute);
 }
 
 .VehicleProfileReview__pending-meta {
@@ -278,7 +278,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   flex-direction: column;
   gap: 4px;
   font-size: 11px;
-  color: #606266;
+  color: var(--ink-soft);
 }
 
 .VehicleProfileReview__photos {
@@ -298,20 +298,20 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   width: 100%;
   object-fit: cover;
   border-radius: var(--r-sm);
-  background: #f0f2f5;
+  background: var(--surface-ground);
 
   &.is-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 11px;
-    color: #909399;
+    color: var(--ink-mute);
   }
 }
 
 .VehicleProfileReview__photos-empty {
   font-size: 11px;
-  color: #909399;
+  color: var(--ink-mute);
   grid-column: 1 / -1;
 }
 
@@ -326,7 +326,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #909399;
+  color: var(--ink-mute);
   min-width: 70px;
 }
 
@@ -341,20 +341,20 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   font-size: 11px;
   padding: 2px 8px;
   border-radius: var(--r-pill);
-  border: 1px solid #e4e7ed;
-  background: #f0f9eb;
+  border: 1px solid var(--hairline);
+  background: var(--good-a08);
   color: var(--good);
 
   &.is-pending {
-    background: #fdf6ec;
-    border-color: #faecd8;
+    background: var(--wait-a08);
+    border-color: var(--wait-a30);
     color: var(--wait);
   }
 }
 
 .VehicleProfileReview__empty {
   font-size: 11px;
-  color: #c0c4cc;
+  color: var(--ink-mute);
   flex: 1;
 }
 

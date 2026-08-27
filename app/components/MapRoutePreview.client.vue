@@ -424,13 +424,13 @@ onUnmounted(() => {
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background: #fff0f0;
+  background: var(--stop-a08);
   color: var(--danger);
   font-family: var(--ff-ui);
   font-size: 12px;
   padding: 6px 14px;
   border-radius: var(--r-xl);
-  border: 1px solid rgba(208, 48, 48, 0.25);
+  border: 1px solid var(--stop-a20);
   white-space: nowrap;
   box-shadow: var(--shadow-soft);
 }

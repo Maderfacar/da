@@ -1560,9 +1560,9 @@ const ClickSaveFareRules = async () => {
     border-color: var(--good-a30);
   }
   &.is-assistant {
-    color: #94a3b8;
-    background: rgba(148, 163, 184, 0.1);
-    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--ink-mute);
+    background: color-mix(in srgb, var(--ink-mute) 10%, transparent);
+    border-color: color-mix(in srgb, var(--ink-mute) 30%, transparent);
   }
 }
 
@@ -2172,7 +2172,7 @@ const ClickSaveFareRules = async () => {
   gap: 16px;
   padding: 12px 16px;
   margin: 0 0 16px;
-  background: #fffaeb;
+  background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-radius: var(--r-sm);
 }
@@ -2184,7 +2184,7 @@ const ClickSaveFareRules = async () => {
   color: var(--wait);
   strong {
     font-size: 14px;
-    color: #492a00;
+    color: var(--wait);
   }
 }
 .PageAdminSettings__pin-banner-btn {
@@ -2196,7 +2196,7 @@ const ClickSaveFareRules = async () => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  &:hover { background: #fef3c7; }
+  &:hover { background: var(--wait-a15); }
 }
 
 .PageAdminSettings__promotions {

@@ -777,7 +777,7 @@ const swiperBreakpoints = {
     gap: 5px;
 
     .is-active & {
-      background: rgba(255, 245, 220, 0.88);
+      background: color-mix(in srgb, var(--accent-wash) 88%, transparent);
     }
   }
 

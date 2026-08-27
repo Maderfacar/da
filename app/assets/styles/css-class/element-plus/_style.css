@@ -96,7 +96,7 @@
 
 /* table --------------- */
 .el-table .even-row {
-  --el-table-tr-bg-color: #eee;
+  --el-table-tr-bg-color: var(--hairline);
 }
 
 /* message box --------------- */

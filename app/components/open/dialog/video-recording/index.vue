@@ -438,14 +438,14 @@ ElDialogPlus.OpenDialogVideoRecording(
   border-radius: var(--r-sm);
   border: none;
   cursor: pointer;
-  background: #e5e7eb; // gray-200
-  color: #111827; // gray-900
+  background: var(--hairline); // gray-200
+  color: var(--ink); // gray-900
   &.record { background: var(--danger); color: var(--surface-raised); } // red-500
   &.roteate { 
     @include wh(48px);
     @include center;
     border-radius: var(--r-pill);
-    background: #9ca3af; 
+    background: var(--ink-mute); 
     color: var(--surface-raised);
    } // gray-400
   &.primary { background: var(--accent); color: var(--surface-raised); } // emerald-500
@@ -460,7 +460,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   .warn {
     @include fs(14px, 600);
     color: var(--wait); // amber-700
-    background: #fef3c7; // amber-100
+    background: var(--wait-a15); // amber-100
     border-radius: var(--r-sm);
     padding: 8px 10px;
     margin-bottom: 6px;
@@ -468,7 +468,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   .error {
     @include fs(14px, 600);
     color: var(--stop); // red-800
-    background: #fee2e2; // red-100
+    background: var(--stop-a08); // red-100
     border-radius: var(--r-sm);
     padding: 8px 10px;
     margin-bottom: 8px;
@@ -504,7 +504,7 @@ ElDialogPlus.OpenDialogVideoRecording(
 .countdown-bar {
   width: 100%;
   height: 8px;
-  background: #e5e7eb; // gray-200
+  background: var(--hairline); // gray-200
   border-radius: var(--r-pill);
   overflow: hidden;
 }

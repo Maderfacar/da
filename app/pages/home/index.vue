@@ -948,7 +948,7 @@ onUnmounted(() => {
 }
 
 .PageHome__book-card {
-  background: linear-gradient(135deg, var(--da-dark), #2a2520);
+  background: linear-gradient(135deg, var(--da-dark), var(--surface-deep-3));
   color: var(--da-cream);
   border-radius: var(--r-xl);
   padding: 32px 24px;
@@ -1002,7 +1002,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: 14px;
   font-weight: 300;
-  color: rgba(248, 244, 235, 0.7);
+  color: color-mix(in srgb, var(--surface-raised) 70%, transparent);
   line-height: 1.7;
   margin-bottom: 24px;
   max-width: 320px;

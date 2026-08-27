@@ -366,7 +366,7 @@ const ClickSave = async (): Promise<void> => {
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: var(--da-cream, #faf7f0);
+  background: var(--da-cream);
   border-radius: var(--r-md);
   border: 1px solid var(--hairline);
 }
@@ -392,7 +392,7 @@ const ClickSave = async (): Promise<void> => {
   font-family: var(--ff-label);
   font-size: 12px;
   letter-spacing: 0.15em;
-  color: var(--da-gray, #6b6a68);
+  color: var(--da-gray, var(--ink-soft));
 }
 
 .WelcomeSequenceEditor__lang-tabs {
@@ -432,7 +432,7 @@ const ClickSave = async (): Promise<void> => {
   text-align: center;
   color: var(--da-gray);
   font-size: 13px;
-  border: 1px dashed var(--da-gray-pale, #d5cfc0);
+  border: 1px dashed var(--da-gray-pale, var(--hairline));
   border-radius: var(--r-md);
 }
 
@@ -518,7 +518,7 @@ const ClickSave = async (): Promise<void> => {
 
   &:disabled { opacity: 0.3; cursor: not-allowed; }
   &:not(:disabled):hover {
-    background: var(--da-amber-pale, #fbe9c8);
+    background: var(--da-amber-pale);
     border-color: var(--da-amber);
     color: var(--da-amber);
   }
@@ -538,7 +538,7 @@ const ClickSave = async (): Promise<void> => {
   font-size: 13px;
   font-family: inherit;
   color: var(--da-dark);
-  background: var(--da-cream, #faf7f0);
+  background: var(--da-cream);
   resize: vertical;
 
   &:focus {

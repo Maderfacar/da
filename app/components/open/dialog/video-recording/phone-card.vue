@@ -30,7 +30,7 @@
   }
   .show-area {
     @include wh;
-    background-color: rgba(154, 154, 154, 0.604);
+    background-color: var(--ink-a60);
     border-radius: 10% / 4%;
     overflow: hidden;
   }

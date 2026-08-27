@@ -343,7 +343,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   gap: 5px;
 
   .PageFare__vehicle-card.is-active & {
-    background: rgba(255, 245, 220, 0.88);
+    background: color-mix(in srgb, var(--accent-wash) 88%, transparent);
   }
 }
 

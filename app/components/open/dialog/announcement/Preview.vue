@@ -119,7 +119,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
   overflow: hidden;
   max-width: 320px;
   box-shadow: var(--shadow-soft);
-  color: #222;
+  color: var(--ink);
 }
 
 .AnnouncementPreview__lineHero {
@@ -137,7 +137,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
   font-family: var(--ff-ui);
   font-size: 16px;
   font-weight: 700;
-  color: #222;
+  color: var(--ink);
   line-height: 1.4;
   margin-bottom: 6px;
 }
@@ -145,7 +145,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 .AnnouncementPreview__lineText {
   font-family: var(--ff-ui);
   font-size: 13px;
-  color: #666;
+  color: var(--ink-soft);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 5;
@@ -155,7 +155,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 
 .AnnouncementPreview__linePlaceholder {
   font-size: 12px;
-  color: #bbb;
+  color: var(--ink-mute);
   font-style: italic;
 }
 

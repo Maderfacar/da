@@ -476,7 +476,7 @@ onUnmounted(() => {
 
   &.is-online  { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
   &.is-busy    { background: var(--accent-a12); color: var(--da-amber); border: 1px solid var(--accent-a30); }
-  &.is-offline { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
+  &.is-offline { background: color-mix(in srgb, var(--ink-mute) 12%, transparent); color: var(--ink-mute); border: 1px solid color-mix(in srgb, var(--ink-mute) 30%, transparent); }
 }
 
 .PageDashboard__empty {

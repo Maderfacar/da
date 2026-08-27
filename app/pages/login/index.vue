@@ -132,7 +132,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   z-index: 1;
   width: 100%;
   max-width: 360px;
-  background: rgba(40, 37, 31, 0.8);
+  background: color-mix(in srgb, var(--surface-deep-2) 80%, transparent);
   border: 1px solid var(--accent-a20);
   border-radius: var(--r-xl);
   padding: 36px 28px 32px;

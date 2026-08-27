@@ -148,7 +148,7 @@ Teleport(to="body")
 .CommonDrawer__mask {
   position: fixed;
   inset: 0;
-  background: rgba(20, 18, 14, 0.55);
+  background: var(--ink-a60);
   z-index: var(--z-overlay);
   cursor: pointer;
 }

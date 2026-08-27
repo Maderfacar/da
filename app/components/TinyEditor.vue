@@ -79,10 +79,10 @@ const mergedInit = computed(() => ({
   align-items: center;
   justify-content: center;
   min-height: 500px;
-  color: #999;
+  color: var(--ink-mute);
   font-size: 14px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--hairline);
   border-radius: var(--r-xs);
-  background: #fafafa;
+  background: var(--surface-raised);
 }
 </style>

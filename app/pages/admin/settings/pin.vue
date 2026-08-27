@@ -155,7 +155,7 @@ onMounted(() => { void _LoadStatus(); });
 }
 .AdminSettingsPin__lead {
   font-size: 13px;
-  color: #555;
+  color: var(--ink-soft);
   margin: 0 0 4px;
   line-height: 1.6;
 }
@@ -163,13 +163,13 @@ onMounted(() => { void _LoadStatus(); });
   margin: 0 0 12px 18px;
   padding: 0;
   font-size: 13px;
-  color: #555;
+  color: var(--ink-soft);
   line-height: 1.8;
 }
 .AdminSettingsPin__warn {
   font-size: 12px;
   color: var(--accent-deep);
-  background: #fffaeb;
+  background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-radius: var(--r-sm);
   padding: 8px 10px;
@@ -178,7 +178,7 @@ onMounted(() => { void _LoadStatus(); });
 }
 .AdminSettingsPin__loading {
   text-align: center;
-  color: #888;
+  color: var(--ink-mute);
   padding: 24px 0;
 }
 .AdminSettingsPin__field {
@@ -189,7 +189,7 @@ onMounted(() => { void _LoadStatus(); });
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #333;
+  color: var(--ink);
 }
 .AdminSettingsPin__error {
   color: var(--stop);

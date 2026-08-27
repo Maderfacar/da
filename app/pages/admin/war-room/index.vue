@@ -631,7 +631,7 @@ onUnmounted(() => {
 
   &.is-online  { background: var(--note); box-shadow: 0 0 6px var(--note-a45); }
   &.is-busy    { background: var(--da-amber); box-shadow: 0 0 6px var(--accent-a50); }
-  &.is-offline { background: #6b7280; }
+  &.is-offline { background: var(--ink-soft); }
 }
 
 .PageWarRoom__driver-info {

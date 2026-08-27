@@ -119,7 +119,7 @@ onMounted(() => { void ApiSetup(); });
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: #f5f5f7;
+  background: var(--surface-ground);
 }
 .Admin2faSetup__card {
   width: 100%;
@@ -136,14 +136,14 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__lead {
   font-size: 14px;
-  color: #555;
+  color: var(--ink-soft);
   line-height: 1.6;
   margin: 0 0 8px;
 }
 .Admin2faSetup__warn {
   font-size: 13px;
   color: var(--accent-deep);
-  background: #fffaeb;
+  background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-radius: var(--r-sm);
   padding: 10px 12px;
@@ -152,7 +152,7 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__loading {
   text-align: center;
-  color: #888;
+  color: var(--ink-mute);
   padding: 32px 0;
 }
 .Admin2faSetup__qr {
@@ -166,7 +166,7 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__secretLabel {
   font-size: 13px;
-  color: #666;
+  color: var(--ink-soft);
   margin-bottom: 4px;
 }
 .Admin2faSetup__secretCode {
@@ -174,7 +174,7 @@ onMounted(() => { void ApiSetup(); });
   font-family: var(--ff-mono);
   font-size: 15px;
   letter-spacing: 1px;
-  background: #f0f0f3;
+  background: var(--surface-ground);
   padding: 6px 10px;
   border-radius: var(--r-sm);
   word-break: break-all;
@@ -187,7 +187,7 @@ onMounted(() => { void ApiSetup(); });
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #333;
+  color: var(--ink);
 }
 .Admin2faSetup__error {
   color: var(--stop);

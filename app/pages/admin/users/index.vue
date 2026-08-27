@@ -400,7 +400,7 @@ onMounted(() => {
   width: 100%;
   max-width: 460px;
   padding: 24px;
-  background: #1a1d24;
+  background: var(--surface-deep-2);
   border: 1px solid var(--surface-a06);
   border-radius: var(--r-md);
 }

@@ -567,10 +567,10 @@ onMounted(() => {
   padding: 2px 10px;
   border-radius: var(--r-pill);
 
-  &.is-pending   { background: rgba(127, 140, 141, 0.12); color: #7f8c8d; border: 1px solid rgba(127, 140, 141, 0.3); }
+  &.is-pending   { background: color-mix(in srgb, var(--ink-mute) 12%, transparent); color: var(--ink-mute); border: 1px solid color-mix(in srgb, var(--ink-mute) 30%, transparent); }
   &.is-qualified { background: var(--note-a15);  color: var(--note); border: 1px solid var(--note-a30); }
   &.is-rewarded  { background: var(--good-a15);   color: var(--good); border: 1px solid var(--good-a30); }
-  &.is-expired   { background: rgba(189, 195, 199, 0.18); color: #95a5a6; border: 1px solid rgba(189, 195, 199, 0.4); }
+  &.is-expired   { background: color-mix(in srgb, var(--ink-mute) 18%, transparent); color: var(--ink-mute); border: 1px solid color-mix(in srgb, var(--ink-mute) 40%, transparent); }
 }
 
 .PageReferral__count {

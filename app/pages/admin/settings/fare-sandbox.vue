@@ -566,7 +566,7 @@ const metricsRows = computed(() => {
   font-weight: 600;
   margin-bottom: 12px;
 
-  &.is-fare-v2 { background: #e8f0d5; color: #4a6b00; }
+  &.is-fare-v2 { background: var(--good-a15); color: var(--good); }
   &.is-fare-v1 { background: var(--wait-a15); color: var(--wait); }
   &.is-charter { background: var(--note-a15); color: var(--note); }
 }

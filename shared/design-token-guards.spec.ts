@@ -424,6 +424,40 @@ describe('表面與尺度守衛（階段 2）', () => {
     expect(offenders, `帶 alpha 的顏色請用疊色階梯（--accent-a* / --ink-a* / --surface-a*）：\n${offenders.join('\n')}`).toEqual([]);
   });
 
+  it('元件的 <style> 內不得出現任何字面色碼', () => {
+    // 這條是階段 2 收尾時把前面幾條「門檻式」守衛升級成「全禁式」的結果。
+    //
+    // 為什麼門檻式擋不住：飽和色守衛的條件是 s ≥ 25 且 25 ≤ l ≤ 85，
+    // 而 Element Plus 與 Tailwind 的預設灰藍（#dcdfe6 s17 l88、#606266 s3 l39、
+    // #909399 s4 l58、#6b7280 s9 l46…）全部落在門檻外。它們被手抄進元件裡
+    // ——**131 處**，散在 admin 子頁、2FA 頁、公告彈窗、富文本樣式 ——
+    // 而階段 1 只修了 EP 的 $colors map（編譯期常數），看不到手抄的字面值。
+    // 那是站上的**第三套調色盤**，只是因為夠灰所以一直沒被當成顏色。
+    //
+    // 現在全部走 token 了，所以規則可以收成最簡單的一句：<style> 裡不准有色碼。
+    // 例外只有兩個，各自附理由 —— 不是「先加進來讓測試變綠」。
+    const ALLOW: Array<[string, string]> = [
+      ['app/assets/styles/scss-tool/element-plus/index.scss',
+       'Sass 需要編譯期常數才能推出 EP 的色階；由「$colors map 必須與 token 一致」那條守衛比對'],
+      ['app/composables/system/use-inapp-browser/inapp-browser-block.vue',
+       '全屏阻擋畫面，刻意獨立於設計系統（W0b 已記錄）—— 它要在 token 全掛的情況下仍然看得見'],
+    ];
+    const allow = new Set(ALLOW.map(([f]) => f));
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      if (allow.has(f.rel)) continue;
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        for (const m of line.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+          offenders.push(`${f.rel}:${i + 1} → ${m[0]}  ${line.trim().slice(0, 58)}`);
+        }
+        for (const m of line.matchAll(/rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*[,)]/g)) {
+          offenders.push(`${f.rel}:${i + 1} → ${m[0]}  ${line.trim().slice(0, 58)}`);
+        }
+      });
+    }
+    expect(offenders, `色彩只能從 token 進來（--ink* / --surface* / --accent* / --good|wait|note|stop*）：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('玻璃 token 的**定義**也不得復活', () => {
     // 上面那條「--da-glass-* 零引用」掃不到 _theme-colors.css ——
     // 它在 TOKEN_SOURCES 裡，被 collect() 跳過了（那是刻意的：token 定義處本來就該寫字面值）。
