@@ -317,6 +317,13 @@ export const buildThemeCss = (resolved: ResolvedTheme): string => {
   // `[data-da-theme]`（0,1,0）—— 兩者作用在**同一個節點**上，後者是前者的一般化。
   // 寫成 `:root.dark` 沒用：那是別的節點，子孫的宣告直接蓋掉繼承值，特異度不參與比較。
   // 詳見 design.md D23 與 _theme-colors.css 末段。
-  const darkDecls = DA_THEME_TOKEN_KEYS.map((key) => `--${key}:${resolved.tokensDark[key]}`);
+  // ⚠ `?? DEFAULT_TOKENS_DARK` 不是防禦性冗贅，是**部署窗口**的必要保底：
+  //    /nuxt-api/config/theme 有 30 秒 TTL 快取，部署當下 client 已經是新版 JS，
+  //    卻可能收到部署前產生的舊格式回應（沒有 tokensDark）。
+  //    直接 `resolved.tokensDark[key]` 會拋 TypeError，而它在 useHead 的 computed 裡 ——
+  //    整個 layout 的 head 計算失敗，症狀是白畫面，不是「顏色怪怪的」。
+  const darkDecls = DA_THEME_TOKEN_KEYS.map(
+    (key) => `--${key}:${resolved.tokensDark?.[key] ?? DEFAULT_TOKENS_DARK[key]}`,
+  );
   return `[data-da-theme]{${decls.join(';')}}.dark [data-da-theme]{${darkDecls.join(';')}}`;
 };

@@ -169,3 +169,17 @@ describe('色票四處同步', () => {
     expect(css).toContain('--da-amber:#D2705C');
   });
 });
+
+describe('部署窗口相容', () => {
+  it('buildThemeCss 收到舊格式（沒有 tokensDark）時不得拋錯', () => {
+    // /nuxt-api/config/theme 有 30 秒 TTL 快取。部署當下 client 已是新版 JS，
+    // 卻可能收到部署前產生的舊格式回應。buildThemeCss 在 useHead 的 computed 裡 ——
+    // 它一拋 TypeError，整個 layout 的 head 計算就失敗，症狀是**白畫面**，
+    // 不是「顏色怪怪的」。這條擋的是那 30 秒。
+    const legacy = { ...resolveTheme(DEFAULT_SITE_THEMES, 'default') } as Record<string, unknown>;
+    delete legacy.tokensDark;
+    const css = buildThemeCss(legacy as never);
+    expect(css, '缺深色區塊').toContain('.dark [data-da-theme]{');
+    expect(css, '應回退到 DEFAULT_TOKENS_DARK').toContain('--da-amber:#C9A961');
+  });
+});
