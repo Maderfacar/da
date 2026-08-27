@@ -796,12 +796,15 @@ onUnmounted(() => {
   &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
+// 提案規則一：金額換襯線並放大，卡片上以車資為視覺落點。
 .PageDriverTrip__card-fare {
-  font-family: var(--ff-label);
-  font-size: var(--fs-body-sm);
-  font-weight: 700;
+  font-family: var(--ff-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--fs-h4);
+  font-weight: 500;
+  line-height: var(--lh-flat);
   color: var(--accent);
-  letter-spacing: var(--ls-label);
+  letter-spacing: var(--ls-tight);
 }
 
 // Phase 1F：confirmation pending chip + banner
@@ -1004,7 +1007,15 @@ onUnmounted(() => {
   text-align: right;
 
   &.is-muted { color: var(--surface-a30); font-size: var(--fs-label); font-style: italic; }
-  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: var(--accent); font-size: var(--fs-body-lg); }
+  // 提案規則一：金額換襯線
+  &.is-fare {
+    font-family: var(--ff-display);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: var(--fs-h3);
+    letter-spacing: var(--ls-tight);
+  }
 }
 
 // 地址卡片（可點擊開 Google Maps）

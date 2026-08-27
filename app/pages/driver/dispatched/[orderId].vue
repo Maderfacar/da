@@ -278,10 +278,13 @@ onMounted(ApiLoadOrder);
   letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 
+  // 提案規則一：金額換襯線（Cormorant），司機掃視時比原本的無襯線更好認。
   &.is-fare {
-    font-family: var(--ff-label);
-    font-size: var(--fs-h4);
-    font-weight: 700;
+    font-family: var(--ff-display);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: var(--fs-h2);
+    font-weight: 500;
+    letter-spacing: var(--ls-tight);
     color: var(--accent);
   }
 }

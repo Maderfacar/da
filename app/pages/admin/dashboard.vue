@@ -275,7 +275,8 @@ onUnmounted(() => {
 // ── 統計卡 ─────────────────────────────────────────────────
 .PageDashboard__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  // 襯線大數字放大後 180px 欄寬會擠到四位數以上的值，最小欄寬跟著放寬
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
@@ -303,11 +304,14 @@ onUnmounted(() => {
   color: var(--da-gray);
 }
 
+// 介面方向提案（第五畫面規則一）：統計數字換襯線放大 —— 先給結論，再給明細。
 .PageDashboard__stat-value {
-  font-family: var(--ff-data);
+  font-family: var(--ff-display);
+  font-weight: 500;
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: var(--fs-display);
+  font-size: var(--fs-hero);
   line-height: var(--lh-flat);
+  letter-spacing: var(--ls-tight);
   color: var(--da-dark);
 }
 

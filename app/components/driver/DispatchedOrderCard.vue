@@ -27,6 +27,16 @@ const ORDER_TYPE_LABEL: Record<string, string> = {
 
 const orderShort = computed(() => props.order.orderId.slice(0, 8).toUpperCase());
 
+// 介面方向提案（第四畫面規則二）：派單等級用古銅描邊章，最高級古銅、其餘素色。
+// 值域見 shared/types/dispatch-visibility.ts —— '2' 只有高級司機看得到，'0' 全體可見。
+const DISPATCH_LEVEL_LABEL: Record<string, string> = {
+  '2': '高級專屬',
+  '1': '標準開放',
+  '0': '全體開放',
+};
+const levelLabel = computed(() => DISPATCH_LEVEL_LABEL[props.order.dispatchCurrentLevel] ?? '');
+const isTopLevel = computed(() => props.order.dispatchCurrentLevel === '2');
+
 const pickupAddr = computed(() => props.order.pickupLocation.displayName || props.order.pickupLocation.address);
 const dropoffAddr = computed(() => props.order.dropoffLocation.displayName || props.order.dropoffLocation.address);
 
@@ -58,6 +68,7 @@ const ClickWithdraw = (e: Event) => {
 .DriverDispatchedOrderCard(@click="ClickOpen" :class="{ 'is-bid': order.myBidStatus === 'bid', 'is-withdrawn': order.myBidStatus === 'withdrawn' }")
   .DriverDispatchedOrderCard__head
     .DriverDispatchedOrderCard__type-badge {{ ORDER_TYPE_LABEL[order.orderType] ?? order.orderType }}
+    .DriverDispatchedOrderCard__level(v-if="levelLabel" :class="{ 'is-top': isTopLevel }") {{ levelLabel }}
     .DriverDispatchedOrderCard__id \#{{ orderShort }}
     .DriverDispatchedOrderCard__bid-tag(v-if="order.myBidStatus === 'bid'") 已喊單
     .DriverDispatchedOrderCard__bid-tag.is-withdraw(v-else-if="order.myBidStatus === 'withdrawn'") 已撤回
@@ -88,13 +99,17 @@ const ClickWithdraw = (e: Event) => {
     template(v-else)
       | ⏱ {{ $t('driver.dispatch.countdownLabel', { time: countdown.text.value }) }}
 
+  //- 提案規則一：金額是卡片上最大的字，改用襯線排
+  .DriverDispatchedOrderCard__fare
+    span.DriverDispatchedOrderCard__fare-cur NT$
+    span.DriverDispatchedOrderCard__fare-val {{ order.estimatedFare.toLocaleString() }}
+
   .DriverDispatchedOrderCard__foot
     .DriverDispatchedOrderCard__meta
       //- Booking v2 批次 2：child=0 退回「N 人」，否則拆「大人 X / 兒童 Y」
       span(v-if="(order.childCount ?? 0) > 0") 👥 大人 {{ order.adultCount ?? 1 }} / 兒童 {{ order.childCount }}
       span(v-else) 👥 {{ order.passengerCount }} 人
       span {{ order.distanceKm }} km
-      span NT$ {{ order.estimatedFare.toLocaleString() }}
     .DriverDispatchedOrderCard__btns
       button.DriverDispatchedOrderCard__btn.is-withdraw(
         v-if="showWithdraw && order.myBidStatus === 'bid'"
@@ -159,6 +174,25 @@ const ClickWithdraw = (e: Event) => {
   margin-left: auto;
 }
 
+// 提案規則二：派單等級用描邊章，不用實心色塊 —— 一張單上已經有夠多東西要看。
+.DriverDispatchedOrderCard__level {
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-label);
+  line-height: var(--lh-flat);
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  border: 1px solid var(--surface-a20);
+  color: var(--surface-a60);
+}
+
+.DriverDispatchedOrderCard__level.is-top {
+  border-color: var(--accent-a50);
+  color: var(--accent);
+}
+
 .DriverDispatchedOrderCard__bid-tag {
   font-family: var(--ff-label);
   font-size: var(--fs-label);
@@ -169,10 +203,12 @@ const ClickWithdraw = (e: Event) => {
   border: 1px solid var(--good-a30);
   color: var(--good);
 
+  // 提案規則三：紅是整個 app 唯一的一種意思（異常／破壞性動作）。
+  // 「已撤回」是既成狀態不是異常，改素色描邊。
   &.is-withdraw {
-    background: var(--stop-a08);
-    border-color: var(--stop-a30);
-    color: var(--stop);
+    background: transparent;
+    border-color: var(--surface-a20);
+    color: var(--surface-a60);
   }
 }
 
@@ -263,10 +299,11 @@ const ClickWithdraw = (e: Event) => {
   border: 1px solid var(--surface-a06);
   color: var(--surface-a60);
 
+  // 提案規則三：即將降級是「時間壓力」不是異常，用香檳色，紅留給回報異常。
   &.is-urgent {
-    color: var(--stop);
-    border-color: var(--stop-a30);
-    background: var(--stop-a08);
+    color: var(--wait);
+    border-color: var(--wait-a30);
+    background: var(--wait-a08);
   }
 
   &.is-expired {
@@ -283,6 +320,31 @@ const ClickWithdraw = (e: Event) => {
   background: var(--surface-a06);
   border: 1px solid var(--surface-a12);
   color: var(--surface-a72);
+}
+
+// 提案規則一：金額換襯線，且是卡片上最大的字（時間 --fs-h2 之上一階）。
+.DriverDispatchedOrderCard__fare {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  margin-bottom: 12px;
+}
+
+.DriverDispatchedOrderCard__fare-cur {
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
+  color: var(--surface-a60);
+}
+
+.DriverDispatchedOrderCard__fare-val {
+  font-family: var(--ff-display);
+  font-weight: 500;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-tight);
+  color: var(--surface-raised);
 }
 
 .DriverDispatchedOrderCard__foot {
@@ -322,11 +384,12 @@ const ClickWithdraw = (e: Event) => {
   &:hover:not(:disabled) { background: var(--accent-a20); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  // 提案規則三：全站唯一的紅，且是描邊不是實心。
   &.is-withdraw {
     border-color: var(--stop-a45);
-    background: var(--stop-a08);
+    background: transparent;
     color: var(--stop);
-    &:hover:not(:disabled) { background: var(--stop-a15); }
+    &:hover:not(:disabled) { background: var(--stop-a08); }
   }
 }
 </style>

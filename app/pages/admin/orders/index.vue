@@ -2232,19 +2232,25 @@ onMounted(() => {
   min-width: 1280px;
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
+  // 提案第五畫面規則三：列 hover 從「與底色同階」換成古銅淡底。
+  // 用 a12 不用 a06 —— 列的底本來就是 --surface-a06，同 alpha 的古銅疊上去只有色相差、
+  // 亮度反而更低，hover 會比沒 hover 還暗。
   &.is-clickable {
     cursor: pointer;
 
     &:hover {
-      background: var(--surface-a06);
+      background: var(--accent-a12);
       border-color: var(--accent-a20);
     }
   }
 
+  // 提案第五畫面規則二：表頭給凹陷底（提案寫「米白換亞麻」；本頁是深色面，
+  // --surface-sunk 是為淺底定的米色，直接用會在深色表格上變成一條亮條，
+  // 對應到深色面的凹陷是墨色疊層）。
   &.is-head {
-    background: transparent;
+    background: var(--ink-a20);
     border-color: transparent;
-    padding-bottom: 4px;
+    padding: 10px 16px;
     cursor: default;
 
     span {
