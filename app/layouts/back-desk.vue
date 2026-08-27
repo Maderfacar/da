@@ -305,7 +305,10 @@ function ClickNav(path: string) {
 
 .LayoutBackDesk__drawer-logo {
   font-family: var(--ff-display);
-  font-size: var(--fs-h1);
+  /* ⚠ 刻意用 --fs-h2 而不是 --fs-h1：側欄寬 280px、左右各 20px padding，
+     可用寬度只有 240px，而字標「DEST·ANYWHERE」還帶 0.08em 字距。
+     原本 28px 就已經貼著邊，字級階梯吸到 32px 之後直接被切掉 —— 視覺基線抓到的。 */
+  font-size: var(--fs-h2);
   letter-spacing: var(--ls-wide);
   color: var(--da-cream);
   line-height: var(--lh-flat);
