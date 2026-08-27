@@ -100,7 +100,7 @@ Teleport(to="body")
       @click="Close"
     )
   transition(name="drawer-slide")
-    aside.CommonDrawer(v-if="modelValue" role="dialog" data-surface="dark" :aria-label="$t('drawer.ariaDialog')")
+    aside.CommonDrawer(v-if="modelValue" role="dialog" data-surface="dark" data-da-theme :aria-label="$t('drawer.ariaDialog')")
       //- ── 使用者資訊 ─────────────────────────────────
       header.CommonDrawer__user
         .CommonDrawer__avatar-wrap
