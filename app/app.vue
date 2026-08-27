@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DESIGN_COLORS } from '~shared/design-colors';
 // App 入口
 // -- 引入 --------------------------------------------------------------------------------------------
 // 手動導入組件，避免自動註冊產生的靜態/動態導入衝突
@@ -27,7 +28,7 @@ const $elementI18n = UseElementI18n();
 ElConfigProvider(:locale="$elementI18n.elLocale.value")
   //- 加載橫條（client only）
   ClientOnly
-    NuxtLoadingIndicator(color="#86D4A187")
+    NuxtLoadingIndicator(:color="DESIGN_COLORS.accent")
 
   //- 加載動畫（client only，避免 SSR hydration mismatch）
   ClientOnly

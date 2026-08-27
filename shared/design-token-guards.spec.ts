@@ -404,6 +404,26 @@ describe('表面與尺度守衛（階段 2）', () => {
     expect(offenders, `深色面請用 --surface-deep / -2 / -3（暖黑軸）：\n${offenders.join('\n')}`).toEqual([]);
   });
 
+  it('色碼不得寫成 8 碼 hex（帶 alpha）', () => {
+    // 這是本階段第三次撞到同一個病：**同一個顏色有第三種寫法，而守衛只認得前兩種**。
+    //   第一次（階段 1）：只查 hex，漏掉 rgba() —— 舊主色 rgb 形式比 hex 多三倍
+    //   第二次（本階段）：藍黑守衛只查 hex，漏掉 rgb()，三處要等 Sass 壓成 #1a1a2eeb 才現形
+    //   第三次（這一條）：`#00000094` 這種 8 碼形式，前面兩條守衛的 `#[0-9a-f]{6}\b`
+    //     與 `rgba?\(` 都抓不到 —— `\b` 在第 7 個字元處不成立，整串直接不匹配
+    //
+    // 8 碼 hex 沒有任何非用不可的場合（alpha 一律走疊色階梯），所以直接全禁，
+    // 不必再判斷它是中性還是飽和 —— 少一個判斷就少一個漏法。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        for (const m of line.matchAll(/#[0-9a-fA-F]{8}\b/g)) {
+          offenders.push(`${f.rel}:${i + 1} → ${m[0]}  ${line.trim().slice(0, 60)}`);
+        }
+      });
+    }
+    expect(offenders, `帶 alpha 的顏色請用疊色階梯（--accent-a* / --ink-a* / --surface-a*）：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
   it('玻璃 token 的**定義**也不得復活', () => {
     // 上面那條「--da-glass-* 零引用」掃不到 _theme-colors.css ——
     // 它在 TOKEN_SOURCES 裡，被 collect() 跳過了（那是刻意的：token 定義處本來就該寫字面值）。

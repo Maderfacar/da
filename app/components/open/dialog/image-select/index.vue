@@ -780,7 +780,7 @@ ElDialogPlus.OpenDialogImageSelect(
     // border: 2px dashed #6A574E;
     border-radius: var(--r-sm);
     overflow: hidden;
-    background: #00000094;
+    background: var(--ink-a60);
     display: flex;
     align-items: center;
     justify-content: center;
