@@ -63,6 +63,8 @@ export default {
     guestName: 'ゲスト',
     ariaOpen: 'メニューを開く',
     ariaDialog: 'メインメニュー',
+    // 深色模式切換（階段 2 W4）
+    theme: { aria: '外観', light: 'ライト', dark: 'ダーク', system: 'システム' },
     // コンテンツページ入口（乗客向けコンテンツ拡充）
     service: 'サービス案内',
     fare: '車種のご紹介',

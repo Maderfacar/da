@@ -28,7 +28,8 @@ section.PassengerHomeClosing
 <style lang="scss" scoped>
 
 .PassengerHomeClosing {
-  padding: 72px 24px;
+  padding-block: var(--space-section);
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
   background: var(--da-off-white);
 }
 

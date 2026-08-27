@@ -606,7 +606,7 @@ onMounted(() => {
 .OpenDialogAnnouncementEdit__loadingMask {
   position: absolute;
   inset: 0;
-  background: rgba(13, 15, 20, 0.85);
+  background: color-mix(in srgb, var(--surface-deep) 85%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;

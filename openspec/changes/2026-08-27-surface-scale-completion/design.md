@@ -192,3 +192,48 @@ D20 修好之後（深色標記只落在真正的深色節點上）這個翻轉�
 預設值刻意維持 `preference: 'light'`（不是 `'system'`）：深色配色是本階段新產出的，
 還沒有人目視過，不該讓所有系統設為深色的乘客在上線當天直接吃到。
 切換器提供「淺色 / 深色 / 跟隨系統」三選一，想改預設是 `nuxt.config.ts` 一行的事。
+
+## D24 — 交錯底色的區塊不能用 `max-width` 置中
+
+W5 把公開頁的 section 從 `padding: 72px 24px` 改成節奏 token 時，第一版寫的是：
+
+```css
+.PageLanding__section { padding: var(--space-section) var(--gutter); max-width: var(--shell); margin: 0 auto; }
+```
+
+**那會把交錯底色縮成中間一條。** `.PageLanding__section.is-overview / is-coverage / is-features`
+各自帶 `background`，section 本身就是底色載體；給它 `max-width` 之後，
+兩側會露出頁面底，看起來像三張很寬的卡片而不是交錯的章節。
+
+正確寫法是讓內距吃掉多餘寬度，背景仍然滿版：
+
+```css
+padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
+```
+
+這條在 `/home`、`/fare`、`passenger/home/*` 那批同樣是底色載體的區塊上一體適用。
+
+## D25 — 深色模式到不了 Teleport 出去的浮層
+
+`CommonDrawer` 是 `Teleport(to="body")`，`$open` 系列掛在 `app.vue` 的 `#OpenGroup`
+—— 兩者都是 `body` 的直接子節點，**不在 `[data-da-theme]` 的子樹裡**。
+深色模式的作用域是 `.dark [data-da-theme]`（理由見 D23），所以吃不到。
+
+抽屜沒問題：它本來就標了 `data-surface='dark'`，永遠是深色面。
+受影響的是乘客端的 `$open` 彈窗與 `UseAsk` 確認框 —— 深色模式下它們維持淺色。
+不會壞（淺色彈窗浮在深色頁上，對比正常、可讀），只是不一致。
+
+沒有順手修的原因：能修的作法只有「把深色作用域提到 `:root`」，
+而那會連帶把 admin 與司機端翻掉（D23 理由一）。真正的解是讓 `#OpenGroup`
+知道自己屬於哪一端 —— 那是彈窗系統的變更，不該塞進本階段。
+
+## D26 — 季節主題在深色模式下會被整組蓋掉
+
+`.dark [data-da-theme]` 的特異度（0,2,0）高於主題引擎注入的 `[data-da-theme]`（0,1,0），
+所以深色模式下 12 個 `--da-*` 全部走深色調色盤 —— **聖誕深色 == 預設深色**。
+
+這是刻意的取捨，不是漏掉：要讓節日色在深色模式也成立，需要每套主題各帶一組
+深色 tokens（`SiteTheme.tokensDark`），那是主題引擎的資料結構變更，
+連帶要動 seed、migration、admin UI 與四處同步的守衛。另開變更再做。
+
+現況的行為是安全的：深色模式下換季只會換 Hero 主圖，不會換出對比不足的配色。

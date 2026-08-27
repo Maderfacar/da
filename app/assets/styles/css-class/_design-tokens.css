@@ -30,12 +30,16 @@
      • [data-da-theme]      —— 主題引擎注入處（乘客 layout 根節點，見 shared/site-theme.ts）
      • [data-surface='dark'] —— 深色面（見下方說明）
 
-   新增會覆寫 --da-* 的作用域時，**必須同步加進這三處選擇器**（含下方 @supports 那份）。
+     • .dark [data-da-theme] —— 乘客端深色模式（見 _theme-colors.css 末段）
+
+   新增會覆寫 --da-* 的作用域時，**必須同步加進這三處選擇器**（含下方 @supports 那份），
+   並在 design-token-guards.spec.ts 的 required 清單裡登記。守衛會擋。
    ========================================================================== */
 :root,
 [data-da-theme],
 [data-surface='dark'],
-[data-surface='light'] {
+[data-surface='light'],
+.dark [data-da-theme] {
   /* ======================================================================
      A. 語意色別名 —— 解析路徑：語意名 → --da-* → 主題引擎可覆寫
      ====================================================================== */
@@ -270,6 +274,29 @@
   --bp-lg: 1024px;
   --bp-xl: 1280px;
 
+  /* 版面節奏 —— 階段 2 W5。
+     收斂前現況：乘客端公開頁每個 section 都是 `padding: 72px 24px`，
+     每個網格都是 `1fr 1fr / gap 14px / max-width 760px` —— 均勻到沒有層級。
+     均勻的間距讀起來是「表格」，不是「編輯」；精品調靠的是**節奏差**：
+     大留白讓主張站住，小留白讓一組東西讀成一組。
+
+     ⚠ 這幾條是 clamp，行動裝置與桌機共用一組值，不必到處寫 media query。 */
+  --gutter:        clamp(20px, 5vw, 40px);    /* 頁面左右安全邊 */
+  --space-2xs:     4px;
+  --space-xs:      8px;
+  --space-sm:      14px;
+  --space-md:      24px;
+  --space-lg:      40px;
+  --space-xl:      64px;
+  --space-section: clamp(72px, 9vw, 132px);   /* 一般區塊上下 */
+  --space-major:   clamp(104px, 14vw, 200px); /* 主張級區塊上下（換氣點） */
+
+  /* 內容寬度 —— 閱讀行長與版面外框分開。
+     --measure 是「一行字最多多寬」（約 68 字元），--shell 是「版面能鋪多寬」。
+     兩者相同的話，桌機上不是行長爆掉就是版面縮成一條。 */
+  --measure: 62ch;
+  --shell:   1180px;
+
   /* 觸控 —— 可點元素的最小高度。現況全站僅 2 處 44px */
   --tap: 44px;
 
@@ -315,7 +342,8 @@
   :root,
   [data-da-theme],
   [data-surface='dark'],
-  [data-surface='light'] {
+  [data-surface='light'],
+.dark [data-da-theme] {
     --accent-a06: color-mix(in srgb, var(--accent) 6%, transparent);
     --accent-a12: color-mix(in srgb, var(--accent) 12%, transparent);
     --accent-a20: color-mix(in srgb, var(--accent) 20%, transparent);

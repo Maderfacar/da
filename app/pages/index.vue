@@ -188,7 +188,7 @@ const ClickFare = () => navigateTo('/fare');
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding-bottom: 64px;
+  padding-bottom: var(--space-xl);
   overflow: hidden;
 }
 
@@ -221,9 +221,11 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__hero-inner {
   position: relative;
-  z-index: 1;
-  padding: 0 24px;
-  max-width: 720px;
+  z-index: var(--z-base);
+  padding: 0 var(--gutter);
+  max-width: var(--shell);
+  margin: 0 auto;
+  width: 100%;
 }
 
 .PageLanding__hero-tag {
@@ -246,9 +248,9 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__hero-title-display {
   font-family: var(--ff-display);
-  font-size: clamp(64px, 18vw, 128px);
-  line-height: 0.9;
-  letter-spacing: 0.02em;
+  font-size: clamp(64px, 13vw, 168px);
+  line-height: 0.86;
+  letter-spacing: -0.015em;
   color: var(--da-dark);
 }
 
@@ -258,7 +260,8 @@ const ClickFare = () => navigateTo('/fare');
   font-weight: 300;
   line-height: 1.65;
   color: var(--da-gray);
-  max-width: 560px;
+  /* hero-inner 放寬到 --shell 之後，副標若不另外收行長會拉成一行很長的字 */
+  max-width: var(--measure);
 }
 
 .PageLanding__hero-cta {
@@ -313,9 +316,37 @@ const ClickFare = () => navigateTo('/fare');
 }
 
 // ── 共用 section ──────────────────────────────────────────────
+/* 區塊骨架 —— 手機是單欄；≥1024px 起改 12 欄，標籤與標題落在左側 4 欄的「側欄」上，
+   內文與網格落在右側 8 欄。這是雜誌版面最基本的一招：把導讀與正文分成兩個縱列，
+   讀者一眼就知道「這一段在講什麼」與「內容在哪」是兩件事。 */
+/* ⚠ 這裡不能用 max-width + margin auto 置中 —— .PageLanding__section 同時是
+   交錯底色的載體（is-overview 骨白 / is-coverage 瓷白 / is-features 骨白），
+   給它 max-width 會讓整片底色縮成中間一條，兩側露出頁面底。
+   改用「內距吃掉多餘寬度」：背景仍然滿版，內容照樣置中在 --shell 內。 */
 .PageLanding__section {
-  padding: 72px 24px;
+  padding-block: var(--space-section);
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
 }
+
+@media (min-width: 1024px) {
+  .PageLanding__section {
+    display: grid;
+    grid-template-columns: 4fr 8fr;
+    column-gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .PageLanding__section-label { grid-column: 1; margin-bottom: var(--space-sm); }
+  .PageLanding__section-title { grid-column: 1; margin-bottom: 0; }
+  .PageLanding__section-desc,
+  .PageLanding__overview-body,
+  .PageLanding__airports,
+  .PageLanding__features { grid-column: 2; grid-row: 1 / span 3; }
+}
+
+/* 換氣點：進入「涵蓋範圍」之前給一次大留白，讓前面的主張收乾淨。
+   均勻的 72px 讀起來像清單，節奏差才讀得出章節。 */
+.PageLanding__section.is-coverage { padding-block: var(--space-major); }
 
 .PageLanding__section.is-overview  { background: var(--da-cream); }
 .PageLanding__section.is-coverage  { background: var(--da-off-white); }
@@ -342,11 +373,15 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__section-title {
   font-family: var(--ff-display);
-  font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  /* 上限從 56px 拉到 88px：760px 的內容欄裡 56px 已經是上限，
+     但版面放寬到 --shell 之後，56px 的標題會被右側 8 欄的內文壓過去。
+     尺度對比是精品調的第一件事，不是裝飾。 */
+  font-size: clamp(42px, 6vw, 88px);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
   color: var(--da-dark);
-  margin: 0 0 18px;
+  margin: 0 0 var(--space-md);
+  text-wrap: balance;
 }
 
 .PageLanding__section-desc {
@@ -354,9 +389,9 @@ const ClickFare = () => navigateTo('/fare');
   font-size: 14.5px;
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
-  margin: 0 0 32px;
-  max-width: 560px;
+  line-height: 1.75;
+  margin: 0 0 var(--space-lg);
+  max-width: var(--measure);
 }
 
 // ── SERVICE OVERVIEW body ────────────────────────────────────
@@ -377,14 +412,23 @@ const ClickFare = () => navigateTo('/fare');
 }
 
 // ── COVERAGE airports grid ───────────────────────────────────
+/* 機場：四張卡不再是 2×2 的均勻方陣。桌機改 6 欄，首張（主要機場）橫跨 4 欄、
+   其餘各佔 2 欄 —— 版面自己說出「這四個不等重」，不必加 badge。 */
 .PageLanding__airports {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  max-width: 760px;
+  gap: var(--space-sm);
 
   @media (min-width: 640px) {
     grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-md) var(--space-sm);
+
+    > *      { grid-column: span 2; }
+    > :first-child { grid-column: span 4; }
   }
 }
 
@@ -432,14 +476,20 @@ const ClickFare = () => navigateTo('/fare');
 }
 
 // ── FEATURES grid ───────────────────────────────────────────
+/* 特色：桌機兩欄但第二欄整體下沉一段，形成錯落而不是對齊的方塊。
+   偏移量刻意用 --space-xl 而不是隨手一個 40px —— 錯落也要在節奏上。 */
 .PageLanding__features {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-  max-width: 760px;
+  gap: var(--space-sm);
 
   @media (min-width: 640px) {
     grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+  }
+
+  @media (min-width: 1024px) {
+    > :nth-child(even) { margin-top: var(--space-xl); }
   }
 }
 

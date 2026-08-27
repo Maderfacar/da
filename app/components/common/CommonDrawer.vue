@@ -138,6 +138,7 @@ Teleport(to="body")
 
       //- ── 底部 ──────────────────────────────────────
       footer.CommonDrawer__footer
+        CommonThemeToggle
         span.CommonDrawer__version v{{ appVersion }}
 </template>
 
@@ -316,8 +317,9 @@ Teleport(to="body")
   padding: 14px 20px 22px;
   border-top: 1px solid var(--surface-a06);
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
 }
 
 .CommonDrawer__version {

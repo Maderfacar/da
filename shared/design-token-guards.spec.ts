@@ -196,7 +196,8 @@ describe('色彩收尾守衛（階段 1）', () => {
     for (const { rel, text } of FILES) {
       stripComments(text).split(/\r?\n/).forEach((line, i) => {
         for (const [name, hex, rgb] of RETIRED_PALETTE) {
-          const rgbRe = new RegExp('rgba?\\(\\s*' + rgb[0] + '\\s*,\\s*' + rgb[1] + '\\s*,\\s*' + rgb[2] + '\\s*[,)]');
+          // String.raw：單反斜線在此原樣保留，不必寫成 '\s' 這種容易被工具鏈吃掉的雙跳脫
+          const rgbRe = new RegExp(String.raw`rgba?\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*[,)]`);
           if (line.toLowerCase().includes(hex) || rgbRe.test(line)) {
             offenders.push(rel + ':' + (i + 1) + '（' + name + '）→ ' + line.trim().slice(0, 90));
           }
@@ -285,7 +286,7 @@ describe('色彩收尾守衛（階段 1）', () => {
     //    於是把 [data-da-theme] 從真正的選擇器拿掉，這條測試照樣是綠的。
     //    是「先注入違規證明它會紅」這道程序把它抓出來的。
     const css = stripComments(readFileSync(join(ROOT, 'app/assets/styles/css-class/_design-tokens.css'), 'utf8'));
-    const required = ['[data-da-theme]', '[data-surface=\'dark\']', '[data-surface=\'light\']'];
+    const required = ['[data-da-theme]', '[data-surface=\'dark\']', '[data-surface=\'light\']', '.dark [data-da-theme]'];
     const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*--accent\s*:[^{}]*)\}/g)].map((m) => m[1]!.trim());
     const missing = required.filter((sel) => !blocks.some((b) => b.includes(sel)));
     expect(missing, '這些作用域會覆寫 --da-*，但沒有重新宣告別名層，換膚／深色面會「切一半」：' + missing.join(', ')).toEqual([]);
@@ -340,9 +341,24 @@ function styleOf({ rel, text }: SourceFile): string {
   return stripComments(css);
 }
 
-/** 深色面的藍黑家族 —— 階段 2 之前散在 34 處，與縞黑差了近一個補色 */
-const RETIRED_BLUE_BLACK = ['#1a1a2e', '#161b22', '#1f2937', '#0f1115', '#2d2d4e', '#0d0f14',
-  '#373760', '#0f1623', '#3a3a5c', '#1f1f35'];
+/** 深色面的藍黑家族 —— 階段 2 之前散在 34 處，與縞黑差了近一個補色。
+ *  ⚠ hex 與 rgb() 兩種寫法都要列。只列 hex 的話，`rgba(26, 26, 46, .92)` 會漏掉 ——
+ *    它在原始碼裡看不出是藍黑，要等 Sass 壓縮成 `#1a1a2eeb` 才現形，
+ *    而那時已經在產物裡了。階段 1 的舊色票守衛就是為了同一件事才同時列兩種寫法，
+ *    這條第一版只列了 hex，然後就真的漏了三處（war-room 控制列 / 司機端權限遮罩 /
+ *    公告彈窗遮罩）—— 是比對 build 產物才抓到的。 */
+const RETIRED_BLUE_BLACK: Array<[string, [number, number, number]]> = [
+  ['#1a1a2e', [26, 26, 46]],
+  ['#161b22', [22, 27, 34]],
+  ['#1f2937', [31, 41, 55]],
+  ['#0f1115', [15, 17, 21]],
+  ['#2d2d4e', [45, 45, 78]],
+  ['#0d0f14', [13, 15, 20]],
+  ['#373760', [55, 55, 96]],
+  ['#0f1623', [15, 22, 35]],
+  ['#3a3a5c', [58, 58, 92]],
+  ['#1f1f35', [31, 31, 53]],
+];
 
 describe('表面與尺度守衛（階段 2）', () => {
   it('玻璃已下架 —— --da-glass-* 零引用', () => {
@@ -369,19 +385,33 @@ describe('表面與尺度守衛（階段 2）', () => {
     expect(offenders, `遮罩請用實色疊層，卡片請用實心表面：\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('深色面的藍黑家族不得復活', () => {
+  it('深色面的藍黑家族不得復活 —— hex 與 rgb() 兩種寫法都算', () => {
     // 縞黑 #1A1917 是 hue 40° 的暖黑，這些是 hue 213–240° 的冷藍黑。
     // 兩者並置時暖黑顯得偏紅、藍黑顯得偏冷 —— 那是「admin 跟乘客端不像同一個站」的成因。
     const offenders: string[] = [];
     for (const { rel, text } of FILES) {
       stripComments(text).split(/\r?\n/).forEach((line, i) => {
         const low = line.toLowerCase();
-        for (const hex of RETIRED_BLUE_BLACK) {
-          if (low.includes(hex)) offenders.push(`${rel}:${i + 1}（${hex}）→ ${line.trim().slice(0, 80)}`);
+        for (const [hex, rgb] of RETIRED_BLUE_BLACK) {
+          // String.raw：單反斜線在此原樣保留，不必寫成 '\s' 這種容易被工具鏈吃掉的雙跳脫
+          const rgbRe = new RegExp(String.raw`rgba?\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*[,)]`);
+          if (low.includes(hex) || rgbRe.test(line)) {
+            offenders.push(rel + ':' + (i + 1) + '（' + hex + '）→ ' + line.trim().slice(0, 80));
+          }
         }
       });
     }
     expect(offenders, `深色面請用 --surface-deep / -2 / -3（暖黑軸）：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('玻璃 token 的**定義**也不得復活', () => {
+    // 上面那條「--da-glass-* 零引用」掃不到 _theme-colors.css ——
+    // 它在 TOKEN_SOURCES 裡，被 collect() 跳過了（那是刻意的：token 定義處本來就該寫字面值）。
+    // 結果是：用法 88 處全清乾淨、守衛全綠，而三個定義安安靜靜留在產物的 entry.css 裡。
+    // 是比對 build 產物才發現的。定義與用法要分開守。
+    const css = readFileSync(join(ROOT, 'app/assets/styles/css-class/_theme-colors.css'), 'utf8');
+    const hits = [...stripComments(css).matchAll(/^\s*--da-glass-[\w-]+\s*:/gm)].map((m) => m[0].trim());
+    expect(hits, '玻璃層已於階段 2 下架，別把定義加回來').toEqual([]);
   });
 
   it('表面色不得硬編 —— 中性白／黑疊層與純白純黑', () => {

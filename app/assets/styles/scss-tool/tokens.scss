@@ -70,5 +70,18 @@ $dur-slow:   var(--dur-slow);
 $dur-slower: var(--dur-slower);
 $ease-out:   var(--ease-out);
 
+// ── 版面節奏 ─────────────────────────────────────────────
+$gutter:        var(--gutter);
+$space-2xs:     var(--space-2xs);
+$space-xs:      var(--space-xs);
+$space-sm:      var(--space-sm);
+$space-md:      var(--space-md);
+$space-lg:      var(--space-lg);
+$space-xl:      var(--space-xl);
+$space-section: var(--space-section);
+$space-major:   var(--space-major);
+$measure:       var(--measure);
+$shell:         var(--shell);
+
 // ── 觸控 ─────────────────────────────────────────────────
 $tap: var(--tap);

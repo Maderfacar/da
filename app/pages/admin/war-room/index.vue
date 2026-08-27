@@ -424,7 +424,7 @@ onUnmounted(() => {
   padding: 10px 14px;
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a30);
-  background: rgba(26, 26, 46, 0.92);
+  background: color-mix(in srgb, var(--surface-deep-2) 92%, transparent);
   color: var(--surface-a72);
   font-family: var(--ff-label);
   font-size: $fs-label;

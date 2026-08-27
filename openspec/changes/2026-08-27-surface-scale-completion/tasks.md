@@ -1,57 +1,64 @@
 # Tasks — 階段 2
 
-> 五個 wave，各自獨立 commit。完工後 Brain AI 一次整體驗收（不做中途目視）。
+> 五個 wave。Brain AI 2026-08-27 指示：不做中途驗收，全部完工後一次整體驗收。
 
 ## W0 — 前置
 - [x] **W0.1** `git fetch` 確認與 `origin/main` 同步、工作區乾淨
-- [x] **W0.2** 實測盤點（glass 86 · backdrop-filter 65 · 藍黑 34 · 中性 SCSS 79 ·
+- [x] **W0.2** 實測盤點（glass 88 · backdrop-filter 65 · 藍黑 34 · 中性 SCSS 79 ·
       radius 656/31 · z-index 76/29 · shadow 79 · transition 254）
 
-## W1 — 玻璃退場 + 表面 token 化
-- [ ] **W1.1** `_design-tokens.css` 新增 `--surface-deep` / `-2` / `-3`（D14）
-- [ ] **W1.2** `[data-surface='dark']` 加 `--hairline: var(--surface-a12)`（D14）
-- [ ] **W1.3** `--da-glass-*` 三個 token 從 `_theme-colors.css` 下架
-- [ ] **W1.4** 86 處 glass 依 D18 映射表替換
-- [ ] **W1.5** 65 處 `backdrop-filter` 移除（含 `-webkit-`），遮罩類改實色疊層（D19）
-- [ ] **W1.6** 34 處藍黑改接 `--surface-deep*`（D15）
-- [ ] **W1.7** 79 條中性 SCSS 變數改走 `--surface-a*` / `--ink-a*`
-- [ ] **W1.8** 關掉守衛兩處「暫時放行」（中性 SCSS 變數、深色面硬編色），並證明會紅
-- [ ] **W1.9** lint / test / build 綠 → commit
+## W1 — 玻璃退場 + 表面 token 化 ✅
+- [x] **W1.1** `--surface-deep` / `-2` / `-3` 三個絕對深色面 token（D14）
+- [x] **W1.2** 修正階段 1 的 scope 標記位置（D20）—— admin 7 淺色頁的主色從 1.82:1 拉回 4.58:1
+- [x] **W1.3** `--hairline` 在深色作用域翻轉為 `--surface-a12`（D21，必須在 W1.2 之後）
+- [x] **W1.4** `--da-glass-*` 下架，88 處依 D18/D22 映射
+- [x] **W1.5** `backdrop-filter` 65 處移除（先驗證沒有「只有 blur 沒有 background」的規則）
+- [x] **W1.6** 藍黑家族 34 處 → `--surface-deep*`；war-room 地圖色盤 19 處平移暖黑軸
+- [x] **W1.7** 中性疊層：SCSS 宣告 79 條 + 引用 343 處 + 行內 867 處 → `--surface-a*` / `--ink-a*`
+- [x] **W1.8** 關閉守衛兩處「暫時放行」，新增 4 條守衛並逐條證明會紅
+- [x] **W1.9** lint / test / build 綠（build exit 0，`@font-face` 72 / `_fonts` 64 未變）
 
-## W2 — 尺度 token 實際替換
-- [ ] **W2.1** 圓角階梯重定為七階（D16）
-- [ ] **W2.2** 656 處 `border-radius` 替換
-- [ ] **W2.3** 76 處 `z-index` 收成六層（D17）
-- [ ] **W2.4** 79 處 `box-shadow` 收成三階
-- [ ] **W2.5** 254 處 `transition` 時長／緩動改 token
-- [ ] **W2.6** 新守衛：尺度字面值不得復活（含注入違規證明會紅）
-- [ ] **W2.7** lint / test / build 綠 → commit
+## W2 — 尺度 token 實際替換 ✅
+- [x] **W2.1** 圓角階梯重定為七階（D16）
+- [x] **W2.2** 660 個圓角長度值替換
+- [x] **W2.3** z-index 收成十一層（D17），38 處替換；≤20 的區域堆疊保留
+- [x] **W2.4** box-shadow 37 處收成三階（新增 `--shadow-pop`）
+- [x] **W2.5** transition 378 段時長走 `--dur-*`、緩動統一 expo-out
+- [x] **W2.6** 3 條尺度守衛，逐條證明會紅；另證明「區域 z-index: 5」不誤觸發
 
-## W3 — 後台色票編輯 UI
-- [ ] **W3.1** 主題包 CRUD endpoint
-- [ ] **W3.2** `/admin/settings` 色票編輯器（即時預覽 + 對比度計算）
-- [ ] **W3.3** lint / test / build 綠 → commit
+## W3 — 後台色票編輯 UI ✅
+- [x] **W3.1** `setThemeTokens` helper + `PATCH .../themes/{id}/tokens` 端點（雙重驗證：白名單 + hex）
+- [x] **W3.2** `PatchThemeTokens` protocol
+- [x] **W3.3** `/admin/settings` 色票編輯器：12 色即時預覽 + WCAG 對比即時計算 + 改預設主題二次警告
+- [x] **W3.4** audit log `site_theme.tokens_update`（逐 key before/after）
 
-## W4 — 深色模式
-- [ ] **W4.1** 乘客端深色配色（以 W1 的表面 token 為基礎）
-- [ ] **W4.2** 切換 UI（跟隨系統／手動）與持久化
-- [ ] **W4.3** lint / test / build 綠 → commit
+## W4 — 深色模式 ✅
+- [x] **W4.1** 乘客端深色調色盤（12 token，對比全數實測過門檻）
+- [x] **W4.2** 作用域 `.dark [data-da-theme]`（D23）；別名層與守衛 required 清單同步
+- [x] **W4.3** `CommonThemeToggle` 三選一（淺色 / 深色 / 跟隨系統）放進乘客抽屜；i18n 三語
+- [x] **W4.4** 改寫 `:root.dark` 守衛到它的意圖上，並補「深色調色盤不得缺 key」；兩條都證明會紅
 
-## W5 — 版面重排
-- [ ] **W5.1** 乘客端公開頁面的版面語彙
-- [ ] **W5.2** lint / test / build 綠 → commit
+## W5 — 版面重排 ✅
+- [x] **W5.1** 版面節奏 token（`--gutter` / `--space-*` / `--space-section` / `--space-major` / `--measure` / `--shell`）
+- [x] **W5.2** 首頁 12 欄編輯型骨架（≥1024px 標籤與標題進左側欄）
+- [x] **W5.3** 尺度對比：hero 128 → 168px、區塊標題 56 → 88px 上限
+- [x] **W5.4** 破格網格：機場 6 欄不等重、特色錯落
+- [x] **W5.5** 換氣點（`is-coverage` 用 `--space-major`）取代均勻 72px
+- [x] **W5.6** `/home` `/fare` `passenger/home/*` 8 處區塊改走節奏 token（D24 的滿版寫法）
 
 ## W6 — 收尾
-- [ ] **W6.1** 視覺基線重拍並逐張確認
-- [ ] **W6.2** `@font-face` 數不變（`grep -o` 應 72 / `_fonts` 應 64）
-- [ ] **W6.3** push origin main
+- [ ] **W6.1** 最終 build + 視覺基線重拍
+- [ ] **W6.2** `@font-face` 數不變（72 / 64）
+- [ ] **W6.3** commit + push origin main
 - [ ] **W6.4** 交付 Brain AI 的整體驗收清單
 
 ## 驗收標準
 
-| 項目 | 標準 |
-|------|------|
-| 玻璃 | `--da-glass-*` 與 `backdrop-filter` 在 `app/` 下 0 命中 |
-| 表面 | 藍黑六值 0 命中；中性 SCSS 色變數 0 條；兩處守衛豁免關閉 |
-| 尺度 | radius / z-index / shadow / transition 字面值收斂，由守衛常態擋 |
-| 建置 | lint 0 · test 全綠 · build exit 0 · `@font-face` 數不變 |
+| 項目 | 標準 | 狀態 |
+|------|------|------|
+| 玻璃 | `--da-glass-*` 與 `backdrop-filter` 在 `app/` 下 0 命中 | ✅ 守衛常態擋 |
+| 表面 | 藍黑十值 0 命中；中性色碼在 `<style>` 內 0 命中 | ✅ 守衛常態擋 |
+| 尺度 | 圓角 / 跨元件 z-index / transition 時長皆走 token | ✅ 守衛常態擋 |
+| 色票後台 | 12 色可編輯，存檔前跑 WCAG 對比 | ✅ |
+| 深色模式 | 12 token 全覆蓋、對比全過、三選一切換 | ✅ 守衛擋缺 key |
+| 建置 | lint 0 · test 全綠 · build exit 0 · `@font-face` 72/64 | 待 W6.1 |

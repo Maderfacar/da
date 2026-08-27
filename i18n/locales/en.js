@@ -63,6 +63,8 @@ export default {
     guestName: 'Guest',
     ariaOpen: 'Open menu',
     ariaDialog: 'Main menu',
+    // 深色模式切換（階段 2 W4）
+    theme: { aria: 'Appearance', light: 'Light', dark: 'Dark', system: 'System' },
     // Content page entries (passenger-facing content expansion)
     service: 'Services',
     fare: 'Our Fleet',

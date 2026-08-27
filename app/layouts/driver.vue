@@ -300,7 +300,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: var(--z-gate);
-  background: rgba(15, 17, 21, 0.92);
+  background: color-mix(in srgb, var(--surface-deep) 92%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;

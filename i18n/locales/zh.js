@@ -67,6 +67,8 @@ export default {
     guestName: '訪客',
     ariaOpen: '開啟選單',
     ariaDialog: '主選單',
+    // 深色模式切換（階段 2 W4）
+    theme: { aria: '外觀', light: '淺色', dark: '深色', system: '跟隨系統' },
     // 內容頁入口（乘客端內容擴充）
     service: '服務說明',
     fare: '車型介紹',

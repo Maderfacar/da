@@ -505,7 +505,8 @@ onUnmounted(() => {
 
 // ── SECTION ───────────────────────────────────────────────────────────────────
 .PageHome__section {
-  padding: 64px 24px;
+  padding-block: var(--space-section);
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
   scroll-margin-top: 56px;
 
   &.is-cream    { background: var(--da-cream); }
@@ -941,7 +942,8 @@ onUnmounted(() => {
 
 // ── 預約您的行程 CTA section ──────────────────────────────────────────────────
 .PageHome__book-section {
-  padding: 64px 24px;
+  padding-block: var(--space-section);
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
   background: var(--da-cream);
 }
 

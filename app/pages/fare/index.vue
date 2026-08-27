@@ -176,7 +176,8 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 // ── 區塊 ──────────────────────────────────────────────────
 .PageFare__section {
-  padding: 72px 24px;
+  padding-block: var(--space-section);
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
   scroll-margin-top: 56px;
 
   &.is-top { padding-top: 48px; }

@@ -80,8 +80,37 @@ describe('色票四處同步', () => {
     }
   });
 
-  it('_theme-colors.css 不得復活 :root.dark 死碼', () => {
+  it(':root.dark 不得再拿來宣告調色盤', () => {
+    // W0a 刪掉的那個 :root.dark 是**死碼** —— 內容與 :root 一字不差（連註解都寫「目前維持淺色」），
+    // 卻因為 @nuxtjs/color-mode 掛著而讓人以為站上有深色模式。當時的守衛是「禁止 :root.dark 出現」。
+    //
+    // 階段 2 W4 真的做了深色模式，於是把這條守衛收到它原本的意圖上：
+    // 擋的是「在 :root.dark 裡重宣告一份 --da-* 調色盤」，不是擋 :root.dark 這個選擇器本身。
+    //
+    // 為什麼深色調色盤不能寫在 :root.dark：
+    //   ① --surface-deep / -2 是 var(--da-dark) / var(--da-dark-mid)。深色模式會把 --da-dark
+    //      反轉成淺色（深底上的文字），寫在 :root 會讓 admin 與司機端的深色面底一起翻成淺色，
+    //      那兩端是深色頁面，會變成淺底淺字。
+    //   ② 季節主題注入在 [data-da-theme]（:root 的子孫），子孫的宣告直接蓋掉繼承值 ——
+    //      :root.dark 的特異度再高也追不回來（同 design.md D10 那個坑）。
+    // 正確作用域是 .dark [data-da-theme]，見 _theme-colors.css 末段與 design.md D23。
+    //
+    // :root.dark 本身仍容許存在，但只能放不碰調色盤的宣告（目前只有 color-scheme）。
     const css = read('../app/assets/styles/css-class/_theme-colors.css');
-    expect(/^\s*:root\.dark\s*\{/m.test(css), ':root.dark 已於 W0a 移除，要做深色模式請另開變更').toBe(false);
+    const blocks = [...css.matchAll(/:root\.dark[^{]*\{([^}]*)\}/g)].map((m) => m[1]!);
+    const offenders = blocks.filter((b) => /--da-[\w-]+\s*:/.test(b));
+    expect(offenders, ':root.dark 不得宣告 --da-*，深色調色盤請寫在 .dark [data-da-theme]').toEqual([]);
+  });
+
+  it('深色調色盤必須蓋滿全部 12 個 --da-* token', () => {
+    // 少宣告一個 key，那個 token 在深色模式下會沿用淺色值 —— 例如漏掉 --da-gray-pale，
+    // 深底上就會出現一條 #D6D1C7 的亮線。這種缺漏不會報錯，只會看起來「怪怪的」，
+    // 而且要一頁一頁翻才找得到。
+    const css = read('../app/assets/styles/css-class/_theme-colors.css');
+    const m = css.match(/\.dark \[data-da-theme\]\s*\{([^}]*)\}/);
+    expect(m, '找不到 .dark [data-da-theme] 深色調色盤').not.toBeNull();
+    const declared = new Set([...m![1]!.matchAll(/--(da-[\w-]+)\s*:/g)].map((x) => x[1]!));
+    const missing = DA_THEME_TOKEN_KEYS.filter((k) => !declared.has(k));
+    expect(missing, `深色調色盤漏了這些 token，它們會沿用淺色值：${missing.join(', ')}`).toEqual([]);
   });
 });
