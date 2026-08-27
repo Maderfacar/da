@@ -57,7 +57,7 @@ const MittRefresh = () => {
   @include center;
   .mask-area {
     @include absolute("fill");
-    background-color: rgb(0 0 0 / 60%);
+    background-color: var(--ink-a60);
   }
   .content-area {
     @include wh(400px, 200px);

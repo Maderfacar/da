@@ -453,6 +453,12 @@ describe('表面與尺度守衛（階段 2）', () => {
         for (const m of line.matchAll(/rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*[,)]/g)) {
           offenders.push(`${f.rel}:${i + 1} → ${m[0]}  ${line.trim().slice(0, 58)}`);
         }
+        // 空格分隔的現代語法 `rgb(0 0 0 / 60%)` —— 本階段的**第七種寫法**。
+        // 前面所有 regex 都寫成逗號式，所以它一路穿過六道守衛，
+        // 最後在產物裡以 `#0009`（4 碼 hex）現形 —— 又是比對 build 產物才發現的。
+        for (const m of line.matchAll(/(?:rgba?|hsla?)\(\s*[\d.]+%?\s+[\d.]+%?\s+[\d.]+%?\s*[/)]/g)) {
+          offenders.push(`${f.rel}:${i + 1} → ${m[0]}…  ${line.trim().slice(0, 52)}`);
+        }
         // CSS 顏色關鍵字 —— 本階段撞到的**第五種寫法**。
         // `background: white` 不含 # 也不含 rgb(，前面所有掃描與守衛都不認得它，
         // 而 minifier 會把它輸出成 `#fff` —— 所以它只在 build 產物裡現形。實測 36 處。
