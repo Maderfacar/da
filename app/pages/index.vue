@@ -343,7 +343,12 @@ const ClickFare = () => navigateTo('/fare');
      第一版寫成 `grid-row: 1 / span 3`，結果 is-coverage 有兩個右欄元素
      （section-desc 與 airports），兩個都被放進同一批格子 —— 直接疊在一起。
      只給 column、讓自動排列決定 row，兩者就會依 DOM 順序往下堆。 */
-  .PageLanding__section-head { grid-column: 1; align-self: start; }
+  /* ⚠ 必須 grid-row: 1 / -1（跨滿所有列）。只寫 grid-column 的話 head 會落在第 1 列，
+     而 is-coverage 的右欄有兩個元素（desc 在第 1 列、airports 在第 2 列）——
+     第 1 列的高度被 head 那四行大標題撐開，desc 與 airports 之間就多出一段空隙，
+     而 is-features（右欄只有一個元素）沒有這個問題，兩區看起來不一致。
+     跨滿所有列之後，列高只由右欄內容決定，head 靠 align-self 貼齊頂端。 */
+  .PageLanding__section-head { grid-column: 1; grid-row: 1 / -1; align-self: start; }
   .PageLanding__section-desc,
   .PageLanding__overview-body,
   .PageLanding__airports,
