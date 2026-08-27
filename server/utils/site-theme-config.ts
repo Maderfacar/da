@@ -122,6 +122,26 @@ export const setThemeHeroImage = async (
     );
 };
 
+/**
+ * 覆寫主題的 --da-* 色票（admin 色票編輯器）。
+ *
+ * 只寫入呼叫端傳來的 key，其餘保留（merge）。呼叫端必須先用 DA_THEME_TOKEN_KEYS
+ * 過濾白名單、用 isHexColor 驗值 —— 這一層不再驗，因為 tokens 會被
+ * buildThemeCss() 直接串進 <style>，驗證責任在端點。
+ *
+ * ⚠ default 主題的 tokens 是「合併底層」（節日包只覆寫需變動的 key，缺項 fallback 它）。
+ *    改 default 等於改全部主題的底，端點會另外要求二次確認。
+ */
+export const setThemeTokens = async (
+  db: Firestore,
+  id: string,
+  tokens: Record<string, string>,
+): Promise<void> => {
+  const patch: Record<string, string> = {};
+  for (const [k, v] of Object.entries(tokens)) patch[`tokens.${k}`] = v;
+  await db.collection(SITE_THEMES_COLLECTION).doc(id).update(patch);
+};
+
 // ── In-memory 快取 ───────────────────────────────────────────────────────────
 let cached: ResolvedTheme | null = null;
 let cachedAt = 0;

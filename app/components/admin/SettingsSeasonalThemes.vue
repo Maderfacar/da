@@ -147,13 +147,128 @@ const ClickRemoveHero = async (t: AdminSiteThemeDto) => {
 onMounted(() => {
   void ApiLoadThemes();
 });
+
+// ── 色票編輯（階段 2）────────────────────────────────────────────────────────
+// 在此之前換色只能改 scripts/migrate-site-themes.mjs 重跑或手動改 Firestore。
+// 12 個 key 對齊 shared/site-theme.ts 的 DA_THEME_TOKEN_KEYS 白名單（端點也會再驗一次）。
+const TOKEN_FIELDS: ReadonlyArray<{ key: string; label: string; hint: string }> = [
+  { key: 'da-cream',         label: '骨白 · 頁面底',   hint: '整站背景' },
+  { key: 'da-off-white',     label: '瓷白 · 卡片面',   hint: '卡片、面板' },
+  { key: 'da-amber',         label: '主色',            hint: '按鈕、連結、強調' },
+  { key: 'da-amber-light',   label: '主色（深底用）',  hint: '深色面上的主色' },
+  { key: 'da-amber-pale',    label: '主色極淡底',      hint: '選中態底色' },
+  { key: 'da-dark',          label: '主文字',          hint: '標題與內文' },
+  { key: 'da-dark-mid',      label: '深色面第二層',    hint: '深底上的抬升面' },
+  { key: 'da-gray',          label: '次要文字',        hint: '說明、註記' },
+  { key: 'da-gray-light',    label: '三級文字',        hint: '佔位、停用' },
+  { key: 'da-gray-pale',     label: '髮絲線',          hint: '分隔線、邊框' },
+  { key: 'da-stripe-yellow', label: '斜紋亮',          hint: '首頁跑道斜紋' },
+  { key: 'da-stripe-dark',   label: '斜紋暗',          hint: '首頁跑道斜紋' },
+];
+
+/** 要即時檢查的對比配對 —— [前景 key, 背景 key, 標籤, 門檻] */
+const CONTRAST_CHECKS: ReadonlyArray<[string, string, string, number]> = [
+  ['da-amber', 'da-cream', '主色 / 頁面底', 4.5],
+  ['da-amber', 'da-off-white', '主色 / 卡片面', 4.5],
+  ['da-dark', 'da-cream', '主文字 / 頁面底', 4.5],
+  ['da-gray', 'da-off-white', '次要文字 / 卡片面', 4.5],
+  ['da-gray-light', 'da-off-white', '三級文字 / 卡片面', 3],
+  ['da-amber-light', 'da-dark', '深底主色 / 主文字色', 4.5],
+];
+
+const editingId = ref('');
+const savingTokens = ref(false);
+const draft = ref<Record<string, string>>({});
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+/** WCAG 相對亮度 */
+const Luminance = (hex: string): number => {
+  const c = [1, 3, 5].map((i) => {
+    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+};
+
+/** 兩色對比。任一方不是合法 hex 就回 0（UI 顯示為「—」） */
+const Contrast = (a?: string, b?: string): number => {
+  if (!a || !b || !HEX_RE.test(a) || !HEX_RE.test(b)) return 0;
+  const [hi, lo] = [Luminance(a), Luminance(b)].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+};
+
+/** 草稿目前的對比檢查結果（未填的 key 回退到主題現值，再回退 default 底層） */
+const contrastRows = computed(() => {
+  const theme = themes.value.find((t) => t.id === editingId.value);
+  const base = themes.value.find((t) => t.isDefault);
+  const pick = (k: string) => draft.value[k] || theme?.tokens?.[k] || base?.tokens?.[k] || '';
+  return CONTRAST_CHECKS.map(([fg, bg, label, min]) => {
+    const ratio = Contrast(pick(fg), pick(bg));
+    return { label, min, ratio, pass: ratio >= min, text: ratio ? ratio.toFixed(2) + ':1' : '—' };
+  });
+});
+
+const ClickEditTokens = (t: AdminSiteThemeDto) => {
+  editingId.value = t.id;
+  const base = themes.value.find((x) => x.isDefault);
+  const next: Record<string, string> = {};
+  for (const f of TOKEN_FIELDS) {
+    next[f.key] = (t.tokens?.[f.key] || base?.tokens?.[f.key] || '#000000').toUpperCase();
+  }
+  draft.value = next;
+};
+
+const ClickCancelTokens = () => {
+  editingId.value = '';
+  draft.value = {};
+};
+
+/** 色票文字欄：允許使用者邊打邊看，只在合法 hex 時才同步給色塊 */
+const OnHexInput = (key: string, value: string) => {
+  const v = value.trim();
+  draft.value[key] = v.startsWith('#') ? v.toUpperCase() : ('#' + v).toUpperCase();
+};
+
+const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
+  const invalid = TOKEN_FIELDS.filter((f) => !HEX_RE.test(draft.value[f.key] || ''));
+  if (invalid.length) {
+    ElMessage({ message: `色票格式錯誤：${invalid.map((f) => f.label).join('、')}（需 6 碼 hex）`, type: 'error' });
+    return;
+  }
+  const failing = contrastRows.value.filter((r) => !r.pass);
+  const warn = failing.length
+    ? `\n\n⚠ 這些對比未達門檻，乘客端可能難以閱讀：\n${failing.map((r) => `· ${r.label} ${r.text}（需 ${r.min}:1）`).join('\n')}`
+    : '';
+  const scope = t.isDefault
+    ? '\n\n⚠ 這是**預設主題**，其他節日包沒覆寫的色票都會 fallback 到它 —— 等於同時改動所有主題的底。'
+    : '';
+  const ok = await UseAsk(`確定儲存「${t.name.zh}」的色票？乘客端最多 30 秒後生效。${scope}${warn}`);
+  if (!ok) return;
+
+  savingTokens.value = true;
+  try {
+    const res = await $api.PatchThemeTokens(t.id, { ...draft.value });
+    if (res.status?.code !== 200) {
+      ElMessage({ message: res.status?.message?.zh_tw ?? '儲存色票失敗', type: 'error' });
+      return;
+    }
+    ElMessage({ message: '色票已儲存', type: 'success' });
+    editingId.value = '';
+    draft.value = {};
+    await ApiLoadThemes();
+  } finally {
+    savingTokens.value = false;
+  }
+};
+
 </script>
 
 <template lang="pug">
 .SettingsSeasonalThemes
   .SettingsSeasonalThemes__hint
     | 切換乘客端整組配色與首頁 Hero 主視覺；換色只影響乘客端，司機端與後台外觀不變。
-    | 首發僅提供切換 / 啟用停用 / 更換 Hero 主圖，色票由系統預設（如需改色請通知工程）。
+    | 可切換 / 啟用停用 / 更換 Hero 主圖，並直接編輯 12 個色票（存檔前會即時檢查 WCAG 對比）。
 
   .SettingsSeasonalThemes__loading(v-if="loading") 載入中…
 
@@ -189,6 +304,51 @@ onMounted(() => {
           )
             span.SettingsSeasonalThemes__swatch-chip(:style="{ background: t.tokens[s.key] }")
             span.SettingsSeasonalThemes__swatch-label {{ s.label }}
+
+
+        //- ── 色票編輯器（階段 2）────────────────────────────────
+        .SettingsSeasonalThemes__editor(v-if="editingId === t.id")
+          .SettingsSeasonalThemes__editor-grid
+            label.SettingsSeasonalThemes__field(v-for="f in TOKEN_FIELDS" :key="f.key")
+              span.SettingsSeasonalThemes__field-label {{ f.label }}
+              span.SettingsSeasonalThemes__field-hint {{ f.hint }}
+              .SettingsSeasonalThemes__field-row
+                input.SettingsSeasonalThemes__color(
+                  type="color"
+                  :value="draft[f.key]"
+                  @input="(e) => OnHexInput(f.key, (e.target as HTMLInputElement).value)"
+                )
+                input.SettingsSeasonalThemes__hex(
+                  type="text"
+                  maxlength="7"
+                  spellcheck="false"
+                  :value="draft[f.key]"
+                  @input="(e) => OnHexInput(f.key, (e.target as HTMLInputElement).value)"
+                )
+
+          //- 對比即時檢查：色票編輯最容易出事的地方，不是「好不好看」是「看不看得見」
+          .SettingsSeasonalThemes__contrast
+            .SettingsSeasonalThemes__contrast-head 對比檢查（WCAG）
+            .SettingsSeasonalThemes__contrast-row(
+              v-for="r in contrastRows"
+              :key="r.label"
+              :class="{ 'is-fail': !r.pass }"
+            )
+              span.SettingsSeasonalThemes__contrast-label {{ r.label }}
+              span.SettingsSeasonalThemes__contrast-value {{ r.text }}
+              span.SettingsSeasonalThemes__contrast-min 需 {{ r.min }}:1
+
+          .SettingsSeasonalThemes__editor-foot
+            button.SettingsSeasonalThemes__btn.is-ghost(
+              type="button"
+              :disabled="savingTokens"
+              @click="ClickCancelTokens"
+            ) 取消
+            button.SettingsSeasonalThemes__btn.is-apply(
+              type="button"
+              :disabled="savingTokens"
+              @click="ApiSaveTokens(t)"
+            ) {{ savingTokens ? '儲存中…' : '儲存色票' }}
 
         //- Hero 主圖預覽 + 上傳
         .SettingsSeasonalThemes__hero
@@ -227,6 +387,11 @@ onMounted(() => {
             :disabled="t.isDefault || togglingId === t.id"
             @click="ClickToggleEnabled(t)"
           ) {{ t.enabled ? '停用' : '啟用' }}
+          button.SettingsSeasonalThemes__btn.is-ghost(
+            type="button"
+            :disabled="savingTokens"
+            @click="editingId === t.id ? ClickCancelTokens() : ClickEditTokens(t)"
+          ) {{ editingId === t.id ? '收起色票' : '編輯色票' }}
           button.SettingsSeasonalThemes__btn.is-apply(
             type="button"
             :disabled="t.id === activeThemeId || !t.enabled || applyingId === t.id"
@@ -479,5 +644,129 @@ onMounted(() => {
     color: var(--stop);
     &:hover:not(:disabled) { background: var(--stop-a15); }
   }
+}
+
+/* ── 色票編輯器（階段 2）──────────────────────────────────── */
+.SettingsSeasonalThemes__editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--surface-a06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.SettingsSeasonalThemes__editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.SettingsSeasonalThemes__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.SettingsSeasonalThemes__field-label {
+  font-family: var(--ff-label);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--surface-a72);
+}
+
+.SettingsSeasonalThemes__field-hint {
+  font-family: var(--ff-ui);
+  font-size: 10px;
+  color: var(--surface-a40);
+}
+
+.SettingsSeasonalThemes__field-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.SettingsSeasonalThemes__color {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--surface-a20);
+  border-radius: var(--r-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.SettingsSeasonalThemes__hex {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--surface-a88);
+  background: var(--surface-a06);
+  border: 1px solid var(--surface-a12);
+  border-radius: var(--r-sm);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.SettingsSeasonalThemes__hex:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.SettingsSeasonalThemes__contrast {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface-a06);
+  border-radius: var(--r-sm);
+}
+
+.SettingsSeasonalThemes__contrast-head {
+  font-family: var(--ff-label);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--surface-a50);
+  margin-bottom: 2px;
+}
+
+.SettingsSeasonalThemes__contrast-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--ff-ui);
+  font-size: 11px;
+  color: var(--surface-a72);
+}
+
+.SettingsSeasonalThemes__contrast-row.is-fail {
+  color: var(--stop);
+}
+
+.SettingsSeasonalThemes__contrast-value {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.SettingsSeasonalThemes__contrast-min {
+  font-size: 10px;
+  color: var(--surface-a40);
+}
+
+.SettingsSeasonalThemes__contrast-row.is-fail .SettingsSeasonalThemes__contrast-min {
+  color: var(--stop);
+}
+
+.SettingsSeasonalThemes__editor-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>
