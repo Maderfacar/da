@@ -904,6 +904,15 @@ onUnmounted(() => {
   gap: var(--space-2xs);
 }
 
+/* 桌機：兩個等重的動作並排。單欄時列會橫跨整個版面，
+   內容靠左、右側一大片空白 —— 那是「表格殘留」不是版面。 */
+@media (min-width: 768px) {
+  .PageHome__quick {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+}
+
 .PageHome__quick-row {
   display: flex;
   align-items: center;
@@ -961,6 +970,8 @@ onUnmounted(() => {
 .PageHome__news {
   display: grid;
   gap: var(--space-2xs);
+  /* 公告是要讀的，行長超過可讀寬度就不是清單而是橫幅 */
+  max-width: var(--measure);
 }
 
 .PageHome__news-row {
@@ -1217,12 +1228,14 @@ onUnmounted(() => {
   max-width: 320px;
 }
 
+/* 與 /（行銷頁）的 CTA 同一條規則：主動作不用金色實心。
+   這顆坐在縞黑漸層卡上，取反相＝瓷白底 + 縞黑字，金留給箭頭。 */
 .PageHome__book-btn {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 14px 24px;
-  background: var(--da-amber);
+  background: var(--da-off-white);
   color: var(--da-dark);
   border: none;
   border-radius: var(--r-pill);
@@ -1239,6 +1252,7 @@ onUnmounted(() => {
 }
 
 .PageHome__book-btn-arrow {
+  color: var(--da-amber);
   font-size: var(--fs-h4);
   font-family: var(--ff-display);
 }

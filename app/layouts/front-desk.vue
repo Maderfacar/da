@@ -282,8 +282,9 @@ onUnmounted(() => {
 
 .LayoutFrontDesk__roles-failed-btn {
   padding: 12px 28px;
-  background: var(--da-amber);
-  color: var(--surface-raised);
+  /* 主動作不用金色實心（介面方向提案規則二）：主動作是黑底白字。 */
+  background: var(--da-dark);
+  color: var(--da-cream);
   border: none;
   border-radius: var(--r-pill);
   font-family: var(--ff-label);

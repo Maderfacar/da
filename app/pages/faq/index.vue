@@ -359,7 +359,9 @@ const ClickSupport = () => {
   align-items: center;
   gap: 8px;
   padding: 14px 28px;
-  background: var(--da-amber);
+  /* 主動作不用金色實心（介面方向提案規則二）。此鈕坐在縞黑面上，
+     黑底黑字不成立，取反相：瓷白底 + 縞黑字。 */
+  background: var(--da-off-white);
   color: var(--da-dark);
   font-family: var(--ff-label);
   font-size: var(--fs-body);

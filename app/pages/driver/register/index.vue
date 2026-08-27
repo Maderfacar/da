@@ -661,7 +661,9 @@ onUnmounted(() => {
   width: 100%;
   margin-top: 16px;
   padding: 13px 8px;
-  background: var(--da-amber);
+  /* 主動作不用金色實心（介面方向提案規則二）。此鈕坐在縞黑面上，
+     黑底黑字不成立，取反相：瓷白底 + 縞黑字。 */
+  background: var(--da-off-white);
   color: var(--da-dark);
   border: none;
   border-radius: var(--r-md);

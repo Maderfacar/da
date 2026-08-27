@@ -249,8 +249,9 @@ onMounted(() => {
   margin-top: 24px;
   padding: 12px 28px;
   border-radius: var(--r-pill);
-  background: var(--da-amber);
-  color: var(--surface-raised);
+  /* 主動作不用金色實心（介面方向提案規則二）：主動作是黑底白字。 */
+  background: var(--da-dark);
+  color: var(--da-cream);
   font-family: var(--ff-label);
   font-size: var(--fs-body);
   font-weight: 700;
