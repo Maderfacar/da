@@ -132,16 +132,18 @@ const ClickFare = () => navigateTo('/fare');
 
   //- ── SERVICE OVERVIEW ────────────────────────────────────────
   section.PageLanding__section.is-overview
-    .PageLanding__section-label {{ $t('landing.overview.label') }}
-    h2.PageLanding__section-title {{ $t('landing.overview.heading') }}
+    .PageLanding__section-head
+      .PageLanding__section-label {{ $t('landing.overview.label') }}
+      h2.PageLanding__section-title {{ $t('landing.overview.heading') }}
     .PageLanding__overview-body
       p {{ $t('landing.overview.p1') }}
       p {{ $t('landing.overview.p2') }}
 
   //- ── COVERAGE：4 airports ───────────────────────────────────
   section.PageLanding__section.is-coverage
-    .PageLanding__section-label {{ $t('landing.coverage.label') }}
-    h2.PageLanding__section-title {{ $t('landing.coverage.title') }}
+    .PageLanding__section-head
+      .PageLanding__section-label {{ $t('landing.coverage.label') }}
+      h2.PageLanding__section-title {{ $t('landing.coverage.title') }}
     p.PageLanding__section-desc {{ $t('landing.coverage.desc') }}
     .PageLanding__airports
       article.PageLanding__airport(v-for="code in AIRPORT_CODES" :key="code")
@@ -153,8 +155,9 @@ const ClickFare = () => navigateTo('/fare');
 
   //- ── FEATURES：4 cards ─────────────────────────────────────
   section.PageLanding__section.is-features
-    .PageLanding__section-label {{ $t('landing.features.label') }}
-    h2.PageLanding__section-title {{ $t('landing.features.title') }}
+    .PageLanding__section-head
+      .PageLanding__section-label {{ $t('landing.features.label') }}
+      h2.PageLanding__section-title {{ $t('landing.features.title') }}
     .PageLanding__features
       article.PageLanding__feature(v-for="id in FEATURE_IDS" :key="id")
         h3.PageLanding__feature-title {{ $t(`landing.features.items.${id}.title`) }}
@@ -336,12 +339,21 @@ const ClickFare = () => navigateTo('/fare');
     align-items: start;
   }
 
-  .PageLanding__section-label { grid-column: 1; margin-bottom: var(--space-sm); }
-  .PageLanding__section-title { grid-column: 1; margin-bottom: 0; }
+  /* ⚠ 右欄元素只指定 grid-column，**不要**指定 grid-row。
+     第一版寫成 `grid-row: 1 / span 3`，結果 is-coverage 有兩個右欄元素
+     （section-desc 與 airports），兩個都被放進同一批格子 —— 直接疊在一起。
+     只給 column、讓自動排列決定 row，兩者就會依 DOM 順序往下堆。 */
+  .PageLanding__section-head { grid-column: 1; align-self: start; }
   .PageLanding__section-desc,
   .PageLanding__overview-body,
   .PageLanding__airports,
-  .PageLanding__features { grid-column: 2; grid-row: 1 / span 3; }
+  .PageLanding__features { grid-column: 2; }
+}
+
+.PageLanding__section-head { margin-bottom: var(--space-lg); }
+
+@media (min-width: 1024px) {
+  .PageLanding__section-head { margin-bottom: 0; }
 }
 
 /* 換氣點：進入「涵蓋範圍」之前給一次大留白，讓前面的主張收乾淨。
