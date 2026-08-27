@@ -214,7 +214,7 @@ Teleport(to="body")
   background: var(--accent-a20);
   color: var(--da-amber);
   font-family: var(--ff-label);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
 }
 
@@ -227,7 +227,7 @@ Teleport(to="body")
 
 .CommonDrawer__user-name {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-cream);
   overflow: hidden;
@@ -239,7 +239,7 @@ Teleport(to="body")
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent-a70);
 }
 
@@ -264,7 +264,7 @@ Teleport(to="body")
   background: transparent;
   color: var(--surface-a82);
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -301,14 +301,14 @@ Teleport(to="body")
   // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
   color: var(--ink);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .CommonDrawer__item-ext {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--accent-a60);
 }
 
@@ -325,7 +325,7 @@ Teleport(to="body")
 .CommonDrawer__version {
   font-family: var(--ff-label);
   font-size: $fs-label;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a20);
 }
 </style>

@@ -381,7 +381,7 @@ onUnmounted(() => {
   background: var(--ink-a60);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 5px 12px;
   border-radius: var(--r-xl);
   white-space: nowrap;
@@ -397,7 +397,7 @@ onUnmounted(() => {
   background: var(--surface-a88);
   color: var(--da-dark);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 5px 12px;
   border-radius: var(--r-xl);
   display: flex;
@@ -427,7 +427,7 @@ onUnmounted(() => {
   background: var(--stop-a08);
   color: var(--danger);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 14px;
   border-radius: var(--r-xl);
   border: 1px solid var(--stop-a20);

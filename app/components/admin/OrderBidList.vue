@@ -86,7 +86,7 @@ const ClickAssign = (driverId: string) => {
 
 .AdminOrderBidList__empty {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   padding: 16px 0;
   text-align: center;
@@ -124,7 +124,7 @@ const ClickAssign = (driverId: string) => {
 
 .AdminOrderBidList__name {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--surface-a82);
   display: flex;
@@ -134,7 +134,7 @@ const ClickAssign = (driverId: string) => {
 
 .AdminOrderBidList__withdraw-tag {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 2px 6px;
   border-radius: var(--r-pill);
@@ -149,7 +149,7 @@ const ClickAssign = (driverId: string) => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -172,7 +172,7 @@ const ClickAssign = (driverId: string) => {
 
 .AdminOrderBidList__tag {
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -182,15 +182,15 @@ const ClickAssign = (driverId: string) => {
 
 .AdminOrderBidList__time {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
 .AdminOrderBidList__assign {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 8px 14px;
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);

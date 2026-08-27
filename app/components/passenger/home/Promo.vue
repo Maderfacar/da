@@ -103,9 +103,9 @@ section.PassengerHomePromo(v-if="hasPromo")
 
 .PassengerHomePromo__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -124,17 +124,17 @@ section.PassengerHomePromo(v-if="hasPromo")
 .PassengerHomePromo__title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PassengerHomePromo__desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 320px;
   font-family: var(--ff-ui);
@@ -166,9 +166,9 @@ section.PassengerHomePromo(v-if="hasPromo")
 
 .PassengerHomePromo__code-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -182,8 +182,8 @@ section.PassengerHomePromo(v-if="hasPromo")
 .PassengerHomePromo__code {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 26px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber-light);
 }
 
@@ -215,8 +215,8 @@ section.PassengerHomePromo(v-if="hasPromo")
 }
 
 .PassengerHomePromo__copy-icon {
-  font-size: 16px;
-  line-height: 1;
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-flat);
 }
 
 .PassengerHomePromo__card-info {
@@ -230,14 +230,14 @@ section.PassengerHomePromo(v-if="hasPromo")
 
 .PassengerHomePromo__amount {
   font-family: var(--ff-label);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
   color: var(--da-cream);
 }
 
 .PassengerHomePromo__meta {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
 }
 </style>

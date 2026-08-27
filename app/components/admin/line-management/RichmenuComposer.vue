@@ -460,7 +460,7 @@ function ClickSwitchSize(size: RichmenuSize) {
 .RichmenuComposer__select-label,
 .RichmenuComposer__mime-label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
   color: var(--ink-a70);
 }
@@ -468,7 +468,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   padding: 5px 10px;
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   background: var(--surface-raised);
   min-width: 220px;
 }
@@ -504,9 +504,9 @@ function ClickSwitchSize(size: RichmenuSize) {
 
 .RichmenuComposer__section-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--accent);
   margin: 0 0 8px;
@@ -535,12 +535,12 @@ function ClickSwitchSize(size: RichmenuSize) {
   }
 }
 .RichmenuComposer__layer-icon {
-  font-size: 14px;
+  font-size: var(--fs-body);
   flex-shrink: 0;
 }
 .RichmenuComposer__layer-name {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--fs-label);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -554,7 +554,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   border: none;
   cursor: pointer;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
   border-radius: var(--r-xs);
 
@@ -609,14 +609,14 @@ function ClickSwitchSize(size: RichmenuSize) {
   padding: 40px;
   color: var(--ink-a50);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .RichmenuComposer__hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .RichmenuComposer__field-grid {
@@ -634,17 +634,17 @@ function ClickSwitchSize(size: RichmenuSize) {
 
   label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
     color: var(--ink-a50);
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
   }
   input,
   select {
     padding: 5px 8px;
     border: 1px solid var(--ink-a12);
     border-radius: var(--r-xs);
-    font-size: 12px;
+    font-size: var(--fs-label);
     background: var(--surface-raised);
 
     &:focus {
@@ -661,9 +661,9 @@ function ClickSwitchSize(size: RichmenuSize) {
 
 .RichmenuComposer__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   padding: 5px 12px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -674,7 +674,7 @@ function ClickSwitchSize(size: RichmenuSize) {
 
   &.is-mini {
     padding: 4px 10px;
-    font-size: 10px;
+    font-size: var(--fs-label);
   }
   &.is-active {
     background: var(--accent);
@@ -692,7 +692,7 @@ function ClickSwitchSize(size: RichmenuSize) {
     border-color: var(--accent);
     color: var(--surface-raised);
     padding: 7px 16px;
-    font-size: 12px;
+    font-size: var(--fs-label);
     &:hover:not(:disabled) { background: var(--accent-deep); }
   }
 }

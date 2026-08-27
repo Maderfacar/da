@@ -126,9 +126,9 @@ onMounted(() => {
   background: var(--surface-a82);
   color: var(--da-dark);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -141,7 +141,7 @@ onMounted(() => {
     background: var(--surface-a96);
   }
 
-  span { font-size: 16px; line-height: 1; }
+  span { font-size: var(--fs-body-lg); line-height: var(--lh-flat); }
 }
 
 // ── 載入中 ────────────────────────────────────────────────
@@ -168,11 +168,11 @@ onMounted(() => {
   padding: 80px 20px;
 }
 
-.PageNotificationDetail__emptyIcon { font-size: 48px; margin-bottom: 16px; }
+.PageNotificationDetail__emptyIcon { font-size: var(--fs-display); margin-bottom: 16px; }
 
 .PageNotificationDetail__emptyText {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-gray);
 }
 
@@ -195,10 +195,10 @@ onMounted(() => {
 
 .PageNotificationDetail__title {
   font-family: var(--ff-ui);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   color: var(--da-dark);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   margin: 0 0 10px;
   word-break: break-word;
 }
@@ -206,17 +206,17 @@ onMounted(() => {
 .PageNotificationDetail__time {
   display: block;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray-light);
   margin-bottom: 24px;
 }
 
 .PageNotificationDetail__body {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--da-dark);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
@@ -228,11 +228,11 @@ onMounted(() => {
   :deep(h1), :deep(h2), :deep(h3) {
     color: var(--da-dark);
     margin: 18px 0 10px;
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
-  :deep(h1) { font-size: 20px; }
-  :deep(h2) { font-size: 17px; }
-  :deep(h3) { font-size: 15px; }
+  :deep(h1) { font-size: var(--fs-h3); }
+  :deep(h2) { font-size: var(--fs-body-lg); }
+  :deep(h3) { font-size: var(--fs-body); }
   :deep(img) { max-width: 100%; border-radius: var(--r-md); margin: 10px 0; }
   :deep(blockquote) {
     border-left: 3px solid var(--accent-a50);
@@ -252,9 +252,9 @@ onMounted(() => {
   background: var(--da-amber);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   text-decoration: none;
   transition: background var(--dur-fast) var(--ease-out);
 

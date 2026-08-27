@@ -541,9 +541,9 @@ onMounted(() => {
 
 .OpenDialogAnnouncementEdit__headerLabel {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -553,8 +553,8 @@ onMounted(() => {
 
 .OpenDialogAnnouncementEdit__headerTitle {
   font-family: var(--ff-display);
-  font-size: 24px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   margin: 0;
 }
 
@@ -573,9 +573,9 @@ onMounted(() => {
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
 }
 
@@ -586,7 +586,7 @@ onMounted(() => {
   border: 1px solid var(--surface-a06);
   background: var(--surface-a06);
   color: var(--surface-raised);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -611,8 +611,8 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.16em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a40);
   z-index: 2;
 }
@@ -638,8 +638,8 @@ onMounted(() => {
   color: var(--stop);
   padding: 10px 14px;
   border-radius: var(--r-md);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-normal);
 
   &.is-info {
     background: var(--accent-a06);
@@ -655,9 +655,9 @@ onMounted(() => {
 .OpenDialogAnnouncementEdit__label {
   display: block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a40);
   margin-bottom: 8px;
 }
@@ -674,7 +674,7 @@ onMounted(() => {
   border: 1px solid var(--surface-a06);
   background: var(--surface-a06);
   color: var(--surface-raised);
-  font-size: 14px;
+  font-size: var(--fs-body);
   outline: none;
   box-sizing: border-box;
   transition: border-color var(--dur-fast) var(--ease-out);
@@ -685,7 +685,7 @@ onMounted(() => {
 .OpenDialogAnnouncementEdit__counter {
   text-align: right;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   margin-top: 4px;
 }
@@ -705,16 +705,16 @@ onMounted(() => {
 }
 
 .OpenDialogAnnouncementEdit__coverHint {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
   margin-bottom: 4px;
 }
 
 .OpenDialogAnnouncementEdit__coverSubHint {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 .OpenDialogAnnouncementEdit__coverPreview {
@@ -741,9 +741,9 @@ onMounted(() => {
   background: var(--ink-a60);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   &:hover { background: var(--stop-a70); }
 }
@@ -769,9 +769,9 @@ onMounted(() => {
   background: var(--surface-a06);
   color: var(--surface-a40);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -792,7 +792,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a82);
   cursor: pointer;
 
@@ -806,9 +806,9 @@ onMounted(() => {
 
 .OpenDialogAnnouncementEdit__hint {
   margin-top: 6px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 // ── Footer ────────────────────────────────────────────────
@@ -829,9 +829,9 @@ onMounted(() => {
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 

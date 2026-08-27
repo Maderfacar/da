@@ -92,15 +92,15 @@ const ClickChip = (id: string) => {
 
 .TagGroupPicker__title {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-a82);
 }
 
 .TagGroupPicker__hint {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
 }
 
@@ -112,7 +112,7 @@ const ClickChip = (id: string) => {
 
 .TagGroupPicker__chip {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a20);
@@ -137,7 +137,7 @@ const ClickChip = (id: string) => {
 
 .TagGroupPicker__empty {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 </style>

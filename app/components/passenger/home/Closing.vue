@@ -35,9 +35,9 @@ section.PassengerHomeClosing
 
 .PassengerHomeClosing__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -56,17 +56,17 @@ section.PassengerHomeClosing
 .PassengerHomeClosing__title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PassengerHomeClosing__desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 320px;
   font-family: var(--ff-ui);
@@ -85,8 +85,8 @@ section.PassengerHomeClosing
   background: var(--da-dark);
   color: var(--da-cream);
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.12em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-caps);
   border: none;
   border-radius: var(--r-lg);
   cursor: pointer;
@@ -102,9 +102,9 @@ section.PassengerHomeClosing
   background: transparent;
   color: var(--da-dark);
   font-family: var(--ff-label);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border: 1.5px solid var(--da-dark);
   border-radius: var(--r-lg);

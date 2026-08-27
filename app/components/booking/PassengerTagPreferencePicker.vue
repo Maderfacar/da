@@ -129,15 +129,15 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
 
 .PassengerTagPreferencePicker__group-name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--da-dark);
 }
 
 .PassengerTagPreferencePicker__group-meta {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray-light);
 }
 
@@ -152,7 +152,7 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--da-gray-pale);
@@ -178,9 +178,9 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
 
 .PassengerTagPreferencePicker__chip-surcharge {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-amber);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-snug);
 }
 
 .PassengerTagPreferencePicker__chip.is-selected .PassengerTagPreferencePicker__chip-surcharge {
@@ -189,7 +189,7 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
 
 .PassengerTagPreferencePicker__empty {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   text-align: center;
   padding: 14px 0;

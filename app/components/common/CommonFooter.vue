@@ -241,17 +241,17 @@ footer.CommonFooter
 
 .CommonFooter__qr-caption {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
   max-width: 136px;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .CommonFooter__qr-hint {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-amber);
   display: inline-flex;
@@ -260,7 +260,7 @@ footer.CommonFooter
 
   &::before {
     content: '↗';
-    font-size: 11px;
+    font-size: var(--fs-label);
   }
 }
 
@@ -273,8 +273,8 @@ footer.CommonFooter
 
 .CommonFooter__logo {
   font-family: var(--ff-display);
-  font-size: 24px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
 }
 
 .CommonFooter__logo span {
@@ -283,17 +283,17 @@ footer.CommonFooter
 
 .CommonFooter__tagline {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a60);
   margin-top: 8px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 
 .CommonFooter__col-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -307,7 +307,7 @@ footer.CommonFooter
   padding: 6px 0;
   color: var(--surface-a82);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   cursor: pointer;
   text-align: left;
 }
@@ -323,7 +323,7 @@ footer.CommonFooter
 }
 
 .CommonFooter__hours {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   margin-top: 4px;
 }
@@ -336,8 +336,8 @@ footer.CommonFooter
 
 .CommonFooter__copyright {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.15em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a30);
 }
 </style>

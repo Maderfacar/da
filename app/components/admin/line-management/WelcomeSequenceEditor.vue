@@ -382,7 +382,7 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__enabled {
   display: inline-flex;
   align-items: center;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-dark);
   cursor: pointer;
@@ -390,8 +390,8 @@ const ClickSave = async (): Promise<void> => {
 
 .WelcomeSequenceEditor__count {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.15em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-gray, var(--ink-soft));
 }
 
@@ -407,7 +407,7 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__lang-tab {
   padding: 6px 14px;
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   border: none;
   background: transparent;
@@ -431,7 +431,7 @@ const ClickSave = async (): Promise<void> => {
   padding: 24px;
   text-align: center;
   color: var(--da-gray);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   border: 1px dashed var(--da-gray-pale, var(--hairline));
   border-radius: var(--r-md);
 }
@@ -465,7 +465,7 @@ const ClickSave = async (): Promise<void> => {
   background: none;
   border: none;
   color: var(--da-gray);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   cursor: grab;
   padding: 2px 6px;
   user-select: none;
@@ -475,15 +475,15 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__msg-num {
   font-family: var(--ff-label);
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
 }
 
 .WelcomeSequenceEditor__msg-type-badge {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   padding: 2px 8px;
   border-radius: var(--r-xs);
 
@@ -494,7 +494,7 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__msg-enabled {
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   cursor: pointer;
   margin-right: auto;
@@ -512,7 +512,7 @@ const ClickSave = async (): Promise<void> => {
   width: 28px;
   height: 28px;
   border-radius: var(--r-sm);
-  font-size: 14px;
+  font-size: var(--fs-body);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 
@@ -535,7 +535,7 @@ const ClickSave = async (): Promise<void> => {
   padding: 8px 10px;
   border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-family: inherit;
   color: var(--da-dark);
   background: var(--da-cream);
@@ -549,7 +549,7 @@ const ClickSave = async (): Promise<void> => {
 }
 
 .WelcomeSequenceEditor__count-row {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   text-align: right;
   margin-top: 2px;
@@ -563,7 +563,7 @@ const ClickSave = async (): Promise<void> => {
 }
 
 .WelcomeSequenceEditor__field-label {
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
   color: var(--da-dark);
   margin-top: 8px;
@@ -573,7 +573,7 @@ const ClickSave = async (): Promise<void> => {
 }
 
 .WelcomeSequenceEditor__field-sub-label {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   margin-top: 4px;
   margin-bottom: 2px;
@@ -591,7 +591,7 @@ const ClickSave = async (): Promise<void> => {
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--da-gray);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
@@ -616,7 +616,7 @@ const ClickSave = async (): Promise<void> => {
 .WelcomeSequenceEditor__btn {
   padding: 8px 16px;
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);

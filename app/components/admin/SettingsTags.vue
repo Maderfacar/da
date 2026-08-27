@@ -224,14 +224,14 @@ onMounted(() => {
 
 .AdminSettingsTags__title {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   margin: 0 0 4px;
 }
 
 .AdminSettingsTags__desc {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a60);
   margin: 0 0 12px;
 }
@@ -259,14 +259,14 @@ onMounted(() => {
 
 .AdminSettingsTags__group-name {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
 }
 
 .AdminSettingsTags__group-meta {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--surface-a40);
   margin-right: auto;
@@ -299,19 +299,19 @@ onMounted(() => {
 }
 
 .AdminSettingsTags__logTime {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a60);
 }
 
 .AdminSettingsTags__logActor {
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-family: var(--ff-label);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   color: var(--ink-a40);
 }
 
 .AdminSettingsTags__logBody {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a70);
 
   :deep(summary) {

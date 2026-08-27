@@ -110,9 +110,9 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 
 .PassengerHomeRouteBoard__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -131,17 +131,17 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 .PassengerHomeRouteBoard__title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
+  line-height: var(--lh-flat);
   color: var(--da-cream);
 }
 
 .PassengerHomeRouteBoard__desc {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--surface-a60);
   margin-top: 8px;
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
 }
 
 .PassengerHomeRouteBoard__board {
@@ -161,27 +161,27 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 
 .PassengerHomeRouteBoard__col-flight {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
 
 .PassengerHomeRouteBoard__col-route {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
 
 .PassengerHomeRouteBoard__col-fare {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
   text-align: right;
@@ -215,9 +215,9 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 
 .PassengerHomeRouteBoard__flight {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber-light);
 }
 
@@ -229,7 +229,7 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 
 .PassengerHomeRouteBoard__route-arrow {
   color: var(--da-amber);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .PassengerHomeRouteBoard__fare {
@@ -242,16 +242,16 @@ section.PassengerHomeRouteBoard(ref="boardRef")
 .PassengerHomeRouteBoard__fare-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: var(--da-cream);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
 }
 
 .PassengerHomeRouteBoard__status {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-amber);
 }

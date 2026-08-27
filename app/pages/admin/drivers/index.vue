@@ -296,9 +296,9 @@ const DOC_LABEL: Record<string, string> = {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -309,8 +309,8 @@ const DOC_LABEL: Record<string, string> = {
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
     color: var(--surface-raised);
   }
 }
@@ -344,9 +344,9 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__summary-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a30);
   margin-bottom: 6px;
 }
@@ -354,9 +354,9 @@ const DOC_LABEL: Record<string, string> = {
 .PageAdminDrivers__summary-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 28px;
+  font-size: var(--fs-h1);
   color: var(--surface-raised);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 // ── 三分頁 ──────────────────────────────────────────────
@@ -369,9 +369,9 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__tab {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 6px 14px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a06);
@@ -412,7 +412,7 @@ const DOC_LABEL: Record<string, string> = {
   text-align: center;
   padding: 60px 0;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a30);
 }
 
@@ -465,7 +465,7 @@ const DOC_LABEL: Record<string, string> = {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--accent);
 }
@@ -474,23 +474,23 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__name {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--surface-raised);
-  line-height: 1.2;
+  line-height: var(--lh-tight);
 }
 
 .PageAdminDrivers__uid {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
 }
 
 .PageAdminDrivers__status {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 3px 10px;
   border-radius: var(--r-pill);
   flex-shrink: 0;
@@ -502,9 +502,9 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__vehicle-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   padding: 3px 8px;
   border-radius: var(--r-pill);
   background: var(--wait-a15);
@@ -522,9 +522,9 @@ const DOC_LABEL: Record<string, string> = {
   background: var(--accent-a12);
   color: var(--accent);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   text-decoration: none;
   margin-left: 8px;
   transition: background var(--dur-fast) var(--ease-out);
@@ -533,7 +533,7 @@ const DOC_LABEL: Record<string, string> = {
 }
 
 .PageAdminDrivers__chevron {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a30);
   transition: transform var(--dur-base) var(--ease-out);
   margin-left: 4px;
@@ -558,9 +558,9 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__expand-title {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -585,13 +585,13 @@ const DOC_LABEL: Record<string, string> = {
 }
 
 .PageAdminDrivers__expand-key {
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
 }
 
 .PageAdminDrivers__expand-val {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
   word-break: break-all;
 }
@@ -634,11 +634,11 @@ const DOC_LABEL: Record<string, string> = {
   gap: 4px;
   color: var(--surface-a72);
 
-  span:first-child { font-size: 24px; }
+  span:first-child { font-size: var(--fs-h2); }
   span:last-child {
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.12em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-caps);
   }
 }
 
@@ -651,15 +651,15 @@ const DOC_LABEL: Record<string, string> = {
   background: var(--ink-a70);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-align: center;
 }
 
 .PageAdminDrivers__reject-reason {
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
@@ -676,9 +676,9 @@ const DOC_LABEL: Record<string, string> = {
 
 .PageAdminDrivers__action-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-sm);
   cursor: pointer;

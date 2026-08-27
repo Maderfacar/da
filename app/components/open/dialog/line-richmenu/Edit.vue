@@ -788,8 +788,8 @@ onMounted(() => {
 .DialogLineRichmenuEdit__title {
   flex: 1;
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -797,9 +797,9 @@ onMounted(() => {
 
 .DialogLineRichmenuEdit__chan {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 3px 10px;
 
@@ -816,9 +816,9 @@ onMounted(() => {
 // P42：lang badge（與 chan badge 並列）
 .DialogLineRichmenuEdit__lang {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   border-radius: var(--r-pill);
   padding: 3px 10px;
   /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
@@ -841,7 +841,7 @@ onMounted(() => {
 .DialogLineRichmenuEdit__close {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: var(--fs-h3);
   cursor: pointer;
   color: var(--ink-a50);
   &:hover { color: var(--ink); }
@@ -871,9 +871,9 @@ onMounted(() => {
 
 .DialogLineRichmenuEdit__section-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--accent);
   margin: 0;
@@ -886,7 +886,7 @@ onMounted(() => {
 
   label {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
     color: var(--ink-a70);
   }
@@ -897,7 +897,7 @@ onMounted(() => {
     border: 1px solid var(--ink-a12);
     border-radius: var(--r-sm);
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     width: 100%;
     background: var(--surface-raised);
 
@@ -922,9 +922,9 @@ onMounted(() => {
 
 .DialogLineRichmenuEdit__hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 // ── 圖片 ─────────────────────────────────────────────────────
@@ -968,7 +968,7 @@ onMounted(() => {
   text-align: center;
   color: var(--ink-a50);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .DialogLineRichmenuEdit__area-overlay {
@@ -993,7 +993,7 @@ onMounted(() => {
     top: 2px;
     left: 4px;
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
     color: var(--surface-raised);
     background: var(--ink-a50);
@@ -1071,9 +1071,9 @@ onMounted(() => {
 // P44a：多選 hint banner
 .DialogLineRichmenuEdit__multi-hint {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   background: var(--note-a08);
   color: var(--note);
   border: 1px solid var(--note-a30);
@@ -1125,9 +1125,9 @@ onMounted(() => {
 
   .idx {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
   }
 }
 
@@ -1144,9 +1144,9 @@ onMounted(() => {
 
     label {
       font-family: var(--ff-label);
-      font-size: 10px;
+      font-size: var(--fs-label);
       font-weight: 700;
-      letter-spacing: 0.1em;
+      letter-spacing: var(--ls-wide);
       color: var(--ink-a50);
     }
     input {
@@ -1155,7 +1155,7 @@ onMounted(() => {
       border: 1px solid var(--ink-a12);
       border-radius: var(--r-sm);
       font-family: var(--ff-mono);
-      font-size: 12px;
+      font-size: var(--fs-label);
     }
   }
 }
@@ -1167,7 +1167,7 @@ onMounted(() => {
 
   label {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     cursor: pointer;
   }
 }
@@ -1187,8 +1187,8 @@ onMounted(() => {
 
 .DialogLineRichmenuEdit__liff-hint-msg {
   font-family: var(--ff-ui);
-  font-size: 11.5px;
-  line-height: 1.55;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
   color: var(--wait);
 }
 
@@ -1206,10 +1206,10 @@ onMounted(() => {
     border: 1px solid var(--wait);
     border-radius: var(--r-xs);
     word-break: break-all;
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-family: var(--ff-mono);
     color: var(--ink);
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
 }
 
@@ -1221,9 +1221,9 @@ onMounted(() => {
   border: none;
   border-radius: var(--r-xs);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
@@ -1236,9 +1236,9 @@ onMounted(() => {
 
   label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     color: var(--ink-a50);
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
   }
   input {
     margin-top: 2px;
@@ -1246,7 +1246,7 @@ onMounted(() => {
     padding: 5px 8px;
     border: 1px solid var(--ink-a12);
     border-radius: var(--r-sm);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
 }
 
@@ -1256,7 +1256,7 @@ onMounted(() => {
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-sm);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .DialogLineRichmenuEdit__postback-select {
@@ -1276,12 +1276,12 @@ onMounted(() => {
 .DialogLineRichmenuEdit__warn {
   margin-top: 6px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: var(--r-sm);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 // ── Footer ───────────────────────────────────────────────────
@@ -1296,9 +1296,9 @@ onMounted(() => {
 
 .DialogLineRichmenuEdit__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -1332,7 +1332,7 @@ onMounted(() => {
   }
   &.is-mini {
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--fs-label);
   }
 }
 </style>

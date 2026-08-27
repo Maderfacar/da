@@ -56,14 +56,14 @@ ElDialog(
   gap: 12px;
 }
 .OpenDialogAdminPinPrompt__lead {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
   margin: 0;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 .OpenDialogAdminPinPrompt__error {
   color: var(--stop);
-  font-size: 12px;
+  font-size: var(--fs-label);
   margin: 0;
 }
 </style>

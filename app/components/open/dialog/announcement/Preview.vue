@@ -95,9 +95,9 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 
 .AnnouncementPreview__sectionLabel {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--surface-a40);
   margin-bottom: 10px;
   display: flex;
@@ -135,18 +135,18 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 
 .AnnouncementPreview__lineTitle {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--ink);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   margin-bottom: 6px;
 }
 
 .AnnouncementPreview__lineText {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   display: -webkit-box;
   -webkit-line-clamp: 5;
   -webkit-box-orient: vertical;
@@ -154,7 +154,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 }
 
 .AnnouncementPreview__linePlaceholder {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
   font-style: italic;
 }
@@ -171,7 +171,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
   background: var(--accent);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   cursor: default;
   opacity: 0.95;
@@ -199,18 +199,18 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 
 .AnnouncementPreview__appTitle {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--surface-raised);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   margin: 0 0 8px;
 }
 
 .AnnouncementPreview__appText {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   word-break: break-word;
 
   // 最少限度排版（避免 v-html 內排版崩掉）
@@ -222,7 +222,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 }
 
 .AnnouncementPreview__appPlaceholder {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   font-style: italic;
 }
@@ -236,9 +236,9 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
   border: 1px solid var(--accent-a50);
   color: var(--accent);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   text-decoration: none;
 }

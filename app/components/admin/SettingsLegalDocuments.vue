@@ -175,9 +175,9 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
 .SettingsLegalDocuments__tab {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   padding: 10px 18px;
   border: none;
   background: transparent;
@@ -205,14 +205,14 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
   gap: 12px;
   flex-wrap: wrap;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
 }
 
 .SettingsLegalDocuments__meta-version {
   color: var(--accent);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 .SettingsLegalDocuments__meta-dirty {
@@ -228,9 +228,9 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
 .SettingsLegalDocuments__label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a72);
 }
 
@@ -241,7 +241,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   outline: none;
   &:focus { border-color: var(--accent-a60); }
   &::placeholder { color: var(--surface-a30); }
@@ -256,9 +256,9 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
 .SettingsLegalDocuments__hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .SettingsLegalDocuments__actions {
@@ -271,9 +271,9 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
 .SettingsLegalDocuments__btn {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 9px 22px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
@@ -290,7 +290,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
 .SettingsLegalDocuments__public-hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
 }
 

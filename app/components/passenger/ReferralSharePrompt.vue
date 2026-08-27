@@ -52,7 +52,7 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
 }
 
 .PassengerReferralSharePrompt__icon {
-  font-size: 30px;
+  font-size: var(--fs-h1);
   flex-shrink: 0;
 }
 
@@ -63,16 +63,16 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
 
 .PassengerReferralSharePrompt__title {
   font-family: var(--ff-label);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-snug);
   color: var(--da-cream);
 }
 
 .PassengerReferralSharePrompt__text {
   font-family: var(--ff-ui);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
   color: var(--surface-a72);
   margin-top: 3px;
 }
@@ -84,9 +84,9 @@ section.PassengerReferralSharePrompt(v-if="showPrompt")
   border: 1px solid var(--line-green);
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);

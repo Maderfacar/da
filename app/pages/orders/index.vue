@@ -193,9 +193,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.25em;
+    letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
     color: var(--da-amber);
     margin-bottom: 10px;
@@ -204,7 +204,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   &-title {
     font-family: var(--ff-display);
     font-size: clamp(48px, 14vw, 64px);
-    line-height: 0.92;
+    line-height: var(--lh-flat);
     color: var(--da-dark);
   }
 }
@@ -216,17 +216,17 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__orders-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 6px;
 }
 
 .PageOrders__orders-title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin-bottom: 12px;
 }
@@ -243,9 +243,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   flex: 1;
   min-width: 180px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--ls-snug);
   color: var(--da-gray);
 }
 
@@ -272,11 +272,11 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   text-align: center;
   padding: 60px 20px;
 
-  &-icon { font-size: 48px; margin-bottom: 16px; }
+  &-icon { font-size: var(--fs-display); margin-bottom: 16px; }
 
   &-text {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--da-gray);
     margin-bottom: 20px;
   }
@@ -284,9 +284,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   &-link {
     display: inline-block;
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     padding: 10px 24px;
     border-radius: var(--r-pill);
     background: var(--da-amber);
@@ -333,9 +333,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   border: 1px solid var(--stop-a30);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--stop);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -354,9 +354,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__type-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber);
   background: var(--da-amber-pale);
   border: 1px solid var(--accent-a30);
@@ -366,9 +366,9 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__status {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
 }
 
 // ── 路線 ─────────────────────────────────────────────────────
@@ -401,7 +401,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 
 .PageOrders__route-addr {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-dark);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -420,7 +420,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
 .PageOrders__date,
 .PageOrders__vehicle {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
 }
 
@@ -428,8 +428,8 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   margin-left: auto;
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   color: var(--da-amber);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 </style>

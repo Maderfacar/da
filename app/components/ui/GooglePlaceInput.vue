@@ -185,7 +185,7 @@ defineExpose({ SetPlace });
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-gray);
 }
@@ -200,7 +200,7 @@ defineExpose({ SetPlace });
   padding: 12px 40px 12px 16px;
   border-radius: var(--r-md);
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   outline: none;
   transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
   -webkit-appearance: none;
@@ -259,8 +259,8 @@ defineExpose({ SetPlace });
   border: none;
   background: none;
   color: var(--da-gray);
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -297,7 +297,7 @@ defineExpose({ SetPlace });
 
 .UiGooglePlaceInput__dropdown__name {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-dark);
   white-space: nowrap;
@@ -307,7 +307,7 @@ defineExpose({ SetPlace });
 
 .UiGooglePlaceInput__dropdown__addr {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   margin-top: 2px;
   white-space: nowrap;
@@ -318,9 +318,9 @@ defineExpose({ SetPlace });
 // ── 錯誤訊息 ───────────────────────────────────────────────
 .UiGooglePlaceInput__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--danger);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 // ── 下拉動畫 ───────────────────────────────────────────────

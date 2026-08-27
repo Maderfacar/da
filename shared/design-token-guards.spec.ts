@@ -563,3 +563,73 @@ describe('尺度守衛（階段 2）', () => {
     expect(offenders, `時長請用 --dur-fast / --dur-base / --dur-slow / --dur-slower：\n${offenders.join('\n')}`).toEqual([]);
   });
 });
+
+  /** 排版守衛的共同例外 —— 理由與色彩守衛那份一致，不是「先加進來讓測試變綠」 */
+  const TYPE_ALLOW = new Set([
+    // 全屏阻擋畫面：刻意獨立於設計系統，它要在 token 全掛的情況下仍然讀得到
+    'app/composables/system/use-inapp-browser/inapp-browser-block.vue',
+    // rem() mixin 吃的是傳進來的參數，不是字面值
+    'app/assets/styles/scss-tool/font-size.scss',
+  ]);
+
+describe('排版守衛（階段 2 續）', () => {
+  it('字級不得寫 px 字面值', () => {
+    // `scss-tool/typography.scss` 早在階段 2 之前就定了階梯，還寫著
+    // 「最小字級 12px，不再使用 9 / 10 / 11px」「舊代碼 11px 仍存在 100+ 處，後續以 PR 漸進收斂」。
+    // 那個收斂從來沒發生：實測 444 處低於它自訂的最小值，而整套 16 個 token 只被引用 8 次。
+    // 跟圓角同一個病 —— 階梯定了，實況沒跟上。本輪把 1,309 處接上去。
+    //
+    // 放行 clamp()：超大展示字必須隨視窗縮放，固定 token 蓋不住（否則手機爆版）。
+    // 放行 em / rem / %：那是相對於父級的比例，不是階梯上的一階。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      if (TYPE_ALLOW.has(f.rel)) continue;
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const m = line.match(/font-size\s*:\s*([^;{}]+);/);
+        if (!m) return;
+        const val = m[1]!.replace(/!important/, '').trim();
+        if (/var\(|\$|clamp\(|calc\(|v-bind|inherit/.test(val)) return;
+        if (/^\d*\.?\d+(em|rem|%)$/.test(val)) return;
+        offenders.push(`${f.rel}:${i + 1} → ${val}  ${line.trim().slice(0, 52)}`);
+      });
+    }
+    expect(offenders, `字級請從 --fs-label / -body-sm / -body / -body-lg / -h4 / -h3 / -h2 / -h1 / -display / -hero / -mega 挑：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('行高與字距不得寫字面值', () => {
+    // 行高實測 243 處 25 種、字距 623 處 24 種。字距對精品調特別要緊 ——
+    // 大字收緊、小字放開、UPPERCASE 放到很開，那是「看起來貴」的一部分，不是裝飾。
+    // 行高放行 px（那多半是 Element Plus 的行內覆寫，屬版位不屬排版階梯）。
+    const offenders: string[] = [];
+    for (const f of FILES) {
+      if (TYPE_ALLOW.has(f.rel)) continue;
+      styleOf(f).split(/\r?\n/).forEach((line, i) => {
+        const lh = line.match(/line-height\s*:\s*([^;{}]+);/);
+        if (lh) {
+          const v = lh[1]!.replace(/!important/, '').trim();
+          if (!/var\(|\$|v-bind|calc\(|inherit|normal|px|em|rem|%/.test(v) && /^\d*\.?\d+$/.test(v)) {
+            offenders.push(`${f.rel}:${i + 1} → line-height ${v}`);
+          }
+        }
+        const ls = line.match(/letter-spacing\s*:\s*([^;{}]+);/);
+        if (ls) {
+          const v = ls[1]!.replace(/!important/, '').trim();
+          if (!/var\(|\$|v-bind|calc\(|inherit|normal/.test(v)) {
+            offenders.push(`${f.rel}:${i + 1} → letter-spacing ${v}`);
+          }
+        }
+      });
+    }
+    expect(offenders, `行高用 --lh-*，字距用 --ls-*：\n${offenders.join('\n')}`).toEqual([]);
+  });
+
+  it('typography.scss 只做轉指，不得自帶字面值', () => {
+    // 它原本自帶 16 個字面值（$fs-label: 12px …），與 --fs-* 是兩套排版真相來源。
+    // 這條跟「tokens.scss 只做轉指」是同一條紀律，只是當年漏了這一份檔案。
+    const scss = stripComments(readFileSync(join(ROOT, 'app/assets/styles/scss-tool/typography.scss'), 'utf8'));
+    const offenders = [...scss.matchAll(/^\s*\$([\w-]+)\s*:\s*([^;]+);/gm)]
+      .filter((m) => !/^var\(/.test(m[2]!.trim()))
+      .map((m) => `$${m[1]} = ${m[2]!.trim()}`);
+    expect(offenders, `typography.scss 應只做轉指：\n${offenders.join('\n')}`).toEqual([]);
+  });
+});

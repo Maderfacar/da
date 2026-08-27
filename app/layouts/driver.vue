@@ -271,10 +271,10 @@ onUnmounted(() => {
 
 .LayoutDriver__loading-logo {
   font-family: var(--ff-display);
-  font-size: 32px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
 
   span { color: var(--da-amber); }
 }
@@ -319,22 +319,22 @@ onUnmounted(() => {
 }
 
 .LayoutDriver__perm-icon {
-  font-size: 48px;
+  font-size: var(--fs-display);
   margin-bottom: 12px;
 }
 
 .LayoutDriver__perm-title {
   font-family: var(--ff-display);
-  font-size: 24px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--da-amber-light, var(--accent-lit));
   margin-bottom: 12px;
 }
 
 .LayoutDriver__perm-body {
   font-family: var(--ff-ui);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
   color: var(--surface-a72);
   margin-bottom: 24px;
 }
@@ -347,9 +347,9 @@ onUnmounted(() => {
 
 .LayoutDriver__perm-btn {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 12px 20px;
   border-radius: var(--r-md);
   border: none;
@@ -417,10 +417,10 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   font-family: var(--ff-display);
-  font-size: 20px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -446,9 +446,9 @@ onUnmounted(() => {
 
 .LayoutDriver__status-label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a60);
   white-space: nowrap;
 }
@@ -483,10 +483,10 @@ onUnmounted(() => {
 
 .LayoutDriver__drawer-logo {
   font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-bottom: 4px;
 
   span { color: var(--da-amber); }
@@ -494,9 +494,9 @@ onUnmounted(() => {
 
 .LayoutDriver__drawer-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
@@ -527,15 +527,15 @@ onUnmounted(() => {
 }
 
 .LayoutDriver__nav-icon {
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
   width: 24px;
   text-align: center;
 }
 
 .LayoutDriver__nav-label {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--surface-a60);
 }
@@ -555,13 +555,13 @@ onUnmounted(() => {
   // 標章改用縞黑字：對亮紅 6.89:1，且標章本身對深底也更跳。
   color: var(--ink);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 // ── 抽屜遮罩 ───────────────────────────────────────────────

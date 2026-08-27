@@ -289,17 +289,17 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__count {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
 }
 
 .SettingsFleetExtras__add-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 6px 14px;
   border-radius: var(--r-sm);
   background: var(--accent-a12);
@@ -314,7 +314,7 @@ const ClickDelete = async (e: FleetExtraDto) => {
 .SettingsFleetExtras__empty {
   padding: 24px 16px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   text-align: center;
 }
@@ -351,16 +351,16 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__row-zh {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a88);
 }
 
 .SettingsFleetExtras__row-id {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
   background: var(--surface-a06);
   border: 1px solid var(--surface-a06);
@@ -370,9 +370,9 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__row-price {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
@@ -382,9 +382,9 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__row-disabled-tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
@@ -397,7 +397,7 @@ const ClickDelete = async (e: FleetExtraDto) => {
   flex-wrap: wrap;
   gap: 4px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -409,9 +409,9 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 12px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -467,8 +467,8 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__modal-title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   padding: 20px 22px 14px;
   border-bottom: 1px solid var(--surface-a06);
@@ -505,9 +505,9 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -520,7 +520,7 @@ const ClickDelete = async (e: FleetExtraDto) => {
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   outline: none;
   box-sizing: border-box;
   transition: border-color var(--dur-fast) var(--ease-out);
@@ -559,7 +559,7 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
@@ -577,9 +577,9 @@ const ClickDelete = async (e: FleetExtraDto) => {
 
 .SettingsFleetExtras__action {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 18px;
   border-radius: var(--r-md);
   border: 1px solid transparent;

@@ -89,17 +89,17 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 .PassengerReferralPanel__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 6px;
 }
 
 .PassengerReferralPanel__title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin-bottom: 12px;
 }
@@ -124,17 +124,17 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 .PassengerReferralPanel__code-caption {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber-light);
   margin-bottom: 4px;
 }
 
 .PassengerReferralPanel__code-value {
   font-family: var(--ff-data);
-  font-size: 30px;
-  letter-spacing: 0.16em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-cream);
   font-variant-numeric: tabular-nums;
 }
@@ -146,9 +146,9 @@ section.PassengerReferralPanel(v-if="showPanel")
   border: 1px solid var(--line-green);
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -176,16 +176,16 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 .PassengerReferralPanel__stat-num {
   font-family: var(--ff-data);
-  font-size: 32px;
-  line-height: 1;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-flat);
   color: var(--da-amber);
   font-variant-numeric: tabular-nums;
 }
 
 .PassengerReferralPanel__stat-cap {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray);
   margin-top: 4px;
 }
@@ -201,16 +201,16 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 .PassengerReferralPanel__codes-cap {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-gray);
   margin-bottom: 10px;
 }
 
 .PassengerReferralPanel__empty {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray-light);
   padding: 6px 0;
 }
@@ -244,17 +244,17 @@ section.PassengerReferralPanel(v-if="showPanel")
 
 .PassengerReferralPanel__item-code {
   font-family: var(--ff-data);
-  font-size: 18px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h4);
+  letter-spacing: var(--ls-wide);
   color: var(--da-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .PassengerReferralPanel__item-tag {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -270,7 +270,7 @@ section.PassengerReferralPanel(v-if="showPanel")
 .PassengerReferralPanel__item-amount {
   display: block;
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--da-amber);
 }
@@ -278,7 +278,7 @@ section.PassengerReferralPanel(v-if="showPanel")
 .PassengerReferralPanel__item-expiry {
   display: block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
 }
 </style>

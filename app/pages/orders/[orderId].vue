@@ -290,8 +290,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
@@ -322,11 +322,11 @@ onUnmounted(() => {
   text-align: center;
   padding: 60px 20px;
 
-  &-icon { font-size: 48px; margin-bottom: 12px; }
+  &-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 
   &-text {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--da-gray);
     margin-bottom: 18px;
   }
@@ -334,9 +334,9 @@ onUnmounted(() => {
   &-link {
     display: inline-block;
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     padding: 9px 22px;
     border-radius: var(--r-pill);
     background: var(--da-amber);
@@ -350,9 +350,9 @@ onUnmounted(() => {
 
 .PageOrderDetail__header-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   display: flex;
   align-items: center;
@@ -371,17 +371,17 @@ onUnmounted(() => {
 
 .PageOrderDetail__header-id {
   font-family: var(--ff-data);
-  font-size: 26px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .PageOrderDetail__status {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 // ── Section（cream 玻璃卡）──────────────────────────────
@@ -404,9 +404,9 @@ onUnmounted(() => {
 
 .PageOrderDetail__section-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 12px;
 
@@ -438,16 +438,16 @@ onUnmounted(() => {
 
 .PageOrderDetail__route-tag {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-gray-light);
 }
 
 .PageOrderDetail__route-addr {
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-normal);
   color: var(--da-dark);
   margin-top: 2px;
   word-break: break-word;
@@ -476,16 +476,16 @@ onUnmounted(() => {
 
 .PageOrderDetail__route-meta-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-gray);
 }
 
 .PageOrderDetail__route-meta-val {
   font-family: var(--ff-data);
-  font-size: 20px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
@@ -507,9 +507,9 @@ onUnmounted(() => {
 .PageOrderDetail__driver-badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--line-green);
   background: color-mix(in srgb, var(--line-green) 18%, transparent);
@@ -533,15 +533,15 @@ onUnmounted(() => {
 
 .PageOrderDetail__driver-key {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--surface-a60);
 }
 
 .PageOrderDetail__driver-val {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-cream);
   font-family: var(--ff-ui);
@@ -549,9 +549,9 @@ onUnmounted(() => {
 
   // 車型放大、加粗
   &.is-vehicle {
-    font-size: 19px;
+    font-size: var(--fs-h4);
     font-weight: 700;
-    letter-spacing: 0.01em;
+    letter-spacing: var(--ls-snug);
     color: var(--da-amber-light);
   }
 }
@@ -559,8 +559,8 @@ onUnmounted(() => {
 .PageOrderDetail__driver-plate {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 24px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
   color: var(--da-dark);
   background: var(--da-cream);
   padding: 6px 14px;
@@ -575,7 +575,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   font-family: var(--ff-ui);
-  font-size: 17px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-amber-light);
   text-decoration: none;
@@ -589,9 +589,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   background: var(--da-amber);
   color: var(--da-dark);
@@ -601,9 +601,9 @@ onUnmounted(() => {
 
 .PageOrderDetail__driver-nophone {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a50);
   background: var(--surface-a06);
   border: 1px dashed var(--surface-a20);
@@ -640,15 +640,15 @@ onUnmounted(() => {
 
 .PageOrderDetail__info-label {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
   flex-shrink: 0;
 }
 
 .PageOrderDetail__info-val {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-dark);
   text-align: right;
   margin: 0;
@@ -658,15 +658,15 @@ onUnmounted(() => {
     flex: 1;
     max-width: 65%;
     word-break: break-word;
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 
   &.is-fare {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 22px;
+    font-size: var(--fs-h2);
     color: var(--da-amber);
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-label);
   }
 }
 
@@ -680,7 +680,7 @@ onUnmounted(() => {
 
 .PageOrderDetail__pref-chip {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 3px 9px;
   border-radius: var(--r-pill);
   background: var(--da-amber-pale);
@@ -697,9 +697,9 @@ onUnmounted(() => {
   border: 1px solid var(--stop-a30);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--stop);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);

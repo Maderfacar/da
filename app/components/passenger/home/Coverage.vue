@@ -24,9 +24,9 @@ section.PassengerHomeCoverage
 
 .PassengerHomeCoverage__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -45,17 +45,17 @@ section.PassengerHomeCoverage
 .PassengerHomeCoverage__title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PassengerHomeCoverage__desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 320px;
   font-family: var(--ff-ui);
@@ -91,15 +91,15 @@ section.PassengerHomeCoverage
 
 .PassengerHomeCoverage__iata {
   font-family: var(--ff-display);
-  font-size: 48px;
-  line-height: 1;
+  font-size: var(--fs-display);
+  line-height: var(--lh-flat);
   color: var(--da-dark);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PassengerHomeCoverage__name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 500;
   color: var(--da-gray);
   margin-top: 8px;
@@ -109,9 +109,9 @@ section.PassengerHomeCoverage
   margin-top: 16px;
   text-align: center;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--da-amber);
 }

@@ -130,25 +130,25 @@ onMounted(() => { void ApiSetup(); });
   box-shadow: var(--shadow-soft);
 }
 .Admin2faSetup__title {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   margin: 0 0 12px;
 }
 .Admin2faSetup__lead {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--ink-soft);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin: 0 0 8px;
 }
 .Admin2faSetup__warn {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--accent-deep);
   background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-radius: var(--r-sm);
   padding: 10px 12px;
   margin: 12px 0 20px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 .Admin2faSetup__loading {
   text-align: center;
@@ -165,15 +165,15 @@ onMounted(() => { void ApiSetup(); });
   text-align: center;
 }
 .Admin2faSetup__secretLabel {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
   margin-bottom: 4px;
 }
 .Admin2faSetup__secretCode {
   display: inline-block;
   font-family: var(--ff-mono);
-  font-size: 15px;
-  letter-spacing: 1px;
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-wide);
   background: var(--surface-ground);
   padding: 6px 10px;
   border-radius: var(--r-sm);
@@ -184,14 +184,14 @@ onMounted(() => { void ApiSetup(); });
 }
 .Admin2faSetup__label {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   margin-bottom: 6px;
   color: var(--ink);
 }
 .Admin2faSetup__error {
   color: var(--stop);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   margin: 8px 0;
 }
 .Admin2faSetup__actions {

@@ -123,9 +123,9 @@ const FormatTime = (iso: string | null): string => {
 
 .PageDriverAnnouncements__headerLabel {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -136,8 +136,8 @@ const FormatTime = (iso: string | null): string => {
 
 .PageDriverAnnouncements__headerTitle {
   font-family: var(--ff-display);
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   margin: 0;
 }
@@ -163,11 +163,11 @@ const FormatTime = (iso: string | null): string => {
   padding: 80px 20px;
 }
 
-.PageDriverAnnouncements__emptyIcon { font-size: 48px; margin-bottom: 16px; }
+.PageDriverAnnouncements__emptyIcon { font-size: var(--fs-display); margin-bottom: 16px; }
 
 .PageDriverAnnouncements__emptyText {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a30);
 }
 
@@ -215,7 +215,7 @@ const FormatTime = (iso: string | null): string => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--fs-h1);
   flex-shrink: 0;
 }
 
@@ -237,10 +237,10 @@ const FormatTime = (iso: string | null): string => {
 .PageDriverAnnouncements__cardTitle {
   flex: 1;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--surface-raised);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -259,8 +259,8 @@ const FormatTime = (iso: string | null): string => {
 
 .PageDriverAnnouncements__cardTime {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
 }
 
@@ -272,9 +272,9 @@ const FormatTime = (iso: string | null): string => {
   background: var(--surface-a06);
   color: var(--surface-a60);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   align-self: center;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);

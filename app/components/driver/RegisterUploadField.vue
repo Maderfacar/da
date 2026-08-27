@@ -179,9 +179,9 @@ const ClickClear = () => {
 
 .DriverRegisterUploadField__label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a72);
   display: flex;
   gap: 4px;
@@ -234,22 +234,22 @@ const ClickClear = () => {
 
 .DriverRegisterUploadField__icon {
   font-family: var(--ff-label);
-  font-size: 32px;
+  font-size: var(--fs-h1);
   font-weight: 300;
   color: var(--accent-a60);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .DriverRegisterUploadField__hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
 }
 
 .DriverRegisterUploadField__sub {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
 }
 
@@ -269,8 +269,8 @@ const ClickClear = () => {
   font-family: var(--ff-ui);
   color: var(--surface-a72);
 
-  span:first-child { font-size: 36px; }
-  span:last-child { font-size: 12px; }
+  span:first-child { font-size: var(--fs-h1); }
+  span:last-child { font-size: var(--fs-label); }
 }
 
 .DriverRegisterUploadField__clear {
@@ -283,7 +283,7 @@ const ClickClear = () => {
   border: none;
   background: var(--ink-a60);
   color: var(--surface-raised);
-  font-size: 14px;
+  font-size: var(--fs-body);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -308,7 +308,7 @@ const ClickClear = () => {
 
 .DriverRegisterUploadField__error {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--stop);
 }
 </style>

@@ -707,14 +707,14 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   margin: 0;
 }
 
 .TemplateEditor__key {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
   background: var(--ink-a06);
   border-radius: var(--r-sm);
@@ -724,9 +724,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 // 顯眼的 audience badge — 配色標識「給乘客 / 給司機」
 .TemplateEditor__audience {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   padding: 4px 12px;
   border-radius: var(--r-pill);
   border: 1.5px solid;
@@ -754,14 +754,14 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__desc {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
   margin: 6px 0 0;
 }
 
 .TemplateEditor__trigger {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a60);
   margin: 4px 0 0;
   padding-left: 8px;
@@ -770,7 +770,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__last-edit {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
   margin-top: 4px;
 }
@@ -788,9 +788,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 8px 18px;
   border: none;
   border-bottom: 2px solid transparent;
@@ -834,9 +834,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   border: 1px dashed var(--accent-a30);
   border-radius: var(--r-sm);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 
 // ── Body ────────────────────────────────────────────────────
@@ -859,7 +859,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
   label {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
     color: var(--ink-a70);
   }
@@ -870,7 +870,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
     border: 1px solid var(--ink-a12);
     border-radius: var(--r-sm);
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     background: var(--surface-raised);
     width: 100%;
 
@@ -894,7 +894,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
       display: flex;
       align-items: center;
       cursor: pointer;
-      font-size: 13px;
+      font-size: var(--fs-body-sm);
       font-weight: 500;
       color: inherit;
     }
@@ -903,19 +903,19 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a50);
 }
 
 .TemplateEditor__warn {
   margin-top: 6px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: var(--r-sm);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .TemplateEditor__chips {
@@ -941,12 +941,12 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
   code {
     font-family: var(--ff-mono);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--accent);
   }
   .label {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--ink-a70);
   }
   .req {
@@ -961,7 +961,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
   label {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     cursor: pointer;
     font-weight: 500;
     color: inherit;
@@ -1014,9 +1014,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -1066,9 +1066,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__preview-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -1097,17 +1097,17 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__bubble-title {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--ink);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .TemplateEditor__bubble-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   white-space: pre-wrap;
 }
 
@@ -1121,7 +1121,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   border: none;
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   padding: 10px;
   border-radius: var(--r-md);
@@ -1141,9 +1141,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__text-bubble-content {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--ink);
-  line-height: 1.65;
+  line-height: var(--lh-relaxed);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -1160,9 +1160,9 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__placeholder-examples-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   margin-bottom: 2px;
 }
@@ -1172,8 +1172,8 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   align-items: baseline;
   gap: 8px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
 
   code {
     font-family: var(--ff-mono);
@@ -1192,7 +1192,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
 .TemplateEditor__preview-note {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
   background: var(--accent-a06);
   padding: 6px 10px;

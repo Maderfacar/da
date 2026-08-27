@@ -195,8 +195,8 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__back {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   padding: 6px 0;
   border: none;
   background: none;
@@ -218,7 +218,7 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__header-type {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--r-pill);
@@ -229,20 +229,20 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__header-id {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a40);
 }
 
 .PageDriverDispatchedDetail__header-bidcount {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
   margin-left: auto;
 }
 
 .PageDriverDispatchedDetail__header-bid-tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 3px 10px;
   border-radius: var(--r-pill);
@@ -263,9 +263,9 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__section-title {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a40);
   margin-bottom: 6px;
@@ -274,13 +274,13 @@ onMounted(ApiLoadOrder);
 .PageDriverDispatchedDetail__section-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 24px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 
   &.is-fare {
     font-family: var(--ff-label);
-    font-size: 18px;
+    font-size: var(--fs-h4);
     font-weight: 700;
     color: var(--accent);
   }
@@ -297,7 +297,7 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__section-key {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -314,9 +314,9 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__addr-tag {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   padding: 3px 8px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -327,7 +327,7 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__addr-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
   flex: 1;
   word-break: break-all;
@@ -342,7 +342,7 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__chip {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 4px 10px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -352,16 +352,16 @@ onMounted(ApiLoadOrder);
 
 .PageDriverDispatchedDetail__hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 
 .PageDriverDispatchedDetail__notes {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   padding: 10px 12px;
   background: var(--surface-a06);
   border: 1px solid var(--surface-a06);
@@ -383,9 +383,9 @@ onMounted(ApiLoadOrder);
 .PageDriverDispatchedDetail__action {
   flex: 1;
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 14px 18px;
   border-radius: var(--r-md);
   border: 1px solid transparent;
@@ -429,13 +429,13 @@ onMounted(ApiLoadOrder);
   text-align: center;
   p {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     margin: 0;
   }
 }
 
 .PageDriverDispatchedDetail__error-icon {
-  font-size: 36px;
+  font-size: var(--fs-h1);
 }
 
 .PageDriverDispatchedDetail__spinner {

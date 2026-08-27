@@ -487,7 +487,7 @@ ElDialogPlus.OpenDialogVideoRecording(
   border: none;
   background: var(--ink-a60);
   color: var(--surface-raised);
-  font-size: 24px;
+  font-size: var(--fs-h2);
   display: flex;
   align-items: center;
   justify-content: center;

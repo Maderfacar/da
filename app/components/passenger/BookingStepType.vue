@@ -526,9 +526,9 @@ const ClickNext = () => {
 .PassengerBookingStepType {
   &__section-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.25em;
+    letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
     color: var(--da-amber);
     display: flex;
@@ -542,10 +542,10 @@ const ClickNext = () => {
 
   &__title {
     font-family: var(--ff-display);
-    font-size: 28px;
+    font-size: var(--fs-h1);
     color: var(--da-dark);
     margin-bottom: 20px;
-    letter-spacing: 0.02em;
+    letter-spacing: var(--ls-snug);
   }
 
   &__grid {
@@ -577,19 +577,19 @@ const ClickNext = () => {
     &.is-active { border-color: var(--da-amber); background: var(--da-amber-pale); }
   }
 
-  &__card-icon { font-size: 32px; color: var(--da-amber); }
+  &__card-icon { font-size: var(--fs-h1); color: var(--da-amber); }
 
   &__card-en {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: var(--ls-caps-lg);
     color: var(--da-gray);
   }
 
   &__card-zh {
     font-family: var(--ff-ui);
-    font-size: 15px;
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--da-dark);
   }
@@ -626,25 +626,25 @@ const ClickNext = () => {
   &__charter-day-n {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 22px;
+    font-size: var(--fs-h2);
     color: var(--da-dark);
-    line-height: 1;
+    line-height: var(--lh-flat);
   }
 
   &__charter-day-unit {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     color: var(--da-gray);
   }
 
   &__charter-hint {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     margin: 8px 0 0;
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 
   // ── 航班區塊 ──────────────────────────────────────────────────
@@ -657,9 +657,9 @@ const ClickNext = () => {
 
   &__flight-input {
     font-family: var(--ff-label);
-    font-size: 18px;
+    font-size: var(--fs-h4);
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
     width: 100%;
     padding: 12px 44px 12px 16px;
@@ -671,7 +671,7 @@ const ClickNext = () => {
     transition: border-color var(--dur-base) var(--ease-out);
     box-sizing: border-box;
 
-    &::placeholder { color: var(--da-gray); font-weight: 400; letter-spacing: 0.05em; }
+    &::placeholder { color: var(--da-gray); font-weight: 400; letter-spacing: var(--ls-label); }
     &:focus { border-color: var(--da-amber); }
   }
 
@@ -690,14 +690,14 @@ const ClickNext = () => {
 
   &__time-error {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--stop);
     margin: 6px 0 0;
   }
 
   &__flight-error {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--stop);
     margin: 0 0 8px;
   }
@@ -707,9 +707,9 @@ const ClickNext = () => {
     display: inline-block;
     margin-left: 8px;
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     color: var(--da-amber);
     cursor: pointer;
     text-decoration: underline;
@@ -737,8 +737,8 @@ const ClickNext = () => {
 
   &__manual-title {
     font-family: var(--ff-display);
-    font-size: 18px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h4);
+    letter-spacing: var(--ls-label);
     color: var(--da-dark);
   }
 
@@ -746,20 +746,20 @@ const ClickNext = () => {
     background: transparent;
     border: 0;
     padding: 4px;
-    font-size: 18px;
+    font-size: var(--fs-h4);
     color: var(--da-gray);
     cursor: pointer;
-    line-height: 1;
+    line-height: var(--lh-flat);
 
     &:hover { color: var(--da-dark); }
   }
 
   &__manual-hint {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     margin: 0 0 12px;
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 
   &__manual-row {
@@ -771,9 +771,9 @@ const ClickNext = () => {
 
   &__manual-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--ls-caps);
     text-transform: uppercase;
     color: var(--da-gray);
     width: 64px;
@@ -790,9 +790,9 @@ const ClickNext = () => {
     flex: 1;
     padding: 8px 0;
     font-family: var(--ff-label);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
     border-radius: var(--r-md);
@@ -813,9 +813,9 @@ const ClickNext = () => {
     flex: 1;
     padding: 8px 12px;
     font-family: var(--ff-label);
-    font-size: 15px;
+    font-size: var(--fs-body);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     border: 1.5px solid var(--da-gray-pale);
     border-radius: var(--r-md);
     background: var(--surface-raised);
@@ -829,7 +829,7 @@ const ClickNext = () => {
 
   &__manual-error {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--stop);
     margin: 4px 0 8px;
   }
@@ -860,14 +860,14 @@ const ClickNext = () => {
   &__flight-no {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 22px;
+    font-size: var(--fs-h2);
     color: var(--da-dark);
-    letter-spacing: 0.05em;
+    letter-spacing: var(--ls-label);
   }
 
   &__flight-airline {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
     color: var(--da-gray);
     flex: 1;
@@ -875,9 +875,9 @@ const ClickNext = () => {
 
   &__flight-badge {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     padding: 3px 10px;
     border-radius: var(--r-pill);
 
@@ -892,16 +892,16 @@ const ClickNext = () => {
 
   &__flight-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: var(--ls-caps);
     text-transform: uppercase;
     color: var(--da-gray);
   }
 
   &__flight-val {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--da-dark);
   }

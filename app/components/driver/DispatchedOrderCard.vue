@@ -143,7 +143,7 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__type-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 3px 10px;
   border-radius: var(--r-pill);
@@ -154,14 +154,14 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__id {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   margin-left: auto;
 }
 
 .DriverDispatchedOrderCard__bid-tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 3px 10px;
   border-radius: var(--r-pill);
@@ -185,8 +185,8 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__time-label {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.15em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a40);
   text-transform: uppercase;
 }
@@ -194,8 +194,8 @@ const ClickWithdraw = (e: Event) => {
 .DriverDispatchedOrderCard__time-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 22px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 }
 
@@ -213,7 +213,7 @@ const ClickWithdraw = (e: Event) => {
   align-items: center;
   gap: 10px;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
 
   span {
@@ -254,8 +254,8 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__countdown {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   padding: 5px 10px;
   margin-bottom: 12px;
   border-radius: var(--r-sm);
@@ -277,7 +277,7 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__chip {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 3px 9px;
   border-radius: var(--r-pill);
   background: var(--surface-a06);
@@ -297,7 +297,7 @@ const ClickWithdraw = (e: Event) => {
   flex-wrap: wrap;
   gap: 12px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a60);
 }
 
@@ -308,9 +308,9 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 14px;
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);

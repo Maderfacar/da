@@ -2108,9 +2108,9 @@ onMounted(() => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -2121,8 +2121,8 @@ onMounted(() => {
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
     color: var(--surface-raised);
   }
 }
@@ -2144,9 +2144,9 @@ onMounted(() => {
 
 .PageAdminOrders__filter-btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a06);
@@ -2164,15 +2164,15 @@ onMounted(() => {
 
 .PageAdminOrders__count {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
 }
 
 .PageAdminOrders__create-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
@@ -2204,7 +2204,7 @@ onMounted(() => {
   text-align: center;
   padding: 60px 0;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a30);
 }
 
@@ -2249,9 +2249,9 @@ onMounted(() => {
 
     span {
       font-family: var(--ff-label);
-      font-size: 11px;
+      font-size: var(--fs-label);
       font-weight: 700;
-      letter-spacing: 0.15em;
+      letter-spacing: var(--ls-caps-lg);
       color: var(--surface-a30);
       text-transform: uppercase;
     }
@@ -2260,7 +2260,7 @@ onMounted(() => {
 
 .PageAdminOrders__cell {
   font-family: var(--ff-label);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--surface-a82);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2281,7 +2281,7 @@ onMounted(() => {
 
 .PageAdminOrders__passenger-name {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--surface-raised);
   max-width: 100%;
@@ -2291,7 +2291,7 @@ onMounted(() => {
 
 .PageAdminOrders__pickup-region {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   max-width: 100%;
   overflow: hidden;
@@ -2300,7 +2300,7 @@ onMounted(() => {
 
 .PageAdminOrders__pickup-place {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--surface-a96);
   max-width: 100%;
   overflow: hidden;
@@ -2309,9 +2309,9 @@ onMounted(() => {
 
 .PageAdminOrders__flight-chip {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--note-a15);
@@ -2352,27 +2352,27 @@ onMounted(() => {
     flex-direction: column;
     gap: 2px;
     min-width: 0;
-    font-size: 15px;
+    font-size: var(--fs-body);
   }
 
   .PageAdminOrders__cell::before {
     content: attr(data-label);
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
     color: var(--surface-a30);
   }
 
   .PageAdminOrders__cell.is-id { grid-area: id; }
-  .PageAdminOrders__order-id { font-size: 14px; color: var(--surface-raised); font-weight: 700; }
+  .PageAdminOrders__order-id { font-size: var(--fs-body); color: var(--surface-raised); font-weight: 700; }
 
   .PageAdminOrders__cell.is-status { grid-area: status; align-items: flex-end; }
 
   .PageAdminOrders__cell.is-time {
     grid-area: time;
-    font-size: 16px;
+    font-size: var(--fs-body-lg);
     color: var(--surface-raised);
     font-weight: 700;
     padding: 8px 0;
@@ -2382,7 +2382,7 @@ onMounted(() => {
   .PageAdminOrders__cell.is-time::before { color: var(--surface-a30); }
 
   .PageAdminOrders__cell.is-driver { grid-area: driver; }
-  .PageAdminOrders__cell.is-fare { grid-area: fare; align-items: flex-end; font-size: 17px; }
+  .PageAdminOrders__cell.is-fare { grid-area: fare; align-items: flex-end; font-size: var(--fs-body-lg); }
   .PageAdminOrders__cell.is-type { grid-area: type; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 6px; }
   .PageAdminOrders__cell.is-type::before { flex-basis: 100%; }
   .PageAdminOrders__cell.is-vehicle { grid-area: vehicle; align-items: flex-end; }
@@ -2410,23 +2410,23 @@ onMounted(() => {
 
 @media (max-width: 479.98px) {
   .PageAdminOrders__row { padding: 12px; }
-  .PageAdminOrders__cell.is-time { font-size: 15px; }
+  .PageAdminOrders__cell.is-time { font-size: var(--fs-body); }
 }
 
 .PageAdminOrders__order-id {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a72);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageAdminOrders__referral-chip {
   display: inline-block;
   margin-top: 4px;
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: var(--ls-none);
   color: var(--wait);
   background: var(--wait-a15);
   border: 1px solid var(--wait-a30);
@@ -2437,7 +2437,7 @@ onMounted(() => {
 
 .PageAdminOrders__type-badge {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 3px 9px;
   border-radius: var(--r-pill);
@@ -2448,14 +2448,14 @@ onMounted(() => {
 
 .PageAdminOrders__unassigned {
   color: var(--surface-a30);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .PageAdminOrders__status {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 9px;
   border-radius: var(--r-pill);
 
@@ -2471,9 +2471,9 @@ onMounted(() => {
   display: inline-block;
   margin-top: 4px;
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 2px 6px;
   border-radius: var(--r-pill);
 
@@ -2493,9 +2493,9 @@ onMounted(() => {
 
 .PageAdminOrders__rematch-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .PageAdminOrders__bid-history {
@@ -2516,8 +2516,8 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   margin-bottom: 6px;
 }
 
@@ -2543,7 +2543,7 @@ onMounted(() => {
 
 .PageAdminOrders__history-bid {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--surface-a06);
@@ -2558,15 +2558,15 @@ onMounted(() => {
 
 .PageAdminOrders__history-empty {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
 }
 
 .PageAdminOrders__dispatch-empty {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin-bottom: 8px;
 }
 
@@ -2576,7 +2576,7 @@ onMounted(() => {
   gap: 2px;
   margin-bottom: 10px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
 }
 
@@ -2587,7 +2587,7 @@ onMounted(() => {
 
 .PageAdminOrders__bid-loading {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   padding: 12px 0;
   text-align: center;
@@ -2634,9 +2634,9 @@ onMounted(() => {
 
 .PageAdminOrders__modal-type {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 10px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -2646,17 +2646,17 @@ onMounted(() => {
 
 .PageAdminOrders__modal-vehicle {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--surface-a60);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 .PageAdminOrders__modal-status {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 8px;
   border-radius: var(--r-pill);
 
@@ -2674,8 +2674,8 @@ onMounted(() => {
   background: var(--surface-a06);
   color: var(--surface-a60);
   border-radius: var(--r-round);
-  font-size: 22px;
-  line-height: 1;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -2685,8 +2685,8 @@ onMounted(() => {
 .PageAdminOrders__modal-id {
   padding: 8px 20px 0;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
 }
 
@@ -2699,9 +2699,9 @@ onMounted(() => {
 
 .PageAdminOrders__quick-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 14px;
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a30);
@@ -2731,7 +2731,7 @@ onMounted(() => {
 
 .PageAdminOrders__quick-level {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -2750,8 +2750,8 @@ onMounted(() => {
 
 .PageAdminOrders__dispatch-level-label {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps);
   color: var(--surface-a30);
   text-transform: uppercase;
 }
@@ -2759,7 +2759,7 @@ onMounted(() => {
 .PageAdminOrders__dispatch-level-select {
   flex: 1;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -2771,7 +2771,7 @@ onMounted(() => {
 
 .PageAdminOrders__dispatch-draft-hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   margin-top: 6px;
   color: var(--accent-lit);
 }
@@ -2779,7 +2779,7 @@ onMounted(() => {
 // 強制必選版：未選首發等級時提示（紅色警示，比 draft-hint 更顯眼）
 .PageAdminOrders__dispatch-required-hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   margin-top: 6px;
   color: var(--stop);
 }
@@ -2794,7 +2794,7 @@ onMounted(() => {
 
 .PageAdminOrders__row-dispatch-level {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 4px 6px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -2830,9 +2830,9 @@ select option:disabled {
 
 .PageAdminOrders__section-title {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
   margin-bottom: 8px;
@@ -2844,7 +2844,7 @@ select option:disabled {
   gap: 12px;
   padding: 6px 0;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 
   // Charter Fare V1 W5：司機應現場收取金額 — 整段高亮提示
   &.is-charter-collect {
@@ -2853,12 +2853,12 @@ select option:disabled {
     border-radius: var(--r-sm);
     border: 1px solid var(--accent-a30);
     background: var(--accent-a06);
-    font-size: 14px;
+    font-size: var(--fs-body);
 
     .PageAdminOrders__section-key {
       color: var(--accent-lit);
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: var(--ls-snug);
     }
   }
 }
@@ -2887,9 +2887,9 @@ select option:disabled {
   padding: 4px 10px;
   border-radius: var(--r-pill);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
 
   &.is-ugly {
     color: var(--accent-lit);
@@ -2906,8 +2906,8 @@ select option:disabled {
 
 .PageAdminOrders__notes {
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
   color: var(--surface-a72);
   white-space: pre-wrap;
   background: var(--surface-a06);
@@ -2932,9 +2932,9 @@ select option:disabled {
 
 .PageAdminOrders__addr-tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 8px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -2946,18 +2946,18 @@ select option:disabled {
 
 .PageAdminOrders__addr-name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-raised);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   word-break: break-word;
 }
 
 .PageAdminOrders__addr-full {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin-top: 2px;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   word-break: break-word;
 }
 
@@ -2969,7 +2969,7 @@ select option:disabled {
 
 .PageAdminOrders__extra-tag {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 3px 10px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -2992,9 +2992,9 @@ select option:disabled {
 
 .PageAdminOrders__edit-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
@@ -3008,7 +3008,7 @@ select option:disabled {
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   outline: none;
   resize: none;
   box-sizing: border-box;
@@ -3054,8 +3054,8 @@ select option:disabled {
   border: none;
   background: none;
   color: var(--surface-a30);
-  font-size: 15px;
-  line-height: 1;
+  font-size: var(--fs-body);
+  line-height: var(--lh-flat);
   cursor: grab;
   transition: color var(--dur-fast) var(--ease-out);
 
@@ -3077,8 +3077,8 @@ select option:disabled {
   background: var(--note-a08);
   color: var(--note);
   border-radius: var(--r-xs);
-  font-size: 8px;
-  line-height: 1;
+  font-size: var(--fs-label);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
@@ -3088,9 +3088,9 @@ select option:disabled {
 
 .PageAdminOrders__stopover-num {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--note);
   background: var(--note-a08);
   border: 1px solid var(--note-a30);
@@ -3106,8 +3106,8 @@ select option:disabled {
   background: var(--stop-a08);
   color: var(--stop);
   border-radius: var(--r-sm);
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -3116,9 +3116,9 @@ select option:disabled {
 
 .PageAdminOrders__stopover-add {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 8px 12px;
   border-radius: var(--r-md);
   border: 1px dashed var(--note-a30);
@@ -3156,7 +3156,7 @@ select option:disabled {
 
 .PageAdminOrders__extra-pick-btn {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a06);
@@ -3176,14 +3176,14 @@ select option:disabled {
 .PageAdminOrders__tag-edit { gap: 10px; }
 
 .PageAdminOrders__tag-edit-hint {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--wait);
   font-weight: 400;
   margin-left: 6px;
 }
 
 .PageAdminOrders__tag-edit-empty {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   padding: 8px 12px;
   border-radius: var(--r-sm);
@@ -3205,14 +3205,14 @@ select option:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
 
   &.is-error { color: var(--stop); justify-content: flex-start; }
 
   &.is-warning {
     color: var(--wait);
-    font-size: 12px;
+    font-size: var(--fs-label);
     justify-content: flex-start;
   }
 
@@ -3229,7 +3229,7 @@ select option:disabled {
 
 .PageAdminOrders__tag-edit-key {
   font-family: var(--ff-label);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a60);
 }
 
@@ -3255,9 +3255,9 @@ select option:disabled {
 
 .PageAdminOrders__action {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 18px;
   border-radius: var(--r-md);
   border: 1px solid transparent;
@@ -3306,16 +3306,16 @@ select option:disabled {
     gap: 8px;
   }
   .PageAdminOrders__foot-spacer { display: none; }
-  .PageAdminOrders__action { flex: 1 1 calc(50% - 4px); padding: 9px 12px; font-size: 12px; }
+  .PageAdminOrders__action { flex: 1 1 calc(50% - 4px); padding: 9px 12px; font-size: var(--fs-label); }
 }
 
 // ── 列表 chevron ───────────────────────────────────────────
 .PageAdminOrders__row-chevron {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: var(--surface-a20);
   text-align: center;
   display: block;
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-left: auto;
 }
 
@@ -3340,9 +3340,9 @@ select option:disabled {
   align-items: center;
   gap: 3px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   padding: 5px 9px;
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
@@ -3402,9 +3402,9 @@ select option:disabled {
   display: inline-flex;
   align-items: center;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 1px 6px;
   border-radius: var(--r-pill);
   background: var(--surface-a06);
@@ -3416,9 +3416,9 @@ select option:disabled {
   display: inline-flex;
   align-items: center;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 10px;
   border-radius: var(--r-pill);
   white-space: nowrap;
@@ -3445,7 +3445,7 @@ select option:disabled {
 
 .PageAdminOrders__driver-name {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-raised);
   font-weight: 700;
 
@@ -3454,9 +3454,9 @@ select option:disabled {
 
 .PageAdminOrders__driver-assign-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 6px 12px;
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
@@ -3472,7 +3472,7 @@ select option:disabled {
 // ── 字數提示 ──────────────────────────────────────────────
 .PageAdminOrders__char-count {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   text-align: right;
   margin-top: 4px;
@@ -3503,17 +3503,17 @@ select option:disabled {
 
 .PageAdminOrders__sub-title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   margin-bottom: 16px;
 }
 
 .PageAdminOrders__sub-subtitle {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
   margin-left: 4px;
 }
@@ -3527,10 +3527,10 @@ select option:disabled {
 
 .PageAdminOrders__sub-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin-top: 8px;
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 
   &.is-warn { color: var(--wait-a70); }
 }

@@ -161,9 +161,9 @@ onMounted(ApiLoadOrders);
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -174,8 +174,8 @@ onMounted(ApiLoadOrders);
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
     color: var(--surface-raised);
   }
 }
@@ -194,9 +194,9 @@ onMounted(ApiLoadOrders);
 .PageDriverDispatched__tab {
   position: relative;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 10px 16px;
   border: none;
   background: none;
@@ -225,7 +225,7 @@ onMounted(ApiLoadOrders);
 
 .PageDriverDispatched__tab-count {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--surface-a06);
@@ -253,26 +253,26 @@ onMounted(ApiLoadOrders);
 
   p {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     margin: 8px 0 4px;
     color: var(--surface-a72);
   }
 
   small {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
   }
 }
 
 .PageDriverDispatched__empty-icon {
-  font-size: 40px;
-  line-height: 1;
+  font-size: var(--fs-display);
+  line-height: var(--lh-flat);
 }
 
 .PageDriverDispatched__bid-note {
   font-family: var(--ff-ui);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--fs-label);
+  line-height: var(--lh-relaxed);
   color: var(--surface-a60);
   background: var(--accent-a06);
   border: 1px solid var(--accent-a20);

@@ -781,9 +781,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__count {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
 }
 
@@ -795,9 +795,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__reload-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 6px 12px;
   border-radius: var(--r-sm);
   background: var(--surface-a06);
@@ -812,9 +812,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__add-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 6px 14px;
   border-radius: var(--r-sm);
   background: var(--accent-a12);
@@ -829,7 +829,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 .SettingsFleetVehicles__empty {
   padding: 24px 16px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   text-align: center;
 }
@@ -867,16 +867,16 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__row-zh {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a88);
 }
 
 .SettingsFleetVehicles__row-id {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
   background: var(--surface-a06);
   border: 1px solid var(--surface-a06);
@@ -886,9 +886,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__row-disabled-tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
@@ -901,7 +901,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   flex-wrap: wrap;
   gap: 4px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -913,9 +913,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 12px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -971,8 +971,8 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__modal-title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   padding: 20px 22px 14px;
   border-bottom: 1px solid var(--surface-a06);
@@ -1009,9 +1009,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -1024,7 +1024,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   outline: none;
   box-sizing: border-box;
   transition: border-color var(--dur-fast) var(--ease-out);
@@ -1078,9 +1078,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 // ── 車卡圖片上傳 ─────────────────────────────────────────────────────────
 .SettingsFleetVehicles__image-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   padding: 2px 2px 0;
 }
 
@@ -1102,8 +1102,8 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__image-spec {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
   text-transform: none;
 }
@@ -1132,8 +1132,8 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
 }
 
@@ -1146,8 +1146,8 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   background: var(--ink-a60);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
 }
 
 .SettingsFleetVehicles__image-actions {
@@ -1185,23 +1185,23 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__charter-toggle-label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 .SettingsFleetVehicles__charter-toggle-hint {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
 .SettingsFleetVehicles__charter-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   padding: 10px 2px 6px;
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .SettingsFleetVehicles__charter-copy {
@@ -1214,9 +1214,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__charter-copy-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   color: var(--surface-a40);
 }
 
@@ -1255,9 +1255,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__plan-title {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a82);
 }
 
@@ -1269,7 +1269,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
@@ -1287,9 +1287,9 @@ const ClickDelete = async (v: FleetVehicleDto) => {
 
 .SettingsFleetVehicles__action {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 18px;
   border-radius: var(--r-md);
   border: 1px solid transparent;

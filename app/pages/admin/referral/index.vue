@@ -323,15 +323,15 @@ onMounted(() => {
 
 .PageReferral__title {
   font-family: var(--ff-display);
-  font-size: 32px;
+  font-size: var(--fs-h1);
   color: var(--da-dark);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageReferral__sub {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--da-gray);
   text-transform: uppercase;
   margin-top: 4px;
@@ -351,9 +351,9 @@ onMounted(() => {
   border: none;
   border-bottom: 2px solid transparent;
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--da-gray);
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
@@ -384,16 +384,16 @@ onMounted(() => {
 
 .PageReferral__section-title {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin-bottom: 4px;
 }
 
 .PageReferral__section-desc {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
   margin-bottom: 16px;
 }
@@ -410,14 +410,14 @@ onMounted(() => {
 
 .PageReferral__switch-label {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
 }
 
 .PageReferral__switch-hint {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
 }
 
@@ -439,18 +439,18 @@ onMounted(() => {
 
 .PageReferral__label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--da-gray);
 }
 
 .PageReferral__hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 // ── 圖片預覽 ───────────────────────────────────────────────
@@ -479,7 +479,7 @@ onMounted(() => {
 .PageReferral__error {
   color: var(--stop);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   margin-bottom: 12px;
 }
 
@@ -496,9 +496,9 @@ onMounted(() => {
 
 .PageReferral__anomaly-count {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a30);
@@ -517,7 +517,7 @@ onMounted(() => {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 
   thead {
     background: var(--da-dark);
@@ -528,8 +528,8 @@ onMounted(() => {
     text-align: left;
     padding: 12px 14px;
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-wide);
     text-transform: uppercase;
     font-weight: 700;
   }
@@ -546,14 +546,14 @@ onMounted(() => {
 
 .PageReferral__uid {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   word-break: break-all;
 }
 
 .PageReferral__code {
   font-family: var(--ff-mono);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--da-dark);
 }
@@ -561,9 +561,9 @@ onMounted(() => {
 .PageReferral__badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 2px 10px;
   border-radius: var(--r-pill);
 
@@ -575,7 +575,7 @@ onMounted(() => {
 
 .PageReferral__count {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--da-dark);
 
@@ -584,7 +584,7 @@ onMounted(() => {
 
 .PageReferral__anomaly-tag {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--stop);
   margin-top: 2px;
@@ -592,7 +592,7 @@ onMounted(() => {
 
 .PageReferral__codes {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
 }
 
@@ -612,7 +612,7 @@ onMounted(() => {
 
   .PageReferral__grid { grid-template-columns: 1fr; }
 
-  .PageReferral__table { font-size: 11px; }
+  .PageReferral__table { font-size: var(--fs-label); }
 
   .PageReferral__table th,
   .PageReferral__table td { padding: 8px; }

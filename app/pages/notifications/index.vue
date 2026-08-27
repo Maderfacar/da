@@ -128,9 +128,9 @@ const FormatTime = (iso: string | null): string => {
 
 .PageNotifications__headerLabel {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 10px;
@@ -139,7 +139,7 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__headerTitle {
   font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
-  line-height: 0.92;
+  line-height: var(--lh-flat);
   color: var(--da-dark);
   margin: 0;
 }
@@ -168,11 +168,11 @@ const FormatTime = (iso: string | null): string => {
   padding: 80px 20px;
 }
 
-.PageNotifications__emptyIcon { font-size: 48px; margin-bottom: 16px; }
+.PageNotifications__emptyIcon { font-size: var(--fs-display); margin-bottom: 16px; }
 
 .PageNotifications__emptyText {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-gray);
 }
 
@@ -223,7 +223,7 @@ const FormatTime = (iso: string | null): string => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--fs-h1);
   flex-shrink: 0;
 }
 
@@ -245,10 +245,10 @@ const FormatTime = (iso: string | null): string => {
 .PageNotifications__cardTitle {
   flex: 1;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-dark);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -267,8 +267,8 @@ const FormatTime = (iso: string | null): string => {
 
 .PageNotifications__cardTime {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray-light);
 }
 
@@ -281,9 +281,9 @@ const FormatTime = (iso: string | null): string => {
   background: var(--surface-a60);
   color: var(--da-gray);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   align-self: center;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);

@@ -1369,9 +1369,9 @@ const ClickSaveFareRules = async () => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -1382,8 +1382,8 @@ const ClickSaveFareRules = async () => {
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
     color: var(--surface-raised);
   }
 }
@@ -1398,9 +1398,9 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__main-tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a06);
@@ -1437,9 +1437,9 @@ const ClickSaveFareRules = async () => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 9px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
@@ -1449,7 +1449,7 @@ const ClickSaveFareRules = async () => {
 
   &-title {
     font-family: var(--ff-label);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--surface-a72);
   }
@@ -1466,9 +1466,9 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 8px 20px;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1490,9 +1490,9 @@ const ClickSaveFareRules = async () => {
 // ── 使用者清單 ────────────────────────────────────────────────────
 .PageAdminSettings__sub-title {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
   padding: 12px 16px 4px;
@@ -1529,7 +1529,7 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__user-name {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-a82);
   margin-bottom: 2px;
@@ -1541,13 +1541,13 @@ const ClickSaveFareRules = async () => {
 // P18：admin level 徽章
 .PageAdminSettings__level-badge {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 1px 6px;
   border: 1px solid;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 
   &.is-super {
     color: var(--wait);
@@ -1567,7 +1567,7 @@ const ClickSaveFareRules = async () => {
 }
 
 .PageAdminSettings__user-uid {
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1583,9 +1583,9 @@ const ClickSaveFareRules = async () => {
 // ── 按鈕 ────────────────────────────────────────────────────────
 .PageAdminSettings__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 14px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -1632,7 +1632,7 @@ const ClickSaveFareRules = async () => {
 
     &.is-mini {
       padding: 3px 10px;
-      font-size: 10px;
+      font-size: var(--fs-label);
     }
   }
 }
@@ -1640,15 +1640,15 @@ const ClickSaveFareRules = async () => {
 // P34：細粒度權限 override 徽章 + 展開區
 .PageAdminSettings__perm-badge {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
   border-radius: var(--r-pill);
   padding: 1px 6px;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   margin-left: 4px;
 }
 
@@ -1670,15 +1670,15 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__perm-head-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
 }
 
 .PageAdminSettings__perm-head-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   flex: 1;
 }
@@ -1734,7 +1734,7 @@ const ClickSaveFareRules = async () => {
   grid-column: 2;
   grid-row: 1;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-a82);
 }
@@ -1743,7 +1743,7 @@ const ClickSaveFareRules = async () => {
   grid-column: 2;
   grid-row: 2;
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin-top: 1px;
 }
@@ -1765,7 +1765,7 @@ const ClickSaveFareRules = async () => {
   border-radius: var(--r-sm);
   padding: 7px 12px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-raised);
 
   &::placeholder { color: var(--surface-a30); }
@@ -1776,14 +1776,14 @@ const ClickSaveFareRules = async () => {
 .PageAdminSettings__loading {
   padding: 20px 16px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
 }
 
 .PageAdminSettings__empty {
   padding: 20px 16px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   text-align: center;
 }
@@ -1799,9 +1799,9 @@ const ClickSaveFareRules = async () => {
   padding: 12px 16px;
   margin-bottom: 24px;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 
   &.is-info {
     margin: 0 16px 12px;
@@ -1834,9 +1834,9 @@ const ClickSaveFareRules = async () => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 9px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
@@ -1846,7 +1846,7 @@ const ClickSaveFareRules = async () => {
 
   &-title {
     font-family: var(--ff-label);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--surface-a72);
   }
@@ -1871,7 +1871,7 @@ const ClickSaveFareRules = async () => {
 
   &-key {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
     color: var(--surface-a72);
     margin-bottom: 2px;
@@ -1879,13 +1879,13 @@ const ClickSaveFareRules = async () => {
 
   &-hint {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--surface-a30);
   }
 
   &-val {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--surface-a40);
     flex-shrink: 0;
     max-width: 55%;
@@ -1907,7 +1907,7 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-meta {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   padding: 10px 16px 0;
 }
@@ -1928,9 +1928,9 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-block-title {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--accent);
 }
 
@@ -1939,7 +1939,7 @@ const ClickSaveFareRules = async () => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--surface-a72);
   cursor: pointer;
@@ -1983,17 +1983,17 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--surface-a30);
 
   &.is-invalid {
     color: var(--stop);
     text-transform: none;
-    letter-spacing: 0.04em;
-    font-size: 11px;
+    letter-spacing: var(--ls-label);
+    font-size: var(--fs-label);
   }
 }
 
@@ -2003,9 +2003,9 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-subhead {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--surface-a60);
   margin: 14px 0 8px;
@@ -2013,19 +2013,19 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 400;
   color: var(--surface-a60);
-  line-height: 1.55;
+  line-height: var(--lh-normal);
   margin-top: 6px;
 }
 
 .PageAdminSettings__fare-block-desc {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 400;
   color: var(--surface-a60);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin: 8px 0 14px;
 }
 
@@ -2035,9 +2035,9 @@ const ClickSaveFareRules = async () => {
   margin-left: 8px;
   padding: 2px 8px;
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   border-radius: var(--r-pill);
 
   &.is-paused {
@@ -2086,7 +2086,7 @@ const ClickSaveFareRules = async () => {
   background: var(--surface-a06);
   color: var(--surface-a60);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
@@ -2100,7 +2100,7 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-window-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   margin-bottom: 5px;
 }
@@ -2120,7 +2120,7 @@ const ClickSaveFareRules = async () => {
   background: var(--surface-a06);
   color: var(--surface-a60);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
@@ -2146,7 +2146,7 @@ const ClickSaveFareRules = async () => {
 
 .PageAdminSettings__fare-error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
@@ -2157,7 +2157,7 @@ const ClickSaveFareRules = async () => {
   // 靠近儲存按鈕的即時警告：加強對比 + 更明顯邊框
   &.is-near-save {
     margin: 8px 16px 12px;
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 600;
     background: var(--wait-a15);
     border-color: var(--wait-a45);
@@ -2180,10 +2180,10 @@ const ClickSaveFareRules = async () => {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--wait);
   strong {
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--wait);
   }
 }
@@ -2193,7 +2193,7 @@ const ClickSaveFareRules = async () => {
   color: var(--accent-deep);
   border-radius: var(--r-sm);
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   cursor: pointer;
   &:hover { background: var(--wait-a15); }

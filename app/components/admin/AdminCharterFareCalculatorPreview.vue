@@ -417,9 +417,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__head-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
@@ -429,14 +429,14 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__head-title {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a82);
 }
 
 .AdminCharterFareCalculatorPreview__head-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -462,9 +462,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -478,9 +478,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__plans-head {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--surface-a60);
   margin-bottom: 8px;
@@ -495,7 +495,7 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__plan-label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--surface-a72);
   min-width: 64px;
@@ -510,9 +510,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__signals-head {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--surface-a60);
   margin-bottom: 8px;
@@ -529,7 +529,7 @@ const estimatedEndDisplay = computed(() => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
   cursor: pointer;
   user-select: none;
@@ -556,9 +556,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 8px 18px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
@@ -581,7 +581,7 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
@@ -599,9 +599,9 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__result-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--accent);
   background: var(--accent-a06);
@@ -628,13 +628,13 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__day-key {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
 }
 
 .AdminCharterFareCalculatorPreview__day-val {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--surface-a82);
 }
@@ -662,13 +662,13 @@ const estimatedEndDisplay = computed(() => {
 
 .AdminCharterFareCalculatorPreview__line-key {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
 }
 
 .AdminCharterFareCalculatorPreview__line-val {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a88);
 }
@@ -676,6 +676,6 @@ const estimatedEndDisplay = computed(() => {
 .AdminCharterFareCalculatorPreview__line.is-final .AdminCharterFareCalculatorPreview__line-key,
 .AdminCharterFareCalculatorPreview__line.is-final .AdminCharterFareCalculatorPreview__line-val {
   color: var(--da-stripe-yellow);
-  font-size: 15px;
+  font-size: var(--fs-body);
 }
 </style>

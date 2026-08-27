@@ -43,8 +43,8 @@ const ClickPick = (v: ThemeChoice) => {
 
 .CommonThemeToggle__label {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -63,8 +63,8 @@ const ClickPick = (v: ThemeChoice) => {
   min-height: 30px;
   padding: 0 6px;
   font-family: var(--ff-ui);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-snug);
   color: var(--surface-a50);
   background: none;
   border: none;

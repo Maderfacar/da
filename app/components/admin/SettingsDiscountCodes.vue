@@ -336,7 +336,7 @@ onMounted(() => {
   text-align: center;
   color: var(--surface-a50);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 
 .SettingsDiscountCodes__list {
@@ -364,8 +364,8 @@ onMounted(() => {
 .SettingsDiscountCodes__item-code {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 18px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h4);
+  letter-spacing: var(--ls-label);
   color: var(--accent);
   display: flex;
   flex-wrap: wrap;
@@ -375,9 +375,9 @@ onMounted(() => {
 
 .SettingsDiscountCodes__source-tag {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: var(--ls-none);
   color: var(--surface-a60);
   background: var(--surface-a06);
   border: 1px solid var(--surface-a12);
@@ -396,7 +396,7 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 4px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a50);
   margin-top: 2px;
 }
@@ -409,9 +409,9 @@ onMounted(() => {
 
 .SettingsDiscountCodes__badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   border-radius: var(--r-pill);
   padding: 2px 8px;
   border: 1px solid;
@@ -431,9 +431,9 @@ onMounted(() => {
 
 .SettingsDiscountCodes__form-title {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--accent);
 }
 
@@ -451,9 +451,9 @@ onMounted(() => {
 
 .SettingsDiscountCodes__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a72);
 }
 
@@ -468,7 +468,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
   cursor: pointer;
 }
@@ -478,7 +478,7 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a82);
   cursor: pointer;
 }
@@ -491,9 +491,9 @@ onMounted(() => {
 
 .SettingsDiscountCodes__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 18px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;

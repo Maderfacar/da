@@ -213,15 +213,15 @@ onUnmounted(() => {
 
 .PageDashboard__title {
   font-family: var(--ff-display);
-  font-size: 32px;
+  font-size: var(--fs-h1);
   color: var(--da-dark);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageDashboard__sub {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--da-gray);
   text-transform: uppercase;
   margin-top: 4px;
@@ -235,15 +235,15 @@ onUnmounted(() => {
 
 .PageDashboard__data-time {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
 }
 
 .PageDashboard__error {
   color: var(--stop);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   margin: 8px 0;
 }
 
@@ -252,9 +252,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-gray);
   margin: 24px 0 12px;
@@ -262,9 +262,9 @@ onUnmounted(() => {
 
 .PageDashboard__tag {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
@@ -296,9 +296,9 @@ onUnmounted(() => {
 
 .PageDashboard__stat-label {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--da-gray);
 }
@@ -306,8 +306,8 @@ onUnmounted(() => {
 .PageDashboard__stat-value {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 44px;
-  line-height: 1;
+  font-size: var(--fs-display);
+  line-height: var(--lh-flat);
   color: var(--da-dark);
 }
 
@@ -336,14 +336,14 @@ onUnmounted(() => {
   margin-bottom: 6px;
 }
 
-.PageDashboard__card-icon { font-size: 22px; line-height: 1; }
+.PageDashboard__card-icon { font-size: var(--fs-h2); line-height: var(--lh-flat); }
 
 .PageDashboard__card-label {
   flex: 1;
   font-family: var(--ff-label);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--da-dark);
 }
@@ -351,14 +351,14 @@ onUnmounted(() => {
 .PageDashboard__card-count {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 36px;
-  line-height: 1;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-flat);
   color: var(--da-amber);
 }
 
 .PageDashboard__card-hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   margin-bottom: 14px;
 }
@@ -383,15 +383,15 @@ onUnmounted(() => {
 
 .PageDashboard__discount-code {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
 }
 
 .PageDashboard__discount-detail {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
 }
 
@@ -434,7 +434,7 @@ onUnmounted(() => {
   background: var(--da-dark);
   color: var(--da-cream);
   font-family: var(--ff-label);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -449,7 +449,7 @@ onUnmounted(() => {
 
 .PageDashboard__row-name {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-dark);
   overflow: hidden;
@@ -459,17 +459,17 @@ onUnmounted(() => {
 
 .PageDashboard__row-time {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray);
 }
 
 .PageDashboard__status {
   flex-shrink: 0;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   padding: 3px 9px;
   border-radius: var(--r-pill);
@@ -484,7 +484,7 @@ onUnmounted(() => {
   text-align: center;
   color: var(--da-gray);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 @media (max-width: 768px) {

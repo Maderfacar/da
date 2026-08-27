@@ -230,9 +230,9 @@ const _SingleInputType = computed(() => {
 
 .UiDateRangeFilter__gran-btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 10px;
   border: none;
   background: var(--surface-a06);
@@ -248,7 +248,7 @@ const _SingleInputType = computed(() => {
 
 .UiDateRangeFilter__input {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 5px 10px;
   border: 1px solid var(--surface-a12);
   border-radius: var(--r-sm);
@@ -265,16 +265,16 @@ const _SingleInputType = computed(() => {
 
 .UiDateRangeFilter__sep {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   padding: 0 2px;
 }
 
 .UiDateRangeFilter__clear {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -288,9 +288,9 @@ const _SingleInputType = computed(() => {
 
 // ── 尺寸：size-md（front-desk 用，字級略大）─────────────────
 .UiDateRangeFilter.size-md {
-  .UiDateRangeFilter__input { font-size: 13px; padding: 7px 12px; width: 145px; }
-  .UiDateRangeFilter__gran-btn { font-size: 12px; padding: 6px 12px; }
-  .UiDateRangeFilter__clear { font-size: 12px; padding: 6px 12px; }
+  .UiDateRangeFilter__input { font-size: var(--fs-body-sm); padding: 7px 12px; width: 145px; }
+  .UiDateRangeFilter__gran-btn { font-size: var(--fs-label); padding: 6px 12px; }
+  .UiDateRangeFilter__clear { font-size: var(--fs-label); padding: 6px 12px; }
 }
 
 // ── theme-cream（乘客 /orders 頁面 cream 底色用）────────────

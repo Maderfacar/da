@@ -445,7 +445,7 @@ const ClickNewOrder = () => {
     top: 80px;
     right: -20px;
     font-family: var(--ff-display);
-    font-size: 120px;
+    font-size: var(--fs-mega);
     color: var(--da-dark);
     opacity: 0.04;
     pointer-events: none;
@@ -481,7 +481,7 @@ const ClickNewOrder = () => {
     align-items: center;
     justify-content: center;
     font-family: var(--ff-label);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--da-gray-light);
     transition: border-color var(--dur-slow) var(--ease-out), background var(--dur-slow) var(--ease-out), color var(--dur-slow) var(--ease-out);
@@ -501,7 +501,7 @@ const ClickNewOrder = () => {
 
   &__step-label {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-gray-light);
     white-space: nowrap;
     transition: color var(--dur-slow) var(--ease-out);
@@ -545,22 +545,22 @@ const ClickNewOrder = () => {
   }
 
   &__success-icon {
-    font-size: 64px;
+    font-size: var(--fs-hero);
     color: var(--good);
     margin-bottom: 16px;
   }
 
   &__success-title {
     font-family: var(--ff-display);
-    font-size: 36px;
+    font-size: var(--fs-h1);
     color: var(--da-dark);
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-label);
   }
 
   &__success-sub {
     font-family: var(--ff-label);
-    font-size: 12px;
-    letter-spacing: 0.2em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-kicker);
     color: var(--da-gray);
     margin-top: 4px;
   }
@@ -576,18 +576,18 @@ const ClickNewOrder = () => {
     gap: 6px;
 
     span {
-      font-size: 12px;
+      font-size: var(--fs-label);
       color: var(--da-gray-light);
       font-family: var(--ff-label);
-      letter-spacing: 0.1em;
+      letter-spacing: var(--ls-wide);
       text-transform: uppercase;
     }
 
     strong {
       font-family: var(--ff-display);
-      font-size: 28px;
+      font-size: var(--fs-h1);
       color: var(--da-amber-light);
-      letter-spacing: 0.1em;
+      letter-spacing: var(--ls-wide);
     }
   }
 }

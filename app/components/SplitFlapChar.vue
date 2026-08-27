@@ -113,8 +113,8 @@ $fs:      28px;
   font-family: var(--ff-display);
   font-size:       $fs;
   color:           var(--da-amber-light, var(--wait));
-  letter-spacing:  0.04em;
-  line-height:     1;
+  letter-spacing:  var(--ls-label);
+  line-height:     var(--lh-flat);
   user-select:     none;
   white-space:     nowrap;
 }

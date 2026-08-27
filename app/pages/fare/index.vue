@@ -166,12 +166,12 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   position: fixed;
   top: 80px; right: -10px;
   font-family: var(--ff-display);
-  font-size: 100px;
+  font-size: var(--fs-mega);
   color: var(--da-dark);
   opacity: 0.04;
   pointer-events: none;
   user-select: none;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 // ── 區塊 ──────────────────────────────────────────────────
@@ -193,9 +193,9 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 .PageFare__section-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -213,17 +213,17 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 .PageFare__section-title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PageFare__section-desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 420px;
   font-family: var(--ff-ui);
@@ -261,9 +261,9 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   border: 1px solid var(--da-gray-pale);
   background: var(--surface-a96);
   color: var(--da-dark);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-family: var(--ff-display);
-  line-height: 1;
+  line-height: var(--lh-flat);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -326,7 +326,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 }
 
 .PageFare__vehicle-hero-icon {
-  font-size: 72px;
+  font-size: var(--fs-hero);
   color: var(--da-amber);
 }
 
@@ -349,17 +349,17 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 .PageFare__vehicle-name {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  letter-spacing: var(--ls-snug);
+  line-height: var(--lh-tight);
 }
 
 .PageFare__vehicle-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
   text-transform: uppercase;
 }
@@ -369,7 +369,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   flex-wrap: wrap;
   gap: 6px 10px;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
 
   span {
@@ -378,24 +378,24 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
     gap: 3px;
   }
 
-  .nuxt-icon { font-size: 14px; color: var(--da-amber); }
+  .nuxt-icon { font-size: var(--fs-body); color: var(--da-amber); }
 }
 
 .PageFare__vehicle-fare {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
   display: flex;
   gap: 6px;
   align-items: center;
 
-  span { color: var(--da-amber); font-size: 12px; }
+  span { color: var(--da-amber); font-size: var(--fs-label); }
 }
 
 .PageFare__vehicle-tagline {
   font-family: var(--ff-ui);
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
   color: var(--da-gray);
 }
 
@@ -418,28 +418,28 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 .PageFare__engine-num {
   font-family: var(--ff-display);
-  font-size: 14px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-body);
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 10px;
 }
 
 .PageFare__engine-k {
   font-family: var(--ff-ui);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
   color: var(--da-dark);
-  letter-spacing: 0.01em;
-  line-height: 1.3;
+  letter-spacing: var(--ls-snug);
+  line-height: var(--lh-tight);
   margin-bottom: 8px;
 }
 
 .PageFare__engine-v {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
 }
 
 // ── 結尾 CTA ──────────────────────────────────────────────
@@ -453,14 +453,14 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
 
 .PageFare__cta-title {
   font-family: var(--ff-display);
-  font-size: 32px;
+  font-size: var(--fs-h1);
   color: var(--da-cream);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageFare__cta-desc {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a60);
   margin: 8px 0 20px;
 }
@@ -473,9 +473,9 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   background: var(--da-amber);
   color: var(--da-dark);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border: none;
   border-radius: var(--r-pill);

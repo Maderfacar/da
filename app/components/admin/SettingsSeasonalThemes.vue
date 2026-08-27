@@ -410,8 +410,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--fs-label);
+  line-height: var(--lh-relaxed);
   color: var(--surface-a50);
   padding: 12px 16px;
   border-bottom: 1px solid var(--surface-a06);
@@ -421,7 +421,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 .SettingsSeasonalThemes__empty {
   padding: 24px 16px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   text-align: center;
 }
@@ -466,16 +466,16 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__card-zh {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a96);
 }
 
 .SettingsSeasonalThemes__card-id {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
   background: var(--surface-a06);
   border: 1px solid var(--surface-a06);
@@ -492,9 +492,9 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   border-radius: var(--r-pill);
   padding: 1px 8px;
   border: 1px solid;
@@ -518,8 +518,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__card-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
 }
 
@@ -545,8 +545,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__swatch-label {
   font-family: var(--ff-label);
-  font-size: 9px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
 }
 
@@ -581,8 +581,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
 }
 
@@ -595,8 +595,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
   background: var(--ink-a60);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
 }
 
 .SettingsSeasonalThemes__hero-actions,
@@ -613,9 +613,9 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 6px 14px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -670,14 +670,14 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__field-label {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a72);
 }
 
 .SettingsSeasonalThemes__field-hint {
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -705,8 +705,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
   height: 30px;
   padding: 0 8px;
   font-family: var(--ff-mono);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-snug);
   color: var(--surface-a88);
   background: var(--surface-a06);
   border: 1px solid var(--surface-a12);
@@ -730,8 +730,8 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 
 .SettingsSeasonalThemes__contrast-head {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a50);
   margin-bottom: 2px;
 }
@@ -742,7 +742,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
   align-items: baseline;
   gap: 8px;
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
 }
 
@@ -756,7 +756,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
 }
 
 .SettingsSeasonalThemes__contrast-min {
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 

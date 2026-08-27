@@ -233,9 +233,9 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__hero-tag {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   // 季節主題 hero tag 強調色（缺省回退 amber）
   color: var(--da-hero-tag, var(--da-amber));
@@ -252,8 +252,8 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__hero-title-display {
   font-family: var(--ff-display);
   font-size: clamp(64px, 13vw, 168px);
-  line-height: 0.86;
-  letter-spacing: -0.015em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-tight);
   color: var(--da-dark);
 }
 
@@ -261,7 +261,7 @@ const ClickFare = () => navigateTo('/fare');
   font-family: var(--ff-ui);
   font-size: clamp(14px, 3.4vw, 17px);
   font-weight: 300;
-  line-height: 1.65;
+  line-height: var(--lh-relaxed);
   color: var(--da-gray);
   /* hero-inner 放寬到 --shell 之後，副標若不另外收行長會拉成一行很長的字 */
   max-width: var(--measure);
@@ -277,9 +277,9 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__cta-primary,
 .PageLanding__cta-secondary {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   padding: 14px 26px;
   border-radius: var(--r-pill);
@@ -378,9 +378,9 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__section-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin: 0 0 12px;
@@ -401,8 +401,8 @@ const ClickFare = () => navigateTo('/fare');
      但版面放寬到 --shell 之後，56px 的標題會被右側 8 欄的內文壓過去。
      尺度對比是精品調的第一件事，不是裝飾。 */
   font-size: clamp(42px, 6vw, 88px);
-  line-height: 0.9;
-  letter-spacing: -0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-tight);
   color: var(--da-dark);
   margin: 0 0 var(--space-md);
   text-wrap: balance;
@@ -410,10 +410,10 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__section-desc {
   font-family: var(--ff-ui);
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
   margin: 0 0 var(--space-lg);
   max-width: var(--measure);
 }
@@ -427,10 +427,10 @@ const ClickFare = () => navigateTo('/fare');
 
   p {
     font-family: var(--ff-ui);
-    font-size: 14.5px;
+    font-size: var(--fs-body);
     font-weight: 300;
     color: var(--da-gray);
-    line-height: 1.85;
+    line-height: var(--lh-relaxed);
     margin: 0;
   }
 }
@@ -474,28 +474,28 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__airport-code {
   font-family: var(--ff-display);
-  font-size: 32px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-amber);
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-bottom: 4px;
 }
 
 .PageLanding__airport-name {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
   margin: 0;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
 }
 
 .PageLanding__airport-desc {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.65;
+  line-height: var(--lh-relaxed);
   margin: 0;
 }
 
@@ -526,19 +526,19 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__feature-title {
   font-family: var(--ff-label);
-  font-size: 17px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin: 0 0 8px;
 }
 
 .PageLanding__feature-body {
   font-family: var(--ff-ui);
-  font-size: 13.5px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
   margin: 0;
 }
 
@@ -561,9 +561,9 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__cta-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -572,17 +572,17 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__cta-title {
   font-family: var(--ff-display);
   font-size: clamp(36px, 9vw, 48px);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
   color: var(--da-cream);
   margin: 0 0 12px;
 }
 
 .PageLanding__cta-desc {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--surface-a72);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin: 0 0 28px;
 }
 
@@ -594,9 +594,9 @@ const ClickFare = () => navigateTo('/fare');
   background: var(--da-amber);
   color: var(--da-dark);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border: none;
   border-radius: var(--r-pill);
@@ -608,6 +608,6 @@ const ClickFare = () => navigateTo('/fare');
 }
 
 .PageLanding__cta-btn-arrow {
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
 }
 </style>

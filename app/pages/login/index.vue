@@ -120,11 +120,11 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   transform: translate(-50%, -50%);
   font-family: var(--ff-display);
   font-size: clamp(160px, 50vw, 280px);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--ls-tight);
   color: var(--surface-a06);
   pointer-events: none;
   user-select: none;
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PageLogin__card {
@@ -144,10 +144,10 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 
 .PageLogin__logo {
   font-family: var(--ff-display);
-  font-size: 36px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-bottom: 8px;
 
   span { color: var(--da-amber); }
@@ -155,9 +155,9 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 
 .PageLogin__tagline {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--surface-a30);
   margin-bottom: 0;
@@ -181,7 +181,7 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   border: none;
   border-radius: var(--r-md);
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-raised);
   cursor: pointer;
@@ -201,9 +201,9 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
 .PageLogin__test-label {
   margin-top: 24px;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   opacity: 0.6;
   align-self: flex-start;
@@ -223,9 +223,9 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   border: 1px solid var(--accent-a20);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--da-amber);
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out);
@@ -238,8 +238,8 @@ function ClickMockLogin(kind: 'passenger' | 'driver' | 'admin') {
   z-index: 1;
   margin-top: 24px;
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps);
   color: var(--surface-a12);
 }
 </style>

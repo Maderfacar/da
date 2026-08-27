@@ -495,9 +495,9 @@ const swiperBreakpoints = {
 
   &__section-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.25em;
+    letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
     color: var(--da-amber);
     display: flex;
@@ -516,9 +516,9 @@ const swiperBreakpoints = {
 
   &__title {
     font-family: var(--ff-display);
-    font-size: 28px;
+    font-size: var(--fs-h1);
     color: var(--da-dark);
-    letter-spacing: 0.02em;
+    letter-spacing: var(--ls-snug);
     margin-top: -8px;
   }
 
@@ -549,15 +549,15 @@ const swiperBreakpoints = {
 
   &__counter-label {
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--da-dark);
     font-weight: 500;
   }
 
   &__counter-hint {
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.05em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-label);
     color: var(--da-gray-light);
   }
 
@@ -574,7 +574,7 @@ const swiperBreakpoints = {
       border: 1.5px solid var(--da-amber);
       background: none;
       color: var(--da-amber);
-      font-size: 18px;
+      font-size: var(--fs-h4);
       font-weight: 700;
       cursor: pointer;
       transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
@@ -588,7 +588,7 @@ const swiperBreakpoints = {
 
     span {
       font-family: var(--ff-display);
-      font-size: 28px;
+      font-size: var(--fs-h1);
       color: var(--da-dark);
       min-width: 24px;
       text-align: center;
@@ -623,9 +623,9 @@ const swiperBreakpoints = {
 
   &__luggage-name {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--da-dark);
-    line-height: 1.3;
+    line-height: var(--lh-tight);
   }
 
   &__luggage-ctrl {
@@ -641,7 +641,7 @@ const swiperBreakpoints = {
       border: 1.5px solid var(--da-amber);
       background: none;
       color: var(--da-amber);
-      font-size: 16px;
+      font-size: var(--fs-body-lg);
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -653,7 +653,7 @@ const swiperBreakpoints = {
 
     span {
       font-family: var(--ff-display);
-      font-size: 22px;
+      font-size: var(--fs-h2);
       color: var(--da-dark);
       min-width: 20px;
       text-align: center;
@@ -682,8 +682,8 @@ const swiperBreakpoints = {
     border: 1px solid var(--da-gray-pale);
     background: var(--da-cream);
     color: var(--da-dark);
-    font-size: 20px;
-    line-height: 1;
+    font-size: var(--fs-h3);
+    line-height: var(--lh-flat);
     cursor: pointer;
     box-shadow: var(--shadow-soft);
     transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
@@ -705,7 +705,7 @@ const swiperBreakpoints = {
     @media (min-width: 768px) {
       width: 36px;
       height: 36px;
-      font-size: 22px;
+      font-size: var(--fs-h2);
       &.is-prev { left: -10px; }
       &.is-next { right: -10px; }
     }
@@ -761,7 +761,7 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-hero-icon {
-    font-size: 56px;
+    font-size: var(--fs-hero);
     opacity: 0.55;
   }
 
@@ -783,22 +783,22 @@ const swiperBreakpoints = {
 
   &__vehicle-name {
     font-family: var(--ff-ui);
-    font-size: 16px;
+    font-size: var(--fs-body-lg);
     font-weight: 700;
     color: var(--da-dark);
   }
 
   &__vehicle-sub {
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-wide);
     color: var(--da-gray);
   }
 
   &__vehicle-specs {
     display: flex;
     gap: 10px;
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--da-gray);
     align-items: center;
 
@@ -811,13 +811,13 @@ const swiperBreakpoints = {
 
   &__vehicle-tagline {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
 
   &__vehicle-hint {
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-family: var(--ff-ui);
 
     .is-disabled & { color: var(--stop); }
@@ -843,19 +843,19 @@ const swiperBreakpoints = {
 
   &__charter-plan-label {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     color: var(--da-amber);
     min-width: 56px;
   }
 
   &__charter-hint {
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     margin: 6px 0 0;
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 
   // ── 加值服務 card grid ───────────────────────────────────────────────
@@ -875,13 +875,13 @@ const swiperBreakpoints = {
     border: 1.5px solid var(--da-gray-pale);
     border-radius: var(--r-lg);
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--da-dark);
     text-align: center;
     transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
     font-family: var(--ff-ui);
 
-    .nuxt-icon { font-size: 24px; color: var(--da-gray-light); }
+    .nuxt-icon { font-size: var(--fs-h2); color: var(--da-gray-light); }
 
     &.is-active {
       border-color: var(--da-amber);
@@ -892,7 +892,7 @@ const swiperBreakpoints = {
   }
 
   &__extra-price {
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-amber);
     font-family: var(--ff-ui);
   }
@@ -938,18 +938,18 @@ const swiperBreakpoints = {
 
   &__expectations-title {
     font-family: var(--ff-display);
-    font-size: 22px;
+    font-size: var(--fs-h2);
     color: var(--da-dark);
-    letter-spacing: 0.02em;
-    line-height: 1.1;
+    letter-spacing: var(--ls-snug);
+    line-height: var(--lh-tight);
     margin: 0;
   }
 
   &__expectations-hint {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
-    line-height: 1.45;
+    line-height: var(--lh-normal);
   }
 
   &__expectations-mark {
@@ -960,8 +960,8 @@ const swiperBreakpoints = {
     background: var(--da-cream);
     color: var(--da-amber);
     font-family: var(--ff-display);
-    font-size: 22px;
-    line-height: 1;
+    font-size: var(--fs-h2);
+    line-height: var(--lh-flat);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -988,10 +988,10 @@ const swiperBreakpoints = {
   &__next-hint {
     margin: 0 0 -6px;
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--stop);
     text-align: center;
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
 
   &__actions {

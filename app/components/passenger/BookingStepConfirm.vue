@@ -532,9 +532,9 @@ const ClickSubmit = () => {
 
   &__section-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.25em;
+    letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
     color: var(--da-amber);
     display: flex;
@@ -551,9 +551,9 @@ const ClickSubmit = () => {
 
   &__title {
     font-family: var(--ff-display);
-    font-size: 28px;
+    font-size: var(--fs-h1);
     color: var(--da-dark);
-    letter-spacing: 0.02em;
+    letter-spacing: var(--ls-snug);
     margin-top: -8px;
   }
 
@@ -570,9 +570,9 @@ const ClickSubmit = () => {
 
   &__contact-label {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
     color: var(--da-amber);
   }
@@ -585,7 +585,7 @@ const ClickSubmit = () => {
 
   &__field-label {
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--da-dark);
     display: flex;
     align-items: center;
@@ -599,12 +599,12 @@ const ClickSubmit = () => {
 
   &__field-optional {
     color: var(--da-gray-light);
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
 
   &__field-error {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--stop);
     margin-top: 2px;
   }
@@ -629,7 +629,7 @@ const ClickSubmit = () => {
     background: transparent;
     cursor: pointer;
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     transition: all var(--dur-fast) var(--ease-out);
 
@@ -651,12 +651,12 @@ const ClickSubmit = () => {
     height: 16px;
     border-radius: var(--r-xs);
     border: 1.5px solid currentColor;
-    font-size: 12px;
+    font-size: var(--fs-label);
 
-    .nuxt-icon { font-size: 12px; }
+    .nuxt-icon { font-size: var(--fs-label); }
   }
 
-  &__same-toggle-label { line-height: 1; }
+  &__same-toggle-label { line-height: var(--lh-flat); }
 
   &__discount-row {
     display: flex;
@@ -674,14 +674,14 @@ const ClickSubmit = () => {
 
   &__discount-ok {
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--good);
     font-weight: 600;
   }
 
   &__discount-clear {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     background: none;
     border: none;
@@ -708,7 +708,7 @@ const ClickSubmit = () => {
     justify-content: space-between;
     gap: 12px;
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
   }
 
   &__row-label {
@@ -737,7 +737,7 @@ const ClickSubmit = () => {
 
   &__tag-chip {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     padding: 2px 10px;
     border-radius: var(--r-pill);
     background: var(--da-amber-pale);
@@ -763,9 +763,9 @@ const ClickSubmit = () => {
 
   &__charter-title {
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
     color: var(--da-amber);
     margin-bottom: 4px;
@@ -785,7 +785,7 @@ const ClickSubmit = () => {
     justify-content: space-between;
     align-items: center;
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
   }
 
   &__charter-day-key { color: var(--da-gray); }
@@ -796,7 +796,7 @@ const ClickSubmit = () => {
     justify-content: space-between;
     align-items: center;
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
 
     span:first-child { color: var(--da-gray); }
     span:last-child  { color: var(--da-dark); font-weight: 600; }
@@ -818,9 +818,9 @@ const ClickSubmit = () => {
   &__charter-note {
     margin-top: 4px;
     font-family: var(--ff-ui);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--da-gray-light);
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 
   // ── Booking v2：單行總價 ────────────────────────────────────────────────
@@ -835,9 +835,9 @@ const ClickSubmit = () => {
 
   &__final-label {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
     color: var(--da-gray-light);
   }
@@ -845,16 +845,16 @@ const ClickSubmit = () => {
   &__final-value {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 32px;
+    font-size: var(--fs-h1);
     color: var(--da-amber-light);
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-label);
   }
 
   &__cash-note {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
-    letter-spacing: 0.03em;
+    letter-spacing: var(--ls-snug);
     margin-top: -8px;
     padding-left: 4px;
   }
@@ -863,10 +863,10 @@ const ClickSubmit = () => {
     display: flex;
     align-items: flex-start;
     gap: 6px;
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     font-family: var(--ff-ui);
-    line-height: 1.6;
+    line-height: var(--lh-relaxed);
 
     .nuxt-icon { flex-shrink: 0; margin-top: 1px; color: var(--da-gray-light); }
   }

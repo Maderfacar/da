@@ -53,7 +53,7 @@ const model = defineModel<string | number>();
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-gray);
   display: block;
@@ -69,7 +69,7 @@ const model = defineModel<string | number>();
   padding: 12px 16px;
   border-radius: var(--r-md);
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--da-dark);
   outline: none;
   transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
@@ -121,15 +121,15 @@ const model = defineModel<string | number>();
 
 .UiInput__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--danger);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .UiInput__hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray-light);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 </style>

@@ -214,16 +214,16 @@ onUnmounted(() => {
 
 .LayoutFrontDesk__banner-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 500;
   flex: 1;
 }
 
 .LayoutFrontDesk__banner-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 14px;
   border-radius: var(--r-pill);
   background: var(--surface-raised);
@@ -275,7 +275,7 @@ onUnmounted(() => {
 
 .LayoutFrontDesk__roles-failed-msg {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   color: var(--da-gray);
   margin: 0;
 }
@@ -287,9 +287,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
@@ -313,10 +313,10 @@ onUnmounted(() => {
 
 .LayoutFrontDesk__logo {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
   color: var(--da-dark);
-  line-height: 1;
+  line-height: var(--lh-flat);
   cursor: pointer;
   user-select: none;
 

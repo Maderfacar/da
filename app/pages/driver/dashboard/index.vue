@@ -179,7 +179,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   border-radius: var(--r-md);
 }
 
-.PageDriverDashboard__oa-cta-icon { font-size: 22px; }
+.PageDriverDashboard__oa-cta-icon { font-size: var(--fs-h2); }
 
 .PageDriverDashboard__oa-cta-text {
   flex: 1;
@@ -190,15 +190,15 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 }
 .PageDriverDashboard__oa-cta-text strong {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 }
 .PageDriverDashboard__oa-cta-text span {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a60);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .PageDriverDashboard__oa-cta-btn {
@@ -208,9 +208,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   color: var(--surface-raised);
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   text-decoration: none;
   white-space: nowrap;
 
@@ -227,8 +227,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   color: var(--surface-a60);
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
 
   &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
@@ -238,9 +238,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -251,15 +251,15 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 40px;
-    letter-spacing: 0.04em;
-    line-height: 1;
+    font-size: var(--fs-display);
+    letter-spacing: var(--ls-label);
+    line-height: var(--lh-flat);
     color: var(--surface-raised);
   }
 
   &-name {
     font-family: var(--ff-label);
-    font-size: 18px;
+    font-size: var(--fs-h4);
     font-weight: 700;
     color: var(--accent);
     margin-top: 4px;
@@ -267,8 +267,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
   &-date {
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.15em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-caps-lg);
     color: var(--surface-a30);
     margin-top: 2px;
   }
@@ -296,17 +296,17 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .PageDriverDashboard__status-text {
   font-family: var(--ff-label);
-  font-size: 13px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-body-sm);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a82);
   flex: 1;
 }
 
 .PageDriverDashboard__status-btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 6px 16px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--accent-a60);
@@ -341,9 +341,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 9px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: var(--ls-caps-lg);
     color: var(--surface-a30);
     margin-bottom: 6px;
   }
@@ -351,14 +351,14 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   &-val {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 24px;
+    font-size: var(--fs-h2);
     color: var(--surface-raised);
-    line-height: 1;
+    line-height: var(--lh-flat);
   }
 
   &-unit {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     color: var(--surface-a30);
     margin-top: 2px;
   }
@@ -390,7 +390,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     background: var(--accent-a06);
   }
 
-  &-icon { font-size: 32px; }
+  &-icon { font-size: var(--fs-h1); }
 
   &-text {
     display: flex;
@@ -400,16 +400,16 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
     span {
       font-family: var(--ff-display);
-      font-size: 20px;
+      font-size: var(--fs-h3);
       color: var(--surface-raised);
-      letter-spacing: 0.05em;
+      letter-spacing: var(--ls-label);
     }
 
     small {
       font-family: var(--ff-label);
-      font-size: 9px;
+      font-size: var(--fs-label);
       font-weight: 700;
-      letter-spacing: 0.15em;
+      letter-spacing: var(--ls-caps-lg);
       color: var(--surface-a30);
     }
   }
@@ -431,9 +431,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
   p {
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--surface-a30);
-    line-height: 1.8;
+    line-height: var(--lh-relaxed);
     &::before { content: '· '; }
   }
 }

@@ -461,8 +461,8 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__title {
   font-family: var(--ff-display);
-  font-size: 24px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 }
 
@@ -473,8 +473,8 @@ Transition(name="fade")
   background: var(--surface-a06);
   color: var(--surface-a60);
   border-radius: var(--r-round);
-  font-size: 22px;
-  line-height: 1;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -484,9 +484,9 @@ Transition(name="fade")
 .AdminOrdersCreateModal__hint {
   padding: 10px 20px 0;
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .AdminOrdersCreateModal__body {
@@ -516,9 +516,9 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
@@ -532,7 +532,7 @@ Transition(name="fade")
   background: var(--surface-a06);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   outline: none;
   resize: none;
   box-sizing: border-box;
@@ -576,8 +576,8 @@ Transition(name="fade")
   border: none;
   background: none;
   color: var(--surface-a30);
-  font-size: 15px;
-  line-height: 1;
+  font-size: var(--fs-body);
+  line-height: var(--lh-flat);
   cursor: grab;
   transition: color var(--dur-fast) var(--ease-out);
 
@@ -599,8 +599,8 @@ Transition(name="fade")
   background: var(--note-a08);
   color: var(--note);
   border-radius: var(--r-xs);
-  font-size: 8px;
-  line-height: 1;
+  font-size: var(--fs-label);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 
@@ -627,9 +627,9 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__stopover-num {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--note);
   background: var(--note-a08);
   border: 1px solid var(--note-a30);
@@ -645,8 +645,8 @@ Transition(name="fade")
   background: var(--stop-a08);
   color: var(--stop);
   border-radius: var(--r-sm);
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -655,9 +655,9 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__stopover-add {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 8px 12px;
   border-radius: var(--r-md);
   border: 1px dashed var(--note-a30);
@@ -685,7 +685,7 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__luggage-name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
 }
 
@@ -697,7 +697,7 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__extra-btn {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 6px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a06);
@@ -736,16 +736,16 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__autodispatch-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   color: var(--accent-lit);
 }
 
 .AdminOrdersCreateModal__autodispatch-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .AdminOrdersCreateModal__foot {
@@ -759,9 +759,9 @@ Transition(name="fade")
 
 .AdminOrdersCreateModal__action {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 20px;
   border-radius: var(--r-md);
   border: 1px solid transparent;

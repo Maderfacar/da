@@ -149,32 +149,32 @@ onMounted(() => { void _LoadStatus(); });
   box-shadow: var(--shadow-soft);
 }
 .AdminSettingsPin__title {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   margin: 0 0 12px;
 }
 .AdminSettingsPin__lead {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
   margin: 0 0 4px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 .AdminSettingsPin__list {
   margin: 0 0 12px 18px;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
-  line-height: 1.8;
+  line-height: var(--lh-relaxed);
 }
 .AdminSettingsPin__warn {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--accent-deep);
   background: var(--wait-a08);
   border: 1px solid var(--wait);
   border-radius: var(--r-sm);
   padding: 8px 10px;
   margin: 8px 0 18px;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 .AdminSettingsPin__loading {
   text-align: center;
@@ -186,14 +186,14 @@ onMounted(() => { void _LoadStatus(); });
 }
 .AdminSettingsPin__label {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   margin-bottom: 6px;
   color: var(--ink);
 }
 .AdminSettingsPin__error {
   color: var(--stop);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   margin: 8px 0;
 }
 .AdminSettingsPin__actions {

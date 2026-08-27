@@ -254,7 +254,7 @@ ElDialog(
 
 .OpenDialogTagEdit__label {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   color: var(--ink-a70);
 }
@@ -268,7 +268,7 @@ ElDialog(
   padding: 8px 12px;
   background: var(--ink-a06);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-a60);
 }
 </style>

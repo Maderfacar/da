@@ -200,15 +200,15 @@ onMounted(() => {
 
 .PageAdminUsers__header-label {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--accent-lit);
   text-transform: uppercase;
 }
 
 .PageAdminUsers__header-title {
   margin-top: 4px;
-  font-size: 28px;
+  font-size: var(--fs-h1);
   font-weight: 700;
 }
 
@@ -227,7 +227,7 @@ onMounted(() => {
   background: transparent;
   border: 0;
   color: var(--surface-a40);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
   cursor: pointer;
   transition: color var(--dur-base) var(--ease-out);
@@ -252,7 +252,7 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: var(--r-pill);
   background: var(--surface-a06);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 600;
 }
 
@@ -283,7 +283,7 @@ onMounted(() => {
 }
 
 .PageAdminUsers__row-name {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--surface-raised);
 }
@@ -292,7 +292,7 @@ onMounted(() => {
   margin-top: 4px;
   display: flex;
   gap: 12px;
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -318,9 +318,9 @@ onMounted(() => {
   gap: 4px;
   padding: 4px 10px;
   border-radius: var(--r-pill);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
 
   &.is-ugly {
     color: var(--accent-lit);
@@ -350,7 +350,7 @@ onMounted(() => {
   padding: 8px 16px;
   border: 0;
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   cursor: pointer;
   transition: opacity var(--dur-base) var(--ease-out);
@@ -382,7 +382,7 @@ onMounted(() => {
   padding: 60px 20px;
   text-align: center;
   color: var(--surface-a40);
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .PageAdminUsers__sub-mask {
@@ -406,7 +406,7 @@ onMounted(() => {
 }
 
 .PageAdminUsers__sub-title {
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
   margin-bottom: 16px;
 }
@@ -418,18 +418,18 @@ onMounted(() => {
 }
 
 .PageAdminUsers__sub-user {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a82);
 }
 
 .PageAdminUsers__sub-user-uid {
   color: var(--surface-a40);
   font-family: var(--ff-mono);
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 
 .PageAdminUsers__sub-label {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -440,15 +440,15 @@ onMounted(() => {
   color: var(--surface-raised);
   border: 1px solid var(--surface-a06);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-family: inherit;
   resize: vertical;
 }
 
 .PageAdminUsers__sub-hint {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 
   &.is-warn {
     color: var(--wait-a70);

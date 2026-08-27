@@ -36,8 +36,8 @@ withDefaults(defineProps<Props>(), {
 
 .PassengerFareBreakdownCard__label {
   font-family: var(--ff-label);
-  font-size: 13px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-body-sm);
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   color: var(--da-gray-light);
 }
@@ -51,13 +51,13 @@ withDefaults(defineProps<Props>(), {
 .PassengerFareBreakdownCard__total {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 32px;
+  font-size: var(--fs-h1);
   color: var(--da-amber-light);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .PassengerFareBreakdownCard__spin {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: var(--da-amber-light);
   animation: fare-breakdown-spin 0.8s linear infinite;
 }

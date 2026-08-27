@@ -477,14 +477,14 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__block-title {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-raised);
 }
 
 .VehicleProfileEditor__block-sub {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   flex: 1;
 }
@@ -493,17 +493,17 @@ defineExpose({ reloadTags: ApiLoadTags });
 .VehicleProfileEditor__block-note {
   width: 100%;
   font-family: var(--ff-ui);
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
   color: var(--surface-a20);
   margin-top: 2px;
 }
 
 .VehicleProfileEditor__badge {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 3px 10px;
   border-radius: var(--r-pill);
 
@@ -520,7 +520,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__loading {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   padding: 12px 0;
 }
@@ -536,16 +536,16 @@ defineExpose({ reloadTags: ApiLoadTags });
 
   &-title {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     color: var(--stop);
   }
   &-body {
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--surface-a82);
-    line-height: 1.5;
+    line-height: var(--lh-normal);
   }
 }
 
@@ -566,14 +566,14 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__photos-title {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-a82);
 }
 
 .VehicleProfileEditor__photos-hint {
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -611,7 +611,7 @@ defineExpose({ reloadTags: ApiLoadTags });
   width: 100%;
   height: 100%;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -626,8 +626,8 @@ defineExpose({ reloadTags: ApiLoadTags });
   background: var(--ink-a60);
   color: var(--stop);
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
+  font-size: var(--fs-body);
+  line-height: var(--lh-flat);
   padding: 0;
 
   &:hover { background: var(--stop-a15); }
@@ -639,7 +639,7 @@ defineExpose({ reloadTags: ApiLoadTags });
   background: var(--accent-a06);
   color: var(--accent);
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   cursor: pointer;
   border-radius: var(--r-md);
@@ -661,16 +661,16 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__hint-line {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   flex: 1 1 100%;
 }
 
 .VehicleProfileEditor__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 8px 18px;
   border-radius: var(--r-sm);
   cursor: pointer;
@@ -702,7 +702,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__tag-chip {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 3px 9px;
   border-radius: var(--r-pill);
   background: var(--good-a15);
@@ -712,7 +712,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__empty {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -731,7 +731,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__capacity-label {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
   min-width: 120px;
 }
@@ -752,21 +752,21 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__capacity-su-val {
   font-family: var(--ff-label);
-  font-size: 20px;
+  font-size: var(--fs-h3);
   font-weight: 700;
   color: var(--good);
 }
 
 .VehicleProfileEditor__capacity-su-label {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   color: var(--good);
 }
 
 .VehicleProfileEditor__capacity-hint {
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -800,7 +800,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__seat-sep {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -812,8 +812,8 @@ defineExpose({ reloadTags: ApiLoadTags });
   background: transparent;
   color: var(--stop);
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
+  font-size: var(--fs-body);
+  line-height: var(--lh-flat);
   padding: 0;
   flex-shrink: 0;
 
@@ -823,7 +823,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 .VehicleProfileEditor__seat-add {
   align-self: flex-start;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 5px 14px;
   border: 1.5px dashed var(--accent-a40);
   background: var(--accent-a06);
@@ -847,7 +847,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
 .VehicleProfileEditor__capacity-current {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 </style>

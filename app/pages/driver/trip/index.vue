@@ -544,9 +544,9 @@ onUnmounted(() => {
 
 .PageDriverTrip__header-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -557,16 +557,16 @@ onUnmounted(() => {
 
 .PageDriverTrip__header-title {
   font-family: var(--ff-display);
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PageDriverTrip__header-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--surface-a30);
   margin-top: 4px;
 }
@@ -585,9 +585,9 @@ onUnmounted(() => {
 
 .PageDriverTrip__tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 6px 16px;
   border: none;
   border-radius: var(--r-sm);
@@ -607,9 +607,9 @@ onUnmounted(() => {
 .PageDriverTrip__history-badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 9px;
   border-radius: var(--r-sm);
 
@@ -638,16 +638,16 @@ onUnmounted(() => {
 
 // ── 空狀態 ────────────────────────────────────────────
 .PageDriverTrip__empty { text-align: center; padding: 60px 0; }
-.PageDriverTrip__empty-icon { font-size: 48px; margin-bottom: 12px; }
+.PageDriverTrip__empty-icon { font-size: var(--fs-display); margin-bottom: 12px; }
 .PageDriverTrip__empty p {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--surface-a50);
 }
 .PageDriverTrip__empty small {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a20);
 }
 
@@ -682,16 +682,16 @@ onUnmounted(() => {
 // 日期與時間同字級（司機在車上快速掃視，日期不能比時間小）
 .PageDriverTrip__card-date {
   font-family: var(--ff-data);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a60);
 }
 
 .PageDriverTrip__card-clock {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
   margin-top: 2px;
 }
@@ -702,9 +702,9 @@ onUnmounted(() => {
 
 .PageDriverTrip__type-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -714,10 +714,10 @@ onUnmounted(() => {
 
 .PageDriverTrip__id {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a20);
   margin-left: auto;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
 }
 
 // 上 / 下車各佔一行：縣市行政區在前、地點名稱在後，避免橫排被截斷看不出地區
@@ -760,14 +760,14 @@ onUnmounted(() => {
 
 .PageDriverTrip__route-region {
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 500;
   color: var(--surface-a50);
 }
 
 .PageDriverTrip__route-place {
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a88);
   white-space: nowrap;
   overflow: hidden;
@@ -784,9 +784,9 @@ onUnmounted(() => {
 .PageDriverTrip__status-badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 9px;
   border-radius: var(--r-sm);
 
@@ -798,19 +798,19 @@ onUnmounted(() => {
 
 .PageDriverTrip__card-fare {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--accent);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 // Phase 1F：confirmation pending chip + banner
 .PageDriverTrip__pending-chip {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--wait-a15);
@@ -831,8 +831,8 @@ onUnmounted(() => {
 }
 
 .PageDriverTrip__pending-banner-icon {
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
 }
 
 .PageDriverTrip__pending-banner-body {
@@ -841,17 +841,17 @@ onUnmounted(() => {
 
 .PageDriverTrip__pending-banner-title {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--wait);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageDriverTrip__pending-banner-desc {
   font-family: var(--ff-ui);
-  font-size: 11.5px;
+  font-size: var(--fs-label);
   color: var(--surface-a60);
-  line-height: 1.55;
+  line-height: var(--lh-normal);
   margin-top: 4px;
 }
 
@@ -901,9 +901,9 @@ onUnmounted(() => {
 
 .PageDriverTrip__modal-type {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 4px 12px;
   border-radius: var(--r-pill);
   background: var(--accent-a20);
@@ -913,7 +913,7 @@ onUnmounted(() => {
 
 .PageDriverTrip__modal-vehicle {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--r-pill);
@@ -927,7 +927,7 @@ onUnmounted(() => {
   border: none;
   background: var(--surface-a06);
   color: var(--surface-a60);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   cursor: pointer;
   &:hover { background: var(--surface-a12); color: var(--surface-raised); }
 }
@@ -935,8 +935,8 @@ onUnmounted(() => {
 .PageDriverTrip__modal-id {
   padding: 0 20px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
 }
 
@@ -945,9 +945,9 @@ onUnmounted(() => {
   display: inline-block;
   align-self: flex-start;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   padding: 4px 12px;
   border-radius: var(--r-sm);
   width: fit-content;
@@ -973,9 +973,9 @@ onUnmounted(() => {
 
 .PageDriverTrip__section-title {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--surface-a30);
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -991,20 +991,20 @@ onUnmounted(() => {
 
 .PageDriverTrip__section-key {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a40);
   flex-shrink: 0;
 }
 
 .PageDriverTrip__section-val {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a82);
   text-align: right;
 
-  &.is-muted { color: var(--surface-a30); font-size: 12px; font-style: italic; }
-  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: var(--accent); font-size: 16px; }
+  &.is-muted { color: var(--surface-a30); font-size: var(--fs-label); font-style: italic; }
+  &.is-fare { font-family: var(--ff-label); font-weight: 700; color: var(--accent); font-size: var(--fs-body-lg); }
 }
 
 // 地址卡片（可點擊開 Google Maps）
@@ -1031,9 +1031,9 @@ onUnmounted(() => {
 .PageDriverTrip__addr-tag {
   flex-shrink: 0;
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 4px 8px;
   border-radius: var(--r-xs);
   margin-top: 2px;
@@ -1043,23 +1043,23 @@ onUnmounted(() => {
 
 .PageDriverTrip__addr-name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a88);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .PageDriverTrip__addr-full {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
   margin-top: 2px;
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .PageDriverTrip__addr-icon {
   flex-shrink: 0;
-  font-size: 18px;
+  font-size: var(--fs-h4);
   color: var(--accent);
   margin-top: 4px;
 }
@@ -1073,7 +1073,7 @@ onUnmounted(() => {
 
 .PageDriverTrip__extra-tag {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   padding: 4px 10px;
   border-radius: var(--r-sm);
   background: var(--accent-a12);
@@ -1084,9 +1084,9 @@ onUnmounted(() => {
 // 備註
 .PageDriverTrip__notes {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   padding: 10px 12px;
   background: var(--surface-a06);
   border-radius: var(--r-sm);
@@ -1104,9 +1104,9 @@ onUnmounted(() => {
 .PageDriverTrip__action {
   width: 100%;
   font-family: var(--ff-label);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 14px 20px;
   border-radius: var(--r-md);
   border: none;
@@ -1131,8 +1131,8 @@ onUnmounted(() => {
 .PageDriverTrip__action-hint {
   margin-top: 8px;
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a60);
   text-align: center;
 }

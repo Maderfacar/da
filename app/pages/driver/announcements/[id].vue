@@ -121,9 +121,9 @@ onMounted(() => {
   background: var(--ink-a60);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -136,7 +136,7 @@ onMounted(() => {
     background: var(--ink-a70);
   }
 
-  span { font-size: 16px; line-height: 1; }
+  span { font-size: var(--fs-body-lg); line-height: var(--lh-flat); }
 }
 
 .PageDriverAnnouncementDetail__loading {
@@ -160,11 +160,11 @@ onMounted(() => {
   padding: 80px 20px;
 }
 
-.PageDriverAnnouncementDetail__emptyIcon { font-size: 48px; margin-bottom: 16px; }
+.PageDriverAnnouncementDetail__emptyIcon { font-size: var(--fs-display); margin-bottom: 16px; }
 
 .PageDriverAnnouncementDetail__emptyText {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a30);
 }
 
@@ -186,10 +186,10 @@ onMounted(() => {
 
 .PageDriverAnnouncementDetail__title {
   font-family: var(--ff-ui);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   color: var(--surface-raised);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   margin: 0 0 10px;
   word-break: break-word;
 }
@@ -197,17 +197,17 @@ onMounted(() => {
 .PageDriverAnnouncementDetail__time {
   display: block;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
   margin-bottom: 24px;
 }
 
 .PageDriverAnnouncementDetail__body {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   color: var(--surface-a88);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
@@ -219,11 +219,11 @@ onMounted(() => {
   :deep(h1), :deep(h2), :deep(h3) {
     color: var(--surface-raised);
     margin: 18px 0 10px;
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
-  :deep(h1) { font-size: 20px; }
-  :deep(h2) { font-size: 17px; }
-  :deep(h3) { font-size: 15px; }
+  :deep(h1) { font-size: var(--fs-h3); }
+  :deep(h2) { font-size: var(--fs-body-lg); }
+  :deep(h3) { font-size: var(--fs-body); }
   :deep(img) { max-width: 100%; border-radius: var(--r-md); margin: 10px 0; }
   :deep(blockquote) {
     border-left: 3px solid var(--accent-a50);
@@ -243,9 +243,9 @@ onMounted(() => {
   background: var(--accent);
   color: var(--surface-raised);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   text-decoration: none;
   transition: background var(--dur-fast) var(--ease-out);
 

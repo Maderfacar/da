@@ -132,22 +132,22 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 }
 
 .VehiclePublicProfile__notfound-icon {
-  font-size: 56px;
+  font-size: var(--fs-hero);
   margin-bottom: 16px;
   opacity: 0.7;
 }
 
 .VehiclePublicProfile__notfound-title {
   font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin: 0 0 8px;
 }
 
 .VehiclePublicProfile__notfound-desc {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-gray);
   margin: 0 0 24px;
 }
@@ -155,9 +155,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 .VehiclePublicProfile__notfound-link {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 22px;
   border-radius: var(--r-pill);
   background: var(--da-amber);
@@ -176,9 +176,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 
 .VehiclePublicProfile__hero-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   display: flex;
   align-items: center;
@@ -190,28 +190,28 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 
 .VehiclePublicProfile__driver-name {
   font-family: var(--ff-display);
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin: 0 0 12px;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  line-height: 1.1;
+  line-height: var(--lh-tight);
 }
 
 .VehiclePublicProfile__verified-badge {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 4px 12px;
   border-radius: var(--r-pill);
   background: var(--good-a15);
   border: 1px solid var(--good-a45);
   color: var(--good);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .VehiclePublicProfile__hero-meta {
@@ -220,7 +220,7 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   gap: 8px;
   flex-wrap: wrap;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
 }
 
@@ -233,9 +233,9 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 
 .VehiclePublicProfile__section-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-gray);
   margin: 0 0 12px;
@@ -257,7 +257,7 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
 
 .VehiclePublicProfile__cta-hint {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
   margin-top: 10px;
 }

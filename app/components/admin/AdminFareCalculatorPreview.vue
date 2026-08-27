@@ -331,9 +331,9 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__head-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
@@ -343,14 +343,14 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__head-title {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a82);
 }
 
 .AdminFareCalculatorPreview__head-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a40);
 }
 
@@ -378,9 +378,9 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--surface-a40);
 }
@@ -394,9 +394,9 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__btn {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 8px 18px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
@@ -419,7 +419,7 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__error {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--wait);
   background: var(--wait-a08);
   border: 1px solid var(--wait-a30);
@@ -437,9 +437,9 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__result-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--accent);
   background: var(--accent-a06);
@@ -470,13 +470,13 @@ const fmt = (n: number): string => {
 
 .AdminFareCalculatorPreview__line-key {
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
 }
 
 .AdminFareCalculatorPreview__line-val {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--surface-a88);
 }
@@ -484,6 +484,6 @@ const fmt = (n: number): string => {
 .AdminFareCalculatorPreview__line.is-final .AdminFareCalculatorPreview__line-key,
 .AdminFareCalculatorPreview__line.is-final .AdminFareCalculatorPreview__line-val {
   color: var(--da-stripe-yellow);
-  font-size: 15px;
+  font-size: var(--fs-body);
 }
 </style>

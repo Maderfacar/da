@@ -1142,9 +1142,9 @@ $border: var(--accent-a20);
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -1155,8 +1155,8 @@ $border: var(--accent-a20);
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
   }
 }
 
@@ -1171,9 +1171,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__main-tab {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 20px;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1197,9 +1197,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__phase-badge {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--ink-a40);
   background: var(--ink-a06);
   border-radius: var(--r-pill);
@@ -1227,9 +1227,9 @@ $border: var(--accent-a20);
   gap: 8px;
   flex: 1;
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 14px 20px;
   border: none;
   border-bottom: 3px solid transparent;
@@ -1274,9 +1274,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__filter-tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 12px;
   border: 1px solid transparent;
   border-radius: var(--r-pill);
@@ -1296,9 +1296,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__new {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 16px;
   border-radius: var(--r-pill);
   background: var(--accent);
@@ -1352,7 +1352,7 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__card-name {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   flex: 1;
   min-width: 0;
@@ -1360,9 +1360,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__status-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 2px 8px;
   border: 1px solid;
@@ -1387,9 +1387,9 @@ $border: var(--accent-a20);
 // P42：lang badge（卡片內 lang 標示）
 .PageAdminLineManagement__lang-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   border-radius: var(--r-pill);
   padding: 2px 8px;
   /* 語言 chip 是類別色盤不是語意色 —— 原本 zh_tw 深紅 / en 靛藍 / ja 洋紅。
@@ -1419,9 +1419,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__lang-tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-pill);
   padding: 4px 14px;
@@ -1460,9 +1460,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__sync-badge {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   border-radius: var(--r-pill);
   padding: 2px 8px;
   background: var(--ink-a06);
@@ -1494,7 +1494,7 @@ $border: var(--accent-a20);
     align-items: center;
     justify-content: center;
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--ink-a40);
     text-align: center;
     padding: 8px;
@@ -1511,11 +1511,11 @@ $border: var(--accent-a20);
     align-items: baseline;
     gap: 10px;
     font-family: var(--ff-label);
-    font-size: 12px;
+    font-size: var(--fs-label);
 
     .k {
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: var(--ls-wide);
       color: var(--ink-a40);
       min-width: 80px;
     }
@@ -1523,7 +1523,7 @@ $border: var(--accent-a20);
       flex: 1;
       min-width: 0;
       word-break: break-word;
-      &.mono { font-family: var(--ff-mono); font-size: 11px; }
+      &.mono { font-family: var(--ff-mono); font-size: var(--fs-label); }
     }
 
     &.err .v { color: var(--stop); }
@@ -1538,9 +1538,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 12px;
   border-radius: var(--r-sm);
   border: 1px solid;
@@ -1588,9 +1588,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__category-tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   border: 1px solid var(--ink-a12);
   border-radius: var(--r-pill);
   padding: 5px 14px;
@@ -1636,7 +1636,7 @@ $border: var(--accent-a20);
   padding: 28px 16px;
   text-align: center;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
 }
 
@@ -1655,9 +1655,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__template-cat-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--ink-a40);
   padding: 8px 16px 4px;
@@ -1673,7 +1673,7 @@ $border: var(--accent-a20);
   background: transparent;
   cursor: pointer;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-a70);
   text-align: left;
   border-left: 3px solid transparent;
@@ -1710,9 +1710,9 @@ $border: var(--accent-a20);
 // 2026-05-29：列表卡片顯眼版 audience pill — 一眼分辨「給乘客 / 給司機」
 .PageAdminLineManagement__template-audience {
   font-family: var(--ff-ui);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   border: 1px solid;
@@ -1745,8 +1745,8 @@ $border: var(--accent-a20);
 }
 
 .PageAdminLineManagement__template-badge {
-  font-size: 11px;
-  line-height: 1;
+  font-size: var(--fs-label);
+  line-height: var(--lh-flat);
   padding: 2px;
   border-radius: var(--r-xs);
   background: var(--ink-a06);
@@ -1777,11 +1777,11 @@ $border: var(--accent-a20);
 // ── Bot Replies Tab（P40 Phase 2）─────────────────────────
 .PageAdminLineManagement__bot-intro {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
   padding: 14px 18px;
   border-bottom: 1px solid $border;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageAdminLineManagement__bot-rows {
@@ -1810,9 +1810,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__bot-channel {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 3px 10px;
 
@@ -1828,16 +1828,16 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__bot-type-label {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageAdminLineManagement__bot-customized {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--accent);
   background: var(--accent-a12);
   border-radius: var(--r-pill);
@@ -1850,15 +1850,15 @@ $border: var(--accent-a20);
   display: inline-flex;
   align-items: center;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   cursor: pointer;
 }
 
 .PageAdminLineManagement__bot-desc {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 /* 這個白底輸入框在 admin 的 [data-surface='dark'] 之內。
@@ -1870,8 +1870,8 @@ $border: var(--accent-a20);
   border: 1px solid $border;
   border-radius: var(--r-sm);
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
   background: var(--surface-raised);
   resize: vertical;
   min-height: 96px;
@@ -1892,9 +1892,9 @@ $border: var(--accent-a20);
 .PageAdminLineManagement__bot-meta {
   flex: 1;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageAdminLineManagement__bot-actions {
@@ -1905,11 +1905,11 @@ $border: var(--accent-a20);
 // ── Diagnostics Tab（P40 Phase 3）─────────────────────────
 .PageAdminLineManagement__diag-intro {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
   padding: 14px 18px;
   border-bottom: 1px solid $border;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageAdminLineManagement__diag-grid {
@@ -1945,9 +1945,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-channel {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 4px 12px;
 
@@ -1968,7 +1968,7 @@ $border: var(--accent-a20);
   padding: 24px;
   text-align: center;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
 }
 
@@ -1981,9 +1981,9 @@ $border: var(--accent-a20);
   background: var(--good-a08);
   color: var(--good);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
 
   &.is-warning {
     background: var(--stop-a08);
@@ -1992,16 +1992,16 @@ $border: var(--accent-a20);
 }
 
 .PageAdminLineManagement__diag-banner-icon {
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
 }
 
 .PageAdminLineManagement__diag-inc {
   margin: 0;
   padding: 8px 14px 8px 28px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--stop);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   list-style: disc;
 }
 
@@ -2013,9 +2013,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-section-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -2025,11 +2025,11 @@ $border: var(--accent-a20);
   align-items: baseline;
   gap: 10px;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
 
   .k {
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     color: var(--ink-a40);
     min-width: 90px;
   }
@@ -2037,7 +2037,7 @@ $border: var(--accent-a20);
     flex: 1;
     min-width: 0;
     word-break: break-all;
-    &.mono { font-family: var(--ff-mono); font-size: 11px; }
+    &.mono { font-family: var(--ff-mono); font-size: var(--fs-label); }
     &.muted { color: var(--ink-a40); }
   }
 }
@@ -2059,7 +2059,7 @@ $border: var(--accent-a20);
   border-radius: var(--r-sm);
   background: var(--ink-a06);
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
 
   &.is-default { background: var(--good-a08); }
   &.is-orphan { background: var(--stop-a08); }
@@ -2067,7 +2067,7 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-menu-name {
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2076,14 +2076,14 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-menu-id {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-a40);
 }
 
 .PageAdminLineManagement__diag-menu-badge {
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   border-radius: var(--r-pill);
   padding: 2px 8px;
 
@@ -2103,10 +2103,10 @@ $border: var(--accent-a20);
   margin: 6px 0 0;
   padding: 0 0 0 18px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--accent);
   list-style: disc;
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
 }
 
 // ── Diagnostics sub-tab + Event/Error Log（P43 Phase 3）──
@@ -2119,9 +2119,9 @@ $border: var(--accent-a20);
 
 .PageAdminLineManagement__diag-sub-tab {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 10px 18px;
   border: none;
   border-bottom: 2px solid transparent;
@@ -2152,9 +2152,9 @@ $border: var(--accent-a20);
 
   .k {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     color: var(--ink-a40);
   }
 
@@ -2164,7 +2164,7 @@ $border: var(--accent-a20);
     border: 1px solid $border;
     border-radius: var(--r-sm);
     font-family: var(--ff-ui);
-    font-size: 12px;
+    font-size: var(--fs-label);
     background: var(--surface-raised);
     min-width: 120px;
 
@@ -2189,7 +2189,7 @@ $border: var(--accent-a20);
   padding: 8px 18px;
   border-bottom: 1px solid $border;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -2197,7 +2197,7 @@ $border: var(--accent-a20);
   &.is-head {
     background: var(--ink-a06);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     color: var(--ink-a40);
     cursor: default;
     &:hover { background: var(--ink-a06); }
@@ -2211,7 +2211,7 @@ $border: var(--accent-a20);
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    &.mono { font-family: var(--ff-mono); font-size: 11px; }
+    &.mono { font-family: var(--ff-mono); font-size: var(--fs-label); }
     &.result {
       font-weight: 700;
       &.is-replied { color: var(--good); }
@@ -2252,12 +2252,12 @@ $border: var(--accent-a20);
     gap: 12px;
     align-items: baseline;
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
 
     .k {
       min-width: 100px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: var(--ls-wide);
       color: var(--ink-a40);
     }
     .v {
@@ -2265,7 +2265,7 @@ $border: var(--accent-a20);
       min-width: 0;
       word-break: break-all;
       color: var(--ink-a90);
-      &.mono { font-family: var(--ff-mono); font-size: 11px; }
+      &.mono { font-family: var(--ff-mono); font-size: var(--fs-label); }
     }
   }
 }
@@ -2278,11 +2278,11 @@ $border: var(--accent-a20);
   align-items: center;
   gap: 12px;
 
-  &-icon { font-size: 36px; }
+  &-icon { font-size: var(--fs-h1); }
   &-text {
     font-family: var(--ff-label);
-    font-size: 14px;
-    letter-spacing: 0.08em;
+    font-size: var(--fs-body);
+    letter-spacing: var(--ls-wide);
     color: var(--ink-a40);
   }
 }

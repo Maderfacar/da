@@ -590,9 +590,9 @@ onMounted(() => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -603,8 +603,8 @@ onMounted(() => {
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 36px;
-    letter-spacing: 0.04em;
+    font-size: var(--fs-h1);
+    letter-spacing: var(--ls-label);
     color: var(--surface-raised);
   }
 }
@@ -640,7 +640,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   color: var(--accent);
 }
@@ -649,15 +649,15 @@ onMounted(() => {
 
 .PageDriverProfile__name {
   font-family: var(--ff-label);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
   color: var(--surface-raised);
-  line-height: 1.2;
+  line-height: var(--lh-tight);
 }
 
 .PageDriverProfile__uid {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin-top: 2px;
 }
@@ -684,9 +684,9 @@ onMounted(() => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 9px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: var(--ls-caps-lg);
     color: var(--surface-a30);
     margin-bottom: 6px;
   }
@@ -694,9 +694,9 @@ onMounted(() => {
   &-val {
     font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
-    font-size: 20px;
+    font-size: var(--fs-h3);
     color: var(--surface-raised);
-    line-height: 1;
+    line-height: var(--lh-flat);
   }
 }
 
@@ -709,9 +709,9 @@ onMounted(() => {
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 9px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: var(--ls-kicker);
     color: var(--surface-a30);
     padding: 10px 16px 8px;
     border-bottom: 1px solid var(--surface-a06);
@@ -732,13 +732,13 @@ onMounted(() => {
 
   &-key {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     color: var(--surface-a30);
   }
 
   &-val {
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
     color: var(--surface-a82);
   }
@@ -757,9 +757,9 @@ onMounted(() => {
   background: var(--accent-a06);
   color: var(--accent);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -786,9 +786,9 @@ onMounted(() => {
   padding: 6px 10px;
   border-radius: var(--r-sm);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   border: 1px solid;
   transition: background var(--dur-fast) var(--ease-out);
@@ -836,9 +836,9 @@ onMounted(() => {
 
 .PageDriverProfile__doc-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a72);
 }
 
@@ -862,14 +862,14 @@ onMounted(() => {
 
 .PageDriverProfile__doc-pdf {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a60);
 }
 
 .PageDriverProfile__doc-empty {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
 }
 
@@ -886,9 +886,9 @@ onMounted(() => {
 
   &-title {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: var(--ls-label);
     color: var(--accent);
   }
 
@@ -896,7 +896,7 @@ onMounted(() => {
 
   &-sub {
     font-family: var(--ff-ui);
-    font-size: 10px;
+    font-size: var(--fs-label);
     color: var(--surface-a60);
     margin-top: 2px;
   }
@@ -909,9 +909,9 @@ onMounted(() => {
   background: var(--accent-a06);
   color: var(--accent);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 

@@ -105,15 +105,15 @@ onMounted(ApiGetWeather);
 
 .WeatherWidget__label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: var(--ls-kicker);
   color: var(--note); // sky blue
 }
 
 .WeatherWidget__loading {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a20);
 }
 
@@ -125,15 +125,15 @@ onMounted(ApiGetWeather);
 }
 
 .WeatherWidget__icon {
-  font-size: 28px;
-  line-height: 1;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-flat);
 }
 
 .WeatherWidget__desc {
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 }
 
@@ -152,9 +152,9 @@ onMounted(ApiGetWeather);
 
 .WeatherWidget__stat-label {
   font-family: var(--ff-label);
-  font-size: 8px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a20);
   margin-bottom: 4px;
 }
@@ -162,9 +162,9 @@ onMounted(ApiGetWeather);
 .WeatherWidget__stat-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   color: var(--note);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .WeatherWidget__error {
@@ -177,11 +177,11 @@ onMounted(ApiGetWeather);
   padding: 10px 12px;
 }
 
-.WeatherWidget__error-icon { font-size: 14px; flex-shrink: 0; }
+.WeatherWidget__error-icon { font-size: var(--fs-body); flex-shrink: 0; }
 
 .WeatherWidget__error-text {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
   color: var(--stop);
   margin: 0;
@@ -189,7 +189,7 @@ onMounted(ApiGetWeather);
 
 .WeatherWidget__error-hint {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin: 2px 0 0;
 }

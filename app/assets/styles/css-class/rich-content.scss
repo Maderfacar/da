@@ -8,15 +8,15 @@
  */
 .rich-content {
   font-family: var(--ff-ui);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
   word-break: break-word;
 
   // 標題 ----
   h1, h2, h3, h4, h5, h6 {
     font-weight: bold;
     margin: 0.83em 0;
-    line-height: 1.3;
+    line-height: var(--lh-tight);
   }
   h1 { font-size: 2em;    margin: 0.67em 0; }
   h2 { font-size: 1.5em;  margin: 0.83em 0; }
@@ -57,7 +57,7 @@
 
   sub, sup {
     font-size: 0.75em;
-    line-height: 0;
+    line-height: var(--lh-flat);
     position: relative;
     vertical-align: baseline;
   }
@@ -100,7 +100,7 @@
     overflow-x: auto;
     font-family: var(--ff-mono);
     font-size: 0.9em;
-    line-height: 1.5;
+    line-height: var(--lh-normal);
     white-space: pre;
   }
   code {

@@ -36,7 +36,7 @@ button.UiButton(
   gap: 8px;
   font-family: var(--ff-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border-radius: var(--r-md);
   cursor: pointer;
@@ -50,17 +50,17 @@ button.UiButton(
 // ── 尺寸 ──────────────────────────────────────────────────
 .UiButton.is-sm {
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 
 .UiButton.is-md {
   padding: 14px 24px;
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .UiButton.is-lg {
   padding: 18px 32px;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
 }
 
 // ── 變體 ──────────────────────────────────────────────────

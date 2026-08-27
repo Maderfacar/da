@@ -331,55 +331,55 @@ onUnmounted(() => {
 .PageHome__airport-badge {
   position: absolute;
   font-family: var(--ff-display);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   opacity: 0.06;
   pointer-events: none;
   user-select: none;
 
   &.is-tpe {
-    font-size: 120px;
+    font-size: var(--fs-mega);
     top: 60px; right: -20px;
     animation: floatY 8s ease-in-out infinite;
   }
   &.is-jfk {
-    font-size: 80px;
+    font-size: var(--fs-hero);
     top: 200px; left: -10px;
     animation: floatY 10s 2s ease-in-out infinite;
   }
   &.is-nrt {
-    font-size: 60px;
+    font-size: var(--fs-hero);
     top: 320px; right: 16px;
     animation: floatY 7s 1s ease-in-out infinite;
   }
   &.is-hnd {
-    font-size: 72px;
+    font-size: var(--fs-hero);
     top: 420px; left: 20px;
     animation: floatY 9s 0.5s ease-in-out infinite;
   }
   &.is-icn {
-    font-size: 56px;
+    font-size: var(--fs-hero);
     top: 520px; right: 40px;
     animation: floatY 11s 1.5s ease-in-out infinite;
   }
   &.is-lax {
-    font-size: 90px;
+    font-size: var(--fs-mega);
     top: 140px; left: 38%;
     opacity: 0.045;
     animation: floatY 13s 0.8s ease-in-out infinite;
   }
   &.is-hkg {
-    font-size: 50px;
+    font-size: var(--fs-display);
     top: 600px; left: -8px;
     animation: floatY 6s 2.4s ease-in-out infinite;
   }
   &.is-sin {
-    font-size: 64px;
+    font-size: var(--fs-hero);
     top: 680px; right: 24px;
     animation: floatY 12s 1.2s ease-in-out infinite;
   }
   &.is-sfo {
-    font-size: 56px;
+    font-size: var(--fs-hero);
     top: 760px; left: 36%;
     animation: floatY 8s 3.2s ease-in-out infinite;
   }
@@ -404,9 +404,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 20px;
@@ -427,8 +427,8 @@ onUnmounted(() => {
 .PageHome__hero-title {
   font-family: var(--ff-display);
   font-size: clamp(72px, 22vw, 108px);
-  line-height: 0.88;
-  letter-spacing: -0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-tight);
   color: var(--da-dark);
   margin-bottom: 8px;
   animation: fadeUp 0.8s 0.1s ease both;
@@ -438,15 +438,15 @@ onUnmounted(() => {
   color: var(--da-amber);
   display: block;
   font-size: clamp(56px, 17vw, 82px);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
 }
 
 .PageHome__hero-subtitle {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 320px;
   animation: fadeUp 0.8s 0.2s ease both;
@@ -465,9 +465,9 @@ onUnmounted(() => {
   min-width: 130px;
   padding: 14px 16px;
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border-radius: var(--r-md);
   cursor: pointer;
@@ -483,7 +483,7 @@ onUnmounted(() => {
   color: var(--da-cream);
   border: none;
   padding: 16px 24px;
-  font-size: 15px;
+  font-size: var(--fs-body);
 }
 
 .PageHome__cta-secondary {
@@ -515,9 +515,9 @@ onUnmounted(() => {
 
 .PageHome__section-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -535,17 +535,17 @@ onUnmounted(() => {
 .PageHome__section-title {
   font-family: var(--ff-display);
   font-size: clamp(36px, 10vw, 48px);
-  line-height: 0.95;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PageHome__section-desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 28px;
   max-width: 320px;
   font-family: var(--ff-ui);
@@ -608,34 +608,34 @@ onUnmounted(() => {
 .PageHome__trip-date {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 22px;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-snug);
+  line-height: var(--lh-flat);
   color: var(--da-dark);
 }
 
 .PageHome__trip-weekday {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.15em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-gray-light);
 }
 
 .PageHome__trip-time {
   font-family: var(--ff-data);
-  font-size: 30px;
-  letter-spacing: 0.02em;
-  line-height: 1;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-snug);
+  line-height: var(--lh-flat);
   color: var(--da-amber);
   font-variant-numeric: tabular-nums;
 }
 
 .PageHome__trip-status {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   padding: 5px 10px;
   border-radius: var(--r-pill);
@@ -709,20 +709,20 @@ onUnmounted(() => {
 
 .PageHome__trip-route-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-gray-light);
   margin-bottom: 2px;
 }
 
 .PageHome__trip-route-val {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--da-dark);
   font-family: var(--ff-ui);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   word-break: break-word;
 }
 
@@ -738,23 +738,23 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-flight-icon {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-amber);
 }
 
 .PageHome__trip-flight-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-amber);
 }
 
 .PageHome__trip-flight-val {
   font-family: var(--ff-data);
-  font-size: 16px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-body-lg);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   font-variant-numeric: tabular-nums;
   margin-left: auto;
@@ -778,9 +778,9 @@ onUnmounted(() => {
 .PageHome__trip-driver-badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--line-green);
   background: color-mix(in srgb, var(--line-green) 12%, transparent);
@@ -803,15 +803,15 @@ onUnmounted(() => {
 
 .PageHome__trip-driver-key {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--da-gray-light);
 }
 
 .PageHome__trip-driver-val {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--da-dark);
   font-family: var(--ff-ui);
@@ -819,17 +819,17 @@ onUnmounted(() => {
 
   // 車型放大、加粗 — 與車牌一致辨識度
   &.is-vehicle {
-    font-size: 17px;
+    font-size: var(--fs-body-lg);
     font-weight: 700;
-    letter-spacing: 0.01em;
+    letter-spacing: var(--ls-snug);
   }
 }
 
 .PageHome__trip-driver-plate {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 22px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
   color: var(--da-dark);
   background: var(--da-cream);
   padding: 6px 14px;
@@ -844,7 +844,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-amber);
   text-decoration: none;
@@ -858,9 +858,9 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   background: var(--da-amber);
   color: var(--da-cream);
@@ -891,24 +891,24 @@ onUnmounted(() => {
   border-radius: var(--r-round);
   background: var(--accent-a12);
   color: var(--da-amber);
-  font-size: 28px;
+  font-size: var(--fs-h1);
   margin-bottom: 4px;
 }
 
 .PageHome__next-trip-empty-title {
   font-family: var(--ff-ui);
-  font-size: 17px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-snug);
 }
 
 .PageHome__next-trip-empty-sub {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   max-width: 280px;
   margin-bottom: 8px;
 }
@@ -923,9 +923,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -935,8 +935,8 @@ onUnmounted(() => {
 
   span:first-child {
     font-family: var(--ff-display);
-    font-size: 16px;
-    line-height: 1;
+    font-size: var(--fs-body-lg);
+    line-height: var(--lh-flat);
   }
 }
 
@@ -971,9 +971,9 @@ onUnmounted(() => {
 
 .PageHome__book-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -992,18 +992,18 @@ onUnmounted(() => {
 .PageHome__book-title {
   font-family: var(--ff-display);
   font-size: clamp(36px, 11vw, 52px);
-  line-height: 0.95;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-cream);
   margin-bottom: 12px;
 }
 
 .PageHome__book-desc {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: color-mix(in srgb, var(--surface-raised) 70%, transparent);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 24px;
   max-width: 320px;
 }
@@ -1018,9 +1018,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--r-pill);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   cursor: pointer;
   transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
@@ -1030,7 +1030,7 @@ onUnmounted(() => {
 }
 
 .PageHome__book-btn-arrow {
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-family: var(--ff-display);
 }
 

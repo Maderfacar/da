@@ -31,10 +31,10 @@
 
 .CommonBootSplash__logo {
   font-family: var(--ff-display);
-  font-size: 32px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
 
   span { color: var(--da-amber); }
 }

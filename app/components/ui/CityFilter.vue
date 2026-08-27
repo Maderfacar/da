@@ -165,9 +165,9 @@ const hasValue = computed(
 
 .UiCityFilter__toggle-btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 10px;
   border: none;
   background: var(--surface-a06);
@@ -184,14 +184,14 @@ const hasValue = computed(
 .UiCityFilter__select {
   width: 160px;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 
 .UiCityFilter__clear {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -231,8 +231,8 @@ const hasValue = computed(
 
 // ── size-md（front-desk 用，字級略大）─────────────────────
 .UiCityFilter.size-md {
-  .UiCityFilter__select { width: 180px; font-size: 13px; }
-  .UiCityFilter__toggle-btn { font-size: 12px; padding: 6px 12px; }
-  .UiCityFilter__clear { font-size: 12px; padding: 6px 12px; }
+  .UiCityFilter__select { width: 180px; font-size: var(--fs-body-sm); }
+  .UiCityFilter__toggle-btn { font-size: var(--fs-label); padding: 6px 12px; }
+  .UiCityFilter__clear { font-size: var(--fs-label); padding: 6px 12px; }
 }
 </style>

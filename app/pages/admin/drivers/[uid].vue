@@ -617,14 +617,14 @@ onMounted(() => {
   background: var(--surface-raised);
   border-radius: var(--r-sm);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
 
   &:hover { background: var(--surface-ground); }
 }
 
 .PageAdminDriverDetail__title {
-  font-size: 20px;
+  font-size: var(--fs-h3);
   font-weight: 600;
   color: var(--ink);
 }
@@ -663,12 +663,12 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: var(--fs-h2);
   font-weight: 600;
 }
 
 .PageAdminDriverDetail__hero-name {
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 600;
   color: var(--ink);
 }
@@ -683,7 +683,7 @@ onMounted(() => {
 .status-pill {
   padding: 2px 10px;
   border-radius: var(--r-pill);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
 
   &.is-approved {
@@ -697,7 +697,7 @@ onMounted(() => {
 }
 
 .PageAdminDriverDetail__hero-uid {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
   font-family: var(--ff-ui);
 }
@@ -728,12 +728,12 @@ onMounted(() => {
 
   &-key {
     color: var(--ink-mute);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
   }
 
   &-val {
     color: var(--ink);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 500;
     text-align: right;
     max-width: 60%;
@@ -753,7 +753,7 @@ onMounted(() => {
   border: 1px solid var(--note);
   background: var(--note-a08);
   color: var(--note);
-  font-size: 12px;
+  font-size: var(--fs-label);
   cursor: pointer;
 
   &:hover { background: var(--note-a15); }
@@ -779,7 +779,7 @@ onMounted(() => {
 }
 
 .PageAdminDriverDetail__doc-head {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--ink);
   margin-bottom: 12px;
@@ -804,9 +804,9 @@ onMounted(() => {
 }
 
 .PageAdminDriverDetail__doc-col-label {
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--ink-mute);
 }
 
@@ -830,7 +830,7 @@ onMounted(() => {
 
 .PageAdminDriverDetail__doc-pdf,
 .PageAdminDriverDetail__doc-empty {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-mute);
 }
 
@@ -840,7 +840,7 @@ onMounted(() => {
   border-top: 1px dashed var(--hairline);
 
   &-line {
-    font-size: 12px;
+    font-size: var(--fs-label);
     color: var(--ink-soft);
     margin-bottom: 4px;
   }

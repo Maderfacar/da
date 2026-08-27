@@ -200,9 +200,9 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__header-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   display: flex;
   align-items: center;
@@ -214,16 +214,16 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__header-title {
   font-family: var(--ff-display);
-  font-size: 40px;
+  font-size: var(--fs-display);
   color: var(--surface-raised);
-  letter-spacing: 0.02em;
-  line-height: 0.95;
+  letter-spacing: var(--ls-snug);
+  line-height: var(--lh-flat);
 }
 
 .PageTraffic__header-sub {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--surface-a30);
   margin-top: 4px;
 }
@@ -254,7 +254,7 @@ onMounted(ApiLoadFlow);
   }
 
   .PageTraffic__header { margin-bottom: 20px; }
-  .PageTraffic__header-title { font-size: 30px; }
+  .PageTraffic__header-title { font-size: var(--fs-h1); }
 
   .PageTraffic__layout {
     flex-direction: column;
@@ -285,7 +285,7 @@ onMounted(ApiLoadFlow);
   }
 
   .PageTraffic__stat-card { padding: 12px 14px; }
-  .PageTraffic__stat-val { font-size: 22px; }
+  .PageTraffic__stat-val { font-size: var(--fs-h2); }
 
   .PageTraffic__chart-wrapper {
     height: 280px;
@@ -301,15 +301,15 @@ onMounted(ApiLoadFlow);
   .PageTraffic__seg-btn,
   .PageTraffic__shortcut {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: var(--fs-label);
   }
 }
 
 .PageTraffic__aside-title {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--note);
   margin-bottom: 10px;
 }
@@ -331,9 +331,9 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__filter-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
   min-width: 36px;
@@ -346,9 +346,9 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__shortcut {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 5px 12px;
   border-radius: var(--r-pill);
   border: 1px solid var(--surface-a12);
@@ -374,9 +374,9 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__seg-btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 5px 14px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a12);
@@ -414,9 +414,9 @@ onMounted(ApiLoadFlow);
 
 .PageTraffic__stat-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
   margin-bottom: 4px;
@@ -425,17 +425,17 @@ onMounted(ApiLoadFlow);
 .PageTraffic__stat-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 26px;
+  font-size: var(--fs-h2);
   color: var(--surface-raised);
-  line-height: 1;
-  letter-spacing: 0.02em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
 
   .is-peak & { color: var(--da-amber); }
 }
 
 .PageTraffic__stat-unit {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a30);
   margin-top: 2px;
 }
@@ -453,9 +453,9 @@ onMounted(ApiLoadFlow);
 
   span {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: var(--ls-label);
     color: var(--wait);
   }
 }
@@ -482,13 +482,13 @@ onMounted(ApiLoadFlow);
   padding: 14px 16px;
 }
 
-.PageTraffic__suggest-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.PageTraffic__suggest-icon { font-size: var(--fs-body-lg); flex-shrink: 0; margin-top: 1px; }
 
 .PageTraffic__suggest-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 
   strong { color: var(--da-amber); font-weight: 700; }
 }

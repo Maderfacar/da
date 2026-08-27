@@ -74,9 +74,9 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -95,17 +95,17 @@ section.PassengerHomeFeatures
 .PassengerHomeFeatures__title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 8px;
 }
 
 .PassengerHomeFeatures__desc {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   margin-bottom: 32px;
   max-width: 320px;
   font-family: var(--ff-ui);
@@ -149,14 +149,14 @@ section.PassengerHomeFeatures
   align-items: center;
   justify-content: center;
   font-family: var(--ff-display);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   color: var(--da-amber);
   margin: 8px 0 12px;
 }
 
 .PassengerHomeFeatures__card-title {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
   margin-bottom: 6px;
@@ -164,10 +164,10 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__card-body {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.65;
+  line-height: var(--lh-relaxed);
 }
 
 // ── 3 步流程 ─────────────────────────────────────────────
@@ -183,9 +183,9 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__flow-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 6px;
@@ -193,10 +193,10 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__flow-title {
   font-family: var(--ff-display);
-  font-size: 30px;
-  letter-spacing: 0.01em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PassengerHomeFeatures__steps {
@@ -218,8 +218,8 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__step-no {
   font-family: var(--ff-display);
-  font-size: 36px;
-  line-height: 1;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-flat);
   color: var(--da-amber);
   width: 48px;
   text-align: center;
@@ -231,7 +231,7 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__step-title {
   font-family: var(--ff-label);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--da-dark);
   margin-bottom: 4px;
@@ -239,10 +239,10 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__step-desc {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.65;
+  line-height: var(--lh-relaxed);
 }
 
 .PassengerHomeFeatures__step-connector {
@@ -279,9 +279,9 @@ section.PassengerHomeFeatures
 .PassengerHomeFeatures__line-only-badge {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--line-green);
   background: color-mix(in srgb, var(--line-green) 12%, transparent);
@@ -292,7 +292,7 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__line-only-title {
   font-family: var(--ff-label);
-  font-size: 20px;
+  font-size: var(--fs-h3);
   font-weight: 700;
   color: var(--da-dark);
   margin-bottom: 6px;
@@ -300,9 +300,9 @@ section.PassengerHomeFeatures
 
 .PassengerHomeFeatures__line-only-body {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 400;
   color: var(--da-gray);
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
 }
 </style>

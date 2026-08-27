@@ -232,13 +232,13 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__title {
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--ink);
 }
 
 .VehicleProfileReview__verified-meta {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
   display: flex;
   gap: 4px;
@@ -267,9 +267,9 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__col-label {
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   color: var(--ink-mute);
 }
 
@@ -277,7 +277,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-soft);
 }
 
@@ -304,13 +304,13 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: var(--fs-label);
     color: var(--ink-mute);
   }
 }
 
 .VehicleProfileReview__photos-empty {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
   grid-column: 1 / -1;
 }
@@ -323,9 +323,9 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__group-label {
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--ink-mute);
   min-width: 70px;
 }
@@ -338,7 +338,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__chip {
-  font-size: 11px;
+  font-size: var(--fs-label);
   padding: 2px 8px;
   border-radius: var(--r-pill);
   border: 1px solid var(--hairline);
@@ -353,7 +353,7 @@ const canReview = computed(() => props.pending?.status === 'pending_review');
 }
 
 .VehicleProfileReview__empty {
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
   flex: 1;
 }

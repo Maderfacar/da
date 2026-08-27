@@ -87,9 +87,9 @@ onMounted(() => { void ApiLoad(); });
 
 .LegalPageView__header-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 10px;
@@ -98,16 +98,16 @@ onMounted(() => { void ApiLoad(); });
 .LegalPageView__header-title {
   font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
-  line-height: 0.92;
+  line-height: var(--lh-flat);
   color: var(--da-dark);
   margin: 0 0 6px;
 }
 
 .LegalPageView__header-meta {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .LegalPageView__loading {
@@ -131,18 +131,18 @@ onMounted(() => { void ApiLoad(); });
   text-align: center;
   padding: 60px 20px;
 
-  &-icon { font-size: 40px; margin-bottom: 12px; }
+  &-icon { font-size: var(--fs-display); margin-bottom: 12px; }
   &-text {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--da-gray);
   }
 }
 
 .LegalPageView__body {
   font-family: var(--ff-ui);
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
   color: var(--da-dark);
   background: var(--surface-a60);
   border: 1px solid var(--hairline);
@@ -158,12 +158,12 @@ onMounted(() => { void ApiLoad(); });
     color: var(--da-dark);
     margin: 28px 0 12px;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: var(--ls-snug);
   }
-  :deep(h1) { font-size: 22px; }
-  :deep(h2) { font-size: 19px; }
-  :deep(h3) { font-size: 16px; }
-  :deep(h4) { font-size: 15px; }
+  :deep(h1) { font-size: var(--fs-h2); }
+  :deep(h2) { font-size: var(--fs-h4); }
+  :deep(h3) { font-size: var(--fs-body-lg); }
+  :deep(h4) { font-size: var(--fs-body); }
 
   :deep(p) { margin: 0 0 14px; }
   :deep(ul),
@@ -196,7 +196,7 @@ onMounted(() => { void ApiLoad(); });
     width: 100%;
     border-collapse: collapse;
     margin: 14px 0;
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     th, td {
       border: 1px solid var(--ink-a12);
       padding: 8px 10px;
@@ -221,7 +221,7 @@ onMounted(() => { void ApiLoad(); });
 
   :deep(code) {
     font-family: var(--ff-mono);
-    font-size: 12px;
+    font-size: var(--fs-label);
     background: var(--ink-a06);
     padding: 1px 5px;
     border-radius: var(--r-xs);

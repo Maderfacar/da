@@ -82,10 +82,10 @@ const ClickLogo = () => navigateTo('/');
 
 .LayoutMarketing__logo {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-wide);
   color: var(--da-dark);
-  line-height: 1;
+  line-height: var(--lh-flat);
   cursor: pointer;
   user-select: none;
 

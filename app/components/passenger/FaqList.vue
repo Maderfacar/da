@@ -77,18 +77,18 @@ const ClickToggle = (key: string) => {
 
 .PassengerFaqList__q-text {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--da-dark);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 .PassengerFaqList__q-mark {
   font-family: var(--ff-display);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: var(--da-amber);
   flex-shrink: 0;
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PassengerFaqList__a {
@@ -97,9 +97,9 @@ const ClickToggle = (key: string) => {
 
 .PassengerFaqList__a p {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
 }
 </style>

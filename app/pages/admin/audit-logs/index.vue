@@ -256,7 +256,7 @@ onMounted(() => {
     text-align: center;
     padding: 80px 16px;
 
-    h2 { font-family: var(--ff-display); font-size: 48px; color: var(--da-dark); margin-bottom: 12px; }
+    h2 { font-family: var(--ff-display); font-size: var(--fs-display); color: var(--da-dark); margin-bottom: 12px; }
     p { color: var(--da-gray); font-family: var(--ff-ui); }
   }
 
@@ -264,15 +264,15 @@ onMounted(() => {
 
   &__title {
     font-family: var(--ff-display);
-    font-size: 32px;
+    font-size: var(--fs-h1);
     color: var(--da-dark);
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-label);
   }
 
   &__sub {
     font-family: var(--ff-label);
-    font-size: 12px;
-    letter-spacing: 0.2em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-kicker);
     color: var(--da-gray);
     text-transform: uppercase;
     margin-top: 4px;
@@ -294,9 +294,9 @@ onMounted(() => {
 
   &__label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     text-transform: uppercase;
     color: var(--da-gray);
   }
@@ -311,7 +311,7 @@ onMounted(() => {
   &__error {
     color: var(--stop);
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     margin: 8px 0;
   }
 
@@ -326,7 +326,7 @@ onMounted(() => {
     width: 100%;
     border-collapse: collapse;
     font-family: var(--ff-ui);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
 
     thead {
       background: var(--da-dark);
@@ -337,8 +337,8 @@ onMounted(() => {
       text-align: left;
       padding: 12px 14px;
       font-family: var(--ff-label);
-      font-size: 11px;
-      letter-spacing: 0.1em;
+      font-size: var(--fs-label);
+      letter-spacing: var(--ls-wide);
       text-transform: uppercase;
       font-weight: 700;
     }
@@ -360,13 +360,13 @@ onMounted(() => {
   }
 
   &__actor-name { font-weight: 700; }
-  &__actor-uid { font-size: 11px; color: var(--da-gray); font-family: var(--ff-mono); }
+  &__actor-uid { font-size: var(--fs-label); color: var(--da-gray); font-family: var(--ff-mono); }
 
   &__badge {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     padding: 2px 8px;
     border-radius: var(--r-pill);
     text-transform: uppercase;
@@ -376,14 +376,14 @@ onMounted(() => {
     &.is-assistant { background: color-mix(in srgb, var(--ink-mute) 12%, transparent); color: var(--ink-mute); border: 1px solid color-mix(in srgb, var(--ink-mute) 30%, transparent); }
   }
 
-  &__action { font-family: var(--ff-mono); font-size: 12px; }
-  &__target { font-family: var(--ff-mono); font-size: 11px; color: var(--da-gray); word-break: break-all; }
+  &__action { font-family: var(--ff-mono); font-size: var(--fs-label); }
+  &__target { font-family: var(--ff-mono); font-size: var(--fs-label); color: var(--da-gray); word-break: break-all; }
 
   &__expand-cell {
     text-align: center;
     color: var(--da-gray);
 
-    span { display: inline-block; transition: transform var(--dur-base) var(--ease-out); font-size: 18px; }
+    span { display: inline-block; transition: transform var(--dur-base) var(--ease-out); font-size: var(--fs-h4); }
     span.is-rotated { transform: rotate(90deg); }
   }
 
@@ -399,16 +399,16 @@ onMounted(() => {
 
   &__detail-label {
     font-family: var(--ff-label);
-    font-size: 11px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: var(--ls-wide);
     text-transform: uppercase;
     color: var(--da-gray);
     width: 90px;
     flex-shrink: 0;
   }
 
-  &__detail-val { font-family: var(--ff-mono); font-size: 12px; color: var(--da-dark); word-break: break-all; }
+  &__detail-val { font-family: var(--ff-mono); font-size: var(--fs-label); color: var(--da-dark); word-break: break-all; }
 
   &__payload {
     margin: 0;
@@ -416,8 +416,8 @@ onMounted(() => {
     background: var(--da-dark);
     color: var(--good);
     font-family: var(--ff-mono);
-    font-size: 11px;
-    line-height: 1.5;
+    font-size: var(--fs-label);
+    line-height: var(--lh-normal);
     border-radius: var(--r-sm);
     overflow-x: auto;
     max-height: 320px;
@@ -440,8 +440,8 @@ onMounted(() => {
 
   &__count {
     font-family: var(--ff-label);
-    font-size: 11px;
-    letter-spacing: 0.1em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-wide);
     text-transform: uppercase;
     color: var(--da-gray);
   }
@@ -452,7 +452,7 @@ onMounted(() => {
     padding: 16px;
 
     &__filters { grid-template-columns: 1fr 1fr; }
-    &__table { font-size: 11px; }
+    &__table { font-size: var(--fs-label); }
     &__table th, &__table td { padding: 8px; }
   }
 }

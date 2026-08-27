@@ -1,36 +1,49 @@
-// 字級 design token — 三端共用
+// 字級 / 行高 / 字距 —— SCSS 別名層
 //
-// 設計準則：
-// 1. 新元件**只能**從這裡挑字級，禁止寫 hard-coded px
-// 2. 最小字級為 $fs-label (12px)，不再使用 9 / 10 / 11px
-//    （舊代碼 11px 仍存在 100+ 處，後續以 PR 漸進收斂）
-// 3. body 標準從原本混用的 13/14px 統一提到 15px（提升可讀性）
-// 4. line-height / letter-spacing 一同 token 化，避免每處重寫
+// ⚠ 這份檔案原本自帶字面值（$fs-label: 12px 等 16 個），是**第二真相來源**。
+//    階段 2 續（2026-08-28）把值搬進 css-class/_design-tokens.css 的 --fs-* / --lh-* / --ls-*，
+//    這裡只做轉指 —— 與 scss-tool/tokens.scss 同一個模式。
+//
+// 它原本寫的設計準則仍然有效，而且**本輪才真的落實**：
+//   1. 新元件只能從這裡（或 CSS 變數）挑字級，禁止 hard-coded px
+//   2. 最小字級 12px，不再使用 9 / 10 / 11px
+//      —— 那句話當年就寫了，但「舊代碼 11px 仍存在 100+ 處，後續以 PR 漸進收斂」
+//         從來沒發生：實測 444 處低於它自訂的最小值，而整套 token 只被引用 8 次
+//   3. body 標準 15px（原本混用 13/14）
+//   4. line-height / letter-spacing 一同 token 化
+//
+// 限制：值為 var(--x) 的 SCSS 變數不能參與 SCSS 數學運算，需要的話直接用 CSS calc()。
 
-// ── 巨型字 ────────────────────────────────────────────────
-$fs-hero:      72px;   // 訂單詳情大數字 / landing hero
-$fs-display:   48px;   // permission modal icon / loading logo（巨）
-
-// ── Heading ──────────────────────────────────────────────
-$fs-h1:        32px;   // 頁面 H1（大標題，字族走 --ff-display）
-$fs-h2:        24px;   // 區塊標題
-$fs-h3:        20px;   // 子標題 / 大型 stat
-$fs-h4:        18px;   // 小型 heading
-
-// ── Body ─────────────────────────────────────────────────
-$fs-body-lg:   16px;   // modal body / 重點段落
-$fs-body:      15px;   // 標準 body（從 13-14 升到 15）
-$fs-body-sm:   13px;   // 次要 body / hint / footnote
-
-// ── Label / Chip / Nav ────────────────────────────────────
-$fs-label:     12px;   // UPPERCASE kicker / chip / nav label / badge（最小可讀字級，取代舊 9-11px）
+// ── 字級 ─────────────────────────────────────────────────
+$fs-hero:      var(--fs-hero);
+$fs-mega:      var(--fs-mega);
+$fs-display:   var(--fs-display);
+$fs-h1:        var(--fs-h1);
+$fs-h2:        var(--fs-h2);
+$fs-h3:        var(--fs-h3);
+$fs-h4:        var(--fs-h4);
+$fs-body-lg:   var(--fs-body-lg);
+$fs-body:      var(--fs-body);
+$fs-body-sm:   var(--fs-body-sm);
+$fs-label:     var(--fs-label);
 
 // ── line-height ──────────────────────────────────────────
-$lh-tight:     1.2;    // heading / 大字
-$lh-normal:    1.5;    // body 預設
-$lh-relaxed:   1.7;    // 長段落
+$lh-flat:      var(--lh-flat);
+$lh-display:   var(--lh-display);
+$lh-tight:     var(--lh-tight);
+$lh-normal:    var(--lh-normal);
+$lh-relaxed:   var(--lh-relaxed);
 
 // ── letter-spacing ───────────────────────────────────────
-$ls-heading:   0.06em; // 一般標題
-$ls-label:     0.08em; // 小寫 label
-$ls-uppercase: 0.15em; // 強烈 UPPERCASE（chip / badge）
+$ls-tight:     var(--ls-tight);
+$ls-none:      var(--ls-none);
+$ls-snug:      var(--ls-snug);
+$ls-label:     var(--ls-label);
+$ls-wide:      var(--ls-wide);
+$ls-caps:      var(--ls-caps);
+$ls-caps-lg:   var(--ls-caps-lg);
+$ls-kicker:    var(--ls-kicker);
+
+// 舊名保留（$ls-heading / $ls-uppercase 曾被引用），指向新階
+$ls-heading:   var(--ls-wide);
+$ls-uppercase: var(--ls-caps-lg);

@@ -429,7 +429,7 @@ onUnmounted(() => {
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   box-shadow: var(--shadow-soft);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -445,7 +445,7 @@ onUnmounted(() => {
   }
 }
 
-.PageWarRoom__ctrl-icon { font-size: 14px; line-height: 1; }
+.PageWarRoom__ctrl-icon { font-size: var(--fs-body); line-height: var(--lh-flat); }
 .PageWarRoom__ctrl-label {
   font-variant-numeric: tabular-nums;
 }
@@ -533,17 +533,17 @@ onUnmounted(() => {
 
 .PageWarRoom__panel-title {
   font-family: var(--ff-display);
-  font-size: 28px;
+  font-size: var(--fs-h1);
   color: var(--surface-raised);
-  letter-spacing: 0.04em;
-  line-height: 1;
+  letter-spacing: var(--ls-label);
+  line-height: var(--lh-flat);
 }
 
 .PageWarRoom__panel-sub {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-top: 2px;
 }
@@ -558,9 +558,9 @@ onUnmounted(() => {
 
 .PageWarRoom__filter-btn {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 7px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--surface-a06);
@@ -589,16 +589,16 @@ onUnmounted(() => {
 
 .PageWarRoom__meta-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
 
 .PageWarRoom__meta-val {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-raised);
 }
@@ -641,7 +641,7 @@ onUnmounted(() => {
 
 .PageWarRoom__driver-name {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
   color: var(--surface-raised);
   white-space: nowrap;
@@ -651,8 +651,8 @@ onUnmounted(() => {
 
 .PageWarRoom__driver-coords {
   font-family: var(--ff-label);
-  font-size: 9px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
   margin-top: 2px;
 }
@@ -671,25 +671,25 @@ onUnmounted(() => {
 
 .PageWarRoom__driver-order-id {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber);
 }
 
 .PageWarRoom__driver-order-status {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--surface-a60);
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 // ── 空狀態 ────────────────────────────────────────────────
 .PageWarRoom__empty {
   margin-top: 24px;
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a20);
   text-align: center;
 }

@@ -216,8 +216,8 @@ onMounted(ApiLoadMe);
   align-items: center;
   gap: 6px;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
@@ -232,9 +232,9 @@ onMounted(ApiLoadMe);
 
 .PageReferralShare__header-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 10px;
@@ -243,7 +243,7 @@ onMounted(ApiLoadMe);
 .PageReferralShare__header-title {
   font-family: var(--ff-display);
   font-size: clamp(40px, 12vw, 56px);
-  line-height: 0.92;
+  line-height: var(--lh-flat);
   color: var(--da-dark);
 }
 
@@ -270,11 +270,11 @@ onMounted(ApiLoadMe);
   text-align: center;
   padding: 56px 20px;
 
-  &-icon { font-size: 44px; margin-bottom: 14px; }
+  &-icon { font-size: var(--fs-display); margin-bottom: 14px; }
 
   &-text {
     font-family: var(--ff-ui);
-    font-size: 14px;
+    font-size: var(--fs-body);
     color: var(--da-gray);
     margin-bottom: 18px;
   }
@@ -282,9 +282,9 @@ onMounted(ApiLoadMe);
   &-link {
     display: inline-block;
     font-family: var(--ff-label);
-    font-size: 13px;
+    font-size: var(--fs-body-sm);
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--ls-wide);
     padding: 9px 22px;
     border-radius: var(--r-pill);
     background: var(--da-amber);
@@ -306,25 +306,25 @@ onMounted(ApiLoadMe);
 
 .PageReferralShare__code-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber-light);
   margin-bottom: 8px;
 }
 
 .PageReferralShare__code-value {
   font-family: var(--ff-data);
-  font-size: 44px;
-  letter-spacing: 0.18em;
+  font-size: var(--fs-display);
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-cream);
   font-variant-numeric: tabular-nums;
 }
 
 .PageReferralShare__code-hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: var(--fs-label);
+  line-height: var(--lh-normal);
   color: var(--surface-a60);
   margin-top: 8px;
 }
@@ -336,9 +336,9 @@ onMounted(ApiLoadMe);
 
 .PageReferralShare__preview-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 8px;
 }
@@ -364,17 +364,17 @@ onMounted(ApiLoadMe);
 
 .PageReferralShare__card-title {
   font-family: var(--ff-label);
-  font-size: 18px;
+  font-size: var(--fs-h4);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 6px;
 }
 
 .PageReferralShare__card-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
   color: var(--da-gray);
   margin-bottom: 14px;
 }
@@ -383,9 +383,9 @@ onMounted(ApiLoadMe);
   display: block;
   text-align: center;
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 10px;
   border-radius: var(--r-md);
   background: var(--da-amber);
@@ -406,9 +406,9 @@ onMounted(ApiLoadMe);
   border: 1px solid var(--line-green);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-raised);
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -425,9 +425,9 @@ onMounted(ApiLoadMe);
   border: 1px solid var(--accent-a40);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);

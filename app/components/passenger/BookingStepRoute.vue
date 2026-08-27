@@ -275,9 +275,9 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .PassengerBookingStepRoute__section-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   display: flex;
@@ -294,9 +294,9 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .PassengerBookingStepRoute__title {
   font-family: var(--ff-display);
-  font-size: 28px;
+  font-size: var(--fs-h1);
   color: var(--da-dark);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-snug);
   margin-top: -8px;
 }
 
@@ -314,7 +314,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .PassengerBookingStepRoute__safety-icon {
   flex-shrink: 0;
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: var(--stop);
   margin-top: 2px;
 }
@@ -326,9 +326,9 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .PassengerBookingStepRoute__safety-label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--stop);
   margin-bottom: 4px;
@@ -336,8 +336,8 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
 .PassengerBookingStepRoute__safety-text {
   font-family: var(--ff-ui);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
   color: var(--ink);
   font-weight: 500;
 }
@@ -369,7 +369,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   background: none;
   border: none;
   color: var(--da-gray);
-  font-size: 20px;
+  font-size: var(--fs-h3);
   cursor: grab;
   padding: 6px 2px;
   margin-bottom: 2px;
@@ -386,7 +386,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   background: none;
   border: none;
   color: var(--da-gray);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   cursor: pointer;
   padding: 6px;
   margin-bottom: 2px;
@@ -404,7 +404,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   border-radius: var(--r-md);
   padding: 10px 16px;
   color: var(--da-gray);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   cursor: pointer;
   transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
   font-family: var(--ff-ui);
@@ -430,7 +430,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   border-radius: var(--r-md);
   padding: 14px 18px;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-dark);
 }
 

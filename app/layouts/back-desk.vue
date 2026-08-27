@@ -181,10 +181,10 @@ function ClickNav(path: string) {
 
 .LayoutBackDesk__loading-logo {
   font-family: var(--ff-display);
-  font-size: 32px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
 
   span { color: var(--da-amber); }
 }
@@ -223,10 +223,10 @@ function ClickNav(path: string) {
   flex: 1;
   min-width: 0;
   font-family: var(--ff-display);
-  font-size: 20px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -272,7 +272,7 @@ function ClickNav(path: string) {
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-amber);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
@@ -305,10 +305,10 @@ function ClickNav(path: string) {
 
 .LayoutBackDesk__drawer-logo {
   font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-bottom: 4px;
 
   span { color: var(--da-amber); }
@@ -316,9 +316,9 @@ function ClickNav(path: string) {
 
 .LayoutBackDesk__drawer-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
@@ -349,15 +349,15 @@ function ClickNav(path: string) {
 }
 
 .LayoutBackDesk__nav-icon {
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
   width: 24px;
   text-align: center;
 }
 
 .LayoutBackDesk__nav-label {
   font-family: var(--ff-ui);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--surface-a60);
 }
@@ -378,9 +378,9 @@ function ClickNav(path: string) {
   border: 1px solid var(--stop-a15);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--danger);
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out);

@@ -18,9 +18,9 @@ teleport(to="body")
   background: var(--da-dark);
   color: var(--da-cream);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 12px 24px;
   border-radius: var(--r-pill);
   white-space: nowrap;

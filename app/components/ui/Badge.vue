@@ -19,11 +19,11 @@ span.UiBadge(:class="`is-${variant}`")
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   padding: 4px 12px;
   border-radius: var(--r-pill);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
 }
 
 .UiBadge.is-confirmed {

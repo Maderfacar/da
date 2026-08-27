@@ -73,9 +73,9 @@ onMounted(() => {
 
 .LangSwitcher__trigger {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   padding: 6px 10px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--da-gray-pale);
@@ -83,7 +83,7 @@ onMounted(() => {
   color: var(--da-gray);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
-  line-height: 1;
+  line-height: var(--lh-flat);
 
   &:hover {
     border-color: var(--da-dark);
@@ -109,9 +109,9 @@ onMounted(() => {
 
 .LangSwitcher__item {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   padding: 6px 10px;
   border-radius: var(--r-sm);
   border: none;

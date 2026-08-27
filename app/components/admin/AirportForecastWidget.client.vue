@@ -85,25 +85,25 @@ onMounted(ApiGetForecast);
 
 .AirportForecastWidget__label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
 }
 
 .AirportForecastWidget__date {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a50);
 }
 
 .AirportForecastWidget__updated {
   margin-left: auto;
   font-family: var(--ff-label);
-  font-size: 9px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a20);
 }
 
@@ -123,9 +123,9 @@ onMounted(ApiGetForecast);
 
 .AirportForecastWidget__stat-label {
   font-family: var(--ff-label);
-  font-size: 8px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a20);
   margin-bottom: 4px;
   white-space: nowrap;
@@ -134,9 +134,9 @@ onMounted(ApiGetForecast);
 .AirportForecastWidget__stat-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   color: var(--surface-raised);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .AirportForecastWidget__chart {

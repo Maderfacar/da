@@ -369,7 +369,7 @@ const mountainHit = computed<boolean>(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--fs-h3);
 
   &:hover { color: var(--da-dark); }
 }
@@ -385,7 +385,7 @@ const mountainHit = computed<boolean>(() => {
   color: var(--da-dark);
   cursor: pointer;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   align-self: flex-start;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -430,9 +430,9 @@ const mountainHit = computed<boolean>(() => {
 
 .PassengerFareEstimator__field-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
   color: var(--da-gray);
 }
@@ -447,9 +447,9 @@ const mountainHit = computed<boolean>(() => {
 
 .PassengerFareEstimator__btn {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   padding: 10px 22px;
   border-radius: var(--r-pill);
@@ -479,7 +479,7 @@ const mountainHit = computed<boolean>(() => {
     &:hover:not(:disabled) { background: var(--da-off-white); }
   }
 
-  .spin { animation: PassengerFareEstimator-spin 0.8s linear infinite; font-size: 16px; }
+  .spin { animation: PassengerFareEstimator-spin 0.8s linear infinite; font-size: var(--fs-body-lg); }
 }
 
 @keyframes PassengerFareEstimator-spin {
@@ -495,7 +495,7 @@ const mountainHit = computed<boolean>(() => {
   border: 1px solid var(--stop-a30);
   color: var(--stop);
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 // ── 結果 ────────────────────────────────────────────────────
@@ -515,9 +515,9 @@ const mountainHit = computed<boolean>(() => {
 
 .PassengerFareEstimator__final-label {
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   text-transform: uppercase;
   color: var(--da-gray);
 }
@@ -525,8 +525,8 @@ const mountainHit = computed<boolean>(() => {
 .PassengerFareEstimator__final-val {
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-amber-light);
 }
 
@@ -541,7 +541,7 @@ const mountainHit = computed<boolean>(() => {
   justify-content: space-between;
   align-items: center;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   padding: 6px 0;
   border-bottom: 1px dashed var(--da-gray-pale);
 
@@ -560,7 +560,7 @@ const mountainHit = computed<boolean>(() => {
     display: inline-flex;
     align-items: center;
     color: var(--good);
-    font-size: 22px;
+    font-size: var(--fs-h2);
   }
 }
 
@@ -575,9 +575,9 @@ const mountainHit = computed<boolean>(() => {
 
 .PassengerFareEstimator__notes-title {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 10px;
@@ -604,8 +604,8 @@ const mountainHit = computed<boolean>(() => {
 
 .PassengerFareEstimator__notes-list li {
   font-family: var(--ff-ui);
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-relaxed);
   color: var(--da-dark);
   padding-left: 18px;
   position: relative;
@@ -629,7 +629,7 @@ const mountainHit = computed<boolean>(() => {
   background: var(--ink-a06);
   color: var(--da-gray);
   font-family: var(--ff-ui);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--fs-label);
+  line-height: var(--lh-relaxed);
 }
 </style>

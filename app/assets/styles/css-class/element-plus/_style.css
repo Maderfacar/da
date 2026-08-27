@@ -46,7 +46,7 @@
 }
 
 .el-checkbox__label {
-  font-size: 16px !important;
+  font-size: var(--fs-body-lg) !important;
   font-weight: 400;
 }
 
@@ -59,7 +59,7 @@
   margin: 0 2px 0 4px;
 }
 .el-radio__label {
-  font-size: 16px !important;
+  font-size: var(--fs-body-lg) !important;
   font-weight: 400;
 }
 
@@ -79,14 +79,14 @@
 }
 
 .el-form-item__content {
-  font-size: 18px!important;
+  font-size: var(--fs-h4)!important;
   line-height: 30px !important;
 }
 
 /* 必填* */
 .el-form-item__label::after {
-  line-height: 0;
-  font-size: 20px !important;
+  line-height: var(--lh-flat);
+  font-size: var(--fs-h3) !important;
 }
 
 /* tooltip --------------- */

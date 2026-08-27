@@ -78,25 +78,25 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 
 .PassengerHistoryJourneys__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   margin-bottom: 6px;
 }
 
 .PassengerHistoryJourneys__title {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin-bottom: 14px;
 }
 
 .PassengerHistoryJourneys__loading {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--da-gray);
   text-align: center;
   padding: 20px 0;
@@ -126,30 +126,30 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 
 .PassengerHistoryJourneys__stat-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--da-gray);
 }
 
 .PassengerHistoryJourneys__stat-val {
   font-family: var(--ff-data);
-  font-size: 24px;
-  line-height: 1;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-flat);
   color: var(--da-dark);
   font-variant-numeric: tabular-nums;
 }
 
 .PassengerHistoryJourneys__stat-unit {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
 }
 
 .PassengerHistoryJourneys__hint {
   font-family: var(--ff-ui);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray);
   margin-top: 12px;
   text-align: center;

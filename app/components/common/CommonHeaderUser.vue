@@ -82,7 +82,7 @@ const ClickPassenger = () => {
   font-family: var(--ff-label);
   font-size: $fs-label;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: var(--ls-caps-lg);
   padding: 5px 12px;
   border-radius: var(--r-pill);
   cursor: pointer;
@@ -133,15 +133,15 @@ const ClickPassenger = () => {
   background: var(--accent-a20);
   color: var(--da-amber);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: var(--ls-none);
 }
 
 // ── 名稱（窄螢幕隱藏，節省 header 空間） ──────────────────
 .CommonHeaderUser__name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 500;
   color: inherit;
   max-width: 120px;

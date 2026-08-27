@@ -419,11 +419,11 @@ onUnmounted(() => {
   transform: translate(-50%, -50%);
   font-family: var(--ff-display);
   font-size: clamp(140px, 42vw, 240px);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--ls-tight);
   color: var(--surface-a06);
   pointer-events: none;
   user-select: none;
-  line-height: 1;
+  line-height: var(--lh-flat);
   z-index: 0;
 }
 
@@ -444,10 +444,10 @@ onUnmounted(() => {
 
 .PageDriverRegister__logo {
   font-family: var(--ff-display);
-  font-size: 32px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-wide);
   color: var(--da-cream);
-  line-height: 1;
+  line-height: var(--lh-flat);
   margin-bottom: 6px;
 
   span { color: var(--da-amber); }
@@ -455,9 +455,9 @@ onUnmounted(() => {
 
 .PageDriverRegister__tagline {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--surface-a30);
 }
@@ -471,7 +471,7 @@ onUnmounted(() => {
 
 .PageDriverRegister__loading {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a40);
   padding: 20px 0;
 }
@@ -494,16 +494,16 @@ onUnmounted(() => {
 
 .PageDriverRegister__user-name {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-cream);
   font-weight: 500;
 }
 
 .PageDriverRegister__heading {
   font-family: var(--ff-label);
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
   color: var(--da-cream);
   margin-bottom: 16px;
   text-align: center;
@@ -515,20 +515,20 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--good);
   padding: 24px 0;
 
-  span:first-child { font-size: 36px; }
+  span:first-child { font-size: var(--fs-h1); }
 }
 
 // ── 區塊標題 ────────────────────────────────────────────
 .PageDriverRegister__section-title {
   width: 100%;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin: 16px 0 8px;
@@ -549,9 +549,9 @@ onUnmounted(() => {
 
 .PageDriverRegister__label {
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--surface-a72);
 }
 
@@ -567,7 +567,7 @@ onUnmounted(() => {
   border: 1px solid var(--surface-a12);
   border-radius: var(--r-sm);
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-raised);
 
   &::placeholder { color: var(--surface-a30); }
@@ -597,7 +597,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--surface-a72);
 
   input { display: none; }
@@ -622,11 +622,11 @@ onUnmounted(() => {
 .PageDriverRegister__tag-hint {
   width: 100%;
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
   margin: -2px 0 12px;
-  line-height: 1.5;
+  line-height: var(--lh-normal);
 }
 
 // ── 證件上傳區 ──────────────────────────────────────────
@@ -648,7 +648,7 @@ onUnmounted(() => {
 .PageDriverRegister__error {
   width: 100%;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
@@ -666,9 +666,9 @@ onUnmounted(() => {
   border: none;
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
@@ -682,8 +682,8 @@ onUnmounted(() => {
 
 .PageDriverRegister__desc {
   font-family: var(--ff-ui);
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relaxed);
   color: var(--surface-a60);
   margin-bottom: 16px;
   text-align: center;
@@ -691,15 +691,15 @@ onUnmounted(() => {
 
 .PageDriverRegister__hint {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
   margin-bottom: 24px;
   text-align: center;
 }
 
 .PageDriverRegister__status-icon {
-  font-size: 48px;
+  font-size: var(--fs-display);
   margin-bottom: 12px;
 }
 
@@ -717,23 +717,23 @@ onUnmounted(() => {
 
 .PageDriverRegister__cooldown-label {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--stop-a70);
   text-transform: uppercase;
 }
 
 .PageDriverRegister__cooldown-time {
   font-family: var(--ff-data);
-  font-size: 28px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--stop);
   font-variant-numeric: tabular-nums;
 }
 
 .PageDriverRegister__reason {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--stop);
   background: var(--stop-a08);
   border: 1px solid var(--stop-a15);
@@ -752,9 +752,9 @@ onUnmounted(() => {
   border: 1px solid var(--accent-a20);
   border-radius: var(--r-md);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   color: var(--da-amber);
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -782,11 +782,11 @@ onUnmounted(() => {
   &:hover { background: color-mix(in srgb, var(--line-green) 24%, transparent); }
 }
 
-.PageDriverRegister__oa-cta-icon { font-size: 18px; }
+.PageDriverRegister__oa-cta-icon { font-size: var(--fs-h4); }
 
 .PageDriverRegister__oa-cta-text {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 500;
   color: var(--good);
   text-align: center;
@@ -797,8 +797,8 @@ onUnmounted(() => {
   z-index: 1;
   margin-top: 24px;
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps);
   color: var(--surface-a12);
 }
 </style>

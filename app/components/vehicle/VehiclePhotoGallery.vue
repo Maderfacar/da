@@ -64,7 +64,7 @@ const props = defineProps<Props>();
   justify-content: center;
   padding: 40px 0;
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--da-gray);
   background: var(--da-amber-pale);
   border-radius: var(--r-md);

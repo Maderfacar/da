@@ -57,16 +57,16 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 
 .PassengerHistoryUserCard__name {
   font-family: var(--ff-label);
-  font-size: 20px;
+  font-size: var(--fs-h3);
   font-weight: 700;
   color: var(--da-dark);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PassengerHistoryUserCard__uid {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--da-gray-light);
 }
 
@@ -75,7 +75,7 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
   align-items: center;
   gap: 6px;
   font-family: var(--ff-ui);
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--da-gray);
 }
 
@@ -92,9 +92,9 @@ const lineOaUrl = useRuntimeConfig().public.lineOaAddUrl as string;
 .PassengerHistoryUserCard__add {
   display: inline-block;
   font-family: var(--ff-label);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   padding: 7px 18px;
   border-radius: var(--r-pill);
   background: var(--line-green);

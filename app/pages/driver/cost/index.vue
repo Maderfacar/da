@@ -318,9 +318,9 @@ onMounted(ApiLoadCostSettings);
 
   &-label {
     font-family: var(--ff-label);
-    font-size: 10px;
+    font-size: var(--fs-label);
     font-weight: 700;
-    letter-spacing: 0.3em;
+    letter-spacing: var(--ls-kicker);
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -331,16 +331,16 @@ onMounted(ApiLoadCostSettings);
 
   &-title {
     font-family: var(--ff-display);
-    font-size: 40px;
-    letter-spacing: 0.04em;
-    line-height: 1;
+    font-size: var(--fs-display);
+    letter-spacing: var(--ls-label);
+    line-height: var(--lh-flat);
     color: var(--surface-raised);
   }
 
   &-sub {
     font-family: var(--ff-label);
-    font-size: 13px;
-    letter-spacing: 0.08em;
+    font-size: var(--fs-body-sm);
+    letter-spacing: var(--ls-wide);
     color: var(--surface-a40);
     margin-top: 6px;
   }
@@ -357,25 +357,25 @@ onMounted(ApiLoadCostSettings);
 
 .PageDriverCost__section-label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   margin-bottom: 10px;
 }
 
 .PageDriverCost__heading {
   font-family: var(--ff-display);
-  font-size: 22px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-h2);
+  letter-spacing: var(--ls-label);
   color: var(--surface-raised);
-  line-height: 1;
+  line-height: var(--lh-flat);
 }
 
 .PageDriverCost__heading-sub {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-wide);
   color: var(--surface-a30);
   margin-top: 4px;
   margin-bottom: 14px;
@@ -410,17 +410,17 @@ onMounted(ApiLoadCostSettings);
 
 .PageDriverCost__stat-label {
   font-family: var(--ff-label);
-  font-size: 9px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-caps-lg);
   color: var(--surface-a30);
 }
 
 .PageDriverCost__stat-val {
   font-family: var(--ff-data);
-  font-size: 28px;
+  font-size: var(--fs-h1);
   color: var(--surface-raised);
-  line-height: 1;
+  line-height: var(--lh-flat);
   font-variant-numeric: tabular-nums;
 
   .PageDriverCost__stat.is-positive & { color: var(--good); }
@@ -429,8 +429,8 @@ onMounted(ApiLoadCostSettings);
 
 .PageDriverCost__stat-unit {
   font-family: var(--ff-label);
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
 }
 
@@ -464,16 +464,16 @@ onMounted(ApiLoadCostSettings);
 
   span {
     font-family: var(--ff-label);
-    font-size: 14px;
+    font-size: var(--fs-body);
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-label);
     color: var(--surface-a82);
   }
 
   small {
     font-family: var(--ff-label);
-    font-size: 10px;
-    letter-spacing: 0.15em;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-caps-lg);
     color: var(--surface-a30);
     text-transform: uppercase;
   }
@@ -486,7 +486,7 @@ onMounted(ApiLoadCostSettings);
   background: var(--ink-a30);
   color: var(--surface-raised);
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-variant-numeric: tabular-nums;
   text-align: right;
   width: 100%;
@@ -511,7 +511,7 @@ onMounted(ApiLoadCostSettings);
   padding: 11px 16px;
   border-bottom: 1px solid var(--surface-a06);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 
   &:last-child { border-bottom: none; }
 
@@ -525,14 +525,14 @@ onMounted(ApiLoadCostSettings);
 .PageDriverCost__breakdown-label {
   color: var(--surface-a72);
 
-  .is-total & { color: var(--surface-raised); font-size: 14px; letter-spacing: 0.06em; }
+  .is-total & { color: var(--surface-raised); font-size: var(--fs-body); letter-spacing: var(--ls-label); }
 }
 
 .PageDriverCost__breakdown-num {
   color: var(--surface-a88);
   font-variant-numeric: tabular-nums;
 
-  .is-total & { color: var(--accent); font-size: 15px; font-weight: 700; }
+  .is-total & { color: var(--accent); font-size: var(--fs-body); font-weight: 700; }
 }
 
 // ── 儲存區（P30）──────────────────────────────────────────
@@ -559,9 +559,9 @@ onMounted(ApiLoadCostSettings);
   background: var(--accent-a12);
   color: var(--da-stripe-yellow);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-caps);
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 
@@ -572,8 +572,8 @@ onMounted(ApiLoadCostSettings);
 
 .PageDriverCost__save-hint {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a30);
   flex: 1;
   text-align: right;
@@ -583,13 +583,13 @@ onMounted(ApiLoadCostSettings);
 @media (max-width: 600px) {
   .PageDriverCost { padding: 72px 14px 28px; }
   .PageDriverCost__section { padding: 16px; }
-  .PageDriverCost__header-title { font-size: 32px; }
-  .PageDriverCost__heading { font-size: 19px; }
+  .PageDriverCost__header-title { font-size: var(--fs-h1); }
+  .PageDriverCost__heading { font-size: var(--fs-h4); }
   .PageDriverCost__field {
     grid-template-columns: 1fr 110px;
     padding: 9px 10px;
   }
-  .PageDriverCost__input { font-size: 15px; padding: 7px 10px; }
+  .PageDriverCost__input { font-size: var(--fs-body); padding: 7px 10px; }
 
   .PageDriverCost__save-bar {
     flex-direction: column;

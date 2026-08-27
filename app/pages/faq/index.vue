@@ -113,12 +113,12 @@ const ClickSupport = () => {
   position: fixed;
   top: 80px; right: -10px;
   font-family: var(--ff-display);
-  font-size: 100px;
+  font-size: var(--fs-mega);
   color: var(--da-dark);
   opacity: 0.04;
   pointer-events: none;
   user-select: none;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 // ── 頁首 ──────────────────────────────────────────────────────────────────────
@@ -128,9 +128,9 @@ const ClickSupport = () => {
 
 .PageFaq__header-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 10px;
@@ -139,17 +139,17 @@ const ClickSupport = () => {
 .PageFaq__header-title {
   font-family: var(--ff-display);
   font-size: clamp(48px, 14vw, 64px);
-  line-height: 0.92;
+  line-height: var(--lh-flat);
   color: var(--da-dark);
 }
 
 .PageFaq__header-intro {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 300;
   color: var(--da-gray);
   margin-top: 12px;
-  line-height: 1.7;
+  line-height: var(--lh-relaxed);
   max-width: 320px;
 }
 
@@ -164,9 +164,9 @@ const ClickSupport = () => {
 
 .PageFaq__section-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 12px;
@@ -184,8 +184,8 @@ const ClickSupport = () => {
 .PageFaq__section-title {
   font-family: var(--ff-display);
   font-size: clamp(42px, 12vw, 56px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-flat);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin-bottom: 20px;
 }
@@ -205,8 +205,8 @@ const ClickSupport = () => {
 .PageFaq__overview-heading {
   font-family: var(--ff-display);
   font-size: clamp(22px, 5vw, 28px);
-  line-height: 1.3;
-  letter-spacing: 0.02em;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-snug);
   color: var(--da-dark);
   margin: 8px 0 22px;
   max-width: 480px;
@@ -220,10 +220,10 @@ const ClickSupport = () => {
 
   p {
     font-family: var(--ff-ui);
-    font-size: 14.5px;
+    font-size: var(--fs-body);
     font-weight: 300;
     color: var(--da-gray);
-    line-height: 1.85;
+    line-height: var(--lh-relaxed);
     margin: 0;
   }
 }
@@ -241,15 +241,15 @@ const ClickSupport = () => {
 
 .PageFaq__trust-subtitle {
   font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-cream);
 }
 
 .PageFaq__trust-tagline {
   font-family: var(--ff-label);
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-kicker);
   color: var(--da-amber);
   text-transform: uppercase;
   margin: 6px 0 22px;
@@ -266,9 +266,9 @@ const ClickSupport = () => {
 
 .PageFaq__trust-list li {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--surface-a88);
-  line-height: 1.75;
+  line-height: var(--lh-relaxed);
   padding-left: 24px;
   position: relative;
 }
@@ -290,9 +290,9 @@ const ClickSupport = () => {
 .PageFaq__faq-label {
   padding: 0 24px;
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 8px;
@@ -314,9 +314,9 @@ const ClickSupport = () => {
 
 .PageFaq__cat-label {
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--da-amber);
   margin-bottom: 14px;
@@ -342,14 +342,14 @@ const ClickSupport = () => {
 
 .PageFaq__contact-title {
   font-family: var(--ff-display);
-  font-size: 32px;
+  font-size: var(--fs-h1);
   color: var(--da-cream);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-label);
 }
 
 .PageFaq__contact-desc {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a60);
   margin: 8px 0 20px;
 }
@@ -362,9 +362,9 @@ const ClickSupport = () => {
   background: var(--da-amber);
   color: var(--da-dark);
   font-family: var(--ff-label);
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--ls-wide);
   text-transform: uppercase;
   border: none;
   border-radius: var(--r-pill);
@@ -376,6 +376,6 @@ const ClickSupport = () => {
 }
 
 .PageFaq__contact-ext {
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 </style>

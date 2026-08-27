@@ -80,7 +80,7 @@ const mergedInit = computed(() => ({
   justify-content: center;
   min-height: 500px;
   color: var(--ink-mute);
-  font-size: 14px;
+  font-size: var(--fs-body);
   border: 1px solid var(--hairline);
   border-radius: var(--r-xs);
   background: var(--surface-raised);

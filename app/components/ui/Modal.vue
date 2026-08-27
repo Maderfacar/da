@@ -60,17 +60,17 @@ teleport(to="body")
 
 .UiModal__title {
   font-family: var(--ff-display);
-  font-size: 28px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   color: var(--da-dark);
   margin-bottom: 16px;
 }
 
 .UiModal__body {
   font-family: var(--ff-ui);
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--da-gray);
-  line-height: 1.8;
+  line-height: var(--lh-relaxed);
 }
 
 .UiModal__footer {

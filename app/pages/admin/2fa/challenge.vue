@@ -94,14 +94,14 @@ const ClickVerify = async () => {
   box-shadow: var(--shadow-soft);
 }
 .Admin2faChallenge__title {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   margin: 0 0 12px;
 }
 .Admin2faChallenge__lead {
-  font-size: 14px;
+  font-size: var(--fs-body);
   color: var(--ink-soft);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin: 0 0 20px;
 }
 .Admin2faChallenge__field {
@@ -109,7 +109,7 @@ const ClickVerify = async () => {
 }
 .Admin2faChallenge__error {
   color: var(--stop);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   margin: 8px 0;
 }
 .Admin2faChallenge__actions {
@@ -118,9 +118,9 @@ const ClickVerify = async () => {
   justify-content: flex-end;
 }
 .Admin2faChallenge__help {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-mute);
-  line-height: 1.6;
+  line-height: var(--lh-relaxed);
   margin: 20px 0 0;
 }
 </style>

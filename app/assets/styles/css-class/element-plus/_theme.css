@@ -60,9 +60,18 @@
   /* 字級：18px / 14px / 16px。
      這三條的 !important 是既有的（important-audit.md 的 A-3 類），
      等尺度 token 實際替換時一併處理，色彩收尾不動。 */
-  --el-font-size-base: 1.125rem !important;
-  --el-font-size-small: 0.875rem !important;
-  --el-checkbox-font-size: 1rem !important;
+  /* EP 的字級接上設計系統的字級階梯（階段 2 續）。
+     在此之前這三條是 rem 字面值（1.125rem = 18px / 0.875rem = 14px / 1rem = 16px），
+     與 --fs-* 各走各的 —— 那是排版的第二真相來源，
+     跟 --el-color-* 當年沒接品牌色是同一個病。
+     ⚠ --el-font-size-large / -medium EP 有預設值，這裡一併接上，
+        免得 _style.css 裡那幾條 var(--el-font-size-large) 仍指向 EP 的字面值。 */
+  --el-font-size-extra-large: var(--fs-h3) !important;
+  --el-font-size-large: var(--fs-h4) !important;
+  --el-font-size-medium: var(--fs-body-lg) !important;
+  --el-font-size-base: var(--fs-body) !important;
+  --el-font-size-small: var(--fs-body-sm) !important;
+  --el-checkbox-font-size: var(--fs-body) !important;
 }
 
 /* 深色面（admin / driver layout）——

@@ -379,7 +379,7 @@ const metricsRows = computed(() => {
 .AdminFareSandbox__back {
   display: inline-block;
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   text-decoration: none;
   margin-bottom: 8px;
 
@@ -387,7 +387,7 @@ const metricsRows = computed(() => {
 }
 
 .AdminFareSandbox__title {
-  font-size: 24px;
+  font-size: var(--fs-h2);
   font-weight: 700;
   margin: 0 0 4px;
 }
@@ -395,7 +395,7 @@ const metricsRows = computed(() => {
 .AdminFareSandbox__sub {
   color: var(--ink-soft);
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .AdminFareSandbox__grid {
@@ -416,7 +416,7 @@ const metricsRows = computed(() => {
 }
 
 .AdminFareSandbox__panel-title {
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 600;
   margin: 0 0 16px;
   padding-bottom: 8px;
@@ -432,7 +432,7 @@ const metricsRows = computed(() => {
 
 .AdminFareSandbox__label {
   flex: 0 0 110px;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--ink-soft);
 }
 
@@ -456,7 +456,7 @@ const metricsRows = computed(() => {
   border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
   padding: 6px 10px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   background: var(--surface-raised);
   color: var(--ink);
 }
@@ -488,7 +488,7 @@ const metricsRows = computed(() => {
   color: var(--ink);
   border-radius: var(--r-pill);
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--fs-label);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -506,7 +506,7 @@ const metricsRows = computed(() => {
   border-radius: var(--r-xs);
   padding: 2px 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-body);
 }
 
 .AdminFareSandbox__btn-add {
@@ -516,7 +516,7 @@ const metricsRows = computed(() => {
   border-radius: var(--r-sm);
   padding: 6px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--fs-label);
   margin-left: 122px;
 }
 
@@ -532,7 +532,7 @@ const metricsRows = computed(() => {
   border: none;
   border-radius: var(--r-sm);
   padding: 10px 24px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;
 
@@ -548,12 +548,12 @@ const metricsRows = computed(() => {
   background: var(--accent-wash);
   border-radius: var(--r-sm);
   color: var(--accent);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .AdminFareSandbox__empty {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   padding: 24px 0;
   text-align: center;
 }
@@ -562,7 +562,7 @@ const metricsRows = computed(() => {
   display: inline-block;
   padding: 4px 12px;
   border-radius: var(--r-pill);
-  font-size: 12px;
+  font-size: var(--fs-label);
   font-weight: 600;
   margin-bottom: 12px;
 
@@ -572,18 +572,18 @@ const metricsRows = computed(() => {
 }
 
 .AdminFareSandbox__roundtrip {
-  font-size: 12px;
+  font-size: var(--fs-label);
   color: var(--ink-soft);
   margin-bottom: 12px;
 }
 
 .AdminFareSandbox__section-title {
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 600;
   margin: 16px 0 8px;
   color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-label);
 }
 
 .AdminFareSandbox__rows {
@@ -599,7 +599,7 @@ const metricsRows = computed(() => {
   display: flex;
   justify-content: space-between;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   border-bottom: 1px solid var(--hairline);
 
   &:last-child { border-bottom: none; }
@@ -628,7 +628,7 @@ const metricsRows = computed(() => {
   border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--fs-label);
 }
 
 .AdminFareSandbox__hit-name {
@@ -645,7 +645,7 @@ const metricsRows = computed(() => {
 
 .AdminFareSandbox__hit-sub {
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: var(--fs-label);
   margin-top: 2px;
 }
 
@@ -657,7 +657,7 @@ const metricsRows = computed(() => {
   padding: 3px 8px;
   margin-top: 6px;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--fs-label);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -682,10 +682,10 @@ const metricsRows = computed(() => {
   gap: 6px;
   padding: 6px 8px;
   background: var(--surface-ground);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-label);
   color: var(--ink-soft);
   border-bottom: 1px solid var(--hairline);
 }
@@ -695,7 +695,7 @@ const metricsRows = computed(() => {
   grid-template-columns: 50px 60px 1fr;
   gap: 6px;
   padding: 5px 8px;
-  font-size: 11px;
+  font-size: var(--fs-label);
   border-bottom: 1px solid var(--ink-a06);
 
   &:last-child { border-bottom: none; }
@@ -719,7 +719,7 @@ const metricsRows = computed(() => {
   &.is-instr {
     color: var(--ink);
     word-break: break-word;
-    line-height: 1.4;
+    line-height: var(--lh-normal);
   }
 }
 </style>

@@ -333,9 +333,9 @@ onMounted(() => {
 
 .PageAdminAnnouncements__label {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-kicker);
   color: var(--accent);
   display: flex;
   align-items: center;
@@ -347,8 +347,8 @@ onMounted(() => {
 
 .PageAdminAnnouncements__title {
   font-family: var(--ff-display);
-  font-size: 36px;
-  letter-spacing: 0.04em;
+  font-size: var(--fs-h1);
+  letter-spacing: var(--ls-label);
   margin: 0;
 }
 
@@ -359,9 +359,9 @@ onMounted(() => {
   background: var(--accent-a12);
   color: var(--accent);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
@@ -384,9 +384,9 @@ onMounted(() => {
   background: transparent;
   color: var(--surface-a40);
   font-family: var(--ff-label);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -414,7 +414,7 @@ onMounted(() => {
   padding: 40px 20px;
   text-align: center;
   color: var(--surface-a40);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
 }
 
 .PageAdminAnnouncements__card {
@@ -437,10 +437,10 @@ onMounted(() => {
 
 .PageAdminAnnouncements__cardTitle {
   font-family: var(--ff-ui);
-  font-size: 16px;
+  font-size: var(--fs-body-lg);
   font-weight: 700;
   color: var(--surface-raised);
-  line-height: 1.4;
+  line-height: var(--lh-normal);
   flex: 1 1 auto;
   min-width: 0;
   word-break: break-word;
@@ -455,9 +455,9 @@ onMounted(() => {
 
 .PageAdminAnnouncements__chip {
   font-family: var(--ff-label);
-  font-size: 10px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   padding: 3px 10px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
@@ -467,9 +467,9 @@ onMounted(() => {
 
 .PageAdminAnnouncements__cardBody {
   font-family: var(--ff-ui);
-  font-size: 13px;
+  font-size: var(--fs-body-sm);
   color: var(--surface-a72);
-  line-height: 1.5;
+  line-height: var(--lh-normal);
   margin-bottom: 12px;
 }
 
@@ -489,8 +489,8 @@ onMounted(() => {
 
 .PageAdminAnnouncements__stat {
   font-family: var(--ff-label);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-label);
   color: var(--surface-a40);
 }
 
@@ -507,9 +507,9 @@ onMounted(() => {
   background: var(--surface-a06);
   color: var(--surface-a82);
   font-family: var(--ff-label);
-  font-size: 11px;
+  font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-wide);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 
