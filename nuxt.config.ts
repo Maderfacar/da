@@ -198,9 +198,27 @@ export default defineNuxtConfig({
       // （Noto Serif TC 是完整 CJK 字重，payload 代價不值得）
       { name: 'Cormorant Garamond', provider: 'bunny', weights: [300, 400, 500, 600] },
       { name: 'Jost', provider: 'bunny', weights: [300, 400, 500, 600] },
-      // 中文字重不動（CJK 子集是 payload 大頭，加一個字重就是幾百 KB）。
-      // 已知缺口：站上有 56 處對中文用 font-weight 600、未載 → 瀏覽器合成偽粗體。
-      // 要不要補 500/600 留給後續階段，先量 payload 再決定。
+      // ⚠ 這一條**實際上沒有自架成功，中文一律走系統字**（2026-08-28 量測確認）。
+      //
+      //   產物實證：`.output/public/static/*.css` 內只有 Cormorant Garamond 與 Jost
+      //   兩組 @font-face，Noto Sans TC 一個都沒有 —— 連 fallback metrics 都沒產生。
+      //
+      //   根因在 bunny 端，不是我們的設定：`fonts.bunny.net/css?family=noto-sans-tc`
+      //   回 **106 個 @font-face，其中只有 4 個帶 unicode-range**。少了 unicode-range，
+      //   瀏覽器無從判斷該抓哪一塊，102 個 subset 對它而言是同一個字體的重複宣告 ——
+      //   要嘛只用最後一個（中文覆蓋殘缺），要嘛全抓（106 × 約 7KB ≈ 750KB／單一字重）。
+      //   @nuxt/fonts 因此產不出可用的 @font-face。
+      //
+      //   為什麼不換回 google provider：那正是它對 CJK woff2 回 404 害 Vercel 部署掛的原因。
+      //
+      //   ⚠ **不要為了「補中文字重」而改這一行的 weights** —— 加上去不會生效，
+      //   只會多花建置時間。站上 56 處對中文用 font-weight 600 仍是瀏覽器合成偽粗體，
+      //   那是**已知且接受**的現況，不是漏做。
+      //
+      //   要真正自架中文，唯一可行路線是建置期自行 subset（只打包站上實際用到的字），
+      //   那是獨立的 payload 決策，不在字族 token 化的範圍內。
+      //   這一條保留著是因為移除它會讓 processCSSVariables 改走預設 provider 解析
+      //   --ff-* 裡的 'Noto Sans TC'，反而可能把 gstatic 依賴帶回建置期。
       { name: 'Noto Sans TC', provider: 'bunny', weights: [300, 400, 700, 900] },
       // Bebas Neue / Barlow / Barlow Condensed 已於 W0b 全站零引用後移除。
       // 別加回來 —— 字族只能從 _design-tokens.css 的 --ff-* 進來。

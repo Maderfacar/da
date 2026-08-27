@@ -97,6 +97,36 @@ describe('設計 token 單一真相來源', () => {
     expect(inConfig, `nuxt.config.ts 的 fonts.families 仍列著已下架字族：${inConfig.join(', ')}`).toEqual([]);
   });
 
+  it('CJK 字族的宣告不得擴張 —— bunny 自架不成立，加了也不會生效', () => {
+    // 為什麼要守這條：nuxt.config 的 fonts.families 列著 Noto Sans TC，
+    // 但產物裡 @font-face 是 0 —— 宣告與現實不一致，而**建置全綠**，
+    // 沒有任何訊號會告訴後人「你加的字重沒有生效」。
+    //
+    // 根因量測（2026-08-28）：bunny 對 noto-sans-tc 回 106 個 @font-face，
+    // 只有 4 個帶 unicode-range。少了 unicode-range 就無法分塊載入 CJK。
+    // 詳見 nuxt.config.ts 該條目上方的註解。
+    //
+    // 這條守的是「有人以為補字重就會有中文粗體」——
+    // 那會白花建置時間、且讓宣告離現實更遠。
+    const entries = [...NUXT_CONFIG.matchAll(/\{\s*name:\s*'([^']+)'[^}]*weights:\s*\[([^\]]*)\][^}]*\}/g)]
+      .map((m) => ({ name: m[1]!, weights: m[2]!.replace(/\s/g, '') }));
+
+    const cjk = entries.filter((e) => /(?:^|[ -])(TC|SC|JP|KR|CJK)(?:$|[ -])/.test(e.name));
+
+    expect(
+      cjk.map((e) => e.name),
+      'fonts.families 只允許既有的 Noto Sans TC 這一個 CJK 條目。'
+      + '新增 CJK 字族不會產生 @font-face（bunny 缺 unicode-range），'
+      + '要自架中文請走建置期 subset，另開變更。',
+    ).toEqual(['Noto Sans TC']);
+
+    expect(
+      cjk[0]?.weights,
+      '不要為了補中文字重而改 Noto Sans TC 的 weights —— 加上去不會生效，只會多花建置時間。'
+      + '站上對中文用 font-weight 600 由瀏覽器合成偽粗體，是已知且接受的現況。',
+    ).toBe('300,400,700,900');
+  });
+
   it('tokens.scss 只做轉指，不得自帶字面值', () => {
     const scss = readFileSync(join(ROOT, 'app/assets/styles/scss-tool/tokens.scss'), 'utf8');
     const offenders = scss.split(/\r?\n/)

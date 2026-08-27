@@ -139,6 +139,18 @@ MUST NOT 以同名重複宣告（`--x: rgba(…); --x: color-mix(…);`）作為
 - **THEN** `@nuxt/fonts` 會為它產生 `@font-face` 並下載字檔，造成非預期的 payload 增加
 - **AND** 等寬與其他純系統堆疊 SHALL 只使用系統字族名（`ui-monospace` / `Menlo` / `Consolas` 等）
 
+#### Scenario: CJK 走系統字是刻意的，不是漏做
+- **WHEN** 檢視產物 `.output/public/static/*.css`
+- **THEN** 只有拉丁字族（Cormorant Garamond / Jost）具 `@font-face`，CJK 一個都沒有
+- **AND** 此為 provider 限制：bunny 對 `noto-sans-tc` 回 106 個 `@font-face`，
+  其中僅 4 個帶 `unicode-range`，無法分塊載入（2026-08-28 量測）
+- **AND** MUST NOT 為此改回 `google` provider —— 該 provider 正是對 CJK woff2 回 404
+  導致 Vercel 部署失敗的原因
+- **AND** `fonts.families` 的 CJK 條目 MUST NOT 擴張（新增字族或補字重皆不會生效，
+  只會延長建置時間），由守衛常態擋下
+- **AND** 中文 `font-weight: 600` 由瀏覽器合成偽粗體，屬已知且接受的現況
+- **AND** 真正自架 CJK 的唯一可行路線為建置期自行 subset，屬獨立的 payload 決策
+
 #### Scenario: 換字體只需改一處
 - **WHEN** 修改 `_design-tokens.css` 的 `--ff-display`
 - **THEN** 全站展示字體隨之改變，無需修改任何 `.vue` 檔
