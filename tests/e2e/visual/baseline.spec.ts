@@ -51,7 +51,100 @@ interface VisualTarget {
   name: string;
   path: string;
   identity: Identity;
+  /**
+   * 需要有資料才看得到的畫面。fixtures 的列表端點一律回 []，空狀態下卡片根本不渲染，
+   * 基線就拍不到那些樣式 —— 於是「做完了但沒人看過」。這裡在 loginAs 之後覆蓋端點回應。
+   * key = pathname 片段，value = data 欄位內容。
+   */
+  seed?: Readonly<Record<string, unknown>>;
+  /** 拍照前要先做的事（例：切到某個分頁）。 */
+  beforeShot?: (page: Page) => Promise<void>;
 }
+
+/**
+ * 司機需求單卡的假資料。
+ * 這張卡是「金額襯線 · 派單等級章 · 倒數不佔用紅」三條規則的落點，
+ * 三張單分別涵蓋：最高等級（古銅章）+ 緊急倒數、全體開放（素色章、無倒數）、已喊單。
+ * 時間全部釘在 clock.setFixedTime 的 2026-08-27T09:30:00+08:00 附近，倒數才是定值。
+ */
+const DISPATCHED_SEED = [
+  {
+    orderId: 'seedaaa1b2c3d4', orderType: 'airport-pickup',
+    pickupDateTime: '2026-08-27T15:40:00+08:00',
+    pickupLocation: { address: '桃園市大園區航站南路 9 號', lat: 25.0777, lng: 121.2328, displayName: '桃園機場 T2', city: '桃園市', district: '大園區' },
+    dropoffLocation: { address: '台北市中山區南京東路二段 1 號', lat: 25.0524, lng: 121.5238, displayName: '台北 中山區', city: '台北市', district: '中山區' },
+    stopovers: [], vehicleType: 'mpv-family', passengerCount: 4, adultCount: 3, childCount: 1,
+    estimatedFare: 1450, distanceKm: 41.6, notes: null, flightNumber: 'BR128', terminal: 'T2',
+    preferences: null, dispatchAt: '2026-08-27T09:20:00+08:00', activeBidCount: 0, myBidStatus: 'none',
+    dispatchCurrentLevel: '2', dispatchOpenedAt: '2026-08-27T09:20:00+08:00',
+    dispatchNextDowngradeAt: '2026-08-27T09:30:45+08:00',
+  },
+  {
+    orderId: 'seedbbb2c3d4e5', orderType: 'airport-dropoff',
+    pickupDateTime: '2026-08-28T09:15:00+08:00',
+    pickupLocation: { address: '台北市信義區信義路五段 7 號', lat: 25.0339, lng: 121.5645, displayName: '台北 信義區', city: '台北市', district: '信義區' },
+    dropoffLocation: { address: '台北市松山區敦化北路 340 號', lat: 25.0637, lng: 121.5520, displayName: '松山機場', city: '台北市', district: '松山區' },
+    stopovers: [], vehicleType: 'sedan-suv', passengerCount: 2, adultCount: 2, childCount: 0,
+    estimatedFare: 680, distanceKm: 8.2, notes: null, flightNumber: null, terminal: null,
+    preferences: null, dispatchAt: '2026-08-27T08:00:00+08:00', activeBidCount: 2, myBidStatus: 'none',
+    dispatchCurrentLevel: '0', dispatchOpenedAt: '2026-08-27T08:00:00+08:00',
+    dispatchNextDowngradeAt: null,
+  },
+  {
+    orderId: 'seedccc3d4e5f6', orderType: 'charter',
+    pickupDateTime: '2026-08-29T08:00:00+08:00',
+    pickupLocation: { address: '台中市西屯區台灣大道三段 251 號', lat: 24.1657, lng: 120.6417, displayName: '台中 西屯區', city: '台中市', district: '西屯區' },
+    dropoffLocation: { address: '南投縣仁愛鄉大同村仁和路 170 號', lat: 24.0000, lng: 121.1500, displayName: '清境農場', city: '南投縣', district: '仁愛鄉' },
+    stopovers: [], vehicleType: 'van-9', passengerCount: 7, adultCount: 7, childCount: 0,
+    estimatedFare: 12800, distanceKm: 96.4, notes: null, flightNumber: null, terminal: null,
+    preferences: null, dispatchAt: '2026-08-27T09:00:00+08:00', activeBidCount: 1, myBidStatus: 'bid',
+    dispatchCurrentLevel: '1', dispatchOpenedAt: '2026-08-27T09:00:00+08:00',
+    dispatchNextDowngradeAt: '2026-08-27T09:36:00+08:00',
+  },
+];
+
+/**
+ * Admin 訂單列表的假資料。
+ * 訂單為空時整張表（含表頭）不渲染 —— 「表頭底色」「列 hover」兩條規則
+ * 在空狀態基線裡是驗不到的。
+ */
+const ADMIN_ORDERS_SEED = [
+  {
+    orderId: 'seedadm1a2b3c4', userId: 'u-seed-1', lineUserId: 'U-seed-1', orderType: 'airport-pickup',
+    pickupDateTime: '2026-08-27T15:40:00+08:00',
+    pickupLocation: { address: '桃園市大園區航站南路 9 號', lat: 25.0777, lng: 121.2328, displayName: '桃園機場 T2', city: '桃園市', district: '大園區' },
+    dropoffLocation: { address: '台北市中山區南京東路二段 1 號', lat: 25.0524, lng: 121.5238, displayName: '台北 中山區', city: '台北市', district: '中山區' },
+    stopovers: [], vehicleType: 'mpv-family', passengerCount: 4, adultCount: 3, childCount: 1,
+    luggageItems: [], estimatedFare: 1450, estimatedTime: 52, distanceKm: 41.6, extraServices: [],
+    flightNumber: 'BR128', terminal: 'T2', notes: null, orderStatus: 'pending', assignedDriverId: '',
+    cancelReason: null, createdAt: 1787000000000, passengerName: '王小姐', passengerPhone: '0912345678',
+    preferences: null, dispatchAt: null, bids: [],
+  },
+  {
+    orderId: 'seedadm2b3c4d5', userId: 'u-seed-2', lineUserId: 'U-seed-2', orderType: 'airport-dropoff',
+    pickupDateTime: '2026-08-28T09:15:00+08:00',
+    pickupLocation: { address: '台北市信義區信義路五段 7 號', lat: 25.0339, lng: 121.5645, displayName: '台北 信義區', city: '台北市', district: '信義區' },
+    dropoffLocation: { address: '台北市松山區敦化北路 340 號', lat: 25.0637, lng: 121.5520, displayName: '松山機場', city: '台北市', district: '松山區' },
+    stopovers: [], vehicleType: 'sedan-suv', passengerCount: 2, adultCount: 2, childCount: 0,
+    luggageItems: [], estimatedFare: 680, estimatedTime: 22, distanceKm: 8.2, extraServices: [],
+    flightNumber: null, terminal: null, notes: null, orderStatus: 'pending', assignedDriverId: '',
+    cancelReason: null, createdAt: 1787000100000, passengerName: '陳先生', passengerPhone: '0922333444',
+    preferences: null, dispatchAt: '2026-08-27T09:00:00+08:00', dispatchCount: 1,
+    bids: [{ driverId: 'd-seed-1', bidAt: '2026-08-27T09:05:00+08:00', withdrawnAt: null }],
+  },
+  {
+    orderId: 'seedadm3c4d5e6', userId: 'u-seed-3', lineUserId: 'U-seed-3', orderType: 'charter',
+    pickupDateTime: '2026-08-29T08:00:00+08:00',
+    pickupLocation: { address: '台中市西屯區台灣大道三段 251 號', lat: 24.1657, lng: 120.6417, displayName: '台中 西屯區', city: '台中市', district: '西屯區' },
+    dropoffLocation: { address: '南投縣仁愛鄉大同村仁和路 170 號', lat: 24.0000, lng: 121.1500, displayName: '清境農場', city: '南投縣', district: '仁愛鄉' },
+    stopovers: [], vehicleType: 'van-9', passengerCount: 7, adultCount: 7, childCount: 0,
+    luggageItems: [], estimatedFare: 12800, estimatedTime: 128, distanceKm: 96.4, extraServices: [],
+    flightNumber: null, terminal: null, notes: null, orderStatus: 'confirmed', assignedDriverId: 'd-seed-1',
+    cancelReason: null, createdAt: 1787000200000, passengerName: '林小姐', passengerPhone: '0933444555',
+    preferences: null, dispatchAt: '2026-08-26T10:00:00+08:00', assignedAt: '2026-08-26T11:00:00+08:00',
+    bids: [],
+  },
+];
 
 const TARGETS: readonly VisualTarget[] = [
   // ── 乘客端 ────────────────────────────────────────────────
@@ -64,8 +157,30 @@ const TARGETS: readonly VisualTarget[] = [
   // ── 司機端 ────────────────────────────────────────────────
   { name: 'driver-dashboard', path: '/driver/dashboard', identity: 'driverApproved' },
   { name: 'driver-trip', path: '/driver/trip', identity: 'driverApproved' },
+  {
+    name: 'driver-dispatched',
+    path: '/driver/dispatched',
+    identity: 'driverApproved',
+    seed: { '/nuxt-api/driver/dispatched-orders': DISPATCHED_SEED },
+  },
+  {
+    name: 'driver-dispatched-mine',
+    path: '/driver/dispatched',
+    identity: 'driverApproved',
+    seed: { '/nuxt-api/driver/dispatched-orders': DISPATCHED_SEED },
+    beforeShot: async (page) => {
+      await page.getByRole('button', { name: /已喊單/ }).click();
+      await page.waitForTimeout(300);
+    },
+  },
   // ── 管理端 ────────────────────────────────────────────────
   { name: 'admin-orders', path: '/admin/orders', identity: 'adminWith2fa' },
+  {
+    name: 'admin-orders-list',
+    path: '/admin/orders',
+    identity: 'adminWith2fa',
+    seed: { '/nuxt-api/admin/orders': ADMIN_ORDERS_SEED },
+  },
   { name: 'admin-dashboard', path: '/admin/dashboard', identity: 'adminWith2fa' },
   // /admin/settings 呼叫 20+ 支 API，逐一精準 mock 不划算（fixture 萬用 {data:{}} 會炸）；
   // 改用同樣具代表性的 admin 頁面 —— 側欄、表格、卡片一樣涵蓋到。
@@ -198,8 +313,20 @@ for (const target of TARGETS) {
 
     await loginAs(target.identity);
 
+    // 在 fixtures 的萬用 mock **之後**註冊，才蓋得過它（Playwright 後註冊優先）。
+    if (target.seed) {
+      for (const [key, data] of Object.entries(target.seed)) {
+        await page.route(`**${key}**`, (route) => route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data, status: { code: 200, message: { zh_tw: '', en: '', ja: '' } } }),
+        }));
+      }
+    }
+
     await page.goto(target.path, { waitUntil: 'load', timeout: 25000 });
     await waitForContent(page);
+    if (target.beforeShot) await target.beforeShot(page);
     await settle(page);
 
     await assertRenderedForReal(page, target);
