@@ -582,7 +582,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  background: repeating-conic-gradient(var(--ink-a06) 0% 25%, white 0% 50%) 50% / 16px 16px;
+  background: repeating-conic-gradient(var(--ink-a06) 0% 25%, var(--surface-raised) 0% 50%) 50% / 16px 16px;
 }
 
 .RichmenuComposer__canvas-wrap {

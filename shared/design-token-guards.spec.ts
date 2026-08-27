@@ -456,8 +456,13 @@ describe('表面與尺度守衛（階段 2）', () => {
         // CSS 顏色關鍵字 —— 本階段撞到的**第五種寫法**。
         // `background: white` 不含 # 也不含 rgb(，前面所有掃描與守衛都不認得它，
         // 而 minifier 會把它輸出成 `#fff` —— 所以它只在 build 產物裡現形。實測 36 處。
-        // 只擋會拿來塗色的屬性；`transparent` / `currentColor` / `inherit` 不在此列。
-        for (const m of line.matchAll(/(?:background|color|border(?:-[a-z]+)?-color|fill|stroke|outline-color|text-decoration-color)\s*:\s*(white|black|gray|grey|red|blue|green|silver|orange|yellow|purple|pink|brown|navy|teal|olive|lime|aqua|maroon|fuchsia)\b/g)) {
+        //
+        // ⚠ 比對的是**值裡的關鍵字 token**，不是「屬性後緊接關鍵字」。
+        //    第一版寫成後者，於是漏掉寫在函式裡的
+        //    `repeating-conic-gradient(var(--ink-a06) 0% 25%, white 0% 50%)`
+        //    —— 同一個病的第六個變化，一樣是比對產物才發現的。
+        //    前後的 (?<![\w-]) / (?![\w-]) 用來排掉 `white-space:` 與 `.is-white` 這類。
+        for (const m of line.matchAll(/(?<![\w-])(white|black|gray|grey|red|blue|green|silver|orange|yellow|purple|pink|brown|navy|teal|olive|lime|aqua|maroon|fuchsia)(?![\w-])/g)) {
           offenders.push(`${f.rel}:${i + 1} → ${m[1]}  ${line.trim().slice(0, 58)}`);
         }
       });

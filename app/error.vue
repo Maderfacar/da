@@ -101,7 +101,7 @@ onUnmounted(() => {
   @include center;
   cursor: pointer;
   padding: 10px 40px;
-  border: 1px solid white;
+  border: 1px solid var(--surface-raised);
   border-radius: var(--r-md);
 }
 </style>
