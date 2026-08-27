@@ -347,8 +347,15 @@ const ClickFare = () => navigateTo('/fare');
      而 is-coverage 的右欄有兩個元素（desc 在第 1 列、airports 在第 2 列）——
      第 1 列的高度被 head 那四行大標題撐開，desc 與 airports 之間就多出一段空隙，
      而 is-features（右欄只有一個元素）沒有這個問題，兩區看起來不一致。
-     跨滿所有列之後，列高只由右欄內容決定，head 靠 align-self 貼齊頂端。 */
-  .PageLanding__section-head { grid-column: 1; grid-row: 1 / -1; align-self: start; }
+     跨滿所有列之後，列高只由右欄內容決定，head 靠 align-self 貼齊頂端。
+
+     ⚠ 這裡**不能寫 grid-row: 1 / -1**。`-1` 指的是「**顯式**格線的最後一條」，
+        而這個 grid 沒有 grid-template-rows，列全是隱式的 —— `-1` 於是解析成第 1 條線，
+        `1 / -1` 塌成 `1 / 2`，head 又只佔第 1 列，空隙原封不動。
+        第一次修就是這樣寫的，改完看起來像修好了（CSS 有進產物、33 張基線全綠），
+        但截圖上的空隙一點沒變 —— 是**逐張看圖**才發現沒生效的。
+        用 span 才會延伸到隱式列。多出來的空列高度為 0，不影響版面。 */
+  .PageLanding__section-head { grid-column: 1; grid-row: 1 / span 20; align-self: start; }
   .PageLanding__section-desc,
   .PageLanding__overview-body,
   .PageLanding__airports,
