@@ -261,6 +261,19 @@ export default {
     },
   },
   home: {
+    quick: {
+      title: 'Quick Actions',
+      book: 'Book a Ride',
+      bookDesc: 'Airport transfer · Charter',
+      orders: 'My Orders',
+      ordersActive: '{count} in progress',
+      ordersEmpty: 'View order history',
+    },
+    news: {
+      title: 'Announcements',
+      badgeNew: 'New',
+      more: 'View all announcements',
+    },
     hero: {
       tag: '✈ Professional Airport Transfer',
       subtitle: 'Every journey, a memory worth keeping. From departure to arrival, we\'re here for you.',

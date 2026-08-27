@@ -275,6 +275,19 @@ export default {
   },
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
+    quick: {
+      title: '快速操作',
+      book: '立即訂車',
+      bookDesc: '機場接送 · 包車旅遊',
+      orders: '我的訂單',
+      ordersActive: '{count} 筆進行中',
+      ordersEmpty: '查看訂單紀錄',
+    },
+    news: {
+      title: '最新公告',
+      badgeNew: '新',
+      more: '查看全部公告',
+    },
     hero: {
       tag: '✈ 專業機場接送服務',
       subtitle: '每一次旅程，都是一段值得記憶的體驗。從出發到抵達，我們為您守候。',

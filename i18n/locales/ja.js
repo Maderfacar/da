@@ -261,6 +261,19 @@ export default {
     },
   },
   home: {
+    quick: {
+      title: 'クイック操作',
+      book: '今すぐ予約',
+      bookDesc: '空港送迎 · チャーター',
+      orders: 'ご注文一覧',
+      ordersActive: '進行中 {count} 件',
+      ordersEmpty: '注文履歴を見る',
+    },
+    news: {
+      title: 'お知らせ',
+      badgeNew: '新着',
+      more: 'すべてのお知らせ',
+    },
     hero: {
       tag: '✈ プロフェッショナル空港送迎',
       subtitle: 'すべての旅に、忘れられない記憶を。出発から到着まで、私たちがお守りします。',

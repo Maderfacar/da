@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { AnnouncementListItem } from '@/protocol/fetch-api/api/announcement';
+
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
@@ -87,12 +89,46 @@ const ClickOpenNextTrip = () => {
 };
 
 // 30s polling + visibility refresh
+// ── 快速操作 + 最新公告（2026-08-28）─────────────────────
+// 介面方向提案的登入後首頁是「下一趟 → 快速操作 → 最新公告」——
+// 狀態卡之後接的是功能，不是行銷。原本 hero 之後直接接三段行銷文案，
+// 等於對已經買單的人繼續推銷。行銷區塊改排在功能之後。
+const activeOrderCount = ref(0);
+const newsItems = ref<AnnouncementListItem[]>([]);
+
+/** 非進行中的訂單狀態（其餘一律算進行中） */
+const DONE_ORDER_STATUS = new Set(['completed', 'cancelled']);
+
+const ApiLoadQuickInfo = async () => {
+  if (!isSignIn.value) {
+    activeOrderCount.value = 0;
+    newsItems.value = [];
+    return;
+  }
+  try {
+    const res = await $api.GetOrderList({});
+    if (res.status?.code === 200 && Array.isArray(res.data)) {
+      activeOrderCount.value = res.data.filter((o) => !DONE_ORDER_STATUS.has(o.orderStatus)).length;
+    }
+  } catch (err) {
+    console.error('[home/quick] 訂單數載入失敗:', err);
+  }
+  try {
+    const res = await $api.GetAnnouncements({ limit: 2 });
+    if (res.status?.code === 200) newsItems.value = res.data?.items ?? [];
+  } catch (err) {
+    console.error('[home/news] 公告載入失敗:', err);
+  }
+};
+
+const ClickOpenNews = (id: string) => navigateTo(`/notifications/${id}`);
+
 let nextTripTimer: ReturnType<typeof setInterval> | null = null;
 const NEXT_TRIP_POLL_MS = 30_000;
 const _OnVisibilityChange = () => {
   if (typeof document !== 'undefined' && document.visibilityState === 'visible') ApiLoadNextTrip();
 };
-watch(isSignIn, () => { ApiLoadNextTrip(); });
+watch(isSignIn, () => { ApiLoadNextTrip(); ApiLoadQuickInfo(); });
 
 // Scroll reveal observer
 let revealObserver: IntersectionObserver | null = null;
@@ -113,6 +149,7 @@ watch([nextTripLoaded, nextTripDisplay], async () => {
 
 onMounted(() => {
   ApiLoadNextTrip();
+  ApiLoadQuickInfo();
   nextTripTimer = setInterval(ApiLoadNextTrip, NEXT_TRIP_POLL_MS);
   if (typeof document !== 'undefined') document.addEventListener('visibilitychange', _OnVisibilityChange);
 
@@ -243,7 +280,41 @@ onUnmounted(() => {
         span ＋
         span {{ $t('home.nextTrip.emptyCta') }}
 
-  //- ── 2. 安心接送的理由（合併 Steps + LINE Only 提示）───────
+  //- ── 2. 快速操作（狀態卡之後接功能，不接行銷）──────────
+  section.PageHome__section.is-cream
+    .PageHome__section-label QUICK ACTIONS
+    h2.PageHome__section-title {{ $t('home.quick.title') }}
+    .PageHome__quick.reveal
+      button.PageHome__quick-row(type="button" @click="navigateTo('/booking')")
+        .PageHome__quick-text
+          .PageHome__quick-name {{ $t('home.quick.book') }}
+          .PageHome__quick-desc {{ $t('home.quick.bookDesc') }}
+        span.PageHome__quick-arrow →
+      button.PageHome__quick-row(type="button" @click="navigateTo('/orders')")
+        .PageHome__quick-text
+          .PageHome__quick-name {{ $t('home.quick.orders') }}
+          .PageHome__quick-desc {{ activeOrderCount > 0 ? $t('home.quick.ordersActive', { count: activeOrderCount }) : $t('home.quick.ordersEmpty') }}
+        span.PageHome__quick-count(v-if="activeOrderCount > 0") {{ activeOrderCount }}
+        span.PageHome__quick-arrow(v-else) →
+
+  //- ── 3. 最新公告（無公告自動隱藏）──────────────────────
+  section.PageHome__section.is-off-white(v-if="newsItems.length")
+    .PageHome__section-label ANNOUNCEMENTS
+    h2.PageHome__section-title {{ $t('home.news.title') }}
+    .PageHome__news.reveal
+      button.PageHome__news-row(
+        v-for="n in newsItems"
+        :key="n.id"
+        type="button"
+        @click="ClickOpenNews(n.id)"
+      )
+        span.PageHome__news-badge(v-if="!n.isRead") {{ $t('home.news.badgeNew') }}
+        span.PageHome__news-title {{ n.title }}
+        span.PageHome__news-arrow →
+      button.PageHome__news-more(type="button" @click="navigateTo('/notifications')")
+        | {{ $t('home.news.more') }}
+
+  //- ── 4. 安心接送的理由（合併 Steps + LINE Only 提示）───────
   PassengerHomeFeatures
 
   //- ── 3. 預約您的行程 CTA ────────────────────────────────
@@ -825,8 +896,146 @@ onUnmounted(() => {
   }
 }
 
+/* ── 快速操作 ────────────────────────────────────────────────
+   刻意做成「列」而不是「卡片格」：格子是行銷語彙（每格等重、都在爭取注意），
+   列是功能語彙（由上而下讀完就走）。列高吃 --tap，觸控目標不打折。 */
+.PageHome__quick {
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.PageHome__quick-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--da-off-white);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.PageHome__quick-row:hover {
+  background: var(--surface-a96);
+  border-color: var(--ink-a20);
+}
+
+.PageHome__quick-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.PageHome__quick-name {
+  font-family: var(--ff-ui);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--da-dark);
+}
+
+.PageHome__quick-desc {
+  font-family: var(--ff-ui);
+  font-size: var(--fs-body-sm);
+  font-weight: 300;
+  color: var(--da-gray);
+  margin-top: 2px;
+}
+
+/* 進行中筆數：唯一需要被一眼看到的數字，用襯線放大而不是加底色 */
+.PageHome__quick-count {
+  font-family: var(--ff-display);
+  font-size: var(--fs-h2);
+  color: var(--da-amber);
+  line-height: 1;
+}
+
+.PageHome__quick-arrow {
+  font-size: var(--fs-body-lg);
+  color: var(--da-gray-light);
+}
+
+/* ── 最新公告 ────────────────────────────────────────────── */
+.PageHome__news {
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.PageHome__news-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--da-cream);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.PageHome__news-row:hover {
+  background: var(--surface-a96);
+}
+
+/* 未讀標記：用語意狀態色的 note（提示），不是自挑的紅 */
+.PageHome__news-badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--note-a08);
+  color: var(--note);
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: var(--ls-label);
+}
+
+.PageHome__news-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff-ui);
+  font-size: var(--fs-body);
+  font-weight: 300;
+  color: var(--da-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.PageHome__news-arrow {
+  flex: none;
+  font-size: var(--fs-body);
+  color: var(--da-gray-light);
+}
+
+.PageHome__news-more {
+  justify-self: start;
+  margin-top: var(--space-2xs);
+  padding: var(--space-2xs) 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--ink-a20);
+  color: var(--da-gray);
+  font-family: var(--ff-label);
+  font-size: var(--fs-body-sm);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.PageHome__news-more:hover {
+  color: var(--da-dark);
+  border-bottom-color: var(--da-dark);
+}
+
 .PageHome__trip-driver-plate {
-  font-family: var(--ff-data);
+  /* 提案規則四：車牌用襯線排，與訂單編號的等寬感形成對比 */
+  font-family: var(--ff-display);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h2);
   letter-spacing: var(--ls-wide);
