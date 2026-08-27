@@ -11,10 +11,10 @@
 ## P1 — 舊色票殘留清除（363 處 / 86 檔）
 
 - [x] **P1.1** `_design-tokens.css` 新增疊色階梯（design.md D2）
-  - [ ] `--accent-a06/a12/a20/a32/a50/a70`
-  - [ ] `--ink-a06/a12/a20/a32/a50/a70`
-  - [ ] `--surface-a50/a72/a88/a96`
-  - [ ] 每組先寫 `rgba()` 字面值，再以 `@supports (color: color-mix(…))` 覆蓋成 `color-mix`
+  - [x] `--accent-a06/a12/a20/a32/a50/a70`
+  - [x] `--ink-a06/a12/a20/a32/a50/a70`
+  - [x] `--surface-a50/a72/a88/a96`
+  - [x] 每組先寫 `rgba()` 字面值，再以 `@supports (color: color-mix(…))` 覆蓋成 `color-mix`
         —— **不可用同名重複宣告**（design.md D1，custom property 會 invalid at computed-value time）
 - [x] **P1.2** 替換 7 個舊值的 hex 形式（89 處）
 - [x] **P1.3** 替換 `rgba()` 形式（274 處），alpha 就近吸附到 6 階
@@ -76,6 +76,8 @@
 - [x] **P5.5** push origin main（= prod）
 - [x] **P5.6** 產出「交付 Brain AI 的驗收項目」清單（見下方）
 - [ ] **P5.7** Brain AI prod 目視驗收 —— **併入階段 2 一次驗收**
+  - 2026-08-28 已交付 `2026-08-27-surface-scale-completion/acceptance.md`（27 項 + 4 個代決判斷）
+  - 驗收進行中；archive 不等待此項，驗收結果以後續變更追蹤
       （Brain AI 2026-08-27 指示：「整個都改完之後我再一次就整體感覺來驗收」。
       本階段的 11 項清單與 4 個代決判斷不單獨驗，隨
       `2026-08-27-surface-scale-completion` 的交付清單一起看；兩個 change 同時 archive。）
