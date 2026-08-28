@@ -5,6 +5,13 @@
 //
 // 包含路徑說明：
 //   - '/'                — 行銷首頁 hero
+//   - '/booking'         — 訂車流程。介面方向提案第一畫面規則四「沒有登入牆」：
+//                          看得到車型、看得到價、填得到地點，**要送出時才需要 LINE 身分**
+//                          （gate 在 booking 的 SubmitFlow，未登入直接導
+//                          /nuxt-api/auth/line/start?clientType=passenger&target=/booking）。
+//                          頁面本身對訪客無副作用：唯一用到身分的地方是「以 LINE 顯示名稱
+//                          預填聯絡人」，訪客自己填即可；middleware/role 對未登入者直接 return。
+//                          ⚠ 建單 API 仍然要求身分，這裡放行的只有「頁面」不是「送單」。
 //   - '/fare'            — 車資說明（含試算機）
 //   - '/faq'             — 常見問題
 //   - '/fleet'           — 車型介紹（目前已合併進 /fare；保留前綴避免未來重啟頁面遺漏）
@@ -20,6 +27,7 @@
 
 export const PUBLIC_ROUTE_PREFIXES: readonly string[] = [
   '/',
+  '/booking',
   '/fare',
   '/faq',
   '/fleet',

@@ -33,6 +33,28 @@ const showContent = computed(
   () => authResolved.value && (!isSignIn.value || rolesLoadState.value === 'ready'),
 );
 
+// ── 底部四格 Tab Bar（介面方向提案第二畫面）─────────────
+// 2026-08-28 由 Brain AI 拍板加回。b99da52 當初移除的是 5-tab emoji 版
+// （含已刪除的 /upcoming），這一版是提案的四格：首頁／訂車／訂單／我的。
+// drawer 保留 —— tab 收四個高頻動作，其餘入口仍在 drawer。
+const TABS = [
+  { id: 'home',    path: '/home',    labelKey: 'tab.home',    icon: 'mdi:home-outline' },
+  { id: 'booking', path: '/booking', labelKey: 'tab.book',    icon: 'mdi:car-outline' },
+  { id: 'orders',  path: '/orders',  labelKey: 'tab.orders',  icon: 'mdi:file-document-outline' },
+  { id: 'profile', path: '/profile', labelKey: 'tab.profile', icon: 'mdi:account-outline' },
+] as const;
+
+// 作用中分頁：走最長前綴匹配，並先剝掉 i18n 的 /en /ja 前綴
+// （prefix_except_default → 英日版路徑會多一段，不剝的話四格永遠沒有 active）。
+const _tabRoute = useRoute();
+const activeTab = computed(() => {
+  const path = _tabRoute.path.replace(/^\/(?:en|ja)(?=\/|$)/, '') || '/';
+  const hit = TABS
+    .filter((t) => path === t.path || path.startsWith(`${t.path}/`))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  return hit?.id ?? '';
+});
+
 // ── Meta：分頁標題 + favicon（區隔三端）─────────────────
 // 規格：titleTemplate = `{頁名} · {品牌}`；route→key 走最長前綴匹配；
 // 兼容 i18n prefix_except_default（剝 /en /ja 前綴）；i18n 三語自動套。
@@ -180,6 +202,22 @@ onUnmounted(() => {
 
   //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
   CommonFooter
+
+  //- ── 底部四格 Tab Bar（介面方向提案第二畫面）─────────────────
+  //- 2026-08-28 由 Brain AI 拍板加回（b99da52 當初移除的是 5-tab emoji 版）。
+  //- 與 drawer 併存：tab 給四個高頻動作，drawer 給其餘入口。
+  //- 只在窄螢幕出現 —— 桌機上滿版底欄會讓網站讀起來像手機 App。
+  nav.LayoutFrontDesk__tabs(:aria-label="$t('tab.ariaLabel')")
+    button.LayoutFrontDesk__tab(
+      v-for="t in TABS"
+      :key="t.id"
+      type="button"
+      :class="{ 'is-active': activeTab === t.id }"
+      :aria-current="activeTab === t.id ? 'page' : undefined"
+      @click="navigateTo(t.path)"
+    )
+      NuxtIcon.LayoutFrontDesk__tab-icon(:name="t.icon")
+      span.LayoutFrontDesk__tab-label {{ $t(t.labelKey) }}
 
   //- ── Drawer ──────────────────────────────────────────────
   ClientOnly
@@ -366,6 +404,61 @@ onUnmounted(() => {
 // 底部 tab bar 移除後，padding-bottom 從 80px 改為 0（保留 iOS safe-area）
 .LayoutFrontDesk__body {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+// ── 底部四格 Tab Bar ─────────────────────────────────────
+/* 只在窄螢幕出現：桌機上滿版底欄會讓網站讀起來像手機 App，
+   桌機的入口交給 hamburger drawer（b99da52 建立的那套）。 */
+.LayoutFrontDesk__tabs {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* 內容區讓出底欄高度，否則頁尾最後一列會被蓋住 */
+  .LayoutFrontDesk {
+    padding-bottom: calc(var(--tap) + 18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .LayoutFrontDesk__tabs {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: var(--z-header);
+    display: flex;
+    background: var(--da-off-white);
+    border-top: 1px solid var(--da-gray-pale);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+.LayoutFrontDesk__tab {
+  flex: 1;
+  min-height: var(--tap);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--da-gray-light);
+  transition: color var(--dur-fast) var(--ease-out);
+
+  &.is-active { color: var(--da-dark); }
+}
+
+.LayoutFrontDesk__tab-icon {
+  font-size: var(--fs-h4);
+  line-height: var(--lh-flat);
+}
+
+.LayoutFrontDesk__tab-label {
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  line-height: var(--lh-flat);
 }
 
 // 加好友橫幅顯示時下移 40px（banner 高度 = 10px padding × 2 + 20px content）

@@ -37,6 +37,8 @@ export default {
     book: '予約',
     fleet: '車種',
     orders: '注文',
+    profile: 'マイページ',
+    ariaLabel: 'メインナビゲーション',
   },
   // お知らせ（P37 Phase 5）
   notifications: {

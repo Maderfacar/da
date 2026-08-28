@@ -36,7 +36,16 @@ const stepLabels = computed(() => [
 ]);
 
 // ── 表單狀態（從 store draft 同步）────────────────────────────────────────
-const orderType = ref<OrderType | undefined>(storeOrder.draft.orderType as OrderType | undefined);
+// 提案首頁規則二：訂車卡在首頁先選好服務類型，帶 ?type= 過來直接預選第一步。
+const VALID_ORDER_TYPES = ['airport-pickup', 'airport-dropoff', 'charter', 'transfer'] as const;
+const InitialOrderType = (): OrderType | undefined => {
+  const q = route.query.type;
+  if (typeof q === 'string' && (VALID_ORDER_TYPES as readonly string[]).includes(q)) {
+    return q as OrderType;
+  }
+  return storeOrder.draft.orderType as OrderType | undefined;
+};
+const orderType = ref<OrderType | undefined>(InitialOrderType());
 const pickupDateTime = ref(storeOrder.draft.pickupDateTime ?? '');
 const pickupLocation = ref<GooglePlace | null>(storeOrder.draft.pickupLocation ?? null);
 const dropoffLocation = ref<GooglePlace | null>(storeOrder.draft.dropoffLocation ?? null);
@@ -62,7 +71,17 @@ const passengerName = ref(storeOrder.draft.passengerName ?? '');
 const sameAsContact = ref(true);
 
 // LINE displayName 預填 contactName（首次掛載時、空才填、避免覆蓋既有 draft）
-onMounted(() => {
+//
+// ⚠ 2026-08-28 /booking 改公開路由之後，**這頁必須自己確保身分**：
+//   middleware/auth 對 isPublicRoute 是在 EnsureSessionChecked() **之前**就 return，
+//   於是已登入的人直接開 /booking 時 isSignIn 仍是 false、lineProfile 仍是 null ——
+//   預填會消失，而且送出 gate 會把真正登入的人踢去重登。
+//   EnsureSessionChecked 是 sticky promise，重複呼叫不會多打一次 /session-check；
+//   訪客則是回一個「未登入」的答案，同樣不影響。
+onMounted(async () => {
+  try {
+    await storeAuth.EnsureSessionChecked();
+  } catch { /* 未登入或 session-check 失敗都不該擋住訪客填單 */ }
   const lineName = storeAuth.lineProfile?.displayName ?? '';
   if (!contactName.value && lineName) {
     contactName.value = lineName;
@@ -228,6 +247,22 @@ const ClickSubmit = async () => {
   const finalPassengerName = sameAsContact.value
     ? contactName.value.trim()
     : (passengerName.value.trim() || contactName.value.trim());
+
+  // 提案首頁規則四「沒有登入牆」：訪客可以一路填到這裡，**送出時**才要 LINE 身分。
+  // 走與 /login 相同的 server-side OAuth（固定 redirect_uri，見 P3 認證根治），
+  // 回程指回 /booking；草稿留在 storeOrder，回來後接著送出即可。
+  // ⚠ 這不是唯一防線 —— 建單 API 本身仍要求身分，這裡只是把 401 換成一次登入導引。
+  // 先把身分問清楚再判斷 —— 公開路由上 middleware 沒跑過 session-check，
+  // 直接讀 isSignIn 會把已登入的人誤判成訪客（sticky，通常是 no-op）。
+  try {
+    await storeAuth.EnsureSessionChecked();
+  } catch { /* 問不到就當訪客，導去登入仍是正確結果 */ }
+
+  if (!storeAuth.isSignIn) {
+    const params = new URLSearchParams({ clientType: 'passenger', target: '/booking' });
+    window.location.href = `/nuxt-api/auth/line/start?${params.toString()}`;
+    return;
+  }
 
   isSubmitting.value = true;
   const res = await $api.CreateOrder({

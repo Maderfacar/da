@@ -41,6 +41,8 @@ export default {
     book: '預約',
     fleet: '車型',
     orders: '訂單',
+    profile: '我的',
+    ariaLabel: '主要導覽',
   },
   // ── 最新消息（P37 Phase 5）────────────────────────────────
   notifications: {

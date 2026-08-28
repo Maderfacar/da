@@ -28,10 +28,18 @@ describe('isPublicRoute', () => {
 
   it('treats authenticated routes as non-public', () => {
     expect(isPublicRoute('/home')).toBe(false);
-    expect(isPublicRoute('/booking')).toBe(false);
     expect(isPublicRoute('/orders')).toBe(false);
     expect(isPublicRoute('/admin/orders')).toBe(false);
     expect(isPublicRoute('/driver/dashboard')).toBe(false);
+  });
+
+  // 介面方向提案第一畫面規則四「沒有登入牆」（2026-08-28，Brain AI 拍板）：
+  // 訂車流程本身公開，看得到車型與價、填得到地點；**送出**才要 LINE 身分
+  // （gate 在 booking 的 SubmitFlow，建單 API 本身也仍要求身分）。
+  it('treats /booking as public — 送出才 gate，不是進站就 gate', () => {
+    expect(isPublicRoute('/booking')).toBe(true);
+    expect(isPublicRoute('/en/booking')).toBe(true);
+    expect(isPublicRoute('/ja/booking')).toBe(true);
   });
 
   it('treats driver login + register entries as public (W4-FU)', () => {

@@ -50,6 +50,15 @@ export function resolveRequiredLoads(path: string): RequiredLoads {
     return { user: true, driver: false, admin: false, admin2fa: false };
   }
 
+  // /booking — 2026-08-28 起是公開路由（提案「沒有登入牆」），但**已登入者**在這頁的
+  // 行為必須跟以前一模一樣（聯絡人以 LINE 顯示名稱預填等）。若讓它落進下面的
+  // `isPublicRoute → NONE` 短路，signed-in 使用者就少載一份 users doc ——
+  // 正是本專案犯過三次的「路由改公開後 client 少載東西」那一類。
+  // 未登入者不受影響：middleware/role 在 `!isSignIn` 就 return，根本 reach 不到這裡。
+  if (stripped === '/booking' || stripped.startsWith('/booking/')) {
+    return { user: true, driver: false, admin: false, admin2fa: false };
+  }
+
   if (isPublicRoute(stripped)) return NONE;
 
   // /admin/2fa/* — 只 users（避免 2FA gate 迴圈）

@@ -37,6 +37,8 @@ export default {
     book: 'Book',
     fleet: 'Fleet',
     orders: 'Orders',
+    profile: 'Profile',
+    ariaLabel: 'Main navigation',
   },
   // Notifications (P37 Phase 5)
   notifications: {
