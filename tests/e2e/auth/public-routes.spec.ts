@@ -10,7 +10,10 @@ import { expectPublicPageOk } from './_helpers';
  * 自動化邊界：不驗 SEO meta / OG / JSON-LD（已由 AEO 專用測試覆蓋）。
  */
 
-const PUBLIC_ROUTES = ['/', '/fare', '/fleet', '/faq', '/legal/terms', '/legal/privacy'];
+// ⚠ /fleet 不在此列：它在 shared/constants/auth-public-routes.ts 是刻意保留的**公開前綴**
+// （車型介紹已併進 /fare，註解寫明「保留前綴避免未來重啟頁面遺漏」），底下沒有頁面。
+// 拿一個刻意不存在的路徑來斷言「訪客訪問不崩」必然紅 —— 那不是網站壞了，是清單抄錯對象。
+const PUBLIC_ROUTES = ['/', '/booking', '/fare', '/faq', '/legal/terms', '/legal/privacy'];
 const LOCALE_PREFIX = [
   { code: 'zh', prefix: '' },
   { code: 'en', prefix: '/en' },

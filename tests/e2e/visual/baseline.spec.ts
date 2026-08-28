@@ -6,6 +6,10 @@
 // 用法（**對 production build 拍，不要用 dev server**）：
 //   1. `pnpm build`
 //   2. `PORT=3000 node .output/server/index.mjs`
+//      ⚠ **不要加 NUXT_PUBLIC_TEST_MODE=T**。那個 env 不只 auth plugin 在看 ——
+//        app/protocol/fetch-api/api/{order,auth,file}/index.ts 的 IsMock() 也看它，為 T 時
+//        整層 API 直接回罐頭資料、完全不發請求，於是 fixtures 的 page.route 與下面的 seed
+//        全部被繞過，拍到的是「另一組資料」的畫面。身分 mock 靠 window.__E2E_MODE__ 就夠。
 //   3. 產生／更新基線：`npx playwright test tests/e2e/visual --update-snapshots`
 //   4. 比對：`npx playwright test tests/e2e/visual`
 //

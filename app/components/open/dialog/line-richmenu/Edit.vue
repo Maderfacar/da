@@ -875,7 +875,7 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
   margin: 0;
 }
 
@@ -1277,7 +1277,7 @@ onMounted(() => {
   margin-top: 6px;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: var(--r-sm);

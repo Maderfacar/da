@@ -78,7 +78,7 @@ section.PassengerHomeFeatures
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -150,7 +150,7 @@ section.PassengerHomeFeatures
   justify-content: center;
   font-family: var(--ff-display);
   font-size: var(--fs-h4);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin: 8px 0 12px;
 }
 
@@ -187,7 +187,7 @@ section.PassengerHomeFeatures
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 

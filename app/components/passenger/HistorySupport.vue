@@ -60,7 +60,7 @@ section.PassengerHistorySupport
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 
@@ -114,7 +114,7 @@ section.PassengerHistorySupport
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .PassengerHistorySupport__row-val {

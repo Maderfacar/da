@@ -383,7 +383,7 @@ const metricsRows = computed(() => {
   text-decoration: none;
   margin-bottom: 8px;
 
-  &:hover { color: var(--accent); }
+  &:hover { color: var(--accent-text); }
 }
 
 .AdminFareSandbox__title {
@@ -502,7 +502,7 @@ const metricsRows = computed(() => {
 .AdminFareSandbox__btn-mini {
   background: none;
   border: 1px solid var(--hairline);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: var(--r-xs);
   padding: 2px 8px;
   cursor: pointer;
@@ -547,7 +547,7 @@ const metricsRows = computed(() => {
   padding: 10px 12px;
   background: var(--accent-wash);
   border-radius: var(--r-sm);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--fs-body-sm);
 }
 
@@ -581,7 +581,7 @@ const metricsRows = computed(() => {
   font-size: var(--fs-body-sm);
   font-weight: 600;
   margin: 16px 0 8px;
-  color: var(--accent);
+  color: var(--accent-text);
   text-transform: uppercase;
   letter-spacing: var(--ls-label);
 }
@@ -633,14 +633,14 @@ const metricsRows = computed(() => {
 
 .AdminFareSandbox__hit-name {
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 2px;
 }
 
 .AdminFareSandbox__hit-val {
   color: var(--ink);
 
-  &.is-on { color: var(--accent); font-weight: 600; }
+  &.is-on { color: var(--accent-text); font-weight: 600; }
 }
 
 .AdminFareSandbox__hit-sub {
@@ -656,7 +656,7 @@ const metricsRows = computed(() => {
   border-radius: var(--r-xs);
   padding: 3px 8px;
   margin-top: 6px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--fs-label);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
@@ -702,7 +702,7 @@ const metricsRows = computed(() => {
   &.is-highway {
     background: var(--accent-a06);
 
-    .AdminFareSandbox__seg-cell.is-tag { color: var(--accent); font-weight: 600; }
+    .AdminFareSandbox__seg-cell.is-tag { color: var(--accent-text); font-weight: 600; }
   }
 }
 

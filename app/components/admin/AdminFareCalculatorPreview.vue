@@ -334,7 +334,7 @@ const fmt = (n: number): string => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
   border-radius: var(--r-pill);
@@ -441,7 +441,7 @@ const fmt = (n: number): string => {
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a06);
   padding: 8px 14px;
   border-bottom: 1px solid var(--accent-a20);

@@ -663,7 +663,7 @@ const ApiSaveTokens = async (t: AdminSiteThemeDto) => {
   &.is-apply {
     background: var(--accent-a12);
     border-color: var(--accent-a40);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 

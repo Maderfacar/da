@@ -208,7 +208,7 @@ function ClickMockLogin() {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   opacity: 0.6;
   align-self: flex-start;
 }
@@ -224,7 +224,7 @@ function ClickMockLogin() {
   font-size: var(--fs-body-sm);
   font-weight: 700;
   letter-spacing: var(--ls-label);
-  color: var(--da-amber);
+  color: var(--accent-text);
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out);
 

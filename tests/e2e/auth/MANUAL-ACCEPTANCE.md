@@ -195,3 +195,40 @@ Private 模式可能直接拋 QuotaExceededError → Firebase init 失敗 → pl
 **版本紀錄**
 - 版本：v1.0（auth e2e 矩陣 Tier C，配套 Tier A + Tier B 自動化 spec）
 - 建立日期：2026-06-25
+
+---
+
+## 場景 #9 — 401 自動 refresh + retry（2026-08-29 從自動化移出）
+
+原本有 `token-401-refresh.spec.ts` 兩個案例，自 2026-06-25 寫出來起**一次都沒綠過**。
+2026-08-29 查明原因後刪除，理由如下 —— 這不是「改成寬鬆一點讓它過」，是它在 mock 環境
+裡結構上就到不了要驗的那條分支。
+
+### 為什麼自動不了
+
+retry 的觸發條件是 `refreshToken()` 回**非空字串**（`shared/auth/unauthorized-policy.ts`）。
+實作是 `StoreAuth().GetFreshIdToken()`，它要 Firebase app 已初始化且 `currentUser` 非 null
+才拿得到 token。而 e2e 一律走 mock 模式（`window.__E2E_MODE__`），plugin 直接 return，
+Firebase 從頭到尾沒初始化 → `GetFreshIdToken()` 必然回空 → policy 判 refresh 失敗 →
+`signed-out`，永遠走不到 retry。實測 `callCount` 固定是 1。
+
+原本的規避方式是用 `Object.defineProperty(window, '__authStore', { set })` 事後
+monkey patch `GetFreshIdToken`，實測無效（callCount 仍是 1）。
+
+### 現有覆蓋
+
+- **state machine 本身**：`shared/auth/unauthorized-policy.spec.ts` 7 個單元測試，
+  涵蓋 refresh 成功 / 回空 / throw / retry 仍 401 / 重複 SignOut / 並行 401 / reset。
+- **未被覆蓋的部分（已知缺口）**：`app/protocol/fetch-api/methods.ts` 的**接線**——
+  「decision === 'retry' 時真的重發一次原 request」。要補這塊得在 mock 模式下給
+  `GetFreshIdToken` 一個真的 seam（例如讓 `__E2E_PATCH__` 帶 `freshIdToken`），
+  屬於獨立的一小塊工作，還沒做。
+
+### 手動驗收步驟（prod）
+
+1. 用真機 LINE 開乘客端 `/orders`，確認訂單列表載得出來。
+2. 在 DevTools 的 Application → Cookies 刪掉 `da_session`（模擬 session 過期）。
+3. 觸發一次列表重載（切到別的分頁再切回來，`visibilitychange` 會重打）。
+4. **預期**：畫面不應該直接把人踢去 `/login`，而是先自己換到新 token 重試一次；
+   若真的換不到才收斂到 `/login`。
+5. 若步驟 4 直接跳 `/login` 且 Network 只看得到**一發** 401 請求 → retry 接線壞了。

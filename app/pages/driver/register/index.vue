@@ -530,7 +530,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin: 16px 0 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--accent-a20);
@@ -605,7 +605,7 @@ onUnmounted(() => {
   &.is-active {
     border-color: var(--accent-a50);
     background: var(--accent-a12);
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
 
   &:hover:not(.is-active) {
@@ -757,7 +757,7 @@ onUnmounted(() => {
   font-size: var(--fs-body-sm);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--da-amber);
+  color: var(--accent-text);
   cursor: pointer;
   transition: background var(--dur-base) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 

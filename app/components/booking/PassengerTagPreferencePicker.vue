@@ -169,7 +169,7 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
   &.is-selected {
     border-color: var(--da-amber);
     background: var(--da-amber-pale);
-    color: var(--da-amber);
+    color: var(--accent-text);
     font-weight: 700;
   }
 
@@ -179,12 +179,12 @@ const ClickToggleChip = (tag: TagDto, group: TagGroup) => {
 .PassengerTagPreferencePicker__chip-surcharge {
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--da-amber);
+  color: var(--accent-text);
   letter-spacing: var(--ls-snug);
 }
 
 .PassengerTagPreferencePicker__chip.is-selected .PassengerTagPreferencePicker__chip-surcharge {
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .PassengerTagPreferencePicker__empty {

@@ -802,7 +802,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   &:hover { color: var(--ink-a70); }
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
   &.is-zh_tw.is-active {
@@ -835,7 +835,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   border-radius: var(--r-sm);
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   line-height: var(--lh-relaxed);
 }
 
@@ -911,7 +911,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   margin-top: 6px;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: var(--r-sm);
@@ -942,7 +942,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   code {
     font-family: var(--ff-mono);
     font-size: var(--fs-label);
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .label {
     font-family: var(--ff-ui);
@@ -1070,7 +1070,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .TemplateEditor__bubble {
@@ -1163,7 +1163,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 2px;
 }
 
@@ -1177,7 +1177,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 
   code {
     font-family: var(--ff-mono);
-    color: var(--accent);
+    color: var(--accent-text);
     background: var(--accent-a12);
     padding: 1px 6px;
     border-radius: var(--r-xs);
@@ -1193,7 +1193,7 @@ const previewCtaLabel = computed(() => form.ctaLabel || '查看詳情');
 .TemplateEditor__preview-note {
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a06);
   padding: 6px 10px;
   border-radius: var(--r-sm);

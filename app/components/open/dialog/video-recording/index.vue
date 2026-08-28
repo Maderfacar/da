@@ -498,7 +498,7 @@ ElDialogPlus.OpenDialogVideoRecording(
 .countdown {
   @include center;
   @include fs(24px, 700);
-  color: var(--accent); // gray-900
+  color: var(--accent-text); // gray-900
 }
 
 .countdown-bar {

@@ -799,7 +799,7 @@ ElDialogPlus.OpenDialogImageSelect(
       @include fs(28px);
       border-radius: var(--r-md);
       background-color: var(--surface-raised) ;
-      color: var(--accent);
+      color: var(--accent-text);
       opacity: 0.7;
     }
   }

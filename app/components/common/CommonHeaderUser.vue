@@ -94,7 +94,7 @@ const ClickPassenger = () => {
 
 .CommonHeaderUser__admin-btn {
   background: var(--stop-a15);
-  color: var(--da-amber);
+  color: var(--accent-text);
   border: 1px solid var(--accent-a30);
   &:hover { background: var(--stop-a30); }
 }
@@ -131,7 +131,7 @@ const ClickPassenger = () => {
   align-items: center;
   justify-content: center;
   background: var(--accent-a20);
-  color: var(--da-amber);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-body);
   font-weight: 700;

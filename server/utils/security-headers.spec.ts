@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildCsp, getSecurityHeaders } from './security-headers';
+import {
+  buildCsp,
+  getSecurityHeaders,
+  isLocalHost,
+  relaxHeadersForLocalHttp,
+  stripUpgradeInsecureRequests,
+} from './security-headers';
 
 describe('security-headers', () => {
   describe('buildCsp()', () => {
@@ -151,6 +157,65 @@ describe('security-headers', () => {
       const noArg = getSecurityHeaders();
       const explicit = getSecurityHeaders('default');
       expect(noArg).toEqual(explicit);
+    });
+  });
+});
+
+// ── 本機 plain-HTTP 例外（2026-08-29）──────────────────────────────────────
+// WebKit 不對 localhost 網開一面：upgrade-insecure-requests 會把 /static/* 升成 https，
+// 本機 plain-HTTP server 於是全數 SSL connect error → JS 從沒載入。
+// 這組測試同時守「會生效」與「不誤傷 prod」兩面。
+describe('本機 plain-HTTP 鬆綁', () => {
+  describe('isLocalHost()', () => {
+    it('localhost / 127.0.0.1 / IPv6 loopback 皆判為本機（含 port）', () => {
+      expect(isLocalHost('localhost:3000')).toBe(true);
+      expect(isLocalHost('localhost')).toBe(true);
+      expect(isLocalHost('127.0.0.1:3000')).toBe(true);
+      expect(isLocalHost('[::1]:3000')).toBe(true);
+      expect(isLocalHost('LOCALHOST:3000')).toBe(true);
+    });
+
+    it('prod host 一律不成立 —— 這是「線上零改變」的唯一依據', () => {
+      expect(isLocalHost('da-line-liff-app.vercel.app')).toBe(false);
+      expect(isLocalHost(undefined)).toBe(false);
+      expect(isLocalHost('')).toBe(false);
+    });
+
+    it('不因字串包含 localhost 就誤判（子網域 / 前綴）', () => {
+      expect(isLocalHost('localhost.evil.com')).toBe(false);
+      expect(isLocalHost('notlocalhost')).toBe(false);
+      expect(isLocalHost('evil.com')).toBe(false);
+    });
+  });
+
+  describe('stripUpgradeInsecureRequests()', () => {
+    it('拿掉該 directive，其餘原樣保留', () => {
+      const out = stripUpgradeInsecureRequests(buildCsp('default'));
+      expect(out).not.toContain('upgrade-insecure-requests');
+      expect(out).toContain('default-src \'self\'');
+      expect(out).toContain('object-src \'none\'');
+    });
+
+    it('沒有該 directive 時不動任何東西', () => {
+      const csp = 'default-src \'self\'; object-src \'none\'';
+      expect(stripUpgradeInsecureRequests(csp)).toBe(csp);
+    });
+  });
+
+  describe('relaxHeadersForLocalHttp()', () => {
+    it('移除 HSTS 並從 CSP 拿掉 upgrade-insecure-requests', () => {
+      const relaxed = relaxHeadersForLocalHttp(getSecurityHeaders('default'));
+      expect(relaxed['Strict-Transport-Security']).toBeUndefined();
+      expect(relaxed['Content-Security-Policy']).not.toContain('upgrade-insecure-requests');
+    });
+
+    it('其他 hardening header 一個都不能少（只鬆綁這兩項）', () => {
+      const relaxed = relaxHeadersForLocalHttp(getSecurityHeaders('admin'));
+      expect(relaxed['X-Content-Type-Options']).toBe('nosniff');
+      expect(relaxed['X-Frame-Options']).toBe('DENY');
+      expect(relaxed['Referrer-Policy']).toBe('strict-origin-when-cross-origin');
+      expect(relaxed['Permissions-Policy']).toBeDefined();
+      expect(relaxed['Content-Security-Policy']).toContain('frame-ancestors \'none\'');
     });
   });
 });

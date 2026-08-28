@@ -1372,7 +1372,7 @@ const ClickSaveFareRules = async () => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1414,7 +1414,7 @@ const ClickSaveFareRules = async () => {
   &.is-active {
     border-color: var(--accent-a50);
     background: var(--accent-a12);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 
@@ -1440,7 +1440,7 @@ const ClickSaveFareRules = async () => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
     border-radius: var(--r-pill);
@@ -1478,7 +1478,7 @@ const ClickSaveFareRules = async () => {
   transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
 }
@@ -1643,7 +1643,7 @@ const ClickSaveFareRules = async () => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-label);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
   border-radius: var(--r-pill);
@@ -1673,7 +1673,7 @@ const ClickSaveFareRules = async () => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminSettings__perm-head-hint {
@@ -1837,7 +1837,7 @@ const ClickSaveFareRules = async () => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     background: var(--accent-a12);
     border: 1px solid var(--accent-a20);
     border-radius: var(--r-pill);
@@ -1931,7 +1931,7 @@ const ClickSaveFareRules = async () => {
   font-size: var(--fs-body-sm);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminSettings__fare-switch-label {
@@ -2094,7 +2094,7 @@ const ClickSaveFareRules = async () => {
   &.is-on {
     background: var(--accent-a20);
     border-color: var(--accent-a60);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 
@@ -2128,7 +2128,7 @@ const ClickSaveFareRules = async () => {
   &.is-on {
     background: var(--accent-a20);
     border-color: var(--accent-a60);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 

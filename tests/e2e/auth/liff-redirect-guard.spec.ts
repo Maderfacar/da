@@ -13,7 +13,8 @@ import { attachConsoleCapture } from './_helpers';
  * 自動化邊界：不驗「真實 LIFF 內登入流程」（屬 Tier C 手動驗收）。
  */
 
-const PROBE_ROUTES = ['/booking', '/orders', '/profile'];
+// /profile 不存在（已併進 /orders）—— 探針要打真的有頁面的受保護路由才有意義
+const PROBE_ROUTES = ['/booking', '/orders', '/notifications'];
 
 test.describe('auth #4 — LIFF redirect guard（plugin boot 不無條件 redirect）', () => {
   for (const route of PROBE_ROUTES) {

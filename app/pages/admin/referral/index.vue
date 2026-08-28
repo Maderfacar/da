@@ -362,7 +362,7 @@ onMounted(() => {
 .PageReferral__tab:hover { color: var(--da-dark); }
 
 .PageReferral__tab.is-active {
-  color: var(--da-amber);
+  color: var(--accent-text);
   border-bottom-color: var(--da-amber);
 }
 

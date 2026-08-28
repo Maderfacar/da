@@ -215,7 +215,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
 
   // 最少限度排版（避免 v-html 內排版崩掉）
   :deep(p) { margin: 0 0 6px; }
-  :deep(a) { color: var(--accent); text-decoration: underline; }
+  :deep(a) { color: var(--accent-text); text-decoration: underline; }
   :deep(strong) { font-weight: 700; color: var(--surface-raised); }
   :deep(ul), :deep(ol) { margin: 4px 0 6px 18px; }
   :deep(img) { max-width: 100%; border-radius: var(--r-sm); margin: 6px 0; }
@@ -234,7 +234,7 @@ const displayTitle = computed(() => props.title.trim() || '（未輸入標題）
   border-radius: var(--r-pill);
   background: var(--accent-a20);
   border: 1px solid var(--accent-a50);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;

@@ -131,7 +131,7 @@ onMounted(() => {
   transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 
   &:hover {
-    color: var(--accent);
+    color: var(--accent-text);
     border-color: var(--accent-a40);
     background: var(--ink-a70);
   }
@@ -211,7 +211,7 @@ onMounted(() => {
   word-break: break-word;
 
   :deep(p) { margin: 0 0 12px; }
-  :deep(a) { color: var(--accent); text-decoration: underline; }
+  :deep(a) { color: var(--accent-text); text-decoration: underline; }
   :deep(strong) { font-weight: 700; color: var(--surface-raised); }
   :deep(em) { font-style: italic; }
   :deep(ul), :deep(ol) { margin: 8px 0 12px 22px; }

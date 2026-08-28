@@ -544,7 +544,7 @@ onUnmounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-top: 2px;
 }
 
@@ -674,7 +674,7 @@ onUnmounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .PageWarRoom__driver-order-status {

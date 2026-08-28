@@ -197,7 +197,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -389,7 +389,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   gap: 6px;
   align-items: center;
 
-  span { color: var(--da-amber); font-size: var(--fs-label); }
+  span { color: var(--accent-text); font-size: var(--fs-label); }
 }
 
 .PageFare__vehicle-tagline {
@@ -420,7 +420,7 @@ const ClickVehicleCard = (id: string) => { activeVehicleId.value = id; };
   font-family: var(--ff-display);
   font-size: var(--fs-body);
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 10px;
 }
 

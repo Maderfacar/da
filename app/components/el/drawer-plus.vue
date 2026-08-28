@@ -112,7 +112,7 @@ const EmitClose = () => {
       .el-drawer__header span,
     
       .el-drawer__close-btn {
-        color: var(--accent);
+        color: var(--accent-text);
         font-weight: 700;
       }
     }

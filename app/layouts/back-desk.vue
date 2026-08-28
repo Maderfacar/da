@@ -273,7 +273,7 @@ function ClickNav(path: string) {
   font-size: $fs-label;
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
-  color: var(--da-amber);
+  color: var(--accent-text);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   padding: 3px 10px;

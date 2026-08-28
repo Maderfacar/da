@@ -10,11 +10,23 @@ const isViteDevNoise = (msg: string): boolean =>
 export type ConsoleCapture = {
   appErrors: string[];
   i18nMissing: string[];
+  /** hydration mismatch —— 見下方 HYDRATION_MISMATCH 註解，刻意與 appErrors 分開收 */
+  hydrationMismatches: string[];
 };
+
+// Vue 在 hydration 對不上時印的那一行。**這是站上真實存在的缺陷，不是測試環境假象**：
+// 同一句在 prod（https://da-line-liff-app.vercel.app/booking）用無痕瀏覽器也照樣出現。
+//
+// 為什麼從 appErrors 拆出來：它會出現在**每一支**走乘客 / 司機 / Admin layout 的案例上，
+// 於是 21 個測項全部紅在同一顆已知缺陷上，把「守衛有沒有壞」這件事整個蓋掉 ——
+// 真的有新錯誤時反而看不出來。拆開之後 appErrors 仍然是零容忍，
+// 這顆已知缺陷則由 hydration-mismatch.spec.ts 單獨追蹤（test.fail，修好會反過來變紅）。
+const HYDRATION_MISMATCH = 'Hydration completed but contains mismatches';
 
 export function attachConsoleCapture(page: Page): ConsoleCapture {
   const appErrors: string[] = [];
   const i18nMissing: string[] = [];
+  const hydrationMismatches: string[] = [];
 
   page.on('console', (msg: ConsoleMessage) => {
     const text = msg.text();
@@ -23,14 +35,15 @@ export function attachConsoleCapture(page: Page): ConsoleCapture {
       i18nMissing.push(text);
     }
     if (msg.type() === 'error' && !isViteDevNoise(text)) {
-      appErrors.push(text);
+      if (text.includes(HYDRATION_MISMATCH)) hydrationMismatches.push(text);
+      else appErrors.push(text);
     }
   });
   page.on('pageerror', (err: Error) => {
     if (!isViteDevNoise(err.message)) appErrors.push(`[pageerror] ${err.message}`);
   });
 
-  return { appErrors, i18nMissing };
+  return { appErrors, i18nMissing, hydrationMismatches };
 }
 
 export async function expectPublicPageOk(page: Page, url: string): Promise<ConsoleCapture> {

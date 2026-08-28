@@ -508,7 +508,7 @@ function ClickSwitchSize(size: RichmenuSize) {
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
   margin: 0 0 8px;
 }
 

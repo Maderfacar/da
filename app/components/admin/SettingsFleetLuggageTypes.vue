@@ -270,7 +270,7 @@ const ClickDelete = async (t: FleetLuggageTypeDto) => {
   border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -338,7 +338,7 @@ const ClickDelete = async (t: FleetLuggageTypeDto) => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
   border-radius: var(--r-pill);
@@ -376,7 +376,7 @@ const ClickDelete = async (t: FleetLuggageTypeDto) => {
   &.is-edit {
     background: var(--accent-a12);
     border-color: var(--accent-a30);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 

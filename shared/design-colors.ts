@@ -29,7 +29,7 @@ export const DESIGN_COLORS = {
   /** 三級文字 */
   inkMute: '#868073',
   /** 古銅 · 主色 */
-  accent: '#7E6330',
+  accent: '#9C7C3C',
   /** 亮銅 · 深底上使用 */
   accentLit: '#C9A961',
   /** 極淡底 */

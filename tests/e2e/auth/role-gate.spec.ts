@@ -34,7 +34,10 @@ test.describe('auth #7 — Admin 2FA gate', () => {
       // middleware/role 應 navigateTo({ path: '/admin/2fa/challenge', query: { next: to.fullPath } })
       await page.waitForURL(/\/admin\/2fa\/challenge/, { timeout: 8_000 });
       expect(page.url()).toMatch(/\/admin\/2fa\/challenge/);
-      expect(page.url(), '應帶 next= 參數記住原 target').toContain(encodeURIComponent(target));
+      // 2026-08-29：原本斷言 encodeURIComponent(target)（%2Fadmin%2Forders）。
+      // 實測 URL 是 `?next=/admin/orders` —— Vue Router 的 query 序列化不編碼斜線，
+      // 而斜線在 query value 裡本來就合法。是斷言抄錯，網站行為正確。
+      expect(page.url(), '應帶 next= 參數記住原 target').toContain(`next=${target}`);
     });
   }
 
@@ -48,17 +51,28 @@ test.describe('auth #7 — Admin 2FA gate', () => {
   });
 });
 
-test.describe('auth #8 — Driver pending 不可進 /driver/dashboard', () => {
+test.describe('auth #8 — Driver pending / 非司機 不可進 /driver/* 受保護頁', () => {
   const DRIVER_TARGETS = ['/driver/dashboard', '/driver/dispatched', '/driver/profile'] as const;
+  // 被擋下來之後真正停在哪：**/driver/register**，不是 /driver/auth。
+  //
+  // 2026-08-29 實測 trail：/driver/dashboard → /driver/register（/driver/auth 連 frame
+  // navigation 事件都沒留下 —— 它是 middleware 內 replace 的中繼站，同一個 tick 就被
+  // 下一段 resolveDestination 接手了）。原本的 waitForURL(/\/driver\/auth/) 等的是一個
+  // 從來不會停留的中繼 URL，所以必然 8 秒逾時。
+  //
+  // 停在 /driver/register 是 P27（2026-05-12 司機申請遷移）之後的正確落點：
+  // 純乘客 → apply mode、申請中 → pending mode。斷言因此改成兩件事 ——
+  // ①「沒進到受保護頁」（這才是 gate 的重點）②「停在司機端的登入／申請入口」。
+  const NOT_ADMITTED = /\/driver\/(auth|register)/;
 
   for (const target of DRIVER_TARGETS) {
-    test(`driverPending 訪問 ${target} → /driver/auth`, async ({ page, loginAs }) => {
+    test(`driverPending 訪問 ${target} → 擋在 /driver/register`, async ({ page, loginAs }) => {
       await loginAs('driverPending');
       await page.goto(target, { waitUntil: 'load', timeout: 15_000 });
 
-      // middleware/role L109-111：roles 含 driver 但 approved=false → 跳 /driver/auth
-      await page.waitForURL(/\/driver\/auth/, { timeout: 8_000 });
-      expect(page.url()).toMatch(/\/driver\/auth/);
+      await page.waitForURL(NOT_ADMITTED, { timeout: 8_000 });
+      expect(page.url(), '未核准司機不得停在受保護頁').not.toMatch(new RegExp(target));
+      expect(page.url()).toMatch(NOT_ADMITTED);
     });
   }
 
@@ -67,15 +81,14 @@ test.describe('auth #8 — Driver pending 不可進 /driver/dashboard', () => {
     await page.goto('/driver/dashboard', { waitUntil: 'load', timeout: 15_000 });
 
     expect(page.url()).toMatch(/\/driver\/dashboard/);
-    expect(page.url()).not.toMatch(/\/driver\/auth/);
+    expect(page.url()).not.toMatch(NOT_ADMITTED);
   });
 
-  test('passenger 訪問 /driver/dashboard → /driver/auth（無 driver role）', async ({ page, loginAs }) => {
+  test('passenger 訪問 /driver/dashboard → 擋在 /driver/register（無 driver role）', async ({ page, loginAs }) => {
     await loginAs('passenger');
     await page.goto('/driver/dashboard', { waitUntil: 'load', timeout: 15_000 });
 
-    // middleware/role L109：!roles.includes('driver') → 跳 /driver/auth
-    await page.waitForURL(/\/driver\/auth/, { timeout: 8_000 });
-    expect(page.url()).toMatch(/\/driver\/auth/);
+    await page.waitForURL(NOT_ADMITTED, { timeout: 8_000 });
+    expect(page.url()).not.toMatch(/\/driver\/dashboard/);
   });
 });

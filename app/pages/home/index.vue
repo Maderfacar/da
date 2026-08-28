@@ -479,7 +479,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 20px;
   padding: 6px 14px;
   border: 1.5px solid var(--da-amber);
@@ -590,7 +590,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -723,7 +723,7 @@ onUnmounted(() => {
   &.is-arrived_pickup,
   &.is-in_transit {
     background: var(--accent-a12);
-    color: var(--da-amber);
+    color: var(--accent-text);
     border: 1px solid var(--accent-a20);
   }
 }
@@ -819,7 +819,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .PageHome__trip-flight-val {
@@ -1067,7 +1067,7 @@ onUnmounted(() => {
   font-family: var(--ff-ui);
   font-size: var(--fs-body);
   font-weight: 600;
-  color: var(--da-amber);
+  color: var(--accent-text);
   text-decoration: none;
   font-variant-numeric: tabular-nums;
 
@@ -1196,7 +1196,7 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
   display: flex;
   align-items: center;

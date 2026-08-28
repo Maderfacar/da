@@ -203,7 +203,7 @@ onMounted(ApiLoadFlow);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -388,7 +388,7 @@ onMounted(ApiLoadFlow);
   &.is-active {
     background: var(--accent-a20);
     border-color: var(--accent-a50);
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
 }
 
@@ -490,6 +490,6 @@ onMounted(ApiLoadFlow);
   color: var(--surface-a72);
   line-height: var(--lh-normal);
 
-  strong { color: var(--da-amber); font-weight: 700; }
+  strong { color: var(--accent-text); font-weight: 700; }
 }
 </style>

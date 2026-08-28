@@ -241,7 +241,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -261,7 +261,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
     font-family: var(--ff-label);
     font-size: var(--fs-h4);
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-text);
     margin-top: 4px;
   }
 

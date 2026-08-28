@@ -509,7 +509,7 @@ defineExpose({ reloadTags: ApiLoadTags });
 
   &.is-pending  { background: var(--wait-a15);  border: 1px solid var(--wait-a45);  color: var(--wait); }
   &.is-rejected { background: var(--stop-a15); border: 1px solid var(--stop-a45); color: var(--stop); }
-  &.is-draft    { background: var(--accent-a12);       border: 1px solid var(--accent-a30);  color: var(--accent); }
+  &.is-draft    { background: var(--accent-a12);       border: 1px solid var(--accent-a30);  color: var(--accent-text); }
   &.is-verified { background: var(--good-a15); border: 1px solid var(--good-a45); color: var(--good); }
   &.is-none     { background: var(--surface-a06); border: 1px solid var(--surface-a06); color: var(--surface-a40); }
 }
@@ -637,7 +637,7 @@ defineExpose({ reloadTags: ApiLoadTags });
   aspect-ratio: 4 / 3;
   border: 1.5px dashed var(--accent-a40);
   background: var(--accent-a06);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-ui);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -682,7 +682,7 @@ defineExpose({ reloadTags: ApiLoadTags });
   &.is-primary {
     border-color: var(--accent-a50);
     background: var(--accent-a20);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a30); }
   }
   &.is-secondary {
@@ -827,7 +827,7 @@ defineExpose({ reloadTags: ApiLoadTags });
   padding: 5px 14px;
   border: 1.5px dashed var(--accent-a40);
   background: var(--accent-a06);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   border-radius: var(--r-sm);
   margin-top: 2px;

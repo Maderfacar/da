@@ -715,3 +715,69 @@ describe('Sass 與 CSS 變數的邊界（階段 2 續）', () => {
     expect(offenders, `這些是編譯期常數，改成 var() 會讓 build 中斷：\n${offenders.join('\n')}`).toEqual([]);
   });
 });
+
+// ── 兩層古銅還原（2026-08-29）新增的守衛 ────────────────────────────────────
+//
+// 為什麼是現在補：`_design-tokens.css` 的疊色階梯上方寫著「後備值的三通道 MUST 等於
+// --da-amber / --da-dark / --da-off-white 的當前值，**由守衛比對**」——
+// 實際上那條守衛從來沒有存在過。這次把主色從 #7E6330 換回 #9C7C3C 時才發現：
+// 只要沒人手動改那 9 行 rgba，不支援 color-mix 的瀏覽器會拿到舊主色的疊層，
+// 而 lint / test / build 全綠。註解自稱有守衛，比沒有守衛更危險。
+describe('兩層古銅（主色 / 小字階）守衛', () => {
+  const DT_PATH = 'app/assets/styles/css-class/_design-tokens.css';
+
+  /** 把 `#RRGGBB` 轉成 `r, g, b` 的十進位字串（比對 rgba 後備值用） */
+  function rgbTriplet(hex: string): string {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    return `${r}, ${g}, ${b}`;
+  }
+
+  it('疊色階梯的 rgba 後備值三通道必須等於對應 token 的當前值', () => {
+    const tokens = tokenLiterals();
+    const css = stripComments(readFileSync(join(ROOT, DT_PATH), 'utf8'));
+    const pairs: Array<[string, string]> = [
+      ['accent', tokens['da-amber']!],
+      ['ink', tokens['da-dark']!],
+      ['surface', tokens['da-off-white']!],
+    ];
+    const offenders: string[] = [];
+    for (const [prefix, hex] of pairs) {
+      const want = rgbTriplet(hex);
+      for (const m of css.matchAll(new RegExp(String.raw`--${prefix}-a\d+\s*:\s*rgba\(([^)]+)\)`, 'g'))) {
+        const got = m[1]!.split(',').slice(0, 3).map((s) => s.trim()).join(', ');
+        if (got !== want) offenders.push(`--${prefix}-a* 後備值是 rgba(${got}, …)，token 是 ${hex}（${want}）`);
+      }
+    }
+    expect(
+      [...new Set(offenders)],
+      '不支援 color-mix 的瀏覽器會拿到舊主色的疊層，而 lint / test / build 全綠：\n' + offenders.join('\n'),
+    ).toEqual([]);
+  });
+
+  it('主色不得再被用在小字上 —— 文字一律走 --accent-text', () => {
+    // 主色 #9C7C3C 在瓷白上 3.53:1，過非文字的 3.0、過不了內文的 4.5。
+    // 這條擋的是「之後 copy-paste 一段 `color: var(--accent)` 到 12px 的 label 上」。
+    // 例外清單裡每一條都附了字級或「這是圖示」的理由，不是為了讓測試變綠而加的。
+    const ALLOW = new Set([
+      'app/pages/driver/dispatched/[orderId].vue:291',  // --fs-h1
+      'app/pages/driver/profile/index.vue:645',         // --fs-h2
+      'app/pages/driver/trip/index.vue:1027',           // --fs-h3
+      'app/pages/driver/trip/index.vue:1086',           // 位址圖示
+      'app/components/el/dialog-plus.vue:141',          // 關閉鈕圖示
+    ]);
+    const offenders: string[] = [];
+    for (const { rel, text } of FILES) {
+      stripComments(text).split(/\r?\n/).forEach((line, i) => {
+        if (!/(^|[^-])color\s*:\s*var\(--accent\)/.test(line)) return;
+        if (/(border|background|outline|shadow|fill|stroke|caret|decoration)-color\s*:/.test(line)) return;
+        const at = `${rel}:${i + 1}`;
+        if (!ALLOW.has(at)) offenders.push(`${at} → ${line.trim().slice(0, 80)}`);
+      });
+    }
+    expect(
+      offenders,
+      '小字用主色只有 3.53:1，過不了 AA。請改 var(--accent-text)；若確定是大字或圖示，加進 ALLOW 並註明理由：\n'
+        + offenders.join('\n'),
+    ).toEqual([]);
+  });
+});

@@ -141,15 +141,15 @@
      ====================================================================== */
 
   /* 主色疊層 —— 邊框、光暈、hover 底、選中態 */
-  --accent-a06: rgba(126, 99, 48, 0.06);
-  --accent-a12: rgba(126, 99, 48, 0.12);
-  --accent-a20: rgba(126, 99, 48, 0.2);
-  --accent-a30: rgba(126, 99, 48, 0.3);
-  --accent-a40: rgba(126, 99, 48, 0.4);
-  --accent-a50: rgba(126, 99, 48, 0.5);
-  --accent-a60: rgba(126, 99, 48, 0.6);
-  --accent-a70: rgba(126, 99, 48, 0.7);
-  --accent-a90: rgba(126, 99, 48, 0.9);
+  --accent-a06: rgba(156, 124, 60, 0.06);
+  --accent-a12: rgba(156, 124, 60, 0.12);
+  --accent-a20: rgba(156, 124, 60, 0.2);
+  --accent-a30: rgba(156, 124, 60, 0.3);
+  --accent-a40: rgba(156, 124, 60, 0.4);
+  --accent-a50: rgba(156, 124, 60, 0.5);
+  --accent-a60: rgba(156, 124, 60, 0.6);
+  --accent-a70: rgba(156, 124, 60, 0.7);
+  --accent-a90: rgba(156, 124, 60, 0.9);
 
   /* 墨色疊層 —— 陰影、遮罩、深色分隔 */
   --ink-a06: rgba(26, 25, 23, 0.06);
@@ -176,8 +176,19 @@
   --surface-a88: rgba(245, 243, 238, 0.88);
   --surface-a96: rgba(245, 243, 238, 0.96);
 
+  /* 主色的小字階 —— kicker / label / 註解這類「要被讀」的小字。
+     為什麼要分兩層：主色 --accent #9C7C3C 在瓷白上只有 3.53:1，過得了非文字的 3.0，
+     過不了內文的 4.5。介面方向提案本來就定義了兩層（brass / brass-deep），
+     W0a 當時把兩層塌成一層以求小字過 AA —— 代價是整站的面、圖示、邊框全被拉暗一階。
+     這裡把兩層還原：面／大字／圖示／邊框／選中態用 --accent，小字用 --accent-text。
+     取法是「主色往墨色推 25%」而非寫死色碼，季節主題換成深酒紅時小字階會一起轉。
+     實測（後備值 #7B6333）：瓷白 5.16:1 · 骨白 4.63:1，兩者都過 AA。
+     ⚠ 深色面（[data-surface='dark']）不適用這條推導 —— 那裡的 --ink 仍是縞黑，
+        往墨色推只會更看不見。該作用域下方另有覆寫，直接用亮銅本身。 */
+  --accent-text: #7B6333;
+
   /* 主色的深階 —— 實心主色按鈕的 hover。取代散在 9 處的 darken($amber, 6~8%) */
-  --accent-deep: #725A2D;
+  --accent-deep: #8C7038;
 
   /* 語意狀態色的疊色 —— 狀態標章的底(a08/a15)、框(a30/a45)、強調字(a70)。
      現況 684 處用了 25 種相異 alpha，收成五階，最大偏移 0.05（少數高透明處 0.1）。 */
@@ -424,6 +435,7 @@
     --surface-a88: color-mix(in srgb, var(--surface-raised) 88%, transparent);
     --surface-a96: color-mix(in srgb, var(--surface-raised) 96%, transparent);
 
+    --accent-text: color-mix(in srgb, var(--accent) 75%, var(--ink));
     --accent-deep: color-mix(in srgb, var(--accent) 88%, var(--ink));
     --surface-deep-3: color-mix(in srgb, var(--da-dark) 88%, var(--da-off-white));
 
@@ -469,6 +481,10 @@
 [data-surface='dark'] {
   --da-amber: var(--da-amber-light);
 
+  /* 小字階在這裡不能沿用「往墨色推」的推導 —— 深色面的 --ink 仍是縞黑，
+     推過去等於把字塗成背景色。亮銅本身在縞黑上就有 7.81:1，直接用。 */
+  --accent-text: var(--da-amber-light);
+
   /* 髮絲線是唯一在深色面翻轉的表面別名 —— 它安全的理由是「沒有任何東西從 --hairline 推導」。
      --da-gray-pale #D6D1C7 在縞黑上是一條亮線，太搶；--surface-a12 是瓷白 12%，
      正好是階段 1 拿來取代 rgba(255,255,255,.08) 的那一階。 */
@@ -488,7 +504,8 @@
    在白底上剩 1.9:1。標在該淺底元素本身即可。
    ========================================================================== */
 [data-surface='light'] {
-  --da-amber: #7E6330;
+  --da-amber: #9C7C3C;
+  --accent-text: #7B6333;
   --good: #3E6B4E;
   --wait: #A0521F;
   --note: #35527A;

@@ -4,10 +4,20 @@ name: E2E Auth Matrix
 # 401 retry、lazy read timeout）共 10 個自動化場景。Tier C 4 場景由 Brain AI 手動驗收。
 #
 # 設計：
-#   - 採方案 B（auth.client.ts 內既有 testMode='T' 後門 + window.__E2E_MODE__ 旗標）
-#   - CI 用 minimal .env.dev（NUXT_PUBLIC_TEST_MODE=T + 必要 base url）；plugin 跳過 LIFF/Firebase init
+#   - 身分 mock 只靠 fixture 注入的 window.__E2E_MODE__；plugin 跳過 LIFF / Firebase init
 #   - 所有 /nuxt-api/* request 由 fixture page.route 攔截，不打真實後端
 #   - 不需要任何 Firebase / LINE / Google Maps secret
+#
+# 2026-08-29 修正（這條 workflow 自 2026-06-25 建立起 32 次執行 0 次成功）：
+#   a. **不再設 NUXT_PUBLIC_TEST_MODE=T**。它不只 auth plugin 在看 ——
+#      app/protocol/fetch-api/api/{order,auth,file}/index.ts 的 IsMock() 也看它，為 T 時整層
+#      API 回罐頭資料、完全不發請求，fixture 的 page.route 全部形同虛設。
+#   b. **裝 webkit**。playwright.config 有三個 project，iphone-14 走 WebKit；
+#      原本只裝 chromium，那個 project 連瀏覽器都起不來。
+#   c. **對 production build 跑**，與本地、與視覺基線同一種產物（dev 的 vite-node 會 IPC
+#      crash 讓 /admin/* 回 500）。build 走 `nuxt build` 而非 `pnpm build`：後者前置的
+#      scripts/check-env-contract.mjs 守的是「部署」的 22 個必要設定，e2e 一個都不需要，
+#      而 CI=true 會讓它改讀 process.env → 必然缺項 → 整條 workflow 卡在 gate。
 
 on:
   push:
@@ -25,6 +35,11 @@ on:
       - 'app/composables/use-liff-redirect-guard.ts'
       - 'app/layouts/front-desk.vue'
       - 'playwright.config.ts'
+      - 'app/app.vue'
+      - 'app/components/common/CommonBootGate.vue'
+      - 'app/pages/orders/index.vue'
+      - 'server/utils/security-headers.ts'
+      - 'server/plugins/local-http-headers.ts'
       - '.github/workflows/e2e-auth.yml'
   pull_request:
     branches: [main]
@@ -50,17 +65,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Write minimal .env.dev (CI)
-        # plugin 看到 NUXT_PUBLIC_TEST_MODE=T 直接 mock，跳過 LIFF/Firebase init
-        # 所有 secret 不需要；server endpoint 由 page.route 攔截，dev server 不被打到
-        run: |
-          cat > .env.dev <<'EOF'
-          NUXT_PUBLIC_TEST_MODE=T
-          NUXT_API_BASE=http://localhost
-          EOF
+      - name: Build production bundle
+        # 見檔頭 (c)：繞過 check-env-contract 的部署 gate，直接 nuxt build。
+        # playwright.config 的 webServer 會起 .output/server/index.mjs。
+        run: pnpm exec nuxt build
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        # 三個 project：chromium / mobile-chrome（Pixel 5，仍是 chromium）/ iphone-14（WebKit）
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: Run auth e2e suite
         # webServer (playwright.config) 在 CI=true 時自動起 pnpm dev

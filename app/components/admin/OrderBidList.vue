@@ -154,7 +154,7 @@ const ClickAssign = (driverId: string) => {
 }
 
 .AdminOrderBidList__match {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
   &.is-none { color: var(--surface-a40); font-weight: 500; }
 }
@@ -195,7 +195,7 @@ const ClickAssign = (driverId: string) => {
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
   white-space: nowrap;

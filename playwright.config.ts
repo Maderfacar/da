@@ -29,16 +29,27 @@ export default defineConfig({
       use: { ...devices['iPhone 14'] },      // 390×844, Safari Mobile
     },
   ],
-  // CI 時自動起 dev server；本地維持手動（避免每次跑 e2e 都 reload dev）
-  // CI workflow 內已預先寫好 minimal .env.dev（NUXT_PUBLIC_TEST_MODE=T）
+  // CI 時自動起 server；本地維持手動（避免每次跑 e2e 都重啟）
+  //
+  // 2026-08-29：從 `pnpm dev` 改成 production build 的 node server，兩個理由 ——
+  //
+  //   ① 跟本地與視覺基線用同一種產物。dev 的 vite-node 會 IPC crash 讓 /admin/* 回 500
+  //      （見 tests/e2e/visual/baseline.spec.ts 檔頭），那是 dev 基礎設施不穩、不是應用壞，
+  //      但在 CI 上會變成查不出原因的紅。
+  //   ② **不再設 NUXT_PUBLIC_TEST_MODE=T**。那個 env 不只 auth plugin 在看 ——
+  //      `app/protocol/fetch-api/api/{order,auth,file}/index.ts` 的 `IsMock()` 也看它，
+  //      為 T 時整層 API 直接回罐頭資料、**完全不發網路請求**，於是 fixture 的
+  //      `page.route('**/nuxt-api/**')` 全部形同虛設，測到的不是真的行為。
+  //      身分 mock 改為只靠 fixture 注入的 `window.__E2E_MODE__`（auth.client.ts 本來就吃）。
   webServer: process.env.CI
     ? {
-        command: 'pnpm dev',
+        command: 'node .output/server/index.mjs',
         url: 'http://localhost:3000',
         timeout: 120_000,
         reuseExistingServer: false,
         stdout: 'pipe',
         stderr: 'pipe',
+        env: { PORT: '3000' },
       }
     : undefined,
 });

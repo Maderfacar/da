@@ -132,7 +132,7 @@ const ClickSupport = () => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 10px;
 }
 
@@ -168,7 +168,7 @@ const ClickSupport = () => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -250,7 +250,7 @@ const ClickSupport = () => {
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   text-transform: uppercase;
   margin: 6px 0 22px;
 }
@@ -294,7 +294,7 @@ const ClickSupport = () => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -318,7 +318,7 @@ const ClickSupport = () => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 14px;
   display: flex;
   align-items: center;

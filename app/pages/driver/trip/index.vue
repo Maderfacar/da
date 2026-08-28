@@ -547,7 +547,7 @@ onUnmounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -597,7 +597,7 @@ onUnmounted(() => {
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 
   &:hover { color: var(--surface-a72); }
-  &.is-active { background: var(--accent-a20); color: var(--accent); }
+  &.is-active { background: var(--accent-a20); color: var(--accent-text); }
 }
 
 .PageDriverTrip__history-toolbar {
@@ -711,7 +711,7 @@ onUnmounted(() => {
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a30);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageDriverTrip__id {
@@ -801,7 +801,7 @@ onUnmounted(() => {
   &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
   &.is-en_route        { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
   &.is-arrived_pickup  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
-  &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
+  &.is-in_transit      { background: var(--accent-a12); color: var(--accent-text); border: 1px solid var(--accent-a40); }
 }
 
 // 提案規則一：金額放大，卡片上以車資為視覺落點（字族不換，見規則三）。
@@ -814,7 +814,7 @@ onUnmounted(() => {
   font-size: var(--fs-h4);
   font-weight: 500;
   line-height: var(--lh-flat);
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: var(--ls-tight);
 }
 
@@ -923,7 +923,7 @@ onUnmounted(() => {
   border-radius: var(--r-pill);
   background: var(--accent-a20);
   border: 1px solid var(--accent-a40);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageDriverTrip__modal-vehicle {
@@ -970,7 +970,7 @@ onUnmounted(() => {
   &.is-confirmed       { background: var(--good-a15); color: var(--good); border: 1px solid var(--good-a30); }
   &.is-en_route        { background: var(--note-a15); color: var(--note); border: 1px solid var(--note-a30); }
   &.is-arrived_pickup  { background: var(--wait-a15); color: var(--wait); border: 1px solid var(--wait-a30); }
-  &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
+  &.is-in_transit      { background: var(--accent-a12); color: var(--accent-text); border: 1px solid var(--accent-a40); }
 }
 
 .PageDriverTrip__modal-body {

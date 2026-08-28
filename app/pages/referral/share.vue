@@ -222,7 +222,7 @@ onMounted(ApiLoadMe);
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
 
-  &:hover { color: var(--da-amber); }
+  &:hover { color: var(--accent-text); }
 }
 
 // ── 頁首 ──────────────────────────────────────────────────
@@ -236,7 +236,7 @@ onMounted(ApiLoadMe);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 10px;
 }
 
@@ -339,7 +339,7 @@ onMounted(ApiLoadMe);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 8px;
 }
 
@@ -428,7 +428,7 @@ onMounted(ApiLoadMe);
   font-size: var(--fs-body-sm);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--da-amber);
+  color: var(--accent-text);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 

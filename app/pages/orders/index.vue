@@ -39,6 +39,12 @@ const displayOrders = computed<OrderItem[]>(() => {
 
 const ApiLoadOrders = async () => {
   // server 強制使用 auth.lineUid（passenger 只能讀自己）；from / to 範圍過濾 pickupDateTime
+  //
+  // 2026-08-29：未登入直接 return。此頁受 middleware/auth 保護，但 SSR 階段 middleware 直接
+  // return（見 middleware/auth 檔頭），所以訪客深連結進來時本頁仍會 mount 一次、送出一發
+  // 必然 401 的請求，然後在 console 印一行紅字 —— 導向 /login 之後那行紅字還留在那裡，
+  // 看起來像網站壞了。訪客沒有訂單可讀，這一發請求從來就沒有意義。
+  if (!StoreAuth().isSignIn) return;
   loading.value = true;
   try {
     const params: GetOrderListParams = {};
@@ -197,7 +203,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
     margin-bottom: 10px;
   }
 
@@ -219,7 +225,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 
@@ -357,7 +363,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--da-amber);
+  color: var(--accent-text);
   background: var(--da-amber-pale);
   border: 1px solid var(--accent-a30);
   border-radius: var(--r-pill);
@@ -429,7 +435,7 @@ const CanCancel = (status: string) => CAN_CANCEL_STATUS.has(status);
   font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-body-lg);
-  color: var(--da-amber);
+  color: var(--accent-text);
   letter-spacing: var(--ls-label);
 }
 </style>

@@ -279,7 +279,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -411,7 +411,7 @@ const canNext = computed(() => !!pickup.value && !!dropoff.value);
 
   &:hover {
     border-color: var(--da-amber);
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
 }
 

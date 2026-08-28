@@ -294,7 +294,7 @@ const ClickFare = () => navigateTo('/fare');
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   // 季節主題 hero tag 強調色（缺省回退 amber）
-  color: var(--da-hero-tag, var(--da-amber));
+  color: var(--da-hero-tag, var(--accent-text));
   margin: 0 0 18px;
 }
 
@@ -612,7 +612,7 @@ const ClickFare = () => navigateTo('/fare');
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin: 0 0 12px;
   display: flex;
   align-items: center;
@@ -742,7 +742,7 @@ const ClickFare = () => navigateTo('/fare');
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-top: 4px;
 }
 
@@ -787,7 +787,7 @@ const ClickFare = () => navigateTo('/fare');
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
 }
 

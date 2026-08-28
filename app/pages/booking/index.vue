@@ -533,7 +533,7 @@ const ClickNewOrder = () => {
     .is-done & {
       border-color: var(--da-amber);
       background: transparent;
-      color: var(--da-amber);
+      color: var(--accent-text);
     }
   }
 
@@ -545,7 +545,7 @@ const ClickNewOrder = () => {
     transition: color var(--dur-slow) var(--ease-out);
 
     .is-active &,
-    .is-done & { color: var(--da-amber); }
+    .is-done & { color: var(--accent-text); }
   }
 
   &__step-line {

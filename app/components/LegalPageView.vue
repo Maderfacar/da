@@ -91,7 +91,7 @@ onMounted(() => { void ApiLoad(); });
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 10px;
 }
 
@@ -174,7 +174,7 @@ onMounted(() => { void ApiLoad(); });
   }
 
   :deep(a) {
-    color: var(--da-amber);
+    color: var(--accent-text);
     text-decoration: underline;
     text-underline-offset: 2px;
     &:hover { color: var(--accent-deep); }

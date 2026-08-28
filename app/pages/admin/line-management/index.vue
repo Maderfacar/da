@@ -1145,7 +1145,7 @@ $border: var(--accent-a20);
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1186,7 +1186,7 @@ $border: var(--accent-a20);
   gap: 8px;
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
   &.is-disabled {
@@ -1286,7 +1286,7 @@ $border: var(--accent-a20);
   transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     background: var(--accent-a12);
     border-color: var(--accent-a30);
   }
@@ -1469,7 +1469,7 @@ $border: var(--accent-a20);
   color: var(--ink-a40);
 
   &.is-synced { color: var(--good); background: var(--good-a08); }
-  &.is-syncing { color: var(--accent); background: var(--accent-a12); }
+  &.is-syncing { color: var(--accent-text); background: var(--accent-a12); }
   &.is-sync_failed { color: var(--stop); background: var(--stop-a08); }
 }
 
@@ -1558,7 +1558,7 @@ $border: var(--accent-a20);
   &.is-warning {
     background: var(--accent-a12);
     border-color: var(--accent-a40);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
   &.is-reject {
@@ -1838,7 +1838,7 @@ $border: var(--accent-a20);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-a12);
   border-radius: var(--r-pill);
   padding: 2px 8px;
@@ -2017,7 +2017,7 @@ $border: var(--accent-a20);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminLineManagement__diag-meta-row {
@@ -2104,7 +2104,7 @@ $border: var(--accent-a20);
   padding: 0 0 0 18px;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   list-style: disc;
   line-height: var(--lh-relaxed);
 }
@@ -2131,7 +2131,7 @@ $border: var(--accent-a20);
   transition: all var(--dur-fast) var(--ease-out);
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
 }

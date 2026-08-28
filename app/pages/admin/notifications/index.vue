@@ -336,7 +336,7 @@ onMounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -357,7 +357,7 @@ onMounted(() => {
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-body-sm);
   font-weight: 700;
@@ -395,7 +395,7 @@ onMounted(() => {
 
   &:hover { color: var(--surface-raised); }
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
 }
@@ -462,7 +462,7 @@ onMounted(() => {
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminAnnouncements__cardBody {
@@ -523,7 +523,7 @@ onMounted(() => {
   &--primary {
     background: var(--accent-a12);
     border-color: var(--accent-a40);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 

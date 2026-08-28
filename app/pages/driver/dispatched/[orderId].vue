@@ -224,7 +224,7 @@ onMounted(ApiLoadOrder);
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageDriverDispatchedDetail__header-id {
@@ -236,7 +236,7 @@ onMounted(ApiLoadOrder);
 .PageDriverDispatchedDetail__header-bidcount {
   font-family: var(--ff-label);
   font-size: var(--fs-label);
-  color: var(--accent);
+  color: var(--accent-text);
   margin-left: auto;
 }
 
@@ -327,7 +327,7 @@ onMounted(ApiLoadOrder);
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 

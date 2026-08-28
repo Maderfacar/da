@@ -28,7 +28,7 @@ span.UiBadge(:class="`is-${variant}`")
 
 .UiBadge.is-confirmed {
   background: var(--accent-a12);
-  color: var(--da-amber);
+  color: var(--accent-text);
   border: 1px solid var(--accent-a30);
 }
 

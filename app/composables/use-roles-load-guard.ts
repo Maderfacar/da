@@ -44,8 +44,13 @@ export const UseRolesLoadGuard = () => {
     }, ROLES_LOAD_TIMEOUT_MS);
   }
 
+  // 2026-08-29：原本是 navigateTo('/login')，實測**按了沒反應** —— 使用者卡死在這個畫面。
+  // 原因：此時 store 仍是「已登入但 roles 空」，/login 是 login entry，middleware/role 會走
+  // resolveDestination 把已登入者導回落點，於是又彈回原頁（實測 URL 從頭到尾沒離開 /orders）。
+  // 「重新登入」字面上就是先登出再登入，所以改走 SignOut —— 它會清 server session cookie
+  // 與 client state，isSignIn 轉 false 之後 /login 才進得去。
   const ClickReLogin = (): void => {
-    void navigateTo('/login', { replace: true });
+    void authStore.SignOut('/login');
   };
 
   onScopeDispose(() => {

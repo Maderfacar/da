@@ -1129,7 +1129,13 @@ export const StoreAuth = defineStore('StoreAuth', () => {
   const MockSignIn = (_roles: Role[]) => {
     _mockMode = true; // 認證根治 P1：EnsureSessionChecked 對 mock 直接 resolve，不打真實 session-check
     user.value = { uid: `mock-${_roles.join('-')}` } as import('firebase/auth').User;
-    roles.value = _roles.length > 0 ? _roles : ['passenger'];
+    // 2026-08-29：拿掉「空陣列 → ['passenger']」的內建 fallback。
+    // 預設值本來就在呼叫端（plugins/auth.client.ts 的 `__E2E_ROLES__ ?? ['passenger']`），
+    // 這裡再兜一次的副作用是「**無法** mock 出 roles=[]」——
+    // 而 roles=[] 正是 UseRolesLoadGuard 5 秒 timeout UI 唯一的觸發條件，
+    // 於是 lazy-read-timeout 那支 e2e 從寫出來就不可能通過。
+    // 沒有任何呼叫端會傳空陣列（driver/auth、login 兩處都傳明確角色）。
+    roles.value = _roles;
     approved.value = true; // 測試模式視為已核准
     _markAuthResolved();
   };

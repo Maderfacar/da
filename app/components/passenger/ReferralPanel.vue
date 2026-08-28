@@ -92,7 +92,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 
@@ -258,7 +258,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   padding: 2px 8px;
   border-radius: var(--r-pill);
   background: var(--accent-a12);
-  color: var(--da-amber);
+  color: var(--accent-text);
   white-space: nowrap;
 }
 
@@ -272,7 +272,7 @@ section.PassengerReferralPanel(v-if="showPanel")
   font-family: var(--ff-label);
   font-size: var(--fs-body);
   font-weight: 700;
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .PassengerReferralPanel__item-expiry {

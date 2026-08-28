@@ -164,7 +164,7 @@ onMounted(ApiLoadOrders);
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -210,7 +210,7 @@ onMounted(ApiLoadOrders);
   &:hover { color: var(--surface-a72); }
 
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     &::after {
       content: '';
       position: absolute;

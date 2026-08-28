@@ -299,7 +299,7 @@ const DOC_LABEL: Record<string, string> = {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -383,7 +383,7 @@ const DOC_LABEL: Record<string, string> = {
   &.is-active {
     border-color: var(--accent-a50);
     background: var(--accent-a12);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   &.is-rejected.is-active {
@@ -467,7 +467,7 @@ const DOC_LABEL: Record<string, string> = {
   font-family: var(--ff-label);
   font-size: var(--fs-body-lg);
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminDrivers__info { flex: 1; min-width: 0; }
@@ -520,7 +520,7 @@ const DOC_LABEL: Record<string, string> = {
   padding: 4px 10px;
   border-radius: var(--r-sm);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -562,7 +562,7 @@ const DOC_LABEL: Record<string, string> = {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminDrivers__expand-grid {
@@ -706,7 +706,7 @@ const DOC_LABEL: Record<string, string> = {
   &.is-clear {
     background: var(--accent-a12);
     border-color: var(--accent-a40);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 

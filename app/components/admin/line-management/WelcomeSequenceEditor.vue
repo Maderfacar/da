@@ -487,7 +487,7 @@ const ClickSave = async (): Promise<void> => {
   padding: 2px 8px;
   border-radius: var(--r-xs);
 
-  &.is-text { background: var(--accent-a12); color: var(--da-amber); }
+  &.is-text { background: var(--accent-a12); color: var(--accent-text); }
   &.is-flex { background: var(--note-a15); color: var(--note); }
 }
 
@@ -520,7 +520,7 @@ const ClickSave = async (): Promise<void> => {
   &:not(:disabled):hover {
     background: var(--da-amber-pale);
     border-color: var(--da-amber);
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
   &.is-danger:not(:disabled):hover {
     background: var(--stop-a15);
@@ -599,7 +599,7 @@ const ClickSave = async (): Promise<void> => {
   &:disabled { opacity: 0.4; cursor: not-allowed; }
   &:not(:disabled):hover {
     border-color: var(--da-amber);
-    color: var(--da-amber);
+    color: var(--accent-text);
     background: var(--accent-a06);
   }
 }

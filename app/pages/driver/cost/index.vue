@@ -321,7 +321,7 @@ onMounted(ApiLoadCostSettings);
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -360,7 +360,7 @@ onMounted(ApiLoadCostSettings);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 10px;
 }
 
@@ -532,7 +532,7 @@ onMounted(ApiLoadCostSettings);
   color: var(--surface-a88);
   font-variant-numeric: tabular-nums;
 
-  .is-total & { color: var(--accent); font-size: var(--fs-body); font-weight: 700; }
+  .is-total & { color: var(--accent-text); font-size: var(--fs-body); font-weight: 700; }
 }
 
 // ── 儲存區（P30）──────────────────────────────────────────

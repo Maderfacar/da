@@ -164,7 +164,7 @@ const ClickWithdraw = (e: Event) => {
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .DriverDispatchedOrderCard__id {
@@ -190,7 +190,7 @@ const ClickWithdraw = (e: Event) => {
 
 .DriverDispatchedOrderCard__level.is-top {
   border-color: var(--accent-a50);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .DriverDispatchedOrderCard__bid-tag {
@@ -384,7 +384,7 @@ const ClickWithdraw = (e: Event) => {
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-out);
 

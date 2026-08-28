@@ -544,7 +544,7 @@ onMounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -663,7 +663,7 @@ onMounted(() => {
 }
 
 .OpenDialogAnnouncementEdit__required {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-left: 4px;
 }
 
@@ -778,7 +778,7 @@ onMounted(() => {
   &.is-active {
     border-color: var(--accent-a50);
     background: var(--accent-a12);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 

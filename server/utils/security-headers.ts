@@ -111,3 +111,60 @@ export function getSecurityHeaders(profile: SecurityProfile = 'default'): Record
     'Content-Security-Policy': buildCsp(profile),
   };
 }
+
+// ── 本機 plain-HTTP 例外（2026-08-29）────────────────────────────────────────
+//
+// `upgrade-insecure-requests` 與 HSTS 在 https 的 prod 上完全正確，但本機用
+// `node .output/server/index.mjs` 起的是 **plain HTTP**。Chromium 對 localhost 網開一面，
+// **WebKit 不會** —— 它老實把每一支 `/static/*.js`、`*.css` 升成 `https://localhost:3000`，
+// 於是全數 `SSL connect error`。
+//
+// 後果：auth e2e 的 iphone-14 project（devices['iPhone 14'] → WebKit）整批失敗，
+// 因為 JS 從沒載入 —— 不是紅在斷言，是紅在頁面根本沒 boot。
+//
+// ⚠ 視覺基線**不受影響**：`tests/e2e/visual/baseline.spec.ts` 早就自己發現過這件事，
+// 並在 spec 內用 `stripSecurityHeaders` 從 response header 把 CSP 拿掉（見該檔檔頭註解）。
+// 本 plugin 修的是 server 端，讓 auth e2e 這種沒有自帶 workaround 的套件也能跑；
+// 加上之後重拍視覺基線，51 張一張都沒變 —— 那是這件事已被繞過的證據。
+//
+// 判定條件刻意收得極窄：**只看 host 是不是 localhost / 127.0.0.1 / [::1]**。
+// prod 的 host 永遠不可能是這些，所以線上行為零改變 —— 不用 x-forwarded-proto 之類
+// 可被偽造或在某些代理下缺失的訊號來決定要不要拿掉安全標頭。
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+
+/** host header（可能帶 port）是否為本機。 */
+export function isLocalHost(host: string | undefined): boolean {
+  if (!host) return false;
+  // IPv6 字面值形如 `[::1]:3000`；先抓中括號段，否則以最後一個冒號切 port
+  const bracket = host.match(/^\[[^\]]+\]/);
+  const hostname = bracket ? bracket[0] : host.split(':')[0];
+  return LOCAL_HOSTNAMES.has((hostname ?? '').toLowerCase());
+}
+
+/**
+ * 把一份 security headers 調整成「plain-HTTP 本機可用」：
+ * 移除 HSTS、並從 CSP 拿掉 `upgrade-insecure-requests`。其餘標頭原封不動。
+ */
+export function relaxHeadersForLocalHttp(
+  headers: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'strict-transport-security') continue;
+    if (key.toLowerCase() === 'content-security-policy') {
+      out[key] = stripUpgradeInsecureRequests(value);
+      continue;
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+/** 從 CSP 字串移除 `upgrade-insecure-requests` directive（其餘 directive 與順序不變）。 */
+export function stripUpgradeInsecureRequests(csp: string): string {
+  return csp
+    .split(';')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0 && part.toLowerCase() !== 'upgrade-insecure-requests')
+    .join('; ');
+}

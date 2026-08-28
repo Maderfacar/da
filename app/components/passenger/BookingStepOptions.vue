@@ -499,7 +499,7 @@ const swiperBreakpoints = {
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -573,7 +573,7 @@ const swiperBreakpoints = {
       border-radius: var(--r-round);
       border: 1.5px solid var(--da-amber);
       background: none;
-      color: var(--da-amber);
+      color: var(--accent-text);
       font-size: var(--fs-h4);
       font-weight: 700;
       cursor: pointer;
@@ -640,7 +640,7 @@ const swiperBreakpoints = {
       border-radius: var(--r-round);
       border: 1.5px solid var(--da-amber);
       background: none;
-      color: var(--da-amber);
+      color: var(--accent-text);
       font-size: var(--fs-body-lg);
       font-weight: 700;
       cursor: pointer;
@@ -694,7 +694,7 @@ const swiperBreakpoints = {
     &:hover {
       background: var(--da-amber-pale);
       border-color: var(--da-amber);
-      color: var(--da-amber);
+      color: var(--accent-text);
     }
 
     &:active { transform: translateY(-50%) scale(0.9); }
@@ -846,7 +846,7 @@ const swiperBreakpoints = {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-wide);
-    color: var(--da-amber);
+    color: var(--accent-text);
     min-width: 56px;
   }
 
@@ -893,7 +893,7 @@ const swiperBreakpoints = {
 
   &__extra-price {
     font-size: var(--fs-label);
-    color: var(--da-amber);
+    color: var(--accent-text);
     font-family: var(--ff-ui);
   }
 

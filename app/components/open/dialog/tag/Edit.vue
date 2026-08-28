@@ -260,7 +260,7 @@ ElDialog(
 }
 
 .OpenDialogTagEdit__required {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-left: 4px;
 }
 

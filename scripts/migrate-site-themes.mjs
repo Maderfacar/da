@@ -43,7 +43,7 @@ const TARGET = {
     tokens: {
       'da-cream': '#EAE7E0',          // 骨白 · 頁面底
       'da-off-white': '#F5F3EE',      // 瓷白 · 卡片表面
-      'da-amber': '#7E6330',          // 古銅 · 主色（淺底上 5.07:1，過 AA）
+      'da-amber': '#9C7C3C',          // 古銅 · 主色（瓷白 3.53:1，非文字門檻 3.0）
       'da-amber-light': '#C9A961',    // 亮銅 · 深底上使用
       'da-amber-pale': '#F0E8D6',
       'da-dark': '#1A1917',           // 縞黑（對骨白 14.0:1）
@@ -68,7 +68,7 @@ const TARGET = {
       'da-stripe-yellow': '#6E5C36',
       'da-stripe-dark': '#171613',
     },
-    hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7E6330' },
+    hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7B6333' },
   },
 
   // 節日包：舊值是配著米白 #F5F2EC + 琥珀 #D4860A 定的，換骨白底後會失衡，

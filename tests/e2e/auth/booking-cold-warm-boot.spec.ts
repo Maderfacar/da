@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
 
 /**
  * Auth E2E 矩陣 — 場景 #5 + #6 — /booking 進得去 + 不出 race
@@ -52,6 +53,18 @@ test.describe('auth #5 — cold boot /booking 5s 內 mount', () => {
   }
 });
 
+// middleware 的導向是非同步的：goto 回來、URL 也已經是 /home 了，middleware 內那一發
+// navigateTo('/home', { replace: true }) 仍可能還在飛。Chromium 會把它併掉，**WebKit 不會**
+// —— 下一個 page.goto 會被它打斷，報 "interrupted by another navigation" / "Frame load
+// interrupted"。這不是網站有 race，是測試沒等前一段導向落地就發下一段。
+//
+// 所以每段導向後統一走這裡：先等 URL 真的到位，再等一小段安靜期讓殘餘導向跑完。
+const SETTLE_MS = 400;
+async function settleAt(page: Page, urlRe: RegExp): Promise<void> {
+  await page.waitForURL(urlRe, { timeout: 10_000 });
+  await page.waitForTimeout(SETTLE_MS);
+}
+
 test.describe('auth #6 — warm boot SPA 內 push→replace 不出 race', () => {
   test('home → booking 切換不卡 spinner、不踢 /login', async ({ page, loginAs }) => {
     await loginAs('passenger');
@@ -59,7 +72,7 @@ test.describe('auth #6 — warm boot SPA 內 push→replace 不出 race', () => 
     // 第一段：home 完整 mount（plugin boot + auth state 就緒）
     await page.goto('/home', { waitUntil: 'load', timeout: 15_000 });
     await expect(page.locator(SPINNER)).toHaveCount(0, { timeout: 5_000 });
-    expect(page.url()).toMatch(/\/home/);
+    await settleAt(page, /\/home/);
 
     // 第二段：warm 狀態切到 /booking
     // 此時 store 內已有 user/roles/authResolved，middleware/auth 不該再等 12s WaitForAuthResolved
@@ -79,16 +92,17 @@ test.describe('auth #6 — warm boot SPA 內 push→replace 不出 race', () => 
 
     await page.goto('/home', { waitUntil: 'load' });
     await expect(page.locator(SPINNER)).toHaveCount(0, { timeout: 5_000 });
+    await settleAt(page, /\/home/);
 
     // 5 輪 ping-pong；每輪 < 5s
     for (let i = 0; i < 5; i++) {
       await page.goto('/booking', { waitUntil: 'load' });
       await expect(page.locator(SPINNER)).toHaveCount(0, { timeout: 5_000 });
-      expect(page.url()).toMatch(/\/booking/);
+      await settleAt(page, /\/booking/);
 
       await page.goto('/home', { waitUntil: 'load' });
       await expect(page.locator(SPINNER)).toHaveCount(0, { timeout: 5_000 });
-      expect(page.url()).toMatch(/\/home/);
+      await settleAt(page, /\/home/);
     }
   });
 });

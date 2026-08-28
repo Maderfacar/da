@@ -366,7 +366,7 @@ onMounted(() => {
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h4);
   letter-spacing: var(--ls-label);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -434,7 +434,7 @@ onMounted(() => {
   font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: var(--ls-label);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .SettingsDiscountCodes__grid {

@@ -110,7 +110,7 @@ export const isSafeThemeImageUrl = (v: unknown): v is string =>
 const DEFAULT_TOKENS: Record<DaTokenKey, string> = {
   'da-cream': '#EAE7E0',
   'da-off-white': '#F5F3EE',
-  'da-amber': '#7E6330',
+  'da-amber': '#9C7C3C',
   'da-amber-light': '#C9A961',
   'da-amber-pale': '#F0E8D6',
   'da-dark': '#1A1917',
@@ -152,7 +152,9 @@ export const DEFAULT_SITE_THEMES: SiteTheme[] = [
     name: { zh: '經典（預設）', en: 'Classic (Default)', ja: 'クラシック（既定）' },
     tokens: { ...DEFAULT_TOKENS },
     tokensDark: { ...DEFAULT_TOKENS_DARK },
-    hero: {},
+    // tagColor 明寫深階：hero tag 是 12px uppercase kicker，而主色 #9C7C3C 只有 3.53:1。
+    // 不寫的話會回退到 tokens['da-amber'] —— 那是給面／圖示／邊框用的亮階。
+    hero: { tagColor: '#7B6333' },
     enabled: true,
     sortOrder: 0,
     isDefault: true,

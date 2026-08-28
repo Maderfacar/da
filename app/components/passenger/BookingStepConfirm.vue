@@ -536,7 +536,7 @@ const ClickSubmit = () => {
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -574,7 +574,7 @@ const ClickSubmit = () => {
     font-weight: 700;
     letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
 
   &__field {
@@ -638,7 +638,7 @@ const ClickSubmit = () => {
     &.is-on {
       background: var(--da-amber-pale);
       border-color: var(--da-amber);
-      color: var(--da-amber);
+      color: var(--accent-text);
       font-weight: 700;
     }
   }
@@ -742,7 +742,7 @@ const ClickSubmit = () => {
     border-radius: var(--r-pill);
     background: var(--da-amber-pale);
     border: 1px solid var(--da-amber);
-    color: var(--da-amber);
+    color: var(--accent-text);
   }
 
   &__divider {
@@ -767,7 +767,7 @@ const ClickSubmit = () => {
     font-weight: 700;
     letter-spacing: var(--ls-caps-lg);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
     margin-bottom: 4px;
   }
 

@@ -253,7 +253,7 @@ footer.CommonFooter
   font-weight: 700;
   letter-spacing: var(--ls-caps-lg);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -278,7 +278,7 @@ footer.CommonFooter
 }
 
 .CommonFooter__logo span {
-  color: var(--da-amber);
+  color: var(--accent-text);
 }
 
 .CommonFooter__tagline {
@@ -295,7 +295,7 @@ footer.CommonFooter
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
 }
 
@@ -318,7 +318,7 @@ footer.CommonFooter
 }
 
 .CommonFooter__support-ext {
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-left: 6px;
 }
 

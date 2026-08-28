@@ -593,7 +593,7 @@ onMounted(() => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -755,7 +755,7 @@ onMounted(() => {
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a06);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -889,7 +889,7 @@ onMounted(() => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-label);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   &.is-rejected &-title { color: var(--stop); }
@@ -907,7 +907,7 @@ onMounted(() => {
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a06);
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;

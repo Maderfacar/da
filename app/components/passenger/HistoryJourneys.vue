@@ -81,7 +81,7 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 
@@ -156,7 +156,7 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
 }
 
 .PassengerHistoryJourneys__link {
-  color: var(--da-amber);
+  color: var(--accent-text);
   text-decoration: none;
   &:hover { text-decoration: underline; }
 }

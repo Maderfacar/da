@@ -212,7 +212,7 @@ Teleport(to="body")
   align-items: center;
   justify-content: center;
   background: var(--accent-a20);
-  color: var(--da-amber);
+  color: var(--accent-text);
   font-family: var(--ff-label);
   font-size: var(--fs-h4);
   font-weight: 700;
@@ -275,7 +275,7 @@ Teleport(to="body")
 
   &.is-active {
     background: var(--accent-a12);
-    color: var(--da-amber);
+    color: var(--accent-text);
     font-weight: 600;
   }
 

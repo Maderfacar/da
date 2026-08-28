@@ -126,7 +126,7 @@ const FormatTime = (iso: string | null): string => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -281,7 +281,7 @@ const FormatTime = (iso: string | null): string => {
 
   &:hover:not(:disabled) {
     background: var(--surface-a06);
-    color: var(--accent);
+    color: var(--accent-text);
     border-color: var(--accent-a30);
   }
   &:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -88,7 +88,7 @@ onMounted(ApiGetForecast);
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .AirportForecastWidget__date {

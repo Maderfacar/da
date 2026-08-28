@@ -579,7 +579,7 @@ const mountainHit = computed<boolean>(() => {
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 10px;
   display: flex;
   align-items: center;

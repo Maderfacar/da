@@ -16,7 +16,10 @@ export type Identity =
   | 'adminWith2fa'
   // 2026-08-17：司機 OA 進站閃 500 的回報者身分 —— passenger + driver + admin 三合一。
   // 既有 6 種身分全是單一角色，完全涵蓋不到多重身分的分流路徑（正是出事的那條）。
-  | 'multiRoleDriverAdmin';
+  | 'multiRoleDriverAdmin'
+  // 2026-08-29：roles 載入失敗（Ensure* 靜默吞掉 → roles 留空）。
+  // 這是 UseRolesLoadGuard 5 秒 timeout UI 唯一的觸發條件，沒有這個身分就測不到。
+  | 'rolesLoadFailed';
 
 type IdentityPayload = {
   roles: ('passenger' | 'driver' | 'admin')[];
@@ -56,6 +59,10 @@ const IDENTITIES: Readonly<Record<Identity, IdentityPayload>> = {
     patch: { approved: true, admin2faEnrolled: true, admin2faSessionVerified: true },
     localStorage: { da_admin_2fa_session: 'e2e-mock-2fa-session-token' },
   },
+  rolesLoadFailed: {
+    roles: [],
+    patch: { approved: false },
+  },
   multiRoleDriverAdmin: {
     roles: ['passenger', 'driver', 'admin'],
     patch: { approved: true, admin2faEnrolled: true, admin2faSessionVerified: true },
@@ -88,7 +95,7 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
       // prod Firestore site_themes）。不同步的話，乘客端 e2e 與視覺基線會拍到舊色，
       // 而 admin/driver 拍到新色 —— 是 fixture 造成的假象，不是真的破圖。
       tokens: {
-        'da-cream': '#EAE7E0', 'da-off-white': '#F5F3EE', 'da-amber': '#7E6330',
+        'da-cream': '#EAE7E0', 'da-off-white': '#F5F3EE', 'da-amber': '#9C7C3C',
         'da-amber-light': '#C9A961', 'da-amber-pale': '#F0E8D6', 'da-dark': '#1A1917',
         'da-dark-mid': '#26241F', 'da-gray': '#6D6A62', 'da-gray-light': '#868073',
         'da-gray-pale': '#D6D1C7', 'da-stripe-yellow': '#B79A5E', 'da-stripe-dark': '#26241F',
@@ -100,7 +107,7 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
         'da-dark-mid': '#C6C1B7', 'da-gray': '#A29D93', 'da-gray-light': '#7E7A71',
         'da-gray-pale': '#34312C', 'da-stripe-yellow': '#6E5C36', 'da-stripe-dark': '#171613',
       },
-      hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7E6330' },
+      hero: { stripeYellow: '#B79A5E', stripeDark: '#26241F', tagColor: '#7B6333' },
     },
     status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   }),

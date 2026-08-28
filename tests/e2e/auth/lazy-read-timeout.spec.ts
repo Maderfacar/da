@@ -8,79 +8,54 @@ import { test, expect } from './fixtures';
  *     roles 留空。app/composables/use-roles-load-guard.ts 提供 5s timeout 兜底：
  *     state 'loading'→'failed' → front-desk layout 顯示「載入失敗，請重新登入」按鈕。
  *
- * 涵蓋 layout：front-desk（layouts/front-desk.vue L154-159）
+ * 涵蓋 layout：front-desk（layouts/front-desk.vue）
  *   class `.LayoutFrontDesk__roles-failed` 容器
  *   class `.LayoutFrontDesk__roles-failed-btn` 按鈕 → 點擊 navigateTo('/login', { replace: true })
  *
- * Mock 環境 simulate：
- *   - MockSignIn 預設 fallback ['passenger']（store-auth L715），無法直接傳空 roles
- *   - 透過 __authStore setter 在 plugin MockSignIn 跑完後 setTimeout 0 清空 roles
+ * ── 2026-08-29 重寫：原版從寫出來就不可能通過 ──────────────────────────────
+ *
+ * 原版先 `loginAs('passenger')`（roles=['passenger']），再用 `__authStore` setter +
+ * `setTimeout(0)` 事後把 roles 清空，想藉此 simulate「Ensure* 失敗」。兩個致命點：
+ *
+ *   1. `MockSignIn` 當時寫死「空陣列 → ['passenger']」，所以根本 mock 不出 roles=[]；
+ *   2. `UseRolesLoadGuard` 的初始 state 在 roles 非空時就是 'ready'，而它的 watch
+ *      **只往 'ready' 走、不會走回去**。等 setTimeout 跑到時 guard 早已 'ready'，
+ *      5 秒 timer 從一開始就沒被排上（`if (state.value === 'loading')` 才排）。
+ *
+ * 正解是讓 roles **從頭就是空的** —— 那才是 prod 真正的失敗形狀。
+ * 新增 `rolesLoadFailed` 身分（roles: []），並把 MockSignIn 的內建 fallback 拿掉
+ * （預設值本來就在呼叫端）。
  */
 
 const ROLES_FAILED = '.LayoutFrontDesk__roles-failed';
 const RETRY_BTN = '.LayoutFrontDesk__roles-failed-btn';
-const SPINNER = '.LayoutFrontDesk__content-loading';
 // 5s timeout + buffer，給渲染 + microtask 一些餘裕
-const FAILED_UI_TIMEOUT = 8_000;
+const FAILED_UI_TIMEOUT = 9_000;
 
 test.describe('auth #10 — lazy read 失敗 5s timeout 顯示重試 UI', () => {
   test('roles 空陣列 5s 後顯示「載入失敗，請重新登入」', async ({ page, loginAs }) => {
-    await loginAs('passenger');
-
-    // 在 store 賦給 window 後立刻清空 roles —— microtask 排程確保
-    // MockSignIn（同步）已跑完
-    await page.addInitScript(() => {
-      let _store: unknown = null;
-      Object.defineProperty(window, '__authStore', {
-        configurable: true,
-        get: () => _store,
-        set: (s: { roles?: unknown[]; $patch?: (p: unknown) => void }) => {
-          _store = s;
-          // 等同個事件 loop tick 結束後清 roles，simulate「Firestore Ensure* 失敗 → roles 留空」
-          setTimeout(() => {
-            try {
-              if (s.$patch) s.$patch({ roles: [] });
-              else s.roles = [];
-            } catch { /* Pinia proxy 不接受時 fallback 取 .value */ }
-          }, 0);
-        },
-      });
-    });
-
+    await loginAs('rolesLoadFailed');
     await page.goto('/orders', { waitUntil: 'load', timeout: 15_000 });
 
-    // spinner 應在 authResolved 後消失（authResolved=true by MockSignIn）
-    await expect(page.locator(SPINNER)).toHaveCount(0, { timeout: 3_000 });
-
-    // 5s + buffer 後應出現 roles-failed UI
     await expect(page.locator(ROLES_FAILED)).toBeVisible({ timeout: FAILED_UI_TIMEOUT });
     await expect(page.locator(RETRY_BTN)).toBeVisible();
     await expect(page.locator(RETRY_BTN)).toContainText('重新登入');
   });
 
-  test('點「重新登入」按鈕導向 /login', async ({ page, loginAs }) => {
+  test('roles 正常載入時不該出現這個 UI（守衛不誤觸發）', async ({ page, loginAs }) => {
     await loginAs('passenger');
-
-    await page.addInitScript(() => {
-      let _store: unknown = null;
-      Object.defineProperty(window, '__authStore', {
-        configurable: true,
-        get: () => _store,
-        set: (s: { roles?: unknown[]; $patch?: (p: unknown) => void }) => {
-          _store = s;
-          setTimeout(() => {
-            try {
-              if (s.$patch) s.$patch({ roles: [] });
-              else s.roles = [];
-            } catch { /* ignore */ }
-          }, 0);
-        },
-      });
-    });
-
     await page.goto('/orders', { waitUntil: 'load', timeout: 15_000 });
-    await expect(page.locator(RETRY_BTN)).toBeVisible({ timeout: FAILED_UI_TIMEOUT });
 
+    // 等超過 5 秒 timeout，確認它不是「還沒到時間」而是真的不會出現
+    await page.waitForTimeout(FAILED_UI_TIMEOUT);
+    await expect(page.locator(ROLES_FAILED)).toHaveCount(0);
+  });
+
+  test('點「重新登入」按鈕導向 /login', async ({ page, loginAs }) => {
+    await loginAs('rolesLoadFailed');
+    await page.goto('/orders', { waitUntil: 'load', timeout: 15_000 });
+
+    await expect(page.locator(RETRY_BTN)).toBeVisible({ timeout: FAILED_UI_TIMEOUT });
     await page.locator(RETRY_BTN).click();
 
     // navigateTo('/login', { replace: true })

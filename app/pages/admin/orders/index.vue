@@ -2111,7 +2111,7 @@ onMounted(() => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2158,7 +2158,7 @@ onMounted(() => {
   &.is-active {
     border-color: var(--accent-a50);
     background: var(--accent-a12);
-    color: var(--accent);
+    color: var(--accent-text);
   }
 }
 
@@ -2177,7 +2177,7 @@ onMounted(() => {
   border-radius: var(--r-pill);
   border: 1px solid var(--accent-a50);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   margin-left: auto;
   transition: all var(--dur-fast) var(--ease-out);
@@ -2273,7 +2273,7 @@ onMounted(() => {
   white-space: nowrap;
 
   &.is-time { color: var(--surface-a82); font-weight: 700; }
-  &.is-fare { font-weight: 700; color: var(--accent); }
+  &.is-fare { font-weight: 700; color: var(--accent-text); }
   // 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
   &.is-type,
   &.is-passenger,
@@ -2449,7 +2449,7 @@ onMounted(() => {
   border-radius: var(--r-pill);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a20);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .PageAdminOrders__unassigned {
@@ -2467,7 +2467,7 @@ onMounted(() => {
 
   &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
   &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
-  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
+  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent-text); }
   &.is-done      { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
   &.is-cancel    { background: var(--stop-a08); border: 1px solid var(--stop-a15); color: var(--stop); }
 }
@@ -2484,7 +2484,7 @@ onMounted(() => {
   border-radius: var(--r-pill);
 
   &.is-pending  { background: var(--stop-a08);  border: 1px solid var(--stop-a30);  color: var(--stop); }
-  &.is-progress { background: var(--accent-a12);       border: 1px solid var(--accent-a30);         color: var(--accent); }
+  &.is-progress { background: var(--accent-a12);       border: 1px solid var(--accent-a30);         color: var(--accent-text); }
   // Phase 1F：重派次數徽章
   &.is-rematch  { background: var(--note-a15); border: 1px solid var(--note-a30); color: var(--note); margin-left: 4px; }
 }
@@ -2528,7 +2528,7 @@ onMounted(() => {
 }
 
 .PageAdminOrders__history-round {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -2587,7 +2587,7 @@ onMounted(() => {
 }
 
 .PageAdminOrders__dispatch-active {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -2668,7 +2668,7 @@ onMounted(() => {
 
   &.is-pending   { background: var(--wait-a15); border: 1px solid var(--wait-a30); color: var(--wait); }
   &.is-confirmed { background: var(--note-a08); border: 1px solid var(--note-a30); color: var(--note); }
-  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent); }
+  &.is-progress  { background: var(--accent-a12); border: 1px solid var(--accent-a30); color: var(--accent-text); }
   &.is-done      { background: var(--good-a08); border: 1px solid var(--good-a30); color: var(--good); }
   &.is-cancel    { background: var(--stop-a08); border: 1px solid var(--stop-a15); color: var(--stop); }
 }
@@ -2875,7 +2875,7 @@ select option:disabled {
   color: var(--surface-raised);
   text-align: right;
 
-  &.is-fare { color: var(--accent); font-weight: 700; }
+  &.is-fare { color: var(--accent-text); font-weight: 700; }
   &.is-muted { color: var(--surface-a30); }
 }
 
@@ -3353,7 +3353,7 @@ select option:disabled {
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -3467,7 +3467,7 @@ select option:disabled {
   border-radius: var(--r-sm);
   border: 1px solid var(--accent-a40);
   background: var(--accent-a12);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   white-space: nowrap;
   transition: all var(--dur-fast) var(--ease-out);

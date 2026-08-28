@@ -179,7 +179,7 @@ const FormatDate = (iso: string): string => $dayjs(iso).format('YYYY/MM/DD');
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;

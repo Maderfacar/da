@@ -13,9 +13,10 @@ import { expectGuardedRouteSafe } from './_helpers';
  */
 
 const GUARDED_ROUTES = [
-  { end: 'passenger', path: '/booking' },
+  // /booking 自 b0ff9a6 起是公開路由（訪客可填、送出才要身分）→ 移到 public-routes.spec
+  // /profile 不存在（乘客個人資料已併進 /orders）→ 換成同樣受保護的 /notifications
   { end: 'passenger', path: '/orders' },
-  { end: 'passenger', path: '/profile' },
+  { end: 'passenger', path: '/notifications' },
   { end: 'driver', path: '/driver/dashboard' },
   { end: 'admin', path: '/admin/orders' },
 ];

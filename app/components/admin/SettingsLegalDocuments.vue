@@ -188,7 +188,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 
   &:hover { color: var(--surface-raised); }
   &.is-active {
-    color: var(--accent);
+    color: var(--accent-text);
     border-bottom-color: var(--accent);
   }
 }
@@ -210,7 +210,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 }
 
 .SettingsLegalDocuments__meta-version {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
   letter-spacing: var(--ls-wide);
 }
@@ -295,7 +295,7 @@ const currentDoc = computed(() => docs.value[activeKey.value]);
 }
 
 .SettingsLegalDocuments__public-link {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
   font-weight: 600;
   &:hover { text-decoration: underline; }

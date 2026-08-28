@@ -530,7 +530,7 @@ const ClickNext = () => {
     font-weight: 700;
     letter-spacing: var(--ls-kicker);
     text-transform: uppercase;
-    color: var(--da-amber);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -712,7 +712,7 @@ const ClickNext = () => {
     font-size: var(--fs-label);
     font-weight: 700;
     letter-spacing: var(--ls-wide);
-    color: var(--da-amber);
+    color: var(--accent-text);
     cursor: pointer;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -807,7 +807,7 @@ const ClickNext = () => {
     &.is-active {
       border-color: var(--da-amber);
       background: var(--da-amber-pale);
-      color: var(--da-amber);
+      color: var(--accent-text);
     }
   }
 

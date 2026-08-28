@@ -819,7 +819,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   border-radius: var(--r-sm);
   background: var(--accent-a12);
   border: 1px solid var(--accent-a40);
-  color: var(--accent);
+  color: var(--accent-text);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out);
 
@@ -934,7 +934,7 @@ const ClickDelete = async (v: FleetVehicleDto) => {
   &.is-edit {
     background: var(--accent-a12);
     border-color: var(--accent-a30);
-    color: var(--accent);
+    color: var(--accent-text);
     &:hover:not(:disabled) { background: var(--accent-a20); }
   }
 

@@ -296,7 +296,7 @@ onUnmounted(() => {
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
 
-  &:hover { color: var(--da-amber); }
+  &:hover { color: var(--accent-text); }
 }
 
 // ── 載入中 ───────────────────────────────────────────────
@@ -353,7 +353,7 @@ onUnmounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -407,7 +407,7 @@ onUnmounted(() => {
   font-size: var(--fs-label);
   font-weight: 700;
   letter-spacing: var(--ls-kicker);
-  color: var(--da-amber);
+  color: var(--accent-text);
   margin-bottom: 12px;
 
   .is-driver & { color: var(--da-amber-light); }
