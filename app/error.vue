@@ -38,7 +38,18 @@ const isDriverPath = requestUrl.pathname.startsWith('/driver');
 const redirectTarget = isDriverPath ? '/driver/dashboard' : '/';
 const redirectLabel = isDriverPath ? '回到司機後台' : '回到首頁';
 
-// 倒數自動跳轉（僅 driver 路徑啟用，乘客端保留手動點擊以保留錯誤資訊）
+// 倒數自動跳轉。
+//
+// 原本只有 driver 路徑啟用，乘客端刻意保留手動點擊「以保留錯誤資訊」。
+// 2026-08-29 加上乘客端 404：**404 沒有錯誤資訊可以保留** —— 訊息在本頁 onMounted
+// 就已寫進 client_error_logs，畫面上留著也只是一句「Page not found」。
+// 而死路由不只從站內連結來：LIFF SDK 會自己消化 `liff.state` 並直接導頁，那一步發生在
+// 我們的 middleware 之外（未登入者更是在 role middleware early-return 之前就被帶走），
+// 攔不到。所以錯誤頁本身要能把人送回去，這是那條路徑上唯一還握得住的地方。
+// 5xx 維持手動 —— 那種才需要使用者看得到、講得出來。
+const isNotFound = props.error?.statusCode === 404;
+// 已經在目標頁上就不自動跳，避免「目標頁自己壞掉」時來回彈。
+const autoRedirect = (isDriverPath || isNotFound) && requestUrl.pathname !== redirectTarget;
 const countdown = ref(3);
 let timer: ReturnType<typeof setInterval> | null = null;
 
@@ -48,7 +59,7 @@ const HandleError = () => {
 };
 
 onMounted(() => {
-  if (!isDriverPath) return;
+  if (!autoRedirect) return;
   timer = setInterval(() => {
     countdown.value--;
     if (countdown.value <= 0) {
@@ -67,7 +78,7 @@ onUnmounted(() => {
 #Error
   p.title {{ props.error.statusCode }}
   p.msg {{ props.error.statusMessage }}
-  p.countdown(v-if="isDriverPath") {{ countdown }} 秒後自動返回司機後台
+  p.countdown(v-if="autoRedirect") {{ countdown }} 秒後自動{{ isDriverPath ? '返回司機後台' : '回到首頁' }}
   p.go-home-btn(
     @click="HandleError"
   ) {{ redirectLabel }}
