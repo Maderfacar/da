@@ -31,9 +31,13 @@ import { stripDeepLinkParams } from '~shared/auth/deep-link';
 import { clearEntryIntent, readEntryIntent, rememberEntryIntent } from '~shared/auth/entry-intent';
 import { noteRedirect, resetBreaker } from '~shared/auth/redirect-breaker';
 import { logMiddleware } from '~/utils/error-log';
+import { MakeRouteExists } from '~/utils/route-exists';
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
+  // 深連結目標可能指向不存在的頁（舊版路徑、被合併掉的頁、外部亂帶的 liff.state）。
+  // 導過去只會 404，而在 LIFF 裡 404 + 返回鍵會演變成「重跑 OAuth → 再被導回同一個 404」的迴圈。
+  const routeExists = MakeRouteExists(useRouter());
 
   // 認證根治 P1：先確保 server cookie session-check 已跑（sticky，auth.ts 多半已觸發 → 這裡 no-op），
   // 讓 roles / approved 來源與 server 一致（Firestore 即時 SSOT），避免只靠 Firebase claims 舊值 gate。
@@ -130,15 +134,26 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // 深連結目標若該 user 無權進入（如 passenger 帶 /driver/trip），不再盲目導過去對踢，
   // 改走 resolveAuthTarget 授權落點（register/home）；並把深連結 query 從 URL 剝掉，消費一次。
   if (isLoginEntry(to.path)) {
-    const liffTarget = resolveLiffTarget({
+    // rawLiffTarget = URL 上實際帶了什麼；liffTarget = 其中真的對得到頁面的那些。
+    // 兩者要分開：剝 query 看的是「有沒有帶」，導向看的是「導得過去嗎」。
+    const rawLiffTarget = resolveLiffTarget({
       query: to.query as Record<string, string | string[] | null | undefined>,
       pathname: import.meta.client ? window.location.pathname : undefined,
     });
+    const liffTarget = rawLiffTarget && routeExists(rawLiffTarget) ? rawLiffTarget : '';
+    if (rawLiffTarget && !liffTarget) {
+      logMiddleware({
+        event: 'middleware.deep-link.dead-route',
+        severity: 'warn',
+        message: `深連結目標無對應頁面，已忽略：${rawLiffTarget}`,
+        metadata: { from: to.path, deadTarget: rawLiffTarget },
+      });
+    }
     // 2026-08-17：深連結一出現就記進 entry-intent。URL 稍後會被 stripDeepLinkParams 剝乾淨，
     // 但 LIFF SDK init 完成後 middleware 會在 `/` 再解析一次；沒有這份意圖，第二輪就會落回
     // 角色預設，把司機 OA 進來的多重身分者丟去 /admin/orders（prod log 實測）。
-    if (liffTarget) rememberEntryIntent(liffTarget);
-    const intent = readEntryIntent();
+    if (rawLiffTarget) rememberEntryIntent(rawLiffTarget, Date.now(), routeExists);
+    const intent = readEntryIntent(Date.now(), routeExists);
     // 本輪 URL 沒有深連結時，沿用前一輪記下的目標與端別
     const effectiveTarget = liffTarget || intent?.target || '';
     const dest = resolveDestination({
@@ -149,8 +164,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
       liffTarget: effectiveTarget,
       entryEnd: intent?.end,
     });
-    // 深連結已被消費（無論採用與否）→ 從 URL 剝掉，避免殘留 query 反覆觸發導向
-    if (liffTarget) stripDeepLinkParams();
+    // 深連結已被消費（無論採用與否）→ 從 URL 剝掉，避免殘留 query 反覆觸發導向。
+    // ⚠ 用 rawLiffTarget 不是 liffTarget：死路由**更**要剝乾淨，否則它會留在 URL 上
+    // 讓每一輪 middleware 重新解析、重新導向，正是 LIFF 404 迴圈的燃料。
+    if (rawLiffTarget) stripDeepLinkParams();
 
     if (dest && dest !== to.path) {
       return guardedRedirect(dest, 'middleware.redirect.login-entry', `${to.path} → ${dest}`, {

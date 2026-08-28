@@ -136,3 +136,51 @@ describe('rememberEntryEnd（只記端別、不帶目標）', () => {
     expect(readEntryIntent(1000 + ENTRY_INTENT_TTL_MS)).toBeNull();
   });
 });
+
+// ── 死路由防護（2026-08-29）────────────────────────────────────────────────
+// 現場：tab bar 指向不存在的 /profile → 404 → LIFF 返回鍵重進站 → middleware 依 intent
+// 又導回 /profile → 再 404。中間 LIFF 重跑 OAuth（舊 code 重用），prod 實測卡 104 秒。
+// 規則：死路由降級成「只知端別」，不是整份丟掉 —— 端別仍要保住，否則多重身分者會落回
+// 角色預設被丟去 admin 端（即 2026-08-17 修過的那顆）。
+const routeExists = (path: string) => path.split('?')[0] !== '/profile';
+
+describe('死路由降級', () => {
+  it('makeEntryIntent：目標無對應頁面時只保留端別', () => {
+    expect(makeEntryIntent('/profile', 1000, routeExists)).toEqual({ target: '', end: 'passenger', at: 1000 });
+  });
+
+  it('makeEntryIntent：死路由仍由原路徑推導端別（保住 driver，不落回角色預設）', () => {
+    expect(makeEntryIntent('/driver/gone', 1000, () => false)).toEqual({
+      target: '',
+      end: 'driver',
+      at: 1000,
+    });
+  });
+
+  it('makeEntryIntent：存在的路由不受影響', () => {
+    expect(makeEntryIntent('/orders', 1000, routeExists)).toEqual({ target: '/orders', end: 'passenger', at: 1000 });
+  });
+
+  it('不傳 routeExists 時維持舊行為（不檢查）', () => {
+    expect(makeEntryIntent('/profile', 1000)).toEqual({ target: '/profile', end: 'passenger', at: 1000 });
+  });
+
+  it('帶 query 的死路由一樣被擋', () => {
+    expect(makeEntryIntent('/profile?liff.hback=2', 1000, routeExists)?.target).toBe('');
+  });
+
+  it('rememberEntryIntent：死路由不會洗掉前一輪記到的正確目標', () => {
+    rememberEntryIntent('/driver/trip', 1000, routeExists);
+    rememberEntryIntent('/profile', 1100, routeExists);
+
+    expect(readEntryIntent(1200, routeExists)?.target).toBe('/driver/trip');
+  });
+
+  it('readEntryIntent：記憶體裡的死路由在讀取時也會被降級', () => {
+    rememberEntryIntent('/profile', 1000);
+
+    const intent = readEntryIntent(1100, routeExists);
+    expect(intent?.target).toBe('');
+    expect(intent?.end).toBe('passenger');
+  });
+});

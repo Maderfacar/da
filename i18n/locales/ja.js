@@ -38,6 +38,7 @@ export default {
     fleet: '車種',
     orders: '注文',
     profile: 'マイページ',
+    news: 'お知らせ',
     ariaLabel: 'メインナビゲーション',
   },
   // お知らせ（P37 Phase 5）

@@ -35,13 +35,19 @@ const showContent = computed(
 
 // ── 底部四格 Tab Bar（介面方向提案第二畫面）─────────────
 // 2026-08-28 由 Brain AI 拍板加回。b99da52 當初移除的是 5-tab emoji 版
-// （含已刪除的 /upcoming），這一版是提案的四格：首頁／訂車／訂單／我的。
+// （含已刪除的 /upcoming），這一版是提案的四格。
 // drawer 保留 —— tab 收四個高頻動作，其餘入口仍在 drawer。
+//
+// ⚠ 2026-08-29 修：第四格原本是「我的」→ `/profile`，**那頁不存在**。
+// 乘客個人資料早就併進 `/orders`（見該頁檔頭「原 /orders + /profile 合併」，
+// 頭像卡 / 我的旅程 / 客服資訊三個元件都在那裡），CLAUDE.md 的路由表沒跟上。
+// 死路由在 LIFF 裡不只是 404，它會被記進 entry-intent 反覆重放成迴圈（見 route-exists.ts）。
+// 四格若要各自不同目的地，第四格改成既有的「消息」——它在 drawer 本來就有，且帶未讀紅點。
 const TABS = [
-  { id: 'home',    path: '/home',    labelKey: 'tab.home',    icon: 'mdi:home-outline' },
-  { id: 'booking', path: '/booking', labelKey: 'tab.book',    icon: 'mdi:car-outline' },
-  { id: 'orders',  path: '/orders',  labelKey: 'tab.orders',  icon: 'mdi:file-document-outline' },
-  { id: 'profile', path: '/profile', labelKey: 'tab.profile', icon: 'mdi:account-outline' },
+  { id: 'home',    path: '/home',          labelKey: 'tab.home',   icon: 'mdi:home-outline' },
+  { id: 'booking', path: '/booking',       labelKey: 'tab.book',   icon: 'mdi:car-outline' },
+  { id: 'orders',  path: '/orders',        labelKey: 'tab.orders', icon: 'mdi:file-document-outline' },
+  { id: 'news',    path: '/notifications', labelKey: 'tab.news',   icon: 'mdi:bell-outline' },
 ] as const;
 
 // 作用中分頁：走最長前綴匹配，並先剝掉 i18n 的 /en /ja 前綴
@@ -68,7 +74,6 @@ const PASSENGER_TITLE_MAP: Readonly<Record<string, string>> = {
   '/fleet': 'meta.title.passenger.fleet',
   '/fare': 'meta.title.passenger.fare',
   '/faq': 'meta.title.passenger.faq',
-  '/profile': 'meta.title.passenger.profile',
   '/notifications': 'meta.title.passenger.notifications',
   '/login': 'meta.title.passenger.login',
   '/referral': 'meta.title.passenger.referral',

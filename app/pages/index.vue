@@ -20,12 +20,14 @@
 import { resolveAuthTarget } from '~shared/utils/auth-target';
 import { resolveLiffTarget } from '~shared/utils/liff-target';
 import { readEntryIntent, rememberEntryIntent } from '~shared/auth/entry-intent';
+import { MakeRouteExists } from '~/utils/route-exists';
 
 definePageMeta({ layout: 'marketing', middleware: ['role'] });
 
 const { t } = useI18n();
 const authStore = StoreAuth();
 const route = useRoute();
+const _routeExists = MakeRouteExists(useRouter());
 
 // ── SEO/AEO meta（W1）─────────────────────────────────────
 // 三語對齊 i18n.locale；useSeoMeta 自動補 og:title/og:description fallback。
@@ -79,9 +81,12 @@ watch(
       query: route.query as Record<string, string | string[] | null | undefined>,
       pathname: typeof window === 'undefined' ? undefined : window.location.pathname,
     });
-    if (liffTarget) rememberEntryIntent(liffTarget);
-    const intent = readEntryIntent();
-    const effectiveTarget = liffTarget || intent?.target || '';
+    // 2026-08-29：與 middleware/role 同一道防護 —— 深連結目標若沒有對應頁面就不採用。
+    // 這個 watch 是 middleware 的兜底，兩邊都得擋，否則死路由會從這裡漏過去。
+    if (liffTarget) rememberEntryIntent(liffTarget, Date.now(), _routeExists);
+    const intent = readEntryIntent(Date.now(), _routeExists);
+    const liveLiffTarget = liffTarget && _routeExists(liffTarget) ? liffTarget : '';
+    const effectiveTarget = liveLiffTarget || intent?.target || '';
     if (effectiveTarget && effectiveTarget !== route.path) {
       navigateTo(effectiveTarget, { replace: true });
       return;

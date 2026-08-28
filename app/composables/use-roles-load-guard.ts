@@ -11,8 +11,7 @@
 //
 // 使用範圍（Brain AI 拍板，2026-06-18）：只套乘客端
 //   - app/layouts/front-desk.vue
-//   - app/pages/profile/index.vue
-//   - app/pages/orders/index.vue
+//   - app/pages/orders/index.vue（個人資料已併入此頁；原 app/pages/profile 已不存在）
 import { logLifecycle } from '~/utils/error-log';
 
 const ROLES_LOAD_TIMEOUT_MS = 5_000;

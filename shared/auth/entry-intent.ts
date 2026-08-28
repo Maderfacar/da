@@ -44,12 +44,32 @@ export function entryEndOf(target: string): EntryEnd {
   return target === '/driver' || target.startsWith('/driver/') ? 'driver' : 'passenger';
 }
 
-/** 由目標建立意圖；target 非站內相對路徑時回 null（呼叫端應已淨化，此處為防禦性）。 */
-export function makeEntryIntent(target: string, now: number = Date.now()): EntryIntent | null {
+/**
+ * 目標路徑是否真的存在對應頁面。由 app 層注入（`shared/` 拿不到 Vue Router）。
+ * 不注入＝不檢查，維持舊行為。
+ */
+export type RouteExistsFn = (path: string) => boolean;
+
+/**
+ * 由目標建立意圖；target 非站內相對路徑時回 null（呼叫端應已淨化，此處為防禦性）。
+ *
+ * 2026-08-29：多一道「路由必須存在」。死路由（如已被合併掉的 `/profile`）若被記進意圖，
+ * 每次進站都會被重放 → 404 → 使用者在 LIFF 裡按返回鍵重進站 → 又被導回同一個 404，
+ * 中間 LIFF 還會重跑一次 OAuth（舊 code 被重用 → code_verifier does not match），
+ * prod 實測 auth resolve 卡了 104 秒。**死路由降級成「只知端別」而不是整份丟掉** ——
+ * 端別（driver/passenger）仍是可信訊號，丟掉它會讓多重身分者落回角色預設而被丟去 admin 端。
+ */
+export function makeEntryIntent(
+  target: string,
+  now: number = Date.now(),
+  routeExists?: RouteExistsFn,
+): EntryIntent | null {
   if (typeof target !== 'string') return null;
   const t = target.trim();
   if (!t.startsWith('/') || t.startsWith('//')) return null;
-  return { target: t, end: entryEndOf(t), at: now };
+  const end = entryEndOf(t);
+  if (routeExists && !routeExists(t)) return { target: '', end, at: now };
+  return { target: t, end, at: now };
 }
 
 /** 意圖是否仍在有效期內。 */
@@ -73,9 +93,19 @@ function _write(intent: EntryIntent): void {
 }
 
 /** 記住這次進站的深連結意圖（stripDeepLinkParams 之前 / 之後呼叫皆可）。 */
-export function rememberEntryIntent(target: string, now: number = Date.now()): void {
-  const intent = makeEntryIntent(target, now);
+export function rememberEntryIntent(
+  target: string,
+  now: number = Date.now(),
+  routeExists?: RouteExistsFn,
+): void {
+  const intent = makeEntryIntent(target, now, routeExists);
   if (!intent) return;
+  // 死路由被降級成只知端別 → 走 rememberEntryEnd，沿用它「不覆蓋既有已帶目標意圖」的規則，
+  // 免得一個死連結把前一輪記到的正確目標洗掉。
+  if (!intent.target) {
+    rememberEntryEnd(intent.end, now);
+    return;
+  }
   _write(intent);
 }
 
@@ -91,8 +121,16 @@ export function rememberEntryEnd(end: EntryEnd, now: number = Date.now()): void 
   _write({ target: '', end, at: now });
 }
 
-/** 讀取仍在有效期內的意圖；過期或不存在回 null（過期會順手清掉）。 */
-export function readEntryIntent(now: number = Date.now()): EntryIntent | null {
+/**
+ * 讀取仍在有效期內的意圖；過期或不存在回 null（過期會順手清掉）。
+ *
+ * `routeExists` 同 makeEntryIntent：讀出來的目標若已無對應頁面（例如部署把該頁移除、
+ * 或 sessionStorage 裡是上一版留下的舊路徑），降級成只知端別，不把使用者送去 404。
+ */
+export function readEntryIntent(
+  now: number = Date.now(),
+  routeExists?: RouteExistsFn,
+): EntryIntent | null {
   let intent = _memoryIntent;
   if (!intent && typeof window !== 'undefined') {
     try {
@@ -103,7 +141,7 @@ export function readEntryIntent(now: number = Date.now()): EntryIntent | null {
         if (typeof parsed?.at === 'number' && typeof parsed?.target === 'string' && okEnd) {
           // target 空＝只知端別；有值則須為站內相對路徑（防 open redirect）
           intent = parsed.target
-            ? makeEntryIntent(parsed.target, parsed.at)
+            ? makeEntryIntent(parsed.target, parsed.at, routeExists)
             : { target: '', end: parsed.end, at: parsed.at };
         }
       }
@@ -114,6 +152,10 @@ export function readEntryIntent(now: number = Date.now()): EntryIntent | null {
   if (!isEntryIntentFresh(intent, now)) {
     if (intent) clearEntryIntent();
     return null;
+  }
+  // 記憶體那份可能是在還不知道路由表的時機寫進來的 —— 讀取時再驗一次才擋得住。
+  if (intent?.target && routeExists && !routeExists(intent.target)) {
+    return { target: '', end: intent.end, at: intent.at };
   }
   return intent;
 }
