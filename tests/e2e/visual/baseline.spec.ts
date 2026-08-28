@@ -104,6 +104,33 @@ const DISPATCHED_SEED = [
 ];
 
 /**
+ * 登入後乘客首頁「下一趟」與「最新公告」的假資料。
+ * 兩塊都是 v-if 有資料才渲染 —— 空狀態基線只拍得到 hero 與行銷段。
+ * ⚠ 「快速操作」的筆數蓋不到：GetOrderList 在 testMode='T' 時走 mock-res 不出門，
+ *   route mock 攔不到，所以那個數字在基線裡永遠是 0。
+ */
+const UPCOMING_SEED = {
+  orderId: 'seedhome1a2b3c', orderType: 'airport-pickup',
+  pickupDateTime: '2026-08-27T15:40:00+08:00',
+  pickupLocation: { address: '桃園市大園區航站南路 9 號', lat: 25.0777, lng: 121.2328, displayName: '桃園機場 T2', city: '桃園市', district: '大園區' },
+  dropoffLocation: { address: '台北市中山區南京東路二段 1 號', lat: 25.0524, lng: 121.5238, displayName: '台北 中山區', city: '台北市', district: '中山區' },
+  stopovers: [], vehicleType: 'mpv-family', passengerCount: 4, adultCount: 3, childCount: 1,
+  estimatedFare: 1450, orderStatus: 'confirmed', flightNumber: 'BR128',
+  driver: {
+    displayName: '張大明', plateNumber: 'ABC-1234',
+    vehicleType: 'mpv', vehicleModel: 'Toyota Alphard', phone: '0912345678',
+  },
+};
+
+const ANNOUNCEMENTS_SEED = {
+  items: [
+    { id: 'seednews1', title: '中秋連假加成時段公告', coverImageUrl: null, publishedAt: '2026-08-20T10:00:00+08:00', isRead: false },
+    { id: 'seednews2', title: '桃園機場 T1 接機點調整', coverImageUrl: null, publishedAt: '2026-08-12T10:00:00+08:00', isRead: true },
+  ],
+  nextCursor: null,
+};
+
+/**
  * 司機任務列表的假資料（/nuxt-api/orders/assigned）。
  * 任務卡的車資同樣換了襯線，空狀態一樣拍不到。
  */
@@ -190,6 +217,15 @@ const TARGETS: readonly VisualTarget[] = [
   { name: 'passenger-fare', path: '/fare', identity: 'passenger' },
   // 註：沒有 /vehicles 列表頁（只有 /vehicles/[driverId]）；/home 是登入後的乘客首頁
   { name: 'passenger-home', path: '/home', identity: 'passenger' },
+  {
+    name: 'passenger-home-full',
+    path: '/home',
+    identity: 'passenger',
+    seed: {
+      '/nuxt-api/orders/upcoming': UPCOMING_SEED,
+      '/nuxt-api/passenger/announcements': ANNOUNCEMENTS_SEED,
+    },
+  },
   // ── 司機端 ────────────────────────────────────────────────
   { name: 'driver-dashboard', path: '/driver/dashboard', identity: 'driverApproved' },
   { name: 'driver-trip', path: '/driver/trip', identity: 'driverApproved' },
