@@ -278,11 +278,11 @@ onMounted(ApiLoadOrder);
   letter-spacing: var(--ls-label);
   color: var(--surface-raised);
 
-  // 提案規則一：金額換襯線（Cormorant），且要是這一頁最大的字。
+  // 提案規則一：金額要是這一頁最大的字（字族不換，見規則三）。
   // ⚠ 本區塊的 __section-val 底噪就是 --fs-h2，車資也用 --fs-h2 的話會跟航班、
   //    人數一樣大，「金額最大」等於沒做（改之前是 --fs-h4，比其他欄位還小）。
   &.is-fare {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
     font-size: var(--fs-h1);
     font-weight: 500;

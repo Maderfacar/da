@@ -275,8 +275,7 @@ onUnmounted(() => {
 // ── 統計卡 ─────────────────────────────────────────────────
 .PageDashboard__stats {
   display: grid;
-  // 襯線大數字放大後 180px 欄寬會擠到四位數以上的值，最小欄寬跟著放寬
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -304,14 +303,14 @@ onUnmounted(() => {
   color: var(--da-gray);
 }
 
-// 介面方向提案（第五畫面規則一）：統計數字換襯線放大 —— 先給結論，再給明細。
+// ⚠ 提案第五畫面的散文寫「統計數字換襯線放大」，但它自己的 .stat b 是
+//   --f-data 34px —— 字族沒換，而且比站上原本的 --fs-display 48px 還小。
+//   換襯線與「不隨配色改變的規則」第三條直接相衝，兩半都不成立，維持原樣。
 .PageDashboard__stat-value {
-  font-family: var(--ff-display);
-  font-weight: 500;
+  font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
-  font-size: var(--fs-hero);
+  font-size: var(--fs-display);
   line-height: var(--lh-flat);
-  letter-spacing: var(--ls-tight);
   color: var(--da-dark);
 }
 

@@ -1045,8 +1045,10 @@ onUnmounted(() => {
 }
 
 .PageHome__trip-driver-plate {
-  /* 提案規則四：車牌用襯線排，與訂單編號的等寬感形成對比 */
-  font-family: var(--ff-display);
+  /* ⚠ 車牌不換襯線 —— 提案「不隨配色改變的規則」第三條把車牌明列為等高等寬數字，
+     示範圖更標明「上·全襯線（錯）／下·車牌換等高數字（對）」，
+     提案自己的 .plate class 也是 --f-data。原本那條散文註解與規則相衝。 */
+  font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h2);
   letter-spacing: var(--ls-wide);
@@ -1056,7 +1058,6 @@ onUnmounted(() => {
   border-radius: var(--r-sm);
   border: 2px solid var(--da-dark);
   justify-self: start;
-  font-variant-numeric: tabular-nums;
 }
 
 .PageHome__trip-driver-phone {

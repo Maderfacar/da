@@ -804,12 +804,12 @@ onUnmounted(() => {
   &.is-in_transit      { background: var(--accent-a12); color: var(--accent); border: 1px solid var(--accent-a40); }
 }
 
-// 提案規則一：金額換襯線並放大，卡片上以車資為視覺落點。
+// 提案規則一：金額放大，卡片上以車資為視覺落點（字族不換，見規則三）。
 .PageDriverTrip__card-fare {
   flex: none;
   margin-left: auto;
   white-space: nowrap;
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h4);
   font-weight: 500;
@@ -1019,9 +1019,9 @@ onUnmounted(() => {
   text-align: right;
 
   &.is-muted { color: var(--surface-a30); font-size: var(--fs-label); font-style: italic; }
-  // 提案規則一：金額換襯線
+  // 提案規則一：金額放大（字族不換，見規則三）
   &.is-fare {
-    font-family: var(--ff-display);
+    font-family: var(--ff-data);
     font-variant-numeric: lining-nums tabular-nums;
     font-weight: 500;
     color: var(--accent);

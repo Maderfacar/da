@@ -322,7 +322,14 @@ const ClickWithdraw = (e: Event) => {
   color: var(--surface-a72);
 }
 
-// 提案規則一：金額換襯線，且是卡片上最大的字（時間 --fs-h2 之上一階）。
+// 提案規則一：金額是卡片上最大的字（時間 --fs-h2 之上一階）。
+  // ⚠ 數字不換襯線。提案的「不隨配色改變的規則」第三條寫死：
+  //   「車牌、訂單號、航班、電話、金額、時間 —— 凡是要被唸出來或對照的字串，
+  //     一律走等高等寬數字。襯線只留給人名與標題。」
+  //   而且提案自己的 CSS（.data / .plate / .amount / .stat b / .job .fare b /
+  //   .li.total b）全部是 --f-data，示範圖還標明「上·全襯線（錯）下·車牌換等高數字（對）」。
+  //   各畫面散文註解寫的「換襯線」與這條規則、與提案自己的實作、與本專案
+  //   _design-tokens.css 的既有原則三方相衝 —— 以規則為準。放大保留，字族還原。
 .DriverDispatchedOrderCard__fare {
   display: flex;
   align-items: baseline;
@@ -338,7 +345,7 @@ const ClickWithdraw = (e: Event) => {
 }
 
 .DriverDispatchedOrderCard__fare-val {
-  font-family: var(--ff-display);
+  font-family: var(--ff-data);
   font-weight: 500;
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h1);
