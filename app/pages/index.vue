@@ -365,7 +365,9 @@ const ClickFare = () => navigateTo('/fare');
 
 .PageLanding__booktype {
   flex: 1;
-  min-height: 34px;
+  /* 提案「不隨配色改變的規則」第二條：按鈕、分頁、輸入框、表格列最小高度一律 --tap。
+     第一版寫 34px —— 分段控制也是分頁，同樣受這條約束。 */
+  min-height: var(--tap);
   border: none;
   border-radius: var(--r-xs);
   background: transparent;

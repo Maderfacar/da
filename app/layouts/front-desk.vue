@@ -371,8 +371,9 @@ onUnmounted(() => {
 
 // ── Hamburger 按鈕 ────────────────────────────────────────
 .LayoutFrontDesk__hamburger {
-  width: 36px;
-  height: 36px;
+  /* 提案「不隨配色改變的規則」第二條：可點的東西一律 --tap。原本 36px。 */
+  width: var(--tap);
+  height: var(--tap);
   display: flex;
   flex-direction: column;
   align-items: center;

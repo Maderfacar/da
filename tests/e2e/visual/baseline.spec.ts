@@ -299,6 +299,16 @@ async function settle(page: Page): Promise<void> {
       [class*="reveal"], [class*="fade"] { opacity: 1 !important; transform: none !important; }
     `,
   });
+  // 等載入指示器消失。waitForContent 只看「可見文字夠不夠」，光頁首就滿足了 ——
+  // 於是資料還在飛的頁面會拍到 spinner 區塊，而 spinner 與它之後的空狀態／列表
+  // 高度不同（實測 /orders 在 1307 ↔ 1445 之間跳，138px）。等的是狀態不是字數。
+  // 逾時不拋：有些頁面本來就沒有指示器，也不該讓它擋住截圖。
+  await page
+    .locator('[class*="__loading"], [class*="__spinner"]')
+    .first()
+    .waitFor({ state: 'detached', timeout: 8000 })
+    .catch(() => { /* 沒有指示器、或它是常駐的 → 照拍 */ });
+
   // 讓字體載入完成，否則會拍到 fallback 字體
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(600);
