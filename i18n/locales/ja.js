@@ -214,6 +214,30 @@ export default {
       ctaPrimary: '今すぐ予約',
       ctaSecondary: '料金試算',
     },
+    book: {
+      types: {
+        'airport-pickup': '送迎（到着）',
+        'airport-dropoff': '送迎（出発）',
+        charter: 'チャーター',
+      },
+      from: '出発',
+      to: '到着',
+      when: '日時',
+      fromHint: {
+        'airport-pickup': '到着空港・ターミナルを選択',
+        'airport-dropoff': '乗車場所を入力',
+        charter: '出発地を入力',
+      },
+      toHint: '目的地を入力',
+      whenHint: '日付と時刻を選択',
+      cta: '車種と料金を見る',
+      hint: 'アプリ不要 · LINE で予約',
+    },
+    trust: {
+      hours: { value: '24H', label: '終日対応' },
+      airports: { value: '4', label: '国際空港' },
+      insurance: { value: '500万', label: '旅客保険' },
+    },
     overview: {
       label: 'SERVICE OVERVIEW',
       heading: 'お客様を安全にお届けすることが、私たちの唯一の目的地。',

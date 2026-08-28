@@ -214,6 +214,30 @@ export default {
       ctaPrimary: 'Book Transfer Now',
       ctaSecondary: 'Estimate Fare',
     },
+    book: {
+      types: {
+        'airport-pickup': 'Pickup',
+        'airport-dropoff': 'Dropoff',
+        charter: 'Charter',
+      },
+      from: 'From',
+      to: 'To',
+      when: 'When',
+      fromHint: {
+        'airport-pickup': 'Choose arrival airport and terminal',
+        'airport-dropoff': 'Enter pickup address',
+        charter: 'Enter starting point',
+      },
+      toHint: 'Enter destination',
+      whenHint: 'Choose date and time',
+      cta: 'See vehicles and fares',
+      hint: 'No app download · Book via LINE',
+    },
+    trust: {
+      hours: { value: '24H', label: 'Around the clock' },
+      airports: { value: '4', label: 'Intl. airports' },
+      insurance: { value: 'NT$5M', label: 'Passenger cover' },
+    },
     overview: {
       label: 'SERVICE OVERVIEW',
       heading: 'Getting you there safely is our only destination.',

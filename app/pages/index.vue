@@ -104,7 +104,13 @@ watch(
 const AIRPORT_CODES = ['tpe', 'tsa', 'rmq', 'khh'] as const;
 const FEATURE_IDS = ['flight', 'transparent', 'service', 'professional'] as const;
 
-const ClickBook = () => navigateTo('/booking');
+// 提案首頁規則二：訂車卡壓在 hero 下緣 —— 品牌看完，手指剛好落在「要去哪裡」上。
+// 服務類型在這裡先選好，帶 ?type= 進 /booking 直接預選第一步。
+const BOOK_TYPES = ['airport-pickup', 'airport-dropoff', 'charter'] as const;
+const bookType = ref<(typeof BOOK_TYPES)[number]>('airport-pickup');
+const TRUST_KEYS = ['hours', 'airports', 'insurance'] as const;
+
+const ClickBook = () => navigateTo(`/booking?type=${bookType.value}`);
 const ClickFare = () => navigateTo('/fare');
 </script>
 
@@ -123,9 +129,43 @@ const ClickFare = () => navigateTo('/fare');
           br
           | {{ $t('landing.hero.titleB') }}
         span.PageLanding__hero-title-sub {{ $t('landing.hero.subtitle') }}
-      .PageLanding__hero-cta
-        button.PageLanding__cta-primary(type="button" @click="ClickBook") {{ $t('landing.hero.ctaPrimary') }}
-        button.PageLanding__cta-secondary(type="button" @click="ClickFare") {{ $t('landing.hero.ctaSecondary') }}
+
+  //- ── 訂車卡：疊在 hero 下緣，全頁唯一有陰影的東西（提案規則二）────
+  //- 它在說「從這裡開始」。地點與時間在 /booking 填，這裡只先決定服務類型。
+  .PageLanding__booklane
+    .PageLanding__bookcard
+      .PageLanding__booktypes(role="tablist")
+        button.PageLanding__booktype(
+          v-for="t in BOOK_TYPES"
+          :key="t"
+          type="button"
+          role="tab"
+          :aria-selected="bookType === t"
+          :class="{ 'is-active': bookType === t }"
+          @click="bookType = t"
+        ) {{ $t(`landing.book.types.${t}`) }}
+
+      .PageLanding__bookfields
+        .PageLanding__bookfield
+          span.PageLanding__bookfield-label {{ $t('landing.book.from') }}
+          span.PageLanding__bookfield-value {{ $t(`landing.book.fromHint.${bookType}`) }}
+        .PageLanding__bookfield
+          span.PageLanding__bookfield-label {{ $t('landing.book.to') }}
+          span.PageLanding__bookfield-value.is-placeholder {{ $t('landing.book.toHint') }}
+        .PageLanding__bookfield
+          span.PageLanding__bookfield-label {{ $t('landing.book.when') }}
+          span.PageLanding__bookfield-value.is-placeholder {{ $t('landing.book.whenHint') }}
+
+      button.PageLanding__bookcta(type="button" @click="ClickBook")
+        | {{ $t('landing.book.cta') }}
+        span.PageLanding__bookcta-arrow →
+      p.PageLanding__bookhint {{ $t('landing.book.hint') }}
+
+    //- 信任條：三格，用細線切不用卡片（提案規則三：行銷降成資訊層）
+    .PageLanding__trust
+      .PageLanding__trust-cell(v-for="k in TRUST_KEYS" :key="k")
+        span.PageLanding__trust-value {{ $t(`landing.trust.${k}.value`) }}
+        span.PageLanding__trust-label {{ $t(`landing.trust.${k}.label`) }}
 
   //- ── 斜紋分隔（黃黑跑道意象，與 /home /faq 風格一致）─────────────
   .PageLanding__stripe
@@ -145,11 +185,13 @@ const ClickFare = () => navigateTo('/fare');
       .PageLanding__section-label {{ $t('landing.coverage.label') }}
       h2.PageLanding__section-title {{ $t('landing.coverage.title') }}
     p.PageLanding__section-desc {{ $t('landing.coverage.desc') }}
+    //- 提案規則三：行銷內容從「章節」降成「列」—— 內容全保留，只是不再做成卡片方塊。
     .PageLanding__airports
       article.PageLanding__airport(v-for="code in AIRPORT_CODES" :key="code")
         .PageLanding__airport-code {{ $t(`landing.coverage.airports.${code}.code`) }}
-        h3.PageLanding__airport-name {{ $t(`landing.coverage.airports.${code}.name`) }}
-        p.PageLanding__airport-desc {{ $t(`landing.coverage.airports.${code}.desc`) }}
+        .PageLanding__airport-text
+          h3.PageLanding__airport-name {{ $t(`landing.coverage.airports.${code}.name`) }}
+          p.PageLanding__airport-desc {{ $t(`landing.coverage.airports.${code}.desc`) }}
 
   .PageLanding__stripe
 
@@ -158,10 +200,13 @@ const ClickFare = () => navigateTo('/fare');
     .PageLanding__section-head
       .PageLanding__section-label {{ $t('landing.features.label') }}
       h2.PageLanding__section-title {{ $t('landing.features.title') }}
+    //- 同上：理由也降成列，編號 + 細線，安靜到底。
     .PageLanding__features
-      article.PageLanding__feature(v-for="id in FEATURE_IDS" :key="id")
-        h3.PageLanding__feature-title {{ $t(`landing.features.items.${id}.title`) }}
-        p.PageLanding__feature-body {{ $t(`landing.features.items.${id}.body`) }}
+      article.PageLanding__feature(v-for="(id, i) in FEATURE_IDS" :key="id")
+        span.PageLanding__feature-no {{ String(i + 1).padStart(2, '0') }}
+        .PageLanding__feature-text
+          h3.PageLanding__feature-title {{ $t(`landing.features.items.${id}.title`) }}
+          p.PageLanding__feature-body {{ $t(`landing.features.items.${id}.body`) }}
 
   //- ── FINAL CTA ──────────────────────────────────────────────
   section.PageLanding__cta-section
@@ -184,9 +229,12 @@ const ClickFare = () => navigateTo('/fare');
 }
 
 // ── HERO ────────────────────────────────────────────────────
+/* 提案規則一：hero 只佔四成 —— 品牌需要一個安靜的開場，但它不該吃掉整個第一屏，
+   剩下的留給要動手的東西（訂車卡）。原本是 100svh，整屏都是品牌。
+   下界 320px 是為了小螢幕上 tag + 標題 + 副標不被壓爛；上界避免大桌機拉太空。 */
 .PageLanding__hero {
   position: relative;
-  min-height: 100svh;
+  min-height: clamp(320px, 44svh, 560px);
   padding-top: 56px;
   display: flex;
   flex-direction: column;
@@ -210,7 +258,10 @@ const ClickFare = () => navigateTo('/fare');
 .PageLanding__hero-runway {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 220px;
+  /* ⚠ 這道斜紋是靠 hero 底部對齊的。hero 從 100svh 收成四成之後，
+     原本的 220px 幾乎填滿整個 hero，斜紋直接壓到標題與副標上（桌機基線一眼看到）。
+     收成 72px 才回到「底部一道帶」的原意。改 hero 高度時要一起看這個值。 */
+  height: 72px;
   // 斜紋亮色綁季節主題 hero 變數（缺省回退現行黃）
   background: repeating-linear-gradient(
     -45deg,
@@ -249,9 +300,11 @@ const ClickFare = () => navigateTo('/fare');
   gap: 16px;
 }
 
+/* hero 收成四成之後，原本 clamp(64px, 13vw, 168px) 的兩行標題自己就吃掉整段高度。
+   收到 9vw 一階 —— 仍是全站最大的展示字，但讓得出空間給訂車卡。 */
 .PageLanding__hero-title-display {
   font-family: var(--ff-display);
-  font-size: clamp(64px, 13vw, 168px);
+  font-size: clamp(40px, 9vw, 104px);
   line-height: var(--lh-flat);
   letter-spacing: var(--ls-tight);
   color: var(--da-dark);
@@ -267,11 +320,181 @@ const ClickFare = () => navigateTo('/fare');
   max-width: var(--measure);
 }
 
-.PageLanding__hero-cta {
-  display: flex;
-  flex-wrap: wrap;
+/* ── 訂車卡（提案規則二）─────────────────────────────────────
+   −34px 疊在 hero 下緣，是全頁唯一有陰影的東西。 */
+.PageLanding__booklane {
+  position: relative;
+  z-index: var(--z-sticky);
+  margin: -34px auto 0;
+  padding: 0 var(--gutter);
+  max-width: var(--shell);
+  width: 100%;
+
+  /* 桌機：訂車卡 520px 靠左的話右邊會空一整片（與 /home 快速操作同一種病）。
+     信任條改排到卡片右側、底端對齊，兩者讀成同一條帶。 */
+  @media (min-width: 900px) {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-lg);
+  }
+}
+
+.PageLanding__bookcard {
+  background: var(--da-off-white);
+  border: 1px solid var(--ink-a06);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  display: grid;
   gap: 12px;
-  margin-top: 32px;
+  box-shadow: var(--shadow-pop);
+  max-width: 520px;
+
+  @media (min-width: 900px) {
+    flex: none;
+    width: 460px;
+  }
+}
+
+.PageLanding__booktypes {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-sm);
+  background: var(--da-gray-pale);
+}
+
+.PageLanding__booktype {
+  flex: 1;
+  min-height: 34px;
+  border: none;
+  border-radius: var(--r-xs);
+  background: transparent;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-label);
+  color: var(--da-gray);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+
+  &.is-active {
+    background: var(--da-off-white);
+    color: var(--da-dark);
+  }
+}
+
+.PageLanding__bookfield {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--ink-a06);
+
+  &:last-child { border-bottom: 0; }
+}
+
+.PageLanding__bookfield-label {
+  flex: none;
+  width: 34px;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--da-gray-light);
+}
+
+.PageLanding__bookfield-value {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--ff-ui);
+  font-size: var(--fs-body);
+  color: var(--da-dark);
+
+  &.is-placeholder {
+    font-weight: 300;
+    color: var(--da-gray-light);
+  }
+}
+
+/* 主動作：縞黑實心、金只作箭頭（提案「不隨配色改變的規則」與首頁規則二） */
+.PageLanding__bookcta {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--da-dark);
+  border-radius: var(--r-sm);
+  background: var(--da-dark);
+  color: var(--da-cream);
+  font-family: var(--ff-label);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  letter-spacing: var(--ls-wide);
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+
+  &:hover { opacity: 0.88; }
+  &:active { transform: scale(0.98); }
+}
+
+.PageLanding__bookcta-arrow { color: var(--da-amber-light); }
+
+.PageLanding__bookhint {
+  margin: 0;
+  text-align: center;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--da-gray-light);
+}
+
+/* 信任條：三格，用細線切不用卡片 */
+.PageLanding__trust {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: var(--space-md);
+  max-width: 520px;
+  border-top: 1px solid var(--ink-a06);
+  border-bottom: 1px solid var(--ink-a06);
+
+  @media (min-width: 900px) {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+  }
+}
+
+.PageLanding__trust-cell {
+  padding: 14px 4px;
+  text-align: center;
+  border-left: 1px solid var(--ink-a06);
+
+  &:first-child { border-left: 0; }
+}
+
+.PageLanding__trust-value {
+  display: block;
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--fs-h3);
+  color: var(--da-dark);
+}
+
+.PageLanding__trust-label {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--da-gray-light);
 }
 
 .PageLanding__cta-primary,
@@ -438,52 +661,41 @@ const ClickFare = () => navigateTo('/fare');
 // ── COVERAGE airports grid ───────────────────────────────────
 /* 機場：四張卡不再是 2×2 的均勻方陣。桌機改 6 欄，首張（主要機場）橫跨 4 欄、
    其餘各佔 2 欄 —— 版面自己說出「這四個不等重」，不必加 badge。 */
+/* 提案規則三：機場從「卡片方塊」降成「列」—— 代碼在左，細線分隔，不做卡片。 */
 .PageLanding__airports {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-sm);
-
-  @media (min-width: 640px) {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  @media (min-width: 1024px) {
-    grid-template-columns: repeat(6, 1fr);
-    gap: var(--space-md) var(--space-sm);
-
-    > *      { grid-column: span 2; }
-    > :first-child { grid-column: span 4; }
-  }
+  display: block;
 }
 
 .PageLanding__airport {
-  background: var(--da-cream);
-  border: 1px solid var(--ink-a06);
-  border-radius: var(--r-lg);
-  padding: 22px 20px;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  align-items: center;
+  gap: 14px;
+  min-height: var(--tap);
+  padding: 13px 2px;
+  border-bottom: 1px solid var(--ink-a06);
 
-  &:hover {
-    border-color: var(--accent-a30);
-    transform: translateY(-2px);
-  }
+  &:last-child { border-bottom: 0; }
 }
 
 .PageLanding__airport-code {
-  font-family: var(--ff-display);
-  font-size: var(--fs-h1);
-  letter-spacing: var(--ls-label);
+  flex: none;
+  width: 72px;
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--fs-h3);
+  letter-spacing: var(--ls-caps);
   color: var(--da-amber);
   line-height: var(--lh-flat);
-  margin-bottom: 4px;
+}
+
+.PageLanding__airport-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .PageLanding__airport-name {
-  font-family: var(--ff-label);
-  font-size: var(--fs-body-lg);
+  font-family: var(--ff-display);
+  font-size: var(--fs-h4);
   font-weight: 700;
   color: var(--da-dark);
   margin: 0;
@@ -502,35 +714,38 @@ const ClickFare = () => navigateTo('/fare');
 // ── FEATURES grid ───────────────────────────────────────────
 /* 特色：桌機兩欄但第二欄整體下沉一段，形成錯落而不是對齊的方塊。
    偏移量刻意用 --space-xl 而不是隨手一個 40px —— 錯落也要在節奏上。 */
+/* 提案規則三：理由同樣降成列 —— 編號 + 細線，安靜到底。 */
 .PageLanding__features {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-sm);
-
-  @media (min-width: 640px) {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-md);
-  }
-
-  @media (min-width: 1024px) {
-    > :nth-child(even) { margin-top: var(--space-xl); }
-  }
+  display: block;
 }
 
 .PageLanding__feature {
-  background: var(--da-off-white);
-  border: 1px solid var(--ink-a06);
-  border-radius: var(--r-lg);
-  padding: 24px 22px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 14px;
+  padding: 15px 2px;
+  border-bottom: 1px solid var(--ink-a06);
+
+  &:last-child { border-bottom: 0; }
+}
+
+.PageLanding__feature-no {
+  font-family: var(--ff-data);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-wide);
+  color: var(--da-amber);
+  margin-top: 4px;
 }
 
 .PageLanding__feature-title {
-  font-family: var(--ff-label);
-  font-size: var(--fs-body-lg);
+  font-family: var(--ff-display);
+  font-size: var(--fs-h4);
   font-weight: 700;
   letter-spacing: var(--ls-snug);
   color: var(--da-dark);
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
 .PageLanding__feature-body {

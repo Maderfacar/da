@@ -257,9 +257,12 @@ const TARGETS: readonly VisualTarget[] = [
     path: '/driver/dispatched',
     identity: 'driverApproved',
     seed: { '/nuxt-api/driver/dispatched-orders': DISPATCHED_SEED },
+    // ⚠ 切分頁後**不要用固定秒數等**。第一版寫 waitForTimeout(300)，
+    //    mobile-chrome 上約每兩輪紅一次（356 px，比例 0.01）——
+    //    等的是時間不是狀態。改等「只有這個分頁才有的元素」真的出現。
     beforeShot: async (page) => {
       await page.getByRole('button', { name: /已喊單/ }).click();
-      await page.waitForTimeout(300);
+      await page.getByRole('button', { name: '撤回喊單' }).waitFor({ state: 'visible' });
     },
   },
   // ── 管理端 ────────────────────────────────────────────────

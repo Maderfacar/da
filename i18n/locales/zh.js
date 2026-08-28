@@ -227,6 +227,31 @@ export default {
       ctaPrimary: '立即預約接送',
       ctaSecondary: '車資試算',
     },
+    // 提案首頁規則二：hero 下緣的訂車卡
+    book: {
+      types: {
+        'airport-pickup': '接機',
+        'airport-dropoff': '送機',
+        charter: '包車',
+      },
+      from: '從',
+      to: '到',
+      when: '時間',
+      fromHint: {
+        'airport-pickup': '選擇抵達機場與航廈',
+        'airport-dropoff': '輸入上車地點',
+        charter: '輸入出發地點',
+      },
+      toHint: '輸入目的地',
+      whenHint: '選擇日期與時間',
+      cta: '查看車型與車資',
+      hint: '免下載 App · LINE 直接預約',
+    },
+    trust: {
+      hours: { value: '24H', label: '全天候' },
+      airports: { value: '4', label: '國際機場' },
+      insurance: { value: '500萬', label: '旅客險' },
+    },
     overview: {
       label: 'SERVICE OVERVIEW',
       heading: '把您安全送達，是我們唯一的目的地。',
