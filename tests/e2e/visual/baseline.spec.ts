@@ -104,6 +104,35 @@ const DISPATCHED_SEED = [
 ];
 
 /**
+ * 司機任務列表的假資料（/nuxt-api/orders/assigned）。
+ * 任務卡的車資同樣換了襯線，空狀態一樣拍不到。
+ */
+const ASSIGNED_SEED = [
+  {
+    orderId: 'seedtrip1a2b3c', userId: 'u-seed-1', orderType: 'airport-pickup',
+    pickupDateTime: '2026-08-27T15:40:00+08:00',
+    pickupLocation: { address: '桃園市大園區航站南路 9 號', lat: 25.0777, lng: 121.2328, displayName: '桃園機場 T2', city: '桃園市', district: '大園區' },
+    dropoffLocation: { address: '台北市中山區南京東路二段 1 號', lat: 25.0524, lng: 121.5238, displayName: '台北 中山區', city: '台北市', district: '中山區' },
+    stopovers: [], vehicleType: 'mpv-family', passengerCount: 4, adultCount: 3, childCount: 1,
+    luggageItems: [], estimatedFare: 1450, estimatedTime: 52, distanceKm: 41.6, extraServices: [],
+    flightNumber: 'BR128', terminal: 'T2', notes: null, orderStatus: 'en_route',
+    createdAt: 1787000000000, passengerName: '王小姐', passengerPhone: '0912345678',
+    passengerConfirmationStatus: null,
+  },
+  {
+    orderId: 'seedtrip2b3c4d', userId: 'u-seed-2', orderType: 'charter',
+    pickupDateTime: '2026-08-29T08:00:00+08:00',
+    pickupLocation: { address: '台中市西屯區台灣大道三段 251 號', lat: 24.1657, lng: 120.6417, displayName: '台中 西屯區', city: '台中市', district: '西屯區' },
+    dropoffLocation: { address: '南投縣仁愛鄉大同村仁和路 170 號', lat: 24.0000, lng: 121.1500, displayName: '清境農場', city: '南投縣', district: '仁愛鄉' },
+    stopovers: [], vehicleType: 'van-9', passengerCount: 7, adultCount: 7, childCount: 0,
+    luggageItems: [], estimatedFare: 12800, estimatedTime: 128, distanceKm: 96.4, extraServices: [],
+    flightNumber: null, terminal: null, notes: null, orderStatus: 'confirmed',
+    createdAt: 1787000200000, passengerName: '林小姐', passengerPhone: '0933444555',
+    passengerConfirmationStatus: 'pending',
+  },
+];
+
+/**
  * Admin 訂單列表的假資料。
  * 訂單為空時整張表（含表頭）不渲染 —— 「表頭底色」「列 hover」兩條規則
  * 在空狀態基線裡是驗不到的。
@@ -157,6 +186,12 @@ const TARGETS: readonly VisualTarget[] = [
   // ── 司機端 ────────────────────────────────────────────────
   { name: 'driver-dashboard', path: '/driver/dashboard', identity: 'driverApproved' },
   { name: 'driver-trip', path: '/driver/trip', identity: 'driverApproved' },
+  {
+    name: 'driver-trip-list',
+    path: '/driver/trip',
+    identity: 'driverApproved',
+    seed: { '/nuxt-api/orders/assigned': ASSIGNED_SEED },
+  },
   {
     name: 'driver-dispatched',
     path: '/driver/dispatched',

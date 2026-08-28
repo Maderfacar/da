@@ -606,6 +606,8 @@ onUnmounted(() => {
 
 .PageDriverTrip__history-badge {
   display: inline-block;
+  flex: none;
+  white-space: nowrap;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -778,11 +780,17 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  // 車資換襯線放大後，窄螢幕上「狀態章 + 待確認 chip + 車資」三件會互相擠斷行。
+  // 允許整列換行，並讓每個元件自己不斷字。
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 2px;
 }
 
 .PageDriverTrip__status-badge {
   display: inline-block;
+  flex: none;
+  white-space: nowrap;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -798,6 +806,9 @@ onUnmounted(() => {
 
 // 提案規則一：金額換襯線並放大，卡片上以車資為視覺落點。
 .PageDriverTrip__card-fare {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
   font-family: var(--ff-display);
   font-variant-numeric: lining-nums tabular-nums;
   font-size: var(--fs-h4);
@@ -810,6 +821,8 @@ onUnmounted(() => {
 // Phase 1F：confirmation pending chip + banner
 .PageDriverTrip__pending-chip {
   display: inline-block;
+  flex: none;
+  white-space: nowrap;
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   font-weight: 700;
@@ -819,7 +832,6 @@ onUnmounted(() => {
   background: var(--wait-a15);
   border: 1px solid var(--wait-a30);
   color: var(--wait);
-  margin-left: 6px;
 }
 
 .PageDriverTrip__pending-banner {
