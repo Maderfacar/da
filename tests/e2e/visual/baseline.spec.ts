@@ -132,6 +132,13 @@ const ASSIGNED_SEED = [
   },
 ];
 
+/** 需求單詳情用：列表第一張單再補三個 detail-only 欄位。 */
+const DISPATCHED_DETAIL_SEED = {
+  ...DISPATCHED_SEED[0],
+  luggageItems: [{ typeId: 'suitcase-l', count: 3 }],
+  extraServices: [], estimatedTime: 52,
+};
+
 /**
  * Admin 訂單列表的假資料。
  * 訂單為空時整張表（含表頭）不渲染 —— 「表頭底色」「列 hover」兩條規則
@@ -197,6 +204,17 @@ const TARGETS: readonly VisualTarget[] = [
     path: '/driver/dispatched',
     identity: 'driverApproved',
     seed: { '/nuxt-api/driver/dispatched-orders': DISPATCHED_SEED },
+  },
+  {
+    // ⚠ 兩個 key 的順序有意義：list pattern 也會命中 detail URL，
+    //    detail 要**後**註冊才蓋得過它（Playwright 後註冊優先）。
+    name: 'driver-dispatched-detail',
+    path: '/driver/dispatched/seedaaa1b2c3d4',
+    identity: 'driverApproved',
+    seed: {
+      '/nuxt-api/driver/dispatched-orders': DISPATCHED_SEED,
+      '/nuxt-api/driver/dispatched-orders/seedaaa1b2c3d4': DISPATCHED_DETAIL_SEED,
+    },
   },
   {
     name: 'driver-dispatched-mine',
