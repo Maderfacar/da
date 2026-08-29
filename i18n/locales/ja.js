@@ -126,7 +126,13 @@ export default {
   orders: {
     title: '利用履歴',
     heading: 'マイオーダー',
-    note: '直近の注文のみ表示しています。他の注文は日付で検索してください。',
+    note: 'より細かい期間は日付フィルターをご利用ください。',
+    filter: {
+      all: 'すべて',
+      active: '進行中',
+      completed: '完了',
+      cancelled: 'キャンセル',
+    },
     empty: { text: '注文履歴がありません', btn: '今すぐ予約' },
     loadFailed: '注文の読み込みに失敗しました',
     cancel: {
@@ -288,6 +294,45 @@ export default {
     },
   },
   home: {
+    // ポケットターミナル 第4版（2026-08-29）：ログイン後ホームの刷新で追加。
+    pocket: {
+      greeting: {
+        morning: 'おはようございます',
+        morningNamed: 'おはようございます、{name}さん',
+        afternoon: 'こんにちは',
+        afternoonNamed: 'こんにちは、{name}さん',
+        evening: 'こんばんは',
+        eveningNamed: 'こんばんは、{name}さん',
+      },
+      next: {
+        countdownDays: '{n}日後',
+        countdownHours: '{n}時間後',
+        countdownSoon: 'まもなく出発',
+        countdownNow: '出発時刻です',
+        call: '発信',
+        etaArrive: '{time} 到着',
+        etaDepart: '{time} 出発',
+      },
+      go: {
+        kicker: 'where to',
+        title: 'どちらへ',
+      },
+      crowd: {
+        kicker: 'airport flow',
+        title: '桃園空港 本日の出国者数',
+        peak: 'ピーク {hour}:00',
+      },
+      quick: {
+        kicker: 'quick actions',
+        orders: '注文',
+        estimate: '試算',
+        referral: '紹介',
+        support: 'サポート',
+      },
+      news: {
+        kicker: 'announcements',
+      },
+    },
     quick: {
       title: 'クイック操作',
       book: '今すぐ予約',

@@ -138,6 +138,40 @@ const MOCK_RESPONSES: Readonly<Record<string, (identity: Identity) => unknown>> 
     },
     status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
   }),
+  // ── /api/* （BFF 輕量端點，不在 /nuxt-api 底下）──────────────────────────
+  // 2026-08-29：口袋航廈第四版的首頁主卡會打這兩支。它們不在 `**/nuxt-api/**` 的
+  // 攔截範圍內，沒有這兩筆的話會落到真實 server → 本機無 env → 404 →
+  // 視覺基線的「有 app 層錯誤」直接紅，而且首頁永遠拍不到航班列與人流圖。
+  '/api/flight': () => ({
+    data: {
+      flightNo: 'BR128',
+      airline: { iataCode: 'BR', name: 'EVA Air' },
+      origin: { iataCode: 'NRT', cityName: '東京成田' },
+      destination: { iataCode: 'TPE', cityName: '台北桃園' },
+      terminal: '2',
+      scheduledTime: '2026-08-27T15:10:00+08:00',
+      estimatedTime: '2026-08-27T15:10:00+08:00',
+      status: 'scheduled',
+      direction: 'arrival',
+    },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
+  '/api/airport/flow': () => ({
+    data: {
+      date: '2026-08-27',
+      // 一天 24 格，尖峰落在 07:00 —— 與提案畫面上的「尖峰 07:00」一致
+      hours: Array.from({ length: 24 }, (_, hour) => ({
+        hour,
+        forecastCount: [
+          0, 0, 0, 0, 120, 980, 2400, 4200, 3600, 2900, 2400, 2100,
+          2600, 2300, 1900, 2200, 2800, 3100, 2700, 2000, 1400, 800, 300, 90,
+        ][hour]!,
+        actualCount: null,
+      })),
+      isMock: false,
+    },
+    status: { code: 200, message: { zh_tw: '', en: '', ja: '' } },
+  }),
   '/nuxt-api/admin/2fa/session-check': (identity) => ({
     data: {},
     status: {
@@ -169,11 +203,14 @@ async function installAuthMocks(page: Page, identity: Identity): Promise<void> {
     }
   }, { roles: payload.roles, patch: payload.patch, localStorage: payload.localStorage ?? null });
 
-  // Step 2：攔截所有 /nuxt-api/* 餵假 response
+  // Step 2：攔截後端端點餵假 response
   // 個別 spec 若需要特殊 response（401 模擬、5s timeout 模擬）可在 spec 內 page.route 覆蓋
-  await page.route('**/nuxt-api/**', async (route) => {
-    const url = new URL(route.request().url());
-    const pathname = url.pathname;
+  //
+  // 兩條 pattern：資源型 CRUD 在 `/nuxt-api/*`，輕量 BFF 在 `/api/*`（見 CLAUDE.md 分層表）。
+  // 只攔前者的話，`/api/flight`、`/api/airport/flow` 會落到真實 server —— 本機沒有那些
+  // 第三方 env，回 404，於是測試紅在「有 app 層錯誤」而不是紅在它真正想測的東西上。
+  const fulfillMock = async (route: import('@playwright/test').Route) => {
+    const pathname = new URL(route.request().url()).pathname;
     const matched = Object.keys(MOCK_RESPONSES).find((key) => pathname.includes(key));
     const body = matched ? MOCK_RESPONSES[matched](identity) : DEFAULT_RESPONSE;
     await route.fulfill({
@@ -181,7 +218,9 @@ async function installAuthMocks(page: Page, identity: Identity): Promise<void> {
       contentType: 'application/json; charset=utf-8',
       body: JSON.stringify(body),
     });
-  });
+  };
+  await page.route('**/nuxt-api/**', fulfillMock);
+  await page.route('**/api/**', fulfillMock);
 
   // Step 3：攔 Firebase / Google 認證相關 API
   // plugin 在 isMockMode 為 true 時已 return 不跑 InitAuthFlow，但 safety net 攔截避免任何

@@ -59,10 +59,25 @@ test.describe('auth #5 — cold boot /booking 5s 內 mount', () => {
 // interrupted"。這不是網站有 race，是測試沒等前一段導向落地就發下一段。
 //
 // 所以每段導向後統一走這裡：先等 URL 真的到位，再等一小段安靜期讓殘餘導向跑完。
-const SETTLE_MS = 400;
+// 「落定」＝ URL 連續 STABLE_MS 沒再變過。
+//
+// 第一版是固定 sleep 400ms，單獨跑一直過，但在整套 57 支併行跑、機器被吃滿的時候
+// 偶爾還是被下一段 navigateTo 打斷（WebKit only）。固定 sleep 的長度是猜的，
+// 機器一慢就不夠 —— 改成看 URL 有沒有真的停下來，跟機器速度脫鉤。
+const STABLE_MS = 450;
+const POLL_MS = 100;
+const SETTLE_DEADLINE_MS = 8_000;
+
 async function settleAt(page: Page, urlRe: RegExp): Promise<void> {
   await page.waitForURL(urlRe, { timeout: 10_000 });
-  await page.waitForTimeout(SETTLE_MS);
+  let last = page.url();
+  let stable = 0;
+  const deadline = Date.now() + SETTLE_DEADLINE_MS;
+  while (stable < STABLE_MS && Date.now() < deadline) {
+    await page.waitForTimeout(POLL_MS);
+    const now = page.url();
+    if (now === last) { stable += POLL_MS; } else { last = now; stable = 0; }
+  }
 }
 
 test.describe('auth #6 — warm boot SPA 內 push→replace 不出 race', () => {

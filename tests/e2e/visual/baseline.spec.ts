@@ -126,6 +126,38 @@ const UPCOMING_SEED = {
   },
 };
 
+/**
+ * 訂單列表假資料（/nuxt-api/orders）。
+ * 空狀態拍不到「狀態流程條」—— 那正是口袋航廈第四版第三張畫面的主角，
+ * 所以三筆刻意落在流程的不同站：已敲定 / 已成立 / 已完成。
+ */
+const ORDERS_SEED = [
+  {
+    orderId: 'seedord1a2b3c', orderType: 'airport-pickup',
+    pickupDateTime: '2026-08-27T15:40:00+08:00',
+    pickupLocation: { address: '桃園市大園區航站南路 9 號', lat: 25.0777, lng: 121.2328, displayName: '桃園機場 T2', city: '桃園市', district: '大園區' },
+    dropoffLocation: { address: '台北市中山區南京東路二段 1 號', lat: 25.0524, lng: 121.5238, displayName: '台北 中山區', city: '台北市', district: '中山區' },
+    stopovers: [], vehicleType: 'mpv-family', passengerCount: 4,
+    estimatedFare: 1450, orderStatus: 'confirmed', flightNumber: 'BR128',
+  },
+  {
+    orderId: 'seedord2a2b3c', orderType: 'airport-dropoff',
+    pickupDateTime: '2026-09-03T06:15:00+08:00',
+    pickupLocation: { address: '台北市信義區市府路 1 號', lat: 25.0330, lng: 121.5654, displayName: '台北 信義區', city: '台北市', district: '信義區' },
+    dropoffLocation: { address: '桃園市大園區航站南路 15 號', lat: 25.0797, lng: 121.2342, displayName: '桃園機場 T1', city: '桃園市', district: '大園區' },
+    stopovers: [], vehicleType: 'sedan-business', passengerCount: 2,
+    estimatedFare: 1380, orderStatus: 'pending', flightNumber: 'CI102',
+  },
+  {
+    orderId: 'seedord3a2b3c', orderType: 'airport-dropoff',
+    pickupDateTime: '2026-08-14T09:20:00+08:00',
+    pickupLocation: { address: '台北市大安區信義路四段 1 號', lat: 25.0330, lng: 121.5450, displayName: '台北 大安區', city: '台北市', district: '大安區' },
+    dropoffLocation: { address: '台北市松山區敦化北路 340 號', lat: 25.0637, lng: 121.5520, displayName: '松山機場', city: '台北市', district: '松山區' },
+    stopovers: [], vehicleType: 'mpv-family', passengerCount: 3,
+    estimatedFare: 980, orderStatus: 'completed', flightNumber: '',
+  },
+];
+
 const ANNOUNCEMENTS_SEED = {
   items: [
     { id: 'seednews1', title: '中秋連假加成時段公告', coverImageUrl: null, publishedAt: '2026-08-20T10:00:00+08:00', isRead: false },
@@ -218,6 +250,20 @@ const TARGETS: readonly VisualTarget[] = [
   { name: 'passenger-landing', path: '/', identity: 'passenger' },
   { name: 'passenger-booking', path: '/booking', identity: 'passenger' },
   { name: 'passenger-orders', path: '/orders', identity: 'passenger' },
+  // 有單的訂單頁 —— 空狀態拍不到狀態流程條與 chips 的計數
+  {
+    name: 'passenger-orders-full',
+    path: '/orders',
+    identity: 'passenger',
+    seed: { '/nuxt-api/orders': ORDERS_SEED },
+  },
+  // 消息頁本來沒有基線 —— 口袋航廈第四版動到它（未讀點改古銅、日期靠右等寬），補上
+  {
+    name: 'passenger-notifications',
+    path: '/notifications',
+    identity: 'passenger',
+    seed: { '/nuxt-api/passenger/announcements': ANNOUNCEMENTS_SEED },
+  },
   { name: 'passenger-fare', path: '/fare', identity: 'passenger' },
   // 註：沒有 /vehicles 列表頁（只有 /vehicles/[driverId]）；/home 是登入後的乘客首頁
   { name: 'passenger-home', path: '/home', identity: 'passenger' },

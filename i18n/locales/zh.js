@@ -135,7 +135,14 @@ export default {
   orders: {
     title: '歷史訂單',
     heading: '我的訂單',
-    note: '僅預先列出最近一筆訂單，需查詢其他訂單請用日期篩選',
+    note: '需要更精確的區間，可用日期篩選',
+    // 口袋航廈 第四版：狀態 chips 取代「年 / 月 / 日 下拉 + 日期框」
+    filter: {
+      all: '全部',
+      active: '進行中',
+      completed: '已完成',
+      cancelled: '已取消',
+    },
     empty: { text: '尚無訂單紀錄', btn: '立即訂車' },
     loadFailed: '載入訂單失敗',
     cancel: {
@@ -303,6 +310,46 @@ export default {
   },
   // ── 首頁 ──────────────────────────────────────────────────
   home: {
+    // 口袋航廈 第四版（2026-08-29）：登入後首頁改版新增的字串。
+    // 舊 hero / reasons / book 三組留著沒刪 —— 那些內容搬去未登入的 `/`（PageLanding）用。
+    pocket: {
+      greeting: {
+        morning: '早安',
+        morningNamed: '早安，{name}',
+        afternoon: '午安',
+        afternoonNamed: '午安，{name}',
+        evening: '晚安',
+        eveningNamed: '晚安，{name}',
+      },
+      next: {
+        countdownDays: '{n} 天後',
+        countdownHours: '{n} 小時後',
+        countdownSoon: '即將出發',
+        countdownNow: '出發時間已到',
+        call: '撥打',
+        etaArrive: '{time} 抵達',
+        etaDepart: '{time} 起飛',
+      },
+      go: {
+        kicker: 'where to',
+        title: '要去哪裡',
+      },
+      crowd: {
+        kicker: 'airport flow',
+        title: '桃機今日出境人流',
+        peak: '尖峰 {hour}:00',
+      },
+      quick: {
+        kicker: 'quick actions',
+        orders: '訂單',
+        estimate: '試算',
+        referral: '推薦',
+        support: '客服',
+      },
+      news: {
+        kicker: 'announcements',
+      },
+    },
     quick: {
       title: '快速操作',
       book: '立即訂車',

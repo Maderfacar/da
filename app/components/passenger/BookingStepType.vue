@@ -513,12 +513,16 @@ const ClickNext = () => {
               span.PassengerBookingStepType__flight-label {{ timeLabel }}
               span.PassengerBookingStepType__flight-val {{ formatTime(localFlightInfo.estimatedTime) }}
 
-  UiButton(
-    type="primary"
-    :disabled="!canNext"
-    @click="ClickNext"
-    style="margin-top: 28px; width: 100%"
-  ) {{ $t('booking.nav.next') }}
+  //- 2026-08-29：包一層 __actions —— 第一步原本是裸的 UiButton，
+  //- 而「主要動作釘在拇指區」那條規則是由 /booking 統一用 :deep(...__actions) 套的，
+  //- 沒有這層包裝，第一步的「下一步」就是唯一一顆還躺在頁尾的按鈕。
+  .PassengerBookingStepType__actions
+    UiButton(
+      type="primary"
+      :disabled="!canNext"
+      @click="ClickNext"
+      style="width: 100%"
+    ) {{ $t('booking.nav.next') }}
 </template>
 
 <style lang="scss" scoped>
@@ -926,4 +930,10 @@ const ClickNext = () => {
 .manual-slide-leave-to { opacity: 0; transform: translateY(-8px); max-height: 0; padding: 0 14px; }
 
 @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* 第一步只有「下一步」一顆；間距與其餘三步的 __actions 對齊，
+   sticky 由 /booking 的 :deep() 統一套（見那支的總則 03 段落）。 */
+.PassengerBookingStepType__actions {
+  margin-top: 28px;
+}
 </style>

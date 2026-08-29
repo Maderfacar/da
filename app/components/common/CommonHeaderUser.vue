@@ -6,9 +6,19 @@
 //   2. Admin 端（/admin/*）：永遠顯示 PASSENGER 鈕（無條件）
 //   3. 司機端（/driver/*）：不顯示任何跨端按鈕
 //
-// 頭像不可點擊（純顯示）；無 pictureUrl 時顯示 displayName 第一個字元 fallback。
+// 頭像預設不可點擊（純顯示）；無 pictureUrl 時顯示 displayName 第一個字元 fallback。
 // 內部直接讀 authStore proxy（不用 storeToRefs），避免 Pinia setup store 解構 computed
 // 在某些瀏覽器環境失去 reactivity 的潛在問題。
+//
+// 2026-08-29：加一個 opt-in 的 `clickable-avatar`。乘客端手機頂欄照介面方向提案總則 01
+// 把漢堡拿掉了，抽屜（車型 / 常見問題 / 推薦 / 客服 / 條款）需要新的入口，
+// 而頭像是提案上唯一還留在頂欄的可點物件。**預設值不變**，admin / driver / 桌機不受影響。
+// 不把整個元件包進 <button> 的理由：裡面本來就有 ADMIN / PASSENGER 兩顆按鈕，button 巢狀是無效 HTML。
+
+const props = withDefaults(defineProps<{ clickableAvatar?: boolean }>(), {
+  clickableAvatar: false,
+});
+const emit = defineEmits<{ avatarClick: [] }>();
 
 const route = useRoute();
 const authStore = StoreAuth();
@@ -56,7 +66,15 @@ const ClickPassenger = () => {
     @click="ClickPassenger"
   ) PASSENGER
 
-  .CommonHeaderUser__avatar-wrap(:title="tooltip")
+  component(
+    :is="props.clickableAvatar ? 'button' : 'div'"
+    class="CommonHeaderUser__avatar-wrap"
+    :class="{ 'is-clickable': props.clickableAvatar }"
+    :type="props.clickableAvatar ? 'button' : undefined"
+    :title="tooltip"
+    :aria-label="props.clickableAvatar ? tooltip : undefined"
+    @click="props.clickableAvatar && emit('avatarClick')"
+  )
     img.CommonHeaderUser__avatar(
       v-if="lineProfile?.pictureUrl"
       :src="lineProfile.pictureUrl"
@@ -106,7 +124,17 @@ const ClickPassenger = () => {
   &:hover { background: var(--accent-a20); }
 }
 
-// ── 頭像（純顯示，不可點擊） ─────────────────────────────
+// ── 頭像（預設純顯示；clickable-avatar 時才是按鈕） ───────
+.CommonHeaderUser__avatar-wrap.is-clickable {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+
+  &:active { transform: scale(0.94); }
+}
+
 .CommonHeaderUser__avatar-wrap {
   width: clamp(28px, 8vw, 36px);
   height: clamp(28px, 8vw, 36px);

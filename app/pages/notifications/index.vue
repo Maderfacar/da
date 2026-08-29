@@ -63,17 +63,23 @@ onUnmounted(() => {
   if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
 });
 
+// 列表只給 MM/DD —— 提案第四張畫面：日期靠右、等高等寬，用途是「一眼掃時間」而不是精讀。
+// 完整時間戳留在詳情頁（notifications/[id] 的 publishedAt）。
 const FormatTime = (iso: string | null): string => {
   if (!iso) return '';
-  return $dayjs(iso).format('YYYY/MM/DD HH:mm');
+  return $dayjs(iso).format('MM/DD');
 };
 </script>
 
 <template lang="pug">
 .PageNotifications
-  header.PageNotifications__header
-    .PageNotifications__headerLabel {{ $t('notifications.label') }}
-    h1.PageNotifications__headerTitle {{ $t('notifications.title') }}
+  //- 提案總則 02：巨大襯線標題拿掉 —— 頁名已經在頂欄。
+  //-
+  //- ⚠ 提案第四張畫面的「全部 / 公告 / 我的行程」分類 chips **沒做**：
+  //-   /nuxt-api/passenger/announcements 的 AnnouncementListItem 只有
+  //-   id / title / coverImageUrl / publishedAt / isRead —— 沒有 category 欄位，
+  //-   也沒有「我的行程」這條訊息流（行程狀態變更目前只走 LINE 推播與 /orders）。
+  //-   提案的資料來源表把它寫成「已在用」，那一格是錯的。要做得先加後端欄位。
 
   //- 載入中（首次）
   .PageNotifications__loading(v-if="loading")
@@ -100,9 +106,10 @@ const FormatTime = (iso: string | null): string => {
       .PageNotifications__coverPlaceholder(v-else) 📢
       .PageNotifications__cardBody
         .PageNotifications__cardTop
-          .PageNotifications__cardTitle {{ ann.title }}
+          //- 未讀：左側一顆古銅點（提案第四張畫面）—— 原本是右側紅點
           span.PageNotifications__cardDot(v-if="!ann.isRead")
-        .PageNotifications__cardTime {{ FormatTime(ann.publishedAt) }}
+          .PageNotifications__cardTitle {{ ann.title }}
+        .PageNotifications__cardTime.u-data {{ FormatTime(ann.publishedAt) }}
 
     //- 載入更多
     button.PageNotifications__loadMore(
@@ -117,7 +124,9 @@ const FormatTime = (iso: string | null): string => {
 // Wave 3-P1：cream theme 對齊 booking 家族
 
 .PageNotifications {
-  padding: 72px 24px 0;
+  padding-block: 72px 0;
+  /* 桌機：底色留滿版，內容收進 --shell 置中（手機時 max() 取回原本的邊距）*/
+  padding-inline: max(24px, calc((100% - var(--shell)) / 2));
   min-height: 100svh;
   background: var(--da-cream);
   color: var(--da-dark);
@@ -256,17 +265,21 @@ const FormatTime = (iso: string | null): string => {
   word-break: break-word;
 }
 
+/* 未讀點：提案改成左側一顆**古銅**點。
+   語意四色只標狀態（good/wait/note/stop），「還沒看」不是錯誤狀態，
+   用紅點是把注意力等級拉得比它該有的高；主色才是「這裡有東西」的既有語彙。 */
 .PageNotifications__cardDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: var(--r-round);
-  background: var(--stop);
+  background: var(--accent);
   flex-shrink: 0;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
+/* 日期靠右等高等寬，一眼掃時間（提案第四張畫面） */
 .PageNotifications__cardTime {
-  font-family: var(--ff-label);
+  align-self: flex-end;
   font-size: var(--fs-label);
   letter-spacing: var(--ls-label);
   color: var(--da-gray-light);

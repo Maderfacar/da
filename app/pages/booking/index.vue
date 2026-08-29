@@ -472,8 +472,16 @@ const ClickNewOrder = () => {
   position: relative;
   min-height: 100vh;
   background: var(--da-cream);
-  padding: 76px 16px 120px; // 56px nav + 20px gap
-  overflow: hidden;
+  padding-block: 76px 120px; // 56px nav + 20px gap
+  /* 桌機：底色留滿版，內容收進 --shell 置中（手機時 max() 取回原本的邊距）*/
+  padding-inline: max(16px, calc((100% - var(--shell)) / 2));
+
+  /* 2026-08-29：`overflow: hidden` → `overflow-x: clip`。
+     兩者都擋得住 step-slide 轉場時的水平溢出，但 hidden 會建立一個捲動容器，
+     底下所有 position: sticky 就此失效 —— 提案總則 03 的「動作釘在拇指區」正是靠 sticky。
+     clip 不建立捲動容器，sticky 照常運作。
+     舊瀏覽器（iOS Safari < 16）不支援 clip：退化成不裁切，不是破圖。 */
+  overflow-x: clip;
 
   &__watermark {
     position: fixed;
@@ -572,6 +580,43 @@ const ClickNewOrder = () => {
     padding: 24px 20px;
     box-shadow: var(--shadow-pop);
   }
+}
+
+/* ── 提案總則 03：主要動作釘在拇指區 ─────────────────────────────────────────
+   四個步驟元件各自在自己 template 的最後放了一組 `__actions`（上一步 / 下一步）。
+   手機上那組按鈕躺在卡片最底 —— 每一步都要先捲到底才按得到。
+
+   ⚠ 第一版用 `position: sticky; bottom: …`，**沒有效果**，而且是靜默的：
+   computed style 確實是 sticky，但 sticky 元素永遠離不開自己父元素的框，
+   而 `__actions` 正好是卡片的最後一個子元素 —— 底下沒有空間可以被推下去，
+   於是它就停在原地。實測「捲動 400px 後動作列離視窗底部 473px」才發現。
+   要真的浮起來只能脫離文件流 → fixed。
+
+   fixed 的已知副作用：step-slide 轉場那 300ms 內，祖先有 `transform: translateX(24px)`，
+   fixed 會改以那個祖先為定位基準。表現是動作列跟著卡片一起滑進來 —— 看起來反而合理，
+   轉場結束就回到視窗定位。
+
+   為什麼從頁面用 :deep() 一次做完，而不是進四個元件各改一次：
+   這是版面規則不是元件行為，散在四處會漂移。 */
+@media (max-width: 900px) {
+  .PageBooking :deep(.PassengerBookingStepType__actions),
+  .PageBooking :deep(.PassengerBookingStepRoute__actions),
+  .PageBooking :deep(.PassengerBookingStepOptions__actions),
+  .PageBooking :deep(.PassengerBookingStepConfirm__actions) {
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* 四格 + 斜紋；高度統一由 --tabbar-* 決定，不在這裡各算一次 */
+    bottom: calc(var(--tabbar-h) + var(--tabbar-stripe));
+    z-index: var(--z-nav);
+    margin: 0;
+    padding: 12px 16px;
+    background: var(--surface-raised);
+    border-top: 1px solid var(--hairline);
+  }
+}
+
+.PageBooking {
 
   // ── 成功畫面 ──────────────────────────────────────────────────────────────
   &__success {

@@ -126,7 +126,13 @@ export default {
   orders: {
     title: 'Trip History',
     heading: 'My Orders',
-    note: 'Showing only your most recent order. Use the date filter to find others.',
+    note: 'Need a narrower window? Use the date filter.',
+    filter: {
+      all: 'All',
+      active: 'Active',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+    },
     empty: { text: 'No order records yet', btn: 'Book Now' },
     loadFailed: 'Failed to load orders',
     cancel: {
@@ -288,6 +294,45 @@ export default {
     },
   },
   home: {
+    // Pocket Terminal v4 (2026-08-29) — signed-in home redesign.
+    pocket: {
+      greeting: {
+        morning: 'Good morning',
+        morningNamed: 'Good morning, {name}',
+        afternoon: 'Good afternoon',
+        afternoonNamed: 'Good afternoon, {name}',
+        evening: 'Good evening',
+        eveningNamed: 'Good evening, {name}',
+      },
+      next: {
+        countdownDays: 'in {n} days',
+        countdownHours: 'in {n} hours',
+        countdownSoon: 'departing soon',
+        countdownNow: 'departure time',
+        call: 'Call',
+        etaArrive: 'arrives {time}',
+        etaDepart: 'departs {time}',
+      },
+      go: {
+        kicker: 'where to',
+        title: 'Where to?',
+      },
+      crowd: {
+        kicker: 'airport flow',
+        title: 'TPE departures today',
+        peak: 'peak {hour}:00',
+      },
+      quick: {
+        kicker: 'quick actions',
+        orders: 'Orders',
+        estimate: 'Estimate',
+        referral: 'Referral',
+        support: 'Support',
+      },
+      news: {
+        kicker: 'announcements',
+      },
+    },
     quick: {
       title: 'Quick Actions',
       book: 'Book a Ride',

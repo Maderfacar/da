@@ -757,19 +757,32 @@ describe('兩層古銅（主色 / 小字階）守衛', () => {
   it('主色不得再被用在小字上 —— 文字一律走 --accent-text', () => {
     // 主色 #9C7C3C 在瓷白上 3.53:1，過非文字的 3.0、過不了內文的 4.5。
     // 這條擋的是「之後 copy-paste 一段 `color: var(--accent)` 到 12px 的 label 上」。
-    // 例外清單裡每一條都附了字級或「這是圖示」的理由，不是為了讓測試變綠而加的。
+    //
+    // **圖示不算小字**：非文字元素的門檻就是 3.0，而 `color:` 是圖示上色的常用方式
+    // （NuxtIcon / svg 走 currentColor）。所以不是列 file:line 例外清單，而是直接看
+    // 最近的選擇器像不像圖示 —— 行號會漂，語意不會。
+    // 只有「大字」這種看得出級距、列不出通則的才進 ALLOW，每條附字級。
+    const ICONISH = /icon|svg|arrow|chevron|caret|\bmark\b|::before|::after/i;
     const ALLOW = new Set([
       'app/pages/driver/dispatched/[orderId].vue:291',  // --fs-h1
       'app/pages/driver/profile/index.vue:645',         // --fs-h2
       'app/pages/driver/trip/index.vue:1027',           // --fs-h3
-      'app/pages/driver/trip/index.vue:1086',           // 位址圖示
-      'app/components/el/dialog-plus.vue:141',          // 關閉鈕圖示
+      // Element Plus 的關閉鈕圖示掛在裸 <i> 上（.el-dialog__headerbtn i），
+      // 選擇器裡沒有任何「icon」字樣。不把 `\bi\b` 加進 ICONISH —— 那會誤放行一大片。
+      'app/components/el/dialog-plus.vue:141',
     ]);
+    /** 往上找最近一行帶 `{` 的選擇器 */
+    const nearestSelector = (lines: string[], idx: number): string => {
+      for (let k = idx; k >= 0; k--) if (lines[k]!.includes('{')) return lines[k]!;
+      return '';
+    };
     const offenders: string[] = [];
     for (const { rel, text } of FILES) {
-      stripComments(text).split(/\r?\n/).forEach((line, i) => {
+      const lines = stripComments(text).split(/\r?\n/);
+      lines.forEach((line, i) => {
         if (!/(^|[^-])color\s*:\s*var\(--accent\)/.test(line)) return;
         if (/(border|background|outline|shadow|fill|stroke|caret|decoration)-color\s*:/.test(line)) return;
+        if (ICONISH.test(nearestSelector(lines, i)) || ICONISH.test(line)) return;
         const at = `${rel}:${i + 1}`;
         if (!ALLOW.has(at)) offenders.push(`${at} → ${line.trim().slice(0, 80)}`);
       });

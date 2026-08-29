@@ -1,6 +1,12 @@
 <script setup lang="ts">
 // PassengerHistoryJourneys — 歷史訂單頁「我的旅程」累積統計（原 /profile P35 section）
+//
+// 2026-08-29（口袋航廈 第四版）：加 `compact`。原本三張大卡在手機上佔掉半屏，
+// 而使用者進 /orders 是來找訂單的，不是來看累計里程的 —— 提案把它壓成一行摘要。
+// 預設值不變（非 compact 仍是三張卡），其他呼叫端不受影響。
 import type { PassengerStats } from '@/protocol/fetch-api/api/passenger';
+
+const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false });
 
 const { isSignIn } = storeToRefs(StoreAuth());
 
@@ -36,7 +42,21 @@ onMounted(() => {
 </script>
 
 <template lang="pug">
-section.PassengerHistoryJourneys(v-if="isSignIn")
+//- compact：一行摘要（趟數 · 里程 · 消費），不佔屏
+section.PassengerHistoryJourneys.is-compact(v-if="isSignIn && props.compact")
+  span.PassengerHistoryJourneys__c-item
+    span.PassengerHistoryJourneys__c-val.u-data {{ stats?.totalTrips ?? 0 }}
+    span.PassengerHistoryJourneys__c-unit 趟
+  span.PassengerHistoryJourneys__c-sep ·
+  span.PassengerHistoryJourneys__c-item
+    span.PassengerHistoryJourneys__c-val.u-data {{ (stats?.totalDistanceKm ?? 0).toLocaleString() }}
+    span.PassengerHistoryJourneys__c-unit km
+  span.PassengerHistoryJourneys__c-sep ·
+  span.PassengerHistoryJourneys__c-item
+    span.PassengerHistoryJourneys__c-val.u-data NT$ {{ (stats?.totalSpent ?? 0).toLocaleString() }}
+    span.PassengerHistoryJourneys__c-unit 累計
+
+section.PassengerHistoryJourneys(v-else-if="isSignIn")
   .PassengerHistoryJourneys__label MY JOURNEYS
   h2.PassengerHistoryJourneys__title 我的旅程
 
@@ -74,6 +94,37 @@ section.PassengerHistoryJourneys(v-if="isSignIn")
   padding: 18px 16px;
   margin-bottom: 16px;
   box-shadow: var(--shadow-soft);
+}
+
+// ── compact：一行摘要 ─────────────────────────────────────
+.PassengerHistoryJourneys.is-compact {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 12px 16px;
+  box-shadow: none;
+}
+
+.PassengerHistoryJourneys__c-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.PassengerHistoryJourneys__c-val {
+  font-size: var(--fs-body-lg);
+  font-weight: 600;
+  color: var(--da-dark);
+}
+
+.PassengerHistoryJourneys__c-unit {
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  color: var(--ink-mute);
+}
+
+.PassengerHistoryJourneys__c-sep {
+  color: var(--da-gray-pale);
 }
 
 .PassengerHistoryJourneys__label {

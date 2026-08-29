@@ -101,6 +101,8 @@ const ClickSupport = () => {
 
 // ── 版面 ──────────────────────────────────────────────────────────────────────
 .PageFaq {
+  /* 桌機：底色留滿版，內容收進 --shell 置中（手機時 max() 取回原本的邊距）*/
+  padding-inline: max(var(--gutter), calc((100% - var(--shell)) / 2));
   background: var(--da-off-white);
   color: var(--da-dark);
   min-height: 100svh;
