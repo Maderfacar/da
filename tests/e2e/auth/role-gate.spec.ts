@@ -92,3 +92,34 @@ test.describe('auth #8 — Driver pending / 非司機 不可進 /driver/* 受保
     expect(page.url()).not.toMatch(/\/driver\/dashboard/);
   });
 });
+
+/**
+ * 入口決定端別，不是角色決定端別（2026-08-29）
+ *
+ * 舊行為：只要身上有 admin，不管從哪裡進來，一律被丟去 /admin/orders。
+ * Brain AI 的原話：「我都 url 輸入 https://…/ 卻被導到 /admin 也不合理吧」。
+ * 他的帳號是 passenger + admin + driver 三重身分，所以他**從來沒看過乘客首頁**。
+ *
+ * 2026-08-17 那次事故（司機 OA 進站被丟去 admin）只補了 entryEnd='driver' 一條，
+ * 沒動「其餘一律 admin 優先」的預設 —— 這支守的就是那個預設被改掉之後不要長回來。
+ */
+test.describe('auth — 入口決定端別（多重身分不被 admin 優先蓋掉）', () => {
+  for (const entry of ['/', '/login'] as const) {
+    test(`multiRoleDriverAdmin 打 ${entry} → 落乘客端 /home，不進 /admin`, async ({ page, loginAs }) => {
+      await loginAs('multiRoleDriverAdmin');
+      await page.goto(entry, { waitUntil: 'load', timeout: 15_000 });
+
+      await page.waitForURL(/\/home/, { timeout: 10_000 });
+      expect(page.url(), '乘客端入口不該把人丟去 admin').not.toMatch(/\/admin/);
+      expect(page.url(), '乘客端入口不該把人丟去司機端').not.toMatch(/\/driver/);
+    });
+  }
+
+  test('adminWith2fa 打 / → 落乘客端 /home（要進 admin 走頂欄 ADMIN 鈕）', async ({ page, loginAs }) => {
+    await loginAs('adminWith2fa');
+    await page.goto('/', { waitUntil: 'load', timeout: 15_000 });
+
+    await page.waitForURL(/\/home/, { timeout: 10_000 });
+    expect(page.url()).not.toMatch(/\/admin/);
+  });
+});

@@ -247,7 +247,17 @@ const ADMIN_ORDERS_SEED = [
 
 const TARGETS: readonly VisualTarget[] = [
   // ── 乘客端 ────────────────────────────────────────────────
-  { name: 'passenger-landing', path: '/', identity: 'passenger' },
+  // 2026-08-29：`passenger-landing` 移除。
+  //
+  // 它拍的是 `/`，但 fixture 一律是**已登入**身分，而已登入者進 `/` 會被
+  // resolveAuthTarget 導去 `/home` —— 也就是說這張跟 passenger-home 是同一個畫面。
+  // 之前它看起來有內容，是因為 Playwright 預設 locale 是 en-US，`/` 被 i18n 導到 `/en`，
+  // 而當時 `/en` **不算入口**（auth-target 沒剝語系前綴），所以停在英文行銷頁上。
+  // 那是 bug 造成的覆蓋率，不是設計。前綴修好之後它就變成 /home 的重複。
+  //
+  // ⚠ 已知缺口：**未登入訪客看到的行銷 landing 目前沒有視覺基線**，而那是 SEO 主頁。
+  //   要補得先讓 fixture 有一個真正的 anonymous 身分（現在 plugin 在 mock 模式下
+  //   一定會 MockSignIn，做不出「已解析但未登入」的狀態）。
   { name: 'passenger-booking', path: '/booking', identity: 'passenger' },
   { name: 'passenger-orders', path: '/orders', identity: 'passenger' },
   // 有單的訂單頁 —— 空狀態拍不到狀態流程條與 chips 的計數

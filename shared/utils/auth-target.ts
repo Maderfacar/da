@@ -13,10 +13,25 @@
 //        （讓 register 頁顯示對應流程：申請 / pending / rejected 訊息）
 //
 //   2. `/` 或 `/login`（乘客端入口）
-//      - roles=[]         → /login（edge case — 已 sign in 但 role 載入失敗 / Firestore 阻擋）
-//      - admin            → /admin/orders（多角色時 admin 優先）
-//      - approved driver  → /driver/dashboard
-//      - 其他（passenger / pending driver）→ /home
+//      - roles=[]                       → /login（edge case — 已 sign in 但 role 載入失敗 / Firestore 阻擋）
+//      - entryEnd='driver' 且 approved  → /driver/dashboard（司機 OA 進站，見 entryEnd 說明）
+//      - 其他一律                        → /home
+//
+//      ⚠ 2026-08-29：拿掉「多角色時 admin 優先」與「approved driver 優先」兩條。
+//
+//      原本的規則是**用角色決定端別**：只要身上有 admin，不管你怎麼進來的，一律丟去
+//      /admin/orders。實際後果是「在網址列打 https://…/ 卻跳到 /admin」——
+//      使用者明明指定了乘客端的網址，系統用他的身分把他的選擇蓋掉。
+//
+//      正確的模型是**用入口決定端別，不是用角色**：
+//        - `/` 與 `/login` 是**乘客端**的入口 → 落點就是乘客端 /home
+//        - 司機端有自己的入口（`/driver/auth`、司機 OA richmenu）
+//        - Admin 端有自己的入口（`/admin/*`），而且乘客端頂欄常駐一顆 ADMIN 鈕
+//          （CommonHeaderUser 規則 1），要過去是一個點擊的事，不需要被強制帶過去
+//        - LIFF 深連結另有 liffTarget 走 resolveDestination，不受這條影響
+//
+//      entryEnd='driver' 那條保留：司機 OA 的 LIFF endpoint 也是 `/`，
+//      path 本身分不出端別，只能靠 entry-intent 記下的來源（見 2026-08-17 那次事故）。
 
 export interface AuthTargetInput {
   entryPath: string;
@@ -33,12 +48,31 @@ export interface AuthTargetInput {
   entryEnd?: 'driver' | 'passenger';
 }
 
+// i18n 是 prefix_except_default：預設繁中無前綴，英日是 /en、/ja。
+//
+// 2026-08-29：入口比對前先剝語系前綴。在此之前 `/en` 與 `/ja/login` 都**不算入口**，
+// 於是英日語系的已登入使用者打首頁完全不會被分流 —— 停在行銷 landing 上。
+// 本機瀏覽器是 zh-TW 所以一直沒人踩到；是新增的 e2e（Playwright 預設 en-US）抓出來的。
+// 剝掉之後目標也要把前綴接回去，否則英日使用者會被順手切回中文。
+const LOCALE_PREFIX_PATTERN = /^\/(?:en|ja)(?=\/|$)/;
+
+function _localePrefixOf(path: string): string {
+  return path.match(LOCALE_PREFIX_PATTERN)?.[0] ?? '';
+}
+
+function _stripLocale(path: string): string {
+  const stripped = path.replace(LOCALE_PREFIX_PATTERN, '');
+  return stripped === '' ? '/' : stripped;
+}
+
 function _isDriverAuthEntry(path: string): boolean {
-  return path === '/driver/auth' || path.startsWith('/driver/auth/');
+  const p = _stripLocale(path);
+  return p === '/driver/auth' || p.startsWith('/driver/auth/');
 }
 
 function _isPassengerEntry(path: string): boolean {
-  return path === '/' || path === '/login' || path === '/login/';
+  const p = _stripLocale(path);
+  return p === '/' || p === '/login' || p === '/login/';
 }
 
 export function isLoginEntry(path: string): boolean {
@@ -104,20 +138,22 @@ export function resolveAuthTarget(input: AuthTargetInput): string {
   const hasDriver = input.roles.includes('driver');
   const hasAdmin = input.roles.includes('admin');
   const driverApproved = hasDriver && input.approved;
+  // 進站帶什麼語系，就用什麼語系落地（英日使用者不該被順手切回中文）
+  const prefix = _localePrefixOf(input.entryPath);
+  const withLocale = (target: string): string => `${prefix}${target}`;
 
   if (_isDriverAuthEntry(input.entryPath)) {
-    if (driverApproved) return '/driver/dashboard';
-    if (hasAdmin && !hasDriver) return '/admin/orders';
-    return '/driver/register';
+    if (driverApproved) return withLocale('/driver/dashboard');
+    if (hasAdmin && !hasDriver) return withLocale('/admin/orders');
+    return withLocale('/driver/register');
   }
 
   if (_isPassengerEntry(input.entryPath)) {
-    if (input.roles.length === 0) return '/login';
-    // 入口端別優先於角色優先序：從司機 OA 進來的多重身分者應落司機端，不該被 admin 優先蓋掉
-    if (input.entryEnd === 'driver' && driverApproved) return '/driver/dashboard';
-    if (hasAdmin) return '/admin/orders';
-    if (driverApproved) return '/driver/dashboard';
-    return '/home';
+    if (input.roles.length === 0) return withLocale('/login');
+    // 唯一的例外：司機 OA 的 LIFF endpoint 也是 `/`，path 分不出端別，靠 entry-intent 補。
+    if (input.entryEnd === 'driver' && driverApproved) return withLocale('/driver/dashboard');
+    // 其餘一律回乘客端 —— 入口決定端別，不是角色決定端別（見檔頭 2026-08-29 段落）。
+    return withLocale('/home');
   }
 
   return '';

@@ -25,12 +25,15 @@ describe('resolveAuthTarget — / entry', () => {
     expect(resolveAuthTarget({ ...base, isSignIn: false, roles: ['passenger'] })).toBe('');
   });
 
-  it('admin → /admin/orders', () => {
-    expect(resolveAuthTarget({ ...base, roles: ['passenger', 'admin'] })).toBe('/admin/orders');
+  // 2026-08-29：`/` 是**乘客端**的入口，落點就是乘客端。
+  // 舊規則用角色決定端別（有 admin 就丟 /admin/orders），實際後果是
+  // 「在網址列打 https://…/ 卻跳到 /admin」—— 使用者指定了乘客端網址，被身分蓋掉。
+  it('admin 也落 /home —— 入口決定端別，不是角色決定端別', () => {
+    expect(resolveAuthTarget({ ...base, roles: ['passenger', 'admin'] })).toBe('/home');
   });
 
-  it('approved driver → /driver/dashboard', () => {
-    expect(resolveAuthTarget({ ...base, roles: ['passenger', 'driver'], approved: true })).toBe('/driver/dashboard');
+  it('approved driver 也落 /home（要進司機端請走 /driver/auth 或司機 OA）', () => {
+    expect(resolveAuthTarget({ ...base, roles: ['passenger', 'driver'], approved: true })).toBe('/home');
   });
 
   it('passenger only → /home', () => {
@@ -45,16 +48,16 @@ describe('resolveAuthTarget — / entry', () => {
     expect(resolveAuthTarget({ ...base, roles: [] })).toBe('/login');
   });
 
-  it('admin takes precedence over approved driver', () => {
-    expect(resolveAuthTarget({ ...base, roles: ['admin', 'driver'], approved: true })).toBe('/admin/orders');
+  it('三重身分（passenger+admin+driver）從網址列打 / → /home，不再被丟去 admin', () => {
+    expect(resolveAuthTarget({ ...base, roles: ['passenger', 'admin', 'driver'], approved: true })).toBe('/home');
   });
 });
 
 describe('resolveAuthTarget — /login entry', () => {
   const base = { entryPath: '/login', isSignIn: true, approved: false };
 
-  it('admin → /admin/orders', () => {
-    expect(resolveAuthTarget({ ...base, roles: ['admin'] })).toBe('/admin/orders');
+  it('admin 從乘客登入頁進來 → /home（頂欄有 ADMIN 鈕，要過去是一個點擊）', () => {
+    expect(resolveAuthTarget({ ...base, roles: ['admin'] })).toBe('/home');
   });
 
   it('passenger → /home', () => {
@@ -180,25 +183,59 @@ describe('resolveAuthTarget — entryEnd 入口端別優先', () => {
     expect(resolveAuthTarget({ ...multiRole, entryEnd: 'driver' })).toBe('/driver/dashboard');
   });
 
-  it('乘客 OA 進站的 admin+driver → 維持 admin 優先（既有行為不變）', () => {
-    expect(resolveAuthTarget({ ...multiRole, entryEnd: 'passenger' })).toBe('/admin/orders');
+  it('乘客 OA 進站的 admin+driver → 乘客端 /home', () => {
+    expect(resolveAuthTarget({ ...multiRole, entryEnd: 'passenger' })).toBe('/home');
   });
 
-  it('無 entryEnd → 維持既有 admin 優先（不影響桌機直接開站）', () => {
-    expect(resolveAuthTarget({ ...multiRole })).toBe('/admin/orders');
+  it('無 entryEnd（桌機直接打網址）→ 乘客端 /home', () => {
+    expect(resolveAuthTarget({ ...multiRole })).toBe('/home');
   });
 
-  it('司機 OA 進站但 driver 未核准 → 不硬導司機端，仍回 admin', () => {
-    expect(resolveAuthTarget({ ...multiRole, approved: false, entryEnd: 'driver' })).toBe('/admin/orders');
+  it('司機 OA 進站但 driver 未核准 → 不硬導司機端，落乘客端 /home', () => {
+    expect(resolveAuthTarget({ ...multiRole, approved: false, entryEnd: 'driver' })).toBe('/home');
   });
 
-  it('司機 OA 進站的純 admin（無 driver 角色）→ 仍回 admin', () => {
+  it('司機 OA 進站的純 admin（無 driver 角色）→ 落乘客端 /home，不再被丟去 admin', () => {
     expect(resolveAuthTarget({
       entryPath: '/', isSignIn: true, roles: ['passenger', 'admin'], approved: false, entryEnd: 'driver',
-    })).toBe('/admin/orders');
+    })).toBe('/home');
   });
 
   it('entryEnd 透過 resolveDestination 傳遞下去', () => {
     expect(resolveDestination({ ...multiRole, liffTarget: '', entryEnd: 'driver' })).toBe('/driver/dashboard');
+  });
+});
+
+// 2026-08-29：i18n prefix_except_default —— `/en` 與 `/ja/login` 也是入口。
+// 在此之前它們不算入口，英日語系的已登入使用者打首頁完全不會被分流，
+// 停在行銷 landing 上。本機瀏覽器是 zh-TW 所以一直沒人踩到。
+describe('resolveAuthTarget — 語系前綴（/en、/ja）', () => {
+  const signedIn = { isSignIn: true, roles: ['passenger'], approved: false } as const;
+
+  it('/en 也算乘客端入口', () => {
+    expect(isLoginEntry('/en')).toBe(true);
+    expect(isLoginEntry('/ja/login')).toBe(true);
+    expect(isLoginEntry('/en/driver/auth')).toBe(true);
+  });
+
+  it('/en → /en/home（不把英日使用者切回中文）', () => {
+    expect(resolveAuthTarget({ ...signedIn, entryPath: '/en' })).toBe('/en/home');
+    expect(resolveAuthTarget({ ...signedIn, entryPath: '/ja/login' })).toBe('/ja/home');
+  });
+
+  it('/en 的多重身分者一樣落乘客端，不進 admin', () => {
+    expect(resolveAuthTarget({
+      entryPath: '/en', isSignIn: true, roles: ['passenger', 'admin', 'driver'], approved: true,
+    })).toBe('/en/home');
+  });
+
+  it('/ja/driver/auth 的 approved driver → /ja/driver/dashboard', () => {
+    expect(resolveAuthTarget({
+      entryPath: '/ja/driver/auth', isSignIn: true, roles: ['driver'], approved: true,
+    })).toBe('/ja/driver/dashboard');
+  });
+
+  it('不是入口的語系路徑仍回空字串', () => {
+    expect(resolveAuthTarget({ ...signedIn, entryPath: '/en/orders' })).toBe('');
   });
 });
