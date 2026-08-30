@@ -70,9 +70,16 @@ useHead({
 //   此時 authResolved=false → middleware early return；之後 authResolved 變 true 時
 //   router 沒有 navigation event → middleware 不會重跑 → user 卡在本頁。
 //   解法：watch authResolved + isSignIn，用 utils 算同個 target 兜底（同 SSOT 不分歧）。
+//
+// hydration 同形守門補遺（2026-08-30）：immediate watch 在 setup 期就會跑，而已登入
+// 者的 authResolved 常在 hydration 完成前就是 true —— 此時 navigateTo 等於在 hydration
+// 中途換頁，client 拿 /home 的 vDOM 對 `/` 的 SSR HTML → 整頁 mismatch（prod 實測）。
+// 用 hydrationDone 壓到 mounted 後才准導向；SPA 導航只多一個 tick，無感。
+const hydrationDone = UseHydrationDone();
 watch(
-  () => [authStore.authResolved, authStore.isSignIn, authStore.roles.join(','), authStore.approved],
+  () => [hydrationDone.value, authStore.authResolved, authStore.isSignIn, authStore.roles.join(','), authStore.approved],
   () => {
+    if (!hydrationDone.value) return;
     if (!authStore.authResolved || !authStore.isSignIn) return;
     // 優先序 1：LIFF OAuth callback 目標
     // 2026-08-17：URL 被 stripDeepLinkParams 剝掉後改讀 entry-intent，

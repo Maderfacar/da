@@ -170,6 +170,35 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (rawLiffTarget) stripDeepLinkParams();
 
     if (dest && dest !== to.path) {
+      // hydration 同形守門補遺（2026-08-30，與 use-hydration-done.ts 同一套時序）：
+      // 初次進站（hydration 尚未完成）就 navigateTo 的話，client 會拿 dest 頁的 vDOM
+      // 去對「SSR 剛畫好的本頁」HTML —— 整頁 mismatch。prod 實測：已登入開 `/` →
+      // 補踢 /home，正是驗收回報的那行「Hydration completed but contains mismatches」。
+      // 改為：先讓本頁以 SSR 同形 hydrate 完（app:suspense:resolve = Nuxt 把 isHydrating
+      // 翻 false 的同一時刻），再導向同一個 dest。語意（SSR 不 redirect、client 補踢）
+      // 與落點完全不變，只是把導向壓到 hydration 之後 —— 使用者多看到本頁一瞬。
+      // 只跑一次的 hook、每次 app boot 至多一發，無迴圈風險故不過斷路器。
+      const nuxtApp = useNuxtApp();
+      if (import.meta.client && nuxtApp.isHydrating) {
+        logMiddleware({
+          event: 'middleware.redirect.login-entry',
+          message: `${to.path} → ${dest}（deferred：hydration 完成後導向）`,
+          metadata: {
+            from: to.path,
+            to: dest,
+            deferred: true,
+            liffTarget: liffTarget || null,
+            intentTarget: intent?.target ?? null,
+            entryEnd: intent?.end ?? null,
+            roles: authStore.roles,
+          },
+        });
+        const router = useRouter();
+        nuxtApp.hook('app:suspense:resolve', () => {
+          void router.replace(dest);
+        });
+        return;
+      }
       return guardedRedirect(dest, 'middleware.redirect.login-entry', `${to.path} → ${dest}`, {
         from: to.path,
         to: dest,

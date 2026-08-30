@@ -48,6 +48,25 @@ test.describe('layout hydration mismatch 守衛', () => {
     });
   }
 
+  // 已登入者開 login entry `/`（2026-08-30 prod 驗收回報的那顆）：
+  // middleware/role 的 login-entry 補踢原本在 hydration 完成前就 navigateTo(/home)，
+  // client 拿 /home 的 vDOM 對 `/` 的 SSR HTML → 整頁 mismatch。修法＝導向壓到
+  // app:suspense:resolve 之後（middleware）+ PageIndex watch 加 hydrationDone 因子。
+  // 本案例同時守「mismatch 為零」與「補踢仍然會發生」兩件事。
+  test('passenger 開 / 補踢 /home 不得有 hydration mismatch', async ({ page, loginAs }) => {
+    await loginAs('passenger');
+    const capture = attachConsoleCapture(page);
+    await page.goto('/', { waitUntil: 'load', timeout: 25_000 });
+    // 補踢改到 hydration 完成後才發生 —— 等 URL 真的變成 /home，證明導向沒有因此丟失
+    await page.waitForURL('**/home', { timeout: 15_000 });
+    await page.waitForTimeout(3_000);
+
+    expect(
+      capture.hydrationMismatches,
+      `/ → /home 補踢的 hydration mismatch：\n${capture.hydrationMismatches.join('\n')}`,
+    ).toHaveLength(0);
+  });
+
   // 受保護路由：登入態直達（不觸發 redirect），同路由 hydration 必須同形
   for (const { end, path, identity } of [
     { end: '乘客（front-desk）', path: '/orders', identity: 'passenger' },
