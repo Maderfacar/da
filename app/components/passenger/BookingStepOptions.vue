@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   calculateCharterFareV2,
+  calculateFareV2,
   type VehicleType,
   type FleetVehicle,
   type OrderType,
@@ -9,11 +10,6 @@ import {
 } from '~shared/pricing';
 import type { GooglePlace, MapsRouteRes } from '~/protocol/fetch-api/api/maps';
 import type { TagDto } from '@/protocol/fetch-api/api/tag';
-import { Swiper, SwiperSlide } from 'swiper/vue';
-import { Navigation } from 'swiper/modules';
-import type { Swiper as SwiperInstance } from 'swiper/types';
-import 'swiper/css';
-import 'swiper/css/navigation';
 
 export interface LuggageItem { typeId: string; count: number }
 
@@ -162,6 +158,9 @@ const luggageTypes = computed(() => storeConfig.luggageTypes);
 const fareResult = ref<MapsRouteRes | null>(null);
 const fareLoading = ref(false);
 const charterResult = ref<CharterFareBreakdownV2 | null>(null);
+// charter 路線回應另存一份（含 routeMetrics / isRoundTrip）—— 供車型卡並排比價用；
+// 非 charter 直接讀 fareResult.routeMetrics
+const charterRouteRes = ref<MapsRouteRes | null>(null);
 let _fareTimer: ReturnType<typeof setTimeout> | null = null;
 
 const ApiFetchCharterFare = async () => {
@@ -203,6 +202,7 @@ const ApiFetchCharterFare = async () => {
     emit('charterCalc', null);
     return;
   }
+  charterRouteRes.value = res.data;
 
   const pickup = props.pickupDateTime ? new Date(props.pickupDateTime) : new Date();
   const totalHours = planKeys.reduce((s, k) => s + CHARTER_PLAN_KEY_TO_HOURS[k], 0);
@@ -315,18 +315,65 @@ const HandleUpdateTags = (next: string[]) => {
   emit('update:selectedTagIds', next);
 };
 
-// ── Booking v2 批次 2：車型卡 Swiper Slider ──────────────────────────────────
-const swiperRef = ref<SwiperInstance | null>(null);
-const OnSwiperReady = (sw: SwiperInstance) => { swiperRef.value = sw; };
-const ClickSwiperPrev = () => swiperRef.value?.slidePrev();
-const ClickSwiperNext = () => swiperRef.value?.slideNext();
-const swiperModules = [Navigation];
-const swiperBreakpoints = {
-  0: { slidesPerView: 1.2, spaceBetween: 10 },
-  480: { slidesPerView: 1.5, spaceBetween: 12 },
-  768: { slidesPerView: 2.2, spaceBetween: 14 },
-  1024: { slidesPerView: 2.5, spaceBetween: 16 },
-};
+// ── 待辦②：車型橫向卡並排比價（取代 Swiper 輪播）────────────────────────────
+// 一次 route 回應（routeMetrics 與車型無關）+ 共用純函式引擎，算出全部車型的估價，
+// 讓價差在同一屏並排看得到。
+//
+// ⚠ 跨端公式一致性（feedback-cross-version-formula-consistency）：
+//   client 與 server 用同一支 calculateFareV2、同一份 routeMetrics（server 回的）、
+//   同一份 fareRules（StoreConfig 從 /nuxt-api/config/fleet 撈，TTL 30s）。
+//   「選中車型」一律以 server 回傳的 fareTotal 蓋掉 client 估值 —— 卡片上的數字
+//   與明細卡、第四步、落帳永遠同源，其他車型的數字只是比價參考。
+const vehiclePriceMap = computed<Record<string, number | null>>(() => {
+  const map: Record<string, number | null> = {};
+  const rules = storeConfig.fareRules;
+  const pickup = props.pickupDateTime ? new Date(props.pickupDateTime) : new Date();
+
+  if (isCharter.value) {
+    const routeRes = charterRouteRes.value;
+    const planKeys = props.charterPlanKeys.slice(0, props.charterDays);
+    const totalHours = planKeys.reduce((s, k) => s + (CHARTER_PLAN_KEY_TO_HOURS[k] ?? 0), 0);
+    const estimatedEnd = new Date(pickup.getTime() + totalHours * 3600 * 1000);
+    for (const v of storeConfig.EnabledVehicles) {
+      if (!routeRes?.routeMetrics || !rules || planKeys.length !== props.charterDays || planKeys.length === 0) {
+        map[v.id] = null;
+        continue;
+      }
+      if (planKeys.some((k) => !v.charterPlans?.[k]?.enabled)) {
+        map[v.id] = null;
+        continue;
+      }
+      try {
+        map[v.id] = calculateCharterFareV2(
+          v, planKeys, routeRes.routeMetrics, routeRes.isRoundTrip ?? false,
+          pickup, estimatedEnd, null, [], rules,
+        ).final;
+      } catch {
+        map[v.id] = null;
+      }
+    }
+    if (charterResult.value && vehicle.value) map[vehicle.value] = charterResult.value.final;
+    return map;
+  }
+
+  const metrics = fareResult.value?.routeMetrics ?? null;
+  const extraObjs = storeConfig.EnabledExtras.filter((e) => extras.value.includes(e.id));
+  for (const v of storeConfig.EnabledVehicles) {
+    if (!metrics || !rules) {
+      map[v.id] = null;
+      continue;
+    }
+    try {
+      map[v.id] = calculateFareV2(v, metrics, pickup, extraObjs, rules, props.orderType ?? null).final;
+    } catch {
+      map[v.id] = null;
+    }
+  }
+  if (fareResult.value?.fareTotal != null && vehicle.value) map[vehicle.value] = fareResult.value.fareTotal;
+  return map;
+});
+
+const FmtPrice = (n: number): string => Math.round(n).toLocaleString('en-US');
 </script>
 
 <template lang="pug">
@@ -373,53 +420,37 @@ const swiperBreakpoints = {
   .PassengerBookingStepOptions__section-label.mt VEHICLE
   h2.PassengerBookingStepOptions__title {{ $t('booking.options.vehicleTitle') }}
 
-  .PassengerBookingStepOptions__vehicle-slider
-    button.PassengerBookingStepOptions__slider-nav.is-prev(
-      type="button"
-      :aria-label="$t('booking.nav.back')"
-      @click="ClickSwiperPrev"
-    ) ‹
-    Swiper.PassengerBookingStepOptions__swiper(
-      :modules="swiperModules"
-      :breakpoints="swiperBreakpoints"
-      :grab-cursor="true"
-      :centered-slides="false"
-      :slides-per-view="1.5"
-      :space-between="12"
-      :watch-overflow="true"
-      @swiper="OnSwiperReady"
+  //- 待辦②：橫向捲動卡（scroll-snap），2 張以上同屏、每張帶預估價 —— 價差並排看得到。
+  //- 路線未估出前價格顯示「—」（例如尚未填地點就直接跳到第三步）。
+  .PassengerBookingStepOptions__vehicle-scroll
+    .PassengerBookingStepOptions__vehicle-card(
+      v-for="cfg in vehicles"
+      :key="cfg.id"
+      :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
+      @click="ClickVehicle(cfg)"
     )
-      SwiperSlide(v-for="cfg in vehicles" :key="cfg.id")
-        .PassengerBookingStepOptions__vehicle-card(
-          :class="{ 'is-active': vehicle === cfg.id, 'is-disabled': cfg.status === 'disabled', 'is-warn': cfg.status === 'warn' }"
-          @click="ClickVehicle(cfg)"
-        )
-          //- 主視覺：有 images.exterior 顯示縮圖，否則 fallback mdi icon
-          .PassengerBookingStepOptions__vehicle-hero(v-if="cfg.images?.exterior")
-            img.PassengerBookingStepOptions__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en")
-          .PassengerBookingStepOptions__vehicle-hero.is-icon(v-else)
-            NuxtIcon.PassengerBookingStepOptions__vehicle-hero-icon(:name="cfg.icon")
-          //- 毛玻璃文字區
-          .PassengerBookingStepOptions__vehicle-body
-            .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
-            .PassengerBookingStepOptions__vehicle-sub {{ cfg.label.en }}
-            .PassengerBookingStepOptions__vehicle-specs
-              span
-                NuxtIcon(name="mdi:account-group")
-                | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
-              span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
-                NuxtIcon(name="mdi:bag-suitcase")
-                | {{ Loc(cfg.luggageDescription) }}
-            //- 起跳價 + 每公里費率移除（對齊 /fare：價格僅在試算機呈現）
-            .PassengerBookingStepOptions__vehicle-tagline(v-if="cfg.tagline && Loc(cfg.tagline)") {{ Loc(cfg.tagline) }}
-            .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
-    button.PassengerBookingStepOptions__slider-nav.is-next(
-      type="button"
-      :aria-label="$t('booking.nav.next')"
-      @click="ClickSwiperNext"
-    ) ›
+      //- 主視覺：有 images.exterior 顯示縮圖，否則 fallback mdi icon
+      .PassengerBookingStepOptions__vehicle-hero(v-if="cfg.images?.exterior")
+        img.PassengerBookingStepOptions__vehicle-hero-img(:src="cfg.images.exterior" :alt="cfg.label.en" loading="lazy")
+      .PassengerBookingStepOptions__vehicle-hero.is-icon(v-else)
+        NuxtIcon.PassengerBookingStepOptions__vehicle-hero-icon(:name="cfg.icon")
+      .PassengerBookingStepOptions__vehicle-body
+        .PassengerBookingStepOptions__vehicle-name {{ Loc(cfg.label) }}
+        .PassengerBookingStepOptions__vehicle-specs
+          span
+            NuxtIcon(name="mdi:account-group")
+            | {{ cfg.capacity }}{{ $t('fleet.unit.person') }}
+          span(v-if="cfg.luggageDescription && Loc(cfg.luggageDescription)")
+            NuxtIcon(name="mdi:bag-suitcase")
+            | {{ Loc(cfg.luggageDescription) }}
+        //- 預估價：這台車跑這趟路線的價格（選中車型 = server 數字，其餘為同引擎比價參考）
+        .PassengerBookingStepOptions__vehicle-price
+          span.PassengerBookingStepOptions__vehicle-price-currency NT$
+          span.PassengerBookingStepOptions__vehicle-price-value(v-if="vehiclePriceMap[cfg.id] != null") {{ FmtPrice(vehiclePriceMap[cfg.id] ?? 0) }}
+          span.PassengerBookingStepOptions__vehicle-price-value.is-empty(v-else) —
+        .PassengerBookingStepOptions__vehicle-hint(v-if="cfg.hint") {{ cfg.hint }}
 
-  //- 加值服務（位置：車型 swiper 之後、期望特徵之前；charter 訂單預估階段不算入車資，server 編排會以實際 fleet extras 重算）
+  //- 加值服務（位置：車型卡之後、期望特徵之前；charter 訂單預估階段不算入車資，server 編排會以實際 fleet extras 重算）
   template(v-if="storeConfig.EnabledExtras.length")
     .PassengerBookingStepOptions__section-label.mt EXTRAS
     h2.PassengerBookingStepOptions__title {{ $t('booking.options.extrasTitle') }}
@@ -477,7 +508,15 @@ const swiperBreakpoints = {
             @update:model-value="HandleUpdateTags"
           )
 
-  //- 車資僅在第四步 Confirm 顯示；第三步隱藏預估卡
+  //- 待辦③：預估車資卡（點擊就地展開明細，不用等到第四步）
+  //- 資料同源：非 charter 用 server 回應的 fareBreakdown / routeMetrics；charter 用 client 引擎明細
+  PassengerFareBreakdownCard(
+    :fare-total="isCharter ? (charterResult?.final ?? null) : (fareResult?.fareTotal ?? null)"
+    :loading="fareLoading"
+    :breakdown="isCharter ? null : (fareResult?.fareBreakdown ?? null)"
+    :metrics="fareResult?.routeMetrics ?? null"
+    :charter-breakdown="isCharter ? charterResult : null"
+  )
 
   //- 未選車型時提示（讓使用者明白為什麼「下一步」按不下去）
   p.PassengerBookingStepOptions__next-hint(v-if="!canGoNext") {{ $t('booking.options.pickVehicleHint') }}
@@ -660,58 +699,26 @@ const swiperBreakpoints = {
     }
   }
 
-  // ── Booking v2 批次 2：車型卡 Slider ──────────────────────────────────
-  &__vehicle-slider {
-    position: relative;
+  // ── 待辦②：車型橫向卡（scroll-snap 並排比價）────────────────────────
+  // 卡寬收到 164px：390px 屏一屏看得到 2 張多一點，價差直接並排。
+  // 負 margin + padding 讓捲動溢出貼齊頁面 gutter，捲軸隱藏。
+  &__vehicle-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
     margin: 0 -4px;
-  }
-
-  &__swiper {
     padding: 4px 4px 6px;
-    overflow: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
-  &__slider-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 5;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--r-round);
-    border: 1px solid var(--da-gray-pale);
-    background: var(--da-cream);
-    color: var(--da-dark);
-    font-size: var(--fs-h3);
-    line-height: var(--lh-flat);
-    cursor: pointer;
-    box-shadow: var(--shadow-soft);
-    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: var(--da-amber-pale);
-      border-color: var(--da-amber);
-      color: var(--accent-text);
-    }
-
-    &:active { transform: translateY(-50%) scale(0.9); }
-
-    &.is-prev { left: -8px; }
-    &.is-next { right: -8px; }
-
-    @media (min-width: 768px) {
-      width: 36px;
-      height: 36px;
-      font-size: var(--fs-h2);
-      &.is-prev { left: -10px; }
-      &.is-next { right: -10px; }
-    }
-  }
+  &__vehicle-scroll::-webkit-scrollbar { display: none; }
 
   &__vehicle-card {
+    flex: none;
+    width: 164px;
+    scroll-snap-align: start;
     background: var(--surface-raised);
     border: 1.5px solid var(--da-gray-pale);
     border-radius: var(--r-lg);
@@ -719,14 +726,14 @@ const swiperBreakpoints = {
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    transition: border-color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
     position: relative;
-    height: 380px;
     box-sizing: border-box;
 
     &.is-active {
       border-color: var(--da-amber);
       background: var(--da-amber-pale);
+      box-shadow: var(--shadow-soft);
     }
 
     &.is-warn { border-color: var(--wait); }
@@ -736,12 +743,16 @@ const swiperBreakpoints = {
       cursor: not-allowed;
       border-color: var(--stop);
     }
+
+    @media (min-width: 768px) {
+      width: 200px;
+    }
   }
 
-  // 鎖定固定高 220px，body 拿剩餘 160px；不再用 flex:1 避免 tagline/hint v-if 晃動造成圖片高低不一
+  // 固定高 hero；價格行永遠渲染（估不出顯示 —），卡高不因內容缺項晃動
   &__vehicle-hero {
     flex: none;
-    height: 220px;
+    height: 96px;
     overflow: hidden;
     background: var(--ink-a06);
     display: flex;
@@ -761,20 +772,19 @@ const swiperBreakpoints = {
   }
 
   &__vehicle-hero-icon {
-    font-size: var(--fs-hero);
+    font-size: var(--fs-h1);
     opacity: 0.55;
   }
 
   &__vehicle-body {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
-    padding: 14px 18px 16px;
+    padding: 10px 12px 12px;
     background: var(--surface-a82);
     border-top: 1px solid var(--surface-a72);
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
 
     .is-active & {
       background: color-mix(in srgb, var(--accent-wash) 88%, transparent);
@@ -783,37 +793,59 @@ const swiperBreakpoints = {
 
   &__vehicle-name {
     font-family: var(--ff-ui);
-    font-size: var(--fs-body-lg);
+    font-size: var(--fs-body);
     font-weight: 700;
     color: var(--da-dark);
-  }
-
-  &__vehicle-sub {
-    font-family: var(--ff-label);
-    font-size: var(--fs-label);
-    letter-spacing: var(--ls-wide);
-    color: var(--da-gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__vehicle-specs {
     display: flex;
-    gap: 10px;
-    font-size: var(--fs-body-sm);
+    gap: 8px;
+    font-size: var(--fs-label);
     color: var(--da-gray);
     align-items: center;
+    flex-wrap: wrap;
 
     span {
       display: flex;
       align-items: center;
       gap: 3px;
+      white-space: nowrap;
     }
   }
 
-  &__vehicle-tagline {
-    font-family: var(--ff-ui);
+  // 價格 = 這張卡存在的理由，字階拉到卡內最大；幣別小字，金額 data 字
+  &__vehicle-price {
+    margin-top: auto;
+    padding-top: 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+
+  &__vehicle-price-currency {
+    font-family: var(--ff-label);
     font-size: var(--fs-label);
+    letter-spacing: var(--ls-label);
     color: var(--da-gray);
-    line-height: var(--lh-normal);
+  }
+
+  &__vehicle-price-value {
+    font-family: var(--ff-data);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: var(--fs-h3);
+    font-weight: 700;
+    color: var(--da-dark);
+
+    .is-active & { color: var(--accent-text); }
+
+    &.is-empty {
+      color: var(--da-gray-light);
+      font-weight: 400;
+    }
   }
 
   &__vehicle-hint {

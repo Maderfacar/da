@@ -52,6 +52,11 @@ export default {
     back: '戻る',
     publishedAt: '配信日時',
     cardUnread: '未読',
+    filter: {
+      all: 'すべて',
+      announcement: 'お知らせ',
+      trip: 'マイトリップ',
+    },
   },
   // サイドメニュー（hamburger drawer、2026/05/14 リニューアル）
   drawer: {
@@ -551,6 +556,10 @@ export default {
       freewayToll: '高速道路 {km} km',
       extras: 'オプション',
       rounded: '合計（{round}円単位）',
+      // ステップ3の料金内訳（その場展開）追加分
+      mountainIncluded: '山間部割増 ×{mul}（走行料金に含む）',
+      timeSurcharge: '時間帯割増',
+      promoDiscount: 'キャンペーン割引',
     },
     confirm: {
       title: '注文を確認',

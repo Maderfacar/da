@@ -52,6 +52,11 @@ export default {
     back: 'Back',
     publishedAt: 'Published',
     cardUnread: 'Unread',
+    filter: {
+      all: 'All',
+      announcement: 'News',
+      trip: 'My trips',
+    },
   },
   // Side menu (hamburger drawer, 2026/05/14 redesign)
   drawer: {
@@ -551,6 +556,10 @@ export default {
       freewayToll: 'Freeway {km} km',
       extras: 'Add-on services',
       rounded: 'Total (rounded to {round})',
+      // Step 3 in-place breakdown additions
+      mountainIncluded: 'Mountain surcharge ×{mul} (included in distance)',
+      timeSurcharge: 'Time-of-day surcharge',
+      promoDiscount: 'Promo discount',
     },
     confirm: {
       title: 'Confirm Order',

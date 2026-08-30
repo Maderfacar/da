@@ -5,25 +5,54 @@
 // - 點擊卡片 → /notifications/[id]
 // - 分頁：cursor-based（後端依 publishedAt desc）
 // - 30s polling + visibility refresh（沿用 orders 端模式）
-import type { AnnouncementListItem } from '@/protocol/fetch-api/api/announcement';
+import type { AnnouncementCategory, AnnouncementListItem } from '@/protocol/fetch-api/api/announcement';
 
 definePageMeta({ layout: 'front-desk', middleware: ['auth', 'role'] });
 
 const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
 
 const items = ref<AnnouncementListItem[]>([]);
 const nextCursor = ref<string | null>(null);
 const loading = ref(false);
 const loadingMore = ref(false);
 
+// ── 分類 chips（提案第四張畫面：全部 / 公告 / 我的行程）──────
+// category 是 targetType 的衍生檢視（trip = 針對我某張訂單的訊息），server 過濾。
+// 選中的分類進 URL query（?cat=trip），分享 / 重整不掉狀態。
+type CategoryFilter = 'all' | AnnouncementCategory;
+const CATEGORY_FILTERS: readonly CategoryFilter[] = ['all', 'announcement', 'trip'];
+const _initialCat = ((): CategoryFilter => {
+  const q = route.query.cat;
+  return q === 'announcement' || q === 'trip' ? q : 'all';
+})();
+const activeCategory = ref<CategoryFilter>(_initialCat);
+
+const ClickCategory = (cat: CategoryFilter) => {
+  if (activeCategory.value === cat) return;
+  activeCategory.value = cat;
+  router.replace({ query: { ...route.query, cat: cat === 'all' ? undefined : cat } });
+  ApiLoad();
+};
+
+// 換分類時舊請求可能晚到 —— 用序號擋掉過期回應，避免 chips 快速切換時列表閃回上一類
+let _loadSeq = 0;
+
 const ApiLoad = async (cursor: string | null = null) => {
+  const seq = ++_loadSeq;
   if (cursor) {
     loadingMore.value = true;
   } else {
     loading.value = true;
   }
   try {
-    const res = await $api.GetAnnouncements({ limit: 20, cursor });
+    const res = await $api.GetAnnouncements({
+      limit: 20,
+      cursor,
+      ...(activeCategory.value !== 'all' ? { category: activeCategory.value } : {}),
+    });
+    if (seq !== _loadSeq) return;
     if (res.status.code !== $enum.apiStatus.success) {
       ElMessage({ message: res.status.message?.zh_tw || t('notifications.loadFailed'), type: 'error' });
       return;
@@ -35,8 +64,10 @@ const ApiLoad = async (cursor: string | null = null) => {
     }
     nextCursor.value = res.data?.nextCursor ?? null;
   } finally {
-    loading.value = false;
-    loadingMore.value = false;
+    if (seq === _loadSeq) {
+      loading.value = false;
+      loadingMore.value = false;
+    }
   }
 };
 
@@ -74,12 +105,18 @@ const FormatTime = (iso: string | null): string => {
 <template lang="pug">
 .PageNotifications
   //- 提案總則 02：巨大襯線標題拿掉 —— 頁名已經在頂欄。
-  //-
-  //- ⚠ 提案第四張畫面的「全部 / 公告 / 我的行程」分類 chips **沒做**：
-  //-   /nuxt-api/passenger/announcements 的 AnnouncementListItem 只有
-  //-   id / title / coverImageUrl / publishedAt / isRead —— 沒有 category 欄位，
-  //-   也沒有「我的行程」這條訊息流（行程狀態變更目前只走 LINE 推播與 /orders）。
-  //-   提案的資料來源表把它寫成「已在用」，那一格是錯的。要做得先加後端欄位。
+
+  //- 分類 chips（提案第四張畫面）：category 衍生自 targetType（trip = order-targeted），
+  //- server 過濾。注意「我的行程」目前只有 admin 手動發 order-targeted 公告時才有內容 ——
+  //- 行程狀態變更本身仍只走 LINE 推播，沒有自動落一則站內訊息。
+  .PageNotifications__chips
+    button.PageNotifications__chip(
+      v-for="cat in CATEGORY_FILTERS"
+      :key="cat"
+      type="button"
+      :class="{ 'is-active': activeCategory === cat }"
+      @click="ClickCategory(cat)"
+    ) {{ $t(`notifications.filter.${cat}`) }}
 
   //- 載入中（首次）
   .PageNotifications__loading(v-if="loading")
@@ -151,6 +188,41 @@ const FormatTime = (iso: string | null): string => {
   line-height: var(--lh-flat);
   color: var(--da-dark);
   margin: 0;
+}
+
+// ── 分類 chips（與 /orders 狀態 chips 同語彙：pill、選中換 ink 底）──
+.PageNotifications__chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 0 14px;
+  scrollbar-width: none;
+}
+
+.PageNotifications__chips::-webkit-scrollbar { display: none; }
+
+.PageNotifications__chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  color: var(--ink-soft);
+  font-family: var(--ff-ui);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  /* 選中只換顏色，不動 border-width —— 動了會造成 0.5px 重排 */
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.PageNotifications__chip.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface-raised);
 }
 
 // ── 載入中 ────────────────────────────────────────────────

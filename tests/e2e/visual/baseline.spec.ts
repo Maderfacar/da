@@ -160,8 +160,8 @@ const ORDERS_SEED = [
 
 const ANNOUNCEMENTS_SEED = {
   items: [
-    { id: 'seednews1', title: '中秋連假加成時段公告', coverImageUrl: null, publishedAt: '2026-08-20T10:00:00+08:00', isRead: false },
-    { id: 'seednews2', title: '桃園機場 T1 接機點調整', coverImageUrl: null, publishedAt: '2026-08-12T10:00:00+08:00', isRead: true },
+    { id: 'seednews1', title: '中秋連假加成時段公告', coverImageUrl: null, publishedAt: '2026-08-20T10:00:00+08:00', isRead: false, category: 'announcement' },
+    { id: 'seednews2', title: '桃園機場 T1 接機點調整', coverImageUrl: null, publishedAt: '2026-08-12T10:00:00+08:00', isRead: true, category: 'announcement' },
   ],
   nextCursor: null,
 };

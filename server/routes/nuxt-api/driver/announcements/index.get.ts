@@ -86,6 +86,8 @@ export default defineEventHandler(async (event) => {
         coverImageUrl: data.coverImageUrl ?? null,
         publishedAt: data.publishedAt?.toDate?.()?.toISOString?.() ?? null,
         isRead: readIdsSet.has(doc.id),
+        // 司機端只看 all / driver target，恆為 announcement；補欄位讓兩端 shape 一致
+        category: 'announcement' as const,
       };
     });
 

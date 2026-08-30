@@ -1,20 +1,24 @@
 // P37 Phase 5：乘客端公告 API
 import methods from '@/protocol/fetch-api/methods';
 import type {
+  AnnouncementCategory,
   AnnouncementDetail,
   AnnouncementListRes,
   AnnouncementUnreadRes,
 } from './type.d';
 
 export type {
+  AnnouncementCategory,
   AnnouncementDetail,
   AnnouncementListItem,
   AnnouncementListRes,
   AnnouncementUnreadRes,
 } from './type.d';
 
-/** 取得乘客可見的 published 公告列表（分頁） */
-export const GetAnnouncements = (params: { limit?: number; cursor?: string | null } = {}) =>
+/** 取得乘客可見的 published 公告列表（分頁；category 不帶 = 全部） */
+export const GetAnnouncements = (
+  params: { limit?: number; cursor?: string | null; category?: AnnouncementCategory } = {},
+) =>
   methods.get<AnnouncementListRes>(
     '/nuxt-api/passenger/announcements',
     params as Record<string, unknown>,

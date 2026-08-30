@@ -10,11 +10,18 @@
  * Query：
  *   limit?: number（1-50，default=20）
  *   cursor?: string（上一頁最後一篇 publishedAt ISO；optional）
+ *   category?: 'announcement' | 'trip'（optional；不帶 = 全部）
  *
  * 回傳：
  *   { items: AnnouncementListItem[], nextCursor: string | null }
  *
  * 注意：每項帶 `isRead` 欄位（讀 announcement_reads/{lineUid}/items 對比）。
+ *
+ * category 的定義（乘客消息頁分類 chips）：
+ *   - 'trip'         → targetType='order'（針對單一訂單的訊息，只有訂單主人可見）
+ *   - 'announcement' → 其餘（all / passenger）
+ * 這不是新欄位，是 targetType 的衍生檢視 —— 資料模型早就有 order-targeted 公告，
+ * 只是列表 API 之前沒吐出來。
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
@@ -33,6 +40,10 @@ export default defineEventHandler(async (event) => {
   if (limit > 50) limit = 50;
 
   const cursor = (query.cursor as string | undefined) ?? null;
+
+  // category 過濾（衍生自 targetType；非法值一律當「全部」，不擋請求）
+  const rawCategory = query.category;
+  const category = rawCategory === 'trip' || rawCategory === 'announcement' ? rawCategory : null;
 
   try {
     const { db } = useFirebaseAdmin(firebaseServiceAccountJson);
@@ -55,11 +66,13 @@ export default defineEventHandler(async (event) => {
 
     const snap = await q.get();
 
-    // 過濾：channels.inApp + visibility
+    // 過濾：channels.inApp + visibility + category
     const visible = snap.docs.filter((doc) => {
       const data = doc.data();
       const channels = data.channels as { line?: boolean; inApp?: boolean } | undefined;
       if (!channels?.inApp) return false;
+      if (category === 'trip' && data.targetType !== 'order') return false;
+      if (category === 'announcement' && data.targetType === 'order') return false;
       return isAnnouncementVisibleToUser(
         {
           status: data.status,
@@ -95,6 +108,7 @@ export default defineEventHandler(async (event) => {
         coverImageUrl: data.coverImageUrl ?? null,
         publishedAt: data.publishedAt?.toDate?.()?.toISOString?.() ?? null,
         isRead: readIdsSet.has(doc.id),
+        category: data.targetType === 'order' ? 'trip' : 'announcement',
       };
     });
 

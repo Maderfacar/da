@@ -56,6 +56,11 @@ export default {
     back: '返回',
     publishedAt: '發佈時間',
     cardUnread: '未讀',
+    filter: {
+      all: '全部',
+      announcement: '公告',
+      trip: '我的行程',
+    },
   },
   // ── 側邊選單（hamburger drawer，2026/05/14 改造）─────────
   drawer: {
@@ -571,6 +576,10 @@ export default {
       freewayToll: '國道 {km} km',
       extras: '加值服務',
       rounded: '總計（進位 {round} 元）',
+      // 待辦③：第三步就地展開明細新增
+      mountainIncluded: '山區加成 ×{mul}（已計入里程）',
+      timeSurcharge: '時段加價',
+      promoDiscount: '優惠折抵',
     },
     confirm: {
       title: '確認訂單資訊',
