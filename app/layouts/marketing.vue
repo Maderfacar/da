@@ -7,12 +7,12 @@
 //   SSR 時 authResolved 必為 false → slot 不渲染 → AI 爬蟲拿到空白 body。
 //
 // 設計原則：
-//   - 不 import StoreAuth、不讀 authResolved/isSignIn
-//   - SSR 時直接 render slot（hero/features 等爬蟲可讀內容）
-//   - 用戶相關 UI（CommonHeaderUser, CommonDrawer）包 ClientOnly 避免 hydration mismatch
+//   - **slot 不 gate on auth**（SSR 直接 render，hero/features 等爬蟲可讀內容）
+//   - auth 只允許用在「疊加型 UI」（頭像、tab bar），且一律 ClientOnly +
+//     hydrationDone 守門，SSR 與 client 首次 render 保證同形
 //   - 視覺基調對齊 front-desk（同 nav 高度、字體、色票），避免品牌分裂
 //
-// 適用頁面：純行銷 / 公開 landing page，目前僅 `/`（pages/index.vue）使用。
+// 適用頁面：公開行銷/資訊頁 —— `/` `/fare` `/faq` `/legal/*`。
 
 // 季節主題：SSR 解析生效主題並注入 [data-da-theme]（FOUC-free；只作用乘客端）
 useSiteThemeInject();
@@ -20,10 +20,20 @@ useSiteThemeInject();
 const drawerOpen = ref(false);
 const ClickHamburger = () => { drawerOpen.value = true; };
 const ClickLogo = () => navigateTo('/');
+
+// ── 登入者的底部四格（2026-08-30，Brain AI 拍板）─────────────────────
+// /fare /faq 掛在本 layout（AEO 公開頁），登入的人一走進來 tab bar 就消失 ——
+// 與 front-desk 各頁不一致。補法：登入者也顯示同一組 CommonTabBar；
+// 訪客維持純行銷版（四格有三格要登入，對訪客只是誘導去撞登入牆）。
+// hydrationDone 守門：isSignIn 常在 hydration 完成前就翻 true，直接綁 class
+// 會讓 client 首次 render 與 SSR 不同形（同 use-hydration-done.ts 檔頭病根）。
+const { isSignIn } = storeToRefs(StoreAuth());
+const hydrationDone = UseHydrationDone();
+const showTabBar = computed(() => hydrationDone.value && isSignIn.value);
 </script>
 
 <template lang="pug">
-.LayoutMarketing(data-da-theme)
+.LayoutMarketing(data-da-theme :class="{ 'has-tabbar': showTabBar }")
   //- ── 固定頂部 Nav（SSR 友善：hamburger / logo / langSwitcher 都可 SSR）──────
   nav.LayoutMarketing__top
     .LayoutMarketing__nav-left
@@ -51,6 +61,10 @@ const ClickLogo = () => navigateTo('/');
 
   //- ── 共用 Footer（含 LINE QR）──────────────────────────────────────
   CommonFooter
+
+  //- ── 登入者的底部四格（ClientOnly + hydrationDone，SSR 同形）────────
+  ClientOnly
+    CommonTabBar(v-if="showTabBar")
 
   //- ── Drawer（純 client-side 互動，包 ClientOnly）─────────────────────
   ClientOnly
@@ -132,5 +146,12 @@ const ClickLogo = () => navigateTo('/');
 // ── 頁面主體 ─────────────────────────────────────────────────────
 .LayoutMarketing__body {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+// ── 登入者四格：讓出「四格 + 斜紋」的高度（與 front-desk 同一條規則）──
+@media (max-width: 900px) {
+  .LayoutMarketing.has-tabbar {
+    padding-bottom: calc(var(--tabbar-h) + var(--tabbar-stripe));
+  }
 }
 </style>

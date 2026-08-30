@@ -150,19 +150,23 @@ footer.CommonFooter
 
 <style lang="scss" scoped>
 
+/* 2026-08-30 改版（Brain AI 拍板）：舊版是整塊縞黑大底 —— 那是 cream 改版前的
+   遺產，而且違反口袋航廈提案「/home 唯一縞黑面是下一趟主卡」的規則。
+   改成 cream 資訊層（提案規則三：行銷降成資訊層）：底色比頁面低一階
+   （off-white → cream），文字走灰階、標籤走古銅，跑道斜紋帶保留當品牌記號。 */
 .CommonFooter {
-  background: var(--da-dark);
-  color: var(--da-cream);
+  background: var(--da-cream);
+  color: var(--da-dark);
 }
 
+/* 帶寬與手機底部四格上方那條（CommonTabBar__stripe）一致：10px 一節，兩端同語彙 */
 .CommonFooter__stripe {
-  height: 12px;
+  height: 8px;
   background: repeating-linear-gradient(
     -45deg,
-    var(--da-stripe-yellow) 0px, var(--da-stripe-yellow) 12px,
-    var(--da-stripe-dark) 12px, var(--da-stripe-dark) 24px
+    var(--da-stripe-dark) 0 10px,
+    var(--da-stripe-yellow) 10px 20px
   );
-  opacity: 0.85;
 }
 
 .CommonFooter__inner {
@@ -195,7 +199,7 @@ footer.CommonFooter
   padding: 8px;
   background: var(--surface-raised);
   border-radius: var(--r-md);
-  border: none;
+  border: 1px solid var(--da-gray-pale);
   cursor: pointer;
   box-shadow: var(--shadow-soft);
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
@@ -242,7 +246,7 @@ footer.CommonFooter
 .CommonFooter__qr-caption {
   font-family: var(--ff-ui);
   font-size: var(--fs-label);
-  color: var(--surface-a50);
+  color: var(--da-gray);
   max-width: 136px;
   line-height: var(--lh-normal);
 }
@@ -284,7 +288,7 @@ footer.CommonFooter
 .CommonFooter__tagline {
   font-family: var(--ff-ui);
   font-size: var(--fs-body-sm);
-  color: var(--surface-a60);
+  color: var(--da-gray);
   margin-top: 8px;
   line-height: var(--lh-relaxed);
 }
@@ -305,16 +309,17 @@ footer.CommonFooter
   background: transparent;
   border: none;
   padding: 6px 0;
-  color: var(--surface-a82);
+  color: var(--da-gray);
   font-family: var(--ff-ui);
   font-size: var(--fs-body);
   cursor: pointer;
   text-align: left;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
 .CommonFooter__link:hover,
 .CommonFooter__support:hover {
-  color: var(--da-cream);
+  color: var(--da-dark);
 }
 
 .CommonFooter__support-ext {
@@ -324,13 +329,13 @@ footer.CommonFooter
 
 .CommonFooter__hours {
   font-size: var(--fs-label);
-  color: var(--surface-a40);
+  color: var(--da-gray-light);
   margin-top: 4px;
 }
 
 .CommonFooter__bottom {
   padding: 16px 24px;
-  border-top: 1px solid var(--surface-a06);
+  border-top: 1px solid var(--da-gray-pale);
   text-align: center;
 }
 
@@ -338,6 +343,6 @@ footer.CommonFooter
   font-family: var(--ff-label);
   font-size: var(--fs-label);
   letter-spacing: var(--ls-caps-lg);
-  color: var(--surface-a30);
+  color: var(--da-gray-light);
 }
 </style>

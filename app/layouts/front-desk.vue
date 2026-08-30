@@ -50,12 +50,10 @@ const showContent = computed(
 // 頭像卡 / 我的旅程 / 客服資訊三個元件都在那裡），CLAUDE.md 的路由表沒跟上。
 // 死路由在 LIFF 裡不只是 404，它會被記進 entry-intent 反覆重放成迴圈（見 route-exists.ts）。
 // 四格若要各自不同目的地，第四格改成既有的「消息」——它在 drawer 本來就有，且帶未讀紅點。
-const TABS = [
-  { id: 'home',    path: '/home',          labelKey: 'tab.home',   icon: 'mdi:home-outline' },
-  { id: 'booking', path: '/booking',       labelKey: 'tab.book',   icon: 'mdi:car-outline' },
-  { id: 'orders',  path: '/orders',        labelKey: 'tab.orders', icon: 'mdi:file-document-outline' },
-  { id: 'news',    path: '/notifications', labelKey: 'tab.news',   icon: 'mdi:bell-outline' },
-] as const;
+//
+// 2026-08-30：四格清單抽到 app/utils/passenger-tabs.ts（PASSENGER_TABS）、
+// 手機四格 markup 抽成 CommonTabBar —— marketing layout（/fare /faq /legal）
+// 的登入者也要看到同一組四格，兩份清單/兩份 markup 必漂移。
 
 // ── 桌機常駐導覽（2026-08-29）───────────────────────────────
 // 在此之前，乘客端桌機只有一顆漢堡 —— 導覽藏在抽屜裡、內容貼滿 1440px，
@@ -64,7 +62,7 @@ const TABS = [
 // 桌機把四個高頻動作攤開成水平導覽，再補上抽屜裡剩下的兩個公開入口（車資 / 常見問題）。
 // 抽屜其餘項目（客服、服務條款、隱私權）頁尾本來就有，所以桌機不再需要抽屜。
 const DESKTOP_NAV = [
-  ...TABS,
+  ...PASSENGER_TABS,
   { id: 'fare', path: '/fare', labelKey: 'drawer.fare', icon: 'mdi:tag-outline' },
   { id: 'faq',  path: '/faq',  labelKey: 'drawer.faq',  icon: 'mdi:help-circle-outline' },
 ] as const;
@@ -251,23 +249,11 @@ onUnmounted(() => {
   //- ── 共用 Footer（含 LINE QR），所有 front-desk 頁面統一顯示 ──
   CommonFooter
 
-  //- ── 底部四格 Tab Bar（介面方向提案第二畫面）─────────────────
-  //- 2026-08-28 由 Brain AI 拍板加回（b99da52 當初移除的是 5-tab emoji 版）。
-  //- 與 drawer 併存：tab 給四個高頻動作，drawer 給其餘入口。
-  //- 只在窄螢幕出現 —— 桌機上滿版底欄會讓網站讀起來像手機 App。
-  //- 跑道斜紋帶：頁尾本來就有這條，手機把它壓在底部四格之上（提案裝飾語彙 A）
-  .LayoutFrontDesk__tab-stripe
-  nav.LayoutFrontDesk__tabs(:aria-label="$t('tab.ariaLabel')")
-    button.LayoutFrontDesk__tab(
-      v-for="t in TABS"
-      :key="t.id"
-      type="button"
-      :class="{ 'is-active': activeTab === t.id }"
-      :aria-current="activeTab === t.id ? 'page' : undefined"
-      @click="navigateTo(t.path)"
-    )
-      NuxtIcon.LayoutFrontDesk__tab-icon(:name="t.icon")
-      span.LayoutFrontDesk__tab-label {{ $t(t.labelKey) }}
+  //- ── 底部四格 Tab Bar（介面方向提案第二畫面；2026-08-30 抽成 CommonTabBar）──
+  //- 2026-08-28 由 Brain AI 拍板加回。與 drawer 併存：tab 給四個高頻動作。
+  //- 只在窄螢幕出現（元件內 CSS 控制）；padding-bottom 由本 layout 的
+  //- @media ≤900px 規則讓出高度。
+  CommonTabBar
 
   //- ── Drawer ──────────────────────────────────────────────
   ClientOnly
@@ -528,11 +514,6 @@ onUnmounted(() => {
   text-align: center;
 }
 
-// ── 底部四格上方的跑道斜紋（手機才有；桌機那一條在頁尾）──
-.LayoutFrontDesk__tab-stripe {
-  display: none;
-}
-
 .LayoutFrontDesk__logo {
   font-family: var(--ff-display);
   font-size: var(--fs-h2);
@@ -590,79 +571,12 @@ onUnmounted(() => {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-// ── 底部四格 Tab Bar ─────────────────────────────────────
-/* 只在窄螢幕出現：桌機上滿版底欄會讓網站讀起來像手機 App，
-   桌機的入口交給 hamburger drawer（b99da52 建立的那套）。 */
-.LayoutFrontDesk__tabs {
-  display: none;
-}
-
+// ── 底部四格 Tab Bar：markup/樣式在 CommonTabBar，這裡只負責讓出高度 ──
 @media (max-width: 900px) {
   /* 內容區讓出「四格 + 斜紋」的高度，否則頁尾最後一列會被蓋住 */
   .LayoutFrontDesk {
     padding-bottom: calc(var(--tabbar-h) + var(--tabbar-stripe));
   }
-
-  /* 5px 品牌記號，壓在四格之上；桌機那一端在頁尾（CommonFooter__stripe），兩端一致 */
-  .LayoutFrontDesk__tab-stripe {
-    display: block;
-    position: fixed;
-    left: 0; right: 0;
-    bottom: var(--tabbar-h);
-    z-index: var(--z-header);
-    height: var(--tabbar-stripe);
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--da-stripe-dark) 0 10px,
-      var(--da-stripe-yellow) 10px 20px
-    );
-  }
-
-  .LayoutFrontDesk__tabs {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    z-index: var(--z-header);
-    display: flex;
-    /* 高度與 --tabbar-h 綁死；下緣的安全區留白由 padding 讓出，
-       圖示與文字永遠落在 --tabbar-body 那一段裡，不會被手勢列吃到。 */
-    height: var(--tabbar-h);
-    padding-bottom: var(--tabbar-safe);
-    background: var(--da-off-white);
-    border-top: 1px solid var(--da-gray-pale);
-  }
-}
-
-.LayoutFrontDesk__tab {
-  flex: 1;
-  /* 高度吃滿 --tabbar-body（62px），比 --tap 的 44px 再厚一階 ——
-     四格是全站最常按的東西，而且底下就是手機的手勢列，太薄會誤觸。 */
-  min-height: var(--tabbar-body);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: var(--da-gray-light);
-  transition: color var(--dur-fast) var(--ease-out);
-
-  &.is-active { color: var(--da-dark); }
-}
-
-.LayoutFrontDesk__tab-icon {
-  font-size: var(--fs-h4);
-  line-height: var(--lh-flat);
-}
-
-.LayoutFrontDesk__tab-label {
-  font-family: var(--ff-label);
-  font-size: var(--fs-label);
-  font-weight: 700;
-  letter-spacing: var(--ls-caps);
-  line-height: var(--lh-flat);
 }
 
 // 加好友橫幅顯示時下移 40px（banner 高度 = 10px padding × 2 + 20px content）
