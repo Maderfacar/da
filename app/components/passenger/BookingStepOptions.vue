@@ -238,6 +238,10 @@ const ApiFetchFare = async () => {
     await ApiFetchCharterFare();
     return;
   }
+  // 2026-08-30：vehicle 可能是 booking 頁沿用的舊預設 'sedan'（fleet-vehicles-rev 換 id
+  // 後已不存在）—— 打出去 server 必回 400 車型不存在，純浪費。比價 seed 由
+  // ApiFetchSeedMetrics 負責，這裡只服務「真的選中一台合法車型」的估價。
+  if (!storeConfig.GetVehicle(vehicle.value)) return;
   fareLoading.value = true;
   const validWps = props.stopovers.filter((s) => s.lat !== 0);
   const res = await $api.GetMapsRoute({
@@ -289,6 +293,54 @@ watch(vehicle, (val) => { emit('update:vehicleType', val); FareFetchFlow(); });
 watch(extras, (val) => { emit('update:extraServices', val); FareFetchFlow(); }, { deep: true });
 
 onMounted(ApiFetchFare);
+
+// ── 並排比價的 seed metrics（2026-08-30）────────────────────────────────────
+// 病根：booking 頁 vehicleType 舊預設 'sedan' 已不在 fleet（fleet-vehicles-rev 換 id），
+// onMounted 的 ApiFetchFare 打出去 server 回 400 車型不存在 → fareResult 恆 null →
+// 進第三步時六張卡並排比價全「—」，要等使用者先手選一台才有 metrics ——
+// 比價淪為「選後才看得到」，跟並排比價的目的（幫你選）整個顛倒。prod 實測如此。
+// 解法：routeMetrics 與車型無關 —— 用第一台 enabled 車型抓一次 route 當 seed，
+// **只餵比價 map**，不動 fareResult / 不 emit：預估車資照舊等真正選中車型後
+// 才顯示 server 價（選中卡也照舊被 server fareTotal 蓋掉，同源不變）。
+const seedRouteRes = ref<MapsRouteRes | null>(null);
+
+const ApiFetchSeedMetrics = async () => {
+  if (!props.pickupLocation || !props.dropoffLocation) return;
+  const validWps = props.stopovers.filter((s) => s.lat !== 0);
+  const base = {
+    origin: `${props.pickupLocation.lat},${props.pickupLocation.lng}`,
+    destination: `${props.dropoffLocation.lat},${props.dropoffLocation.lng}`,
+    ...(validWps.length ? { waypoints: validWps.map((s) => `${s.lat},${s.lng}`).join('|') } : {}),
+  };
+  if (isCharter.value) {
+    // charter 的 route 本來就不吃 vehicleType（見 ApiFetchCharterFare）——
+    // 沒選車也能先把 charterRouteRes 種起來，讓比價 map 提前活
+    if (charterRouteRes.value) return;
+    const res = await $api.GetMapsRoute({ ...base, orderType: 'charter' });
+    if (res.status.code !== 200 || !res.data?.routeMetrics) return;
+    if (!charterRouteRes.value) charterRouteRes.value = res.data;
+    return;
+  }
+  if (seedRouteRes.value || fareResult.value?.routeMetrics) return;
+  const seedVehicle = storeConfig.EnabledVehicles[0];
+  if (!seedVehicle) return; // fleet config 未就緒 → 下方 watch 等到有車再補打
+  const res = await $api.GetMapsRoute({
+    ...base,
+    vehicleType: seedVehicle.id,
+    pickupTime: props.pickupDateTime
+      ? $dayjs(props.pickupDateTime).toISOString()
+      : new Date().toISOString(),
+    ...(props.orderType ? { orderType: props.orderType } : {}),
+  });
+  if (res.status.code !== 200 || !res.data?.routeMetrics) return;
+  // 使用者若在等待期間已選了車型（fareResult 先到），以真估價為準、seed 丟棄
+  if (!seedRouteRes.value && !fareResult.value?.routeMetrics) seedRouteRes.value = res.data;
+};
+
+onMounted(ApiFetchSeedMetrics);
+// fleet config 是 async 撈的（TTL 30s），mount 當下 EnabledVehicles 可能還是空；
+// isCharter 切換時 seed 需求也不同 —— 兩者變動都補試一次（函式內有冪等守門）。
+watch(() => [storeConfig.EnabledVehicles.length, isCharter.value], () => { ApiFetchSeedMetrics(); });
 
 const ClickVehicle = (v: FleetVehicle) => {
   const status = _GetVehicleStatus(v);
@@ -356,7 +408,9 @@ const vehiclePriceMap = computed<Record<string, number | null>>(() => {
     return map;
   }
 
-  const metrics = fareResult.value?.routeMetrics ?? null;
+  // 未選車前 fareResult 是空的，metrics 退到 seed（ApiFetchSeedMetrics）——
+  // 兩者是同一支 server route API 回的同形 RouteMetrics，只差有沒有選中車型
+  const metrics = fareResult.value?.routeMetrics ?? seedRouteRes.value?.routeMetrics ?? null;
   const extraObjs = storeConfig.EnabledExtras.filter((e) => extras.value.includes(e.id));
   for (const v of storeConfig.EnabledVehicles) {
     if (!metrics || !rules) {
