@@ -5,6 +5,13 @@ const route = useRoute();
 const { authResolved, isSuper } = storeToRefs(StoreAuth());
 const drawerOpen = ref(false);
 
+// hydration mismatch 根治（2026-08-30，見 use-hydration-done.ts）：
+// SSR 時 authResolved 恆 false → loading 遮罩有渲染；但 client 端 BootGate 在 mount 前
+// 就 await 完 auth，第一次 render 不畫遮罩 → 對不上 SSR。壓到 mounted 後才撤遮罩。
+// （註：admin 頁的 definePageMeta({ ssr: false }) 不是 Nuxt 機制，頁面實際上有 SSR。）
+const hydrationDone = UseHydrationDone();
+const showAuthLoading = computed(() => !authResolved.value || !hydrationDone.value);
+
 // ── Meta：分頁標題 + favicon（區隔三端）─────────────────
 // 規格：titleTemplate = `{頁名} · DA 後台`；i18n 三語自動套。
 const { t: _tMeta } = useI18n();
@@ -97,7 +104,7 @@ function ClickNav(path: string) {
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")
-    .LayoutBackDesk__loading(v-if="!authResolved" data-surface='dark')
+    .LayoutBackDesk__loading(v-if="showAuthLoading" data-surface='dark')
       .LayoutBackDesk__loading-logo
         | DEST
         span ∙
@@ -120,7 +127,9 @@ function ClickNav(path: string) {
       | ADMIN
     .LayoutBackDesk__top-right
       span.LayoutBackDesk__admin-badge ADMIN
-      CommonHeaderUser
+      //- 依賴 auth state，包 ClientOnly 避免 hydration mismatch（對齊 marketing）
+      ClientOnly
+        CommonHeaderUser
 
   //- ── 側邊抽屜（手機 overlay / 桌機常駐）────────────────────
   aside.LayoutBackDesk__drawer(data-surface='dark' :class="{ 'is-open': drawerOpen }")

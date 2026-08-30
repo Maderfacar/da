@@ -14,6 +14,12 @@ const { authResolved } = storeToRefs(StoreAuth());
 const driverGeo = useDriverGeolocation();
 const drawerOpen = ref(false);
 
+// hydration mismatch 根治（2026-08-30，見 use-hydration-done.ts）：
+// SSR 時 authResolved 恆 false → loading 遮罩有渲染；但 client 端 BootGate 在 mount 前
+// 就 await 完 auth，第一次 render 不畫遮罩 → 對不上 SSR。壓到 mounted 後才撤遮罩。
+const hydrationDone = UseHydrationDone();
+const showAuthLoading = computed(() => !authResolved.value || !hydrationDone.value);
+
 // ── Meta：分頁標題 + favicon（區隔三端）─────────────────
 // 規格：titleTemplate = `{頁名} · DA 司機端`；i18n 三語自動套。
 const { t: _tMeta } = useI18n();
@@ -166,7 +172,7 @@ onUnmounted(() => {
 
   //- ── Auth Loading ────────────────────────────────────────
   transition(name="auth-fade")
-    .LayoutDriver__loading(v-if="!authResolved")
+    .LayoutDriver__loading(v-if="showAuthLoading")
       .LayoutDriver__loading-logo
         | DEST
         span ∙
@@ -209,7 +215,9 @@ onUnmounted(() => {
     .LayoutDriver__top-right
       .LayoutDriver__status-dot
       span.LayoutDriver__status-label 待命中
-      CommonHeaderUser
+      //- 依賴 auth state，包 ClientOnly 避免 hydration mismatch（對齊 marketing）
+      ClientOnly
+        CommonHeaderUser
 
   //- ── 側邊抽屜（手機 overlay / 桌機常駐）────────────────────
   aside.LayoutDriver__drawer(:class="{ 'is-open': drawerOpen }")

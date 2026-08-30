@@ -29,8 +29,15 @@ const showSpinner = computed(
 const showRolesFailed = computed(
   () => authResolved.value && isSignIn.value && rolesLoadState.value === 'failed',
 );
+
+// hydration mismatch 根治（2026-08-30，見 use-hydration-done.ts）：
+// SSR 時 authResolved 恆 false → slot 不渲染；但 client 端 auth plugin 常在 mount 前
+// 就把 authResolved 翻 true，讓 hydration 的第一次 render 想畫 slot（Fragment）——
+// 對不上 SSR 的註解節點，整個 layout 被重畫。壓到 mounted 後才放行，
+// 時序與原本 mismatch 修復重畫相同，使用者無感。
+const hydrationDone = UseHydrationDone();
 const showContent = computed(
-  () => authResolved.value && (!isSignIn.value || rolesLoadState.value === 'ready'),
+  () => hydrationDone.value && authResolved.value && (!isSignIn.value || rolesLoadState.value === 'ready'),
 );
 
 // ── 底部四格 Tab Bar（介面方向提案第二畫面）─────────────
@@ -218,7 +225,10 @@ onUnmounted(() => {
           NuxtIcon.LayoutFrontDesk__bell-icon(name="mdi:bell-outline")
           span.LayoutFrontDesk__bell-dot(v-if="unreadCount > 0") {{ unreadCount > 9 ? '9+' : unreadCount }}
         LangSwitcher
-        CommonHeaderUser(clickable-avatar @avatar-click="ClickHamburger")
+        //- 依賴 auth state（登入者的 lineProfile 可能在 mount 前就進 store）——
+        //- 包 ClientOnly 避免 hydration mismatch，作法對齊 marketing layout
+        ClientOnly
+          CommonHeaderUser(clickable-avatar @avatar-click="ClickHamburger")
 
   //- ── 頁面內容 ─────────────────────────────────────────────
   //- 加好友橫幅顯示時整體下移 40px，避免橫幅遮住 Hero / 頁首內容
