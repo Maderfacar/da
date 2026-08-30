@@ -21,12 +21,15 @@ import { attachConsoleCapture } from './_helpers';
  * SSR 同形（⚠ 不能拿 nuxtApp.isHydrating 當初值 —— async layout 的 setup 執行當下
  * 它已是 false，實測守不住）。另把三個 layout 的 CommonHeaderUser 包進 ClientOnly。
  *
+ * ── redirect 造成的 mismatch（2026-08-30 兩顆皆修，修法同一套）────────────
+ * 「SSR 不 redirect、client 補踢」的兩條路（已登入開 login entry `/`、訪客深連結
+ * 受保護頁）原本都在 hydration 完成前就 navigateTo —— client 拿目的頁的 vDOM 對
+ * 原頁的 SSR HTML，必然 mismatch。修法：初次進站（client && isHydrating）把導向
+ * 壓到 app:suspense:resolve 後（middleware/role login-entry 分支 + middleware/auth
+ * unauth 分支），語意與落點不變。本檔各補一個守衛案例。
+ *
  * ── 已知殘留（刻意不列入本守衛）────────────────────────────────────────────
- * 1. 訪客深連結受保護路由（如未登入直接打 /orders）：middleware/auth 設計上
- *    「SSR 不 redirect、client 補踢 /login」，SSR 給 A 頁、client 決定畫 B 頁，
- *    重畫是語意必然，那行警告是 redirect 固有噪音 —— 除非改動 auth middleware 的
- *    server 行為，否則修不掉，不屬於「同路由 hydration 必須同形」的守備範圍。
- * 2. /driver/dashboard 的 AdminAirportForecastWidget（.client.vue）有頁面級
+ * 1. /driver/dashboard 的 AdminAirportForecastWidget（.client.vue）有頁面級
  *    children/class mismatch —— 與 layout 無關的獨立缺陷，另案追蹤。
  */
 
@@ -64,6 +67,21 @@ test.describe('layout hydration mismatch 守衛', () => {
     expect(
       capture.hydrationMismatches,
       `/ → /home 補踢的 hydration mismatch：\n${capture.hydrationMismatches.join('\n')}`,
+    ).toHaveLength(0);
+  });
+
+  // 訪客深連結受保護頁（2026-08-30 Brain AI 拍板套同一招修掉的那顆）：
+  // middleware/auth 的 unauth 補踢原本也在 hydration 完成前 navigateTo(/login)。
+  // 同時守「mismatch 為零」與「補踢仍然會發生」。
+  test('訪客深連結 /orders 補踢 /login 不得有 hydration mismatch', async ({ page }) => {
+    const capture = attachConsoleCapture(page);
+    await page.goto('/orders', { waitUntil: 'load', timeout: 25_000 });
+    await page.waitForURL('**/login', { timeout: 15_000 });
+    await page.waitForTimeout(3_000);
+
+    expect(
+      capture.hydrationMismatches,
+      `/orders → /login 補踢的 hydration mismatch：\n${capture.hydrationMismatches.join('\n')}`,
     ).toHaveLength(0);
   });
 

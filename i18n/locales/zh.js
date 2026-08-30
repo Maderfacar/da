@@ -252,13 +252,16 @@ export default {
       from: '從',
       to: '到',
       when: '時間',
+      // 2026-08-30 Brain AI 拍板：這三行是行程預覽，不是輸入框 —— 動詞句
+      // （「輸入⋯」「選擇⋯」）讀起來像 placeholder 會騙人去點，改名詞句。
+      fieldsNote: '進入預約後填寫',
       fromHint: {
-        'airport-pickup': '選擇抵達機場與航廈',
-        'airport-dropoff': '輸入上車地點',
-        charter: '輸入出發地點',
+        'airport-pickup': '抵達的機場與航廈',
+        'airport-dropoff': '您的上車地點',
+        charter: '您的出發地點',
       },
-      toHint: '輸入目的地',
-      whenHint: '選擇日期與時間',
+      toHint: '您的目的地',
+      whenHint: '用車日期與時間',
       cta: '查看車型與車資',
       hint: '免下載 App · LINE 直接預約',
     },

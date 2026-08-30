@@ -70,6 +70,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
       message: `${to.path} → ${loginPath}`,
       metadata: { from: to.path, to: loginPath, reason: 'not-signed-in' },
     });
+    // hydration 同形守門（2026-08-30，Brain AI 拍板套用；同 middleware/role login-entry）：
+    // 訪客深連結受保護頁（如未登入直開 /orders）時，SSR 畫的是原頁骨架，初次進站的
+    // client middleware 若在 hydration 完成前就 navigateTo(/login)，client 會拿登入頁
+    // 的 vDOM 去對原頁的 SSR HTML —— 一次 mismatch 噪音。壓到 app:suspense:resolve
+    // 後再踢，語意（SSR 不 redirect、client 補踢）與落點不變。
+    const nuxtApp = useNuxtApp();
+    if (import.meta.client && nuxtApp.isHydrating) {
+      const router = useRouter();
+      nuxtApp.hook('app:suspense:resolve', () => {
+        void router.replace(loginPath);
+      });
+      return;
+    }
     // 用 replace 而非 push — 避免 reload 期間「閃登入頁 → 跳回原頁」造成歷史堆疊，
     // 按返回鍵又回到「未授權的原頁」造成 middleware 迴圈
     return navigateTo(loginPath, { replace: true });

@@ -157,16 +157,20 @@ const ClickFare = () => navigateTo('/fare');
           @click="bookType = t"
         ) {{ $t(`landing.book.types.${t}`) }}
 
+      //- 2026-08-30 Brain AI 拍板：三行是「行程預覽」不是表單 —— prod 驗收時被
+      //- 當成壞掉的輸入框（點不進去、打不了字）。拿掉 input 樣的分隔線與
+      //- placeholder 灰態、動詞句改名詞句，並加一行小字說明這些在下一步填。
+      p.PageLanding__bookfields-note {{ $t('landing.book.fieldsNote') }}
       .PageLanding__bookfields
         .PageLanding__bookfield
           span.PageLanding__bookfield-label {{ $t('landing.book.from') }}
           span.PageLanding__bookfield-value {{ $t(`landing.book.fromHint.${bookType}`) }}
         .PageLanding__bookfield
           span.PageLanding__bookfield-label {{ $t('landing.book.to') }}
-          span.PageLanding__bookfield-value.is-placeholder {{ $t('landing.book.toHint') }}
+          span.PageLanding__bookfield-value {{ $t('landing.book.toHint') }}
         .PageLanding__bookfield
           span.PageLanding__bookfield-label {{ $t('landing.book.when') }}
-          span.PageLanding__bookfield-value.is-placeholder {{ $t('landing.book.whenHint') }}
+          span.PageLanding__bookfield-value {{ $t('landing.book.whenHint') }}
 
       button.PageLanding__bookcta(type="button" @click="ClickBook")
         | {{ $t('landing.book.cta') }}
@@ -397,15 +401,24 @@ const ClickFare = () => navigateTo('/fare');
   }
 }
 
-.PageLanding__bookfield {
-  min-height: var(--tap);
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 6px 2px;
-  border-bottom: 1px solid var(--ink-a06);
+/* 行程預覽三行（2026-08-30 改版）：不是表單。原本每行 --tap 高 + 底部分隔線 +
+   placeholder 灰態，prod 驗收被當成壞掉的輸入框。改成緊湊的說明列 ——
+   無分隔線、非互動高度、全列同一種灰，上面配 __bookfields-note 小字。 */
+.PageLanding__bookfields-note {
+  margin: 0;
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 700;
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  color: var(--da-amber);
+}
 
-  &:last-child { border-bottom: 0; }
+.PageLanding__bookfield {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  padding: 3px 2px;
 }
 
 .PageLanding__bookfield-label {
@@ -423,13 +436,8 @@ const ClickFare = () => navigateTo('/fare');
   flex: 1;
   min-width: 0;
   font-family: var(--ff-ui);
-  font-size: var(--fs-body);
-  color: var(--da-dark);
-
-  &.is-placeholder {
-    font-weight: 300;
-    color: var(--da-gray-light);
-  }
+  font-size: var(--fs-body-sm);
+  color: var(--da-gray);
 }
 
 /* 主動作：縞黑實心、金只作箭頭（提案「不隨配色改變的規則」與首頁規則二） */
