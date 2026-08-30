@@ -98,7 +98,8 @@ footer.CommonFooter
         | ANYWHERE
       p.CommonFooter__tagline {{ $t('footer.tagline') }}
 
-    .CommonFooter__col
+    //- 快速連結：兩欄排（2026-08-30 壓縮留白 —— 六條單欄直落佔掉半屏）
+    .CommonFooter__col.CommonFooter__col--nav
       .CommonFooter__col-label {{ $t('footer.navLabel') }}
       button.CommonFooter__link(
         v-for="l in links"
@@ -107,42 +108,44 @@ footer.CommonFooter
         @click="ClickLink(l.path)"
       ) {{ $t('footer.links.' + l.id) }}
 
-    .CommonFooter__col
-      .CommonFooter__col-label {{ $t('footer.supportLabel') }}
-      button.CommonFooter__support(type="button" @click="ClickSupport")
-        span {{ $t('footer.support') }}
-        span.CommonFooter__support-ext ↗
-      .CommonFooter__hours {{ $t('footer.supportHours') }}
+    //- 客服與 QR 併一列（同上：原本兩個獨立直落區塊，各自吃一段高度）
+    .CommonFooter__meta
+      .CommonFooter__col
+        .CommonFooter__col-label {{ $t('footer.supportLabel') }}
+        button.CommonFooter__support(type="button" @click="ClickSupport")
+          span {{ $t('footer.support') }}
+          span.CommonFooter__support-ext ↗
+        .CommonFooter__hours {{ $t('footer.supportHours') }}
 
-    //- LINE 官方帳號 QR Code（每頁顯示；qrcode lib 動態生成可掃描，點擊分享）
-    .CommonFooter__qr
-      .CommonFooter__col-label {{ $t('footer.lineQrLabel') }}
-      button.CommonFooter__qr-card(
-        type="button"
-        :aria-label="$t('footer.lineQrShare')"
-        @click="ClickQrShare"
-      )
-        ClientOnly
-          img.CommonFooter__qr-img(
-            v-if="qrSrc"
-            :src="qrSrc"
-            alt="LINE QR Code"
-            width="120"
-            height="120"
-          )
-          //- 載入中 / 失敗時顯示 SVG fallback placeholder
-          img.CommonFooter__qr-img(
-            v-else-if="qrError"
-            src="/img/line-qr.svg"
-            alt="LINE QR Placeholder"
-            width="120"
-            height="120"
-          )
-          .CommonFooter__qr-loading(v-else)
-          template(#fallback)
-            .CommonFooter__qr-loading
-      .CommonFooter__qr-caption {{ $t('footer.lineQrCaption') }}
-      .CommonFooter__qr-hint {{ $t('footer.lineQrShareHint') }}
+      //- LINE 官方帳號 QR Code（每頁顯示；qrcode lib 動態生成可掃描，點擊分享）
+      .CommonFooter__qr
+        .CommonFooter__col-label {{ $t('footer.lineQrLabel') }}
+        button.CommonFooter__qr-card(
+          type="button"
+          :aria-label="$t('footer.lineQrShare')"
+          @click="ClickQrShare"
+        )
+          ClientOnly
+            img.CommonFooter__qr-img(
+              v-if="qrSrc"
+              :src="qrSrc"
+              alt="LINE QR Code"
+              width="120"
+              height="120"
+            )
+            //- 載入中 / 失敗時顯示 SVG fallback placeholder
+            img.CommonFooter__qr-img(
+              v-else-if="qrError"
+              src="/img/line-qr.svg"
+              alt="LINE QR Placeholder"
+              width="120"
+              height="120"
+            )
+            .CommonFooter__qr-loading(v-else)
+            template(#fallback)
+              .CommonFooter__qr-loading
+        .CommonFooter__qr-caption {{ $t('footer.lineQrCaption') }}
+        .CommonFooter__qr-hint {{ $t('footer.lineQrShareHint') }}
 
   .CommonFooter__bottom
     span.CommonFooter__copyright {{ $t('footer.copyright') }}
@@ -169,20 +172,43 @@ footer.CommonFooter
   );
 }
 
+/* 2026-08-30 壓縮留白：行動版原本四個區塊單欄直落（六條連結各佔一行 +
+   客服、QR 各自成段）整個 footer 快一屏高。改成連結兩欄排、客服與 QR 併列，
+   padding/gap 全面收緊。功能與按鈕（連結、客服外連、QR 分享）不動。 */
 .CommonFooter__inner {
-  padding: 40px 24px 24px;
+  padding: 24px 20px 12px;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 28px;
+  gap: 18px;
 
   @media (min-width: 768px) {
-    grid-template-columns: 1.4fr 1fr 1fr auto;
+    grid-template-columns: 1.1fr 1.2fr auto;
     gap: 32px;
     align-items: start;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 56px 32px 32px;
+    padding: 32px 32px 20px;
   }
+}
+
+/* 快速連結兩欄排：標籤跨滿、六條連結折成 2×3 */
+.CommonFooter__col--nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+  align-items: start;
+}
+
+.CommonFooter__col--nav .CommonFooter__col-label {
+  grid-column: 1 / -1;
+}
+
+/* 客服與 QR 併一列；窄到 360 以下仍夠放（左欄文字 + 136px QR 卡） */
+.CommonFooter__meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .CommonFooter__qr {
@@ -289,7 +315,7 @@ footer.CommonFooter
   font-family: var(--ff-ui);
   font-size: var(--fs-body-sm);
   color: var(--da-gray);
-  margin-top: 8px;
+  margin-top: 4px;
   line-height: var(--lh-relaxed);
 }
 
@@ -300,7 +326,7 @@ footer.CommonFooter
   letter-spacing: var(--ls-kicker);
   text-transform: uppercase;
   color: var(--accent-text);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .CommonFooter__link,
@@ -334,7 +360,7 @@ footer.CommonFooter
 }
 
 .CommonFooter__bottom {
-  padding: 16px 24px;
+  padding: 10px 20px;
   border-top: 1px solid var(--da-gray-pale);
   text-align: center;
 }
