@@ -20,6 +20,8 @@
  */
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+// pickupDateTime 混合格式：無時區字串視為台灣在地，不可 raw Date.parse（Vercel UTC 差 8h）
+import { parseTaiwanTime } from '~shared/trip-time-gate';
 
 export default defineEventHandler(async (event) => {
   const auth = await getAuthFromEvent(event);
@@ -51,7 +53,7 @@ export default defineEventHandler(async (event) => {
       totalSpent += fare;
       // 用 pickupDateTime（user 預約時間）排序「首次行程」；fallback statusHistory.completedAt
       const pickupStr = d.pickupDateTime as string | undefined;
-      const pickupMs = pickupStr ? Date.parse(pickupStr) : 0;
+      const pickupMs = pickupStr ? parseTaiwanTime(pickupStr).getTime() : 0;
       if (pickupMs > 0 && pickupMs < firstTripMs) firstTripMs = pickupMs;
     });
 

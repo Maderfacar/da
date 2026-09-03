@@ -13,6 +13,7 @@ import { buildTemplate, resolveTemplate } from '@@/utils/template-registry';
 import { buildOrderParams, type OrderDataLike } from '@@/utils/template-params';
 import { validateDiscountCode, redeemDiscountCode } from '@@/utils/discount-code';
 import { notifyAdmins } from '@@/utils/notify-admins';
+import { formatDateTimeTpe } from '@@/utils/datetime-tpe';
 import {
   validateAndSnapshotPreferences,
   snapshotForFirestore,
@@ -605,7 +606,7 @@ export default defineEventHandler(async (event) => {
     try {
       await notifyAdmins(db, 'adminNotify.orderCreated', {
         orderId: orderId.slice(0, 8).toUpperCase(),
-        date: body.pickupDateTime.replace('T', ' ').slice(0, 16),
+        date: formatDateTimeTpe(body.pickupDateTime),
         pickup: body.pickupLocation.address,
       });
     } catch (err) {

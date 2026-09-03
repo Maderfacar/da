@@ -5,6 +5,9 @@ import { hasPermission } from '@@/utils/require-permission';
 import { serializeOrderPreferences } from '@@/utils/order-preferences';
 import { serializeBids } from '@@/utils/order-dispatch';
 import { matchRegion } from '~shared/region-match';
+// pickupDateTime 混合格式：無時區字串視為台灣在地，不可 raw Date.parse（Vercel UTC 差 8h，
+// admin 日期篩選的邊界會平移 8 小時）
+import { parseTaiwanTime } from '~shared/trip-time-gate';
 
 type GooglePlaceLite = { address: string; lat: number; lng: number; placeId?: string; displayName?: string; city?: string; district?: string };
 
@@ -113,6 +116,8 @@ export default defineEventHandler(async (event) => {
         // 訂單 doc 自帶的乘客欄位（admin 手動建立的 guest 訂單會有；乘客自助下單無）
         storedPassengerName: (d.passengerName as string | undefined) ?? '',
         contactPhone: (d.contactPhone as string | undefined) ?? null,
+        // Booking v2：聯絡人姓名（PATCH 一直支援，但先前 GET 沒投影 → admin 看不到也改不到）
+        contactName: (d.contactName as string | undefined) ?? null,
         // Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選或為舊單）
         preferences: serializeOrderPreferences(d.preferences),
         // Phase 1E：派發 / 喊單欄位 echo（null/[] = 未派發 / 未喊單）
@@ -147,7 +152,7 @@ export default defineEventHandler(async (event) => {
 
     const baseOrdersAfterDate = (hasFrom || hasTo)
       ? baseOrdersAll.filter((o) => {
-        const t = Date.parse(o.pickupDateTime);
+        const t = parseTaiwanTime(o.pickupDateTime).getTime();
         if (!Number.isFinite(t)) return false;
         if (hasFrom && t < fromMs) return false;
         if (hasTo && t >= toMs) return false;

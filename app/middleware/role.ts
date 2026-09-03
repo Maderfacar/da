@@ -33,6 +33,10 @@ import { noteRedirect, resetBreaker } from '~shared/auth/redirect-breaker';
 import { logMiddleware } from '~/utils/error-log';
 import { MakeRouteExists } from '~/utils/route-exists';
 
+// deferred 導向的 timeout 保底：正常情況 hook 在 0.2-0.5s 內就發（prod log 實測），
+// 2.5s 還沒發 = suspense 掛死或 resolve 已錯過，直接導向比讓使用者卡在行銷頁好
+const DEFERRED_REDIRECT_FALLBACK_MS = 2500;
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const authStore = StoreAuth();
   // 深連結目標可能指向不存在的頁（舊版路徑、被合併掉的頁、外部亂帶的 liff.state）。
@@ -194,9 +198,26 @@ export default defineNuxtRouteMiddleware(async (to) => {
           },
         });
         const router = useRouter();
-        nuxtApp.hook('app:suspense:resolve', () => {
+        // 2026-09-04 保底（陳識翔司機 OA 案）：prod 實證 app:suspense:resolve 可能永遠不發
+        // （suspense 掛死、或 LIFF 第二輪時序下 hook 註冊時 resolve 已錯過），deferred 導向
+        // 就永遠不執行 —— 使用者登入成功卻停在 `/` 行銷頁，看起來像「無法登入」。
+        // hook 與 timeout race，先到者執行、只執行一次；timeout 觸發時留 log 供 prod 對帳。
+        let redirected = false;
+        const go = (via: 'hook' | 'timeout') => {
+          if (redirected) return;
+          redirected = true;
+          if (via === 'timeout') {
+            logMiddleware({
+              event: 'middleware.redirect.login-entry.fallback',
+              severity: 'warn',
+              message: `deferred 導向由 timeout 保底執行：${to.path} → ${dest}`,
+              metadata: { from: to.path, to: dest, fallbackMs: DEFERRED_REDIRECT_FALLBACK_MS },
+            });
+          }
           void router.replace(dest);
-        });
+        };
+        nuxtApp.hook('app:suspense:resolve', () => go('hook'));
+        setTimeout(() => go('timeout'), DEFERRED_REDIRECT_FALLBACK_MS);
         return;
       }
       return guardedRedirect(dest, 'middleware.redirect.login-entry', `${to.path} → ${dest}`, {

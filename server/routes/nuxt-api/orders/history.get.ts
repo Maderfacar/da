@@ -1,6 +1,8 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, serverError, forbiddenError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+// pickupDateTime 混合格式：無時區字串視為台灣在地，不可 raw Date.parse（Vercel UTC 差 8h）
+import { parseTaiwanTime } from '~shared/trip-time-gate';
 
 // Wave 1 D1：driver 取自己「已完成 / 已取消」歷史訂單
 //
@@ -79,7 +81,7 @@ export default defineEventHandler(async (event) => {
       })
       .filter((o) => {
         if (!hasFrom && !hasTo) return true;
-        const t = Date.parse(o.pickupDateTime);
+        const t = parseTaiwanTime(o.pickupDateTime).getTime();
         if (!Number.isFinite(t)) return false;
         if (hasFrom && t < fromMs) return false;
         if (hasTo && t >= toMs) return false;

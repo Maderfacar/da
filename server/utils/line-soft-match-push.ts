@@ -16,6 +16,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { sendLinePush, type LineMessage } from '@@/utils/line-push';
 import type { Lang } from '@@/utils/user-lang';
 import type { DispatchPushEnv } from '@@/utils/line-dispatch-push';
+import { formatDateTimeTpe } from '@@/utils/datetime-tpe';
 import {
   applyPlaceholders,
   buildTemplate,
@@ -54,12 +55,9 @@ export interface DriverDeselectedPayload {
 
 const _orderIdShort = (id: string): string => id.slice(0, 8).toUpperCase();
 
-const _formatDateTime = (iso: string): string => {
-  if (!iso) return '';
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!m) return iso;
-  return `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
-};
+// 舊版 regex 直接抽 ISO 字串的時分 —— 帶 Z 的 UTC 字串（admin 建單/編輯）會差 8 小時。
+// 改走 datetime-tpe（無時區視為台灣在地、帶 Z 轉 Asia/Taipei）。
+const _formatDateTime = (iso: string): string => formatDateTimeTpe(iso, 'MM/DD HH:mm');
 
 /**
  * 組 LIFF URL（path-append）— 見 server/utils/line-dispatch-push.ts 同名 helper 註解。

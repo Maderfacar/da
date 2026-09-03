@@ -1,6 +1,9 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { successResponse, serverError } from '@@/utils/response';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+// pickupDateTime 混合格式：無時區字串視為台灣在地，不可 raw Date.parse（Vercel UTC 差 8h，
+// 「下一趟」卡的過期防呆會晚 8 小時才把陳舊單踢掉）
+import { parseTaiwanTime } from '~shared/trip-time-gate';
 
 // Wave 2 P4：取乘客自己「下一趟」訂單 — pickupDateTime 最近一筆 active order
 // active 定義：pending / confirmed / en_route / arrived_pickup / in_transit
@@ -57,8 +60,8 @@ export default defineEventHandler(async (event) => {
           assignedDriverId: (d.assignedDriverId as string | undefined) ?? '',
         };
       })
-      .filter((o) => Number.isFinite(Date.parse(o.pickupDateTime)))
-      .sort((a, b) => Date.parse(a.pickupDateTime) - Date.parse(b.pickupDateTime));
+      .filter((o) => Number.isFinite(parseTaiwanTime(o.pickupDateTime).getTime()))
+      .sort((a, b) => parseTaiwanTime(a.pickupDateTime).getTime() - parseTaiwanTime(b.pickupDateTime).getTime());
 
     // 陳舊單防呆：pending 單若 pickupDateTime 已過期超過 6h，視為失聯不顯示為「即將到來」
     // 進行中狀態（confirmed/en_route/arrived_pickup/in_transit）不受限，因為正在被服務
@@ -66,7 +69,7 @@ export default defineEventHandler(async (event) => {
     const PAST_GRACE_MS = 6 * 60 * 60 * 1000;
     const next = orders.find((o) => {
       if (o.orderStatus !== 'pending') return true;
-      return Date.parse(o.pickupDateTime) > now - PAST_GRACE_MS;
+      return parseTaiwanTime(o.pickupDateTime).getTime() > now - PAST_GRACE_MS;
     });
     if (!next) return successResponse(null);
 

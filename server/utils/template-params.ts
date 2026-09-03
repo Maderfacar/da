@@ -16,7 +16,7 @@
  *   const msg = buildTemplate(tpl, params, 'flex');
  */
 
-import dayjs from 'dayjs';
+import { formatDateTimeTpe } from '@@/utils/datetime-tpe';
 
 // ── 共用型別 ───────────────────────────────────────────────
 interface GooglePlaceLike {
@@ -147,7 +147,8 @@ export const buildOrderParams = (
   return {
     orderId: orderIdShort,
     orderType: _safeString(o.orderType),
-    date: o.pickupDateTime ? dayjs(o.pickupDateTime).format(dateFmt) : '',
+    // Vercel 跑 UTC：不轉台灣時區的話，推播上的用車時間會差 8 小時
+    date: formatDateTimeTpe(o.pickupDateTime, dateFmt),
     pickup: _safeString(o.pickupLocation?.address),
     pickupAddress: _safeString(o.pickupLocation?.address),  // alias，dispatch 類 template 慣用
     dropoff: _safeString(o.dropoffLocation?.address),

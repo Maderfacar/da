@@ -364,6 +364,8 @@ interface PatchOrderParams {
   terminal?: string | null;
   notes?: string | null;
   passengerName?: string;
+  /** Booking v2 批次 1：聯絡人姓名（admin-only；空字串 server 存 null） */
+  contactName?: string;
   contactPhone?: string;
   /** Wave 1 D2：driver 推進 4 個狀態 (en_route/arrived_pickup/in_transit/completed) 時，
    *  附上當下 GPS 座標。server 寫入 orders.statusHistoryLocations.{state}。

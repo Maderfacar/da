@@ -108,6 +108,8 @@ interface EditForm {
   estimatedFare: number;
   extraServices: string[];
   passengerName: string;
+  /** Booking v2：聯絡人姓名（選填；空字串存 null） */
+  contactName: string;
   contactPhone: string;
   flightNumber: string;
   terminal: string;
@@ -127,6 +129,7 @@ const editForm = reactive<EditForm>({
   estimatedFare: 0,
   extraServices: [],
   passengerName: '',
+  contactName: '',
   contactPhone: '',
   flightNumber: '',
   terminal: '',
@@ -332,6 +335,7 @@ const ClickEditMode = () => {
   const o = selectedOrder.value;
   editForm.orderType = o.orderType;
   editForm.passengerName = o.passengerName ?? '';
+  editForm.contactName = o.contactName ?? '';
   editForm.contactPhone = o.passengerPhone ?? '';
   // 把 ISO 轉成 datetime-local 可吃的格式（YYYY-MM-DDTHH:mm）
   editForm.pickupDateTime = $dayjs(o.pickupDateTime).format('YYYY-MM-DDTHH:mm');
@@ -496,6 +500,7 @@ const ApiSaveEdit = async () => {
     const res = await $api.PatchOrder(selectedOrder.value.orderId, {
       orderType: editForm.orderType,
       passengerName: editForm.passengerName.trim(),
+      contactName: editForm.contactName.trim(),
       contactPhone: editForm.contactPhone,
       pickupDateTime: $dayjs(editForm.pickupDateTime).toISOString(),
       pickupLocation: editForm.pickupLocation,
@@ -1540,6 +1545,10 @@ onMounted(() => {
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 姓名
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerName || '—' }}
+              //- Booking v2：聯絡人 ≠ 乘車人時才顯示（未填不佔一行）
+              .PageAdminOrders__section-row(v-if="selectedOrder.contactName")
+                span.PageAdminOrders__section-key 聯絡人
+                span.PageAdminOrders__section-val {{ selectedOrder.contactName }}
               .PageAdminOrders__section-row
                 span.PageAdminOrders__section-key 聯絡電話
                 span.PageAdminOrders__section-val {{ selectedOrder.passengerPhone || '—' }}
@@ -1766,6 +1775,13 @@ onMounted(() => {
                   v-model="editForm.contactPhone" maxlength="10" inputmode="numeric" placeholder="09xxxxxxxx"
                 )
 
+            //- Booking v2：聯絡人姓名（乘車人 ≠ 聯絡人時使用；選填）
+            .PageAdminOrders__edit-field
+              label.PageAdminOrders__edit-label 聯絡人姓名（選填，與乘車人不同時填）
+              input.PageAdminOrders__edit-input(
+                v-model="editForm.contactName" maxlength="40" placeholder="同乘車人可留空"
+              )
+
             //- 用車時間
             .PageAdminOrders__edit-field
               label.PageAdminOrders__edit-label 用車日期 / 時間
@@ -1864,10 +1880,12 @@ onMounted(() => {
                   :key="lt.id"
                 )
                   span.PageAdminOrders__luggage-edit-name {{ lt.label.zh }}（{{ lt.su }} SU）
+                  //- ⚠ @input 不可寫成 arrow function 再取 $event：arrow 函式體內 $event 是
+                  //- undefined，每次輸入直接 TypeError，行李數量永遠改不動（2026-09-04 prod 實測）
                   input.PageAdminOrders__edit-input(
                     type="number" min="0" max="20" inputmode="numeric"
                     :value="EditLuggageCount(lt.id)"
-                    @input="(e) => SetEditLuggage(lt.id, ($event.target as HTMLInputElement).value)"
+                    @input="SetEditLuggage(lt.id, ($event.target as HTMLInputElement).value)"
                   )
 
             //- 費用

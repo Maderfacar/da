@@ -1,5 +1,8 @@
 import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
+// pickupDateTime 混合格式（乘客單=無時區台灣在地、admin 單=UTC Z）：
+// 不可 raw Date.parse —— 無時區字串在 Vercel（UTC）會被平移 8 小時
+import { parseTaiwanTime } from '~shared/trip-time-gate';
 
 export default defineEventHandler(async (event) => {
   // P14：必須登入。passenger 強制只能讀自己；admin / driver 可帶 query.userId 查指定人
@@ -54,7 +57,7 @@ export default defineEventHandler(async (event) => {
       })
       .filter((o) => {
         if (!hasFrom && !hasTo) return true;
-        const t = Date.parse(o.pickupDateTime);
+        const t = parseTaiwanTime(o.pickupDateTime).getTime();
         if (!Number.isFinite(t)) return false;
         if (hasFrom && t < fromMs) return false;
         if (hasTo && t >= toMs) return false;

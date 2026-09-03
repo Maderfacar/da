@@ -211,6 +211,8 @@ export interface AdminOrder {
   createdAt: number
   passengerName: string
   passengerPhone: string | null
+  /** Booking v2：聯絡人姓名（乘車人 ≠ 聯絡人時乘客會填；舊單 / 未填為 null） */
+  contactName?: string | null
   /** Phase 1D：偏好標籤 snapshot（null = 乘客建單時未勾選） */
   preferences?: AdminOrderPreferences | null
   /** Phase 1E：admin 派發時間（null = 尚未發出需求單；首發後固定不變） */
