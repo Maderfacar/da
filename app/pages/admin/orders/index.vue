@@ -1392,6 +1392,10 @@ onMounted(() => {
       )
         .PageAdminOrders__cell.is-id(data-label="訂單")
           span.PageAdminOrders__order-id \#{{ o.orderId.slice(0, 8).toUpperCase() }}
+          span.PageAdminOrders__created-at(
+            v-if="o.createdAt"
+            :title="`訂單建立於 ${$dayjs(o.createdAt).format('YYYY/MM/DD HH:mm')}`"
+          ) 建立 {{ $dayjs(o.createdAt).format('MM/DD HH:mm') }}
           //- 折扣碼司機歸屬：乘客輸入了 driver-referral 折扣碼時顯示「來源：張司機」
           span.PageAdminOrders__referral-chip(
             v-if="ReferralDriverNameOf(o.referralDriverId)"
@@ -2292,7 +2296,8 @@ onMounted(() => {
 
   &.is-time { color: var(--surface-a82); font-weight: 700; }
   &.is-fare { font-weight: 700; color: var(--accent-text); }
-  // 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
+  // 訂單 / 行程類型 / 客人 / 上車地址：可能兩段資訊疊行顯示
+  &.is-id,
   &.is-type,
   &.is-passenger,
   &.is-pickup {
@@ -2442,6 +2447,14 @@ onMounted(() => {
   font-weight: 700;
   color: var(--surface-a72);
   letter-spacing: var(--ls-label);
+}
+
+.PageAdminOrders__created-at {
+  font-family: var(--ff-label);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--surface-a50);
+  font-variant-numeric: tabular-nums;
 }
 
 .PageAdminOrders__referral-chip {
