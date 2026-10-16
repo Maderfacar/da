@@ -1,121 +1,103 @@
 /**
- * 管理員自動通知 — **改走 email**（2026-08-25）
+ * 管理員自動通知 — **改回 LINE 推播，且只推 super**（2026-10-17）
  *
- * 原本以 passenger OA 逐一 LINE 推播。實測一張訂單在乘客 OA 產生 22 則推播，
- * 其中 18 則（82%）是這裡發給 3 位 admin 的內部通知 —— 每次訂單狀態變更都推 3 則。
- * LINE 每月額度按人頭計，2026-08-24 因此被打爆，連客人的訂單通知一起發不出去。
- * admin 本來就有後台可看，這些通知移到 email（免費、無實質上限），
- * 把 LINE 額度整份留給客人與司機。
+ * 沿革：
+ *   - 原本以 passenger OA 推給所有 canManageOrders admin（3 位）。一張訂單在乘客 OA
+ *     產生 22 則推播，其中 18 則是 admin 內部通知，2026-08-24 把每月額度打爆。
+ *   - 2026-08-25 改走 email 解決額度問題。
+ *   - 2026-10-17 改回 LINE：營運者要在 LINE 上即時看到。額度問題改用「只推 super」解決
+ *     —— 訂單量少的現階段只有營運者本人需要收，其他 admin 有後台可看。
+ *     每次通知只扣 1 則，一張訂單約 6 則 admin 推播（原本 18 則）。
  *
- * **呼叫端介面刻意不變** —— 4 個 call site 一行都不用動。
+ * 推播失敗時 sendLinePush 內建 email 備援（push-failure-email），額度用罄不會靜默消失。
  *
- * 整體 fire-and-forget：呼叫端用 void 包起來，不阻塞主流程；任一步失敗都不 rethrow。
+ * **呼叫端介面刻意不變**。`audience` 選項保留，但目前兩種值都只送 super。
+ * 之後要恢復多位 admin 收通知，改 resolveRecipientUids 一處即可。
+ *
+ * 呼叫端務必 await（勿用 void fire-and-forget）：Vercel 回應送出後函式可能被凍結，
+ * 背景推播會中途消失 —— 2026-10-17 午夜兩筆新訂單的通知就是這樣沒送到。
  */
 import type { Firestore } from 'firebase-admin/firestore';
-import { sendEmail } from '@@/utils/email-send';
-import { getAdminRecipients, getSuperAdminRecipients } from '@@/utils/admin-recipients';
-import {
-  parseEmailList,
-  mergeRecipients,
-  groupByLang,
-} from '@@/utils/admin-email';
+import { sendLinePush } from '@@/utils/line-push';
+import { getUserLang } from '@@/utils/user-lang';
+import { getSuperAdminRecipients } from '@@/utils/admin-recipients';
 import { getAdminNotifyText, type AdminNotifyKey, type AdminNotifyParams } from '@@/utils/admin-notify-message';
-import type { Lang } from '@@/utils/user-lang';
-
-const VALID_LANGS = ['zh_tw', 'en', 'ja'];
 
 /**
  * 一次通知的結果。
  *
- * **為什麼要有回傳值**：呼叫端（告警去重）必須能分辨「發出去了」與「決定要發但沒發成」。
- * 這支原本回 void 並吞掉所有失敗，於是 alert-auth-health 只能憑「決定要發」就寫入去重狀態
- * —— email 管道未設定時，一批告警會被記成「已通知」而抑制 24 小時，收訊者從頭到尾沒看到，
- * 管道修好後也不會補發。
+ * **為什麼要有回傳值**：呼叫端（告警去重）必須能分辨「發出去了」與「決定要發但沒發成」，
+ * 否則一批沒送到的告警會被記成「已通知」而抑制 24 小時。
  *
  * 仍然**永不 throw**：業務呼叫端（訂單、司機申請）照舊可以忽略回傳值。
  */
 export interface AdminNotifyResult {
   delivered: boolean;
-  /** 未送達原因：無收件人 / 未設 API key / 寄送失敗 */
+  /** 未送達原因：無收件人 / 未設 API key / 推播失敗 */
   reason?: 'no-recipients' | 'no-key' | 'error';
 }
 
 export interface NotifyAdminsOptions {
   /**
-   * 收件對象。預設具 canManageOrders 的 admin（業務通知）。
-   * 'super' 僅送 level=super —— 系統告警專用。
+   * 收件對象。'canManageOrders'（業務通知，預設）與 'super'（系統告警）。
+   * 2026-10-17 起兩者都只送 level=super，見檔頭說明。
    */
   audience?: 'canManageOrders' | 'super';
 }
 
-/** 讀出目標 admin 的 email 與語系（email 欄位缺失者自動略過）。 */
-async function loadAdminEmails(
-  db: Firestore,
-  audience: NotifyAdminsOptions['audience'],
-): Promise<{ email: string; lang: Lang }[]> {
-  const uids = audience === 'super'
-    ? await getSuperAdminRecipients(db)
-    : await getAdminRecipients(db, 'canManageOrders');
-  const rows = await Promise.all(uids.map(async (uid) => {
-    try {
-      const snap = await db.collection('admins').doc(uid).get();
-      const data = snap.data() as { email?: string; lang?: string } | undefined;
-      const rawLang = data?.lang;
-      const lang: Lang = typeof rawLang === 'string' && VALID_LANGS.includes(rawLang) ? (rawLang as Lang) : 'zh_tw';
-      return { email: data?.email ?? '', lang };
-    } catch {
-      return { email: '', lang: 'zh_tw' as Lang };
-    }
-  }));
-  return rows;
+/** 解析收件人 lineUid。目前一律只送 super（營運者本人）。 */
+async function resolveRecipientUids(db: Firestore): Promise<string[]> {
+  return getSuperAdminRecipients(db);
 }
 
-/** 推播指定通知給 admin（email，per-recipient lang） */
-export async function notifyAdmins(
+/** 對每位收件人各推一則文字訊息；全部送達才算 delivered。 */
+async function pushTextToRecipients(
   db: Firestore,
-  key: AdminNotifyKey,
-  params: AdminNotifyParams,
-  options: NotifyAdminsOptions = {},
+  label: string,
+  buildText: (uid: string) => Promise<string>,
 ): Promise<AdminNotifyResult> {
   try {
-    const fromAdmins = await loadAdminEmails(db, options.audience);
-    const fromEnv = parseEmailList(
-      (useRuntimeConfig() as { adminEmailTo?: string }).adminEmailTo || process.env.NUXT_ADMIN_EMAIL_TO,
-    );
-    const recipients = mergeRecipients(fromAdmins, fromEnv);
-
-    if (recipients.length === 0) {
+    const uids = await resolveRecipientUids(db);
+    if (uids.length === 0) {
       // 大聲一點：沒有收件人等於通知完全消失，而這件事沒有任何其他徵兆
-      console.warn(`[notify-admins] ${key} 無 email 收件人 —— 請設 NUXT_ADMIN_EMAIL_TO 或補 admins/{uid}.email`);
+      console.warn(`[notify-admins] ${label} 無收件人 —— admins collection 沒有 level=super 的帳號`);
       return { delivered: false, reason: 'no-recipients' };
     }
 
-    const settled = await Promise.allSettled(
-      groupByLang(recipients).map(async (group) => {
-        const text = getAdminNotifyText(key, group.lang, params);
-        // 主旨取內文第一行：LINE 訊息本來就沒有主旨，第一行是最接近標題的東西
-        const subject = `[DA] ${text.split('\n')[0]?.slice(0, 78) || key}`;
-        return sendEmail(subject, text, group.emails);
-      }),
-    );
+    const settled = await Promise.allSettled(uids.map(async (uid) => {
+      const text = await buildText(uid);
+      return sendLinePush('passenger', uid, [{ type: 'text', text }]);
+    }));
 
-    // 一組語系一封信。任一封沒寄出就不算送達 —— 呼叫端據此決定要不要重試。
-    let reason: AdminNotifyResult['reason'] | undefined;
-    for (const r of settled) {
-      if (r.status === 'rejected') {
-        console.error(`[notify-admins] ${key} 寄送拋錯:`, r.reason);
-        reason = reason ?? 'error';
-        continue;
-      }
-      if (!r.value.sent) reason = reason ?? (r.value.reason === 'no-key' ? 'no-key' : 'error');
-    }
-    if (reason) {
-      console.warn(`[notify-admins] ${key} 未送達（${reason}）`);
-      return { delivered: false, reason };
+    const failed = settled.filter((r) => r.status === 'rejected' || !r.value);
+    if (failed.length > 0) {
+      console.warn(`[notify-admins] ${label} 未送達 ${failed.length}/${uids.length}`);
+      return { delivered: false, reason: 'error' };
     }
     return { delivered: true };
   } catch (err) {
     console.error('[notify-admins] 通知失敗（silent）:', err);
     return { delivered: false, reason: 'error' };
   }
+}
+
+/** 推播指定模板通知給 admin（passenger OA，依收件人自己的語系） */
+export async function notifyAdmins(
+  db: Firestore,
+  key: AdminNotifyKey,
+  params: AdminNotifyParams,
+  _options: NotifyAdminsOptions = {},
+): Promise<AdminNotifyResult> {
+  return pushTextToRecipients(db, key, async (uid) => {
+    const lang = await getUserLang(db, uid);
+    return getAdminNotifyText(key, lang, params);
+  });
+}
+
+/**
+ * 推播一則現成中文訊息給 admin（給不走 admin-notify-message 模板的呼叫端，
+ * 例如司機證件 / 車輛 profile 待審核）。收件人規則與 notifyAdmins 相同。
+ */
+export async function notifyAdminsText(db: Firestore, text: string): Promise<AdminNotifyResult> {
+  return pushTextToRecipients(db, text.split('\n')[0] ?? 'text', async () => text);
 }

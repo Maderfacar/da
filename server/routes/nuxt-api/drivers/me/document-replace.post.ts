@@ -22,7 +22,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog } from '@@/utils/audit-log';
-import { sendAdminEmail } from '@@/utils/admin-email';
+import { notifyAdminsText } from '@@/utils/notify-admins';
 
 const ALLOWED_DOC_TYPES = ['licenseUrl', 'registrationUrl', 'insuranceUrl', 'goodCitizenUrl'] as const;
 type DocType = typeof ALLOWED_DOC_TYPES[number];
@@ -97,14 +97,12 @@ export default defineEventHandler(async (event) => {
       payload: { docType, oldUrl, pendingUrl: body.url },
     });
 
-    // 2026-08-25：改走 email（admin 通知不再吃 LINE 每月推播額度），
-    // 同時修掉原本寫死的 level=='super' —— 全專案只有這支這樣寫，結果只有 super
-    // 收得到證件審核通知；隔壁的車輛 profile 審核用的是 canManageDrivers。兩者對齊。
+    // 2026-10-17：改回 LINE 推播，只推 super（收件規則集中在 notify-admins）
     try {
       const driverName = (application as { driverName?: string } | undefined)?.driverName ?? auth.lineUid.slice(0, 8);
       const docLabel = DOC_LABEL_ZH[docType];
       const message = `🔔 司機證件待審核\n司機：${driverName}\n證件：${docLabel}\n請至 admin 後台 /admin/drivers 處理`;
-      await sendAdminEmail(db, 'canManageDrivers', '[DA] 司機證件待審核', message);
+      await notifyAdminsText(db, message);
     } catch (err) {
       console.error('[drivers/me/document-replace] notify admins failed:', err);
     }

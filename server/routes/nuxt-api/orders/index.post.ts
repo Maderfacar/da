@@ -601,18 +601,13 @@ export default defineEventHandler(async (event) => {
     })();
   }
 
-  // ── admin 自動通知（fire-and-forget，失敗不影響訂單成立）──
-  void (async () => {
-    try {
-      await notifyAdmins(db, 'adminNotify.orderCreated', {
-        orderId: orderId.slice(0, 8).toUpperCase(),
-        date: formatDateTimeTpe(body.pickupDateTime),
-        pickup: body.pickupLocation.address,
-      });
-    } catch (err) {
-      console.error('[orders/post] admin notify failed:', err);
-    }
-  })();
+  // ── admin 自動通知（await：回應後 Vercel 可能凍結函式，背景推播會消失；
+  //    notifyAdmins 永不 throw，失敗不影響訂單成立）──
+  await notifyAdmins(db, 'adminNotify.orderCreated', {
+    orderId: orderId.slice(0, 8).toUpperCase(),
+    date: formatDateTimeTpe(body.pickupDateTime),
+    pickup: body.pickupLocation.address,
+  });
 
   return successResponse({
     orderId,

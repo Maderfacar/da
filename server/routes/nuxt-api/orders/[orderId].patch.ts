@@ -928,21 +928,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // ── admin 自動通知：全部狀態變更都推（含操作者本人；fire-and-forget）──
+    // ── admin 自動通知：全部狀態變更都推（含操作者本人）──
+    // await 避免回應後被凍結而消失；notifyAdmins 永不 throw
     if (body.orderStatus && body.orderStatus !== prevStatus) {
-      const fromStatus = prevStatus;
-      const toStatus = body.orderStatus;
-      void (async () => {
-        try {
-          await notifyAdmins(db, 'adminNotify.orderStatusChanged', {
-            orderId: orderId.slice(0, 8).toUpperCase(),
-            fromStatus,
-            toStatus,
-          });
-        } catch (err) {
-          console.error('[orders/patch] admin notify failed:', err);
-        }
-      })();
+      await notifyAdmins(db, 'adminNotify.orderStatusChanged', {
+        orderId: orderId.slice(0, 8).toUpperCase(),
+        fromStatus: prevStatus,
+        toStatus: body.orderStatus,
+      });
     }
 
     // P25-2 audit log：僅 admin 操作 log；driver / passenger 動作不入 audit_logs

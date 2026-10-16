@@ -206,18 +206,12 @@ export default defineEventHandler(async (event) => {
     payload: { passengerName, orderType: body.orderType, estimatedFare: body.estimatedFare },
   });
 
-  // ── admin 自動通知（D1：手動建單也推；fire-and-forget）──
-  void (async () => {
-    try {
-      await notifyAdmins(db, 'adminNotify.orderCreated', {
-        orderId: orderId.slice(0, 8).toUpperCase(),
-        date: formatDateTimeTpe(body.pickupDateTime),
-        pickup: body.pickupLocation.address,
-      });
-    } catch (err) {
-      console.error('[admin/orders/post] admin notify failed:', err);
-    }
-  })();
+  // ── admin 自動通知（D1：手動建單也推；await 避免回應後被凍結，notifyAdmins 永不 throw）──
+  await notifyAdmins(db, 'adminNotify.orderCreated', {
+    orderId: orderId.slice(0, 8).toUpperCase(),
+    date: formatDateTimeTpe(body.pickupDateTime),
+    pickup: body.pickupLocation.address,
+  });
 
   // ── 可選：建單後立即派發（autoDispatch=true）─────────────────────
   // 與 /dispatch.post.ts 流程一致：dispatchOrder（寫 dispatchAt） + LINE multicast 給 active driver + audit

@@ -269,17 +269,11 @@ export default defineEventHandler(async (event) => {
     }, 'text');
     if (applyMsg) await sendLinePush('driver', body.lineUserId, [applyMsg]);
 
-    // ── admin 自動通知：司機申請待審（fire-and-forget）──
-    void (async () => {
-      try {
-        await notifyAdmins(db, 'adminNotify.driverApplied', {
-          driverName: body.driverName,
-          vehicleType: body.vehicleModel.trim(),
-        });
-      } catch (err) {
-        console.error('[driver/apply] admin notify failed:', err);
-      }
-    })();
+    // ── admin 自動通知：司機申請待審（await 避免回應後被凍結；notifyAdmins 永不 throw）──
+    await notifyAdmins(db, 'adminNotify.driverApplied', {
+      driverName: body.driverName,
+      vehicleType: body.vehicleModel.trim(),
+    });
 
     return successResponse({
       applied: true,

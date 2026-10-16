@@ -29,21 +29,26 @@ function isLinePushDisabled(): boolean {
   return process.env.LINE_PUSH_DISABLED === '1' || process.env.LINE_PUSH_DISABLED === 'true';
 }
 
-/** 單推（1 個 user） */
+/**
+ * 單推（1 個 user）。
+ *
+ * 回傳是否送出（true = LINE 收下 / 測試模式略過）。既有呼叫端可照舊忽略；
+ * notifyAdmins 需要它來回報 delivered，告警去重才不會把沒送到的批次記成「已通知」。
+ */
 export async function sendLinePush(
   client: LineClient,
   to: string,
   messages: LineMessage[],
-): Promise<void> {
-  if (!to) return;
+): Promise<boolean> {
+  if (!to) return false;
   if (isLinePushDisabled()) {
     console.log(`[line-push:DISABLED] ${client} → ${to} (${messages.length} msg)`);
-    return;
+    return true;
   }
   const { accessToken } = getLineChannel(client);
   if (!accessToken) {
     console.warn(`[line-push] ${client} accessToken 未設定，skip push to ${to}`);
-    return;
+    return false;
   }
   try {
     await $fetch(LINE_PUSH_URL, {
@@ -54,6 +59,7 @@ export async function sendLinePush(
       },
       body: { to, messages },
     });
+    return true;
   } catch (err) {
     const e = err as { data?: unknown; statusCode?: number; message?: string };
     console.error(`[line-push] ${client} push failed:`, e?.data ?? e);
@@ -76,6 +82,7 @@ export async function sendLinePush(
       errorDetails: e?.data ?? null,
       messages,
     });
+    return false;
   }
 }
 

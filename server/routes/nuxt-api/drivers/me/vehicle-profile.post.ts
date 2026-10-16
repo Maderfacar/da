@@ -16,7 +16,7 @@ import { useFirebaseAdmin } from '@@/utils/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAuthFromEvent, authFailResponse } from '@@/utils/require-auth';
 import { writeAuditLog } from '@@/utils/audit-log';
-import { sendAdminEmail } from '@@/utils/admin-email';
+import { notifyAdminsText } from '@@/utils/notify-admins';
 import { buildTagIndex, tagIdsToNames } from '@@/utils/vehicle-profile';
 
 export default defineEventHandler(async (event) => {
@@ -79,12 +79,12 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    // 2026-08-25：改走 email（admin 通知不再吃 LINE 每月推播額度）
+    // 2026-10-17：改回 LINE 推播，只推 super（收件規則集中在 notify-admins）
     try {
       const driverApp = data.application as { driverName?: string } | undefined;
       const driverName = driverApp?.driverName ?? auth.lineUid.slice(0, 8);
       const message = `🚗 司機車輛 Profile 待審核\n司機：${driverName}\n請至 admin 後台 /admin/drivers/${auth.lineUid} 處理`;
-      await sendAdminEmail(db, 'canManageDrivers', '[DA] 司機車輛 Profile 待審核', message);
+      await notifyAdminsText(db, message);
     } catch (err) {
       console.error('[drivers/me/vehicle-profile.post] notify admins failed:', err);
     }
