@@ -13,6 +13,7 @@
 //   - app/layouts/front-desk.vue
 //   - app/pages/orders/index.vue（個人資料已併入此頁；原 app/pages/profile 已不存在）
 import { logLifecycle } from '~/utils/error-log';
+import { shouldReportRolesLoadTimeout } from '~shared/roles-load-guard';
 
 const ROLES_LOAD_TIMEOUT_MS = 5_000;
 
@@ -35,6 +36,8 @@ export const UseRolesLoadGuard = () => {
     timer = setTimeout(() => {
       if (state.value === 'loading') {
         state.value = 'failed';
+        // 2026-10-23：訪客 roles 恆空，不是故障 —— 只記已登入者（理由見 shared/roles-load-guard.ts）
+        if (!shouldReportRolesLoadTimeout({ isSignIn: authStore.isSignIn, rolesCount: authStore.roles.length })) return;
         logLifecycle({
           event: 'lifecycle.roles-load.timeout',
           severity: 'warn',
